@@ -44,7 +44,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlignJustified
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.rememberTransitionAwareElevation
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -66,6 +65,12 @@ private val CARD_SHADOW_ELEVATION = 8.dp
  * The card uses a neutral surface background with ambient shadow elevation so it
  * visually floats above the list. The outer [Box] is intentionally unclipped so
  * the [SyncStatusBadge] can extend slightly outside the card bounds.
+ *
+ * The shadow is rendered by [FlatCard] via `graphicsLayer { shape = shapes.large; clip = false }`,
+ * which keeps it rounded at all frames (Horizon Narrative §4.4). Dark mode suppresses the shadow
+ * automatically inside [FlatCard]. The `LazyColumn` item must pass
+ * `fadeInSpec = null, fadeOutSpec = null` to `animateItem()` to prevent the alpha-compositing
+ * offscreen buffer from clipping the shadow to a rectangle — see `GroupsScreen`.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -77,9 +82,6 @@ fun SelectedGroupCard(
 ) {
     val haptics = LocalHapticFeedback.current
     val cardShape = MaterialTheme.shapes.large
-
-    // Transition-aware ambient shadow — Horizon Narrative §4.4
-    val elevation = rememberTransitionAwareElevation(targetElevation = CARD_SHADOW_ELEVATION)
 
     // Outer Box is unclipped — lets SyncStatusBadge overflow beyond card bounds.
     Box(modifier = modifier) {
@@ -94,7 +96,7 @@ fun SelectedGroupCard(
                         onLongClick()
                     }
                 ),
-            elevation = elevation
+            elevation = CARD_SHADOW_ELEVATION
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 SelectedGroupCoverImage(
