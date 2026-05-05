@@ -115,7 +115,10 @@ withdrawalsDomainModule + withdrawalsUiModule → withdrawalsFeatureModules  (no
 ## Build & Run
 
 - JDK 21, Android SDK 36, min SDK 26.
-- Place `google-services.json` in `app/`. Set `OPEN_EXCHANGE_RATES_APP_ID` in `local.properties`.
+- Place `google-services.json` in `app/`.
+- API keys are Gradle properties read via `providers.gradleProperty()` — they must go in `~/.gradle/gradle.properties` (never `local.properties`, which is only for `sdk.dir`):
+  - Debug builds: `OER_APP_ID_DEBUG=your_key`
+  - Release builds: `OER_APP_ID_RELEASE=your_key` (or set as an environment variable `OER_APP_ID_RELEASE` — env var takes precedence on CI)
 - Version managed in `version.properties` (major.minor.patch + snapshot flag).
 - `./gradlew test` — unit tests. `./gradlew connectedAndroidTest` — UI tests.
 
