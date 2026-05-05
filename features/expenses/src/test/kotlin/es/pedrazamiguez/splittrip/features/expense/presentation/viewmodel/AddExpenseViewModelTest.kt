@@ -43,6 +43,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnCrudDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnExchangeRateDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CashRateDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ConfigEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CurrencyEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
@@ -233,13 +234,17 @@ class AddExpenseViewModelTest {
 
         val currencyHandler = CurrencyEventHandler(
             getExchangeRateUseCase = getExchangeRateUseCase,
-            previewCashExchangeRateUseCase = previewCashExchangeRateUseCase,
             exchangeRateCalculationService = ExchangeRateCalculationService(),
-            expenseCalculatorService = expenseCalculatorService,
-            splitPreviewService = splitPreviewService,
             formattingHelper = formattingHelper,
             addExpenseOptionsMapper = addExpenseOptionsMapper,
-            withdrawalPoolSelectionDelegate = mockk(relaxed = true)
+            withdrawalPoolSelectionDelegate = mockk(relaxed = true),
+            cashRateDelegate = CashRateDelegate(
+                previewCashExchangeRateUseCase = previewCashExchangeRateUseCase,
+                expenseCalculatorService = expenseCalculatorService,
+                splitPreviewService = splitPreviewService,
+                formattingHelper = formattingHelper,
+                addExpenseOptionsMapper = addExpenseOptionsMapper
+            )
         )
 
         val configHandler = ConfigEventHandler(

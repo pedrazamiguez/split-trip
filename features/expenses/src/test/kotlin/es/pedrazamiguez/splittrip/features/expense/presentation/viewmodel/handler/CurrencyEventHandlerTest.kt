@@ -97,13 +97,17 @@ class CurrencyEventHandlerTest {
 
         handler = CurrencyEventHandler(
             getExchangeRateUseCase = getExchangeRateUseCase,
-            previewCashExchangeRateUseCase = previewCashExchangeRateUseCase,
             exchangeRateCalculationService = exchangeRateCalculationService,
-            expenseCalculatorService = expenseCalculatorService,
-            splitPreviewService = splitPreviewService,
             formattingHelper = formattingHelper,
             addExpenseOptionsMapper = AddExpenseOptionsUiMapper(resourceProvider, mockk(relaxed = true)),
-            withdrawalPoolSelectionDelegate = mockk(relaxed = true)
+            withdrawalPoolSelectionDelegate = mockk(relaxed = true),
+            cashRateDelegate = CashRateDelegate(
+                previewCashExchangeRateUseCase = previewCashExchangeRateUseCase,
+                expenseCalculatorService = expenseCalculatorService,
+                splitPreviewService = splitPreviewService,
+                formattingHelper = formattingHelper,
+                addExpenseOptionsMapper = AddExpenseOptionsUiMapper(resourceProvider, mockk(relaxed = true))
+            )
         )
 
         uiState = MutableStateFlow(cashForeignState)

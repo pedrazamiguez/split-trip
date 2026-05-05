@@ -77,29 +77,45 @@ build times:
 ```bash
 git clone https://github.com/pedrazamiguez/split-trip.git
 cd split-trip
-
 ```
 
-2. **Firebase Configuration**:
+2. **Run the bootstrap script** (installs git hooks, scaffolds `local.properties`, and checks prerequisites):
+
+```bash
+make setup
+```
+
+> Run `make help` to see all available targets.
+
+3. **Firebase Configuration**:
 
 * Go to the [Firebase Console](https://console.firebase.google.com).
 * Create a project and add an Android app (package: `es.pedrazamiguez.splittrip`).
 * Download `google-services.json` and place it in the `app/` directory.
 
+4. **API Keys (Secrets)**:
 
-3. **API Keys (Secrets)**:
-
-* Add your Open Exchange Rates key to your `local.properties`:
+* The Open Exchange Rates key is a **Gradle property** read by `data/remote/build.gradle.kts` via `providers.gradleProperty()`. It must be added to your **user-level** `~/.gradle/gradle.properties` (not `local.properties`, which is only for `sdk.dir`):
 
 ```properties
-OPEN_EXCHANGE_RATES_APP_ID="your_api_key_here"
-
+# ~/.gradle/gradle.properties
+OER_APP_ID_DEBUG=your_debug_key_here
+OER_APP_ID_RELEASE=your_release_key_here
 ```
 
-4. **Build & Run**:
+> For release CI builds, `OER_APP_ID_RELEASE` can also be supplied as an environment variable (env var takes precedence over the Gradle property).
 
-* Sync Gradle files.
+5. **Build & Run**:
+
+* Sync Gradle files in Android Studio.
 * Select the `app` configuration and run on an Emulator (API 26+ recommended).
+
+### Verify your setup
+
+```bash
+make doctor   # checks JDK, SDK path, google-services.json, API key, and git hook
+make check    # runs Konsist architecture tests + unit tests + compilation
+```
 
 ## 🧪 Testing
 

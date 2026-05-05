@@ -45,6 +45,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.Expens
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnCrudDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnExchangeRateDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CashRateDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ConfigEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CurrencyEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
@@ -158,18 +159,26 @@ val expensesUiModule = module {
             splitRowMappingDelegate = splitRowMappingDelegate
         )
 
-        val currencyHandler = CurrencyEventHandler(
-            getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
+        val withdrawalPoolSelectionDelegate = WithdrawalPoolSelectionDelegate(
+            getAvailableWithdrawalPoolsUseCase = get<GetAvailableWithdrawalPoolsUseCase>(),
+            addExpenseOptionsMapper = addExpenseOptionsUiMapper
+        )
+
+        val cashRateDelegate = CashRateDelegate(
             previewCashExchangeRateUseCase = get<PreviewCashExchangeRateUseCase>(),
-            exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             splitPreviewService = get<SplitPreviewService>(),
             formattingHelper = formattingHelper,
+            addExpenseOptionsMapper = addExpenseOptionsUiMapper
+        )
+
+        val currencyHandler = CurrencyEventHandler(
+            getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
+            exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
+            formattingHelper = formattingHelper,
             addExpenseOptionsMapper = addExpenseOptionsUiMapper,
-            withdrawalPoolSelectionDelegate = WithdrawalPoolSelectionDelegate(
-                getAvailableWithdrawalPoolsUseCase = get<GetAvailableWithdrawalPoolsUseCase>(),
-                addExpenseOptionsMapper = addExpenseOptionsUiMapper
-            )
+            withdrawalPoolSelectionDelegate = withdrawalPoolSelectionDelegate,
+            cashRateDelegate = cashRateDelegate
         )
 
         val configHandler = ConfigEventHandler(

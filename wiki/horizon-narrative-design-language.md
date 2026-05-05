@@ -234,35 +234,23 @@ The shadow `Box` is the parent of the `Surface`; the caller's `modifier` (includ
 - The ripple from `combinedClickable()` is still correctly clipped to the card shape (by `clip()` on the `Surface`).
 - The shadow is drawn in the shadow `Box`'s parent draw scope — outside any clip context — so it is fully visible.
 
-#### Transition-Aware Shadow Deferral (Hero Cards)
+#### Elevated Hero Cards in `LazyColumn` — The Alpha-Buffer Rule
 
-When a card participates in a `sharedBounds` `RemeasureToBounds` transition (e.g., `GroupItem` → `SelectedGroupCard`), the shadow elevation should be animated from `0.dp` to the target value so it only appears after the shape-clip animation settles. This prevents a squared drop-shadow artifact during the transition.
-
-**Pattern:** Animate the elevation externally and pass the animated state value to `FlatCard`:
+When a hero card using `FlatCard(elevation > 0)` is placed inside a `LazyColumn` with `animateItem()`, you **must** disable the default alpha fade animations:
 
 ```kotlin
-val sharedTransitionScope = LocalSharedTransitionScope.current
-val isTransitionActive = sharedTransitionScope?.isTransitionActive ?: false
-
-val targetElevation = when {
-    isSystemInDarkTheme() -> 0.dp   // §4.4 — shadows invisible in dark mode
-    isTransitionActive -> 0.dp      // prevent squared artifact during sharedBounds transition
-    else -> CARD_SHADOW_ELEVATION
-}
-
-val elevation by animateDpAsState(
-    targetValue = targetElevation,
-    animationSpec = tween(durationMillis = 200),
-    label = "card_shadow_elevation"
+SelectedGroupCard(
+    modifier = Modifier
+        .animateItem(fadeInSpec = null, fadeOutSpec = null)  // ← required
+        …
 )
-
-FlatCard(
-    modifier = Modifier.fillMaxWidth().clip(cardShape).combinedClickable(…),
-    elevation = elevation
-) { … }
 ```
 
-> **Reference:** `SelectedGroupCard.kt` in `features/groups/.../component/`
+**Why:** `animateItem()`'s default fade-in/out creates a **rectangular offscreen hardware buffer** (Android's alpha compositing layer). `FlatCard`'s `graphicsLayer { clip = false }` shadow bleeds outside the card bounds — but that bleed is silently clipped by the rectangular buffer edge, producing a hard squared-shadow artifact. Disabling the alpha animations eliminates the buffer entirely; the spring placement animation is retained and unaffected.
+
+`FlatCard` uses `graphicsLayer { shape = shapes.large; clip = false }` internally, so the shadow always follows the card's rounded shape regardless of card size or transition frame. No external elevation animation or `isTransitionActive` kill-switch is needed.
+
+> **Reference:** `SelectedGroupCard.kt` in `features/groups/.../component/`, `GroupsScreen.kt` (`animateItem(fadeInSpec = null, fadeOutSpec = null)` call-site)
 
 ---
 
