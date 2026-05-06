@@ -6,11 +6,13 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.Source
+import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toDomain
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
+import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import kotlinx.coroutines.channels.awaitClose
@@ -117,6 +119,72 @@ class FirestoreExpenseDataSourceImpl(
         return doc.exists()
     }
 
+    /**
+     * Saves a cash-funded expense using an optimistic-locking Firestore transaction.
+     *
+     * The transaction atomically:
+     * 1. Reads the current `remainingAmount` for each consumed withdrawal.
+     * 2. Verifies each against [expectedRemainingAmounts] — throws [CashConflictException]
+     *    on any mismatch (non-retriable; Firestore SDK does not retry non-[com.google.firebase.firestore.FirebaseFirestoreException]).
+     * 3. Writes the expense document.
+     * 4. Updates each consumed withdrawal's `remainingAmount` to `expected − consumed`.
+     *
+     * The catch block also handles the rare case where the Firebase SDK wraps a custom
+     * exception as the `cause` of another exception.
+     */
+    override suspend fun addExpenseWithCashPreconditions(
+        groupId: String,
+        expense: Expense,
+        expectedRemainingAmounts: Map<String, Long>
+    ) {
+        val userId = authenticationService.requireUserId()
+        val expenseId = expense.id
+
+        val groupDocRef = firestore
+            .collection(GroupDocument.COLLECTION_PATH)
+            .document(groupId)
+        val expenseDocRef = groupDocRef
+            .collection(ExpenseDocument.COLLECTION_PATH)
+            .document(expenseId)
+        val expenseDocument = expense.toDocument(expenseId, groupId, groupDocRef, userId)
+
+        val withdrawalRefs = expectedRemainingAmounts.keys.map { withdrawalId ->
+            groupDocRef
+                .collection(CashWithdrawalDocument.COLLECTION_PATH)
+                .document(withdrawalId)
+        }
+        val trancheMap = expense.cashTranches.associate { it.withdrawalId to it.amountConsumed }
+
+        try {
+            firestore.runTransaction { transaction ->
+                val withdrawalDocs = withdrawalRefs.map { transaction.get(it) }
+
+                for ((ref, doc) in withdrawalRefs.zip(withdrawalDocs)) {
+                    val serverRemaining = doc.getLong(FIELD_REMAINING_AMOUNT) ?: 0L
+                    val expectedRemaining = expectedRemainingAmounts[ref.id] ?: 0L
+                    if (serverRemaining != expectedRemaining) {
+                        throw CashConflictException()
+                    }
+                }
+
+                transaction.set(expenseDocRef, expenseDocument)
+
+                for (ref in withdrawalRefs) {
+                    val consumed = trancheMap[ref.id] ?: continue
+                    val originalRemaining = expectedRemainingAmounts[ref.id] ?: continue
+                    transaction.update(ref, FIELD_REMAINING_AMOUNT, originalRemaining - consumed)
+                }
+            }.await()
+        } catch (e: CashConflictException) {
+            throw e
+        } catch (e: Exception) {
+            // Re-throw CashConflictException if the SDK wrapped it as the cause
+            val wrappedConflict = e.cause as? CashConflictException
+            if (wrappedConflict != null) throw wrappedConflict
+            throw e
+        }
+    }
+
     private fun createExpensesCollection(groupId: String) = firestore
         .collection(GroupDocument.COLLECTION_PATH)
         .document(groupId)
@@ -190,5 +258,6 @@ class FirestoreExpenseDataSourceImpl(
 
     private companion object {
         const val FIRESTORE_WHERE_IN_LIMIT = 30
+        const val FIELD_REMAINING_AMOUNT = "remainingAmount"
     }
 }

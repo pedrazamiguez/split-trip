@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
@@ -76,6 +77,11 @@ class SubmitResultDelegate(
                     // Preview showed available cash — concurrent write raced this submit.
                     emitCashConflictError(actionsFlow)
                 }
+            }
+            is CashConflictException -> {
+                // Phase 2: Firestore transaction detected a concurrent modification to a
+                // consumed withdrawal. Show same conflict UX as Phase 1 race detection.
+                emitCashConflictError(actionsFlow)
             }
             else -> actionsFlow.emit(
                 AddExpenseUiAction.ShowError(

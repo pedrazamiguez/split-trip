@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
+import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -36,18 +37,7 @@ class ExpenseRepositoryImpl(
     private val cloudSubscriptionJobs = ConcurrentHashMap<String, Job>()
 
     override suspend fun addExpense(groupId: String, expense: Expense) {
-        val expenseId = expense.id.ifBlank { UUID.randomUUID().toString() }
-        val currentUserId = authenticationService.currentUserId() ?: ""
-        val currentTimestamp = java.time.LocalDateTime.now()
-
-        val expenseWithMetadata = expense.copy(
-            id = expenseId,
-            groupId = groupId,
-            createdBy = expense.createdBy.ifBlank { currentUserId },
-            createdAt = expense.createdAt ?: currentTimestamp,
-            lastUpdatedAt = currentTimestamp,
-            syncStatus = SyncStatus.PENDING_SYNC
-        )
+        val expenseWithMetadata = buildExpenseWithMetadata(groupId, expense)
 
         // Save to local first - UI updates instantly via Flow
         localExpenseDataSource.saveExpense(expenseWithMetadata)
@@ -69,6 +59,54 @@ class ExpenseRepositoryImpl(
                 }
                 Timber.w(e, "Failed to sync expense to cloud")
             }
+        }
+    }
+
+    /**
+     * Saves a cash-funded expense with optimistic-locking conflict detection.
+     *
+     * Room-first: the expense is always saved immediately as PENDING_SYNC.
+     * Then a **synchronous** Firestore transaction verifies that no concurrent write
+     * has modified any consumed withdrawal since the FIFO preview was computed.
+     *
+     * - **Online + no conflict:** transaction commits → Room status updated to SYNCED.
+     * - **Online + conflict:** Room write is rolled back → [CashConflictException] re-thrown.
+     * - **Offline / network error:** expense stays SYNC_FAILED (standard offline fallback,
+     *   exception is swallowed so the caller proceeds with the offline-first path).
+     */
+    override suspend fun addCashExpense(
+        groupId: String,
+        expense: Expense,
+        expectedRemainingAmounts: Map<String, Long>
+    ) {
+        val expenseWithMetadata = buildExpenseWithMetadata(groupId, expense)
+
+        // Room-first (offline-first principle)
+        localExpenseDataSource.saveExpense(expenseWithMetadata)
+
+        // Synchronous Firestore transaction — conflict detection
+        try {
+            cloudExpenseDataSource.addExpenseWithCashPreconditions(
+                groupId,
+                expenseWithMetadata,
+                expectedRemainingAmounts
+            )
+            localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
+            Timber.d("Cash expense committed via Firestore transaction: ${expenseWithMetadata.id}")
+        } catch (e: CashConflictException) {
+            // Concurrent modification detected — rollback local write and surface to caller
+            localExpenseDataSource.deleteExpense(expenseWithMetadata.id)
+            throw e
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Offline or network error — keep the Room write so the user can proceed
+            // offline-first; mark as SYNC_FAILED for eventual cloud retry.
+            val currentStatus = localExpenseDataSource.getExpenseById(expenseWithMetadata.id)?.syncStatus
+            if (currentStatus == SyncStatus.PENDING_SYNC) {
+                localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNC_FAILED)
+            }
+            Timber.w(e, "Firestore transaction failed for cash expense, keeping local state for offline retry")
         }
     }
 
@@ -179,5 +217,23 @@ class ExpenseRepositoryImpl(
                 Timber.d(e, "Cannot confirm expense $id — server unreachable")
             }
         }
+    }
+
+    /**
+     * Builds an expense with repository-side metadata applied:
+     * a stable ID, the groupId, [SyncStatus.PENDING_SYNC], and local timestamps.
+     */
+    private fun buildExpenseWithMetadata(groupId: String, expense: Expense): Expense {
+        val expenseId = expense.id.ifBlank { UUID.randomUUID().toString() }
+        val currentUserId = authenticationService.currentUserId() ?: ""
+        val currentTimestamp = java.time.LocalDateTime.now()
+        return expense.copy(
+            id = expenseId,
+            groupId = groupId,
+            createdBy = expense.createdBy.ifBlank { currentUserId },
+            createdAt = expense.createdAt ?: currentTimestamp,
+            lastUpdatedAt = currentTimestamp,
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
     }
 }
