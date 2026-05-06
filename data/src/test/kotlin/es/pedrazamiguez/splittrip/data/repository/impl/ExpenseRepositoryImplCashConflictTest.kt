@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -100,6 +101,16 @@ class ExpenseRepositoryImplCashConflictTest {
             advanceUntilIdle()
 
             coVerify { localExpenseDataSource.updateSyncStatus(testExpense.id, SyncStatus.SYNCED) }
+        }
+
+        @Test
+        fun `returns true when Firestore transaction commits successfully`() = runTest(testDispatcher) {
+            coEvery { cloudExpenseDataSource.addExpenseWithCashPreconditions(any(), any(), any()) } just Runs
+
+            val result = repository.addCashExpense(testGroupId, testExpense, expectedRemainingAmounts)
+            advanceUntilIdle()
+
+            assertTrue(result)
         }
 
         @Test
@@ -201,10 +212,11 @@ class ExpenseRepositoryImplCashConflictTest {
                 } throws RuntimeException("Network error")
 
                 // Must NOT throw — offline-first means the user proceeds
-                repository.addCashExpense(testGroupId, testExpense, expectedRemainingAmounts)
+                val result = repository.addCashExpense(testGroupId, testExpense, expectedRemainingAmounts)
                 advanceUntilIdle()
 
                 coVerify { localExpenseDataSource.saveExpense(any()) }
+                assertFalse(result) // Signals caller that Firestore transaction did not commit
             }
 
         @Test

@@ -61,15 +61,19 @@ class AddExpenseUseCase(
             // Use the precondition-aware write path. On CashConflictException the
             // repository rolls back the local write and re-throws — no withdrawal
             // Room update is needed in that case.
-            expenseRepository.addCashExpense(
+            val transactionCommitted = expenseRepository.addCashExpense(
                 groupId,
                 fifoResult.expense,
                 fifoResult.expectedRemainingAmounts
             )
 
-            // Update withdrawal Room entries only after the cloud transaction succeeded
-            // (or after the offline fallback committed the expense to Room).
-            cashWithdrawalRepository.updateRemainingAmounts(groupId, fifoResult.updatedWithdrawals)
+            // Update withdrawal Room entries only when the Firestore transaction committed.
+            // If the transaction did not run (offline fallback, transactionCommitted == false),
+            // skipping this prevents deducting withdrawals in the cloud without a matching
+            // expense document (which would break cloud-side atomicity).
+            if (transactionCommitted) {
+                cashWithdrawalRepository.updateRemainingAmounts(groupId, fifoResult.updatedWithdrawals)
+            }
 
             expenseToSave = fifoResult.expense
         } else {

@@ -69,16 +69,18 @@ class ExpenseRepositoryImpl(
      * Then a **synchronous** Firestore transaction verifies that no concurrent write
      * has modified any consumed withdrawal since the FIFO preview was computed.
      *
-     * - **Online + no conflict:** transaction commits → Room status updated to SYNCED.
+     * - **Online + no conflict:** transaction commits → Room status updated to SYNCED → returns `true`.
      * - **Online + conflict:** Room write is rolled back → [CashConflictException] re-thrown.
-     * - **Offline / network error:** expense stays SYNC_FAILED (standard offline fallback,
-     *   exception is swallowed so the caller proceeds with the offline-first path).
+     * - **Offline / network error:** expense stays SYNC_FAILED → returns `false`.
+     *   The caller must NOT update withdrawal remaining amounts on `false`, since the
+     *   Firestore transaction never ran; doing so would deduct withdrawals in the cloud
+     *   without a matching expense document.
      */
     override suspend fun addCashExpense(
         groupId: String,
         expense: Expense,
         expectedRemainingAmounts: Map<String, Long>
-    ) {
+    ): Boolean {
         val expenseWithMetadata = buildExpenseWithMetadata(groupId, expense)
 
         // Room-first (offline-first principle)
@@ -93,6 +95,7 @@ class ExpenseRepositoryImpl(
             )
             localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
             Timber.d("Cash expense committed via Firestore transaction: ${expenseWithMetadata.id}")
+            return true
         } catch (e: CashConflictException) {
             // Concurrent modification detected — rollback local write and surface to caller
             localExpenseDataSource.deleteExpense(expenseWithMetadata.id)
@@ -101,12 +104,15 @@ class ExpenseRepositoryImpl(
             throw e
         } catch (e: Exception) {
             // Offline or network error — keep the Room write so the user can proceed
-            // offline-first; mark as SYNC_FAILED for eventual cloud retry.
+            // offline-first; mark as SYNC_FAILED.
+            // Return false so the caller does NOT deduct withdrawals in Room+cloud independently
+            // (which would break cloud atomicity: withdrawals deducted without expense committed).
             val currentStatus = localExpenseDataSource.getExpenseById(expenseWithMetadata.id)?.syncStatus
             if (currentStatus == SyncStatus.PENDING_SYNC) {
                 localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNC_FAILED)
             }
             Timber.w(e, "Firestore transaction failed for cash expense, keeping local state for offline retry")
+            return false
         }
     }
 

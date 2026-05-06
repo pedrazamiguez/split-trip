@@ -162,10 +162,8 @@ class CashRateDelegate(
      * Maps a [CashRatePreviewResult] into an updated [AddExpenseUiState].
      *
      * Extracted from [fetchCashRate] to reduce method length and complexity.
+     * Each sealed variant is delegated to a private mapping method.
      */
-    // Sealed when-expression maps each result variant to a state copy;
-    // length is driven by the number of fields per branch, not logic
-    @Suppress("LongMethod")
     internal fun mapCashRateResult(
         current: AddExpenseUiState,
         result: CashRatePreviewResult,
@@ -173,113 +171,109 @@ class CashRateDelegate(
         sourceCurrencyCode: String = "",
         updateRateFields: Boolean = true
     ): AddExpenseUiState = when (result) {
-        is CashRatePreviewResult.Available -> {
-            val preview = result.preview
-            val tranchePreviews = if (preview.tranches.isNotEmpty() && sourceCurrencyCode.isNotBlank()) {
-                addExpenseOptionsMapper.mapCashTranchePreviews(preview.tranches, sourceCurrencyCode)
-            } else {
-                persistentListOf()
-            }
+        is CashRatePreviewResult.Available -> mapAvailableResult(
+            current,
+            result,
+            targetDecimalDigits,
+            sourceCurrencyCode,
+            updateRateFields
+        )
+        is CashRatePreviewResult.InsufficientCash -> mapInsufficientCashResult(current, updateRateFields)
+        is CashRatePreviewResult.NoWithdrawals -> mapNoWithdrawalsResult(current, updateRateFields)
+    }
 
-            // Same-currency CASH: only update tranche preview and clear insufficient flag.
-            if (!updateRateFields) {
-                return current.copy(
-                    isLoadingRate = false,
-                    isInsufficientCash = false,
-                    cashTranchePreviews = tranchePreviews
-                )
-            }
-
-            val formattedRate = formattingHelper.formatRateForDisplay(
-                preview.displayRate.toPlainString()
-            )
-
-            if (preview.groupAmountCents > 0) {
-                // FIFO-simulated: update both rate and group amount
-                val groupAmountStr = expenseCalculatorService.centsToBigDecimalString(
-                    preview.groupAmountCents,
-                    targetDecimalDigits
-                )
-                val formattedAmount = formattingHelper.formatForDisplay(
-                    internalValue = groupAmountStr,
-                    maxDecimalPlaces = targetDecimalDigits,
-                    minDecimalPlaces = targetDecimalDigits
-                )
-                current.copy(
-                    isLoadingRate = false,
-                    displayExchangeRate = formattedRate,
-                    calculatedGroupAmount = formattedAmount,
-                    isExchangeRateLocked = true,
-                    isInsufficientCash = false,
-                    exchangeRateLockedHint = UiText.StringResource(
-                        R.string.add_expense_cash_rate_locked_hint
-                    ),
-                    cashTranchePreviews = tranchePreviews
-                )
-            } else {
-                // Weighted-average preview (no amount entered yet).
-                current.copy(
-                    isLoadingRate = false,
-                    displayExchangeRate = formattedRate,
-                    calculatedGroupAmount = "",
-                    isExchangeRateLocked = true,
-                    isInsufficientCash = false,
-                    exchangeRateLockedHint = UiText.StringResource(
-                        R.string.add_expense_cash_rate_locked_hint
-                    ),
-                    cashTranchePreviews = persistentListOf()
-                )
-            }
+    private fun mapAvailableResult(
+        current: AddExpenseUiState,
+        result: CashRatePreviewResult.Available,
+        targetDecimalDigits: Int,
+        sourceCurrencyCode: String,
+        updateRateFields: Boolean
+    ): AddExpenseUiState {
+        val preview = result.preview
+        val tranchePreviews = if (preview.tranches.isNotEmpty() && sourceCurrencyCode.isNotBlank()) {
+            addExpenseOptionsMapper.mapCashTranchePreviews(preview.tranches, sourceCurrencyCode)
+        } else {
+            persistentListOf()
         }
 
-        is CashRatePreviewResult.InsufficientCash -> {
-            current.copy(
+        // Same-currency CASH: only update tranche preview and clear insufficient flag.
+        if (!updateRateFields) {
+            return current.copy(
                 isLoadingRate = false,
-                displayExchangeRate = if (updateRateFields) {
-                    EMPTY_FIELD_PLACEHOLDER
-                } else {
-                    current.displayExchangeRate
-                },
-                calculatedGroupAmount = if (updateRateFields) {
-                    EMPTY_FIELD_PLACEHOLDER
-                } else {
-                    current.calculatedGroupAmount
-                },
-                isExchangeRateLocked = updateRateFields || current.isExchangeRateLocked,
-                isInsufficientCash = true,
-                exchangeRateLockedHint = if (updateRateFields) {
-                    UiText.StringResource(R.string.add_expense_cash_insufficient_hint)
-                } else {
-                    current.exchangeRateLockedHint
-                },
-                cashTranchePreviews = persistentListOf()
-            )
-        }
-
-        is CashRatePreviewResult.NoWithdrawals -> {
-            current.copy(
-                isLoadingRate = false,
-                displayExchangeRate = if (updateRateFields) {
-                    EMPTY_FIELD_PLACEHOLDER
-                } else {
-                    current.displayExchangeRate
-                },
-                calculatedGroupAmount = if (updateRateFields) {
-                    EMPTY_FIELD_PLACEHOLDER
-                } else {
-                    current.calculatedGroupAmount
-                },
-                isExchangeRateLocked = updateRateFields,
                 isInsufficientCash = false,
-                exchangeRateLockedHint = if (updateRateFields) {
-                    UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
-                } else {
-                    current.exchangeRateLockedHint
-                },
+                cashTranchePreviews = tranchePreviews
+            )
+        }
+
+        val formattedRate = formattingHelper.formatRateForDisplay(preview.displayRate.toPlainString())
+
+        return if (preview.groupAmountCents > 0) {
+            // FIFO-simulated: update both rate and group amount
+            val groupAmountStr = expenseCalculatorService.centsToBigDecimalString(
+                preview.groupAmountCents,
+                targetDecimalDigits
+            )
+            val formattedAmount = formattingHelper.formatForDisplay(
+                internalValue = groupAmountStr,
+                maxDecimalPlaces = targetDecimalDigits,
+                minDecimalPlaces = targetDecimalDigits
+            )
+            current.copy(
+                isLoadingRate = false,
+                displayExchangeRate = formattedRate,
+                calculatedGroupAmount = formattedAmount,
+                isExchangeRateLocked = true,
+                isInsufficientCash = false,
+                exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint),
+                cashTranchePreviews = tranchePreviews
+            )
+        } else {
+            // Weighted-average preview (no amount entered yet).
+            current.copy(
+                isLoadingRate = false,
+                displayExchangeRate = formattedRate,
+                calculatedGroupAmount = "",
+                isExchangeRateLocked = true,
+                isInsufficientCash = false,
+                exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint),
                 cashTranchePreviews = persistentListOf()
             )
         }
     }
+
+    private fun mapInsufficientCashResult(
+        current: AddExpenseUiState,
+        updateRateFields: Boolean
+    ): AddExpenseUiState = current.copy(
+        isLoadingRate = false,
+        displayExchangeRate = if (updateRateFields) EMPTY_FIELD_PLACEHOLDER else current.displayExchangeRate,
+        calculatedGroupAmount = if (updateRateFields) EMPTY_FIELD_PLACEHOLDER else current.calculatedGroupAmount,
+        isExchangeRateLocked = updateRateFields || current.isExchangeRateLocked,
+        isInsufficientCash = true,
+        exchangeRateLockedHint = if (updateRateFields) {
+            UiText.StringResource(R.string.add_expense_cash_insufficient_hint)
+        } else {
+            current.exchangeRateLockedHint
+        },
+        cashTranchePreviews = persistentListOf()
+    )
+
+    private fun mapNoWithdrawalsResult(
+        current: AddExpenseUiState,
+        updateRateFields: Boolean
+    ): AddExpenseUiState = current.copy(
+        isLoadingRate = false,
+        displayExchangeRate = if (updateRateFields) EMPTY_FIELD_PLACEHOLDER else current.displayExchangeRate,
+        calculatedGroupAmount = if (updateRateFields) EMPTY_FIELD_PLACEHOLDER else current.calculatedGroupAmount,
+        isExchangeRateLocked = updateRateFields,
+        isInsufficientCash = false,
+        exchangeRateLockedHint = if (updateRateFields) {
+            UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
+        } else {
+            current.exchangeRateLockedHint
+        },
+        cashTranchePreviews = persistentListOf()
+    )
 
     /** Debounced CASH rate recalculation — avoids hitting Room on every keystroke. */
     fun recalculateCashForward() {

@@ -139,6 +139,21 @@ class FirestoreExpenseDataSourceImpl(
     ) {
         val userId = authenticationService.requireUserId()
         val expenseId = expense.id
+        val trancheMap = expense.cashTranches.associate { it.withdrawalId to it.amountConsumed }
+
+        // Defensive preconditions — catch caller bugs before touching Firestore.
+        // Every consumed withdrawal must have a snapshot value in expectedRemainingAmounts.
+        require(expectedRemainingAmounts.keys.containsAll(trancheMap.keys)) {
+            "expectedRemainingAmounts is missing entries for withdrawal IDs: " +
+                (trancheMap.keys - expectedRemainingAmounts.keys)
+        }
+        // No tranche may consume more than its expected remaining amount (would produce negative balance).
+        for ((withdrawalId, consumed) in trancheMap) {
+            require(consumed <= expectedRemainingAmounts.getValue(withdrawalId)) {
+                "Consumed $consumed > expected remaining " +
+                    "${expectedRemainingAmounts.getValue(withdrawalId)} for withdrawal $withdrawalId"
+            }
+        }
 
         val groupDocRef = firestore
             .collection(GroupDocument.COLLECTION_PATH)
@@ -153,16 +168,24 @@ class FirestoreExpenseDataSourceImpl(
                 .collection(CashWithdrawalDocument.COLLECTION_PATH)
                 .document(withdrawalId)
         }
-        val trancheMap = expense.cashTranches.associate { it.withdrawalId to it.amountConsumed }
+
+        // Pre-compute the new remaining amounts — avoids a double-continue loop inside
+        // the transaction where both trancheMap and expectedRemainingAmounts are involved.
+        val withdrawalUpdates: Map<String, Long> = trancheMap.mapValues { (withdrawalId, consumed) ->
+            expectedRemainingAmounts.getValue(withdrawalId) - consumed
+        }
 
         try {
             firestore.runTransaction { transaction ->
                 val withdrawalDocs = withdrawalRefs.map { transaction.get(it) }
 
+                // Optimistic-locking check: abort if any withdrawal was modified concurrently
+                // or if its document no longer exists (deletion by another client).
                 for ((ref, doc) in withdrawalRefs.zip(withdrawalDocs)) {
-                    val serverRemaining = doc.getLong(FIELD_REMAINING_AMOUNT) ?: 0L
-                    val expectedRemaining = expectedRemainingAmounts[ref.id] ?: 0L
-                    if (serverRemaining != expectedRemaining) {
+                    if (!doc.exists()) throw CashConflictException()
+                    val serverRemaining = doc.getLong(FIELD_REMAINING_AMOUNT)
+                        ?: throw CashConflictException()
+                    if (serverRemaining != expectedRemainingAmounts.getValue(ref.id)) {
                         throw CashConflictException()
                     }
                 }
@@ -170,9 +193,8 @@ class FirestoreExpenseDataSourceImpl(
                 transaction.set(expenseDocRef, expenseDocument)
 
                 for (ref in withdrawalRefs) {
-                    val consumed = trancheMap[ref.id] ?: continue
-                    val originalRemaining = expectedRemainingAmounts[ref.id] ?: continue
-                    transaction.update(ref, FIELD_REMAINING_AMOUNT, originalRemaining - consumed)
+                    val newRemaining = withdrawalUpdates[ref.id] ?: continue
+                    transaction.update(ref, FIELD_REMAINING_AMOUNT, newRemaining)
                 }
             }.await()
         } catch (e: CashConflictException) {
