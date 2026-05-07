@@ -1,11 +1,13 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl
 
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.Source
+import com.google.firebase.firestore.Transaction
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
@@ -129,8 +131,11 @@ class FirestoreExpenseDataSourceImpl(
      * 3. Writes the expense document.
      * 4. Updates each consumed withdrawal's `remainingAmount` to `expected − consumed`.
      *
-     * The catch block also handles the rare case where the Firebase SDK wraps a custom
-     * exception as the `cause` of another exception.
+     * Complexity is intentionally spread across focused private helpers:
+     * - [checkTranchePreconditions] — validates caller inputs before touching Firestore.
+     * - [runCashTransaction] — drives the Firestore transaction + catch logic.
+     * - [verifyWithdrawalSnapshots] — optimistic-locking check inside the transaction.
+     * - [applyWithdrawalUpdates] — writes the deducted amounts inside the transaction.
      */
     override suspend fun addExpenseWithCashPreconditions(
         groupId: String,
@@ -141,19 +146,7 @@ class FirestoreExpenseDataSourceImpl(
         val expenseId = expense.id
         val trancheMap = expense.cashTranches.associate { it.withdrawalId to it.amountConsumed }
 
-        // Defensive preconditions — catch caller bugs before touching Firestore.
-        // Every consumed withdrawal must have a snapshot value in expectedRemainingAmounts.
-        require(expectedRemainingAmounts.keys.containsAll(trancheMap.keys)) {
-            "expectedRemainingAmounts is missing entries for withdrawal IDs: " +
-                (trancheMap.keys - expectedRemainingAmounts.keys)
-        }
-        // No tranche may consume more than its expected remaining amount (would produce negative balance).
-        for ((withdrawalId, consumed) in trancheMap) {
-            require(consumed <= expectedRemainingAmounts.getValue(withdrawalId)) {
-                "Consumed $consumed > expected remaining " +
-                    "${expectedRemainingAmounts.getValue(withdrawalId)} for withdrawal $withdrawalId"
-            }
-        }
+        checkTranchePreconditions(trancheMap, expectedRemainingAmounts)
 
         val groupDocRef = firestore
             .collection(GroupDocument.COLLECTION_PATH)
@@ -175,35 +168,91 @@ class FirestoreExpenseDataSourceImpl(
             expectedRemainingAmounts.getValue(withdrawalId) - consumed
         }
 
+        runCashTransaction(expenseDocRef, expenseDocument, withdrawalRefs, withdrawalUpdates, expectedRemainingAmounts)
+    }
+
+    /**
+     * Validates caller inputs before touching Firestore:
+     * - Every consumed withdrawal must have a snapshot value in [expectedRemainingAmounts].
+     * - No tranche may consume more than its expected remaining amount.
+     */
+    private fun checkTranchePreconditions(
+        trancheMap: Map<String, Long>,
+        expectedRemainingAmounts: Map<String, Long>
+    ) {
+        require(expectedRemainingAmounts.keys.containsAll(trancheMap.keys)) {
+            "expectedRemainingAmounts is missing entries for withdrawal IDs: " +
+                (trancheMap.keys - expectedRemainingAmounts.keys)
+        }
+        for ((withdrawalId, consumed) in trancheMap) {
+            require(consumed <= expectedRemainingAmounts.getValue(withdrawalId)) {
+                "Consumed $consumed > expected remaining " +
+                    "${expectedRemainingAmounts.getValue(withdrawalId)} for withdrawal $withdrawalId"
+            }
+        }
+    }
+
+    /**
+     * Executes the Firestore transaction and handles the two-layer catch needed because
+     * the SDK may wrap a [CashConflictException] thrown inside the transaction lambda
+     * as the `cause` of another exception.
+     */
+    private suspend fun runCashTransaction(
+        expenseDocRef: DocumentReference,
+        expenseDocument: ExpenseDocument,
+        withdrawalRefs: List<DocumentReference>,
+        withdrawalUpdates: Map<String, Long>,
+        expectedRemainingAmounts: Map<String, Long>
+    ) {
         try {
             firestore.runTransaction { transaction ->
                 val withdrawalDocs = withdrawalRefs.map { transaction.get(it) }
-
-                // Optimistic-locking check: abort if any withdrawal was modified concurrently
-                // or if its document no longer exists (deletion by another client).
-                for ((ref, doc) in withdrawalRefs.zip(withdrawalDocs)) {
-                    if (!doc.exists()) throw CashConflictException()
-                    val serverRemaining = doc.getLong(FIELD_REMAINING_AMOUNT)
-                        ?: throw CashConflictException()
-                    if (serverRemaining != expectedRemainingAmounts.getValue(ref.id)) {
-                        throw CashConflictException()
-                    }
-                }
-
+                verifyWithdrawalSnapshots(withdrawalRefs, withdrawalDocs, expectedRemainingAmounts)
                 transaction.set(expenseDocRef, expenseDocument)
-
-                for (ref in withdrawalRefs) {
-                    val newRemaining = withdrawalUpdates[ref.id] ?: continue
-                    transaction.update(ref, FIELD_REMAINING_AMOUNT, newRemaining)
-                }
+                applyWithdrawalUpdates(transaction, withdrawalRefs, withdrawalUpdates)
             }.await()
         } catch (e: CashConflictException) {
             throw e
         } catch (e: Exception) {
-            // Re-throw CashConflictException if the SDK wrapped it as the cause
             val wrappedConflict = e.cause as? CashConflictException
             if (wrappedConflict != null) throw wrappedConflict
             throw e
+        }
+    }
+
+    /**
+     * Optimistic-locking check: verifies each withdrawal's server-side `remainingAmount`
+     * against the caller's snapshot. Throws [CashConflictException] on any mismatch,
+     * missing document, or missing field.
+     */
+    private fun verifyWithdrawalSnapshots(
+        withdrawalRefs: List<DocumentReference>,
+        withdrawalDocs: List<DocumentSnapshot>,
+        expectedRemainingAmounts: Map<String, Long>
+    ) {
+        for ((ref, doc) in withdrawalRefs.zip(withdrawalDocs)) {
+            if (!doc.exists()) throw CashConflictException()
+            val serverRemaining = doc.getLong(FIELD_REMAINING_AMOUNT)
+                ?: throw CashConflictException()
+            if (serverRemaining != expectedRemainingAmounts.getValue(ref.id)) {
+                throw CashConflictException()
+            }
+        }
+    }
+
+    /**
+     * Writes the deducted `remainingAmount` for each consumed withdrawal inside the
+     * ongoing transaction. Withdrawals with no entry in [withdrawalUpdates] are skipped
+     * (they were read for optimistic-locking but not consumed by any tranche).
+     */
+    private fun applyWithdrawalUpdates(
+        transaction: Transaction,
+        withdrawalRefs: List<DocumentReference>,
+        withdrawalUpdates: Map<String, Long>
+    ) {
+        for (ref in withdrawalRefs) {
+            val newRemaining = withdrawalUpdates[ref.id] ?: continue
+            transaction.update(ref, FIELD_REMAINING_AMOUNT, newRemaining)
         }
     }
 
