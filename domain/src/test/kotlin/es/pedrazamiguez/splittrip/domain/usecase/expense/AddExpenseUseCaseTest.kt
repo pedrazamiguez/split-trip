@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.AddOn
@@ -247,7 +248,7 @@ class AddExpenseUseCaseTest {
             } returns BigDecimal("0.027000")
 
             coEvery { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) } just Runs
-            coEvery { expenseRepository.addExpense(any(), any()) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } returns true
         }
 
         @Test
@@ -256,6 +257,19 @@ class AddExpenseUseCaseTest {
 
             // Must be exactly one batch call, never the single-update method
             coVerify(exactly = 1) { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) }
+            coVerify(exactly = 0) { cashWithdrawalRepository.updateRemainingAmount(any(), any()) }
+        }
+
+        @Test
+        fun `does NOT update withdrawal amounts when addCashExpense returns false (offline fallback)`() = runTest {
+            // addCashExpense returns false = Firestore transaction did not commit
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } returns false
+
+            useCase(groupId, cashExpense)
+
+            // Withdrawals must NOT be deducted — doing so would create orphaned cloud deductions
+            // without a matching expense document (cloud atomicity violation).
+            coVerify(exactly = 0) { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) }
             coVerify(exactly = 0) { cashWithdrawalRepository.updateRemainingAmount(any(), any()) }
         }
 
@@ -294,8 +308,8 @@ class AddExpenseUseCaseTest {
         fun `attaches tranches and blended group amount to saved expense`() = runTest {
             val savedExpenseSlot = slot<Expense>()
             coEvery {
-                expenseRepository.addExpense(any(), capture(savedExpenseSlot))
-            } just Runs
+                expenseRepository.addCashExpense(any(), capture(savedExpenseSlot), any())
+            } returns true
 
             useCase(groupId, cashExpense)
 
@@ -308,8 +322,8 @@ class AddExpenseUseCaseTest {
         fun `sets blended exchange rate on saved cash expense`() = runTest {
             val savedExpenseSlot = slot<Expense>()
             coEvery {
-                expenseRepository.addExpense(any(), capture(savedExpenseSlot))
-            } just Runs
+                expenseRepository.addCashExpense(any(), capture(savedExpenseSlot), any())
+            } returns true
 
             useCase(groupId, cashExpense)
 
@@ -331,6 +345,25 @@ class AddExpenseUseCaseTest {
 
             coVerify(exactly = 1) { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) }
             coVerify(exactly = 0) { cashWithdrawalRepository.updateRemainingAmount(any(), any()) }
+        }
+
+        @Test
+        fun `CashConflictException from repository propagates as Result failure`() = runTest {
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } throws CashConflictException()
+
+            val result = useCase(groupId, cashExpense)
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is CashConflictException)
+        }
+
+        @Test
+        fun `does not update withdrawals when CashConflictException is thrown`() = runTest {
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } throws CashConflictException()
+
+            useCase(groupId, cashExpense)
+
+            coVerify(exactly = 0) { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) }
         }
     }
 
@@ -509,7 +542,7 @@ class AddExpenseUseCaseTest {
             } returns BigDecimal("1.000000")
 
             coEvery { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) } just Runs
-            coEvery { expenseRepository.addExpense(any(), any()) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } returns true
         }
 
         @Test
@@ -526,7 +559,7 @@ class AddExpenseUseCaseTest {
         @Test
         fun `attaches tranches and FIFO blended group amount to saved USER cash expense`() = runTest {
             val savedSlot = slot<Expense>()
-            coEvery { expenseRepository.addExpense(any(), capture(savedSlot)) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), capture(savedSlot), any()) } returns true
 
             useCase(groupId, oopCashExpense)
 
@@ -1011,7 +1044,7 @@ class AddExpenseUseCaseTest {
             } returns BigDecimal("0.027000")
 
             coEvery { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) } just Runs
-            coEvery { expenseRepository.addExpense(any(), any()) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } returns true
         }
 
         @Test
@@ -1083,7 +1116,7 @@ class AddExpenseUseCaseTest {
 
             every { exchangeRateCalculationService.calculateBlendedRate(any(), any()) } returns BigDecimal("0.027000")
             coEvery { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) } just Runs
-            coEvery { expenseRepository.addExpense(any(), any()) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } returns true
         }
 
         @Test
@@ -1098,7 +1131,7 @@ class AddExpenseUseCaseTest {
         @Test
         fun `attaches tranches from fallback GROUP pool`() = runTest {
             val savedSlot = slot<Expense>()
-            coEvery { expenseRepository.addExpense(any(), capture(savedSlot)) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), capture(savedSlot), any()) } returns true
 
             useCase(groupId, userCashExpense)
 
@@ -1158,7 +1191,7 @@ class AddExpenseUseCaseTest {
 
             every { exchangeRateCalculationService.calculateBlendedRate(any(), any()) } returns BigDecimal("0.027000")
             coEvery { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) } just Runs
-            coEvery { expenseRepository.addExpense(any(), any()) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } returns true
         }
 
         @Test
@@ -1173,7 +1206,7 @@ class AddExpenseUseCaseTest {
         @Test
         fun `FIFO runs and attaches tranches for SUBUNIT cash expense`() = runTest {
             val savedSlot = slot<Expense>()
-            coEvery { expenseRepository.addExpense(any(), capture(savedSlot)) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), capture(savedSlot), any()) } returns true
 
             useCase(groupId, subunitCashExpense)
 
@@ -1236,7 +1269,7 @@ class AddExpenseUseCaseTest {
         fun `does not save expense when combined pools are insufficient`() = runTest {
             useCase(groupId, userCashExpense)
 
-            coVerify(exactly = 0) { expenseRepository.addExpense(any(), any()) }
+            coVerify(exactly = 0) { expenseRepository.addCashExpense(any(), any(), any()) }
         }
     }
 
@@ -1268,7 +1301,7 @@ class AddExpenseUseCaseTest {
 
         @BeforeEach
         fun setUpPreferred() {
-            coEvery { expenseRepository.addExpense(any(), any()) } just Runs
+            coEvery { expenseRepository.addCashExpense(any(), any(), any()) } returns true
             coEvery { cashWithdrawalRepository.updateRemainingAmounts(any(), any()) } just Runs
         }
 

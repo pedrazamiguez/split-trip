@@ -118,7 +118,13 @@ object JacocoExclusions {
         "**/*RepositoryImpl\$*.*",
         // ── Database migrations — raw DDL SQL strings; no meaningful unit-test path
         // and triggers Sonar string-duplication false positives (table names repeated).
+        // Covers both the aggregated file AND individual Migration*To* files.
         "**/database/DatabaseMigrations*.*",
+        "**/database/migration/**",
+        // ── Auto-generated Tabler icon ImageVector constants ─────────────────────
+        // These are template-repeated SVG path strings — no testable logic.
+        // Mirrored from sonar.exclusions so local JaCoCo numbers match SonarQube.
+        "**/designsystem/icon/**",
     )
 }
 

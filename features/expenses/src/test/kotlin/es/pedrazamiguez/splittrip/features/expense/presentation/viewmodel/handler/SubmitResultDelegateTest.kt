@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
@@ -180,6 +181,26 @@ class SubmitResultDelegateTest {
                 val resource = action.message as UiText.StringResource
                 assertEquals(R.string.expense_error_insufficient_cash, resource.resId)
             }
+
+        @Test
+        fun `CashConflictException emits cash conflict error`() = runTest {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actionsFlow.collect { actions.add(it) }
+            }
+
+            delegate.handleFailure(
+                error = CashConflictException(),
+                uiState = uiState,
+                actionsFlow = actionsFlow,
+                currentState = uiState.value
+            )
+
+            assertEquals(1, actions.size)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictError
+            val resource = action.message as UiText.StringResource
+            assertEquals(R.string.expense_error_cash_conflict, resource.resId)
+        }
 
         @Test
         fun `generic exception emits generic error`() = runTest {

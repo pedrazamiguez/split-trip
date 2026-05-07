@@ -81,7 +81,7 @@ class BalancesViewModel(
                 // lastSeenBalance for balance animation logic.
                 // Expenses are collected here and passed to computeMemberBalances()
                 // to avoid duplicate Firestore snapshot listeners.
-                // TODO(#1012): revisit @DatabaseView if EXPLAIN QUERY PLAN shows
+                // Issue #1012: revisit @DatabaseView if EXPLAIN QUERY PLAN shows
                 //  full-scan on expense_splits at 500+ expenses
                 combine(
                     combine(

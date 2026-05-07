@@ -20,7 +20,7 @@ YELLOW := \033[1;33m
 CYAN   := \033[0;36m
 NC     := \033[0m
 
-.PHONY: help setup hooks local-props doctor check test konsist build clean
+.PHONY: help setup hooks local-props doctor check test konsist coverage build clean
 
 # ─── Default: show help ───────────────────────────────────────────────────────
 help: ## Show this help message
@@ -119,15 +119,21 @@ doctor: ## Check that required files and tools are present
 	@echo ""
 
 # ─── Quality gates (mirrors CI) ───────────────────────────────────────────────
-check: konsist test build ## Run all local quality gates before pushing (mirrors CI)
+check: konsist test coverage build ## Run all local quality gates before pushing (mirrors CI)
 
-test: ## Run all unit tests
+test: ## Run all unit tests (no coverage report)
 	@printf "$(YELLOW)⏳  Running unit tests...$(NC)\n"
 	@$(GRADLEW) test --continue
 
 konsist: ## Run Konsist architecture tests (file-size limit, naming, dependency rules)
 	@printf "$(YELLOW)⏳  Running Konsist architecture tests...$(NC)\n"
 	@$(GRADLEW) :konsist-tests:test
+
+coverage: ## Run all unit tests, generate merged JaCoCo report, and gate on ≥80%% LINE coverage
+	@printf "$(YELLOW)⏳  Running tests + generating merged coverage report...$(NC)\n"
+	@$(GRADLEW) jacocoMergedReport --continue
+	@printf "$(YELLOW)⏳  Checking LINE coverage gate (≥ 80%%)...$(NC)\n"
+	@python3 scripts/check_coverage.py
 
 build: ## Compile all modules (debug)
 	@printf "$(YELLOW)⏳  Compiling debug...$(NC)\n"

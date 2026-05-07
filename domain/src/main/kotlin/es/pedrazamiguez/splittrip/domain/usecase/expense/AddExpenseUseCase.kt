@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
@@ -48,13 +49,37 @@ class AddExpenseUseCase(
             expense
         }
 
-        val expenseToSave = if (expenseWithId.paymentMethod == PaymentMethod.CASH) {
-            processCashExpense(groupId, expenseWithId, preferredWithdrawalScope, preferredWithdrawalOwnerId)
-        } else {
-            expenseWithId
-        }
+        val expenseToSave: Expense
+        if (expenseWithId.paymentMethod == PaymentMethod.CASH) {
+            val fifoResult = computeCashFifoResult(
+                groupId,
+                expenseWithId,
+                preferredWithdrawalScope,
+                preferredWithdrawalOwnerId
+            )
 
-        expenseRepository.addExpense(groupId, expenseToSave)
+            // Use the precondition-aware write path. On CashConflictException the
+            // repository rolls back the local write and re-throws — no withdrawal
+            // Room update is needed in that case.
+            val transactionCommitted = expenseRepository.addCashExpense(
+                groupId,
+                fifoResult.expense,
+                fifoResult.expectedRemainingAmounts
+            )
+
+            // Update withdrawal Room entries only when the Firestore transaction committed.
+            // If the transaction did not run (offline fallback, transactionCommitted == false),
+            // skipping this prevents deducting withdrawals in the cloud without a matching
+            // expense document (which would break cloud-side atomicity).
+            if (transactionCommitted) {
+                cashWithdrawalRepository.updateRemainingAmounts(groupId, fifoResult.updatedWithdrawals)
+            }
+
+            expenseToSave = fifoResult.expense
+        } else {
+            expenseRepository.addExpense(groupId, expenseWithId)
+            expenseToSave = expenseWithId
+        }
 
         if (expenseToSave.payerType == PayerType.USER) {
             try {
@@ -76,24 +101,26 @@ class AddExpenseUseCase(
     }
 
     /**
-     * Processes a cash expense using FIFO logic:
-     * 1. Fetches available withdrawals. When [preferredScope] is set (user chose a pool via the
-     *    pool-selection UI), queries only that exact scope via [CashWithdrawalRepository.getAvailableWithdrawalsByExactScope].
-     *    Otherwise, falls back to the scope-priority logic in [CashWithdrawalRepository.getAvailableWithdrawals]
-     *    (personal/subunit pool first, GROUP fallback appended).
-     * 2. Applies FIFO to determine which withdrawals fund the expense.
-     * 3. Batches all remaining-amount updates into a single local DB transaction + one cloud sync job.
-     * 4. Returns the expense with cash tranches and blended group amount attached.
+     * Computes FIFO cash allocation for a cash-funded expense without performing any writes.
      *
-     * For USER and SUBUNIT expenses [Expense.payerId] is used as the pool key
-     * (userId for USER, subunitId for SUBUNIT).
+     * Captures [CashFifoResult.expectedRemainingAmounts] (the withdrawal remaining amounts
+     * *before* FIFO consumption) for use as optimistic-locking preconditions in the Firestore
+     * transaction. Also builds [CashFifoResult.updatedWithdrawals] with the post-FIFO
+     * remaining amounts for the subsequent Room update.
+     *
+     * When [preferredScope] is set (user chose a pool via the pool-selection UI), queries only
+     * that exact scope via [CashWithdrawalRepository.getAvailableWithdrawalsByExactScope].
+     * Otherwise, falls back to the scope-priority logic in
+     * [CashWithdrawalRepository.getAvailableWithdrawals].
+     *
+     * @throws InsufficientCashException if the available cash cannot cover the expense.
      */
-    private suspend fun processCashExpense(
+    private suspend fun computeCashFifoResult(
         groupId: String,
         expense: Expense,
         preferredScope: PayerType? = null,
         preferredScopeOwnerId: String? = null
-    ): Expense {
+    ): CashFifoResult {
         val availableWithdrawals = if (preferredScope != null) {
             cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
                 groupId = groupId,
@@ -125,22 +152,34 @@ class AddExpenseUseCase(
             availableWithdrawals = availableWithdrawals
         )
 
-        // Build updated withdrawal objects directly from the already-in-memory list —
-        // no extra DB reads — then persist all in one transaction and one cloud sync job.
+        // Capture the *original* remaining amounts as optimistic-locking preconditions
+        // (the values the client observed before FIFO deduction).
         val withdrawalById = availableWithdrawals.associateBy { it.id }
+        val consumedWithdrawalIds = fifoResult.tranches.map { it.withdrawalId }.toSet()
+        val expectedRemainingAmounts = availableWithdrawals
+            .filter { it.id in consumedWithdrawalIds }
+            .associate { it.id to it.remainingAmount }
+
+        // Build updated withdrawal objects with post-FIFO remaining amounts —
+        // no DB reads needed since we already have the in-memory list.
         val updatedWithdrawals = fifoResult.tranches.map { tranche ->
             val withdrawal = withdrawalById.getValue(tranche.withdrawalId)
             withdrawal.copy(remainingAmount = withdrawal.remainingAmount - tranche.amountConsumed)
         }
-        cashWithdrawalRepository.updateRemainingAmounts(groupId, updatedWithdrawals)
 
-        return expense.copy(
+        val updatedExpense = expense.copy(
             cashTranches = fifoResult.tranches,
             groupAmount = fifoResult.groupAmountCents,
             exchangeRate = exchangeRateCalculationService.calculateBlendedRate(
                 sourceAmountCents = expense.sourceAmount,
                 groupAmountCents = fifoResult.groupAmountCents
             )
+        )
+
+        return CashFifoResult(
+            expense = updatedExpense,
+            updatedWithdrawals = updatedWithdrawals,
+            expectedRemainingAmounts = expectedRemainingAmounts
         )
     }
 
@@ -201,4 +240,20 @@ class AddExpenseUseCase(
         }
         else -> null // GROUP/USER must not carry a subunitId
     }
+
+    /**
+     * Holds the result of the FIFO cash allocation computation.
+     *
+     * @param expense The expense enriched with [Expense.cashTranches], [Expense.groupAmount],
+     *   and [Expense.exchangeRate].
+     * @param updatedWithdrawals The withdrawal objects with post-FIFO [CashWithdrawal.remainingAmount]
+     *   applied. Used for the Room update after a successful commit.
+     * @param expectedRemainingAmounts Map of withdrawal ID → `remainingAmount` observed *before*
+     *   FIFO consumption. Used as optimistic-locking preconditions in the Firestore transaction.
+     */
+    private data class CashFifoResult(
+        val expense: Expense,
+        val updatedWithdrawals: List<CashWithdrawal>,
+        val expectedRemainingAmounts: Map<String, Long>
+    )
 }
