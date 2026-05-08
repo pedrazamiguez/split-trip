@@ -44,6 +44,13 @@ class CurrencyEventHandler(
     private lateinit var _actions: MutableSharedFlow<AddExpenseUiAction>
     private lateinit var scope: CoroutineScope
 
+    /**
+     * Optional callback invoked whenever a withdrawal pool is resolved (auto-selected or
+     * user-selected). Receives the resolved pool's [PayerType] scope and owner ID so the
+     * ViewModel can route the split pre-fill to [SplitEventHandler].
+     */
+    private var onPersonalPoolResolved: ((PayerType, String?) -> Unit)? = null
+
     override fun bind(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
         actionsFlow: MutableSharedFlow<AddExpenseUiAction>,
@@ -53,6 +60,17 @@ class CurrencyEventHandler(
         _actions = actionsFlow
         this.scope = scope
         cashRateDelegate.setup(stateFlow, scope)
+    }
+
+    /**
+     * Registers a callback invoked after a withdrawal pool is resolved (auto-selected or
+     * user-selected). The ViewModel uses this to route the split pre-fill to
+     * [SplitEventHandler.applyPersonalPoolSplitDefault].
+     *
+     * Must be called after [bind].
+     */
+    fun setPersonalPoolResolvedCallback(callback: (PayerType, String?) -> Unit) {
+        onPersonalPoolResolved = callback
     }
 
     fun handleCurrencySelected(currencyCode: String, onRecalculate: () -> Unit) {
@@ -92,7 +110,6 @@ class CurrencyEventHandler(
                     )
                 }
                 // Clear stale pool state from the previous currency pair, then re-probe.
-                // For GROUP this also discovers the user's personal cash in the new currency.
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
                 fetchPoolsIfNeeded()
             } else {
@@ -382,19 +399,16 @@ class CurrencyEventHandler(
      * Handles the user's explicit pool selection from the pool-selection widget.
      * Delegates to [WithdrawalPoolSelectionDelegate], which updates [AddExpenseUiState.selectedWithdrawalPool]
      * and triggers a [fetchCashRate] via the delegate's [onPoolResolved] callback.
+     * Also invokes [onPersonalPoolResolved] so the ViewModel can route the smart split pre-fill.
      */
     fun handleWithdrawalPoolSelected(scope: PayerType, scopeOwnerId: String?) {
         withdrawalPoolSelectionDelegate.handlePoolSelected(scope, scopeOwnerId, _uiState) {
             cashRateDelegate.fetchCashRate()
+            onPersonalPoolResolved?.invoke(scope, scopeOwnerId)
         }
     }
 
-    /**
-     * Triggers pool availability discovery for USER/SUBUNIT CASH expenses.
-     * Called after a funding-source change or currency change when the payment method is CASH
-     * and the payer type is not GROUP. GROUP expenses skip pool discovery entirely.
-     */
-    private fun fetchPoolsIfNeeded() {
+    internal fun fetchPoolsIfNeeded() {
         val state = _uiState.value
         val groupId = state.loadedGroupId ?: return
         val currency = state.selectedCurrency?.code ?: return
@@ -407,7 +421,17 @@ class CurrencyEventHandler(
             payerId = payerId,
             scope = scope,
             stateFlow = _uiState,
-            onPoolResolved = cashRateDelegate::fetchCashRate
+            onPoolResolved = {
+                cashRateDelegate.fetchCashRate()
+                // State was updated before this callback fires — read the resolved pool.
+                // If null (no funds available), treat as GROUP so any lingering warning is cleared.
+                val resolvedPool = _uiState.value.selectedWithdrawalPool
+                if (resolvedPool != null) {
+                    onPersonalPoolResolved?.invoke(resolvedPool.scope, resolvedPool.ownerId)
+                } else {
+                    onPersonalPoolResolved?.invoke(PayerType.GROUP, null)
+                }
+            }
         )
     }
 

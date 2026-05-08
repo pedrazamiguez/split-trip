@@ -71,6 +71,8 @@ Stick to the posted plan. If the plan needs to change, update the comment.
 Follow the architecture constraints in `.github/copilot-instructions.md` and `AGENTS.md` strictly.  
 Take into account detekt rules, ktlint formatting, new code coverage, and the 600-line file-size limit at all times.
 
+**Commenting policy:** Comment the *why*, never the *what*. If a comment only restates what the code already says, delete it. Add a comment only when the reasoning behind a decision would not be obvious to the next reader from the code alone.
+
 ---
 
 ## Step 6 — Local verification gate (run BEFORE declaring done)

@@ -92,12 +92,17 @@ class WithdrawalPoolSelectionDelegate(
                     }
 
                     else -> {
+                        // Auto-select the first pool (highest priority) as the default so that
+                        // tranche info is immediately shown on the Amount step. The full list
+                        // stays in availableWithdrawalPools so the user can override via the
+                        // pool-selection widget.
                         stateFlow.update { state ->
                             state.copy(
                                 availableWithdrawalPools = uiPools,
-                                selectedWithdrawalPool = null
+                                selectedWithdrawalPool = uiPools.first()
                             )
                         }
+                        onPoolResolved()
                     }
                 }
             } catch (e: Exception) {

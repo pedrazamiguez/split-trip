@@ -60,7 +60,7 @@ class AddExpenseViewModel(
                     currencyEventHandler.fetchRate()
 
                 is PostConfigAction.FetchCashRate ->
-                    currencyEventHandler.fetchCashRate()
+                    currencyEventHandler.fetchPoolsIfNeeded()
 
                 is PostConfigAction.InitEntitySplits ->
                     subunitSplitEventHandler.initEntitySplits(
@@ -72,6 +72,16 @@ class AddExpenseViewModel(
                 is PostConfigAction.ClearEntitySplits ->
                     subunitSplitEventHandler.clearEntitySplits()
             }
+        }
+
+        // Wire personal-pool-resolved callback: when a withdrawal pool is auto- or user-selected,
+        // pre-fill the split step to match the pool's natural scope.
+        currencyEventHandler.setPersonalPoolResolvedCallback { poolScope, poolOwnerId ->
+            splitEventHandler.applyPersonalPoolSplitDefault(
+                poolScope = poolScope,
+                poolOwnerId = poolOwnerId,
+                currentUserId = _uiState.value.currentUserId
+            )
         }
 
         // Wire post-form callback: ViewModel routes cross-handler actions

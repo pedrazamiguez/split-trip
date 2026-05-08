@@ -110,7 +110,6 @@ class CashRateDelegate(
             PayerType.GROUP, PayerType.SUBUNIT -> null
         }
 
-        // If the user has explicitly selected a pool, use that pool's exact scope.
         val selectedPool = state.selectedWithdrawalPool
         val preferredScope = selectedPool?.scope
         val preferredOwnerId = selectedPool?.ownerId
