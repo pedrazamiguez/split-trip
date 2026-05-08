@@ -272,6 +272,10 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.AddOnsSectionToggled ->
                 addOnEventHandler.handleSectionToggled()
 
+            // ── Conflict Resolution ──────────────────────────────────────
+            is AddExpenseUiEvent.ResolutionAmountSelected ->
+                formEventHandler.handleSourceAmountChanged(event.amount)
+
             // ── Wizard Navigation ────────────────────────────────────────
             AddExpenseUiEvent.NextStep -> navigateNext()
             AddExpenseUiEvent.PreviousStep -> navigatePrevious()

@@ -13,6 +13,12 @@
     <string name="expense_error_title_empty">Hey! What was this expense for?</string>
     <string name="expense_error_insufficient_cash">Not enough cash\nYou need %1$s but only %2$s available</string>
     <string name="expense_error_cash_conflict">Someone else just used this cash. The available amount has changed — please review and retry.</string>
+
+    <!-- Cash conflict resolution sheet (Phase 3) -->
+    <string name="add_expense_cash_conflict_resolution_title">Cash amount changed</string>
+    <string name="add_expense_cash_conflict_use_remaining">Use remaining cash (%1$s)</string>
+    <string name="add_expense_cash_conflict_switch_payment">Switch payment method</string>
+    <string name="add_expense_cash_conflict_dismiss">Dismiss and review</string>
     <string name="expense_error_addition_failed">Oops! Couldn\'t save the expense. Try again</string>
     <string name="expense_error_load_group_config">Couldn\'t load group info</string>
     <string name="expense_error_config_retry_hint">Check your connection and try again</string>

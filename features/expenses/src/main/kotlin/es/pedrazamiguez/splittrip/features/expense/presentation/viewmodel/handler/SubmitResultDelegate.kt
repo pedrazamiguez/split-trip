@@ -55,8 +55,12 @@ class SubmitResultDelegate(
      *   ([AddExpenseUiState.isInsufficientCash] == true), the user had a genuine cash shortage
      *   and we show the detailed "not enough cash" message with required/available amounts.
      * - If the preview showed available cash but the save failed, another group member consumed
-     *   the cash concurrently (race condition). We emit [AddExpenseUiAction.ShowCashConflictError]
-     *   so the Feature can show a conflict-specific message and refresh the tranche preview.
+     *   the cash concurrently (race condition). We emit [AddExpenseUiAction.ShowCashConflictResolution]
+     *   so the Feature can show the conflict-resolution bottom sheet and refresh the tranche preview.
+     *
+     * For [CashConflictException]:
+     * - Phase 2: Firestore transaction detected a concurrent modification. Same UX as
+     *   Phase 1 race detection, but available amount is unknown so amounts are null.
      *
      * For all other exceptions, emits a generic failure message.
      */
@@ -75,13 +79,14 @@ class SubmitResultDelegate(
                     emitInsufficientCashError(error, actionsFlow, currentState)
                 } else {
                     // Preview showed available cash — concurrent write raced this submit.
-                    emitCashConflictError(actionsFlow)
+                    emitCashConflictResolution(error.availableCents, actionsFlow, currentState)
                 }
             }
             is CashConflictException -> {
-                // Phase 2: Firestore transaction detected a concurrent modification to a
-                // consumed withdrawal. Show same conflict UX as Phase 1 race detection.
-                emitCashConflictError(actionsFlow)
+                // Phase 2: Firestore transaction detected a concurrent modification.
+                // Available amount is unknown at this point; null signals the sheet
+                // to omit the "Use remaining cash" option.
+                emitCashConflictResolution(null, actionsFlow, currentState)
             }
             else -> actionsFlow.emit(
                 AddExpenseUiAction.ShowError(
@@ -122,18 +127,37 @@ class SubmitResultDelegate(
     }
 
     /**
-     * Emits [AddExpenseUiAction.ShowCashConflictError] with a user-friendly conflict message.
+     * Emits [AddExpenseUiAction.ShowCashConflictResolution] to trigger the guided
+     * conflict-resolution bottom sheet.
      *
-     * Used when [InsufficientCashException] is thrown at save time despite the tranche preview
-     * showing available cash — indicating a concurrent write by another group member consumed
-     * the cash between the preview snapshot and this submit.
+     * Pre-formats [availableCents] into:
+     * - [AddExpenseUiAction.ShowCashConflictResolution.availableAmountForInput]: a plain
+     *   decimal string (e.g. "30.00" or "30,00") suitable for the source-amount input field.
+     * - [AddExpenseUiAction.ShowCashConflictResolution.availableAmountDisplay]: a
+     *   currency-symbol string (e.g. "€30.00") for the "Use remaining cash" CTA label.
+     *
+     * Both fields are `null` when [availableCents] is null (i.e. [CashConflictException]
+     * path where the available amount is unknown at emit time).
      */
-    internal suspend fun emitCashConflictError(
-        actionsFlow: MutableSharedFlow<AddExpenseUiAction>
+    internal suspend fun emitCashConflictResolution(
+        availableCents: Long?,
+        actionsFlow: MutableSharedFlow<AddExpenseUiAction>,
+        currentState: AddExpenseUiState
     ) {
+        val currency = currentState.selectedCurrency
+        val amountForInput: String?
+        val amountDisplay: String?
+        if (availableCents != null && availableCents >= 0 && currency != null) {
+            amountForInput = formattingHelper.formatCentsValue(availableCents, currency.decimalDigits)
+            amountDisplay = formattingHelper.formatCentsWithCurrency(availableCents, currency.code)
+        } else {
+            amountForInput = null
+            amountDisplay = null
+        }
         actionsFlow.emit(
-            AddExpenseUiAction.ShowCashConflictError(
-                UiText.StringResource(R.string.expense_error_cash_conflict)
+            AddExpenseUiAction.ShowCashConflictResolution(
+                availableAmountForInput = amountForInput,
+                availableAmountDisplay = amountDisplay
             )
         )
     }

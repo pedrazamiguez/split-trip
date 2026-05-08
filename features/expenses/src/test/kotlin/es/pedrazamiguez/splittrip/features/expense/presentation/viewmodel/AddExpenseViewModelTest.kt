@@ -997,7 +997,7 @@ class AddExpenseViewModelTest {
         }
 
         @Test
-        fun `emits ShowCashConflictError on InsufficientCashException at save time`() = runTest {
+        fun `emits ShowCashConflictResolution on InsufficientCashException at save time`() = runTest {
             loadConfigAndSelectThb()
 
             // 400 THB required, only 2000 cents (20.00 THB) available — simulates a concurrent conflict
@@ -1012,14 +1012,12 @@ class AddExpenseViewModelTest {
             advanceUntilIdle()
             job.cancel()
 
-            val action = emittedActions.filterIsInstance<AddExpenseUiAction.ShowCashConflictError>().first()
-            val uiText = action.message as UiText.StringResource
+            // Phase 3: guided resolution sheet instead of a plain error pill
+            val action = emittedActions.filterIsInstance<AddExpenseUiAction.ShowCashConflictResolution>().first()
 
-            // Verify it uses the cash-conflict string resource (no dynamic amounts)
-            assertEquals(
-                R.string.expense_error_cash_conflict,
-                uiText.resId
-            )
+            // Amounts must be pre-formatted and non-null (availableCents=2000, THB decimalDigits=2)
+            assertNotNull(action.availableAmountForInput)
+            assertNotNull(action.availableAmountDisplay)
         }
 
         @Test
