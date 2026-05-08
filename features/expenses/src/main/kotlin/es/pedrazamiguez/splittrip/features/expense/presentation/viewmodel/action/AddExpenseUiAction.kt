@@ -9,9 +9,21 @@ sealed interface AddExpenseUiAction {
 
     /**
      * Emitted when a cash-tranche conflict is detected at save time (i.e. another group
-     * member consumed cash between the preview and the user's submit). The Feature handles
-     * this by showing the conflict-specific [message] via the top pill notification and
-     * refreshing the tranche preview with the latest Room data.
+     * member consumed cash between the preview and the user's submit, or a Firestore
+     * transaction detected a concurrent modification — Phase 2).
+     *
+     * The Feature handles this by refreshing the tranche preview with the latest Room
+     * data and showing the guided conflict-resolution bottom sheet.
+     *
+     * @param availableAmountForInput Pre-formatted, locale-aware decimal string for the
+     *   source-amount input field (e.g. "30.00" or "30,00"). `null` when the available
+     *   amount cannot be determined (e.g. [CashConflictException]).
+     * @param availableAmountDisplay Pre-formatted, locale-aware string with currency
+     *   symbol for the "Use remaining cash" CTA label in the resolution sheet
+     *   (e.g. "€30.00" or "30,00 €"). `null` when [availableAmountForInput] is null.
      */
-    data class ShowCashConflictError(val message: UiText) : AddExpenseUiAction
+    data class ShowCashConflictResolution(
+        val availableAmountForInput: String?,
+        val availableAmountDisplay: String?
+    ) : AddExpenseUiAction
 }
