@@ -36,13 +36,16 @@ class WithdrawalPoolSelectionDelegate(
      * Queries available withdrawal pools for [groupId] / [currency] / [payerType] and updates
      * [stateFlow] accordingly.
      *
-     * - When no pools have funds: clears pool state.
+     * - When no pools have funds: clears pool state and invokes [onPoolResolved] so the rate
+     *   preview refreshes and returns [CashRatePreviewResult.NoWithdrawals] or
+     *   [CashRatePreviewResult.InsufficientCash] (preserves existing "—" placeholder UX).
      * - When exactly one pool has funds: auto-populates [AddExpenseUiState.selectedWithdrawalPool]
      *   silently and invokes [onPoolResolved] so the rate preview is refreshed.
      * - When multiple pools have funds: populates [AddExpenseUiState.availableWithdrawalPools]
      *   for the UI to render the pool-selection widget; does NOT auto-select (user must choose).
      *
-     * For GROUP payer type, pool selection is irrelevant — clears pool state and returns.
+     * For GROUP payer type, also probes the personal (USER-scoped) pool when a [payerId]
+     * is provided, surfacing it as a supplement when the GROUP pool is insufficient.
      */
     fun fetchPools(
         groupId: String,
@@ -53,11 +56,6 @@ class WithdrawalPoolSelectionDelegate(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
         onPoolResolved: () -> Unit
     ) {
-        if (payerType == PayerType.GROUP) {
-            clearPoolState(stateFlow)
-            return
-        }
-
         val subunitNameLookup = stateFlow.value.contributionSubunitOptions
             .associate { it.id to it.name }
 
@@ -76,7 +74,12 @@ class WithdrawalPoolSelectionDelegate(
                 )
 
                 when {
-                    uiPools.isEmpty() -> clearPoolState(stateFlow)
+                    uiPools.isEmpty() -> {
+                        clearPoolState(stateFlow)
+                        // Invoke callback even with no pools so the rate preview refreshes
+                        // and surfaces NoWithdrawals / InsufficientCash to the user.
+                        onPoolResolved()
+                    }
 
                     uiPools.size == 1 -> {
                         stateFlow.update { state ->

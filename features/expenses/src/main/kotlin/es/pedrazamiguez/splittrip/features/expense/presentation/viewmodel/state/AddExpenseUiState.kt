@@ -90,11 +90,12 @@ data class AddExpenseUiState(
     /**
      * Available cash withdrawal pools for the current expense's scope and currency.
      *
-     * Populated when the payment method is CASH and the expense is USER- or SUBUNIT-scoped.
+     * Populated when the payment method is CASH and multiple pools have available funds.
+     * This includes GROUP-scoped expenses when the user also holds personal (USER-scoped) cash.
      * Contains one entry per pool that has available funds. When this list has more than one
      * entry, a pool-selection widget is shown in the Exchange Rate step. When it has exactly
-     * one entry the selection is applied automatically (no UI shown). Empty for GROUP-scoped
-     * expenses (only one pool exists) or when no withdrawals are available at all.
+     * one entry the selection is applied automatically (no UI shown). Empty when no withdrawals
+     * are available at all.
      */
     val availableWithdrawalPools: ImmutableList<WithdrawalPoolOptionUiModel> = persistentListOf(),
     /**
