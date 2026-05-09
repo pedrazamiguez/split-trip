@@ -25,6 +25,8 @@ import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalUserDataSource
 import es.pedrazamiguez.splittrip.data.local.datastore.NotificationUserPreferences
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCurrencyDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
@@ -110,11 +112,16 @@ val dataLocalModule = module {
         )
     }
 
-    single<LocalCashWithdrawalDataSource> {
+    // Register the single impl as all three types so either segregated interface or the
+    // combined LocalCashWithdrawalDataSource can be injected without duplicate instances.
+    single<LocalCashWithdrawalDataSourceImpl> {
         LocalCashWithdrawalDataSourceImpl(
             cashWithdrawalDao = get<CashWithdrawalDao>()
         )
     }
+    single<LocalCashWithdrawalQueryDataSource> { get<LocalCashWithdrawalDataSourceImpl>() }
+    single<LocalCashWithdrawalWriteDataSource> { get<LocalCashWithdrawalDataSourceImpl>() }
+    single<LocalCashWithdrawalDataSource> { get<LocalCashWithdrawalDataSourceImpl>() }
 
     single<UserDao> { get<AppDatabase>().userDao() }
 

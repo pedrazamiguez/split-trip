@@ -9,6 +9,10 @@ import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+// Implements all methods declared across both [LocalCashWithdrawalQueryDataSource] and
+// [LocalCashWithdrawalWriteDataSource]; the combined count is inherently above the
+// TooManyFunctions threshold without artificial class splitting.
+@Suppress("TooManyFunctions")
 class LocalCashWithdrawalDataSourceImpl(private val cashWithdrawalDao: CashWithdrawalDao) :
     LocalCashWithdrawalDataSource {
 
