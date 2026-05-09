@@ -42,8 +42,10 @@ class WithdrawalPoolSelectionDelegate(
      * - When exactly one pool has funds: auto-populates [AddExpenseUiState.selectedWithdrawalPool]
      *   silently and invokes [onPoolResolved] so the rate preview is refreshed.
      * - When multiple pools have funds: populates [AddExpenseUiState.availableWithdrawalPools]
-     *   for the UI to render the pool-selection widget; pre-selects the GROUP pool (the default)
-     *   and immediately invokes [onPoolResolved] so the tranche preview loads without user action.
+     *   for the UI to render the pool-selection widget; pre-selects the **first pool in the list**
+     *   (which follows the priority order documented in [GetAvailableWithdrawalPoolsUseCase] —
+     *   GROUP for GROUP payerType, personal/subunit pool for USER/SUBUNIT payerType) and immediately
+     *   invokes [onPoolResolved] so the tranche preview loads without requiring user action.
      *
      * For GROUP payer type, also probes the personal (USER-scoped) pool when a [payerId]
      * is provided, surfacing it as a supplement when the GROUP pool is insufficient.
@@ -93,10 +95,10 @@ class WithdrawalPoolSelectionDelegate(
                     }
 
                     else -> {
-                        // Pre-select the GROUP pool (the common case). Paying from personal or
-                        // subunit cash is the exception, so we save the user one tap.
-                        val defaultPool = uiPools.find { it.scope == PayerType.GROUP }
-                            ?: uiPools.first()
+                        // Pre-select the first pool — the use case returns pools in priority order:
+                        // GROUP first for GROUP payerType; personal/subunit first for USER/SUBUNIT.
+                        // This matches the documented FIFO priority chain while saving the user a tap.
+                        val defaultPool = uiPools.first()
                         stateFlow.update { state ->
                             state.copy(
                                 availableWithdrawalPools = uiPools,

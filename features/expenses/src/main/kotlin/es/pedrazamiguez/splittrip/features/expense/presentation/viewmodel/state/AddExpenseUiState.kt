@@ -273,8 +273,10 @@ data class AddExpenseUiState(
                 sourceAmount.isNotBlank() &&
                     isAmountValid &&
                     !(isInsufficientCash && !showExchangeRateSection) &&
-                    // For same-currency CASH with multiple pools, require the user to pick
-                    // a pool before proceeding (pool selector is shown instead of ExchangeRateStep).
+                    // For same-currency CASH with multiple pools, a pool must be resolved (either
+                    // auto-selected by WithdrawalPoolSelectionDelegate or explicitly by the user)
+                    // before the user can advance. The pool selector is shown in AmountStep because
+                    // there is no ExchangeRateStep for same-currency expenses.
                     (showExchangeRateSection || availableWithdrawalPools.size <= 1 || selectedWithdrawalPool != null)
 
             AddExpenseStep.EXCHANGE_RATE ->
