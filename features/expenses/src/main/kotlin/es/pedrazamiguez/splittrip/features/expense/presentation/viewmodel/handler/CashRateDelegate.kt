@@ -111,6 +111,9 @@ class CashRateDelegate(
         }
 
         val selectedPool = state.selectedWithdrawalPool
+        // Pool selector is shown but no pool chosen yet — skip to avoid a false InsufficientCash
+        // from the GROUP-only fallback path while the user's personal cash is still selectable.
+        if (selectedPool == null && state.availableWithdrawalPools.isNotEmpty()) return
         val preferredScope = selectedPool?.scope
         val preferredOwnerId = selectedPool?.ownerId
 
