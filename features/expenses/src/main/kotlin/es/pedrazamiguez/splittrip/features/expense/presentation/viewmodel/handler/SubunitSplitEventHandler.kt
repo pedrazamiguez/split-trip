@@ -145,8 +145,8 @@ class SubunitSplitEventHandler(
      * Disables subunit mode (idempotent). Called when the user selects a USER- or GROUP-scoped
      * withdrawal pool so the split step reverts to flat mode, consistent with the pool scope.
      *
-     * Entity exclusions are intentionally left untouched — if the user manually re-enables
-     * subunit mode later they can adjust from a clean slate via [handleSubunitModeToggled].
+     * Entity exclusions are intentionally preserved — if the user manually re-enables subunit
+     * mode later via [handleSubunitModeToggled], their prior exclusion choices remain in effect.
      */
     fun disableSubunitMode() {
         if (!_uiState.value.isSubunitMode) return

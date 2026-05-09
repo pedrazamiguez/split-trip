@@ -196,9 +196,12 @@ class SplitEventHandler(
      * - USER pool  → exclude everyone except the pool owner (identified by [poolOwnerId],
      *   falling back to [currentUserId] when ownerId is null).
      * - SUBUNIT pool → exclude all members whose [SplitUiModel.subunitId] ≠ [poolOwnerId].
-     * - GROUP pool or null → no-op on splits; only resets [AddExpenseUiState.personalCashSplitWarning].
+     * - GROUP pool → clears all member exclusions and share locks so every member participates
+     *   in the shared group expense, then recalculates splits. This handles the case where the
+     *   user previously selected a USER/SUBUNIT pool (which excluded non-pool members) and then
+     *   switched back to GROUP cash — without the reset those exclusions would silently persist.
      *
-     * Also resets [AddExpenseUiState.personalCashSplitWarning] to null immediately after
+     * In all cases, resets [AddExpenseUiState.personalCashSplitWarning] to null immediately after
      * pre-fill, because the freshly applied exclusions are always pool-scope–compatible.
      */
     fun applyPersonalPoolSplitDefault(
