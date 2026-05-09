@@ -160,7 +160,10 @@ class BalancesViewModel(
                             currency,
                             currentUserId,
                             memberProfiles,
-                            groupCurrency = currency
+                            groupCurrency = currency,
+                            withdrawals = withdrawals,
+                            subunitsMap = subunitsMap,
+                            groupMemberIds = groupMemberIds
                         ),
                         activityItems = balancesUiMapper.mapActivity(
                             contributions,

@@ -73,4 +73,17 @@
     <string name="balances_delete_withdrawal_dialog_text">This will permanently remove the withdrawal of %1$s. This action cannot be undone.</string>
     <string name="balances_delete_withdrawal_success">Withdrawal deleted</string>
     <string name="balances_delete_withdrawal_error">Failed to delete withdrawal</string>
+
+    <!-- Cash Breakdown Bottom Sheet -->
+    <string name="balances_cash_breakdown_title">Cash breakdown</string>
+    <string name="balances_cash_breakdown_group_scope">Group cash (est. share)</string>
+    <string name="balances_cash_breakdown_personal_scope">Personal cash</string>
+    <string name="balances_cash_breakdown_total_label">Total</string>
+    <string name="balances_cash_breakdown_estimated_hint">Estimated · your proportional share of group cash</string>
+    <string name="balances_cash_breakdown_empty">No active withdrawals</string>
+    <!-- %1$s = formatted rate, %2$s = group currency, %3$s = source currency; e.g. "@ 0.027 EUR/THB" -->
+    <string name="balances_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
+    <!-- Fallback label when a withdrawal has no title; %1$s = short date -->
+    <string name="balances_cash_breakdown_atm_fallback">ATM — %1$s</string>
+    <string name="balances_cash_breakdown_view_cd">View cash breakdown</string>
 </resources>

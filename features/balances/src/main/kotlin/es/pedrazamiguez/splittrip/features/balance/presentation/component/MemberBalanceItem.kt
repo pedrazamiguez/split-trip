@@ -42,6 +42,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Cash
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartBar
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -52,6 +53,7 @@ import kotlinx.collections.immutable.ImmutableList
 @Composable
 fun MemberBalanceItem(memberBalance: MemberBalanceUiModel, modifier: Modifier = Modifier) {
     var isExpanded by remember { mutableStateOf(false) }
+    var showCashBreakdown by remember { mutableStateOf(false) }
     val balanceColor = resolveBalanceColor(memberBalance.isPositiveBalance)
     val displayName = resolveDisplayName(memberBalance)
     val expandedStateDesc = resolveExpandedStateDesc(isExpanded)
@@ -75,8 +77,20 @@ fun MemberBalanceItem(memberBalance: MemberBalanceUiModel, modifier: Modifier = 
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
-            MemberBalanceExpandedDetail(memberBalance = memberBalance, balanceColor = balanceColor)
+            MemberBalanceExpandedDetail(
+                memberBalance = memberBalance,
+                balanceColor = balanceColor,
+                onShowCashBreakdown = { showCashBreakdown = true }
+            )
         }
+    }
+
+    if (showCashBreakdown) {
+        CashBreakdownBottomSheet(
+            breakdown = memberBalance.cashBreakdown,
+            formattedTotal = memberBalance.formattedCashInHand,
+            onDismiss = { showCashBreakdown = false }
+        )
     }
 }
 
@@ -182,7 +196,8 @@ private fun MemberBalanceSummaryRow(
 @Composable
 private fun MemberBalanceExpandedDetail(
     memberBalance: MemberBalanceUiModel,
-    balanceColor: Color
+    balanceColor: Color,
+    onShowCashBreakdown: () -> Unit
 ) {
     Column(modifier = Modifier.padding(top = 8.dp)) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -196,28 +211,54 @@ private fun MemberBalanceExpandedDetail(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        DetailRow(
-            label = stringResource(R.string.balances_member_cash_in_hand),
-            value = memberBalance.formattedCashInHand,
-            icon = TablerIcons.Outline.Cash
+        // Cash-in-hand row with info button to open the cash breakdown sheet
+        CashInHandRow(
+            memberBalance = memberBalance,
+            onShowCashBreakdown = onShowCashBreakdown
         )
-        when {
-            memberBalance.hasNegativeCashInHand -> {
-                EmptyHintText(text = stringResource(R.string.balances_member_negative_cash_hint))
-            }
-            memberBalance.cashInHandByCurrency.isNotEmpty() -> {
-                CurrencyBreakdownRows(items = memberBalance.cashInHandByCurrency)
-            }
-            else -> {
-                EmptyHintText(text = stringResource(R.string.balances_member_no_cash))
-            }
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         Spacer(modifier = Modifier.height(8.dp))
 
         SpendingBreakdownSection(memberBalance = memberBalance)
+    }
+}
+
+@Composable
+private fun CashInHandRow(
+    memberBalance: MemberBalanceUiModel,
+    onShowCashBreakdown: () -> Unit
+) {
+    DetailRow(
+        label = stringResource(R.string.balances_member_cash_in_hand),
+        value = memberBalance.formattedCashInHand,
+        icon = TablerIcons.Outline.Cash,
+        labelSuffix = if (memberBalance.cashBreakdown.isNotEmpty()) {
+            {
+                Icon(
+                    imageVector = TablerIcons.Outline.InfoCircle,
+                    contentDescription = stringResource(R.string.balances_cash_breakdown_view_cd),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clickable(onClick = onShowCashBreakdown)
+                )
+            }
+        } else {
+            null
+        }
+    )
+    when {
+        memberBalance.hasNegativeCashInHand -> {
+            EmptyHintText(text = stringResource(R.string.balances_member_negative_cash_hint))
+        }
+        memberBalance.cashInHandByCurrency.isNotEmpty() -> {
+            CurrencyBreakdownRows(items = memberBalance.cashInHandByCurrency)
+        }
+        else -> {
+            EmptyHintText(text = stringResource(R.string.balances_member_no_cash))
+        }
     }
 }
 
@@ -268,7 +309,8 @@ private fun DetailRow(
     value: String,
     modifier: Modifier = Modifier,
     valueColor: Color = MaterialTheme.colorScheme.onSurface,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
+    labelSuffix: (@Composable () -> Unit)? = null
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -292,6 +334,8 @@ private fun DetailRow(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            // Optional composable placed inline after the label (e.g. an info icon)
+            labelSuffix?.invoke()
         }
         Text(
             text = value,

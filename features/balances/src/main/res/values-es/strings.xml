@@ -74,4 +74,15 @@
     <string name="balances_delete_withdrawal_dialog_text">Se eliminará permanentemente la retirada de %1$s. Esta acción no se puede deshacer.</string>
     <string name="balances_delete_withdrawal_success">Retirada eliminada</string>
     <string name="balances_delete_withdrawal_error">Error al eliminar la retirada</string>
+
+    <!-- Cash Breakdown Bottom Sheet -->
+    <string name="balances_cash_breakdown_title">Desglose de efectivo</string>
+    <string name="balances_cash_breakdown_group_scope">Efectivo del grupo (parte estimada)</string>
+    <string name="balances_cash_breakdown_personal_scope">Efectivo personal</string>
+    <string name="balances_cash_breakdown_total_label">Total</string>
+    <string name="balances_cash_breakdown_estimated_hint">Estimado · tu parte proporcional del efectivo del grupo</string>
+    <string name="balances_cash_breakdown_empty">Sin retiradas activas</string>
+    <string name="balances_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
+    <string name="balances_cash_breakdown_atm_fallback">ATM — %1$s</string>
+    <string name="balances_cash_breakdown_view_cd">Ver desglose de efectivo</string>
 </resources>
