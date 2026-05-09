@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.data.local.entity.GroupEntity
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -143,6 +144,25 @@ class LocalExpenseDataSourceImplTest {
         assertEquals("Dinner", result?.title)
         assertEquals(5000L, result?.sourceAmount)
         assertEquals(PaymentMethod.CREDIT_CARD, result?.paymentMethod)
+    }
+
+    @Test
+    fun saveAndGetExpenseById_preservesSplitOrder() = runTest {
+        val expenseWithSplits = testExpense1.copy(
+            id = "expense-with-splits",
+            splits = listOf(
+                ExpenseSplit(userId = "user-2", amountCents = 1500L),
+                ExpenseSplit(userId = "user-1", amountCents = 3500L),
+                ExpenseSplit(userId = "user-3", amountCents = 0L, isExcluded = true)
+            )
+        )
+
+        localDataSource.saveExpense(expenseWithSplits)
+
+        val result = localDataSource.getExpenseById("expense-with-splits")
+
+        assertNotNull(result)
+        assertEquals(listOf("user-2", "user-1", "user-3"), result?.splits?.map { it.userId })
     }
 
     @Test

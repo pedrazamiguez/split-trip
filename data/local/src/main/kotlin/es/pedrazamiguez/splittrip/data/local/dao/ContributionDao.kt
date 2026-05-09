@@ -55,7 +55,10 @@ interface ContributionDao {
     @Query("DELETE FROM contributions WHERE groupId = :groupId AND linkedExpenseId = :expenseId")
     suspend fun deleteByLinkedExpenseId(groupId: String, expenseId: String)
 
-    @Query("SELECT * FROM contributions WHERE groupId = :groupId AND linkedExpenseId = :expenseId LIMIT 1")
+    @Query(
+        "SELECT * FROM contributions WHERE groupId = :groupId AND linkedExpenseId = :expenseId " +
+            "ORDER BY COALESCE(lastUpdatedAtMillis, createdAtMillis, 0) DESC, id DESC LIMIT 1"
+    )
     suspend fun findByLinkedExpenseId(groupId: String, expenseId: String): ContributionEntity?
 
     /**
