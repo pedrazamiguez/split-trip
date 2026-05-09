@@ -395,11 +395,13 @@ class BalancesUiMapper(
             withdrawalLabel = label,
             dateText = dateText,
             formattedRate = if (isForeign) {
+                // Swap order: native/group → reads as "X native-units per 1 group-unit"
+                // e.g. "@ 1.1813 USD/EUR" = "1.1813 USD per EUR" (everyday math, not Forex notation)
                 resourceProvider.getString(
                     R.string.balances_cash_breakdown_rate,
                     withdrawal.exchangeRate.formatForDisplay(locale, maxDecimalPlaces = 6),
-                    groupCurrency,
-                    withdrawal.currency
+                    withdrawal.currency,
+                    groupCurrency
                 )
             } else {
                 ""

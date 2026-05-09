@@ -47,7 +47,7 @@ class BalancesUiMapperMemberBalancesTest {
         every { resourceProvider.getString(R.string.balances_cash_breakdown_atm_fallback, any()) } returns
             "ATM — Jan 10"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_rate, any(), any(), any()) } returns
-            "@ 0.027 EUR/THB"
+            "@ 0.027 THB/EUR"
         mapper = BalancesUiMapper(localeProvider, resourceProvider)
     }
 
@@ -663,7 +663,7 @@ class BalancesUiMapperMemberBalancesTest {
             val breakdown = result[0].cashBreakdown
             assertEquals(1, breakdown.size)
             val item = breakdown[0]
-            assertTrue(item.formattedRate.contains("EUR/THB"))
+            assertTrue(item.formattedRate.contains("THB/EUR"))
             assertTrue(item.formattedEquivalent.isNotBlank())
         }
 
