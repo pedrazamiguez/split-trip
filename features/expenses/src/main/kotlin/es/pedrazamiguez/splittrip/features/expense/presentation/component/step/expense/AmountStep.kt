@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.CashTrancheFundedFromSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.WithdrawalPoolSelectorSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 
@@ -49,9 +50,22 @@ fun AmountStep(
             onImeAction = onImeNext
         )
 
-        // Show the "Funded from" breakdown here only when same currency is used.
-        // For foreign currency CASH, the breakdown is shown in ExchangeRateStep instead.
+        // Show cash-related UI only when same currency is used.
+        // For foreign currency CASH, pool selector and tranche breakdown are in ExchangeRateStep.
         val isSameCurrency = !uiState.showExchangeRateSection
+        if (isSameCurrency && uiState.availableWithdrawalPools.size > 1) {
+            // Multiple pools available — let the user pick which cash pool to draw from.
+            // For foreign-currency CASH this selector lives in ExchangeRateStep; for same-currency
+            // there is no exchange-rate step, so it must live here instead.
+            Spacer(modifier = Modifier.height(16.dp))
+            WithdrawalPoolSelectorSection(
+                pools = uiState.availableWithdrawalPools,
+                selectedPool = uiState.selectedWithdrawalPool,
+                onPoolSelected = { scope, scopeOwnerId ->
+                    onEvent(AddExpenseUiEvent.WithdrawalPoolSelected(scope, scopeOwnerId))
+                }
+            )
+        }
         if (isSameCurrency && uiState.isInsufficientCash) {
             Spacer(modifier = Modifier.height(16.dp))
             FormErrorBanner(error = UiText.StringResource(R.string.add_expense_cash_insufficient_hint))

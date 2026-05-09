@@ -67,7 +67,7 @@ Before running FIFO, the repository queries the **correct withdrawal pool** base
 
 | Expense `payerType` | Pool Priority |
 |---|---|
-| `GROUP` | GROUP-scoped withdrawals only |
+| `GROUP` | GROUP-scoped withdrawals (primary). When a `payerId` is provided, also probes the user's personal (USER-scoped) pool as a supplement — see §5 for the pool-selector UI. |
 | `USER` | USER-scoped withdrawals for `expense.payerId` → fallback to GROUP-scoped if insufficient |
 | `SUBUNIT` | SUBUNIT-scoped withdrawals for the expense's `subunitId` → fallback to GROUP-scoped if insufficient |
 
@@ -84,7 +84,7 @@ suspend fun getAvailableWithdrawals(
 ```
 
 **Impl logic:**
-- `GROUP` → fetch GROUP-scoped withdrawals only.
+- `GROUP` → fetch GROUP-scoped withdrawals first. If a `payerId` (userId) is provided, also probe the user's personal (USER-scoped) pool. If the GROUP pool alone is insufficient, surfacing personal cash via the pool-selector UI allows the user to supplement from their own ATM withdrawal.
 - `USER` → fetch USER-scoped (for `payerId`) + append GROUP-scoped.
 - `SUBUNIT` → fetch SUBUNIT-scoped (for `payerId`) + append GROUP-scoped.
 
@@ -171,7 +171,11 @@ data class WithdrawalPoolOption(
 
 ### `GetAvailableWithdrawalPoolsUseCase`
 
-Queries each candidate scope **independently** (no GROUP fallback — single-scope queries) and returns only pools with `remainingAmount > 0`.
+Queries each candidate scope **independently** (single-scope queries, no GROUP fallback at this level) and returns only pools with `remainingAmount > 0`.
+
+**Priority order returned:**
+- **GROUP payerType:** GROUP pool first (primary), then the user's personal (USER-scoped) pool if `payerId` is provided and has funds. This allows the pool-selector UI to surface personal cash as a supplement when GROUP funds alone are insufficient.
+- **USER / SUBUNIT payerType:** personal/subunit pool first, GROUP pool second.
 
 ```kotlin
 // Usage in CurrencyEventHandler (via WithdrawalPoolSelectionDelegate)
@@ -194,7 +198,11 @@ A **plain class** (NOT an `AddExpenseEventHandler`, NOT a ViewModel) that manage
 
 ### UI: `WithdrawalPoolSelectorSection`
 
-A radio group / `FilterChip` row composable, rendered in `ExchangeRateStep` between `CurrencyConversionCard` and `CashTrancheFundedFromSection`. Only visible when `availableWithdrawalPools.size > 1`.
+A `FlowRow` of `PassportChip`s (consistent with the payment step pattern), shown in the **AmountStep** (same-currency CASH) or **ExchangeRateStep** (foreign-currency CASH). Visible only when `availableWithdrawalPools.size > 1`.
+
+The **first pool in the list** is pre-selected by `WithdrawalPoolSelectionDelegate` (GROUP for GROUP expenses, personal/subunit for USER/SUBUNIT expenses), matching the documented FIFO priority order and saving the user a tap in the common case.
+
+When the user taps a different chip, `AddExpenseViewModel` routes `WithdrawalPoolSelected` to both `CurrencyEventHandler` (re-fetch cash rate preview for the new pool) and `SplitEventHandler` (`applyPersonalPoolSplitDefault` to pre-fill split exclusions based on the pool scope).
 
 ```
 ┌─────────────────────────────────────────────────────┐

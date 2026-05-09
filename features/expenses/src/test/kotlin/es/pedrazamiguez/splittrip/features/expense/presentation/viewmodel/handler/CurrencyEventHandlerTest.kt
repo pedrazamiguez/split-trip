@@ -46,6 +46,7 @@ class CurrencyEventHandlerTest {
     private lateinit var getExchangeRateUseCase: GetExchangeRateUseCase
     private lateinit var expenseCalculatorService: ExpenseCalculatorService
     private lateinit var exchangeRateCalculationService: ExchangeRateCalculationService
+    private lateinit var withdrawalPoolSelectionDelegate: WithdrawalPoolSelectionDelegate
 
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actions: MutableSharedFlow<AddExpenseUiAction>
@@ -95,12 +96,14 @@ class CurrencyEventHandlerTest {
         val formattingHelper = FormattingHelper(localeProvider)
         val splitPreviewService = SplitPreviewService()
 
+        withdrawalPoolSelectionDelegate = mockk(relaxed = true)
+
         handler = CurrencyEventHandler(
             getExchangeRateUseCase = getExchangeRateUseCase,
             exchangeRateCalculationService = exchangeRateCalculationService,
             formattingHelper = formattingHelper,
             addExpenseOptionsMapper = AddExpenseOptionsUiMapper(resourceProvider, mockk(relaxed = true)),
-            withdrawalPoolSelectionDelegate = mockk(relaxed = true),
+            withdrawalPoolSelectionDelegate = withdrawalPoolSelectionDelegate,
             cashRateDelegate = CashRateDelegate(
                 previewCashExchangeRateUseCase = previewCashExchangeRateUseCase,
                 expenseCalculatorService = expenseCalculatorService,
@@ -112,6 +115,27 @@ class CurrencyEventHandlerTest {
 
         uiState = MutableStateFlow(cashForeignState)
         actions = MutableSharedFlow()
+    }
+
+    /**
+     * Configures [withdrawalPoolSelectionDelegate] to immediately invoke the [onPoolResolved]
+     * callback. Use in tests that verify GROUP CASH behaviour where the pool is auto-resolved
+     * (single pool) and the rate preview should fire as part of the same test.
+     */
+    private fun configurePoolDelegateToResolveImmediately() {
+        every {
+            withdrawalPoolSelectionDelegate.fetchPools(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any()
+            )
+        } answers {
+            lastArg<() -> Unit>().invoke()
+        }
     }
 
     // ── InsufficientCash ────────────────────────────────────────────────────
@@ -398,6 +422,9 @@ class CurrencyEventHandlerTest {
                     groupAmountCents = 2703L
                 )
             )
+            // Pool delegate auto-resolves (simulates single pool auto-selected) so
+            // the cash rate fetch fires as part of the same flow.
+            configurePoolDelegateToResolveImmediately()
             handler.bind(uiState, actions, this)
 
             // When: user switches to CASH
@@ -469,6 +496,9 @@ class CurrencyEventHandlerTest {
                     groupAmountCents = 2703L
                 )
             )
+            // Pool delegate auto-resolves so the cash rate fetch fires, then verify the
+            // restored rate survives after switching back to non-CASH.
+            configurePoolDelegateToResolveImmediately()
             handler.bind(uiState, actions, this)
 
             // When: user switches to CASH, then back to non-CASH
@@ -570,6 +600,8 @@ class CurrencyEventHandlerTest {
                     groupAmountCents = 2703L
                 )
             )
+            // Pool delegate auto-resolves so the cash rate fetch fires via onPoolResolved.
+            configurePoolDelegateToResolveImmediately()
             handler.bind(uiState, actions, this)
 
             // When: user switches to CASH with GROUP funding source
@@ -632,6 +664,8 @@ class CurrencyEventHandlerTest {
                     groupAmountCents = 2703L
                 )
             )
+            // Pool delegate auto-resolves so the cash rate fetch fires via onPoolResolved.
+            configurePoolDelegateToResolveImmediately()
             handler.bind(uiState, actions, this)
 
             // When: funding source changes to GROUP

@@ -13,13 +13,13 @@ interface ExpenseSplitDao {
     @Upsert
     suspend fun upsertSplits(splits: List<ExpenseSplitEntity>)
 
-    @Query("SELECT * FROM expense_splits WHERE expenseId = :expenseId")
+    @Query("SELECT * FROM expense_splits WHERE expenseId = :expenseId ORDER BY id ASC")
     suspend fun getSplitsByExpenseId(expenseId: String): List<ExpenseSplitEntity>
 
-    @Query("SELECT * FROM expense_splits WHERE expenseId IN (:expenseIds)")
+    @Query("SELECT * FROM expense_splits WHERE expenseId IN (:expenseIds) ORDER BY expenseId ASC, id ASC")
     suspend fun getSplitsByExpenseIds(expenseIds: List<String>): List<ExpenseSplitEntity>
 
-    @Query("SELECT * FROM expense_splits WHERE expenseId = :expenseId")
+    @Query("SELECT * FROM expense_splits WHERE expenseId = :expenseId ORDER BY id ASC")
     fun getSplitsByExpenseIdFlow(expenseId: String): Flow<List<ExpenseSplitEntity>>
 
     @Query("DELETE FROM expense_splits WHERE expenseId = :expenseId")

@@ -16,7 +16,14 @@ sealed interface PostConfigAction {
     /** Fetch the API exchange rate for a foreign currency. */
     data object FetchRate : PostConfigAction
 
-    /** Fetch the blended CASH exchange rate from ATM withdrawals. */
+    /**
+     * Initiate pool discovery and fetch the blended CASH exchange rate from ATM withdrawals.
+     *
+     * Despite the name, the ViewModel routes this to [CurrencyEventHandler.fetchPoolsIfNeeded],
+     * which first queries available withdrawal pools via [WithdrawalPoolSelectionDelegate]. The
+     * cash rate preview is then fetched automatically via the delegate's [onPoolResolved] callback
+     * once a pool is resolved (auto-selected or pre-selected from the priority list).
+     */
     data object FetchCashRate : PostConfigAction
 
     /** Initialize entity splits when the group has subunits. */

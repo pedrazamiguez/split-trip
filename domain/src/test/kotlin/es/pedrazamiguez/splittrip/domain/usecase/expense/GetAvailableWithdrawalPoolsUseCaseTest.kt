@@ -51,7 +51,7 @@ class GetAvailableWithdrawalPoolsUseCaseTest {
     inner class GroupScope {
 
         @Test
-        fun `returns single GROUP option when GROUP pool has funds`() = runTest {
+        fun `returns single GROUP option when only GROUP pool has funds and no userId`() = runTest {
             coEvery {
                 cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
                     groupId,
@@ -68,7 +68,7 @@ class GetAvailableWithdrawalPoolsUseCaseTest {
         }
 
         @Test
-        fun `returns empty list when GROUP pool has no funds`() = runTest {
+        fun `returns empty list when GROUP pool has no funds and no userId`() = runTest {
             coEvery {
                 cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
                     groupId,
@@ -84,7 +84,7 @@ class GetAvailableWithdrawalPoolsUseCaseTest {
         }
 
         @Test
-        fun `GROUP scope only queries GROUP pool - never USER or SUBUNIT`() = runTest {
+        fun `GROUP scope without userId skips USER pool probe`() = runTest {
             useCase(groupId, currency, PayerType.GROUP)
 
             coVerify(exactly = 1) {
@@ -101,6 +101,120 @@ class GetAvailableWithdrawalPoolsUseCaseTest {
                     any(),
                     PayerType.USER,
                     any()
+                )
+            }
+        }
+
+        @Test
+        fun `returns both GROUP and USER options when both pools have funds`() = runTest {
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.GROUP,
+                    null
+                )
+            } returns listOf(sampleWithdrawal)
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.USER,
+                    userId
+                )
+            } returns listOf(sampleWithdrawal)
+
+            val result = useCase(groupId, currency, PayerType.GROUP, userId)
+
+            assertEquals(2, result.size)
+            assertEquals(WithdrawalPoolOption(PayerType.GROUP), result[0])
+            assertEquals(WithdrawalPoolOption(PayerType.USER, userId), result[1])
+        }
+
+        @Test
+        fun `returns only USER option when GROUP pool is empty but USER pool has funds`() = runTest {
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.USER,
+                    userId
+                )
+            } returns listOf(sampleWithdrawal)
+
+            val result = useCase(groupId, currency, PayerType.GROUP, userId)
+
+            assertEquals(1, result.size)
+            assertEquals(WithdrawalPoolOption(PayerType.USER, userId), result.first())
+        }
+
+        @Test
+        fun `returns only GROUP option when USER pool is empty for GROUP payerType`() = runTest {
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.GROUP,
+                    null
+                )
+            } returns listOf(sampleWithdrawal)
+
+            val result = useCase(groupId, currency, PayerType.GROUP, userId)
+
+            assertEquals(1, result.size)
+            assertEquals(WithdrawalPoolOption(PayerType.GROUP), result.first())
+        }
+
+        @Test
+        fun `returns empty list when both GROUP and USER pools are empty`() = runTest {
+            val result = useCase(groupId, currency, PayerType.GROUP, userId)
+
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `GROUP pool is returned first, USER pool second`() = runTest {
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.GROUP,
+                    null
+                )
+            } returns listOf(sampleWithdrawal)
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.USER,
+                    userId
+                )
+            } returns listOf(sampleWithdrawal)
+
+            val result = useCase(groupId, currency, PayerType.GROUP, userId)
+
+            assertEquals(PayerType.GROUP, result[0].scope)
+            assertEquals(PayerType.USER, result[1].scope)
+        }
+
+        @Test
+        fun `GROUP scope with userId queries both GROUP and USER pools`() = runTest {
+            useCase(groupId, currency, PayerType.GROUP, userId)
+
+            coVerify(exactly = 1) {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.GROUP,
+                    null
+                )
+            }
+            coVerify(exactly = 1) {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.USER,
+                    userId
                 )
             }
             coVerify(exactly = 0) {

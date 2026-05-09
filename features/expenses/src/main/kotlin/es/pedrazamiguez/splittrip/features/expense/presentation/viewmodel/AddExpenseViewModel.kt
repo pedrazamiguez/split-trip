@@ -60,7 +60,7 @@ class AddExpenseViewModel(
                     currencyEventHandler.fetchRate()
 
                 is PostConfigAction.FetchCashRate ->
-                    currencyEventHandler.fetchCashRate()
+                    currencyEventHandler.fetchPoolsIfNeeded()
 
                 is PostConfigAction.InitEntitySplits ->
                     subunitSplitEventHandler.initEntitySplits(
@@ -121,6 +121,9 @@ class AddExpenseViewModel(
                 currencyEventHandler.handleGroupAmountChanged(event.amount)
 
             is AddExpenseUiEvent.WithdrawalPoolSelected ->
+                // Pool-aware split pre-fill (applyPersonalPoolSplitDefault) is intentionally
+                // NOT wired here — that feature is scoped to #1035 and requires additional
+                // UX (warning banner, auto-selection path) not yet implemented.
                 currencyEventHandler.handleWithdrawalPoolSelected(event.scope, event.scopeOwnerId)
 
             // ── Splits ──────────────────────────────────────────────────

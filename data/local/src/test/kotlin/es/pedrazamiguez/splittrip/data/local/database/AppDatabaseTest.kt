@@ -78,8 +78,8 @@ class AppDatabaseTest {
             result.size
         )
         assertEquals(
-            usd.code,
-            result.first().code
+            listOf(eur.code, usd.code),
+            result.map { it.code }
         )
     }
 

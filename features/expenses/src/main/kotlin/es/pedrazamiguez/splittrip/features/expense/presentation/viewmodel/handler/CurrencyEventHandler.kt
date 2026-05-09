@@ -81,7 +81,7 @@ class CurrencyEventHandler(
         if (isForeign) {
             if (isCash) {
                 // Lock immediately so the fields are non-editable from the start,
-                // before the async fetchCashRate completes.
+                // before the async pool probe + rate fetch completes.
                 _uiState.update {
                     it.copy(
                         isExchangeRateLocked = true,
@@ -91,7 +91,9 @@ class CurrencyEventHandler(
                         )
                     )
                 }
-                cashRateDelegate.fetchCashRate()
+                // Clear stale pool state from the previous currency pair, then re-probe.
+                withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
+                fetchPoolsIfNeeded()
             } else {
                 fetchRate()
             }
@@ -104,8 +106,8 @@ class CurrencyEventHandler(
                     exchangeRateLockedHint = null
                 )
             }
-            // Same currency + CASH + GROUP pocket: fetch tranche preview (shown on AmountStep)
-            if (isCash && currentPayerType() == PayerType.GROUP) cashRateDelegate.fetchCashRate()
+            // Same currency + CASH: probe pools and fetch tranche preview via callback.
+            if (isCash) fetchPoolsIfNeeded()
         }
         recalculateForward()
         onRecalculate()
@@ -236,7 +238,8 @@ class CurrencyEventHandler(
 
         if (isCash && isForeign) {
             if (isGroupPocket) {
-                // GROUP pocket CASH: save current rate, lock, fetch ATM preview
+                // GROUP pocket CASH: save current rate, lock fields, then probe pools.
+                // Pool discovery triggers fetchCashRate via onPoolResolved after resolution.
                 _uiState.update {
                     it.copy(
                         preCashExchangeRate = it.displayExchangeRate,
@@ -248,16 +251,17 @@ class CurrencyEventHandler(
                     )
                 }
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                cashRateDelegate.fetchCashRate()
+                fetchPoolsIfNeeded()
             } else {
                 // USER/SUBUNIT cash: rate stays unlocked, user enters manually
                 // but we still fetch pool availability for pool-selector widget.
                 fetchPoolsIfNeeded()
             }
         } else if (isCash && !isForeign && isGroupPocket) {
-            // Same-currency CASH: no rate to lock, but still fetch tranche preview
+            // Same-currency CASH + GROUP pocket: no rate to lock, but probe pools and
+            // fetch tranche preview via pool-resolved callback.
             withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-            cashRateDelegate.fetchCashRate()
+            fetchPoolsIfNeeded()
         } else {
             // Cancel any in-flight or debounced CASH rate jobs so a stale result
             // cannot re-lock the exchange rate after the user has switched away.
@@ -311,7 +315,8 @@ class CurrencyEventHandler(
 
         if (isForeign) {
             if (isGroupPocket) {
-                // Switching to GROUP: lock rate and fetch from ATM pool
+                // Switching to GROUP: lock rate if not already locked, then probe pools.
+                // Pool discovery triggers fetchCashRate via onPoolResolved after resolution.
                 if (!state.isExchangeRateLocked) {
                     _uiState.update {
                         it.copy(
@@ -325,7 +330,7 @@ class CurrencyEventHandler(
                     }
                 }
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                cashRateDelegate.fetchCashRate()
+                fetchPoolsIfNeeded()
             } else {
                 // Switching to USER/SUBUNIT: cancel ATM jobs, unlock rate, restore saved rate
                 cashRateDelegate.cancelPendingCashJobs()
@@ -349,9 +354,9 @@ class CurrencyEventHandler(
         } else {
             // Same-currency CASH: no rate lock, but tranche previews must still be kept in sync.
             if (isGroupPocket) {
-                // Switching to GROUP pocket: (re)fetch tranche preview for the current amount.
+                // Switching to GROUP pocket: probe pools and fetch tranche preview via callback.
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                cashRateDelegate.fetchCashRate()
+                fetchPoolsIfNeeded()
             } else {
                 // Switching to USER/SUBUNIT pocket: clear tranche state — ATM pool is not used.
                 cashRateDelegate.cancelPendingCashJobs()
@@ -383,12 +388,7 @@ class CurrencyEventHandler(
         }
     }
 
-    /**
-     * Triggers pool availability discovery for USER/SUBUNIT CASH expenses.
-     * Called after a funding-source change or currency change when the payment method is CASH
-     * and the payer type is not GROUP. GROUP expenses skip pool discovery entirely.
-     */
-    private fun fetchPoolsIfNeeded() {
+    internal fun fetchPoolsIfNeeded() {
         val state = _uiState.value
         val groupId = state.loadedGroupId ?: return
         val currency = state.selectedCurrency?.code ?: return
@@ -432,13 +432,15 @@ class CurrencyEventHandler(
 
     /**
      * Returns the payer ID relevant to the current funding source scope:
+     * - **GROUP:** the current user's ID ([AddExpenseUiState.currentUserId]), forwarded to
+     *   [GetAvailableWithdrawalPoolsUseCase] so it can probe the user's personal (USER-scoped)
+     *   pool as a supplement to the GROUP pool.
      * - **USER:** the current user's ID ([AddExpenseUiState.currentUserId]).
      * - **SUBUNIT:** not yet available from state (returns null; SUBUNIT pool support
      *   is tracked in the companion issue for SUBUNIT funding-source selection).
-     * - **GROUP:** always null (GROUP pool needs no owner filter).
      */
     internal fun currentPayerId(): String? = when (currentPayerType()) {
-        PayerType.USER -> _uiState.value.currentUserId
-        PayerType.GROUP, PayerType.SUBUNIT -> null
+        PayerType.USER, PayerType.GROUP -> _uiState.value.currentUserId
+        PayerType.SUBUNIT -> null
     }
 }

@@ -90,11 +90,12 @@ data class AddExpenseUiState(
     /**
      * Available cash withdrawal pools for the current expense's scope and currency.
      *
-     * Populated when the payment method is CASH and the expense is USER- or SUBUNIT-scoped.
+     * Populated when the payment method is CASH and multiple pools have available funds.
+     * This includes GROUP-scoped expenses when the user also holds personal (USER-scoped) cash.
      * Contains one entry per pool that has available funds. When this list has more than one
      * entry, a pool-selection widget is shown in the Exchange Rate step. When it has exactly
-     * one entry the selection is applied automatically (no UI shown). Empty for GROUP-scoped
-     * expenses (only one pool exists) or when no withdrawals are available at all.
+     * one entry the selection is applied automatically (no UI shown). Empty when no withdrawals
+     * are available at all.
      */
     val availableWithdrawalPools: ImmutableList<WithdrawalPoolOptionUiModel> = persistentListOf(),
     /**
@@ -104,6 +105,11 @@ data class AddExpenseUiState(
      * (e.g., no withdrawals available or payment method is not CASH).
      */
     val selectedWithdrawalPool: WithdrawalPoolOptionUiModel? = null,
+    /**
+     * True when a personal (USER/SUBUNIT) cash pool is selected and the current split includes
+     * members outside that pool's natural scope.
+     */
+    val isPersonalCashSplitWarning: Boolean = false,
     /**
      * True when the exchange rate was served from an expired local cache
      * (the remote API was unreachable). Drives a warning banner in the
@@ -266,7 +272,12 @@ data class AddExpenseUiState(
             AddExpenseStep.AMOUNT ->
                 sourceAmount.isNotBlank() &&
                     isAmountValid &&
-                    !(isInsufficientCash && !showExchangeRateSection)
+                    !(isInsufficientCash && !showExchangeRateSection) &&
+                    // For same-currency CASH with multiple pools, a pool must be resolved (either
+                    // auto-selected by WithdrawalPoolSelectionDelegate or explicitly by the user)
+                    // before the user can advance. The pool selector is shown in AmountStep because
+                    // there is no ExchangeRateStep for same-currency expenses.
+                    (showExchangeRateSection || availableWithdrawalPools.size <= 1 || selectedWithdrawalPool != null)
 
             AddExpenseStep.EXCHANGE_RATE ->
                 displayExchangeRate.isNotBlank() && calculatedGroupAmount.isNotBlank()
