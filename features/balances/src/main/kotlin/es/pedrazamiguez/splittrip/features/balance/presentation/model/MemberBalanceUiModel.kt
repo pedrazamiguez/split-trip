@@ -13,6 +13,7 @@ import kotlinx.collections.immutable.persistentListOf
  * - [formattedTotalSpent]: all expenses (cashSpent + nonCashSpent)
  *
  * Per-currency breakdowns enable the expandable card to show multi-currency detail.
+ * [cashBreakdown] holds per-withdrawal attribution items for the cash breakdown bottom sheet.
  *
  * [displayName] holds the resolved human-readable name (not a raw userId).
  *
@@ -35,5 +36,6 @@ data class MemberBalanceUiModel(
     val hasNegativeCashInHand: Boolean = false,
     val cashInHandByCurrency: ImmutableList<CurrencyBreakdownUiModel> = persistentListOf(),
     val cashSpentByCurrency: ImmutableList<CurrencyBreakdownUiModel> = persistentListOf(),
-    val nonCashSpentByCurrency: ImmutableList<CurrencyBreakdownUiModel> = persistentListOf()
+    val nonCashSpentByCurrency: ImmutableList<CurrencyBreakdownUiModel> = persistentListOf(),
+    val cashBreakdown: ImmutableList<CashBreakdownUiModel> = persistentListOf()
 )

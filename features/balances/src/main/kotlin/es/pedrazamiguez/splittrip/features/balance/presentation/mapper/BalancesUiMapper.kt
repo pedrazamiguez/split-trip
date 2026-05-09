@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.extensions.toEpochMillisUtc
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatCurrencyAmount
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
@@ -16,11 +17,14 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityItemUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBalanceUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CurrencyBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
+import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -253,13 +257,19 @@ class BalancesUiMapper(
      *
      * @param groupCurrency The group's base currency code, used to determine whether
      *                      to show equivalents for per-currency breakdowns.
+     * @param withdrawals Full withdrawal list for the group, used to build [MemberBalanceUiModel.cashBreakdown].
+     * @param subunitsMap Subunit lookup map, required for SUBUNIT-scoped withdrawal attribution.
+     * @param groupMemberIds Full member id list, required to compute equal GROUP-scope shares.
      */
     fun mapMemberBalances(
         balances: List<MemberBalance>,
         currency: String,
         currentUserId: String?,
         memberProfiles: Map<String, User> = emptyMap(),
-        groupCurrency: String = currency
+        groupCurrency: String = currency,
+        withdrawals: List<CashWithdrawal> = emptyList(),
+        subunitsMap: Map<String, Subunit> = emptyMap(),
+        groupMemberIds: List<String> = emptyList()
     ): ImmutableList<MemberBalanceUiModel> {
         val locale = localeProvider.getCurrentLocale()
         return balances
@@ -303,10 +313,142 @@ class BalancesUiMapper(
                         balance.nonCashSpentByCurrency,
                         groupCurrency,
                         locale
-                    )
+                    ),
+                    cashBreakdown = if (isNegativeCash) {
+                        persistentListOf()
+                    } else {
+                        mapCashBreakdown(
+                            userId = balance.userId,
+                            withdrawals = withdrawals,
+                            subunitsMap = subunitsMap,
+                            groupMemberIds = groupMemberIds,
+                            groupCurrency = groupCurrency,
+                            locale = locale
+                        )
+                    }
                 )
             }
             .toImmutableList()
+    }
+
+    /**
+     * Builds the per-withdrawal cash breakdown for a single member.
+     *
+     * Computes each withdrawal's attributed share using the same scope rules as
+     * [es.pedrazamiguez.splittrip.domain.usecase.balance.support.attributeRemainingByScope]:
+     * - GROUP → equal share among all group members (display approximation).
+     * - USER → full remaining if this member made the withdrawal, else excluded.
+     * - SUBUNIT → proportional share by [Subunit.memberShares] (BigDecimal, HALF_UP).
+     *
+     * Items are ordered: GROUP scope → USER scope → SUBUNIT scope, then by date descending
+     * within each scope group so the breakdown mirrors the pool priority used by FIFO.
+     *
+     * Exchange rate is omitted when the withdrawal currency equals the group currency
+     * (no conversion needed, no meaningful rate to display).
+     */
+    private fun mapCashBreakdown(
+        userId: String,
+        withdrawals: List<CashWithdrawal>,
+        subunitsMap: Map<String, Subunit>,
+        groupMemberIds: List<String>,
+        groupCurrency: String,
+        locale: java.util.Locale
+    ): ImmutableList<CashBreakdownUiModel> {
+        val scopeOrder = mapOf(PayerType.GROUP to 0, PayerType.USER to 1, PayerType.SUBUNIT to 2)
+        return withdrawals
+            .sortedWith(
+                compareBy<CashWithdrawal> { scopeOrder[it.withdrawalScope] ?: 3 }
+                    .thenByDescending { it.createdAt }
+            )
+            .mapNotNull { withdrawal ->
+                if (withdrawal.amountWithdrawn == 0L || withdrawal.remainingAmount <= 0L) return@mapNotNull null
+                val nativeShare = computeUserNativeShare(withdrawal, userId, groupMemberIds, subunitsMap)
+                if (nativeShare <= 0L) return@mapNotNull null
+                buildCashBreakdownEntry(withdrawal, nativeShare, groupCurrency, locale, subunitsMap)
+            }
+            .toImmutableList()
+    }
+
+    /**
+     * Builds a single [CashBreakdownUiModel] from an attributed native share.
+     * Extracted from [mapCashBreakdown] to keep cognitive complexity within detekt limits.
+     */
+    private fun buildCashBreakdownEntry(
+        withdrawal: CashWithdrawal,
+        nativeShare: Long,
+        groupCurrency: String,
+        locale: java.util.Locale,
+        subunitsMap: Map<String, Subunit>
+    ): CashBreakdownUiModel {
+        val groupEquivalent = BigDecimal(nativeShare)
+            .multiply(BigDecimal(withdrawal.deductedBaseAmount))
+            .divide(BigDecimal(withdrawal.amountWithdrawn), 0, RoundingMode.HALF_UP)
+            .toLong()
+        val isForeign = withdrawal.currency != groupCurrency
+        val dateText = withdrawal.createdAt?.formatShortDate(locale) ?: ""
+        val label = if (withdrawal.title.isNullOrBlank()) {
+            resourceProvider.getString(R.string.balances_cash_breakdown_atm_fallback, dateText)
+        } else {
+            withdrawal.title ?: ""
+        }
+        return CashBreakdownUiModel(
+            withdrawalLabel = label,
+            dateText = dateText,
+            formattedRate = if (isForeign) {
+                // Swap order: native/group → reads as "X native-units per 1 group-unit"
+                // e.g. "@ 1.1813 USD/EUR" = "1.1813 USD per EUR" (everyday math, not Forex notation)
+                resourceProvider.getString(
+                    R.string.balances_cash_breakdown_rate,
+                    withdrawal.exchangeRate.formatForDisplay(locale, maxDecimalPlaces = 6),
+                    withdrawal.currency,
+                    groupCurrency
+                )
+            } else {
+                ""
+            },
+            formattedNativeRemaining = formatCurrencyAmount(nativeShare, withdrawal.currency, locale),
+            formattedEquivalent = if (isForeign) {
+                formatCurrencyAmount(groupEquivalent, groupCurrency, locale)
+            } else {
+                ""
+            },
+            scopeLabel = resolveCashBreakdownScopeLabel(withdrawal, subunitsMap),
+            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP
+        )
+    }
+
+    /** Resolves the user's attributed native share (in withdrawal currency cents) for display. */
+    private fun computeUserNativeShare(
+        withdrawal: CashWithdrawal,
+        userId: String,
+        groupMemberIds: List<String>,
+        subunitsMap: Map<String, Subunit>
+    ): Long {
+        val remaining = withdrawal.remainingAmount
+        return when (withdrawal.withdrawalScope) {
+            PayerType.USER -> if (withdrawal.withdrawnBy == userId) remaining else 0L
+            PayerType.GROUP -> {
+                if (groupMemberIds.isEmpty()) 0L else remaining / groupMemberIds.size
+            }
+            PayerType.SUBUNIT -> {
+                val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
+                val share = subunit?.memberShares?.get(userId) ?: return 0L
+                BigDecimal(remaining)
+                    .multiply(share)
+                    .setScale(0, RoundingMode.HALF_UP)
+                    .toLong()
+            }
+        }
+    }
+
+    private fun resolveCashBreakdownScopeLabel(
+        withdrawal: CashWithdrawal,
+        subunitsMap: Map<String, Subunit>
+    ): String = when (withdrawal.withdrawalScope) {
+        PayerType.GROUP -> resourceProvider.getString(R.string.balances_cash_breakdown_group_scope)
+        PayerType.USER -> resourceProvider.getString(R.string.balances_cash_breakdown_personal_scope)
+        PayerType.SUBUNIT -> withdrawal.subunitId?.let { subunitsMap[it]?.name }
+            ?: resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit)
     }
 
     /**
