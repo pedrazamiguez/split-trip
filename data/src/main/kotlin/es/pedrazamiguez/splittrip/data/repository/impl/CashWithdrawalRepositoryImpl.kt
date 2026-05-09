@@ -5,7 +5,8 @@ import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.sync.syncDeletionToCloud
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
-import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
@@ -22,7 +23,8 @@ import timber.log.Timber
 
 class CashWithdrawalRepositoryImpl(
     private val cloudCashWithdrawalDataSource: CloudCashWithdrawalDataSource,
-    private val localCashWithdrawalDataSource: LocalCashWithdrawalDataSource,
+    private val localQueryDataSource: LocalCashWithdrawalQueryDataSource,
+    private val localWriteDataSource: LocalCashWithdrawalWriteDataSource,
     private val authenticationService: AuthenticationService,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CashWithdrawalRepository {
@@ -47,7 +49,7 @@ class CashWithdrawalRepositoryImpl(
             syncStatus = SyncStatus.PENDING_SYNC
         )
 
-        localCashWithdrawalDataSource.saveWithdrawal(withdrawalWithMetadata)
+        localWriteDataSource.saveWithdrawal(withdrawalWithMetadata)
 
         syncCreateToCloud(
             scope = syncScope,
@@ -55,9 +57,9 @@ class CashWithdrawalRepositoryImpl(
             cloudWrite = {
                 cloudCashWithdrawalDataSource.addWithdrawal(groupId, withdrawalWithMetadata)
             },
-            updateSyncStatus = localCashWithdrawalDataSource::updateSyncStatus,
+            updateSyncStatus = localWriteDataSource::updateSyncStatus,
             getCurrentSyncStatus = { id ->
-                localCashWithdrawalDataSource.getWithdrawalById(id)?.syncStatus
+                localQueryDataSource.getWithdrawalById(id)?.syncStatus
                     ?: SyncStatus.PENDING_SYNC
             },
             entityLabel = ENTITY_LABEL
@@ -74,26 +76,26 @@ class CashWithdrawalRepositoryImpl(
      * resubscriptions.
      */
     override fun getGroupWithdrawalsFlow(groupId: String): Flow<List<CashWithdrawal>> =
-        localCashWithdrawalDataSource.getWithdrawalsByGroupIdFlow(groupId)
+        localQueryDataSource.getWithdrawalsByGroupIdFlow(groupId)
             .onStart {
                 subscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
                     subscribeAndReconcile(
                         cloudFlow = cloudCashWithdrawalDataSource
                             .getWithdrawalsByGroupIdFlow(groupId),
                         reconcileLocal = { remoteWithdrawals ->
-                            localCashWithdrawalDataSource.replaceWithdrawalsForGroup(
+                            localWriteDataSource.replaceWithdrawalsForGroup(
                                 groupId,
                                 remoteWithdrawals
                             )
                         },
                         getPendingIds = {
-                            localCashWithdrawalDataSource.getPendingSyncWithdrawalIds(groupId)
+                            localQueryDataSource.getPendingSyncWithdrawalIds(groupId)
                         },
                         verifyOnServer = { id ->
                             cloudCashWithdrawalDataSource.verifyWithdrawalOnServer(groupId, id)
                         },
                         markSynced = { id ->
-                            localCashWithdrawalDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
+                            localWriteDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
                         },
                         entityLabel = ENTITY_LABEL,
                         logContext = "for group $groupId"
@@ -108,11 +110,11 @@ class CashWithdrawalRepositoryImpl(
         payerId: String?
     ): List<CashWithdrawal> = when (payerType) {
         PayerType.GROUP ->
-            localCashWithdrawalDataSource.getAvailableWithdrawalsGroupScoped(groupId, currency)
+            localQueryDataSource.getAvailableWithdrawalsGroupScoped(groupId, currency)
 
         PayerType.USER -> {
             val userPool = if (!payerId.isNullOrBlank()) {
-                localCashWithdrawalDataSource.getAvailableWithdrawalsUserScoped(
+                localQueryDataSource.getAvailableWithdrawalsUserScoped(
                     groupId,
                     currency,
                     payerId
@@ -120,7 +122,7 @@ class CashWithdrawalRepositoryImpl(
             } else {
                 emptyList()
             }
-            val groupFallback = localCashWithdrawalDataSource.getAvailableWithdrawalsGroupScoped(
+            val groupFallback = localQueryDataSource.getAvailableWithdrawalsGroupScoped(
                 groupId,
                 currency
             )
@@ -129,7 +131,7 @@ class CashWithdrawalRepositoryImpl(
 
         PayerType.SUBUNIT -> {
             val subunitPool = if (!payerId.isNullOrBlank()) {
-                localCashWithdrawalDataSource.getAvailableWithdrawalsSubunitScoped(
+                localQueryDataSource.getAvailableWithdrawalsSubunitScoped(
                     groupId,
                     currency,
                     payerId
@@ -137,7 +139,7 @@ class CashWithdrawalRepositoryImpl(
             } else {
                 emptyList()
             }
-            val groupFallback = localCashWithdrawalDataSource.getAvailableWithdrawalsGroupScoped(
+            val groupFallback = localQueryDataSource.getAvailableWithdrawalsGroupScoped(
                 groupId,
                 currency
             )
@@ -152,11 +154,11 @@ class CashWithdrawalRepositoryImpl(
         scopeOwnerId: String?
     ): List<CashWithdrawal> = when (scope) {
         PayerType.GROUP ->
-            localCashWithdrawalDataSource.getAvailableWithdrawalsGroupScoped(groupId, currency)
+            localQueryDataSource.getAvailableWithdrawalsGroupScoped(groupId, currency)
 
         PayerType.USER ->
             if (!scopeOwnerId.isNullOrBlank()) {
-                localCashWithdrawalDataSource.getAvailableWithdrawalsUserScoped(
+                localQueryDataSource.getAvailableWithdrawalsUserScoped(
                     groupId,
                     currency,
                     scopeOwnerId
@@ -167,7 +169,7 @@ class CashWithdrawalRepositoryImpl(
 
         PayerType.SUBUNIT ->
             if (!scopeOwnerId.isNullOrBlank()) {
-                localCashWithdrawalDataSource.getAvailableWithdrawalsSubunitScoped(
+                localQueryDataSource.getAvailableWithdrawalsSubunitScoped(
                     groupId,
                     currency,
                     scopeOwnerId
@@ -178,12 +180,12 @@ class CashWithdrawalRepositoryImpl(
     }
 
     override suspend fun updateRemainingAmount(withdrawalId: String, newRemaining: Long) {
-        localCashWithdrawalDataSource.updateRemainingAmount(withdrawalId, newRemaining)
+        localWriteDataSource.updateRemainingAmount(withdrawalId, newRemaining)
 
         // Sync updated withdrawal to cloud in background
         syncScope.launch {
             try {
-                val withdrawal = localCashWithdrawalDataSource.getWithdrawalById(withdrawalId)
+                val withdrawal = localQueryDataSource.getWithdrawalById(withdrawalId)
                 if (withdrawal != null) {
                     cloudCashWithdrawalDataSource.updateWithdrawal(
                         withdrawal.groupId,
@@ -203,7 +205,7 @@ class CashWithdrawalRepositoryImpl(
     ) {
         // Batch all local DB updates in a single transaction
         val updates = withdrawals.map { it.id to it.remainingAmount }
-        localCashWithdrawalDataSource.updateRemainingAmounts(updates)
+        localWriteDataSource.updateRemainingAmounts(updates)
 
         // Sync all updated withdrawals to the cloud in a single background job — no extra
         // local reads needed since the full CashWithdrawal objects are already available.
@@ -224,7 +226,7 @@ class CashWithdrawalRepositoryImpl(
     }
 
     override suspend fun refundTranche(withdrawalId: String, amountToRefund: Long) {
-        val withdrawal = localCashWithdrawalDataSource.getWithdrawalById(withdrawalId)
+        val withdrawal = localQueryDataSource.getWithdrawalById(withdrawalId)
         if (withdrawal != null) {
             val newRemaining = withdrawal.remainingAmount + amountToRefund
             updateRemainingAmount(withdrawalId, newRemaining)
@@ -239,7 +241,7 @@ class CashWithdrawalRepositoryImpl(
     }
 
     override suspend fun deleteWithdrawal(groupId: String, withdrawalId: String) {
-        localCashWithdrawalDataSource.deleteWithdrawal(withdrawalId)
+        localWriteDataSource.deleteWithdrawal(withdrawalId)
 
         syncDeletionToCloud(
             scope = syncScope,

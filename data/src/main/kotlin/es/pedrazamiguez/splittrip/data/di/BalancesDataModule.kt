@@ -4,7 +4,8 @@ import es.pedrazamiguez.splittrip.data.repository.impl.CashWithdrawalRepositoryI
 import es.pedrazamiguez.splittrip.data.repository.impl.ContributionRepositoryImpl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
-import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
@@ -24,7 +25,8 @@ val balancesDataModule = module {
     single<CashWithdrawalRepository> {
         CashWithdrawalRepositoryImpl(
             cloudCashWithdrawalDataSource = get<CloudCashWithdrawalDataSource>(),
-            localCashWithdrawalDataSource = get<LocalCashWithdrawalDataSource>(),
+            localQueryDataSource = get<LocalCashWithdrawalQueryDataSource>(),
+            localWriteDataSource = get<LocalCashWithdrawalWriteDataSource>(),
             authenticationService = get<AuthenticationService>(),
             ioDispatcher = Dispatchers.IO
         )
