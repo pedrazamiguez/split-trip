@@ -106,10 +106,11 @@ data class AddExpenseUiState(
      */
     val selectedWithdrawalPool: WithdrawalPoolOptionUiModel? = null,
     /**
-     * True when a personal (USER/SUBUNIT) cash pool is selected and the current split includes
-     * members outside that pool's natural scope.
+     * Non-null when a personal (USER/SUBUNIT) cash pool is selected and the current split includes
+     * members outside that pool's natural scope. Contains the warning message to display.
+     * Null when no warning should be shown.
      */
-    val isPersonalCashSplitWarning: Boolean = false,
+    val personalCashSplitWarning: UiText? = null,
     /**
      * True when the exchange rate was served from an expired local cache
      * (the remote API was unreachable). Drives a warning banner in the

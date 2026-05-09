@@ -20,7 +20,7 @@ YELLOW := \033[1;33m
 CYAN   := \033[0;36m
 NC     := \033[0m
 
-.PHONY: help setup hooks local-props doctor check test konsist coverage build clean
+.PHONY: help setup hooks local-props doctor check ktlint test konsist coverage build clean
 
 # ─── Default: show help ───────────────────────────────────────────────────────
 help: ## Show this help message
@@ -119,11 +119,17 @@ doctor: ## Check that required files and tools are present
 	@echo ""
 
 # ─── Quality gates (mirrors CI) ───────────────────────────────────────────────
-check: konsist test coverage build ## Run all local quality gates before pushing (mirrors CI)
+check: ktlint konsist test coverage build ## Run all local quality gates before pushing (mirrors CI)
 
 test: ## Run all unit tests (no coverage report)
 	@printf "$(YELLOW)⏳  Running unit tests...$(NC)\n"
 	@$(GRADLEW) test --continue
+
+ktlint: ## Run ktlint format + check (auto-fixes what it can, fails on unfixable issues)
+	@printf "$(YELLOW)⏳  Running ktlint format...$(NC)\n"
+	@$(GRADLEW) ktlintFormat --continue || true
+	@printf "$(YELLOW)⏳  Running ktlint check...$(NC)\n"
+	@$(GRADLEW) ktlintCheck
 
 konsist: ## Run Konsist architecture tests (file-size limit, naming, dependency rules)
 	@printf "$(YELLOW)⏳  Running Konsist architecture tests...$(NC)\n"

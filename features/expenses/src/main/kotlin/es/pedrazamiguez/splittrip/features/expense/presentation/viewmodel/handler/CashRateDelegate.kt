@@ -105,9 +105,12 @@ class CashRateDelegate(
         } catch (_: IllegalArgumentException) {
             PayerType.GROUP
         }
+        // Mirrors CurrencyEventHandler.currentPayerId():
+        // - USER/GROUP: pass currentUserId so the use case can probe personal supplements.
+        // - SUBUNIT: pass selectedContributionSubunitId so the use case can resolve the subunit pool.
         val payerId = when (payerType) {
-            PayerType.USER -> state.currentUserId
-            PayerType.GROUP, PayerType.SUBUNIT -> null
+            PayerType.USER, PayerType.GROUP -> state.currentUserId
+            PayerType.SUBUNIT -> state.selectedContributionSubunitId
         }
 
         val selectedPool = state.selectedWithdrawalPool

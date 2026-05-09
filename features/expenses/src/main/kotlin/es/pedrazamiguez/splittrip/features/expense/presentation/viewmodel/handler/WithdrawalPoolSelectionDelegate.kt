@@ -59,8 +59,9 @@ class WithdrawalPoolSelectionDelegate(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
         onPoolResolved: () -> Unit
     ) {
-        val subunitNameLookup = stateFlow.value.contributionSubunitOptions
-            .associate { it.id to it.name }
+        val subunitOptions = stateFlow.value.contributionSubunitOptions
+        val subunitNameLookup = subunitOptions.associate { it.id to it.name }
+        val subunitIds = subunitOptions.map { it.id }
 
         scope.launch {
             try {
@@ -68,7 +69,8 @@ class WithdrawalPoolSelectionDelegate(
                     groupId = groupId,
                     currency = currency,
                     payerType = payerType,
-                    payerId = payerId
+                    payerId = payerId,
+                    subunitIds = subunitIds
                 )
 
                 val uiPools = addExpenseOptionsMapper.mapWithdrawalPoolOptions(

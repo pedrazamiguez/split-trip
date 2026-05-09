@@ -141,6 +141,48 @@ class SubunitSplitEventHandler(
 
     // ── Mode Toggle ─────────────────────────────────────────────────────
 
+    /**
+     * Disables subunit mode (idempotent). Called when the user selects a USER- or GROUP-scoped
+     * withdrawal pool so the split step reverts to flat mode, consistent with the pool scope.
+     *
+     * Entity exclusions are intentionally left untouched — if the user manually re-enables
+     * subunit mode later they can adjust from a clean slate via [handleSubunitModeToggled].
+     */
+    fun disableSubunitMode() {
+        if (!_uiState.value.isSubunitMode) return
+        _uiState.update { it.copy(isSubunitMode = false, splitError = null) }
+    }
+
+    /**
+     * Applies a smart default when a SUBUNIT-scoped cash pool is selected:
+     * - Enables subunit mode so the Split step shows entity-level rows.
+     * - Excludes all entity rows except the one whose [SplitUiModel.userId] matches [poolSubunitId].
+     * - Clears all share locks so redistribution starts fresh.
+     * - Recalculates entity splits to reflect the single-subunit active set.
+     *
+     * No-op when [poolSubunitId] is null or the group has no entity splits (subunit-less groups
+     * where [SubunitSplitEventHandler.initEntitySplits] was never called).
+     */
+    fun applySubunitPoolDefault(poolSubunitId: String?) {
+        if (poolSubunitId == null || _uiState.value.entitySplits.isEmpty()) return
+
+        val updatedSplits = _uiState.value.entitySplits.map { entity ->
+            entity.copy(
+                isExcluded = entity.userId != poolSubunitId,
+                isShareLocked = false
+            )
+        }.toImmutableList()
+
+        _uiState.update {
+            it.copy(
+                isSubunitMode = true,
+                entitySplits = updatedSplits,
+                splitError = null
+            )
+        }
+        recalculateEntitySplits()
+    }
+
     fun handleSubunitModeToggled() {
         val newMode = !_uiState.value.isSubunitMode
         _uiState.update { it.copy(isSubunitMode = newMode, splitError = null) }

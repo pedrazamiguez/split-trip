@@ -1,13 +1,16 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.WithdrawalPoolOptionUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import io.mockk.every
@@ -19,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -133,7 +137,7 @@ class SplitEventHandlerTest {
         @Test
         fun `clears split error when changing type`() = runTest {
             uiState.value = baseState.copy(
-                splitError = es.pedrazamiguez.splittrip.core.common.presentation.UiText.DynamicString("error")
+                splitError = UiText.DynamicString("error")
             )
             handler.bind(uiState, actions, this)
 
@@ -530,6 +534,395 @@ class SplitEventHandlerTest {
             val user1 = uiState.value.splits.first { it.userId == "user-1" }
             assertEquals("50.00", user1.percentageInput)
             assertEquals(5000L, user1.amountCents)
+        }
+    }
+
+    // ── applyPersonalPoolSplitDefault ────────────────────────────────────
+
+    @Nested
+    inner class ApplyPersonalPoolSplitDefault {
+
+        private fun makeSplitWithSubunit(
+            userId: String,
+            subunitId: String? = null,
+            isExcluded: Boolean = false,
+            isEntityRow: Boolean = false
+        ) = SplitUiModel(
+            userId = userId,
+            displayName = userId,
+            subunitId = subunitId,
+            isExcluded = isExcluded,
+            isEntityRow = isEntityRow
+        )
+
+        @Test
+        fun `USER pool excludes all members except the pool owner (poolOwnerId)`() = runTest {
+            uiState.value = baseState.copy(
+                splits = persistentListOf(
+                    makeSplitWithSubunit("user-1"),
+                    makeSplitWithSubunit("user-2"),
+                    makeSplitWithSubunit("user-3")
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applyPersonalPoolSplitDefault(
+                poolScope = PayerType.USER,
+                poolOwnerId = "user-1",
+                currentUserId = "user-1"
+            )
+
+            val splits = uiState.value.splits
+            assertFalse(splits.first { it.userId == "user-1" }.isExcluded)
+            assertTrue(splits.first { it.userId == "user-2" }.isExcluded)
+            assertTrue(splits.first { it.userId == "user-3" }.isExcluded)
+        }
+
+        @Test
+        fun `USER pool pre-fill resets personalCashSplitWarning to null`() = runTest {
+            uiState.value = baseState.copy(
+                personalCashSplitWarning = UiText.DynamicString("active"),
+                splits = persistentListOf(
+                    makeSplitWithSubunit("user-1"),
+                    makeSplitWithSubunit("user-2"),
+                    makeSplitWithSubunit("user-3")
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applyPersonalPoolSplitDefault(
+                poolScope = PayerType.USER,
+                poolOwnerId = "user-1",
+                currentUserId = "user-1"
+            )
+
+            // After pre-fill the split matches the pool scope — warning must be null
+            assertNull(uiState.value.personalCashSplitWarning)
+        }
+
+        @Test
+        fun `USER pool falls back to currentUserId when poolOwnerId is null`() = runTest {
+            uiState.value = baseState.copy(
+                splits = persistentListOf(
+                    makeSplitWithSubunit("user-1"),
+                    makeSplitWithSubunit("user-2"),
+                    makeSplitWithSubunit("user-3")
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applyPersonalPoolSplitDefault(
+                poolScope = PayerType.USER,
+                poolOwnerId = null,
+                currentUserId = "user-2"
+            )
+
+            val splits = uiState.value.splits
+            assertTrue(splits.first { it.userId == "user-1" }.isExcluded)
+            assertFalse(splits.first { it.userId == "user-2" }.isExcluded)
+            assertTrue(splits.first { it.userId == "user-3" }.isExcluded)
+        }
+
+        @Test
+        fun `SUBUNIT pool excludes all members whose subunitId differs from poolOwnerId`() = runTest {
+            uiState.value = baseState.copy(
+                splits = persistentListOf(
+                    makeSplitWithSubunit("user-1", subunitId = "subunit-A"),
+                    makeSplitWithSubunit("user-2", subunitId = "subunit-A"),
+                    makeSplitWithSubunit("user-3", subunitId = "subunit-B")
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applyPersonalPoolSplitDefault(
+                poolScope = PayerType.SUBUNIT,
+                poolOwnerId = "subunit-A",
+                currentUserId = "user-1"
+            )
+
+            val splits = uiState.value.splits
+            assertFalse(splits.first { it.userId == "user-1" }.isExcluded)
+            assertFalse(splits.first { it.userId == "user-2" }.isExcluded)
+            assertTrue(splits.first { it.userId == "user-3" }.isExcluded)
+        }
+
+        @Test
+        fun `GROUP pool resets all exclusions so the whole group participates and clears any warning`() = runTest {
+            uiState.value = baseState.copy(
+                personalCashSplitWarning = UiText.DynamicString("active"),
+                splits = persistentListOf(
+                    // user-1 was excluded by a prior USER pool pre-fill
+                    makeSplitWithSubunit("user-1", isExcluded = true),
+                    makeSplitWithSubunit("user-2"),
+                    makeSplitWithSubunit("user-3")
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applyPersonalPoolSplitDefault(
+                poolScope = PayerType.GROUP,
+                poolOwnerId = null,
+                currentUserId = "user-1"
+            )
+
+            // GROUP = shared expense: every member must be included after pool switch
+            uiState.value.splits.forEach { split ->
+                assertFalse(split.isExcluded, "Expected ${split.userId} to be included for GROUP pool")
+            }
+            // Warning must have been cleared
+            assertNull(uiState.value.personalCashSplitWarning)
+        }
+
+        @Test
+        fun `switching from USER pool to GROUP pool restores all members`() = runTest {
+            // After USER pool pre-fill: only user-1 included
+            uiState.value = baseState.copy(
+                splits = persistentListOf(
+                    makeSplitWithSubunit("user-1", isExcluded = false),
+                    makeSplitWithSubunit("user-2", isExcluded = true),
+                    makeSplitWithSubunit("user-3", isExcluded = true)
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applyPersonalPoolSplitDefault(
+                poolScope = PayerType.GROUP,
+                poolOwnerId = null,
+                currentUserId = "user-1"
+            )
+
+            uiState.value.splits.forEach { split ->
+                assertFalse(split.isExcluded, "Expected ${split.userId} to be included after GROUP pool switch")
+            }
+        }
+
+        @Test
+        fun `GROUP pool pre-fill also clears share locks`() = runTest {
+            uiState.value = baseState.copy(
+                splits = persistentListOf(
+                    makeSplitWithSubunit("user-1", isExcluded = false),
+                    makeSplitWithSubunit("user-2", isExcluded = true),
+                    makeSplitWithSubunit("user-3", isExcluded = true)
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applyPersonalPoolSplitDefault(
+                poolScope = PayerType.GROUP,
+                poolOwnerId = null,
+                currentUserId = "user-1"
+            )
+
+            uiState.value.splits.forEach { split ->
+                assertFalse(split.isShareLocked, "Lock should be cleared for ${split.userId}")
+            }
+        }
+
+        @Test
+        fun `USER pool pre-fill skips entity rows`() = runTest {
+            uiState.value = baseState.copy(
+                splits = persistentListOf(
+                    makeSplitWithSubunit("subunit-A", isEntityRow = true),
+                    makeSplitWithSubunit("user-1"),
+                    makeSplitWithSubunit("user-2")
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applyPersonalPoolSplitDefault(
+                poolScope = PayerType.USER,
+                poolOwnerId = "user-1",
+                currentUserId = "user-1"
+            )
+
+            // Entity row must not have been touched
+            assertFalse(uiState.value.splits.first { it.isEntityRow }.isExcluded)
+        }
+
+        @Test
+        fun `warning appears when USER pool is active and out-of-scope member is un-excluded`() = runTest {
+            val userPool = WithdrawalPoolOptionUiModel(
+                scope = PayerType.USER,
+                ownerId = "user-1",
+                displayLabel = "My cash"
+            )
+            // Pre-fill: only user-1 included
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = userPool,
+                splits = persistentListOf(
+                    makeSplitWithSubunit("user-1", isExcluded = false),
+                    makeSplitWithSubunit("user-2", isExcluded = true),
+                    makeSplitWithSubunit("user-3", isExcluded = true)
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            // user-2 is un-excluded → now outside the pool scope
+            handler.handleSplitExcludedToggled("user-2")
+
+            assertNotNull(uiState.value.personalCashSplitWarning)
+        }
+
+        @Test
+        fun `warning disappears when out-of-scope member is re-excluded`() = runTest {
+            val userPool = WithdrawalPoolOptionUiModel(
+                scope = PayerType.USER,
+                ownerId = "user-1",
+                displayLabel = "My cash"
+            )
+            // user-2 is already included (out of scope) — warning is active
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = userPool,
+                personalCashSplitWarning = es.pedrazamiguez.splittrip.core.common.presentation.UiText.DynamicString(
+                    "active"
+                ),
+                splits = persistentListOf(
+                    makeSplitWithSubunit("user-1", isExcluded = false),
+                    makeSplitWithSubunit("user-2", isExcluded = false),
+                    makeSplitWithSubunit("user-3", isExcluded = true)
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            // user-2 is re-excluded → split returns to pool-compatible state
+            handler.handleSplitExcludedToggled("user-2")
+
+            assertNull(uiState.value.personalCashSplitWarning)
+        }
+    }
+
+    @Nested
+    inner class RecomputePersonalCashWarningSubunitMode {
+
+        private val subunitPool = WithdrawalPoolOptionUiModel(
+            scope = PayerType.SUBUNIT,
+            ownerId = "subunit-caris",
+            displayLabel = "Caris cash"
+        )
+
+        private fun makeEntityRow(
+            userId: String,
+            isExcluded: Boolean = false
+        ) = SplitUiModel(
+            userId = userId,
+            displayName = userId,
+            isEntityRow = true,
+            isExcluded = isExcluded
+        )
+
+        private fun makeFlatSplitWithSubunit(
+            userId: String,
+            subunitId: String? = null,
+            isExcluded: Boolean = false
+        ) = SplitUiModel(
+            userId = userId,
+            displayName = userId,
+            subunitId = subunitId,
+            isExcluded = isExcluded
+        )
+
+        @Test
+        fun `no warning when only the pool subunit is included`() = runTest {
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = subunitPool,
+                isSubunitMode = true,
+                entitySplits = persistentListOf(
+                    makeEntityRow("subunit-caris", isExcluded = false),
+                    makeEntityRow("subunit-cunis", isExcluded = true),
+                    makeEntityRow("solo-user", isExcluded = true)
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.recomputePersonalCashWarning()
+
+            assertNull(uiState.value.personalCashSplitWarning)
+        }
+
+        @Test
+        fun `warning appears when out-of-pool entity is included in subunit mode`() = runTest {
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = subunitPool,
+                isSubunitMode = true,
+                entitySplits = persistentListOf(
+                    makeEntityRow("subunit-caris", isExcluded = false),
+                    makeEntityRow("subunit-cunis", isExcluded = false), // <-- out-of-pool, enabled
+                    makeEntityRow("solo-user", isExcluded = true)
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.recomputePersonalCashWarning()
+
+            assertNotNull(uiState.value.personalCashSplitWarning)
+        }
+
+        @Test
+        fun `warning appears when solo user entity is included in subunit mode`() = runTest {
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = subunitPool,
+                isSubunitMode = true,
+                entitySplits = persistentListOf(
+                    makeEntityRow("subunit-caris", isExcluded = false),
+                    makeEntityRow("subunit-cunis", isExcluded = true),
+                    makeEntityRow("solo-user", isExcluded = false) // <-- solo outside pool
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.recomputePersonalCashWarning()
+
+            assertNotNull(uiState.value.personalCashSplitWarning)
+        }
+
+        @Test
+        fun `warning clears when out-of-pool entity is re-excluded in subunit mode`() = runTest {
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = subunitPool,
+                isSubunitMode = true,
+                personalCashSplitWarning = es.pedrazamiguez.splittrip.core.common.presentation.UiText.DynamicString(
+                    "active"
+                ),
+                entitySplits = persistentListOf(
+                    makeEntityRow("subunit-caris", isExcluded = false),
+                    makeEntityRow("subunit-cunis", isExcluded = false)
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            // Simulate manual entity toggle: re-exclude the out-of-pool entity first
+            uiState.value = uiState.value.copy(
+                entitySplits = persistentListOf(
+                    makeEntityRow("subunit-caris", isExcluded = false),
+                    makeEntityRow("subunit-cunis", isExcluded = true) // re-excluded
+                )
+            )
+            handler.recomputePersonalCashWarning()
+
+            assertNull(uiState.value.personalCashSplitWarning)
+        }
+
+        @Test
+        fun `no warning when in flat mode even if other entities would trigger subunit warning`() = runTest {
+            // Flat mode — entity splits are irrelevant; flat splits all belong to subunit-caris members
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = subunitPool,
+                isSubunitMode = false,
+                entitySplits = persistentListOf(
+                    makeEntityRow("subunit-caris", isExcluded = false),
+                    makeEntityRow("subunit-cunis", isExcluded = false) // would warn in subunit mode
+                ),
+                splits = persistentListOf(
+                    makeFlatSplitWithSubunit("user-1", subunitId = "subunit-caris"),
+                    makeFlatSplitWithSubunit("user-2", subunitId = "subunit-caris")
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.recomputePersonalCashWarning()
+
+            // entity splits are ignored in flat mode; flat splits are pool-compatible
+            assertNull(uiState.value.personalCashSplitWarning)
         }
     }
 }
