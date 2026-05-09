@@ -1,10 +1,13 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import java.math.BigDecimal
@@ -57,6 +60,7 @@ class SplitEventHandler(
             )
         }
         recalculateSplits()
+        recomputePersonalCashWarning()
     }
 
     fun handleSplitExcludedToggled(userId: String) {
@@ -72,6 +76,7 @@ class SplitEventHandler(
         val clearedSplits = updatedSplits.map { it.copy(isShareLocked = false) }.toImmutableList()
         _uiState.update { it.copy(splits = clearedSplits, splitError = null) }
         recalculateSplits()
+        recomputePersonalCashWarning()
     }
 
     fun handleShareLockToggled(userId: String) {
@@ -181,6 +186,130 @@ class SplitEventHandler(
         )
 
         _uiState.update { it.copy(splits = updatedSplits, splitError = null) }
+    }
+
+    // ── Pool-aware smart defaults ──────────────────────────────────────
+
+    /**
+     * Applies a smart split default based on the selected withdrawal pool scope.
+     *
+     * - USER pool  → exclude everyone except the pool owner (identified by [poolOwnerId],
+     *   falling back to [currentUserId] when ownerId is null).
+     * - SUBUNIT pool → exclude all members whose [SplitUiModel.subunitId] ≠ [poolOwnerId].
+     * - GROUP pool → clears all member exclusions and share locks so every member participates
+     *   in the shared group expense, then recalculates splits. This handles the case where the
+     *   user previously selected a USER/SUBUNIT pool (which excluded non-pool members) and then
+     *   switched back to GROUP cash — without the reset those exclusions would silently persist.
+     *
+     * In all cases, resets [AddExpenseUiState.personalCashSplitWarning] to null immediately after
+     * pre-fill, because the freshly applied exclusions are always pool-scope–compatible.
+     */
+    fun applyPersonalPoolSplitDefault(
+        poolScope: PayerType,
+        poolOwnerId: String?,
+        currentUserId: String?
+    ) {
+        when (poolScope) {
+            PayerType.USER -> {
+                val ownerId = poolOwnerId ?: currentUserId
+                val updatedSplits = _uiState.value.splits.map { split ->
+                    if (split.isEntityRow) {
+                        split
+                    } else {
+                        split.copy(isExcluded = split.userId != ownerId, isShareLocked = false)
+                    }
+                }.toImmutableList()
+                _uiState.update { it.copy(splits = updatedSplits, personalCashSplitWarning = null) }
+                recalculateSplits()
+            }
+
+            PayerType.SUBUNIT -> {
+                val updatedSplits = _uiState.value.splits.map { split ->
+                    if (split.isEntityRow) {
+                        split
+                    } else {
+                        split.copy(isExcluded = split.subunitId != poolOwnerId, isShareLocked = false)
+                    }
+                }.toImmutableList()
+                _uiState.update { it.copy(splits = updatedSplits, personalCashSplitWarning = null) }
+                recalculateSplits()
+            }
+
+            PayerType.GROUP -> {
+                // GROUP pool funds a shared expense — every member should participate.
+                // Clearing exclusions here handles the case where the user first selected a
+                // USER/SUBUNIT pool (which excluded non-pool members) and then switched back
+                // to GROUP cash; without the reset those exclusions would silently persist.
+                val updatedSplits = _uiState.value.splits.map { split ->
+                    if (split.isEntityRow) {
+                        split
+                    } else {
+                        split.copy(isExcluded = false, isShareLocked = false)
+                    }
+                }.toImmutableList()
+                _uiState.update { it.copy(splits = updatedSplits, personalCashSplitWarning = null) }
+                recalculateSplits()
+            }
+        }
+    }
+
+    /**
+     * Recomputes [AddExpenseUiState.personalCashSplitWarning].
+     *
+     * Non-null when a USER- or SUBUNIT-scoped pool is selected AND at least one included member
+     * (flat mode) or entity (subunit mode) falls outside the pool's natural scope —
+     * i.e., the user is spending personal/subunit cash for someone else.
+     *
+     * - **USER pool / flat mode:** any included `split` whose `userId` ≠ pool owner.
+     * - **SUBUNIT pool / flat mode:** any included `split` whose `subunitId` ≠ pool subunit.
+     * - **SUBUNIT pool / subunit mode:** any included *entity* whose `userId` ≠ pool subunit ID.
+     * - **GROUP pool or no pool:** never warn.
+     *
+     * `internal` so [AddExpenseViewModel] can call it after entity-level exclusion toggles
+     * (which are handled by [SubunitSplitEventHandler], not this handler).
+     */
+    internal fun recomputePersonalCashWarning() {
+        val state = _uiState.value
+        val pool = state.selectedWithdrawalPool
+        val warning: UiText? = when (pool?.scope) {
+            PayerType.USER -> {
+                val hasOutsideMembers = state.splits.any { split ->
+                    !split.isExcluded && !split.isEntityRow && split.userId != pool.ownerId
+                }
+                if (hasOutsideMembers) {
+                    UiText.StringResource(R.string.add_expense_personal_cash_split_warning)
+                } else {
+                    null
+                }
+            }
+
+            PayerType.SUBUNIT -> {
+                val hasOutsideEntities = if (state.isSubunitMode) {
+                    // In subunit mode the user sees entity rows. Warn if any entity outside the
+                    // pool's subunit is included (regardless of whether it's a subunit or solo user).
+                    state.entitySplits.any { entity ->
+                        !entity.isExcluded && entity.userId != pool.ownerId
+                    }
+                } else {
+                    // Flat mode: check per-member subunit membership.
+                    state.splits.any { split ->
+                        !split.isExcluded && !split.isEntityRow && split.subunitId != pool.ownerId
+                    }
+                }
+                if (hasOutsideEntities) {
+                    UiText.StringResource(
+                        R.string.add_expense_subunit_cash_split_warning,
+                        pool.displayLabel
+                    )
+                } else {
+                    null
+                }
+            }
+
+            // GROUP pool or no pool — never warn.
+            else -> null
+        }
+        _uiState.update { it.copy(personalCashSplitWarning = warning) }
     }
 
     // ── Private helpers ──────────────────────────────────────────────────

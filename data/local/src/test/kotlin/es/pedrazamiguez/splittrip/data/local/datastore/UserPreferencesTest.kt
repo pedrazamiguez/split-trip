@@ -35,9 +35,10 @@ class UserPreferencesTest {
     }
 
     @Before
-    fun setUp() {
+    fun setUp() = runTest {
         context = ApplicationProvider.getApplicationContext()
         authenticationService = mockk()
+        context.dataStore.edit { it.clear() }
     }
 
     @After

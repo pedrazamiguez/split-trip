@@ -35,4 +35,33 @@ interface CloudExpenseDataSource {
      * @throws Exception if the server is unreachable (e.g., airplane mode).
      */
     suspend fun verifyExpenseOnServer(groupId: String, expenseId: String): Boolean
+
+    /**
+     * Saves a cash-funded expense using an optimistic-locking Firestore transaction.
+     *
+     * The transaction atomically:
+     * 1. Reads the current `remainingAmount` for each consumed withdrawal.
+     * 2. Verifies each value against [expectedRemainingAmounts] (the amounts observed by the
+     *    client before FIFO consumption).
+     * 3. Writes the expense document.
+     * 4. Updates each consumed withdrawal's `remainingAmount` to `expected − consumed`.
+     *
+     * If any withdrawal's server-side `remainingAmount` differs from the expected value,
+     * the transaction is aborted and [es.pedrazamiguez.splittrip.domain.exception.CashConflictException]
+     * is thrown, indicating a concurrent write by another group member.
+     *
+     * @param groupId The group the expense belongs to.
+     * @param expense The expense to persist. Must have [Expense.cashTranches] populated so
+     *   the transaction knows how much to deduct from each withdrawal.
+     * @param expectedRemainingAmounts Map of withdrawal ID → `remainingAmount` observed by
+     *   the client before FIFO consumption began.
+     * @throws es.pedrazamiguez.splittrip.domain.exception.CashConflictException if a concurrent
+     *   write has modified any consumed withdrawal.
+     * @throws Exception if the server is unreachable (offline, network error, etc.).
+     */
+    suspend fun addExpenseWithCashPreconditions(
+        groupId: String,
+        expense: Expense,
+        expectedRemainingAmounts: Map<String, Long>
+    )
 }

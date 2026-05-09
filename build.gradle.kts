@@ -199,6 +199,7 @@ sonarqube {
                 // "define a constant instead of duplicating this literal" code smells
                 // (table names / index names repeat across migrations by design).
                 "**/database/DatabaseMigrations.kt",
+                "**/database/migration/**/*.kt",
                 // Auto-generated Tabler icon ImageVector constants: no business logic,
                 // inherently duplicated template, long SVG path data strings.
                 "**/designsystem/icon/**/*.kt",

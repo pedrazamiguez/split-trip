@@ -13,6 +13,12 @@
     <string name="expense_error_title_empty">Hey! What was this expense for?</string>
     <string name="expense_error_insufficient_cash">Not enough cash\nYou need %1$s but only %2$s available</string>
     <string name="expense_error_cash_conflict">Someone else just used this cash. The available amount has changed — please review and retry.</string>
+
+    <!-- Cash conflict resolution sheet (Phase 3) -->
+    <string name="add_expense_cash_conflict_resolution_title">Cash amount changed</string>
+    <string name="add_expense_cash_conflict_use_remaining">Use remaining cash (%1$s)</string>
+    <string name="add_expense_cash_conflict_switch_payment">Switch payment method</string>
+    <string name="add_expense_cash_conflict_dismiss">Dismiss and review</string>
     <string name="expense_error_addition_failed">Oops! Couldn\'t save the expense. Try again</string>
     <string name="expense_error_load_group_config">Couldn\'t load group info</string>
     <string name="expense_error_config_retry_hint">Check your connection and try again</string>
@@ -243,4 +249,10 @@
     <string name="add_expense_cash_pool_group">Group cash</string>
     <string name="add_expense_cash_pool_subunit">%1$s cash</string>
     <string name="add_expense_cash_pool_subunit_generic">Subunit cash</string>
+
+    <!-- Personal cash split warning — shown in Split step when a USER/SUBUNIT-scoped pool is
+         selected but the split includes members outside the pool's natural scope -->
+    <string name="add_expense_personal_cash_split_warning">You\'re spending from your personal cash — make sure it\'s intentional to share this with others.</string>
+    <!-- Subunit cash split warning — %1$s is the subunit pool display label (e.g. "Caris cash") -->
+    <string name="add_expense_subunit_cash_split_warning">You\'re spending from %1$s — make sure it\'s intentional to share this with others.</string>
 </resources>

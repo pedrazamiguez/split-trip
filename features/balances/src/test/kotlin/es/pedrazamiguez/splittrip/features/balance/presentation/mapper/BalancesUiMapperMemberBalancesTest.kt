@@ -2,13 +2,18 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.R
 import io.mockk.every
 import io.mockk.mockk
+import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -36,6 +41,13 @@ class BalancesUiMapperMemberBalancesTest {
         every { resourceProvider.getString(R.string.balances_contribution_scope_group) } returns "Group"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_personal) } returns "Personal"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_group) } returns "Group"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_group_scope) } returns
+            "Group cash (est. share)"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_personal_scope) } returns "Personal cash"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_atm_fallback, any()) } returns
+            "ATM — Jan 10"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_rate, any(), any(), any()) } returns
+            "@ 0.027 THB/EUR"
         mapper = BalancesUiMapper(localeProvider, resourceProvider)
     }
 
@@ -507,6 +519,313 @@ class BalancesUiMapperMemberBalancesTest {
             assertNotNull(result.formattedAvailableBalance)
             // Available = 470000 - 5000 = 465000 → 4,650.00
             assertTrue(result.formattedAvailableBalance!!.contains("4,650.00"))
+        }
+    }
+
+    @Nested
+    @DisplayName("mapMemberBalances — cashBreakdown")
+    inner class MapCashBreakdown {
+
+        private val currency = "EUR"
+        private val currentUserId = "user-1"
+        private val groupMemberIds = listOf("user-1", "user-2")
+        private val date = LocalDateTime.of(2026, 1, 10, 9, 0)
+
+        @Test
+        fun `cashBreakdown is empty when no withdrawals provided`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 1000L)
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId
+            )
+
+            assertTrue(result[0].cashBreakdown.isEmpty())
+        }
+
+        @Test
+        fun `USER-scoped withdrawal attributed fully to withdrawing user`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.USER,
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 100000L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date,
+                title = "7-11 ATM"
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(withdrawal),
+                groupMemberIds = groupMemberIds
+            )
+
+            val breakdown = result[0].cashBreakdown
+            assertEquals(1, breakdown.size)
+            val item = breakdown[0]
+            assertEquals("7-11 ATM", item.withdrawalLabel)
+            assertFalse(item.isEstimatedShare)
+            // EUR withdrawal → no rate or equivalent shown
+            assertEquals("", item.formattedRate)
+            assertEquals("", item.formattedEquivalent)
+        }
+
+        @Test
+        fun `USER-scoped withdrawal not attributed to other user`() {
+            val balance = MemberBalance(userId = "user-2", cashInHand = 0L)
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.USER,
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 100000L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(withdrawal),
+                groupMemberIds = groupMemberIds
+            )
+
+            assertTrue(result[0].cashBreakdown.isEmpty())
+        }
+
+        @Test
+        fun `GROUP-scoped withdrawal split equally and marked as estimated share`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 50000L)
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.GROUP,
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 100000L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date,
+                title = "Airport ATM"
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(withdrawal),
+                groupMemberIds = groupMemberIds // 2 members → equal split
+            )
+
+            val breakdown = result[0].cashBreakdown
+            assertEquals(1, breakdown.size)
+            val item = breakdown[0]
+            assertTrue(item.isEstimatedShare)
+            assertEquals("Airport ATM", item.withdrawalLabel)
+        }
+
+        @Test
+        fun `foreign currency withdrawal shows rate and equivalent`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 1342L)
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.USER,
+                currency = "THB",
+                amountWithdrawn = 5000L,
+                remainingAmount = 5000L,
+                deductedBaseAmount = 1342L,
+                exchangeRate = BigDecimal("0.027"),
+                createdAt = date,
+                title = "Airport ATM"
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(withdrawal),
+                groupMemberIds = groupMemberIds,
+                groupCurrency = "EUR"
+            )
+
+            val breakdown = result[0].cashBreakdown
+            assertEquals(1, breakdown.size)
+            val item = breakdown[0]
+            assertTrue(item.formattedRate.contains("THB/EUR"))
+            assertTrue(item.formattedEquivalent.isNotBlank())
+        }
+
+        @Test
+        fun `withdrawal with zero remaining is excluded from breakdown`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 0L)
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.USER,
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 0L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(withdrawal),
+                groupMemberIds = groupMemberIds
+            )
+
+            assertTrue(result[0].cashBreakdown.isEmpty())
+        }
+
+        @Test
+        fun `cashBreakdown is suppressed when cashInHand is negative`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = -500L)
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.USER,
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 50000L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(withdrawal),
+                groupMemberIds = groupMemberIds
+            )
+
+            val item = result[0]
+            assertTrue(item.hasNegativeCashInHand)
+            assertTrue(item.cashBreakdown.isEmpty())
+        }
+
+        @Test
+        fun `blank title uses ATM-date fallback label`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.USER,
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 100000L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date,
+                title = null
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(withdrawal),
+                groupMemberIds = groupMemberIds
+            )
+
+            val label = result[0].cashBreakdown[0].withdrawalLabel
+            assertTrue(label.startsWith("ATM"))
+        }
+
+        @Test
+        fun `SUBUNIT-scoped withdrawal attributed by memberShares`() {
+            val subunit = Subunit(
+                id = "sub-1",
+                name = "Couple",
+                memberShares = mapOf("user-1" to BigDecimal("0.5"), "user-2" to BigDecimal("0.5"))
+            )
+            val balance = MemberBalance(userId = "user-1", cashInHand = 50000L)
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.SUBUNIT,
+                subunitId = "sub-1",
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 100000L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(withdrawal),
+                subunitsMap = mapOf("sub-1" to subunit),
+                groupMemberIds = groupMemberIds
+            )
+
+            val breakdown = result[0].cashBreakdown
+            assertEquals(1, breakdown.size)
+            assertFalse(breakdown[0].isEstimatedShare)
+            assertEquals("Couple", breakdown[0].scopeLabel)
+        }
+
+        @Test
+        fun `GROUP items appear before USER items in breakdown order`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 60000L)
+            val groupWithdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.GROUP,
+                currency = "EUR",
+                amountWithdrawn = 200000L,
+                remainingAmount = 200000L,
+                deductedBaseAmount = 200000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date.minusDays(1),
+                title = "Group ATM"
+            )
+            val userWithdrawal = CashWithdrawal(
+                id = "w2",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.USER,
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 100000L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date,
+                title = "Personal ATM"
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                withdrawals = listOf(userWithdrawal, groupWithdrawal), // intentionally USER first
+                groupMemberIds = groupMemberIds
+            )
+
+            val breakdown = result[0].cashBreakdown
+            assertEquals(2, breakdown.size)
+            // GROUP scope (scopeOrder=0) must appear before USER scope (scopeOrder=1)
+            assertTrue(breakdown[0].isEstimatedShare) // GROUP
+            assertFalse(breakdown[1].isEstimatedShare) // USER
         }
     }
 }

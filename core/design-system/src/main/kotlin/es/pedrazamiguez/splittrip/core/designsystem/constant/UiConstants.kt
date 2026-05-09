@@ -42,22 +42,4 @@ object UiConstants {
      * to the resolved start destination (login, onboarding, or main).
      */
     const val SPLASH_CROSSFADE_DURATION_MS = 400
-
-    /**
-     * Delay (ms) before an elevated card's shadow begins to appear after the card
-     * first enters the composition.
-     *
-     * Used by [rememberTransitionAwareElevation] to prevent the shadow from growing
-     * while the card's `animateItem()` placement spring is still mid-flight. Without
-     * this guard, the shadow visually "chases" the card as it slides into position,
-     * which looks physically incorrect. The delay keeps the shadow at `0.dp` until
-     * the card is substantially settled, then fades it in smoothly.
-     *
-     * Value chosen to cover roughly half the typical spring placement duration
-     * (`Spring.StiffnessMediumLow` ≈ 500–600 ms total, 250 ms = early settle phase).
-     *
-     * **Note:** This constant only applies to the first-appearance delay. The kill
-     * switches for active SharedTransition and dark mode are independent.
-     */
-    const val ITEM_PLACEMENT_SETTLE_MS = 250L
 }

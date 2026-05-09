@@ -129,4 +129,14 @@ sealed interface AddExpenseUiEvent {
 
     /** Jumps directly to a previously completed step by its zero-based index. */
     data class JumpToStep(val stepIndex: Int) : AddExpenseUiEvent
+
+    /**
+     * Fired from the conflict-resolution sheet when the user taps "Use remaining cash".
+     *
+     * [amount] is a pre-formatted, locale-aware decimal string (e.g. "30.00" or "30,00")
+     * already suitable for the source-amount input field. The ViewModel routes this directly
+     * to [FormEventHandler.handleSourceAmountChanged] so the full recalculation chain
+     * (FIFO preview, split recalculation, add-on totals) fires automatically.
+     */
+    data class ResolutionAmountSelected(val amount: String) : AddExpenseUiEvent
 }

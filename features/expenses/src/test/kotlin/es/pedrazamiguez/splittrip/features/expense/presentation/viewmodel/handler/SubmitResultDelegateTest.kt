@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
@@ -20,6 +21,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -135,7 +137,10 @@ class SubmitResultDelegateTest {
     inner class HandleFailure {
 
         @Test
-        fun `InsufficientCashException emits cash conflict error when preview showed available cash`() = runTest {
+        fun `InsufficientCashException emits conflict resolution when preview showed available cash`() = runTest {
+            every { formattingHelper.formatCentsValue(3000L, 2) } returns "30.00"
+            every { formattingHelper.formatCentsWithCurrency(3000L, "EUR") } returns "€30.00"
+
             // isInsufficientCash = false (default) — preview was showing available cash
             val actions = mutableListOf<AddExpenseUiAction>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -150,9 +155,9 @@ class SubmitResultDelegateTest {
             )
 
             assertEquals(1, actions.size)
-            val action = actions[0] as AddExpenseUiAction.ShowCashConflictError
-            val resource = action.message as UiText.StringResource
-            assertEquals(R.string.expense_error_cash_conflict, resource.resId)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+            assertEquals("30.00", action.availableAmountForInput)
+            assertEquals("€30.00", action.availableAmountDisplay)
         }
 
         @Test
@@ -180,6 +185,26 @@ class SubmitResultDelegateTest {
                 val resource = action.message as UiText.StringResource
                 assertEquals(R.string.expense_error_insufficient_cash, resource.resId)
             }
+
+        @Test
+        fun `CashConflictException emits conflict resolution with null amounts`() = runTest {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actionsFlow.collect { actions.add(it) }
+            }
+
+            delegate.handleFailure(
+                error = CashConflictException(),
+                uiState = uiState,
+                actionsFlow = actionsFlow,
+                currentState = uiState.value
+            )
+
+            assertEquals(1, actions.size)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+            assertNull(action.availableAmountForInput)
+            assertNull(action.availableAmountDisplay)
+        }
 
         @Test
         fun `generic exception emits generic error`() = runTest {
@@ -267,24 +292,114 @@ class SubmitResultDelegateTest {
         }
     }
 
-    // ── emitCashConflictError ────────────────────────────────────────────
+    // ── emitCashConflictResolution ────────────────────────────────────────
 
     @Nested
-    inner class EmitCashConflictError {
+    inner class EmitCashConflictResolution {
 
         @Test
-        fun `emits ShowCashConflictError with conflict string resource`() = runTest {
+        fun `emits ShowCashConflictResolution with formatted amounts when cents and currency provided`() = runTest {
+            every { formattingHelper.formatCentsValue(3000L, 2) } returns "30.00"
+            every { formattingHelper.formatCentsWithCurrency(3000L, "EUR") } returns "€30.00"
+
             val actions = mutableListOf<AddExpenseUiAction>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 actionsFlow.collect { actions.add(it) }
             }
 
-            delegate.emitCashConflictError(actionsFlow)
+            delegate.emitCashConflictResolution(
+                availableCents = 3000L,
+                actionsFlow = actionsFlow,
+                currentState = uiState.value
+            )
 
             assertEquals(1, actions.size)
-            val action = actions[0] as AddExpenseUiAction.ShowCashConflictError
-            val resource = action.message as UiText.StringResource
-            assertEquals(R.string.expense_error_cash_conflict, resource.resId)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+            assertEquals("30.00", action.availableAmountForInput)
+            assertEquals("€30.00", action.availableAmountDisplay)
+        }
+
+        @Test
+        fun `emits null amounts when availableCents is null`() = runTest {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actionsFlow.collect { actions.add(it) }
+            }
+
+            delegate.emitCashConflictResolution(
+                availableCents = null,
+                actionsFlow = actionsFlow,
+                currentState = uiState.value
+            )
+
+            assertEquals(1, actions.size)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+            assertNull(action.availableAmountForInput)
+            assertNull(action.availableAmountDisplay)
+        }
+
+        @Test
+        fun `emits null amounts when availableCents is negative`() = runTest {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actionsFlow.collect { actions.add(it) }
+            }
+
+            delegate.emitCashConflictResolution(
+                availableCents = -1L,
+                actionsFlow = actionsFlow,
+                currentState = uiState.value
+            )
+
+            assertEquals(1, actions.size)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+            assertNull(action.availableAmountForInput)
+            assertNull(action.availableAmountDisplay)
+        }
+
+        @Test
+        fun `emits null amounts when selectedCurrency is null`() = runTest {
+            val state = uiState.value.copy(selectedCurrency = null)
+            val actions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actionsFlow.collect { actions.add(it) }
+            }
+
+            delegate.emitCashConflictResolution(
+                availableCents = 3000L,
+                actionsFlow = actionsFlow,
+                currentState = state
+            )
+
+            assertEquals(1, actions.size)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+            assertNull(action.availableAmountForInput)
+            assertNull(action.availableAmountDisplay)
+        }
+
+        @Test
+        fun `formatCentsValue uses currency decimalDigits`() = runTest {
+            val yenCurrency = CurrencyUiModel(code = "JPY", displayText = "JPY (¥)", decimalDigits = 0)
+            val state = uiState.value.copy(selectedCurrency = yenCurrency)
+
+            every { formattingHelper.formatCentsValue(3000L, 0) } returns "3000"
+            every { formattingHelper.formatCentsWithCurrency(3000L, "JPY") } returns "¥3,000"
+
+            val actions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actionsFlow.collect { actions.add(it) }
+            }
+
+            delegate.emitCashConflictResolution(
+                availableCents = 3000L,
+                actionsFlow = actionsFlow,
+                currentState = state
+            )
+
+            assertEquals(1, actions.size)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+            assertEquals("3000", action.availableAmountForInput)
+            assertEquals("¥3,000", action.availableAmountDisplay)
         }
     }
 }

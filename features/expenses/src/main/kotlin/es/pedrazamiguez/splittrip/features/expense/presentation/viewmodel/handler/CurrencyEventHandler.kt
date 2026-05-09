@@ -3,20 +3,15 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
-import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -27,43 +22,34 @@ import timber.log.Timber
  * Handles currency selection and exchange rate events:
  * [CurrencySelected], [ExchangeRateChanged], [GroupAmountChanged].
  *
- * Also exposes [fetchRate] and [recalculateForward] for cross-handler calls
- * (e.g., from [ConfigEventHandler] after initial config load).
+ * Also exposes [fetchRate], [fetchCashRate], [recalculateForward], and [recalculateCashForward]
+ * for cross-handler calls (e.g., from [ConfigEventHandler] after initial config load).
+ *
+ * CASH-specific async operations (rate fetching, result mapping, debounce) are delegated
+ * to [CashRateDelegate] to stay within the 600-line production-file limit.
  */
 // Function count driven by event/action categories (CASH, non-CASH, funding source);
-// extracting further would require a Delegate sub-pattern
+// extracting further would require additional Delegate sub-patterns
 @Suppress("TooManyFunctions")
 class CurrencyEventHandler(
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
-    private val previewCashExchangeRateUseCase: PreviewCashExchangeRateUseCase,
     private val exchangeRateCalculationService: ExchangeRateCalculationService,
-    private val expenseCalculatorService: ExpenseCalculatorService,
-    private val splitPreviewService: SplitPreviewService,
     private val formattingHelper: FormattingHelper,
     private val addExpenseOptionsMapper: AddExpenseOptionsUiMapper,
-    private val withdrawalPoolSelectionDelegate: WithdrawalPoolSelectionDelegate
+    private val withdrawalPoolSelectionDelegate: WithdrawalPoolSelectionDelegate,
+    private val cashRateDelegate: CashRateDelegate
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var _actions: MutableSharedFlow<AddExpenseUiAction>
     private lateinit var scope: CoroutineScope
 
-    /** Debounce job for cash rate preview recalculations on amount changes. */
-    private var cashPreviewJob: Job? = null
-
-    /** Tracked coroutine for in-flight cash rate fetch (prevents stale/duplicate results). */
-    private var cashRateJob: Job? = null
-
-    companion object {
-        private const val CASH_PREVIEW_DEBOUNCE_MS = 300L
-
-        /**
-         * Placeholder shown in locked exchange-rate fields when no value is available
-         * (e.g. insufficient cash, no withdrawals). Keeps the OutlinedTextField label
-         * floating above the field instead of collapsing into the field body.
-         */
-        private const val EMPTY_FIELD_PLACEHOLDER = "—"
-    }
+    /**
+     * Fired after any automatic pool resolution (auto-select single pool, pre-select first of many).
+     * Set by the ViewModel during initialization via [setOnPoolResolvedCallback].
+     * Explicit user selections are handled directly in the ViewModel's [onEvent] router.
+     */
+    private var poolResolvedCallback: ((PayerType, String?) -> Unit)? = null
 
     override fun bind(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
@@ -73,6 +59,7 @@ class CurrencyEventHandler(
         _uiState = stateFlow
         _actions = actionsFlow
         this.scope = scope
+        cashRateDelegate.setup(stateFlow, scope)
     }
 
     fun handleCurrencySelected(currencyCode: String, onRecalculate: () -> Unit) {
@@ -101,7 +88,7 @@ class CurrencyEventHandler(
         if (isForeign) {
             if (isCash) {
                 // Lock immediately so the fields are non-editable from the start,
-                // before the async fetchCashRate completes.
+                // before the async pool probe + rate fetch completes.
                 _uiState.update {
                     it.copy(
                         isExchangeRateLocked = true,
@@ -111,7 +98,9 @@ class CurrencyEventHandler(
                         )
                     )
                 }
-                fetchCashRate()
+                // Clear stale pool state from the previous currency pair, then re-probe.
+                withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
+                fetchPoolsIfNeeded()
             } else {
                 fetchRate()
             }
@@ -124,8 +113,8 @@ class CurrencyEventHandler(
                     exchangeRateLockedHint = null
                 )
             }
-            // Same currency + CASH + GROUP pocket: fetch tranche preview (shown on AmountStep)
-            if (isCash && currentPayerType() == PayerType.GROUP) fetchCashRate()
+            // Same currency + CASH: probe pools and fetch tranche preview via callback.
+            if (isCash) fetchPoolsIfNeeded()
         }
         recalculateForward()
         onRecalculate()
@@ -256,7 +245,8 @@ class CurrencyEventHandler(
 
         if (isCash && isForeign) {
             if (isGroupPocket) {
-                // GROUP pocket CASH: save current rate, lock, fetch ATM preview
+                // GROUP pocket CASH: save current rate, lock fields, then probe pools.
+                // Pool discovery triggers fetchCashRate via onPoolResolved after resolution.
                 _uiState.update {
                     it.copy(
                         preCashExchangeRate = it.displayExchangeRate,
@@ -268,20 +258,21 @@ class CurrencyEventHandler(
                     )
                 }
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                fetchCashRate()
+                fetchPoolsIfNeeded()
             } else {
                 // USER/SUBUNIT cash: rate stays unlocked, user enters manually
                 // but we still fetch pool availability for pool-selector widget.
                 fetchPoolsIfNeeded()
             }
         } else if (isCash && !isForeign && isGroupPocket) {
-            // Same-currency CASH: no rate to lock, but still fetch tranche preview
+            // Same-currency CASH + GROUP pocket: no rate to lock, but probe pools and
+            // fetch tranche preview via pool-resolved callback.
             withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-            fetchCashRate()
+            fetchPoolsIfNeeded()
         } else {
             // Cancel any in-flight or debounced CASH rate jobs so a stale result
             // cannot re-lock the exchange rate after the user has switched away.
-            cancelPendingCashJobs()
+            cashRateDelegate.cancelPendingCashJobs()
             withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
 
             _uiState.update {
@@ -331,7 +322,8 @@ class CurrencyEventHandler(
 
         if (isForeign) {
             if (isGroupPocket) {
-                // Switching to GROUP: lock rate and fetch from ATM pool
+                // Switching to GROUP: lock rate if not already locked, then probe pools.
+                // Pool discovery triggers fetchCashRate via onPoolResolved after resolution.
                 if (!state.isExchangeRateLocked) {
                     _uiState.update {
                         it.copy(
@@ -345,10 +337,10 @@ class CurrencyEventHandler(
                     }
                 }
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                fetchCashRate()
+                fetchPoolsIfNeeded()
             } else {
                 // Switching to USER/SUBUNIT: cancel ATM jobs, unlock rate, restore saved rate
-                cancelPendingCashJobs()
+                cashRateDelegate.cancelPendingCashJobs()
                 val savedRate = state.preCashExchangeRate
                 _uiState.update {
                     it.copy(
@@ -369,12 +361,12 @@ class CurrencyEventHandler(
         } else {
             // Same-currency CASH: no rate lock, but tranche previews must still be kept in sync.
             if (isGroupPocket) {
-                // Switching to GROUP pocket: (re)fetch tranche preview for the current amount.
+                // Switching to GROUP pocket: probe pools and fetch tranche preview via callback.
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                fetchCashRate()
+                fetchPoolsIfNeeded()
             } else {
                 // Switching to USER/SUBUNIT pocket: clear tranche state — ATM pool is not used.
-                cancelPendingCashJobs()
+                cashRateDelegate.cancelPendingCashJobs()
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
                 _uiState.update {
                     it.copy(
@@ -387,208 +379,19 @@ class CurrencyEventHandler(
     }
 
     /**
-     * Fetches the blended ATM exchange rate preview for the current source currency and amount.
-     * Shows a weighted-average when no amount is entered yet.
-     * Cancels any previous in-flight request and applies a stale-result guard.
-     *
-     * When the user has explicitly selected a pool via the pool-selection widget,
-     * delegates to that pool's exact scope by passing [preferredWithdrawalScope] and
-     * [preferredWithdrawalOwnerId] to [PreviewCashExchangeRateUseCase]. Otherwise,
-     * uses the automatic scope-priority logic (personal pool first, GROUP fallback).
+     * Registers a callback that fires after any automatic pool resolution (auto-select single pool
+     * or pre-select first of many). The ViewModel wires this to call
+     * [SplitEventHandler.applyPersonalPoolSplitDefault] with the resolved pool's scope and ownerId.
      */
-    fun fetchCashRate() {
-        val state = _uiState.value
-        val groupId = state.loadedGroupId ?: return
-        val sourceCurrency = state.selectedCurrency?.code ?: return
-        val groupCurrency = state.groupCurrency?.code ?: return
-
-        val isSameCurrency = sourceCurrency == groupCurrency
-        val sourceDecimalDigits = state.selectedCurrency.decimalDigits
-        val targetDecimalDigits = state.groupCurrency.decimalDigits
-
-        // Parse current source amount to cents (0 if blank/invalid)
-        val sourceAmountCents = splitPreviewService.parseAmountToCents(
-            state.sourceAmount,
-            sourceDecimalDigits
-        )
-
-        // Resolve scope context from the current funding source selection
-        val payerType = currentPayerType()
-        val payerId = currentPayerId()
-
-        // If the user has explicitly selected a pool, use that pool's exact scope for the preview.
-        val selectedPool = state.selectedWithdrawalPool
-        val preferredScope = selectedPool?.scope
-        val preferredOwnerId = selectedPool?.ownerId
-
-        // Capture request context for stale-result check
-        val requestedGroupId = groupId
-        val requestedSourceCurrency = sourceCurrency
-
-        // Cancel any previous in-flight cash rate request
-        cashRateJob?.cancel()
-        cashRateJob = scope.launch {
-            _uiState.update { it.copy(isLoadingRate = true) }
-            try {
-                val result = previewCashExchangeRateUseCase(
-                    groupId = requestedGroupId,
-                    sourceCurrency = requestedSourceCurrency,
-                    sourceAmountCents = sourceAmountCents,
-                    payerType = payerType,
-                    payerId = payerId,
-                    preferredWithdrawalScope = preferredScope,
-                    preferredWithdrawalOwnerId = preferredOwnerId
-                )
-
-                _uiState.update { current ->
-                    // Stale-result check: ignore if the user changed group or currency
-                    // while the request was in-flight.
-                    if (current.loadedGroupId != requestedGroupId ||
-                        current.selectedCurrency?.code != requestedSourceCurrency
-                    ) {
-                        return@update current.copy(isLoadingRate = false)
-                    }
-
-                    mapCashRateResult(current, result, targetDecimalDigits, requestedSourceCurrency, !isSameCurrency)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to preview cash exchange rate")
-                _uiState.update { it.copy(isLoadingRate = false) }
-            }
-        }
+    fun setOnPoolResolvedCallback(callback: (PayerType, String?) -> Unit) {
+        poolResolvedCallback = callback
     }
 
-    /**
-     * Maps a [CashRatePreviewResult] into an updated [AddExpenseUiState].
-     *
-     * Extracted from [fetchCashRate] to reduce method length and complexity.
-     */
-    // Sealed when-expression maps each result variant to a state copy;
-    // length is driven by the number of fields per branch, not logic
-    @Suppress("LongMethod")
-    internal fun mapCashRateResult(
-        current: AddExpenseUiState,
-        result: CashRatePreviewResult,
-        targetDecimalDigits: Int,
-        sourceCurrencyCode: String = "",
-        updateRateFields: Boolean = true
-    ): AddExpenseUiState = when (result) {
-        is CashRatePreviewResult.Available -> {
-            val preview = result.preview
-            val tranchePreviews = if (preview.tranches.isNotEmpty() && sourceCurrencyCode.isNotBlank()) {
-                addExpenseOptionsMapper.mapCashTranchePreviews(preview.tranches, sourceCurrencyCode)
-            } else {
-                persistentListOf()
-            }
+    /** Thin wrapper — delegates to [CashRateDelegate.fetchCashRate]. */
+    fun fetchCashRate() = cashRateDelegate.fetchCashRate()
 
-            // Same-currency CASH: only update tranche preview and clear insufficient flag.
-            if (!updateRateFields) {
-                return current.copy(
-                    isLoadingRate = false,
-                    isInsufficientCash = false,
-                    cashTranchePreviews = tranchePreviews
-                )
-            }
-
-            val formattedRate = formattingHelper.formatRateForDisplay(
-                preview.displayRate.toPlainString()
-            )
-
-            if (preview.groupAmountCents > 0) {
-                // FIFO-simulated: update both rate and group amount
-                val groupAmountStr = expenseCalculatorService.centsToBigDecimalString(
-                    preview.groupAmountCents,
-                    targetDecimalDigits
-                )
-                val formattedAmount = formattingHelper.formatForDisplay(
-                    internalValue = groupAmountStr,
-                    maxDecimalPlaces = targetDecimalDigits,
-                    minDecimalPlaces = targetDecimalDigits
-                )
-                current.copy(
-                    isLoadingRate = false,
-                    displayExchangeRate = formattedRate,
-                    calculatedGroupAmount = formattedAmount,
-                    isExchangeRateLocked = true,
-                    isInsufficientCash = false,
-                    exchangeRateLockedHint = UiText.StringResource(
-                        R.string.add_expense_cash_rate_locked_hint
-                    ),
-                    cashTranchePreviews = tranchePreviews
-                )
-            } else {
-                // Weighted-average preview (no amount entered yet).
-                current.copy(
-                    isLoadingRate = false,
-                    displayExchangeRate = formattedRate,
-                    calculatedGroupAmount = "",
-                    isExchangeRateLocked = true,
-                    isInsufficientCash = false,
-                    exchangeRateLockedHint = UiText.StringResource(
-                        R.string.add_expense_cash_rate_locked_hint
-                    ),
-                    cashTranchePreviews = persistentListOf()
-                )
-            }
-        }
-
-        is CashRatePreviewResult.InsufficientCash -> {
-            current.copy(
-                isLoadingRate = false,
-                displayExchangeRate = if (updateRateFields) {
-                    EMPTY_FIELD_PLACEHOLDER
-                } else {
-                    current.displayExchangeRate
-                },
-                calculatedGroupAmount = if (updateRateFields) {
-                    EMPTY_FIELD_PLACEHOLDER
-                } else {
-                    current.calculatedGroupAmount
-                },
-                isExchangeRateLocked = updateRateFields || current.isExchangeRateLocked,
-                isInsufficientCash = true,
-                exchangeRateLockedHint = if (updateRateFields) {
-                    UiText.StringResource(R.string.add_expense_cash_insufficient_hint)
-                } else {
-                    current.exchangeRateLockedHint
-                },
-                cashTranchePreviews = persistentListOf()
-            )
-        }
-
-        is CashRatePreviewResult.NoWithdrawals -> {
-            current.copy(
-                isLoadingRate = false,
-                displayExchangeRate = if (updateRateFields) {
-                    EMPTY_FIELD_PLACEHOLDER
-                } else {
-                    current.displayExchangeRate
-                },
-                calculatedGroupAmount = if (updateRateFields) {
-                    EMPTY_FIELD_PLACEHOLDER
-                } else {
-                    current.calculatedGroupAmount
-                },
-                isExchangeRateLocked = updateRateFields,
-                isInsufficientCash = false,
-                exchangeRateLockedHint = if (updateRateFields) {
-                    UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
-                } else {
-                    current.exchangeRateLockedHint
-                },
-                cashTranchePreviews = persistentListOf()
-            )
-        }
-    }
-
-    /** Debounced CASH rate recalculation — avoids hitting Room on every keystroke. */
-    fun recalculateCashForward() {
-        cashPreviewJob?.cancel()
-        cashPreviewJob = scope.launch {
-            delay(CASH_PREVIEW_DEBOUNCE_MS)
-            fetchCashRate()
-        }
-    }
+    /** Thin wrapper — delegates to [CashRateDelegate.recalculateCashForward]. */
+    fun recalculateCashForward() = cashRateDelegate.recalculateCashForward()
 
     /**
      * Handles the user's explicit pool selection from the pool-selection widget.
@@ -597,16 +400,11 @@ class CurrencyEventHandler(
      */
     fun handleWithdrawalPoolSelected(scope: PayerType, scopeOwnerId: String?) {
         withdrawalPoolSelectionDelegate.handlePoolSelected(scope, scopeOwnerId, _uiState) {
-            fetchCashRate()
+            cashRateDelegate.fetchCashRate()
         }
     }
 
-    /**
-     * Triggers pool availability discovery for USER/SUBUNIT CASH expenses.
-     * Called after a funding-source change or currency change when the payment method is CASH
-     * and the payer type is not GROUP. GROUP expenses skip pool discovery entirely.
-     */
-    private fun fetchPoolsIfNeeded() {
+    internal fun fetchPoolsIfNeeded() {
         val state = _uiState.value
         val groupId = state.loadedGroupId ?: return
         val currency = state.selectedCurrency?.code ?: return
@@ -619,20 +417,17 @@ class CurrencyEventHandler(
             payerId = payerId,
             scope = scope,
             stateFlow = _uiState,
-            onPoolResolved = ::fetchCashRate
+            onPoolResolved = {
+                cashRateDelegate.fetchCashRate()
+                // Notify the ViewModel so it can apply the smart split default if the resolved
+                // pool is USER- or SUBUNIT-scoped. Reading pool from state here is safe because
+                // WithdrawalPoolSelectionDelegate always updates selectedWithdrawalPool first.
+                val pool = _uiState.value.selectedWithdrawalPool
+                if (pool != null) {
+                    poolResolvedCallback?.invoke(pool.scope, pool.ownerId)
+                }
+            }
         )
-    }
-
-    /**
-     * Cancels any in-flight or debounced CASH rate jobs.
-     * Called when leaving CASH payment to prevent a stale result from
-     * re-locking the exchange rate after the user has switched away.
-     */
-    private fun cancelPendingCashJobs() {
-        cashRateJob?.cancel()
-        cashRateJob = null
-        cashPreviewJob?.cancel()
-        cashPreviewJob = null
     }
 
     /**
@@ -641,8 +436,7 @@ class CurrencyEventHandler(
     private fun isCashPaymentMethod(): Boolean {
         val methodId = _uiState.value.selectedPaymentMethod?.id ?: return false
         return try {
-            es.pedrazamiguez.splittrip.domain.enums.PaymentMethod.fromString(methodId) ==
-                es.pedrazamiguez.splittrip.domain.enums.PaymentMethod.CASH
+            PaymentMethod.fromString(methodId) == PaymentMethod.CASH
         } catch (_: IllegalArgumentException) {
             false
         }
@@ -663,13 +457,15 @@ class CurrencyEventHandler(
 
     /**
      * Returns the payer ID relevant to the current funding source scope:
+     * - **GROUP:** the current user's ID ([AddExpenseUiState.currentUserId]), forwarded to
+     *   [GetAvailableWithdrawalPoolsUseCase] so it can probe the user's personal (USER-scoped)
+     *   pool as a supplement to the GROUP pool.
      * - **USER:** the current user's ID ([AddExpenseUiState.currentUserId]).
-     * - **SUBUNIT:** not yet available from state (returns null; SUBUNIT pool support
-     *   is tracked in the companion issue for SUBUNIT funding-source selection).
-     * - **GROUP:** always null (GROUP pool needs no owner filter).
+     * - **SUBUNIT:** the selected contribution subunit ID ([AddExpenseUiState.selectedContributionSubunitId])
+     *   so the use case can look up cash pools owned by that specific subunit.
      */
     internal fun currentPayerId(): String? = when (currentPayerType()) {
-        PayerType.USER -> _uiState.value.currentUserId
-        PayerType.GROUP, PayerType.SUBUNIT -> null
+        PayerType.USER, PayerType.GROUP -> _uiState.value.currentUserId
+        PayerType.SUBUNIT -> _uiState.value.selectedContributionSubunitId
     }
 }

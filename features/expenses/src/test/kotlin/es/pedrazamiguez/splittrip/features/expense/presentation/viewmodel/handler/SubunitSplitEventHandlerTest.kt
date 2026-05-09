@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
@@ -832,6 +833,135 @@ class SubunitSplitEventHandlerTest {
             val member2 = subunit.entityMembers.first { it.userId == coupleMember2 }
             assertEquals(7000L, member1.amountCents)
             assertEquals(3000L, member2.amountCents)
+        }
+    }
+
+    @Nested
+    inner class DisableSubunitMode {
+
+        @Test
+        fun `disables subunit mode when active`() = runTest {
+            uiState.value = baseEntityState.copy(isSubunitMode = true)
+            handler.bind(uiState, actions, this)
+
+            handler.disableSubunitMode()
+
+            assertFalse(uiState.value.isSubunitMode)
+        }
+
+        @Test
+        fun `is no-op when subunit mode is already false`() = runTest {
+            uiState.value = baseEntityState.copy(isSubunitMode = false)
+            handler.bind(uiState, actions, this)
+
+            handler.disableSubunitMode()
+
+            assertFalse(uiState.value.isSubunitMode)
+        }
+
+        @Test
+        fun `clears split error when disabling`() = runTest {
+            uiState.value = baseEntityState.copy(
+                isSubunitMode = true,
+                splitError = UiText.DynamicString("Some error")
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.disableSubunitMode()
+
+            assertEquals(null, uiState.value.splitError)
+        }
+
+        @Test
+        fun `does not reset entity splits exclusions`() = runTest {
+            val excludedEntitySplits = baseEntityState.entitySplits.map { entity ->
+                entity.copy(isExcluded = entity.userId != subunitCoupleId)
+            }.toImmutableList()
+            uiState.value = baseEntityState.copy(
+                isSubunitMode = true,
+                entitySplits = excludedEntitySplits
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.disableSubunitMode()
+
+            // Entity exclusions from the prior SUBUNIT pool selection are preserved
+            assertTrue(uiState.value.entitySplits.first { it.userId == soloMember1 }.isExcluded)
+            assertTrue(uiState.value.entitySplits.first { it.userId == soloMember2 }.isExcluded)
+            assertFalse(uiState.value.entitySplits.first { it.userId == subunitCoupleId }.isExcluded)
+        }
+    }
+
+    @Nested
+    inner class ApplySubunitPoolDefault {
+
+        @Test
+        fun `enables subunit mode`() = runTest {
+            uiState.value = baseEntityState.copy(isSubunitMode = false)
+            handler.bind(uiState, actions, this)
+
+            handler.applySubunitPoolDefault(subunitCoupleId)
+
+            assertTrue(uiState.value.isSubunitMode)
+        }
+
+        @Test
+        fun `excludes all entities except the matching subunit`() = runTest {
+            uiState.value = baseEntityState
+            handler.bind(uiState, actions, this)
+
+            handler.applySubunitPoolDefault(subunitCoupleId)
+
+            val entitySplits = uiState.value.entitySplits
+            assertTrue(entitySplits.first { it.userId == subunitCoupleId }.isExcluded.not())
+            assertTrue(entitySplits.first { it.userId == soloMember1 }.isExcluded)
+            assertTrue(entitySplits.first { it.userId == soloMember2 }.isExcluded)
+        }
+
+        @Test
+        fun `clears all share locks`() = runTest {
+            uiState.value = baseEntityState.copy(
+                entitySplits = baseEntityState.entitySplits.map { it.copy(isShareLocked = true) }
+                    .toImmutableList()
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applySubunitPoolDefault(subunitCoupleId)
+
+            assertTrue(uiState.value.entitySplits.none { it.isShareLocked })
+        }
+
+        @Test
+        fun `clears split error`() = runTest {
+            uiState.value = baseEntityState.copy(splitError = UiText.DynamicString("Some error"))
+            handler.bind(uiState, actions, this)
+
+            handler.applySubunitPoolDefault(subunitCoupleId)
+
+            assertEquals(null, uiState.value.splitError)
+        }
+
+        @Test
+        fun `is no-op when poolSubunitId is null`() = runTest {
+            uiState.value = baseEntityState.copy(isSubunitMode = false)
+            handler.bind(uiState, actions, this)
+
+            handler.applySubunitPoolDefault(null)
+
+            assertFalse(uiState.value.isSubunitMode)
+        }
+
+        @Test
+        fun `is no-op when entitySplits is empty (subunit-less group)`() = runTest {
+            uiState.value = baseEntityState.copy(
+                isSubunitMode = false,
+                entitySplits = persistentListOf()
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.applySubunitPoolDefault(subunitCoupleId)
+
+            assertFalse(uiState.value.isSubunitMode)
         }
     }
 }
