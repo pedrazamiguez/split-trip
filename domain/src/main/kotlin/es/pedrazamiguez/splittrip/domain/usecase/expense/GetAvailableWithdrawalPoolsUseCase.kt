@@ -7,9 +7,10 @@ import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 /**
  * Determines which withdrawal pools have available funds for a given cash expense configuration.
  *
- * For GROUP-scoped expenses, probes both the GROUP pool and the current user's personal
- * (USER-scoped) pool when a [payerId] (userId) is provided. This allows the pool-selection
- * widget to surface personal cash as a supplement when the GROUP pool alone is insufficient.
+ * For GROUP-scoped expenses, probes the GROUP pool, the current user's personal (USER-scoped)
+ * pool when a [payerId] (userId) is provided, and any SUBUNIT pools for [subunitIds] the user
+ * belongs to. This allows the pool-selection widget to surface personal and subunit cash as
+ * supplements when the GROUP pool alone is insufficient.
  *
  * For USER and SUBUNIT scopes, probes the personal/subunit pool AND the GROUP pool independently
  * using [CashWithdrawalRepository.getAvailableWithdrawalsByExactScope] (no fallback).
@@ -33,8 +34,12 @@ class GetAvailableWithdrawalPoolsUseCase(
      * @param payerId       For USER scope: the userId. For SUBUNIT scope: the subunitId.
      *                      For GROUP scope: the current userId, used to probe the user's
      *                      personal (USER-scoped) pool as a supplement to the GROUP pool.
+     * @param subunitIds    For GROUP scope: IDs of subunits the current user belongs to.
+     *                      Each subunit's pool is probed independently and surfaced as a
+     *                      selectable option when funds are available. Ignored for USER/SUBUNIT scope.
      * @return A list of [WithdrawalPoolOption] values with available cash, in priority order.
-     *         For GROUP: GROUP pool first (primary), USER pool second (supplement).
+     *         For GROUP: GROUP pool first (primary), USER pool second (supplement),
+     *         then SUBUNIT pools in the order provided by [subunitIds].
      *         For USER/SUBUNIT: personal/subunit pool first, GROUP pool second.
      *         Empty when no pool has funds.
      */
@@ -42,11 +47,13 @@ class GetAvailableWithdrawalPoolsUseCase(
         groupId: String,
         currency: String,
         payerType: PayerType,
-        payerId: String? = null
+        payerId: String? = null,
+        subunitIds: List<String> = emptyList()
     ): List<WithdrawalPoolOption> {
         // GROUP expenses: probe GROUP pool first (primary source), then the user's personal
-        // (USER-scoped) pool when a userId is provided. This enables the pool-selection widget
-        // to surface personal cash as a supplement when the GROUP pool is insufficient.
+        // (USER-scoped) pool when a userId is provided, and any SUBUNIT pools the user
+        // belongs to. This enables the pool-selection widget to surface all available
+        // cash sources so the user can pick which pool to draw from.
         if (payerType == PayerType.GROUP) {
             val groupPool = cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
                 groupId = groupId,
@@ -63,9 +70,19 @@ class GetAvailableWithdrawalPoolsUseCase(
             } else {
                 emptyList()
             }
+            val subunitPools = subunitIds.mapNotNull { subunitId ->
+                val pool = cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId = groupId,
+                    currency = currency,
+                    scope = PayerType.SUBUNIT,
+                    scopeOwnerId = subunitId
+                )
+                if (pool.isNotEmpty()) WithdrawalPoolOption(PayerType.SUBUNIT, subunitId) else null
+            }
             return buildList {
                 if (groupPool.isNotEmpty()) add(WithdrawalPoolOption(PayerType.GROUP))
                 if (userPool.isNotEmpty()) add(WithdrawalPoolOption(PayerType.USER, payerId))
+                addAll(subunitPools)
             }
         }
 

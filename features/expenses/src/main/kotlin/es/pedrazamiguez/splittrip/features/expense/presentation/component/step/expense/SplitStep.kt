@@ -1,7 +1,11 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.SplitSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -18,6 +22,12 @@ fun SplitStep(
     modifier: Modifier = Modifier
 ) {
     WizardStepLayout(modifier = modifier) {
+        // Non-blocking contextual warning: the selected cash pool is personal (USER/SUBUNIT-scoped)
+        // but the split currently includes members outside its natural scope.
+        uiState.personalCashSplitWarning?.let { warningText ->
+            FormErrorBanner(error = warningText)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         SplitSection(uiState = uiState, onEvent = onEvent)
     }
 }

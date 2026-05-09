@@ -90,6 +90,21 @@ class AddExpenseViewModel(
                     currencyEventHandler.handleFundingSourceChanged(action.isGroupPocket)
             }
         }
+
+        // Wire pool-resolved callback: auto-selection path triggers split smart-default.
+        // Explicit user selection is handled directly in the WithdrawalPoolSelected branch of onEvent.
+        currencyEventHandler.setOnPoolResolvedCallback { poolScope, poolOwnerId ->
+            splitEventHandler.applyPersonalPoolSplitDefault(
+                poolScope = poolScope,
+                poolOwnerId = poolOwnerId,
+                currentUserId = _uiState.value.currentUserId
+            )
+            if (poolScope == PayerType.SUBUNIT) {
+                subunitSplitEventHandler.applySubunitPoolDefault(poolOwnerId)
+            } else {
+                subunitSplitEventHandler.disableSubunitMode()
+            }
+        }
     }
 
     // Thin router — every branch is a single delegation;
@@ -120,11 +135,19 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.GroupAmountChanged ->
                 currencyEventHandler.handleGroupAmountChanged(event.amount)
 
-            is AddExpenseUiEvent.WithdrawalPoolSelected ->
-                // Pool-aware split pre-fill (applyPersonalPoolSplitDefault) is intentionally
-                // NOT wired here — that feature is scoped to #1035 and requires additional
-                // UX (warning banner, auto-selection path) not yet implemented.
+            is AddExpenseUiEvent.WithdrawalPoolSelected -> {
                 currencyEventHandler.handleWithdrawalPoolSelected(event.scope, event.scopeOwnerId)
+                splitEventHandler.applyPersonalPoolSplitDefault(
+                    poolScope = event.scope,
+                    poolOwnerId = event.scopeOwnerId,
+                    currentUserId = _uiState.value.currentUserId
+                )
+                if (event.scope == PayerType.SUBUNIT) {
+                    subunitSplitEventHandler.applySubunitPoolDefault(event.scopeOwnerId)
+                } else {
+                    subunitSplitEventHandler.disableSubunitMode()
+                }
+            }
 
             // ── Splits ──────────────────────────────────────────────────
             is AddExpenseUiEvent.SplitTypeChanged -> {
@@ -145,14 +168,20 @@ class AddExpenseViewModel(
                 splitEventHandler.handleShareLockToggled(event.userId)
 
             // ── Subunit splits ────────────────────────────────────────────
-            is AddExpenseUiEvent.SubunitModeToggled ->
+            is AddExpenseUiEvent.SubunitModeToggled -> {
                 subunitSplitEventHandler.handleSubunitModeToggled()
+                // Mode switch changes which splits are visible → recheck warning.
+                splitEventHandler.recomputePersonalCashWarning()
+            }
 
             is AddExpenseUiEvent.EntityAccordionToggled ->
                 subunitSplitEventHandler.handleAccordionToggled(event.entityId)
 
-            is AddExpenseUiEvent.EntitySplitExcludedToggled ->
+            is AddExpenseUiEvent.EntitySplitExcludedToggled -> {
                 subunitSplitEventHandler.handleEntityExcludedToggled(event.entityId)
+                // Entity inclusion change may bring out-of-scope entities into the split.
+                splitEventHandler.recomputePersonalCashWarning()
+            }
 
             is AddExpenseUiEvent.EntitySplitAmountChanged ->
                 subunitSplitEventHandler.handleEntityAmountChanged(event.entityId, event.amount)

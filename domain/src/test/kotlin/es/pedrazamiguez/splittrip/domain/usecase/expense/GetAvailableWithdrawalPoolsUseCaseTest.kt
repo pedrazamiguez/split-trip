@@ -226,6 +226,122 @@ class GetAvailableWithdrawalPoolsUseCaseTest {
                 )
             }
         }
+
+        @Test
+        fun `GROUP scope probes each provided subunit pool`() = runTest {
+            val subunitId2 = "subunit-456"
+            useCase(groupId, currency, PayerType.GROUP, userId, subunitIds = listOf(subunitId, subunitId2))
+
+            coVerify(exactly = 1) {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.SUBUNIT,
+                    subunitId
+                )
+            }
+            coVerify(exactly = 1) {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.SUBUNIT,
+                    subunitId2
+                )
+            }
+        }
+
+        @Test
+        fun `GROUP scope includes SUBUNIT pool when subunit has funds`() = runTest {
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.GROUP,
+                    null
+                )
+            } returns listOf(sampleWithdrawal)
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.SUBUNIT,
+                    subunitId
+                )
+            } returns listOf(sampleWithdrawal)
+
+            val result = useCase(groupId, currency, PayerType.GROUP, userId, subunitIds = listOf(subunitId))
+
+            assertEquals(2, result.size)
+            assertEquals(WithdrawalPoolOption(PayerType.GROUP), result[0])
+            assertEquals(WithdrawalPoolOption(PayerType.SUBUNIT, subunitId), result[1])
+        }
+
+        @Test
+        fun `GROUP scope returns only SUBUNIT when GROUP and USER pools are empty but subunit has funds`() = runTest {
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.SUBUNIT,
+                    subunitId
+                )
+            } returns listOf(sampleWithdrawal)
+
+            val result = useCase(groupId, currency, PayerType.GROUP, userId, subunitIds = listOf(subunitId))
+
+            assertEquals(1, result.size)
+            assertEquals(WithdrawalPoolOption(PayerType.SUBUNIT, subunitId), result.first())
+        }
+
+        @Test
+        fun `GROUP scope with all three pools returns GROUP then USER then SUBUNIT in order`() = runTest {
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.GROUP,
+                    null
+                )
+            } returns listOf(sampleWithdrawal)
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.USER,
+                    userId
+                )
+            } returns listOf(sampleWithdrawal)
+            coEvery {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    groupId,
+                    currency,
+                    PayerType.SUBUNIT,
+                    subunitId
+                )
+            } returns listOf(sampleWithdrawal)
+
+            val result = useCase(groupId, currency, PayerType.GROUP, userId, subunitIds = listOf(subunitId))
+
+            assertEquals(3, result.size)
+            assertEquals(PayerType.GROUP, result[0].scope)
+            assertEquals(PayerType.USER, result[1].scope)
+            assertEquals(PayerType.SUBUNIT, result[2].scope)
+            assertEquals(subunitId, result[2].ownerId)
+        }
+
+        @Test
+        fun `GROUP scope with empty subunitIds does not probe any SUBUNIT pool`() = runTest {
+            useCase(groupId, currency, PayerType.GROUP, userId, subunitIds = emptyList())
+
+            coVerify(exactly = 0) {
+                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                    any(),
+                    any(),
+                    PayerType.SUBUNIT,
+                    any()
+                )
+            }
+        }
     }
 
     // ── USER scope ────────────────────────────────────────────────────────────

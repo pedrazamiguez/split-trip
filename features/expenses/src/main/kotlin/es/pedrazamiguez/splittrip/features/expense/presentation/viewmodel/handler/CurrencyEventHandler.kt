@@ -44,6 +44,13 @@ class CurrencyEventHandler(
     private lateinit var _actions: MutableSharedFlow<AddExpenseUiAction>
     private lateinit var scope: CoroutineScope
 
+    /**
+     * Fired after any automatic pool resolution (auto-select single pool, pre-select first of many).
+     * Set by the ViewModel during initialization via [setOnPoolResolvedCallback].
+     * Explicit user selections are handled directly in the ViewModel's [onEvent] router.
+     */
+    private var poolResolvedCallback: ((PayerType, String?) -> Unit)? = null
+
     override fun bind(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
         actionsFlow: MutableSharedFlow<AddExpenseUiAction>,
@@ -371,6 +378,15 @@ class CurrencyEventHandler(
         }
     }
 
+    /**
+     * Registers a callback that fires after any automatic pool resolution (auto-select single pool
+     * or pre-select first of many). The ViewModel wires this to call
+     * [SplitEventHandler.applyPersonalPoolSplitDefault] with the resolved pool's scope and ownerId.
+     */
+    fun setOnPoolResolvedCallback(callback: (PayerType, String?) -> Unit) {
+        poolResolvedCallback = callback
+    }
+
     /** Thin wrapper — delegates to [CashRateDelegate.fetchCashRate]. */
     fun fetchCashRate() = cashRateDelegate.fetchCashRate()
 
@@ -401,7 +417,16 @@ class CurrencyEventHandler(
             payerId = payerId,
             scope = scope,
             stateFlow = _uiState,
-            onPoolResolved = cashRateDelegate::fetchCashRate
+            onPoolResolved = {
+                cashRateDelegate.fetchCashRate()
+                // Notify the ViewModel so it can apply the smart split default if the resolved
+                // pool is USER- or SUBUNIT-scoped. Reading pool from state here is safe because
+                // WithdrawalPoolSelectionDelegate always updates selectedWithdrawalPool first.
+                val pool = _uiState.value.selectedWithdrawalPool
+                if (pool != null) {
+                    poolResolvedCallback?.invoke(pool.scope, pool.ownerId)
+                }
+            }
         )
     }
 
@@ -436,11 +461,11 @@ class CurrencyEventHandler(
      *   [GetAvailableWithdrawalPoolsUseCase] so it can probe the user's personal (USER-scoped)
      *   pool as a supplement to the GROUP pool.
      * - **USER:** the current user's ID ([AddExpenseUiState.currentUserId]).
-     * - **SUBUNIT:** not yet available from state (returns null; SUBUNIT pool support
-     *   is tracked in the companion issue for SUBUNIT funding-source selection).
+     * - **SUBUNIT:** the selected contribution subunit ID ([AddExpenseUiState.selectedContributionSubunitId])
+     *   so the use case can look up cash pools owned by that specific subunit.
      */
     internal fun currentPayerId(): String? = when (currentPayerType()) {
         PayerType.USER, PayerType.GROUP -> _uiState.value.currentUserId
-        PayerType.SUBUNIT -> null
+        PayerType.SUBUNIT -> _uiState.value.selectedContributionSubunitId
     }
 }
