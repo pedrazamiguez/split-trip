@@ -120,16 +120,11 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.GroupAmountChanged ->
                 currencyEventHandler.handleGroupAmountChanged(event.amount)
 
-            is AddExpenseUiEvent.WithdrawalPoolSelected -> {
+            is AddExpenseUiEvent.WithdrawalPoolSelected ->
+                // Pool-aware split pre-fill (applyPersonalPoolSplitDefault) is intentionally
+                // NOT wired here — that feature is scoped to #1035 and requires additional
+                // UX (warning banner, auto-selection path) not yet implemented.
                 currencyEventHandler.handleWithdrawalPoolSelected(event.scope, event.scopeOwnerId)
-                // Also apply smart split defaults based on the newly selected pool scope,
-                // so the Split step is pre-filled consistently without requiring a separate action.
-                splitEventHandler.applyPersonalPoolSplitDefault(
-                    poolScope = event.scope,
-                    poolOwnerId = event.scopeOwnerId,
-                    currentUserId = _uiState.value.currentUserId
-                )
-            }
 
             // ── Splits ──────────────────────────────────────────────────
             is AddExpenseUiEvent.SplitTypeChanged -> {
