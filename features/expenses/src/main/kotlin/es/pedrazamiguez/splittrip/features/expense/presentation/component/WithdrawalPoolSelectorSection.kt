@@ -2,19 +2,22 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.WithdrawalPoolOptionUiModel
@@ -24,22 +27,23 @@ import kotlinx.collections.immutable.ImmutableList
  * Displays a pool-selection widget when multiple cash withdrawal pools are available for the
  * current expense's currency and scope.
  *
- * Shown in the Exchange Rate step **above** the "Funded from" tranche breakdown, so the user
- * can pick which pool (e.g. "My personal cash" vs "Group cash") to draw from before seeing the
- * tranche details that correspond to their selection.
+ * Shown in the Amount step (same-currency CASH) or Exchange Rate step (foreign-currency CASH),
+ * above the "Funded from" tranche breakdown, so the user can pick which pool to draw from.
  *
  * Layout:
  * - Section title ("Draw cash from") styled like other wizard step headers.
- * - [FlatCard] container with a horizontal row of [FilterChip]s — one per available pool.
+ * - [FlowRow] of [PassportChip]s — one per available pool, consistent with the payment step.
  *
  * @param pools         Non-empty list of available pool options (must have at least 2 entries,
  *                      caller is responsible for guarding on size > 1).
- * @param selectedPool  Currently selected pool, or null when no explicit selection has been made.
+ * @param selectedPool  Currently selected pool. GROUP pool is pre-selected by default; the user
+ *                      can tap another chip to override.
  * @param onPoolSelected Callback invoked with the selected pool's [PayerType] and scope owner ID
  *                       (userId for USER scope, subunitId for SUBUNIT scope, null for GROUP scope)
  *                       when the user taps a chip.
  * @param modifier      Modifier applied to the root [Column].
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WithdrawalPoolSelectorSection(
     pools: ImmutableList<WithdrawalPoolOptionUiModel>,
@@ -50,31 +54,29 @@ fun WithdrawalPoolSelectorSection(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.add_expense_cash_pool_selection_title),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        FlatCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                pools.forEach { pool ->
-                    val isSelected = pool == selectedPool
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onPoolSelected(pool.scope, pool.ownerId) },
-                        label = {
-                            Text(
-                                text = pool.displayLabel,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-                    )
-                }
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            pools.forEach { pool ->
+                val isSelected = pool == selectedPool
+                PassportChip(
+                    label = pool.displayLabel,
+                    selected = isSelected,
+                    onClick = { onPoolSelected(pool.scope, pool.ownerId) },
+                    leadingIcon = if (isSelected) {
+                        { Icon(TablerIcons.Outline.Check, contentDescription = null) }
+                    } else {
+                        null
+                    }
+                )
             }
         }
     }

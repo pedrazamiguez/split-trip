@@ -272,7 +272,10 @@ data class AddExpenseUiState(
             AddExpenseStep.AMOUNT ->
                 sourceAmount.isNotBlank() &&
                     isAmountValid &&
-                    !(isInsufficientCash && !showExchangeRateSection)
+                    !(isInsufficientCash && !showExchangeRateSection) &&
+                    // For same-currency CASH with multiple pools, require the user to pick
+                    // a pool before proceeding (pool selector is shown instead of ExchangeRateStep).
+                    (showExchangeRateSection || availableWithdrawalPools.size <= 1 || selectedWithdrawalPool != null)
 
             AddExpenseStep.EXCHANGE_RATE ->
                 displayExchangeRate.isNotBlank() && calculatedGroupAmount.isNotBlank()

@@ -42,7 +42,8 @@ class WithdrawalPoolSelectionDelegate(
      * - When exactly one pool has funds: auto-populates [AddExpenseUiState.selectedWithdrawalPool]
      *   silently and invokes [onPoolResolved] so the rate preview is refreshed.
      * - When multiple pools have funds: populates [AddExpenseUiState.availableWithdrawalPools]
-     *   for the UI to render the pool-selection widget; does NOT auto-select (user must choose).
+     *   for the UI to render the pool-selection widget; pre-selects the GROUP pool (the default)
+     *   and immediately invokes [onPoolResolved] so the tranche preview loads without user action.
      *
      * For GROUP payer type, also probes the personal (USER-scoped) pool when a [payerId]
      * is provided, surfacing it as a supplement when the GROUP pool is insufficient.
@@ -92,12 +93,17 @@ class WithdrawalPoolSelectionDelegate(
                     }
 
                     else -> {
+                        // Pre-select the GROUP pool (the common case). Paying from personal or
+                        // subunit cash is the exception, so we save the user one tap.
+                        val defaultPool = uiPools.find { it.scope == PayerType.GROUP }
+                            ?: uiPools.first()
                         stateFlow.update { state ->
                             state.copy(
                                 availableWithdrawalPools = uiPools,
-                                selectedWithdrawalPool = null
+                                selectedWithdrawalPool = defaultPool
                             )
                         }
+                        onPoolResolved()
                     }
                 }
             } catch (e: Exception) {
