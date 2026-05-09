@@ -85,4 +85,6 @@
     <string name="balances_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
     <string name="balances_cash_breakdown_atm_fallback">ATM — %1$s</string>
     <string name="balances_cash_breakdown_view_cd">Ver desglose de efectivo</string>
+    <!-- Fallback cuando la subunidad referenciada por una retirada ya no existe (caso límite de integridad de datos) -->
+    <string name="balances_cash_breakdown_unknown_subunit">Subunidad desconocida</string>
 </resources>

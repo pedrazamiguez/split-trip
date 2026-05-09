@@ -364,46 +364,55 @@ class BalancesUiMapper(
                 if (withdrawal.amountWithdrawn == 0L || withdrawal.remainingAmount <= 0L) return@mapNotNull null
                 val nativeShare = computeUserNativeShare(withdrawal, userId, groupMemberIds, subunitsMap)
                 if (nativeShare <= 0L) return@mapNotNull null
-
-                val groupEquivalent = BigDecimal(nativeShare)
-                    .multiply(BigDecimal(withdrawal.deductedBaseAmount))
-                    .divide(BigDecimal(withdrawal.amountWithdrawn), 0, RoundingMode.HALF_UP)
-                    .toLong()
-
-                val isForeign = withdrawal.currency != groupCurrency
-                val dateText = withdrawal.createdAt?.formatShortDate(locale) ?: ""
-                val label = if (withdrawal.title.isNullOrBlank()) {
-                    resourceProvider.getString(R.string.balances_cash_breakdown_atm_fallback, dateText)
-                } else {
-                    withdrawal.title ?: ""
-                }
-                val scopeLabel = resolveCashBreakdownScopeLabel(withdrawal, subunitsMap)
-                val isGroup = withdrawal.withdrawalScope == PayerType.GROUP
-
-                CashBreakdownUiModel(
-                    withdrawalLabel = label,
-                    dateText = dateText,
-                    formattedRate = if (isForeign) {
-                        resourceProvider.getString(
-                            R.string.balances_cash_breakdown_rate,
-                            withdrawal.exchangeRate.formatForDisplay(locale, maxDecimalPlaces = 6),
-                            groupCurrency,
-                            withdrawal.currency
-                        )
-                    } else {
-                        ""
-                    },
-                    formattedNativeRemaining = formatCurrencyAmount(nativeShare, withdrawal.currency, locale),
-                    formattedEquivalent = if (isForeign) {
-                        formatCurrencyAmount(groupEquivalent, groupCurrency, locale)
-                    } else {
-                        ""
-                    },
-                    scopeLabel = scopeLabel,
-                    isEstimatedShare = isGroup
-                )
+                buildCashBreakdownEntry(withdrawal, nativeShare, groupCurrency, locale, subunitsMap)
             }
             .toImmutableList()
+    }
+
+    /**
+     * Builds a single [CashBreakdownUiModel] from an attributed native share.
+     * Extracted from [mapCashBreakdown] to keep cognitive complexity within detekt limits.
+     */
+    private fun buildCashBreakdownEntry(
+        withdrawal: CashWithdrawal,
+        nativeShare: Long,
+        groupCurrency: String,
+        locale: java.util.Locale,
+        subunitsMap: Map<String, Subunit>
+    ): CashBreakdownUiModel {
+        val groupEquivalent = BigDecimal(nativeShare)
+            .multiply(BigDecimal(withdrawal.deductedBaseAmount))
+            .divide(BigDecimal(withdrawal.amountWithdrawn), 0, RoundingMode.HALF_UP)
+            .toLong()
+        val isForeign = withdrawal.currency != groupCurrency
+        val dateText = withdrawal.createdAt?.formatShortDate(locale) ?: ""
+        val label = if (withdrawal.title.isNullOrBlank()) {
+            resourceProvider.getString(R.string.balances_cash_breakdown_atm_fallback, dateText)
+        } else {
+            withdrawal.title ?: ""
+        }
+        return CashBreakdownUiModel(
+            withdrawalLabel = label,
+            dateText = dateText,
+            formattedRate = if (isForeign) {
+                resourceProvider.getString(
+                    R.string.balances_cash_breakdown_rate,
+                    withdrawal.exchangeRate.formatForDisplay(locale, maxDecimalPlaces = 6),
+                    groupCurrency,
+                    withdrawal.currency
+                )
+            } else {
+                ""
+            },
+            formattedNativeRemaining = formatCurrencyAmount(nativeShare, withdrawal.currency, locale),
+            formattedEquivalent = if (isForeign) {
+                formatCurrencyAmount(groupEquivalent, groupCurrency, locale)
+            } else {
+                ""
+            },
+            scopeLabel = resolveCashBreakdownScopeLabel(withdrawal, subunitsMap),
+            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP
+        )
     }
 
     /** Resolves the user's attributed native share (in withdrawal currency cents) for display. */
@@ -437,7 +446,7 @@ class BalancesUiMapper(
         PayerType.GROUP -> resourceProvider.getString(R.string.balances_cash_breakdown_group_scope)
         PayerType.USER -> resourceProvider.getString(R.string.balances_cash_breakdown_personal_scope)
         PayerType.SUBUNIT -> withdrawal.subunitId?.let { subunitsMap[it]?.name }
-            ?: resourceProvider.getString(R.string.balances_cash_breakdown_personal_scope)
+            ?: resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit)
     }
 
     /**

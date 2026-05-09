@@ -86,4 +86,6 @@
     <!-- Fallback label when a withdrawal has no title; %1$s = short date -->
     <string name="balances_cash_breakdown_atm_fallback">ATM — %1$s</string>
     <string name="balances_cash_breakdown_view_cd">View cash breakdown</string>
+    <!-- Fallback when the subunit referenced by a withdrawal is no longer found (data integrity edge case) -->
+    <string name="balances_cash_breakdown_unknown_subunit">Unknown subunit</string>
 </resources>

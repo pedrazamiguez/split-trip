@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -236,14 +237,17 @@ private fun CashInHandRow(
         icon = TablerIcons.Outline.Cash,
         labelSuffix = if (memberBalance.cashBreakdown.isNotEmpty()) {
             {
-                Icon(
-                    imageVector = TablerIcons.Outline.InfoCircle,
-                    contentDescription = stringResource(R.string.balances_cash_breakdown_view_cd),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clickable(onClick = onShowCashBreakdown)
-                )
+                IconButton(
+                    onClick = onShowCashBreakdown,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = TablerIcons.Outline.InfoCircle,
+                        contentDescription = stringResource(R.string.balances_cash_breakdown_view_cd),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
             }
         } else {
             null
