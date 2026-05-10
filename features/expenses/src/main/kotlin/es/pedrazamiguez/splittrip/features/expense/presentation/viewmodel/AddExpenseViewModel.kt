@@ -244,10 +244,10 @@ class AddExpenseViewModel(
                 formEventHandler.handleDueDateSelected(event.dateMillis)
 
             is AddExpenseUiEvent.ReceiptImageSelected ->
-                formEventHandler.handleReceiptImageSelected(event.uri)
+                formEventHandler.handleReceiptImageChanged(event.uri)
 
             is AddExpenseUiEvent.RemoveReceiptImage ->
-                formEventHandler.handleRemoveReceiptImage()
+                formEventHandler.handleReceiptImageChanged(null)
 
             // ── Add-Ons ─────────────────────────────────────────────────
             is AddExpenseUiEvent.AddOnAdded ->

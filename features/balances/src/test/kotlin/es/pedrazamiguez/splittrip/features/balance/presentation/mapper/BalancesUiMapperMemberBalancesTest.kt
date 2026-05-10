@@ -564,8 +564,10 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(withdrawal),
-                groupMemberIds = groupMemberIds
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
             )
 
             val breakdown = result[0].cashBreakdown
@@ -597,8 +599,10 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(withdrawal),
-                groupMemberIds = groupMemberIds
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
             )
 
             assertTrue(result[0].cashBreakdown.isEmpty())
@@ -624,8 +628,10 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(withdrawal),
-                groupMemberIds = groupMemberIds // 2 members → equal split
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds // 2 members → equal split
+                )
             )
 
             val breakdown = result[0].cashBreakdown
@@ -655,9 +661,11 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(withdrawal),
-                groupMemberIds = groupMemberIds,
-                groupCurrency = "EUR"
+                groupCurrency = "EUR",
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
             )
 
             val breakdown = result[0].cashBreakdown
@@ -686,8 +694,10 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(withdrawal),
-                groupMemberIds = groupMemberIds
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
             )
 
             assertTrue(result[0].cashBreakdown.isEmpty())
@@ -712,8 +722,10 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(withdrawal),
-                groupMemberIds = groupMemberIds
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
             )
 
             val item = result[0]
@@ -741,8 +753,10 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(withdrawal),
-                groupMemberIds = groupMemberIds
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
             )
 
             val label = result[0].cashBreakdown[0].withdrawalLabel
@@ -774,9 +788,11 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(withdrawal),
-                subunitsMap = mapOf("sub-1" to subunit),
-                groupMemberIds = groupMemberIds
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    subunitsMap = mapOf("sub-1" to subunit),
+                    groupMemberIds = groupMemberIds
+                )
             )
 
             val breakdown = result[0].cashBreakdown
@@ -817,8 +833,10 @@ class BalancesUiMapperMemberBalancesTest {
                 balances = listOf(balance),
                 currency = currency,
                 currentUserId = currentUserId,
-                withdrawals = listOf(userWithdrawal, groupWithdrawal), // intentionally USER first
-                groupMemberIds = groupMemberIds
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(userWithdrawal, groupWithdrawal), // intentionally USER first
+                    groupMemberIds = groupMemberIds
+                )
             )
 
             val breakdown = result[0].cashBreakdown

@@ -317,16 +317,16 @@ class FormEventHandlerTest {
         }
 
         @Test
-        fun `sets receipt URI`() = runTest {
-            handler.handleReceiptImageSelected("content://image/1")
+        fun `sets receipt URI when uri is non-null`() = runTest {
+            handler.handleReceiptImageChanged("content://image/1")
             assertEquals("content://image/1", uiState.value.receiptUri)
         }
 
         @Test
-        fun `removes receipt URI`() = runTest {
+        fun `clears receipt URI when uri is null`() = runTest {
             uiState.value = uiState.value.copy(receiptUri = "content://image/1")
 
-            handler.handleRemoveReceiptImage()
+            handler.handleReceiptImageChanged(null)
 
             assertNull(uiState.value.receiptUri)
         }
