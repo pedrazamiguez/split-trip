@@ -28,8 +28,8 @@ import kotlinx.collections.immutable.ImmutableList
  * Bottom sheet displaying a per-withdrawal cash attribution breakdown for a single member.
  *
  * Items are grouped by scope via section headers: GROUP-scoped withdrawals are shown first
- * (with an "estimated share" disclaimer), followed by USER-scoped personal cash, and then
- * SUBUNIT-scoped entries. The scope header re-renders whenever the [CashBreakdownUiModel.scopeLabel]
+ * (with an "estimated share" disclaimer), followed by SUBUNIT-scoped entries, then
+ * USER-scoped personal cash. The scope header re-renders whenever the [CashBreakdownUiModel.scopeLabel]
  * changes from the previous item, producing implicit grouping without a nested data structure.
  *
  * This is intentionally separate from [MemberBalanceItem] to keep that file under the 600-line limit.

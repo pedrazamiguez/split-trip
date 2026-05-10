@@ -854,43 +854,6 @@ class BalancesUiMapperMemberBalancesTest {
                 memberShares = mapOf("user-1" to BigDecimal("0.5"), "user-2" to BigDecimal("0.5"))
             )
             val balance = MemberBalance(userId = "user-1", cashInHand = 150000L)
-            val userWithdrawal = CashWithdrawal(
-                id = "w1",
-                withdrawnBy = "user-1",
-                withdrawalScope = PayerType.USER,
-                currency = "EUR",
-                amountWithdrawn = 100000L,
-                remainingAmount = 100000L,
-                deductedBaseAmount = 100000L,
-                exchangeRate = BigDecimal.ONE,
-                createdAt = date,
-                title = "Personal ATM"
-            )
-            val subunitWithdrawal = CashWithdrawal(
-                id = "w2",
-                withdrawnBy = "user-1",
-                withdrawalScope = PayerType.SUBUNIT,
-                subunitId = "sub-1",
-                currency = "EUR",
-                amountWithdrawn = 200000L,
-                remainingAmount = 200000L,
-                deductedBaseAmount = 200000L,
-                exchangeRate = BigDecimal.ONE,
-                createdAt = date.minusDays(1),
-                title = "Subunit ATM"
-            )
-            val groupWithdrawal = CashWithdrawal(
-                id = "w3",
-                withdrawnBy = "user-1",
-                withdrawalScope = PayerType.GROUP,
-                currency = "EUR",
-                amountWithdrawn = 60000L,
-                remainingAmount = 60000L,
-                deductedBaseAmount = 60000L,
-                exchangeRate = BigDecimal.ONE,
-                createdAt = date.minusDays(2),
-                title = "Group ATM"
-            )
 
             // Input deliberately in reverse of expected order: USER → SUBUNIT → GROUP
             val result = mapper.mapMemberBalances(
@@ -898,7 +861,17 @@ class BalancesUiMapperMemberBalancesTest {
                 currency = currency,
                 currentUserId = currentUserId,
                 cashContext = MemberBalanceCashContext(
-                    withdrawals = listOf(userWithdrawal, subunitWithdrawal, groupWithdrawal),
+                    withdrawals = listOf(
+                        cashWithdrawal("w1", PayerType.USER, createdAt = date),
+                        cashWithdrawal(
+                            "w2",
+                            PayerType.SUBUNIT,
+                            subunitId = "sub-1",
+                            createdAt = date.minusDays(1),
+                            amountWithdrawn = 200000L
+                        ),
+                        cashWithdrawal("w3", PayerType.GROUP, createdAt = date.minusDays(2), amountWithdrawn = 60000L)
+                    ),
                     subunitsMap = mapOf("sub-1" to subunit),
                     groupMemberIds = groupMemberIds
                 )
@@ -913,3 +886,30 @@ class BalancesUiMapperMemberBalancesTest {
         }
     }
 }
+
+/**
+ * Creates a [CashWithdrawal] test fixture with sensible defaults, keeping individual test bodies concise.
+ *
+ * All monetary defaults (100 000 units at 1:1 rate) are intentionally round numbers so
+ * tests can assert share fractions without rounding surprises.
+ */
+private fun cashWithdrawal(
+    id: String,
+    scope: PayerType = PayerType.USER,
+    withdrawnBy: String = "user-1",
+    subunitId: String? = null,
+    amountWithdrawn: Long = 100000L,
+    currency: String = "EUR",
+    createdAt: LocalDateTime? = null
+) = CashWithdrawal(
+    id = id,
+    withdrawnBy = withdrawnBy,
+    withdrawalScope = scope,
+    subunitId = subunitId,
+    currency = currency,
+    amountWithdrawn = amountWithdrawn,
+    remainingAmount = amountWithdrawn, // Defaults to full amount; no FIFO consumption
+    deductedBaseAmount = amountWithdrawn,
+    exchangeRate = BigDecimal.ONE,
+    createdAt = createdAt
+)
