@@ -170,7 +170,7 @@ private fun PocketBalanceStatsRow(balance: GroupPocketBalanceUiModel) {
                     text = balance.formattedTotalExtras,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.error
                 )
             }
         }
