@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.WithdrawalPoolOptionUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.collections.immutable.persistentListOf
@@ -218,11 +219,11 @@ class WithdrawalPoolSelectionDelegateTest {
                         payerId = "user-1",
                         subunitIds = listOf("sub-1")
                     )
-                } returns emptyList()
+                } returns listOf(subunitPoolDomain)
 
                 every {
-                    addExpenseOptionsMapper.mapWithdrawalPoolOptions(any(), any())
-                } returns persistentListOf()
+                    addExpenseOptionsMapper.mapWithdrawalPoolOptions(listOf(subunitPoolDomain), any())
+                } returns listOf(subunitPoolUi).toImmutableList()
 
                 delegate.fetchPools(
                     groupId = "group-1",
@@ -235,7 +236,8 @@ class WithdrawalPoolSelectionDelegateTest {
                 )
                 advanceUntilIdle()
 
-                coEvery {
+                // Verify the use case was called with subunit IDs extracted from state
+                coVerify(exactly = 1) {
                     getAvailableWithdrawalPoolsUseCase(
                         groupId = "group-1",
                         currency = "EUR",
@@ -244,6 +246,9 @@ class WithdrawalPoolSelectionDelegateTest {
                         subunitIds = listOf("sub-1")
                     )
                 }
+                // Single subunit pool → auto-selected without showing the selector widget
+                assertEquals(subunitPoolUi, stateFlow.value.selectedWithdrawalPool)
+                assertTrue(stateFlow.value.availableWithdrawalPools.isEmpty())
             }
     }
 

@@ -131,12 +131,14 @@ class CashRateDelegate(
      */
     private fun buildCashRateRequest(state: AddExpenseUiState): CashRateRequestContext? {
         val groupId = state.loadedGroupId ?: return null
-        val sourceCurrency = state.selectedCurrency?.code ?: return null
-        val groupCurrency = state.groupCurrency?.code ?: return null
+        val selectedCurrency = state.selectedCurrency ?: return null
+        val groupCurrency = state.groupCurrency ?: return null
 
-        val isSameCurrency = sourceCurrency == groupCurrency
-        val sourceDecimalDigits = state.selectedCurrency.decimalDigits
-        val targetDecimalDigits = state.groupCurrency.decimalDigits
+        val sourceCurrency = selectedCurrency.code
+        val groupCurrencyCode = groupCurrency.code
+        val isSameCurrency = sourceCurrency == groupCurrencyCode
+        val sourceDecimalDigits = selectedCurrency.decimalDigits
+        val targetDecimalDigits = groupCurrency.decimalDigits
 
         val sourceAmountCents = splitPreviewService.parseAmountToCents(state.sourceAmount, sourceDecimalDigits)
 

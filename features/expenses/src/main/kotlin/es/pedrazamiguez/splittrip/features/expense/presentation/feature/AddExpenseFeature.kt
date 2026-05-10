@@ -113,7 +113,7 @@ private fun ObserveAddExpenseActions(
 
 @Composable
 private fun CashConflictResolutionSheet(
-    state: es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState,
+    state: AddExpenseUiState,
     resolution: AddExpenseUiAction.ShowCashConflictResolution,
     viewModel: AddExpenseViewModel,
     onDismiss: () -> Unit
