@@ -414,13 +414,40 @@ Powered by the `dev.chrisbanes.haze` library. Constants and the `Modifier.horizo
 
 Travel is about breathing room — the interface must never feel claustrophobic.
 
-| Context | Spacing |
-|---|---|
-| Between major screen sections | 24–48 dp |
-| Within cards (internal padding) | 16–20 dp |
-| Between list items | 16–24 dp (NO divider lines) |
-| Card corner radius | `shapes.large` (default) |
-| Page margins | 16–24 dp (never full-width edge-to-edge) |
+| Context | Spacing | Token(s) |
+|---|---|---|
+| Between major screen sections | 24–48 dp | `ExtraLarge` … `Screen` |
+| Within cards (internal padding) | 16–20 dp | `Default` … `Large` |
+| Between list items | 16–24 dp (NO divider lines) | `Default` … `ExtraLarge` |
+| Card corner radius | `shapes.large` (default) | — (shape token, not spacing) |
+| Page margins | 16–24 dp (never full-width edge-to-edge) | `Default` … `ExtraLarge` |
+
+### Spacing Token Scale
+
+The full token scale is defined in `SplitTripSpacing` and accessible via `MaterialTheme.spacing`:
+
+| Token | dp | Typical context |
+|---|---|---|
+| `None` | 0 | Explicit zero — prefer over bare `0.dp` for readability |
+| `ExtraSmall` | 4 | Icon padding, dense chip gaps |
+| `Small` | 8 | Intra-row gaps, compact label offsets |
+| `Medium` | 12 | Secondary row padding, tight card internals |
+| `Default` | 16 | Card internal padding, page margins |
+| `Large` | 20 | Generous card padding, top/bottom row spacing |
+| `ExtraLarge` | 24 | Section-to-section gaps, list item spacing |
+| `Section` | 32 | Major section separators |
+| `Screen` | 48 | Hero-area breathing room, large top/bottom screen padding |
+
+**Usage inside Composables:**
+
+```kotlin
+Column(
+    modifier = Modifier.padding(horizontal = MaterialTheme.spacing.Default),
+    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraLarge)
+) { … }
+```
+
+> **Implementation:** `Spacing.kt` in `core/design-system/.../foundation/`
 
 ---
 
@@ -497,6 +524,7 @@ The Horizon Narrative was implemented across 7 focused sub-issues:
 | `Theme.kt` | `core/design-system/.../foundation/` | `LightColorScheme` + `DarkColorScheme` from named constants |
 | `Typography.kt` | `core/design-system/.../foundation/` | Dual-voice type scale (Plus Jakarta Sans + Manrope) |
 | `GlassmorphismDefaults.kt` | `core/design-system/.../foundation/` | Glass-blur constants + `Modifier.horizonGlassEffect()` |
+| `Spacing.kt` | `core/design-system/.../foundation/` | `SplitTripSpacing` token scale + `MaterialTheme.spacing` extension |
 
 ### Component Files
 
@@ -523,6 +551,7 @@ All Horizon Narrative components include `@PreviewThemes` previews (light + dark
 | Preview File | Components |
 |---|---|
 | `ThemePreviews.kt` | Full Horizon colour palette swatch |
+| `SpacingPreviews.kt` | Spacing token scale (all 9 levels as labelled bar swatches) |
 | `FlatCardPreviews.kt` | Default card, ghost border variant, `SectionCard` |
 | `GradientButtonPreviews.kt` | Enabled, disabled, loading states |
 | `PassportChipPreviews.kt` | Selected/unselected, removable, overflow variants |
