@@ -15,6 +15,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -46,6 +50,11 @@ fun InlineWarningBanner(
     warning: UiText?,
     modifier: Modifier = Modifier
 ) {
+    // Cache the last non-null warning so the text remains visible during the exit animation.
+    // Without this, warning becomes null before the fade/shrink completes, blanking the banner.
+    var displayedWarning by remember { mutableStateOf(warning) }
+    if (warning != null) displayedWarning = warning
+
     AnimatedVisibility(
         visible = warning != null,
         enter = fadeIn() + expandVertically(),
@@ -68,10 +77,8 @@ fun InlineWarningBanner(
                     tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(WARNING_ICON_SIZE)
                 )
-                // warning is guaranteed non-null inside AnimatedVisibility's visible=true block,
-                // but AnimatedVisibility may still compose the content during exit animation.
                 Text(
-                    text = warning?.asString().orEmpty(),
+                    text = displayedWarning?.asString().orEmpty(),
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                     style = MaterialTheme.typography.bodyMedium
                 )

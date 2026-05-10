@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.CircularProgressIndicator
@@ -83,7 +84,12 @@ fun CurrencyConversionCard(
         } else {
             null
         }
-        InlineWarningBanner(warning = staleRateWarning)
+        // Top padding on the AnimatedVisibility container animates in/out with the banner,
+        // matching the 8 dp gap the former StaleRateBanner Spacer provided.
+        InlineWarningBanner(
+            warning = staleRateWarning,
+            modifier = Modifier.padding(top = 8.dp)
+        )
     }
 }
 
