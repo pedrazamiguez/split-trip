@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.UserFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
@@ -71,27 +72,27 @@ private fun ProfileLoadedContent(
     profile: es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(MaterialTheme.spacing.ExtraLarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
         ProfileAvatarSection(profile = profile)
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
         Text(
             text = profile.displayName,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
         Text(
             text = profile.email,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (profile.memberSinceText.isNotBlank()) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
             Text(
                 text = stringResource(R.string.profile_member_since, profile.memberSinceText),
                 style = MaterialTheme.typography.bodyMedium,
@@ -124,7 +125,7 @@ private fun ProfileAvatarSection(
             Icon(
                 imageVector = TablerIcons.Filled.UserFilled,
                 contentDescription = stringResource(R.string.profile_picture_description),
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(MaterialTheme.spacing.ExtraLarge),
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }

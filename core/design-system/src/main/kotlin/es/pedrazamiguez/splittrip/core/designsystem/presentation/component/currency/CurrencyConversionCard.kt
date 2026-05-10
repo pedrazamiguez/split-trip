@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.InlineWarningBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
@@ -63,7 +64,7 @@ fun CurrencyConversionCard(
             title = state.title,
             isLoadingRate = state.isLoadingRate
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(MaterialTheme.spacing.Medium))
         ConversionCardInputRow(
             state = state,
             onExchangeRateChanged = onExchangeRateChanged,
@@ -88,7 +89,7 @@ fun CurrencyConversionCard(
         // matching the 8 dp gap the former StaleRateBanner Spacer provided.
         InlineWarningBanner(
             warning = staleRateWarning,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }
 }
@@ -100,7 +101,7 @@ private fun ConversionCardTitleRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         Text(
             text = title,
@@ -129,7 +130,7 @@ private fun ConversionCardInputRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         StyledOutlinedTextField(
             value = state.exchangeRateValue,
@@ -164,7 +165,7 @@ private fun ConversionCardLockedHint(
     isInsufficientCash: Boolean
 ) {
     exchangeRateLockedHint?.let { hint ->
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(MaterialTheme.spacing.Small))
         Text(
             text = hint.asString(),
             style = MaterialTheme.typography.bodySmall,

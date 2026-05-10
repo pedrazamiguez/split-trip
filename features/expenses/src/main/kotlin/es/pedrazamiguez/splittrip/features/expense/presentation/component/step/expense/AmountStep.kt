@@ -2,11 +2,12 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.step.
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.AmountCurrencyCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.AmountCurrencyCardState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
@@ -57,7 +58,7 @@ fun AmountStep(
             // Multiple pools available — let the user pick which cash pool to draw from.
             // For foreign-currency CASH this selector lives in ExchangeRateStep; for same-currency
             // there is no exchange-rate step, so it must live here instead.
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
             WithdrawalPoolSelectorSection(
                 pools = uiState.availableWithdrawalPools,
                 selectedPool = uiState.selectedWithdrawalPool,
@@ -67,10 +68,10 @@ fun AmountStep(
             )
         }
         if (isSameCurrency && uiState.isInsufficientCash) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
             FormErrorBanner(error = UiText.StringResource(R.string.add_expense_cash_insufficient_hint))
         } else if (isSameCurrency && uiState.cashTranchePreviews.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
             CashTrancheFundedFromSection(tranches = uiState.cashTranchePreviews)
         }
     }

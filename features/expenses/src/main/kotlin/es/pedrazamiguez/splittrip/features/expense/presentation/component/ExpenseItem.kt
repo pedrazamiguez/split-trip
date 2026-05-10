@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CirclePlus
@@ -63,8 +64,8 @@ fun ExpenseItem(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(MaterialTheme.spacing.Default),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
                 ExpenseItemTitleRow(expenseUiModel = expenseUiModel)
                 ExpenseItemMetaRow(expenseUiModel = expenseUiModel)
@@ -90,8 +91,8 @@ private fun ExpenseItemTitleRow(expenseUiModel: ExpenseUiModel) {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp, end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(start = MaterialTheme.spacing.Medium, end = MaterialTheme.spacing.Default),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
             Text(
                 text = expenseUiModel.title,
@@ -128,7 +129,7 @@ private fun CategoryIconContainer(category: ExpenseCategory, contentDescription:
 private fun ExpenseAmountBadges(expenseUiModel: ExpenseUiModel) {
     Column(
         horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
     ) {
         Box(
             modifier = Modifier
@@ -140,7 +141,7 @@ private fun ExpenseAmountBadges(expenseUiModel: ExpenseUiModel) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = MaterialTheme.spacing.Small)
             )
         }
         if (expenseUiModel.formattedOriginalAmount != null) {
@@ -273,7 +274,7 @@ private fun ScheduledBadge(badgeText: String, isPastDue: Boolean) {
     }
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(

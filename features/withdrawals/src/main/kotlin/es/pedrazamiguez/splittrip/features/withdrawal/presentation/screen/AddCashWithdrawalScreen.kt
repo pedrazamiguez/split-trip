@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
@@ -215,7 +216,7 @@ private fun WithdrawalConfigLoadFailedContent(onRetry: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(MaterialTheme.spacing.Section),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -225,13 +226,13 @@ private fun WithdrawalConfigLoadFailedContent(onRetry: () -> Unit) {
             modifier = Modifier.size(64.dp),
             tint = MaterialTheme.colorScheme.error
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
         Text(
             text = stringResource(R.string.withdrawal_error_load_config),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.error
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
         SecondaryButton(
             text = stringResource(R.string.withdrawal_retry),
             onClick = onRetry,

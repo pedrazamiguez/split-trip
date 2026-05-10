@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 /**
  * A styled text field component (Horizon "Soft Field" design) that provides consistent
@@ -158,7 +159,7 @@ fun StyledOutlinedTextField(
                     isError -> MaterialTheme.colorScheme.error
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
-                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+                modifier = Modifier.padding(start = MaterialTheme.spacing.ExtraSmall, bottom = 6.dp)
             )
         }
 

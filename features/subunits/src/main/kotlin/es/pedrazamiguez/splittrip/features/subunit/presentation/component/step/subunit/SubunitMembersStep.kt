@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.subunit.R
@@ -72,14 +72,14 @@ private fun MemberCheckboxRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = MaterialTheme.spacing.Small)
     ) {
         Checkbox(
             checked = isSelected,
             onCheckedChange = { if (isEnabled) onToggle() },
             enabled = isEnabled
         )
-        Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(MaterialTheme.spacing.ExtraSmall))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = member.displayName,

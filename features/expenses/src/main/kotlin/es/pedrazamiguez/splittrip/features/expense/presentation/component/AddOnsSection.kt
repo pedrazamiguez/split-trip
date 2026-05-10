@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
@@ -54,7 +55,7 @@ fun AddOnsSection(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         AddOnsSectionHeader(
             hasAddOns = hasAddOns,
@@ -135,7 +136,7 @@ private fun AddOnsListCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
             uiState.addOns.forEach { addOn ->
                 AddOnItemEditor(
@@ -189,7 +190,7 @@ private fun AddOnsSectionFooter(
             text = errorUiText.asString(),
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier.padding(MaterialTheme.spacing.Medium)
         )
     }
 
@@ -202,7 +203,7 @@ private fun AddOnsSectionFooter(
             contentDescription = null,
             modifier = Modifier.size(18.dp)
         )
-        Spacer(Modifier.size(4.dp))
+        Spacer(Modifier.size(MaterialTheme.spacing.ExtraSmall))
         Text(
             text = stringResource(R.string.add_expense_add_on_button),
             style = MaterialTheme.typography.labelLarge

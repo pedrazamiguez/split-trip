@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
@@ -101,12 +103,12 @@ private fun SubunitContent(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
-                        start = 16.dp,
-                        top = 16.dp,
-                        end = 16.dp,
-                        bottom = 16.dp + bottomPadding + fabExtraPadding
+                        start = MaterialTheme.spacing.Default,
+                        top = MaterialTheme.spacing.Default,
+                        end = MaterialTheme.spacing.Default,
+                        bottom = MaterialTheme.spacing.Default + bottomPadding + fabExtraPadding
                     ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
                 ) {
                     items(
                         items = uiState.subunits,
@@ -128,8 +130,8 @@ private fun SubunitContent(
             onClick = { onEvent(SubunitManagementUiEvent.CreateSubunit) },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp)
-                .padding(bottom = bottomPadding + 4.dp),
+                .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
+                .padding(bottom = bottomPadding + MaterialTheme.spacing.ExtraSmall),
             enabled = !uiState.isLoading,
             sharedTransitionKey = CREATE_EDIT_SUBUNIT_SHARED_ELEMENT_KEY
         )

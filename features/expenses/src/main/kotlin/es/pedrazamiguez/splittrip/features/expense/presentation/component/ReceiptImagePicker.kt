@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Camera
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
@@ -49,7 +50,7 @@ fun ReceiptImagePicker(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         if (receiptUri != null) {
             ReceiptImagePreview(receiptUri = receiptUri, onRemoveImage = onRemoveImage)
@@ -89,7 +90,7 @@ private fun ReceiptImagePreview(receiptUri: String, onRemoveImage: () -> Unit) {
             onClick = onRemoveImage,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(4.dp)
+                .padding(MaterialTheme.spacing.ExtraSmall)
         ) {
             Icon(
                 imageVector = TablerIcons.Outline.X,
@@ -108,7 +109,7 @@ private fun ReceiptPickerPlaceholder(onClick: () -> Unit) {
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .clickable(onClick = onClick)
-            .padding(vertical = 24.dp),
+            .padding(vertical = MaterialTheme.spacing.ExtraLarge),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -122,7 +123,7 @@ private fun ReceiptPickerPlaceholder(onClick: () -> Unit) {
             text = stringResource(R.string.add_expense_receipt_attach),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 8.dp)
+            modifier = Modifier.padding(start = MaterialTheme.spacing.Small)
         )
     }
 }

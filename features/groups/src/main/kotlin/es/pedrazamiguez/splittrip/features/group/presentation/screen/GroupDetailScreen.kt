@@ -23,6 +23,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
@@ -98,7 +99,7 @@ private fun GroupDetailContent(
                 .padding(horizontal = CONTENT_HORIZONTAL_PADDING),
             verticalArrangement = Arrangement.spacedBy(SECTION_VERTICAL_SPACING)
         ) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
 
             GroupDetailMembersSection(group = group)
 
@@ -107,7 +108,7 @@ private fun GroupDetailContent(
                 onManageSubunits = onManageSubunits
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
 
             GroupDetailActions(
                 isActiveGroup = isActiveGroup,
@@ -115,7 +116,7 @@ private fun GroupDetailContent(
                 onManageSubunits = onManageSubunits
             )
 
-            Spacer(modifier = Modifier.height(24.dp + bottomPadding))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge + bottomPadding))
         }
     }
 }
@@ -128,7 +129,7 @@ private fun GroupDetailMembersSection(group: GroupUiModel) {
     )
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         if (group.memberAvatarUrls.isNotEmpty() || group.memberOverflowCount > 0) {
             MemberAvatarStack(
@@ -169,7 +170,7 @@ private fun GroupDetailSubunitsSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = MaterialTheme.spacing.Default, vertical = MaterialTheme.spacing.Medium),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -197,7 +198,7 @@ private fun GroupDetailActions(
     onManageSubunits: () -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium),
         modifier = Modifier.fillMaxWidth()
     ) {
         if (isActiveGroup) {

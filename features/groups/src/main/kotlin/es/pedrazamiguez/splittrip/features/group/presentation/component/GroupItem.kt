@@ -29,6 +29,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronRight
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
@@ -78,8 +79,8 @@ fun GroupItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(MaterialTheme.spacing.Medium),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 GroupThumbnail(imageUrl = groupUiModel.imageUrl)
@@ -145,7 +146,7 @@ private fun GroupItemMetaLine(groupUiModel: GroupUiModel) {
     if (metaParts.isEmpty()) return
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
         metaParts.forEachIndexed { index, part ->
@@ -171,7 +172,7 @@ private fun GroupItemMetaLine(groupUiModel: GroupUiModel) {
 private fun GroupItemTrailing(currency: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
     ) {
         Box(
             modifier = Modifier

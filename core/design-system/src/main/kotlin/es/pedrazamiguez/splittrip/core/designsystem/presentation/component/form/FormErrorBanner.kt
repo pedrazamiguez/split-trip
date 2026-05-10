@@ -14,6 +14,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 private val ACCENT_STRIP_WIDTH = 4.dp
 
@@ -66,10 +67,14 @@ fun FormErrorBanner(
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(
-                        start = if (!isDarkTheme) ACCENT_STRIP_WIDTH + 12.dp else 12.dp,
-                        top = 12.dp,
-                        end = 12.dp,
-                        bottom = 12.dp
+                        start = if (!isDarkTheme) {
+                            ACCENT_STRIP_WIDTH + MaterialTheme.spacing.Medium
+                        } else {
+                            MaterialTheme.spacing.Medium
+                        },
+                        top = MaterialTheme.spacing.Medium,
+                        end = MaterialTheme.spacing.Medium,
+                        bottom = MaterialTheme.spacing.Medium
                     )
                 )
             }

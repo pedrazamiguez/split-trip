@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronRight
 import es.pedrazamiguez.splittrip.features.settings.presentation.view.SettingItemView
@@ -80,6 +81,6 @@ fun SettingsRow(
         modifier = Modifier
             .clickable { item.onClick() }
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = MaterialTheme.spacing.Small)
     )
 }

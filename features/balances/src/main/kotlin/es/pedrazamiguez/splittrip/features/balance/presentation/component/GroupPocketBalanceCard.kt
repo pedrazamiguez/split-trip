@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CashBanknote
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
@@ -44,7 +45,7 @@ fun GroupPocketBalanceCard(
 ) {
     FlatCard(modifier = modifier.fillMaxWidth(), elevation = CARD_SHADOW_ELEVATION) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(20.dp),
+            modifier = Modifier.fillMaxWidth().padding(MaterialTheme.spacing.Large),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             PocketBalanceMainSection(
@@ -55,19 +56,19 @@ fun GroupPocketBalanceCard(
                 onBalanceAnimationComplete = onBalanceAnimationComplete
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
             PocketBalanceStatsRow(balance = balance)
 
             if (balance.cashBalances.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
                 CashBalancesSection(
                     cashBalances = balance.cashBalances,
                     formattedTotalCashEquivalent = balance.formattedTotalCashEquivalent
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
             BalanceCardActionButtons(
                 onAddMoney = onAddMoney,
@@ -92,14 +93,14 @@ private fun PocketBalanceMainSection(
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
     }
     Text(
         text = stringResource(R.string.balances_remaining),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
     )
-    Spacer(modifier = Modifier.height(4.dp))
+    Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
     AnimatedAmount(
         formattedAmount = balance.formattedBalance,
         shouldAnimate = shouldAnimateBalance,
@@ -111,7 +112,7 @@ private fun PocketBalanceMainSection(
         onAnimationComplete = onBalanceAnimationComplete
     )
     if (balance.formattedAvailableBalance != null) {
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
         Text(
             text = stringResource(R.string.balances_available),
             style = MaterialTheme.typography.labelMedium,
@@ -158,7 +159,7 @@ private fun PocketBalanceStatsRow(balance: GroupPocketBalanceUiModel) {
         }
     }
     if (balance.formattedTotalExtras != null) {
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
@@ -201,14 +202,14 @@ private fun CashBalancesSection(
             )
         }
     }
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
     cashBalances.forEach { cashBalance -> CashBalanceRow(cashBalance = cashBalance) }
 }
 
 @Composable
 private fun CashBalanceRow(cashBalance: CashBalanceUiModel) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.Small),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -245,7 +246,7 @@ private fun BalanceCardActionButtons(
     val withdrawSharedModifier = fabSharedTransitionModifier(SharedElementKeys.ADD_CASH_WITHDRAWAL)
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         GradientButton(
             text = stringResource(R.string.balances_add_money),

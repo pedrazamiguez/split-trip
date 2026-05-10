@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlignJustified
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
@@ -148,7 +149,7 @@ internal fun SelectedGroupCoverImage(
             ActiveNowBadge(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(16.dp)
+                    .padding(MaterialTheme.spacing.Default)
             )
         }
     }
@@ -179,7 +180,7 @@ private fun GroupCoverImagePlaceholder(modifier: Modifier = Modifier) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
             Icon(
                 imageVector = TablerIcons.Outline.Photo,
@@ -208,7 +209,7 @@ private fun ActiveNowBadge(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.ExtraSmall)
         )
     }
 }
@@ -219,8 +220,8 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(MaterialTheme.spacing.Default),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         // Name row with currency chip
         Row(
@@ -235,7 +236,7 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 12.dp),
+                    .padding(end = MaterialTheme.spacing.Medium),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -261,7 +262,7 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
         // Description row
         if (groupUiModel.description.isNotEmpty()) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -283,7 +284,7 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
         // Avatar stack + member count
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
             if (groupUiModel.memberAvatarUrls.isNotEmpty() || groupUiModel.memberOverflowCount > 0) {
                 MemberAvatarStack(

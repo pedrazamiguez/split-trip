@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CashBanknote
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
@@ -64,7 +65,7 @@ fun CashWithdrawalHistoryItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = MaterialTheme.spacing.Default, vertical = MaterialTheme.spacing.Medium),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -72,7 +73,7 @@ fun CashWithdrawalHistoryItem(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.tertiary
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.Medium))
                 WithdrawalDetailColumn(withdrawal = withdrawal, modifier = Modifier.weight(1f))
                 WithdrawalAmountColumn(withdrawal = withdrawal)
             }
@@ -134,7 +135,7 @@ private fun WithdrawalScopeBadge(withdrawal: CashWithdrawalUiModel) {
     if (withdrawal.scopeLabel != null) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
             Icon(
                 imageVector = when {

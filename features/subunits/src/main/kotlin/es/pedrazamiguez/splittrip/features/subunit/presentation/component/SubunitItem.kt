@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.features.subunit.presentation.model.SubunitUiModel
 
@@ -44,8 +45,8 @@ fun SubunitItem(subunitUiModel: SubunitUiModel, modifier: Modifier = Modifier, o
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(MaterialTheme.spacing.Default),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
             // Name + member count
             Row(
@@ -60,7 +61,7 @@ fun SubunitItem(subunitUiModel: SubunitUiModel, modifier: Modifier = Modifier, o
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = 8.dp),
+                        .padding(end = MaterialTheme.spacing.Small),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -73,11 +74,11 @@ fun SubunitItem(subunitUiModel: SubunitUiModel, modifier: Modifier = Modifier, o
 
             // Member shares — each member on its own row with a percentage chip
             if (subunitUiModel.memberShares.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
                     subunitUiModel.memberShares.forEach { memberShare ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
                         ) {
                             Text(
                                 text = memberShare.displayName,
@@ -98,7 +99,7 @@ fun SubunitItem(subunitUiModel: SubunitUiModel, modifier: Modifier = Modifier, o
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.padding(
-                                        horizontal = 8.dp,
+                                        horizontal = MaterialTheme.spacing.Small,
                                         vertical = 2.dp
                                     )
                                 )

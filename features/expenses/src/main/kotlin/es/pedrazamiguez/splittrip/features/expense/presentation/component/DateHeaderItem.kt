@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 @Composable
 fun DateHeaderItem(dateText: String, formattedDayTotal: String, modifier: Modifier = Modifier) {
@@ -19,7 +19,7 @@ fun DateHeaderItem(dateText: String, formattedDayTotal: String, modifier: Modifi
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 4.dp, vertical = 8.dp),
+            .padding(horizontal = MaterialTheme.spacing.ExtraSmall, vertical = MaterialTheme.spacing.Small),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

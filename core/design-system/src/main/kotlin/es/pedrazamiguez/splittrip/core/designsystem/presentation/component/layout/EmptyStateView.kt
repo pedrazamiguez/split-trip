@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Inbox
 
@@ -33,7 +34,7 @@ fun EmptyStateView(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(MaterialTheme.spacing.Section),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -44,7 +45,7 @@ fun EmptyStateView(
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
         Text(
             text = title,
@@ -54,7 +55,7 @@ fun EmptyStateView(
         )
 
         if (description != null) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
 
             Text(
                 text = description,

@@ -38,6 +38,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
@@ -130,7 +131,10 @@ fun <T> AsyncSearchableChipSelector(
         onSearchQueryChanged("")
     }
 
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+    ) {
         if (title != null) {
             Text(text = title, style = MaterialTheme.typography.labelLarge)
         }
@@ -177,7 +181,7 @@ fun <T> AsyncSearchableChipSelector(
                     text = noResultsText,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier.padding(start = MaterialTheme.spacing.ExtraSmall)
                 )
             }
         }
@@ -205,8 +209,8 @@ private fun <T> AsyncSelectedChipsRow(
 ) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
     ) {
         selectedItems.forEach { item ->
             key(itemKey(item)) {

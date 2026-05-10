@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 /** Shared icon size used across all button tiers for visual consistency. */
 internal val BUTTON_ICON_SIZE = 18.dp
@@ -43,11 +45,11 @@ internal fun ButtonContentRow(
         Text(
             text = text,
             color = contentColor,
-            style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(
-                start = if (leadingIcon != null) 8.dp else 0.dp,
-                end = if (trailingIcon != null) 8.dp else 0.dp
+                start = if (leadingIcon != null) MaterialTheme.spacing.Small else 0.dp,
+                end = if (trailingIcon != null) MaterialTheme.spacing.Small else 0.dp
             )
         )
         if (trailingIcon != null) {

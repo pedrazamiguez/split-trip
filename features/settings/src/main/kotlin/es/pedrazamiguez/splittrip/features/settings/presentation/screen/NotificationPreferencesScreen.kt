@@ -12,7 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BuildingBank
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
@@ -31,15 +31,18 @@ fun NotificationPreferencesScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 8.dp),
-        contentPadding = PaddingValues(vertical = 8.dp)
+            .padding(horizontal = MaterialTheme.spacing.Small),
+        contentPadding = PaddingValues(vertical = MaterialTheme.spacing.Small)
     ) {
         item(key = "header") {
             Text(
                 text = stringResource(R.string.notification_prefs_header),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                modifier = Modifier.padding(
+                    horizontal = MaterialTheme.spacing.Default,
+                    vertical = MaterialTheme.spacing.Medium
+                )
             )
         }
 

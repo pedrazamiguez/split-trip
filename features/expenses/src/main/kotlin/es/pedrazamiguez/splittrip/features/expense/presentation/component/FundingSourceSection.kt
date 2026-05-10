@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -29,7 +29,7 @@ internal fun FundingSourceSection(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         Text(
             text = stringResource(R.string.funding_source_title),
