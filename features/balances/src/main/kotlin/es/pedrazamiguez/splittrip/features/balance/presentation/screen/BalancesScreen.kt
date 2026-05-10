@@ -30,6 +30,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DashboardShimmer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerBox
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -121,7 +122,19 @@ private fun BalancesBodyContent(
 ) {
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
-        loadingContent = { DashboardShimmer() }
+        loadingContent = {
+            DashboardShimmer(
+                bottomPadding = bottomPadding,
+                // Mirror the title+subtitle header above GroupPocketBalanceCard to keep the
+                // vertical layout stable during the loading→content transition.
+                headerContent = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ShimmerBox(height = 36.dp, width = 200.dp)
+                        ShimmerBox(height = 14.dp, width = 260.dp)
+                    }
+                }
+            )
+        }
     ) {
         when {
             uiState.pocketBalance.formattedBalance.isEmpty() &&
