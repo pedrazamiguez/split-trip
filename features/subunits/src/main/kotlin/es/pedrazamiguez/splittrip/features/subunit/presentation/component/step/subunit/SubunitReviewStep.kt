@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.component.step.
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,8 +49,6 @@ private fun ReviewCardContent(uiState: CreateEditSubunitUiState, none: String) {
         value = uiState.name.ifBlank { none }
     )
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
     ReviewRow(
         label = stringResource(R.string.subunit_review_members),
         value = uiState.selectedMemberIds
@@ -59,8 +56,6 @@ private fun ReviewCardContent(uiState: CreateEditSubunitUiState, none: String) {
             .joinToString { it.displayName }
             .ifBlank { none }
     )
-
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
     ReviewSharesList(uiState = uiState, memberMap = memberMap, none = none)
 }

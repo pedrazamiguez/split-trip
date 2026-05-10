@@ -198,10 +198,10 @@ private fun GroupCoverImagePlaceholder(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ActiveNowBadge(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.secondaryContainer
+    Box(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
     ) {
         Text(
             text = stringResource(R.string.group_active_badge),
@@ -240,9 +240,10 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
                 overflow = TextOverflow.Ellipsis
             )
             // Primary color chip — high contrast on surfaceContainerLow card background.
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.primary
+            Box(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.primary)
             ) {
                 Text(
                     text = groupUiModel.currency,

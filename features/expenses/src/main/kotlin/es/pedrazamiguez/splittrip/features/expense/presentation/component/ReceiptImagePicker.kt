@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -72,11 +72,7 @@ private fun ReceiptImagePreview(receiptUri: String, onRemoveImage: () -> Unit) {
             .fillMaxWidth()
             .height(200.dp)
             .clip(MaterialTheme.shapes.large)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = MaterialTheme.shapes.large
-            )
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
@@ -110,11 +106,7 @@ private fun ReceiptPickerPlaceholder(onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = MaterialTheme.shapes.large
-            )
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .clickable(onClick = onClick)
             .padding(vertical = 24.dp),
         horizontalArrangement = Arrangement.Center,

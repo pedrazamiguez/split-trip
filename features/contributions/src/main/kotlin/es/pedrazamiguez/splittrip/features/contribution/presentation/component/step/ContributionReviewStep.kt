@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.contribution.presentation.component.
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,16 +33,12 @@ fun ContributionReviewStep(
                 value = uiState.selectedMemberDisplayName.ifBlank { none }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
             ReviewRow(
                 label = stringResource(R.string.contribution_review_amount),
                 value = uiState.formattedAmountWithCurrency.ifBlank {
                     uiState.amountInput.ifBlank { none }
                 }
             )
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             ReviewRow(
                 label = stringResource(R.string.contribution_review_scope),

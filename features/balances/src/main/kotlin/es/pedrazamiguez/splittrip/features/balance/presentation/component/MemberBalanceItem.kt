@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -201,8 +200,7 @@ private fun MemberBalanceExpandedDetail(
     onShowCashBreakdown: () -> Unit
 ) {
     Column(modifier = Modifier.padding(top = 8.dp)) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         DetailRow(
             label = stringResource(R.string.balances_member_pocket_balance),
@@ -218,9 +216,7 @@ private fun MemberBalanceExpandedDetail(
             onShowCashBreakdown = onShowCashBreakdown
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         SpendingBreakdownSection(memberBalance = memberBalance)
     }

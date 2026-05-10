@@ -21,6 +21,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.permission.checkNotificationPermission
 import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestNotificationPermission
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.SettingsScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
@@ -50,33 +51,34 @@ fun SettingsFeature(
         settingsViewModel.updateNotificationPermission(isGranted)
     }
 
-    SettingsScreen(
-        onBack = { navController.popBackStack() },
-        onNotificationsClick = {
-            if (hasPermission) {
-                navController.navigate(Routes.SETTINGS_NOTIFICATIONS)
-            } else {
-                requestPermission()
-            }
-        },
-        onNotificationSwitchToggle = {
-            if (hasPermission) {
-                // Permission already granted — open system settings to allow user to revoke
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
+    FeatureScaffold(currentRoute = Routes.SETTINGS) {
+        SettingsScreen(
+            onNotificationsClick = {
+                if (hasPermission) {
+                    navController.navigate(Routes.SETTINGS_NOTIFICATIONS)
+                } else {
+                    requestPermission()
                 }
-                context.startActivity(intent)
-            } else {
-                requestPermission()
-            }
-        },
-        hasNotificationPermission = hasPermission,
-        currentCurrency = currentCurrency,
-        onDefaultCurrencyClick = {
-            navController.navigate(Routes.SETTINGS_DEFAULT_CURRENCY)
-        },
-        onLogoutClick = { showLogoutDialog = true }
-    )
+            },
+            onNotificationSwitchToggle = {
+                if (hasPermission) {
+                    // Permission already granted — open system settings to allow user to revoke
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
+                } else {
+                    requestPermission()
+                }
+            },
+            hasNotificationPermission = hasPermission,
+            currentCurrency = currentCurrency,
+            onDefaultCurrencyClick = {
+                navController.navigate(Routes.SETTINGS_DEFAULT_CURRENCY)
+            },
+            onLogoutClick = { showLogoutDialog = true }
+        )
+    }
 
     if (showLogoutDialog) {
         DestructiveConfirmationDialog(
