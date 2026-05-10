@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.step.
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,7 +63,6 @@ private fun ReviewAmountSection(uiState: AddExpenseUiState) {
     )
 
     if (uiState.showExchangeRateSection) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         ReviewRow(
             label = stringResource(R.string.expense_review_exchange_rate),
             value = uiState.displayExchangeRate
@@ -93,7 +91,6 @@ private fun ReviewDetailsSection(uiState: AddExpenseUiState) {
 
     if (!hasAnyDetail) return
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     ReviewCategoryAndVendor(uiState)
     ReviewStatusAndSchedule(uiState)
     ReviewReceipt(uiState)
@@ -178,7 +175,6 @@ private fun ReviewReceipt(uiState: AddExpenseUiState) {
 private fun ReviewSplitSection(uiState: AddExpenseUiState) {
     if (uiState.memberIds.size <= 1) return
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     uiState.selectedSplitType?.let {
         ReviewRow(
             label = stringResource(R.string.expense_review_split_type),
@@ -193,7 +189,6 @@ private fun ReviewSplitSection(uiState: AddExpenseUiState) {
 private fun ReviewAddOnsSection(uiState: AddExpenseUiState) {
     if (uiState.addOns.isEmpty()) return
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     ReviewRow(
         label = stringResource(R.string.expense_review_add_ons),
         value = uiState.addOns.size.toString()

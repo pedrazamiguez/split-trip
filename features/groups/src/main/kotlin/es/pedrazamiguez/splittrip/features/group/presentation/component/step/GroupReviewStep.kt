@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.group.presentation.component.step
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,26 +31,22 @@ fun GroupReviewStep(
                 value = uiState.groupName.ifBlank { none }
             )
             if (uiState.groupDescription.isNotBlank()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 ReviewRow(
                     label = stringResource(R.string.group_review_description),
                     value = uiState.groupDescription
                 )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             ReviewRow(
                 label = stringResource(R.string.group_review_currency),
                 value = uiState.selectedCurrency?.displayText ?: none
             )
             if (uiState.extraCurrencies.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 ReviewRow(
                     label = stringResource(R.string.group_review_extra_currencies),
                     value = uiState.extraCurrencies.joinToString { it.code }
                 )
             }
             if (uiState.selectedMembers.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 ReviewRow(
                     label = stringResource(R.string.group_review_members),
                     value = uiState.selectedMembers.joinToString { it.displayName ?: it.email }

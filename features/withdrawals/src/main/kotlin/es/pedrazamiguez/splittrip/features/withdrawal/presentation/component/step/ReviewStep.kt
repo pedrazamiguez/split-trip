@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.st
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,7 +54,6 @@ private fun ReviewAmountSection(uiState: AddCashWithdrawalUiState) {
     )
 
     if (uiState.showExchangeRateSection) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         ReviewRow(
             label = stringResource(R.string.withdrawal_review_exchange_rate),
             value = uiState.displayExchangeRate
@@ -75,7 +73,6 @@ private fun ReviewFeeSection(uiState: AddCashWithdrawalUiState) {
 
     val locale = rememberLocale()
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     ReviewRow(
         label = stringResource(R.string.withdrawal_review_atm_fee),
         value = (uiState.feeCurrency ?: uiState.groupCurrency)?.code?.let { code ->
@@ -96,12 +93,10 @@ private fun ReviewFeeSection(uiState: AddCashWithdrawalUiState) {
 private fun ReviewDetailsSection(uiState: AddCashWithdrawalUiState) {
     val none = stringResource(R.string.withdrawal_review_none)
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     ReviewRow(
         label = stringResource(R.string.withdrawal_review_member),
         value = uiState.selectedMemberDisplayName.ifBlank { none }
     )
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     ReviewRow(
         label = stringResource(R.string.withdrawal_review_scope),
         value = when (uiState.withdrawalScope) {

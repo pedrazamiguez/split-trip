@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.component
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -119,19 +119,19 @@ private fun GroupThumbnail(imageUrl: String?, modifier: Modifier = Modifier) {
                 .clip(shape)
         )
     } else {
-        Surface(
-            modifier = modifier.size(THUMBNAIL_SIZE),
-            shape = shape,
-            color = MaterialTheme.colorScheme.primaryContainer
+        Box(
+            modifier = modifier
+                .size(THUMBNAIL_SIZE)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = TablerIcons.Outline.Photo,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            Icon(
+                imageVector = TablerIcons.Outline.Photo,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }
@@ -173,9 +173,10 @@ private fun GroupItemTrailing(currency: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.primaryContainer
+        Box(
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.primaryContainer)
         ) {
             Text(
                 text = currency,

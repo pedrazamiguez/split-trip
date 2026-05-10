@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyU
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DefaultCurrencyScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.NotificationPreferencesScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.SettingsScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.AppVersionViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DefaultCurrencyViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.InstallationIdViewModel
@@ -47,4 +48,5 @@ val settingsUiModule = module {
 
     single { DefaultCurrencyScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { NotificationPreferencesScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { SettingsScreenUiProviderImpl() } bind ScreenUiProvider::class
 }
