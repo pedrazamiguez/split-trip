@@ -11,11 +11,14 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LargeBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.ScreenTitleText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewLocales
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemes
@@ -33,8 +36,11 @@ private fun TextComponentsGalleryPreview() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ScreenTitleText(text = "My Trips (headlineLarge Bold)")
+            SheetTitleText(text = "Select a Group (titleLarge Bold)")
             SectionHeadingText(text = "Recent Expenses (titleMedium Bold)")
+            CardSectionLabelText(text = "Due Date (titleSmall Bold)")
             CardTitleText(text = "Hotel Lisbon (titleSmall SemiBold)")
+            LargeBodyText(text = "Group currency symbol € (bodyLarge Normal)")
             BodyText(text = "Shared across 4 participants over 3 nights. (bodyMedium Normal)")
             SecondaryBodyText(text = "12 May 2026 · 4 members (bodySmall Normal)")
             LabelText(text = "Paid by Alice (labelLarge SemiBold)")
@@ -61,8 +67,11 @@ private fun TextComponentsLocalePreview() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ScreenTitleText(text = "My Trips")
+            SheetTitleText(text = "Select a Group")
             SectionHeadingText(text = "Recent Expenses")
+            CardSectionLabelText(text = "Due Date")
             CardTitleText(text = "Hotel Lisbon")
+            LargeBodyText(text = "Group currency")
             BodyText(text = "Shared across 4 participants.")
             SecondaryBodyText(text = "12 May 2026 · 4 members")
             LabelText(text = "Paid by Alice")
@@ -168,5 +177,40 @@ private fun AmountTextPreview() {
                 color = MaterialTheme.colorScheme.error
             )
         }
+    }
+}
+
+// ─── New wrappers: isolated previews ─────────────────────────────────────────
+
+@PreviewThemes
+@Composable
+private fun SheetTitleTextPreview() {
+    PreviewThemeWrapper {
+        SheetTitleText(
+            text = "Select a Group",
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@PreviewThemes
+@Composable
+private fun CardSectionLabelTextPreview() {
+    PreviewThemeWrapper {
+        CardSectionLabelText(
+            text = "Due Date",
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@PreviewThemes
+@Composable
+private fun LargeBodyTextPreview() {
+    PreviewThemeWrapper {
+        LargeBodyText(
+            text = "Group currency symbol €",
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }

@@ -18,10 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.features.subunit.presentation.model.SubunitUiModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -54,21 +56,16 @@ fun SubunitItem(subunitUiModel: SubunitUiModel, modifier: Modifier = Modifier, o
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
+                SectionHeadingText(
                     text = subunitUiModel.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = MaterialTheme.spacing.Small),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                        .padding(end = MaterialTheme.spacing.Small)
                 )
-                Text(
+                SecondaryBodyText(
                     text = subunitUiModel.memberCount,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    maxLines = Int.MAX_VALUE
                 )
             }
 
@@ -80,12 +77,10 @@ fun SubunitItem(subunitUiModel: SubunitUiModel, modifier: Modifier = Modifier, o
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
                         ) {
-                            Text(
+                            BodyText(
                                 text = memberShare.displayName,
-                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f, fill = false)
                             )
                             Box(

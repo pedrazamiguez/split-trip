@@ -6,11 +6,10 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 
 /**
  * Reusable card for grouped content sections across the app.
@@ -34,12 +33,7 @@ fun SectionCard(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         if (title != null) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            SectionHeadingText(text = title)
         }
 
         FlatCard(modifier = Modifier.fillMaxWidth()) {

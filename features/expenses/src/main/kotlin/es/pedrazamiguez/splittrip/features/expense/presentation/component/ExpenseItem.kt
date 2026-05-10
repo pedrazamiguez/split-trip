@@ -33,6 +33,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
@@ -195,12 +197,10 @@ private fun ExpenseItemBadgesRow(expenseUiModel: ExpenseUiModel, modifier: Modif
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (expenseUiModel.paymentMethodText.isNotEmpty()) {
-            Text(
+            BodyText(
                 text = expenseUiModel.paymentMethodText,
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 1
             )
         }
         if (expenseUiModel.hasAddOns) {
@@ -228,9 +228,8 @@ private fun AddOnBadge() {
             modifier = Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.primary
         )
-        Text(
+        SecondaryBodyText(
             text = stringResource(R.string.expense_add_ons_label),
-            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -257,9 +256,8 @@ private fun OutOfPocketBadge(
             modifier = Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.primary
         )
-        Text(
+        SecondaryBodyText(
             text = fundingSourceText,
-            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary
         )
     }

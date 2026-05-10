@@ -41,6 +41,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 
 /**
  * A reusable search-based multi-select component with autocomplete dropdown and removable chips.
@@ -301,15 +303,11 @@ private fun <T> DropdownItemText(
 ) {
     if (itemSecondaryText != null) {
         Column {
-            Text(text = itemDisplayText(item), style = MaterialTheme.typography.bodyMedium)
-            Text(
-                text = itemSecondaryText(item),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            BodyText(text = itemDisplayText(item))
+            SecondaryBodyText(text = itemSecondaryText(item))
         }
     } else {
-        Text(text = itemDisplayText(item), style = MaterialTheme.typography.bodyMedium)
+        BodyText(text = itemDisplayText(item))
     }
 }
 
@@ -317,11 +315,7 @@ private fun <T> DropdownItemText(
 private fun SearchHelperText(helperText: String?, showHelper: Boolean) {
     if (helperText != null) {
         AnimatedVisibility(visible = showHelper) {
-            Text(
-                text = helperText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            SecondaryBodyText(text = helperText, maxLines = Int.MAX_VALUE)
         }
     }
 }

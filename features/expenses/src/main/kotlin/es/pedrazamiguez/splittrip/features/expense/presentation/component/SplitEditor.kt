@@ -29,6 +29,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.LockFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.LockOpen
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -130,10 +131,10 @@ private fun SplitMemberNameColumn(
             }
         )
         if (!split.isExcluded && !isEqualMode && split.formattedAmount.isNotBlank()) {
-            Text(
+            SecondaryBodyText(
                 text = split.formattedAmount,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = Int.MAX_VALUE
             )
         }
     }

@@ -34,6 +34,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerBox
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.CashWithdrawalHistoryItem
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.ContributionHistoryItem
@@ -186,9 +188,8 @@ private fun BalancesListContent(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Text(
+                BodyText(
                     text = stringResource(R.string.balances_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -212,10 +213,8 @@ private fun BalancesListContent(
 private fun LazyListScope.memberBalancesSection(memberBalances: ImmutableList<MemberBalanceUiModel>) {
     if (memberBalances.isEmpty()) return
     item {
-        Text(
+        SectionHeadingText(
             text = stringResource(R.string.balances_member_balances_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }
@@ -230,10 +229,8 @@ private fun LazyListScope.activitySection(
 ) {
     if (activityItems.isEmpty()) return
     item {
-        Text(
+        SectionHeadingText(
             text = stringResource(R.string.balances_history_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }

@@ -35,6 +35,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.component.MemberAvatarStack
 import es.pedrazamiguez.splittrip.features.group.presentation.component.SelectedGroupCoverImage
@@ -138,9 +140,8 @@ private fun GroupDetailMembersSection(group: GroupUiModel) {
             )
         }
         if (group.membersCountText.isNotEmpty()) {
-            Text(
+            BodyText(
                 text = group.membersCountText,
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -174,9 +175,8 @@ private fun GroupDetailSubunitsSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
+            BodyText(
                 text = subunitsText,
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (subunitsCount > 0) {
@@ -235,12 +235,7 @@ private fun GroupDetailSectionLabel(
         verticalAlignment = Alignment.CenterVertically
     ) {
         icon()
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        LabelText(text = label)
     }
 }
 

@@ -10,15 +10,15 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import kotlinx.collections.immutable.ImmutableList
@@ -47,12 +47,7 @@ fun PayerTypeScopeCard(
 ) {
     FlatCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(MaterialTheme.spacing.Large)) {
-            Text(
-                text = labels.title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            CardSectionLabelText(text = labels.title)
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
             Column(modifier = Modifier.selectableGroup()) {
                 ScopeRadioRow(
@@ -97,9 +92,8 @@ private fun ScopeRadioRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         RadioButton(selected = selected, onClick = null)
-        Text(
+        BodyText(
             text = text,
-            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(start = MaterialTheme.spacing.Small)
         )
     }

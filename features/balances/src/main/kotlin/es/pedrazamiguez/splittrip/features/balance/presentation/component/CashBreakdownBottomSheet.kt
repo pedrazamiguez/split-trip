@@ -21,6 +21,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakdownUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -59,17 +63,14 @@ fun CashBreakdownBottomSheet(
                     bottom = MaterialTheme.spacing.Section
                 )
         ) {
-            Text(
+            SheetTitleText(
                 text = stringResource(R.string.balances_cash_breakdown_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = MaterialTheme.spacing.Default)
             )
 
             if (breakdown.isEmpty()) {
-                Text(
+                BodyText(
                     text = stringResource(R.string.balances_cash_breakdown_empty),
-                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
@@ -82,10 +83,8 @@ fun CashBreakdownBottomSheet(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
+                    LabelText(
                         text = stringResource(R.string.balances_cash_breakdown_total_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
@@ -107,18 +106,16 @@ private fun CashBreakdownItemList(breakdown: ImmutableList<CashBreakdownUiModel>
         // Render a section header whenever the scope group changes
         if (item.scopeLabel != lastScopeLabel) {
             if (lastScopeLabel.isNotEmpty()) Spacer(Modifier.height(MaterialTheme.spacing.Default))
-            Text(
+            LabelText(
                 text = item.scopeLabel,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(bottom = MaterialTheme.spacing.ExtraSmall)
             )
             if (item.isEstimatedShare) {
-                Text(
+                CaptionText(
                     text = stringResource(R.string.balances_cash_breakdown_estimated_hint),
-                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    maxLines = Int.MAX_VALUE,
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
             }
@@ -149,17 +146,15 @@ private fun CashBreakdownEntryRow(item: CashBreakdownUiModel) {
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (item.dateText.isNotBlank()) {
-                Text(
+                CaptionText(
                     text = item.dateText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    maxLines = Int.MAX_VALUE
                 )
             }
             if (item.formattedRate.isNotBlank()) {
-                Text(
+                CaptionText(
                     text = item.formattedRate,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    maxLines = Int.MAX_VALUE
                 )
             }
         }
@@ -176,9 +171,8 @@ private fun CashBreakdownEntryRow(item: CashBreakdownUiModel) {
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (item.formattedEquivalent.isNotBlank()) {
-                Text(
+                CaptionText(
                     text = item.formattedEquivalent,
-                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }

@@ -35,6 +35,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronRight
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 
 private val THUMBNAIL_SIZE = 56.dp
@@ -151,19 +152,12 @@ private fun GroupItemMetaLine(groupUiModel: GroupUiModel) {
     ) {
         metaParts.forEachIndexed { index, part ->
             if (index > 0) {
-                Text(
+                SecondaryBodyText(
                     text = stringResource(DesignR.string.metadata_separator),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    maxLines = Int.MAX_VALUE
                 )
             }
-            Text(
-                text = part,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            SecondaryBodyText(text = part)
         }
     }
 }

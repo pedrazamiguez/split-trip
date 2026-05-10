@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -15,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 
 private val ACCENT_STRIP_WIDTH = 4.dp
 
@@ -62,10 +62,9 @@ fun FormErrorBanner(
                 Modifier
             }
             Box(modifier = stripModifier) {
-                Text(
+                BodyText(
                     text = errorUiText.asString(),
                     color = MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(
                         start = if (!isDarkTheme) {
                             ACCENT_STRIP_WIDTH + MaterialTheme.spacing.Medium
