@@ -146,7 +146,62 @@ Used for **Title**, **Body**, and **Label** roles. Provides clarity for travel l
 | `labelMedium` | Medium | 12 sp | 16 sp | 0.50 sp |
 | `labelSmall` | Medium | 11 sp | 16 sp | 0.50 sp |
 
-### 3.3 Tabular Numerals
+### 3.3 Semantic Text Wrappers
+
+To enforce the dual-voice system without requiring per-call-site `style`/`fontWeight` arguments, a set of **semantic text wrapper composables** is provided in `core/design-system/.../component/text/TextComponents.kt`. Each wrapper fixes the correct `TextStyle`, `FontWeight`, and default `Color` for its semantic role:
+
+| Wrapper | Base Style | Typeface | Default Weight | Default Color |
+|---|---|---|---|---|
+| `ScreenTitleText` | `headlineLarge` (32 sp) | Plus Jakarta Sans | Bold | `onBackground` |
+| `SectionHeadingText` | `titleMedium` (16 sp) | Manrope | Bold | `onSurface` |
+| `CardTitleText` | `titleSmall` (14 sp) | Manrope | SemiBold | `onSurface` |
+| `BodyText` | `bodyMedium` (14 sp) | Manrope | Normal | `onSurface` |
+| `SecondaryBodyText` | `bodySmall` (12 sp) | Manrope | Normal | `onSurfaceVariant` |
+| `LabelText` | `labelLarge` (14 sp) | Manrope | SemiBold | `onSurface` |
+| `CaptionText` | `labelSmall` (11 sp) | Manrope | Medium | `onSurfaceVariant` |
+| `AmountText` | `titleMedium` (16 sp) | Manrope | Bold | `onSurface` (overridable) |
+
+**Semantic contract rules:**
+* Callers **cannot** pass `style` or `fontWeight` — those are sealed inside each wrapper.
+* An optional `color` parameter allows per-call-site overrides for semantic states (e.g., `MaterialTheme.colorScheme.error` for `AmountText` on negative balances, `MaterialTheme.colorScheme.primary` for highlighted values).
+* A `maxLines` parameter is available on all wrappers for truncation. The default varies by context: `CardTitleText`, `SecondaryBodyText`, `LabelText`, `CaptionText`, and `AmountText` default to `maxLines = 1`; `ScreenTitleText`, `SectionHeadingText`, and `BodyText` default to unlimited.
+
+**When to use each wrapper:**
+
+| Wrapper | Typical usage |
+|---|---|
+| `ScreenTitleText` | Hero headline on an onboarding or empty-state screen |
+| `SectionHeadingText` | Label above a group of related cards in a list |
+| `CardTitleText` | Primary name/title row inside a `FlatCard` |
+| `BodyText` | Descriptive copy, notes, paragraph text |
+| `SecondaryBodyText` | Date, member count, status — secondary metadata |
+| `LabelText` | Form field label, tab label, action label |
+| `CaptionText` | Timestamp, sync status, helper text below a field |
+| `AmountText` | Any monetary amount; pass `color = error` for negative balances |
+
+**Example:**
+```kotlin
+// ✅ Correct — semantic wrapper with explicit error colour for negative balance
+AmountText(
+    text = amountFormatted,
+    color = if (isNegative) MaterialTheme.colorScheme.error else Color.Unspecified,
+)
+
+// ✅ Correct — section label
+SectionHeadingText(text = stringResource(R.string.balances_section_title))
+
+// ❌ Avoid — raw Text with ad-hoc style arguments
+Text(
+    text = title,
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold,
+    color = MaterialTheme.colorScheme.onSurface,
+)
+```
+
+> **Implementation:** `TextComponents.kt` in `core/design-system/.../component/text/`
+
+### 3.4 Tabular Numerals
 
 All text styles include the `tnum` OpenType feature for **tabular (monospaced) numerals**. This ensures:
 - Decimal separators and currency digits align vertically in lists.
@@ -457,6 +512,7 @@ The Horizon Narrative was implemented across 7 focused sub-issues:
 | `PassportChip.kt` | `core/design-system/.../component/chip/` | Signature travel chip with tone-stable colours |
 | `StyledOutlinedTextField.kt` | `core/design-system/.../component/input/` | Soft Field text input with `softFieldColors()` |
 | `StickyActionBar.kt` | `core/design-system/.../component/scaffold/` | Full-width bottom CTA bar (delegates to `GradientButton`) |
+| `TextComponents.kt` | `core/design-system/.../component/text/` | Semantic text wrappers (§3.3) |
 
 ---
 
@@ -470,4 +526,5 @@ All Horizon Narrative components include `@PreviewThemes` previews (light + dark
 | `FlatCardPreviews.kt` | Default card, ghost border variant, `SectionCard` |
 | `GradientButtonPreviews.kt` | Enabled, disabled, loading states |
 | `PassportChipPreviews.kt` | Selected/unselected, removable, overflow variants |
+| `TextComponentsPreviews.kt` | All semantic text wrappers (gallery + per-wrapper light/dark + locale variants) |
 
