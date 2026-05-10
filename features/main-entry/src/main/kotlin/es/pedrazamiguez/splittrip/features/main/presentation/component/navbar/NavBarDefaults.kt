@@ -4,6 +4,10 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Constants for the floating bottom navigation bar dimensions.
+ *
+ * [BottomPadding] is the **minimum** design gap between the pill and the bottom of the window.
+ * At runtime, `WindowInsets.navigationBars` is added on top of it so the pill always floats
+ * above the system navigation bar regardless of navigation mode (gesture / 2-button / 3-button).
  */
 internal object NavBarDefaults {
     val ItemWidth = 76.dp
