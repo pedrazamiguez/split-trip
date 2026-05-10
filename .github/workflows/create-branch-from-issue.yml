@@ -138,23 +138,39 @@ jobs:
           TITLE_FORMAT="[SPLTRP-$(printf "%04d" $ISSUE_NUMBER)]: $ISSUE_TITLE"
 
           if [ "$WAS_CREATED" = "true" ]; then
-            HEADER="🌱 **Branch created:** \`$BRANCH_NAME\`"
+            HEADER="### 🌱 Branch created"
             DESC="This branch has been automatically created based on \`$BASE_BRANCH\`."
           else
-            HEADER="⚠️ **Branch already exists:** \`$BRANCH_NAME\`"
+            HEADER="### ⚠️ Branch already exists"
             DESC="You can use it to continue working."
           fi
 
           cat <<EOF > comment_body.md
           $HEADER
+
+          \`\`\`
+          $BRANCH_NAME
+          \`\`\`
+
           $DESC
 
-          You can now:
-          - Switch to this branch: \`git checkout $BRANCH_NAME\`
-          - Push changes.
-          - **When creating your PR, use this title:** \`$TITLE_FORMAT\`
-          - **Set base branch to:** \`$TARGET_BRANCH\`
-          - **Add description:** \`Closes #$ISSUE_NUMBER\`
+          ### 🚀 Getting started
+
+          Fetch and switch to this branch with the latest changes from \`$BASE_BRANCH\`:
+
+          \`\`\`bash
+          git fetch origin
+          git checkout $BRANCH_NAME
+          git pull origin $BASE_BRANCH
+          \`\`\`
+
+          ### 📌 When creating your PR
+          - **Base branch:** \`$TARGET_BRANCH\`
+          - **Title:**
+            \`\`\`
+            $TITLE_FORMAT
+            \`\`\`
+          - **Description:** \`Closes #$ISSUE_NUMBER\`
           EOF
 
           gh issue comment $ISSUE_NUMBER --repo ${{ github.repository }} -F comment_body.md
