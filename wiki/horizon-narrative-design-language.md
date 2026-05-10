@@ -207,7 +207,7 @@ All text styles include the `tnum` OpenType feature for **tabular (monospaced) n
 - Decimal separators and currency digits align vertically in lists.
 - The `AnimatedAmount` rolling animation renders without layout jitter.
 
-### 3.4 Font Licensing
+### 3.5 Font Licensing
 
 Both typefaces are licensed under the **SIL Open Font License 1.1**:
 - `licenses/Plus_Jakarta_Sans_OFL.txt`

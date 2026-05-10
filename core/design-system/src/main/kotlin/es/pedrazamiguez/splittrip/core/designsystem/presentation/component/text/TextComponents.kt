@@ -20,12 +20,27 @@ import androidx.compose.ui.text.style.TextOverflow
  * (e.g., error-coloured [AmountText] for negative balances).
  *
  * ### Typeface mapping (Horizon Narrative §3)
- * - **Screen titles / section headings** → `headlineLarge` / `titleMedium` → **Plus Jakarta Sans**
- * - **Card titles / amounts** → `titleSmall` / `titleMedium` → **Manrope**
+ * - **Screen titles** → `headlineLarge` → **Plus Jakarta Sans**
+ * - **Section headings / card titles / amounts** → `titleMedium` / `titleSmall` → **Manrope**
  * - **Body / label / caption** → `bodyMedium` / `bodySmall` / `labelLarge` / `labelSmall` → **Manrope**
  *
- * See `wiki/horizon-narrative-design-language.md §3.5` for full usage guidance.
+ * See `wiki/horizon-narrative-design-language.md §3.3` for full usage guidance.
  */
+
+// ─── Private helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Returns [fallback] when this colour is [Color.Unspecified], otherwise returns this colour.
+ * Eliminates the repeated `if (color != Color.Unspecified) color else …` pattern across wrappers.
+ */
+private fun Color.orElse(fallback: Color): Color = if (this != Color.Unspecified) this else fallback
+
+/**
+ * Resolves the correct [TextOverflow] strategy for a given [maxLines] constraint.
+ * When [maxLines] is unconstrained ([Int.MAX_VALUE]), content clips; otherwise it ellipsises.
+ */
+private fun overflowFor(maxLines: Int): TextOverflow =
+    if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
 
 // ─── Display / Headline tier (Plus Jakarta Sans) ────────────────────────────
 
@@ -51,11 +66,11 @@ fun ScreenTitleText(
     Text(
         text = text,
         modifier = modifier,
-        color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onBackground,
+        color = color.orElse(MaterialTheme.colorScheme.onBackground),
         style = MaterialTheme.typography.headlineLarge,
         fontWeight = FontWeight.Bold,
         maxLines = maxLines,
-        overflow = if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = overflowFor(maxLines)
     )
 }
 
@@ -81,11 +96,11 @@ fun SectionHeadingText(
     Text(
         text = text,
         modifier = modifier,
-        color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurface,
+        color = color.orElse(MaterialTheme.colorScheme.onSurface),
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         maxLines = maxLines,
-        overflow = if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = overflowFor(maxLines)
     )
 }
 
@@ -110,11 +125,11 @@ fun CardTitleText(
     Text(
         text = text,
         modifier = modifier,
-        color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurface,
+        color = color.orElse(MaterialTheme.colorScheme.onSurface),
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.SemiBold,
         maxLines = maxLines,
-        overflow = if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = overflowFor(maxLines)
     )
 }
 
@@ -140,11 +155,11 @@ fun BodyText(
     Text(
         text = text,
         modifier = modifier,
-        color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurface,
+        color = color.orElse(MaterialTheme.colorScheme.onSurface),
         style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.Normal,
         maxLines = maxLines,
-        overflow = if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = overflowFor(maxLines)
     )
 }
 
@@ -169,11 +184,11 @@ fun SecondaryBodyText(
     Text(
         text = text,
         modifier = modifier,
-        color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurfaceVariant,
+        color = color.orElse(MaterialTheme.colorScheme.onSurfaceVariant),
         style = MaterialTheme.typography.bodySmall,
         fontWeight = FontWeight.Normal,
         maxLines = maxLines,
-        overflow = if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = overflowFor(maxLines)
     )
 }
 
@@ -200,11 +215,11 @@ fun LabelText(
     Text(
         text = text,
         modifier = modifier,
-        color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurface,
+        color = color.orElse(MaterialTheme.colorScheme.onSurface),
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.SemiBold,
         maxLines = maxLines,
-        overflow = if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = overflowFor(maxLines)
     )
 }
 
@@ -229,11 +244,11 @@ fun CaptionText(
     Text(
         text = text,
         modifier = modifier,
-        color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurfaceVariant,
+        color = color.orElse(MaterialTheme.colorScheme.onSurfaceVariant),
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Medium,
         maxLines = maxLines,
-        overflow = if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = overflowFor(maxLines)
     )
 }
 
@@ -244,7 +259,7 @@ fun CaptionText(
  *
  * The `tnum` (tabular numerals) OpenType feature is already active on this style via the
  * app's `Typography.kt`, ensuring decimal separators and currency digits align in lists
- * (Horizon Narrative §3.3).
+ * (Horizon Narrative §3.4).
  *
  * The [color] parameter is intentionally prominent here — amounts frequently need
  * semantic colour (e.g., `MaterialTheme.colorScheme.error` for negative balances,
@@ -253,7 +268,7 @@ fun CaptionText(
  *
  * @param text     Formatted amount string (e.g., "€ 42.50"). Format with [AmountFormatter].
  * @param modifier Modifier applied to the underlying [Text].
- * @param color    Required colour override. Defaults to `onSurface`; pass `error`,
+ * @param color    Optional colour override. Defaults to `onSurface`; pass `error`,
  *                 `primary`, or any other theme token to convey semantic state.
  * @param maxLines Defaults to 1 with ellipsis — amounts should never wrap.
  */
@@ -267,10 +282,10 @@ fun AmountText(
     Text(
         text = text,
         modifier = modifier,
-        color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurface,
+        color = color.orElse(MaterialTheme.colorScheme.onSurface),
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         maxLines = maxLines,
-        overflow = if (maxLines < Int.MAX_VALUE) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = overflowFor(maxLines)
     )
 }
