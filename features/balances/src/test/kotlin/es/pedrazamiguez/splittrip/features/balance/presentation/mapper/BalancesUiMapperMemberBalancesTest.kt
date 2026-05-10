@@ -841,9 +841,75 @@ class BalancesUiMapperMemberBalancesTest {
 
             val breakdown = result[0].cashBreakdown
             assertEquals(2, breakdown.size)
-            // GROUP scope (scopeOrder=0) must appear before USER scope (scopeOrder=1)
+            // GROUP scope (scopeOrder=0) must appear before USER scope (scopeOrder=2)
             assertTrue(breakdown[0].isEstimatedShare) // GROUP
             assertFalse(breakdown[1].isEstimatedShare) // USER
         }
+
+        @Test
+        fun `breakdown order is GROUP then SUBUNIT then USER regardless of input order`() {
+            val subunit = Subunit(
+                id = "sub-1",
+                name = "Couple",
+                memberShares = mapOf("user-1" to BigDecimal("0.5"), "user-2" to BigDecimal("0.5"))
+            )
+            val balance = MemberBalance(userId = "user-1", cashInHand = 150000L)
+
+            // Input deliberately in reverse of expected order: USER → SUBUNIT → GROUP
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(
+                        cashWithdrawal("w1", PayerType.USER, createdAt = date),
+                        cashWithdrawal(
+                            "w2",
+                            PayerType.SUBUNIT,
+                            subunitId = "sub-1",
+                            createdAt = date.minusDays(1),
+                            amountWithdrawn = 200000L
+                        ),
+                        cashWithdrawal("w3", PayerType.GROUP, createdAt = date.minusDays(2), amountWithdrawn = 60000L)
+                    ),
+                    subunitsMap = mapOf("sub-1" to subunit),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            val breakdown = result[0].cashBreakdown
+            assertEquals(3, breakdown.size)
+            // Expected order: GROUP (scopeOrder=0) → SUBUNIT (scopeOrder=1) → USER (scopeOrder=2)
+            assertTrue(breakdown[0].isEstimatedShare) // GROUP
+            assertEquals("Couple", breakdown[1].scopeLabel) // SUBUNIT
+            assertFalse(breakdown[2].isEstimatedShare) // USER
+        }
     }
 }
+
+/**
+ * Creates a [CashWithdrawal] test fixture with sensible defaults, keeping individual test bodies concise.
+ *
+ * All monetary defaults (100 000 units at 1:1 rate) are intentionally round numbers so
+ * tests can assert share fractions without rounding surprises.
+ */
+private fun cashWithdrawal(
+    id: String,
+    scope: PayerType = PayerType.USER,
+    withdrawnBy: String = "user-1",
+    subunitId: String? = null,
+    amountWithdrawn: Long = 100000L,
+    currency: String = "EUR",
+    createdAt: LocalDateTime? = null
+) = CashWithdrawal(
+    id = id,
+    withdrawnBy = withdrawnBy,
+    withdrawalScope = scope,
+    subunitId = subunitId,
+    currency = currency,
+    amountWithdrawn = amountWithdrawn,
+    remainingAmount = amountWithdrawn, // Defaults to full amount; no FIFO consumption
+    deductedBaseAmount = amountWithdrawn,
+    exchangeRate = BigDecimal.ONE,
+    createdAt = createdAt
+)

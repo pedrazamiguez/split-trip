@@ -346,7 +346,7 @@ class BalancesUiMapper(
      * - USER → full remaining if this member made the withdrawal, else excluded.
      * - SUBUNIT → proportional share by [Subunit.memberShares] (BigDecimal, HALF_UP).
      *
-     * Items are ordered: GROUP scope → USER scope → SUBUNIT scope, then by date descending
+     * Items are ordered: GROUP scope → SUBUNIT scope → USER scope, then by date descending
      * within each scope group so the breakdown mirrors the pool priority used by FIFO.
      *
      * Exchange rate is omitted when the withdrawal currency equals the group currency
@@ -360,7 +360,7 @@ class BalancesUiMapper(
         groupCurrency: String,
         locale: java.util.Locale
     ): ImmutableList<CashBreakdownUiModel> {
-        val scopeOrder = mapOf(PayerType.GROUP to 0, PayerType.USER to 1, PayerType.SUBUNIT to 2)
+        val scopeOrder = mapOf(PayerType.GROUP to 0, PayerType.SUBUNIT to 1, PayerType.USER to 2)
         return withdrawals
             .sortedWith(
                 compareBy<CashWithdrawal> { scopeOrder[it.withdrawalScope] ?: 3 }
