@@ -27,9 +27,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DashboardShimmer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -121,7 +121,7 @@ private fun BalancesBodyContent(
 ) {
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
-        loadingContent = { ShimmerLoadingList() }
+        loadingContent = { DashboardShimmer() }
     ) {
         when {
             uiState.pocketBalance.formattedBalance.isEmpty() &&

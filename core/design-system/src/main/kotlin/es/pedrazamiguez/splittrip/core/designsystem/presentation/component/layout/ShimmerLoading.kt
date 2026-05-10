@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 
 private const val SHIMMER_GRADIENT_OFFSET = 200f
 private const val TITLE_SHIMMER_WEIGHT = 0.6f
+private const val BUTTON_SHIMMER_HEIGHT = 48f
+private const val DASHBOARD_MEMBER_PLACEHOLDER_COUNT = 3
 
 /**
  * Creates a shimmer brush effect for skeleton loading states.
@@ -136,6 +138,91 @@ fun ShimmerLoadingList(modifier: Modifier = Modifier, itemCount: Int = 5) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(itemCount) {
+            ShimmerItemCard()
+        }
+    }
+}
+
+/**
+ * Shimmer skeleton that mirrors the `GroupPocketBalanceCard` structure:
+ * a hero balance area, two currency rows, and two side-by-side button placeholders.
+ */
+@Composable
+fun ShimmerDashboardCard(modifier: Modifier = Modifier) {
+    FlatCard(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Group name placeholder
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.4f), height = 14.dp)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Large balance placeholder
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.55f), height = 36.dp)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Stats row: contributed (left) / spent (right)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ShimmerBox(width = 80.dp, height = 12.dp)
+                    ShimmerBox(width = 100.dp, height = 18.dp)
+                }
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    ShimmerBox(width = 70.dp, height = 12.dp)
+                    ShimmerBox(width = 90.dp, height = 18.dp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Two currency rows (e.g. THB, USD)
+            repeat(2) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ShimmerBox(width = 48.dp, height = 14.dp)
+                    ShimmerBox(width = 88.dp, height = 18.dp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Two side-by-side button placeholders
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ShimmerBox(modifier = Modifier.weight(1f), height = BUTTON_SHIMMER_HEIGHT.dp)
+                ShimmerBox(modifier = Modifier.weight(1f), height = BUTTON_SHIMMER_HEIGHT.dp)
+            }
+        }
+    }
+}
+
+/**
+ * A composite shimmer layout for dashboard-style screens: a hero [ShimmerDashboardCard]
+ * followed by [DASHBOARD_MEMBER_PLACEHOLDER_COUNT] [ShimmerItemCard]s for list rows.
+ * Suitable wherever a screen leads with a summary card and a list below it.
+ */
+@Composable
+fun DashboardShimmer(modifier: Modifier = Modifier) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            ShimmerDashboardCard()
+        }
+        items(DASHBOARD_MEMBER_PLACEHOLDER_COUNT) {
             ShimmerItemCard()
         }
     }
