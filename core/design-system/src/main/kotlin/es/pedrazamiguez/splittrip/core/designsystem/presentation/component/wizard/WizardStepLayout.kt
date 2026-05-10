@@ -28,8 +28,7 @@ fun WizardStepLayout(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = MaterialTheme.spacing.Large)
-            .padding(top = MaterialTheme.spacing.ExtraLarge, bottom = MaterialTheme.spacing.ExtraLarge),
+            .padding(horizontal = MaterialTheme.spacing.Large, vertical = MaterialTheme.spacing.ExtraLarge),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
         content = content
     )
