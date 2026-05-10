@@ -33,6 +33,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
@@ -141,9 +142,8 @@ private fun WithdrawalScopeBadge(withdrawal: CashWithdrawalUiModel) {
                 modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colorScheme.tertiary
             )
-            Text(
+            CaptionText(
                 text = withdrawal.scopeLabel,
-                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.tertiary
             )
         }

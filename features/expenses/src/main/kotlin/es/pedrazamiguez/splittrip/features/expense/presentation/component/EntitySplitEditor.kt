@@ -35,6 +35,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
@@ -261,22 +262,22 @@ private fun EntityNameColumn(
         )
         // Show subunit member count
         if (isSubunitHeader && !entity.isExcluded) {
-            Text(
+            SecondaryBodyText(
                 text = pluralStringResource(
                     R.plurals.add_expense_split_subunit_members_count,
                     entity.entityMembers.size,
                     entity.entityMembers.size
                 ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = Int.MAX_VALUE
             )
         }
         // Show currency amount as secondary text for EXACT and PERCENT modes
         if (!entity.isExcluded && !isEqualMode && entity.formattedAmount.isNotBlank()) {
-            Text(
+            SecondaryBodyText(
                 text = entity.formattedAmount,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = Int.MAX_VALUE
             )
         }
     }

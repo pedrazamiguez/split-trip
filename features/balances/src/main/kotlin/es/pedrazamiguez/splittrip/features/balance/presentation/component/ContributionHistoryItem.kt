@@ -31,6 +31,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
@@ -153,9 +154,8 @@ private fun LinkedContributionBadge() {
             modifier = Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.primary
         )
-        Text(
+        CaptionText(
             text = stringResource(R.string.balances_linked_contribution_label),
-            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -177,9 +177,8 @@ private fun ContributionScopeBadge(contribution: ContributionUiModel) {
             modifier = Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.primary
         )
-        Text(
+        CaptionText(
             text = contribution.scopeLabel.orEmpty(),
-            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary
         )
     }

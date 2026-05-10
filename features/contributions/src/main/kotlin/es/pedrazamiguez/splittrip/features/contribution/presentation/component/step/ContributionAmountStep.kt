@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.contribution.presentation.component.
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
@@ -14,6 +13,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LargeBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.contribution.R
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.event.AddContributionUiEvent
@@ -62,9 +62,8 @@ private fun AmountCard(
         isError = uiState.amountError,
         suffix = {
             if (uiState.groupCurrencySymbol.isNotBlank()) {
-                Text(
+                LargeBodyText(
                     text = uiState.groupCurrencySymbol,
-                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

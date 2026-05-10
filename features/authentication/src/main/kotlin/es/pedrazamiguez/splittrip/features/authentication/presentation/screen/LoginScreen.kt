@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -30,6 +29,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.DoubleTapBackToEx
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiState
@@ -135,10 +135,10 @@ private fun GoogleSignInSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        Text(
+        SecondaryBodyText(
             text = stringResource(R.string.login_or_divider),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = Int.MAX_VALUE
         )
         SecondaryButton(
             text = stringResource(R.string.login_google_button),
@@ -152,10 +152,10 @@ private fun GoogleSignInSection(
 
 @Composable
 private fun LoginErrorText(errorMessage: String) {
-    Text(
+    SecondaryBodyText(
         text = errorMessage,
         color = MaterialTheme.colorScheme.error,
-        style = MaterialTheme.typography.bodySmall,
+        maxLines = Int.MAX_VALUE,
         modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
     )
 }
