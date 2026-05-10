@@ -49,44 +49,64 @@ class GetAvailableWithdrawalPoolsUseCase(
         payerType: PayerType,
         payerId: String? = null,
         subunitIds: List<String> = emptyList()
+    ): List<WithdrawalPoolOption> = if (payerType == PayerType.GROUP) {
+        buildGroupPools(groupId, currency, payerId, subunitIds)
+    } else {
+        buildPersonalPools(groupId, currency, payerType, payerId)
+    }
+
+    /**
+     * Probes GROUP, USER, and SUBUNIT pools for a GROUP-scoped expense.
+     * Returns available pools in priority order: GROUP first, then USER supplement,
+     * then each SUBUNIT that has funded cash.
+     */
+    private suspend fun buildGroupPools(
+        groupId: String,
+        currency: String,
+        payerId: String?,
+        subunitIds: List<String>
     ): List<WithdrawalPoolOption> {
-        // GROUP expenses: probe GROUP pool first (primary source), then the user's personal
-        // (USER-scoped) pool when a userId is provided, and any SUBUNIT pools the user
-        // belongs to. This enables the pool-selection widget to surface all available
-        // cash sources so the user can pick which pool to draw from.
-        if (payerType == PayerType.GROUP) {
-            val groupPool = cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+        val groupPool = cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+            groupId = groupId,
+            currency = currency,
+            scope = PayerType.GROUP
+        )
+        val userPool = if (!payerId.isNullOrBlank()) {
+            cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
                 groupId = groupId,
                 currency = currency,
-                scope = PayerType.GROUP
+                scope = PayerType.USER,
+                scopeOwnerId = payerId
             )
-            val userPool = if (!payerId.isNullOrBlank()) {
-                cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
-                    groupId = groupId,
-                    currency = currency,
-                    scope = PayerType.USER,
-                    scopeOwnerId = payerId
-                )
-            } else {
-                emptyList()
-            }
-            val subunitPools = subunitIds.mapNotNull { subunitId ->
-                val pool = cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
-                    groupId = groupId,
-                    currency = currency,
-                    scope = PayerType.SUBUNIT,
-                    scopeOwnerId = subunitId
-                )
-                if (pool.isNotEmpty()) WithdrawalPoolOption(PayerType.SUBUNIT, subunitId) else null
-            }
-            return buildList {
-                if (groupPool.isNotEmpty()) add(WithdrawalPoolOption(PayerType.GROUP))
-                if (userPool.isNotEmpty()) add(WithdrawalPoolOption(PayerType.USER, payerId))
-                addAll(subunitPools)
-            }
+        } else {
+            emptyList()
         }
+        val subunitPools = subunitIds.mapNotNull { subunitId ->
+            val pool = cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
+                groupId = groupId,
+                currency = currency,
+                scope = PayerType.SUBUNIT,
+                scopeOwnerId = subunitId
+            )
+            if (pool.isNotEmpty()) WithdrawalPoolOption(PayerType.SUBUNIT, subunitId) else null
+        }
+        return buildList {
+            if (groupPool.isNotEmpty()) add(WithdrawalPoolOption(PayerType.GROUP))
+            if (userPool.isNotEmpty()) add(WithdrawalPoolOption(PayerType.USER, payerId))
+            addAll(subunitPools)
+        }
+    }
 
-        // USER / SUBUNIT: probe the personal/subunit pool and the GROUP pool independently.
+    /**
+     * Probes personal/subunit and GROUP pools independently for USER/SUBUNIT-scoped expenses.
+     * Returns personal pool first (primary), then GROUP pool (fallback supplement).
+     */
+    private suspend fun buildPersonalPools(
+        groupId: String,
+        currency: String,
+        payerType: PayerType,
+        payerId: String?
+    ): List<WithdrawalPoolOption> {
         val personalPool = if (!payerId.isNullOrBlank()) {
             cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
                 groupId = groupId,
@@ -97,7 +117,6 @@ class GetAvailableWithdrawalPoolsUseCase(
         } else {
             emptyList()
         }
-
         val groupPool = cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(
             groupId = groupId,
             currency = currency,

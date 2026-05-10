@@ -211,12 +211,10 @@ class FirestoreExpenseDataSourceImpl(
                 transaction.set(expenseDocRef, expenseDocument)
                 applyWithdrawalUpdates(transaction, withdrawalRefs, withdrawalUpdates)
             }.await()
-        } catch (e: CashConflictException) {
-            throw e
         } catch (e: Exception) {
-            val wrappedConflict = e.cause as? CashConflictException
-            if (wrappedConflict != null) throw wrappedConflict
-            throw e
+            // The Firestore SDK may wrap a CashConflictException thrown inside the transaction
+            // lambda as the cause of another exception; unwrap it before re-throwing.
+            throw (e as? CashConflictException) ?: (e.cause as? CashConflictException) ?: e
         }
     }
 
@@ -231,8 +229,7 @@ class FirestoreExpenseDataSourceImpl(
         expectedRemainingAmounts: Map<String, Long>
     ) {
         for ((ref, doc) in withdrawalRefs.zip(withdrawalDocs)) {
-            if (!doc.exists()) throw CashConflictException()
-            val serverRemaining = doc.getLong(FIELD_REMAINING_AMOUNT)
+            val serverRemaining = doc.takeIf { it.exists() }?.getLong(FIELD_REMAINING_AMOUNT)
                 ?: throw CashConflictException()
             if (serverRemaining != expectedRemainingAmounts.getValue(ref.id)) {
                 throw CashConflictException()

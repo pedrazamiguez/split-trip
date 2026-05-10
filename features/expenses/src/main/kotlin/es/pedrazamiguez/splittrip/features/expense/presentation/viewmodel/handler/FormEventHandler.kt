@@ -1,8 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.isValidDecimalInput
-import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -10,7 +8,6 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
-import java.math.BigDecimal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -179,23 +176,13 @@ class FormEventHandler(
         }
     }
 
-    fun handleReceiptImageSelected(uri: String) {
+    fun handleReceiptImageChanged(uri: String?) {
         _uiState.update { it.copy(receiptUri = uri) }
-    }
-
-    fun handleRemoveReceiptImage() {
-        _uiState.update { it.copy(receiptUri = null) }
     }
 
     /**
      * Returns true when [amount] is either blank (user still typing) or a positive decimal number.
      * Non-numeric text, zero, and negative values are considered invalid.
      */
-    private fun isAmountInputValid(amount: String): Boolean {
-        if (amount.isBlank()) return true
-        if (!amount.isValidDecimalInput()) return false
-        val parsed = CurrencyConverter.normalizeAmountString(amount.trim()).toBigDecimalOrNull()
-            ?: return false
-        return parsed > BigDecimal.ZERO
-    }
+    private fun isAmountInputValid(amount: String): Boolean = validateAmountInput(amount)
 }

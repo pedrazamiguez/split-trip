@@ -242,66 +242,55 @@ class CurrencyEventHandler(
         val state = _uiState.value
         val isForeign = state.selectedCurrency?.code != state.groupCurrency?.code
         val wasCashLocked = state.isExchangeRateLocked
-
-        if (isCash && isForeign) {
-            if (isGroupPocket) {
-                // GROUP pocket CASH: save current rate, lock fields, then probe pools.
-                // Pool discovery triggers fetchCashRate via onPoolResolved after resolution.
-                _uiState.update {
-                    it.copy(
-                        preCashExchangeRate = it.displayExchangeRate,
-                        isExchangeRateLocked = true,
-                        isInsufficientCash = false,
-                        exchangeRateLockedHint = UiText.StringResource(
-                            R.string.add_expense_cash_rate_locked_hint
-                        )
-                    )
-                }
-                withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                fetchPoolsIfNeeded()
-            } else {
-                // USER/SUBUNIT cash: rate stays unlocked, user enters manually
-                // but we still fetch pool availability for pool-selector widget.
-                fetchPoolsIfNeeded()
-            }
-        } else if (isCash && !isForeign && isGroupPocket) {
-            // Same-currency CASH + GROUP pocket: no rate to lock, but probe pools and
-            // fetch tranche preview via pool-resolved callback.
-            withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-            fetchPoolsIfNeeded()
+        if (isCash) {
+            switchToCashPayment(isForeign, isGroupPocket)
         } else {
-            // Cancel any in-flight or debounced CASH rate jobs so a stale result
-            // cannot re-lock the exchange rate after the user has switched away.
-            cashRateDelegate.cancelPendingCashJobs()
-            withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
+            switchFromCashPayment(isForeign, wasCashLocked, state.preCashExchangeRate)
+        }
+    }
 
+    private fun switchToCashPayment(isForeign: Boolean, isGroupPocket: Boolean) {
+        if (isForeign && isGroupPocket) {
+            // GROUP pocket CASH: save current rate, lock fields, then probe pools.
             _uiState.update {
                 it.copy(
-                    isExchangeRateLocked = false,
+                    preCashExchangeRate = it.displayExchangeRate,
+                    isExchangeRateLocked = true,
                     isInsufficientCash = false,
-                    exchangeRateLockedHint = null,
-                    cashTranchePreviews = persistentListOf()
+                    exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
                 )
             }
-            if (isForeign && wasCashLocked) {
-                // Transitioning OUT of locked CASH rate — because the user switched payment
-                // method away from CASH.  Restore the rate the user had before the lock
-                // was applied.
-                val savedRate = state.preCashExchangeRate
-                if (savedRate != null) {
-                    _uiState.update {
-                        it.copy(
-                            displayExchangeRate = savedRate,
-                            preCashExchangeRate = null
-                        )
-                    }
-                    recalculateForward()
-                } else {
-                    // No saved rate (e.g. currency changed while on CASH) — fetch fresh
-                    fetchRate()
-                }
+            withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
+            fetchPoolsIfNeeded()
+        } else if (isForeign) {
+            // USER/SUBUNIT cash: rate stays unlocked, user enters manually.
+            fetchPoolsIfNeeded()
+        } else if (isGroupPocket) {
+            // Same-currency CASH + GROUP pocket: no lock, but probe pools for tranche preview.
+            withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
+            fetchPoolsIfNeeded()
+        }
+    }
+
+    private fun switchFromCashPayment(isForeign: Boolean, wasCashLocked: Boolean, savedRate: String?) {
+        cashRateDelegate.cancelPendingCashJobs()
+        withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
+        _uiState.update {
+            it.copy(
+                isExchangeRateLocked = false,
+                isInsufficientCash = false,
+                exchangeRateLockedHint = null,
+                cashTranchePreviews = persistentListOf()
+            )
+        }
+        if (isForeign && wasCashLocked) {
+            // Transitioning OUT of locked CASH rate — restore the rate the user had before lock.
+            if (savedRate != null) {
+                _uiState.update { it.copy(displayExchangeRate = savedRate, preCashExchangeRate = null) }
+                recalculateForward()
+            } else {
+                fetchRate()
             }
-            // Switching between non-CASH methods or same-currency: do nothing with the rate
         }
     }
 
@@ -314,67 +303,52 @@ class CurrencyEventHandler(
      * Non-CASH: no effect on the exchange rate.
      */
     fun handleFundingSourceChanged(isGroupPocket: Boolean) {
+        if (!isCashPaymentMethod()) return
         val state = _uiState.value
-        val isCash = isCashPaymentMethod()
         val isForeign = state.selectedCurrency?.code != state.groupCurrency?.code
-
-        if (!isCash) return // no rate effect for non-CASH
-
-        if (isForeign) {
-            if (isGroupPocket) {
-                // Switching to GROUP: lock rate if not already locked, then probe pools.
-                // Pool discovery triggers fetchCashRate via onPoolResolved after resolution.
-                if (!state.isExchangeRateLocked) {
-                    _uiState.update {
-                        it.copy(
-                            preCashExchangeRate = it.displayExchangeRate,
-                            isExchangeRateLocked = true,
-                            isInsufficientCash = false,
-                            exchangeRateLockedHint = UiText.StringResource(
-                                R.string.add_expense_cash_rate_locked_hint
-                            )
-                        )
-                    }
-                }
-                withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                fetchPoolsIfNeeded()
-            } else {
-                // Switching to USER/SUBUNIT: cancel ATM jobs, unlock rate, restore saved rate
-                cashRateDelegate.cancelPendingCashJobs()
-                val savedRate = state.preCashExchangeRate
-                _uiState.update {
-                    it.copy(
-                        isExchangeRateLocked = false,
-                        isInsufficientCash = false,
-                        exchangeRateLockedHint = null,
-                        displayExchangeRate = savedRate ?: it.displayExchangeRate,
-                        preCashExchangeRate = null,
-                        cashTranchePreviews = persistentListOf()
-                    )
-                }
-                if (savedRate != null) {
-                    recalculateForward()
-                }
-                // Fetch pool availability for the USER/SUBUNIT scope.
-                fetchPoolsIfNeeded()
-            }
+        if (isGroupPocket) {
+            switchToGroupPocketCash(isForeign, state)
         } else {
-            // Same-currency CASH: no rate lock, but tranche previews must still be kept in sync.
-            if (isGroupPocket) {
-                // Switching to GROUP pocket: probe pools and fetch tranche preview via callback.
-                withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                fetchPoolsIfNeeded()
-            } else {
-                // Switching to USER/SUBUNIT pocket: clear tranche state — ATM pool is not used.
-                cashRateDelegate.cancelPendingCashJobs()
-                withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-                _uiState.update {
-                    it.copy(
-                        isInsufficientCash = false,
-                        cashTranchePreviews = persistentListOf()
-                    )
-                }
+            switchToPersonalCash(isForeign, state)
+        }
+    }
+
+    private fun switchToGroupPocketCash(isForeign: Boolean, state: AddExpenseUiState) {
+        if (isForeign && !state.isExchangeRateLocked) {
+            _uiState.update {
+                it.copy(
+                    preCashExchangeRate = it.displayExchangeRate,
+                    isExchangeRateLocked = true,
+                    isInsufficientCash = false,
+                    exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
+                )
             }
+        }
+        withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
+        fetchPoolsIfNeeded()
+    }
+
+    private fun switchToPersonalCash(isForeign: Boolean, state: AddExpenseUiState) {
+        if (isForeign) {
+            cashRateDelegate.cancelPendingCashJobs()
+            val savedRate = state.preCashExchangeRate
+            _uiState.update {
+                it.copy(
+                    isExchangeRateLocked = false,
+                    isInsufficientCash = false,
+                    exchangeRateLockedHint = null,
+                    displayExchangeRate = savedRate ?: it.displayExchangeRate,
+                    preCashExchangeRate = null,
+                    cashTranchePreviews = persistentListOf()
+                )
+            }
+            if (savedRate != null) recalculateForward()
+            fetchPoolsIfNeeded()
+        } else {
+            // Same-currency USER/SUBUNIT pocket: clear tranche state — ATM pool is not used.
+            cashRateDelegate.cancelPendingCashJobs()
+            withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
+            _uiState.update { it.copy(isInsufficientCash = false, cashTranchePreviews = persistentListOf()) }
         }
     }
 
