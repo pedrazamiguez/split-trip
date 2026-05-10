@@ -115,6 +115,7 @@ private fun CashBreakdownItemList(breakdown: ImmutableList<CashBreakdownUiModel>
                 CaptionText(
                     text = stringResource(R.string.balances_cash_breakdown_estimated_hint),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    maxLines = Int.MAX_VALUE,
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
             }
