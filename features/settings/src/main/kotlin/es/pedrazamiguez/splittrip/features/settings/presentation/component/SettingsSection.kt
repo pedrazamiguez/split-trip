@@ -17,7 +17,7 @@ fun SettingsSection(title: String) {
         color = MaterialTheme.colorScheme.primary,
         letterSpacing = MaterialTheme.typography.labelLarge.letterSpacing * 1.5f,
         modifier = Modifier.padding(
-            start = 16.dp,
+            start = 32.dp,
             end = 16.dp,
             top = 24.dp,
             bottom = 8.dp
