@@ -22,7 +22,8 @@ import androidx.compose.ui.text.style.TextOverflow
  * ### Typeface mapping (Horizon Narrative §3)
  * - **Screen titles** → `headlineLarge` → **Plus Jakarta Sans**
  * - **Section headings / card titles / amounts** → `titleMedium` / `titleSmall` → **Manrope**
- * - **Body / label / caption** → `bodyMedium` / `bodySmall` / `labelLarge` / `labelSmall` → **Manrope**
+ * - **Body / label / caption** → `bodyMedium` / `bodySmall` / `bodyLarge` / `labelLarge` / `labelSmall` → **Manrope**
+ * - **Sheet / feature titles** → `titleLarge` → **Manrope**
  *
  * See `wiki/horizon-narrative-design-language.md §3.3` for full usage guidance.
  */
@@ -133,6 +134,66 @@ fun CardTitleText(
     )
 }
 
+/**
+ * Primary title for a bottom sheet, dialog, or prominent feature content block.
+ * Maps to `titleLarge` (22 sp, Manrope Bold).
+ *
+ * Use above a sheet's action list, as the main title of a modal, or for a prominent
+ * item name (e.g., expense title, selected group name) displayed at feature level.
+ *
+ * @param text     Text content to display.
+ * @param modifier Modifier applied to the underlying [Text].
+ * @param color    Overrides the default `onSurface` colour.
+ * @param maxLines Defaults to unlimited. Pass a value to truncate with ellipsis.
+ */
+@Composable
+fun SheetTitleText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    maxLines: Int = Int.MAX_VALUE
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        color = color.orElse(MaterialTheme.colorScheme.onSurface),
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        maxLines = maxLines,
+        overflow = overflowFor(maxLines)
+    )
+}
+
+/**
+ * Sub-section label inside a card or form group. Maps to `titleSmall`
+ * (14 sp, Manrope Bold) with a subdued `onSurfaceVariant` colour.
+ *
+ * Use for the heading of an input group, card sub-section, or picker panel where
+ * the label needs weight but should be visually lighter than a primary [CardTitleText].
+ *
+ * @param text     Text content to display.
+ * @param modifier Modifier applied to the underlying [Text].
+ * @param color    Overrides the default `onSurfaceVariant` colour.
+ * @param maxLines Defaults to 1 with ellipsis, matching the typical single-line label.
+ */
+@Composable
+fun CardSectionLabelText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    maxLines: Int = 1
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        color = color.orElse(MaterialTheme.colorScheme.onSurfaceVariant),
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Bold,
+        maxLines = maxLines,
+        overflow = overflowFor(maxLines)
+    )
+}
+
 // ─── Body tier (Manrope) ─────────────────────────────────────────────────────
 
 /**
@@ -186,6 +247,35 @@ fun SecondaryBodyText(
         modifier = modifier,
         color = color.orElse(MaterialTheme.colorScheme.onSurfaceVariant),
         style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Normal,
+        maxLines = maxLines,
+        overflow = overflowFor(maxLines)
+    )
+}
+
+/**
+ * Large body copy for prominent descriptive text. Maps to `bodyLarge` (16 sp, Manrope Normal).
+ *
+ * Use for primary labels in settings rows, profile attribute values, or any body content
+ * that needs slightly more visual presence than standard [BodyText].
+ *
+ * @param text     Text content to display.
+ * @param modifier Modifier applied to the underlying [Text].
+ * @param color    Overrides the default `onSurface` colour.
+ * @param maxLines Defaults to unlimited.
+ */
+@Composable
+fun LargeBodyText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    maxLines: Int = Int.MAX_VALUE
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        color = color.orElse(MaterialTheme.colorScheme.onSurface),
+        style = MaterialTheme.typography.bodyLarge,
         fontWeight = FontWeight.Normal,
         maxLines = maxLines,
         overflow = overflowFor(maxLines)

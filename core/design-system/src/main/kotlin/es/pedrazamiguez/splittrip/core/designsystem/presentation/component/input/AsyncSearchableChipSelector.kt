@@ -43,6 +43,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 
 /**
  * An async search-based multi-select component with autocomplete dropdown and removable chips.
@@ -177,22 +179,17 @@ fun <T> AsyncSearchableChipSelector(
                     searchResults.isEmpty() &&
                     searchQuery.length >= minQueryLength
             ) {
-                Text(
+                SecondaryBodyText(
                     text = noResultsText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = MaterialTheme.spacing.ExtraSmall)
+                    modifier = Modifier.padding(start = MaterialTheme.spacing.ExtraSmall),
+                    maxLines = Int.MAX_VALUE
                 )
             }
         }
 
         if (helperText != null) {
             AnimatedVisibility(visible = selectedItems.isEmpty() && searchQuery.isEmpty()) {
-                Text(
-                    text = helperText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                SecondaryBodyText(text = helperText, maxLines = Int.MAX_VALUE)
             }
         }
     }
@@ -325,15 +322,11 @@ private fun <T> AsyncDropdownMenuItems(
                 text = {
                     if (itemSecondaryText != null) {
                         Column {
-                            Text(itemDisplayText(item), style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                itemSecondaryText(item),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            BodyText(text = itemDisplayText(item))
+                            SecondaryBodyText(text = itemSecondaryText(item))
                         }
                     } else {
-                        Text(itemDisplayText(item), style = MaterialTheme.typography.bodyMedium)
+                        BodyText(text = itemDisplayText(item))
                     }
                 },
                 onClick = { onItemAdded(item) },

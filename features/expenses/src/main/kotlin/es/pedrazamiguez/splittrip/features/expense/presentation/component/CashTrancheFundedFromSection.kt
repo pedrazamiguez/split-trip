@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranchePreviewUiModel
 
@@ -55,12 +57,7 @@ fun CashTrancheFundedFromSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         // Section title — same style as "Currency conversion" (titleSmall + Bold + onSurfaceVariant)
-        Text(
-            text = stringResource(R.string.add_expense_cash_tranche_funded_from),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        CardSectionLabelText(text = stringResource(R.string.add_expense_cash_tranche_funded_from))
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
         FlatCard(modifier = Modifier.fillMaxWidth()) {
@@ -79,10 +76,9 @@ fun CashTrancheFundedFromSection(
                 )
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
-                Text(
+                SecondaryBodyText(
                     text = stringResource(R.string.add_expense_cash_tranche_disclaimer),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    maxLines = Int.MAX_VALUE
                 )
             }
         }
@@ -161,16 +157,14 @@ internal fun CashTrancheRow(
                 text = tranche.formattedAmountConsumed,
                 style = MaterialTheme.typography.bodySmall
             )
-            Text(
-                text = stringResource(R.string.add_expense_cash_tranche_rate_label, tranche.formattedRate),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            SecondaryBodyText(
+                text = tranche.formattedRate.let { stringResource(R.string.add_expense_cash_tranche_rate_label, it) },
+                maxLines = Int.MAX_VALUE
             )
         }
-        Text(
+        SecondaryBodyText(
             text = stringResource(R.string.add_expense_cash_tranche_remaining, tranche.formattedRemainingAfter),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            maxLines = Int.MAX_VALUE
         )
     }
 }

@@ -5,15 +5,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 
 /** Shared icon size used across all button tiers for visual consistency. */
 internal val BUTTON_ICON_SIZE = 18.dp
@@ -42,11 +41,9 @@ internal fun ButtonContentRow(
                 modifier = Modifier.size(BUTTON_ICON_SIZE)
             )
         }
-        Text(
+        CardSectionLabelText(
             text = text,
             color = contentColor,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(
                 start = if (leadingIcon != null) MaterialTheme.spacing.Small else 0.dp,
                 end = if (trailingIcon != null) MaterialTheme.spacing.Small else 0.dp

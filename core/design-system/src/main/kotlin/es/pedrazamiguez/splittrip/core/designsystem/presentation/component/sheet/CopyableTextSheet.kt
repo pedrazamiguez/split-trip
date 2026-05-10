@@ -50,6 +50,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Copy
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -85,7 +87,7 @@ fun CopyableTextSheet(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)
         ) {
             CopyableIconHeader(icon = icon, isCopied = isCopied)
-            Text(text = title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+            SheetTitleText(text = title)
             CopyableTextContent(copyableText = copyableText, notAvailableText = notAvailableText)
             Spacer(Modifier.size(MaterialTheme.spacing.Small))
             CopyActionButton(
@@ -168,9 +170,8 @@ private fun CopyableTextContent(copyableText: String?, notAvailableText: String)
             )
         }
     } else {
-        Text(
+        BodyText(
             text = notAvailableText,
-            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }

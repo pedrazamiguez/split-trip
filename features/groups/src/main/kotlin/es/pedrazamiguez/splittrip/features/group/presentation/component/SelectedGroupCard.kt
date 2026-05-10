@@ -34,7 +34,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -45,6 +44,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlignJustified
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -229,16 +230,12 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
+            SheetTitleText(
                 text = groupUiModel.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = MaterialTheme.spacing.Medium),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                    .padding(end = MaterialTheme.spacing.Medium)
             )
             // Primary color chip — high contrast on surfaceContainerLow card background.
             Box(
@@ -271,13 +268,7 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp)
                 )
-                Text(
-                    text = groupUiModel.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                SecondaryBodyText(text = groupUiModel.description)
             }
         }
 
@@ -293,10 +284,9 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
                 )
             }
             if (groupUiModel.membersCountText.isNotEmpty()) {
-                Text(
+                SecondaryBodyText(
                     text = groupUiModel.membersCountText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    maxLines = Int.MAX_VALUE
                 )
             }
         }

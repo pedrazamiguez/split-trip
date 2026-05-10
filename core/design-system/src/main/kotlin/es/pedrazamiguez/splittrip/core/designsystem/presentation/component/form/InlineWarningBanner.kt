@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +26,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlertTriangle
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 
 private val WARNING_ICON_SIZE = 16.dp
 
@@ -78,10 +78,9 @@ fun InlineWarningBanner(
                     tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(WARNING_ICON_SIZE)
                 )
-                Text(
+                BodyText(
                     text = displayedWarning?.asString().orEmpty(),
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    style = MaterialTheme.typography.bodyMedium
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
             }
         }

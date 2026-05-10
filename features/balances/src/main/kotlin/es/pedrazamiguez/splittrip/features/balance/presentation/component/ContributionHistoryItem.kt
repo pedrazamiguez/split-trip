@@ -31,6 +31,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 
@@ -126,10 +127,9 @@ private fun ContributionPrimaryLabel(contribution: ContributionUiModel) {
 @Composable
 private fun ContributionLoggedByLine(createdByDisplayName: String?) {
     if (createdByDisplayName != null) {
-        Text(
+        SecondaryBodyText(
             text = stringResource(R.string.balances_logged_by, createdByDisplayName),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            maxLines = Int.MAX_VALUE
         )
     }
 }
@@ -137,11 +137,7 @@ private fun ContributionLoggedByLine(createdByDisplayName: String?) {
 @Composable
 private fun ContributionDateLine(dateText: String) {
     if (dateText.isNotBlank()) {
-        Text(
-            text = dateText,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        SecondaryBodyText(text = dateText, maxLines = Int.MAX_VALUE)
     }
 }
 

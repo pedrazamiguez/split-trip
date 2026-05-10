@@ -31,6 +31,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LargeBodyText
 import es.pedrazamiguez.splittrip.features.profile.R
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.event.ProfileUiEvent
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.state.ProfileUiState
@@ -86,16 +88,14 @@ private fun ProfileLoadedContent(
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
-        Text(
+        LargeBodyText(
             text = profile.email,
-            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (profile.memberSinceText.isNotBlank()) {
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
-            Text(
+            BodyText(
                 text = stringResource(R.string.profile_member_since, profile.memberSinceText),
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

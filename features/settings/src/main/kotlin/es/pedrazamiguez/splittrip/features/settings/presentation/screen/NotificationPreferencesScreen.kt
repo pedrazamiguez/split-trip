@@ -17,6 +17,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BuildingBank
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.domain.enums.NotificationCategory
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.NotificationPreferencesUiEvent
@@ -35,9 +37,8 @@ fun NotificationPreferencesScreen(
         contentPadding = PaddingValues(vertical = MaterialTheme.spacing.Small)
     ) {
         item(key = "header") {
-            Text(
+            BodyText(
                 text = stringResource(R.string.notification_prefs_header),
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(
                     horizontal = MaterialTheme.spacing.Default,
@@ -111,11 +112,7 @@ private fun NotificationCategoryItem(
         leadingContent = icon,
         headlineContent = { Text(title) },
         supportingContent = {
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            SecondaryBodyText(text = description, maxLines = Int.MAX_VALUE)
         },
         trailingContent = {
             Switch(
