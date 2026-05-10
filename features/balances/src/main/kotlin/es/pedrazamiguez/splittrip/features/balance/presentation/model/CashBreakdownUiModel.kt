@@ -12,9 +12,9 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.model
  *                      withdrawal currency matches the group currency.
  * @param formattedNativeRemaining Member's attributed share in the withdrawal's native
  *                                  currency (e.g., "฿ 47,750").
- * @param formattedEquivalent Group-currency equivalent amount without "≈" prefix (e.g., "11.33 €").
- *                             The "≈ " prefix is added by the UI at render time. Empty when
- *                             the withdrawal currency matches the group currency.
+ * @param formattedEquivalent Group-currency equivalent amount, locale-formatted
+ *                             (e.g., "€12.82" in en-US, "12,82 €" in es-ES).
+ *                             Empty when the withdrawal currency matches the group currency.
  * @param scopeLabel Pre-formatted scope description ("Group cash (est. share)",
  *                   "Personal cash", or the subunit name).
  * @param isEstimatedShare `true` for GROUP-scoped withdrawals, where the member's share

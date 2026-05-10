@@ -124,15 +124,17 @@ private fun CashBreakdownItemList(breakdown: ImmutableList<CashBreakdownUiModel>
 
 @Composable
 private fun CashBreakdownEntryRow(item: CashBreakdownUiModel) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
     ) {
-        // Title row: withdrawal label · date · rate
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // Left column: label stacked above date, then rate on its own line for easy scanning
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
                 text = item.withdrawalLabel,
@@ -142,24 +144,24 @@ private fun CashBreakdownEntryRow(item: CashBreakdownUiModel) {
             )
             if (item.dateText.isNotBlank()) {
                 Text(
-                    text = "·  ${item.dateText}",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = item.dateText,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (item.formattedRate.isNotBlank()) {
                 Text(
-                    text = "·  ${item.formattedRate}",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = item.formattedRate,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
-        // Amount row: native remaining [≈ equivalent]
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+        // Right column: native amount on top, group-currency equivalent below — visually secondary
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.padding(start = 8.dp)
         ) {
             Text(
                 text = item.formattedNativeRemaining,
@@ -169,7 +171,7 @@ private fun CashBreakdownEntryRow(item: CashBreakdownUiModel) {
             )
             if (item.formattedEquivalent.isNotBlank()) {
                 Text(
-                    text = "≈  ${item.formattedEquivalent}",
+                    text = item.formattedEquivalent,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )

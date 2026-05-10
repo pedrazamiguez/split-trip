@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -94,6 +95,35 @@ val PREVIEW_CASH_WITHDRAWAL_IMPERSONATED = CashWithdrawal(
     deductedBaseAmount = 8100L,
     exchangeRate = BigDecimal("37.037"),
     createdAt = LocalDateTime.of(2026, 1, 19, 11, 0)
+)
+
+// ── Subunits ─────────────────────────────────────────────────────────────────
+
+/**
+ * Subunit fixture that matches [PREVIEW_CASH_WITHDRAWAL_SUBUNIT]'s subunitId = "subunit-1".
+ * Member shares are equal halves between "user-1" and "user-2".
+ */
+val PREVIEW_SUBUNIT_FOR_BREAKDOWN = Subunit(
+    id = "subunit-1",
+    name = "Couple Hotel Room",
+    memberShares = mapOf("user-1" to BigDecimal("0.5"), "user-2" to BigDecimal("0.5"))
+)
+
+/**
+ * Member balance fixture for cash-breakdown previews.
+ * userId = "user-1" matches [PREVIEW_CASH_WITHDRAWAL_GROUP], [PREVIEW_CASH_WITHDRAWAL_SUBUNIT],
+ * and [PREVIEW_CASH_WITHDRAWAL_PERSONAL] so all three scopes populate the breakdown sheet.
+ */
+val PREVIEW_MEMBER_BALANCE_FOR_BREAKDOWN = MemberBalance(
+    userId = "user-1",
+    contributed = 50000L,
+    withdrawn = 1700000L,
+    cashSpent = 800000L,
+    nonCashSpent = 10000L,
+    totalSpent = 810000L,
+    pocketBalance = 15000L,
+    cashInHand = 900000L,
+    cashInHandByCurrency = listOf(CurrencyAmount("THB", 900000L, 24300L))
 )
 
 // ── Contributions ───────────────────────────────────────────────────────────

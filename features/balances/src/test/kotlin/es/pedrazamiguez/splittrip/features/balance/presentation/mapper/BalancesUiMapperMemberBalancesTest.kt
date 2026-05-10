@@ -841,9 +841,75 @@ class BalancesUiMapperMemberBalancesTest {
 
             val breakdown = result[0].cashBreakdown
             assertEquals(2, breakdown.size)
-            // GROUP scope (scopeOrder=0) must appear before USER scope (scopeOrder=1)
+            // GROUP scope (scopeOrder=0) must appear before USER scope (scopeOrder=2)
             assertTrue(breakdown[0].isEstimatedShare) // GROUP
             assertFalse(breakdown[1].isEstimatedShare) // USER
+        }
+
+        @Test
+        fun `breakdown order is GROUP then SUBUNIT then USER regardless of input order`() {
+            val subunit = Subunit(
+                id = "sub-1",
+                name = "Couple",
+                memberShares = mapOf("user-1" to BigDecimal("0.5"), "user-2" to BigDecimal("0.5"))
+            )
+            val balance = MemberBalance(userId = "user-1", cashInHand = 150000L)
+            val userWithdrawal = CashWithdrawal(
+                id = "w1",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.USER,
+                currency = "EUR",
+                amountWithdrawn = 100000L,
+                remainingAmount = 100000L,
+                deductedBaseAmount = 100000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date,
+                title = "Personal ATM"
+            )
+            val subunitWithdrawal = CashWithdrawal(
+                id = "w2",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.SUBUNIT,
+                subunitId = "sub-1",
+                currency = "EUR",
+                amountWithdrawn = 200000L,
+                remainingAmount = 200000L,
+                deductedBaseAmount = 200000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date.minusDays(1),
+                title = "Subunit ATM"
+            )
+            val groupWithdrawal = CashWithdrawal(
+                id = "w3",
+                withdrawnBy = "user-1",
+                withdrawalScope = PayerType.GROUP,
+                currency = "EUR",
+                amountWithdrawn = 60000L,
+                remainingAmount = 60000L,
+                deductedBaseAmount = 60000L,
+                exchangeRate = BigDecimal.ONE,
+                createdAt = date.minusDays(2),
+                title = "Group ATM"
+            )
+
+            // Input deliberately in reverse of expected order: USER → SUBUNIT → GROUP
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(userWithdrawal, subunitWithdrawal, groupWithdrawal),
+                    subunitsMap = mapOf("sub-1" to subunit),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            val breakdown = result[0].cashBreakdown
+            assertEquals(3, breakdown.size)
+            // Expected order: GROUP (scopeOrder=0) → SUBUNIT (scopeOrder=1) → USER (scopeOrder=2)
+            assertTrue(breakdown[0].isEstimatedShare) // GROUP
+            assertEquals("Couple", breakdown[1].scopeLabel) // SUBUNIT
+            assertFalse(breakdown[2].isEstimatedShare) // USER
         }
     }
 }
