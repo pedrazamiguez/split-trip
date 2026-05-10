@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 private const val STEP_CIRCLE_SIZE = 28
 private const val CONNECTOR_HEIGHT = 3
@@ -199,7 +200,7 @@ private fun StaticStepIndicator(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = HORIZONTAL_PADDING, vertical = 12.dp),
+            .padding(horizontal = HORIZONTAL_PADDING, vertical = MaterialTheme.spacing.Medium),
         verticalAlignment = Alignment.Top
     ) {
         stepLabels.forEachIndexed { index, label ->
@@ -241,7 +242,7 @@ private fun ScrollableStepIndicator(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp)
+            .padding(vertical = MaterialTheme.spacing.Medium)
     ) {
         val usableWidth = maxWidth - HORIZONTAL_PADDING * 2
         val totalConnectorSpace = SCROLLABLE_CONNECTOR_WIDTH * (MAX_VISIBLE_STEPS - 1)
@@ -336,7 +337,7 @@ private fun WizardStepItem(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraSmall)
         )
     }
 }
@@ -356,7 +357,11 @@ private fun WizardStepConnector(
     )
     Box(
         modifier = modifier
-            .padding(top = CONNECTOR_TOP_OFFSET.dp, start = 4.dp, end = 4.dp)
+            .padding(
+                top = CONNECTOR_TOP_OFFSET.dp,
+                start = MaterialTheme.spacing.ExtraSmall,
+                end = MaterialTheme.spacing.ExtraSmall
+            )
             .height(CONNECTOR_HEIGHT.dp)
             .clip(CircleShape)
             .background(connectorColor)

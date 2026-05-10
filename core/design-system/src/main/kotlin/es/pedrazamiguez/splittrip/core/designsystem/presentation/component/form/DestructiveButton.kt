@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -30,12 +31,16 @@ private const val DISABLED_CONTENT_ALPHA = 0.38f
 /**
  * A destructive-action button following the Horizon Narrative design spec.
  *
- * Uses `errorContainer` / `onErrorContainer` colours for dangerous actions such as
- * "Logout" or "Delete". Shares the same pill shape, height, and Box-based shadow
- * pattern as [GradientButton] and [SecondaryButton].
+ * Uses full `error` / `onError` colours in light mode for maximum visual salience — light mode's
+ * `errorContainer` (`#FFDAD6`) is too pale against the off-white page surface to convey urgency.
+ * Dark mode retains `errorContainer` / `onErrorContainer` because the dark `errorContainer`
+ * (`#93000A`) is already high-contrast against the near-black background.
  *
- * **Loading behaviour:** keeps the destructive styling visible while showing a
- * spinner and suppressing tap events.
+ * Shares the same pill shape, height, and Box-based shadow pattern as [GradientButton] and
+ * [SecondaryButton].
+ *
+ * **Loading behaviour:** keeps the destructive styling visible while showing a spinner and
+ * suppressing tap events.
  *
  * @param text         The label displayed on the button.
  * @param onClick      Called when the user taps the button.
@@ -55,17 +60,20 @@ fun DestructiveButton(
 ) {
     val visualEnabled = enabled
     val interactable = enabled && !isLoading
+    val isDarkTheme = isSystemInDarkTheme()
 
-    val containerColor = if (visualEnabled) {
-        MaterialTheme.colorScheme.errorContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA)
+    val containerColor = when {
+        !visualEnabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA)
+        // Dark mode: errorContainer (#93000A) is already high-contrast; preserve existing behaviour.
+        // Light mode: errorContainer (#FFDAD6) is too pale against the off-white surface.
+        isDarkTheme -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.error
     }
 
-    val contentColor = if (visualEnabled) {
-        MaterialTheme.colorScheme.onErrorContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
+    val contentColor = when {
+        !visualEnabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
+        isDarkTheme -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onError
     }
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -82,7 +90,7 @@ fun DestructiveButton(
             .background(color = containerColor, shape = CircleShape)
             .clickable(
                 interactionSource = interactionSource,
-                indication = ripple(color = MaterialTheme.colorScheme.onErrorContainer),
+                indication = ripple(color = contentColor),
                 enabled = interactable,
                 role = Role.Button,
                 onClick = onClick

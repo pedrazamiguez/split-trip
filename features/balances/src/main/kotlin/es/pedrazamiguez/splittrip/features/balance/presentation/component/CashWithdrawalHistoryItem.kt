@@ -23,8 +23,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CashBanknote
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
@@ -32,6 +32,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 
@@ -64,7 +67,7 @@ fun CashWithdrawalHistoryItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = MaterialTheme.spacing.Default, vertical = MaterialTheme.spacing.Medium),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -72,7 +75,7 @@ fun CashWithdrawalHistoryItem(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.tertiary
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.Medium))
                 WithdrawalDetailColumn(withdrawal = withdrawal, modifier = Modifier.weight(1f))
                 WithdrawalAmountColumn(withdrawal = withdrawal)
             }
@@ -108,23 +111,16 @@ private fun WithdrawalPrimaryLabel(withdrawal: CashWithdrawalUiModel) {
 @Composable
 private fun WithdrawalTitleSubtitle(title: String?) {
     if (!title.isNullOrBlank()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        SecondaryBodyText(text = title)
     }
 }
 
 @Composable
 private fun WithdrawalLoggedByLine(createdByDisplayName: String?) {
     if (createdByDisplayName != null) {
-        Text(
+        SecondaryBodyText(
             text = stringResource(R.string.balances_logged_by, createdByDisplayName),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            maxLines = Int.MAX_VALUE
         )
     }
 }
@@ -134,7 +130,7 @@ private fun WithdrawalScopeBadge(withdrawal: CashWithdrawalUiModel) {
     if (withdrawal.scopeLabel != null) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
             Icon(
                 imageVector = when {
@@ -146,9 +142,8 @@ private fun WithdrawalScopeBadge(withdrawal: CashWithdrawalUiModel) {
                 modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colorScheme.tertiary
             )
-            Text(
+            CaptionText(
                 text = withdrawal.scopeLabel,
-                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.tertiary
             )
         }
@@ -159,11 +154,7 @@ private fun WithdrawalScopeBadge(withdrawal: CashWithdrawalUiModel) {
 private fun WithdrawalDateLine(dateText: String) {
     if (dateText.isNotBlank()) {
         Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = dateText,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        SecondaryBodyText(text = dateText, maxLines = Int.MAX_VALUE)
     }
 }
 
@@ -177,9 +168,8 @@ private fun WithdrawalAmountColumn(withdrawal: CashWithdrawalUiModel) {
             color = MaterialTheme.colorScheme.tertiary
         )
         if (withdrawal.isForeignCurrency && withdrawal.formattedDeducted.isNotBlank()) {
-            Text(
+            BodyText(
                 text = withdrawal.formattedDeducted,
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

@@ -253,7 +253,7 @@
 
     <!-- Personal cash split warning — shown in Split step when a USER/SUBUNIT-scoped pool is
          selected but the split includes members outside the pool's natural scope -->
-    <string name="add_expense_personal_cash_split_warning">Estás gastando de tu efectivo personal — asegúrate de que es tu intención compartir este gasto con otros.</string>
+    <string name="add_expense_personal_cash_split_warning">Estás gastando de tu efectivo personal.\nAsegúrate de que es tu intención compartir este gasto con los demás.</string>
     <!-- Subunit cash split warning — %1$s is the subunit pool display label (e.g. "Efectivo de Caris") -->
-    <string name="add_expense_subunit_cash_split_warning">Estás usando %1$s — asegúrate de que es tu intención compartir este gasto con otros.</string>
+    <string name="add_expense_subunit_cash_split_warning">Estás usando %1$s.\nAsegúrate de que es tu intención compartir este gasto con los demás.</string>
 </resources>

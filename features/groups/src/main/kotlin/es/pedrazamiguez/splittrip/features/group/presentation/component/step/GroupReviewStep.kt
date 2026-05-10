@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.group.presentation.component.step
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -11,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
@@ -32,26 +32,22 @@ fun GroupReviewStep(
                 value = uiState.groupName.ifBlank { none }
             )
             if (uiState.groupDescription.isNotBlank()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 ReviewRow(
                     label = stringResource(R.string.group_review_description),
                     value = uiState.groupDescription
                 )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             ReviewRow(
                 label = stringResource(R.string.group_review_currency),
                 value = uiState.selectedCurrency?.displayText ?: none
             )
             if (uiState.extraCurrencies.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 ReviewRow(
                     label = stringResource(R.string.group_review_extra_currencies),
                     value = uiState.extraCurrencies.joinToString { it.code }
                 )
             }
             if (uiState.selectedMembers.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 ReviewRow(
                     label = stringResource(R.string.group_review_members),
                     value = uiState.selectedMembers.joinToString { it.displayName ?: it.email }
@@ -67,9 +63,8 @@ private fun ReviewRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
+        BodyText(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(LABEL_WEIGHT)
         )

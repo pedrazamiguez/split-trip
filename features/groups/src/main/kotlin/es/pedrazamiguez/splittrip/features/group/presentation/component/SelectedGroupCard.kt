@@ -34,16 +34,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlignJustified
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -148,7 +150,7 @@ internal fun SelectedGroupCoverImage(
             ActiveNowBadge(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(16.dp)
+                    .padding(MaterialTheme.spacing.Default)
             )
         }
     }
@@ -179,7 +181,7 @@ private fun GroupCoverImagePlaceholder(modifier: Modifier = Modifier) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
             Icon(
                 imageVector = TablerIcons.Outline.Photo,
@@ -198,17 +200,17 @@ private fun GroupCoverImagePlaceholder(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ActiveNowBadge(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.secondaryContainer
+    Box(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
     ) {
         Text(
             text = stringResource(R.string.group_active_badge),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.ExtraSmall)
         )
     }
 }
@@ -219,8 +221,8 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(MaterialTheme.spacing.Default),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         // Name row with currency chip
         Row(
@@ -228,21 +230,18 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
+            SheetTitleText(
                 text = groupUiModel.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 12.dp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                    .padding(end = MaterialTheme.spacing.Medium)
             )
             // Primary color chip — high contrast on surfaceContainerLow card background.
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.primary
+            Box(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.primary)
             ) {
                 Text(
                     text = groupUiModel.currency,
@@ -260,7 +259,7 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
         // Description row
         if (groupUiModel.description.isNotEmpty()) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -269,20 +268,14 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp)
                 )
-                Text(
-                    text = groupUiModel.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                SecondaryBodyText(text = groupUiModel.description)
             }
         }
 
         // Avatar stack + member count
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
             if (groupUiModel.memberAvatarUrls.isNotEmpty() || groupUiModel.memberOverflowCount > 0) {
                 MemberAvatarStack(
@@ -291,10 +284,9 @@ private fun SelectedGroupCardContent(groupUiModel: GroupUiModel) {
                 )
             }
             if (groupUiModel.membersCountText.isNotEmpty()) {
-                Text(
+                SecondaryBodyText(
                     text = groupUiModel.membersCountText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    maxLines = Int.MAX_VALUE
                 )
             }
         }

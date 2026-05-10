@@ -10,15 +10,15 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import kotlinx.collections.immutable.ImmutableList
 
@@ -46,14 +46,9 @@ fun MemberPickerCard(
     modifier: Modifier = Modifier
 ) {
     FlatCard(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = labels.title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+        Column(modifier = Modifier.padding(MaterialTheme.spacing.Large)) {
+            CardSectionLabelText(text = labels.title)
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
             Column(modifier = Modifier.selectableGroup()) {
                 members.forEach { member ->
                     val displayText = if (member.isCurrentUser) {
@@ -87,14 +82,13 @@ private fun MemberRadioRow(
                 onClick = onClick,
                 role = Role.RadioButton
             )
-            .padding(vertical = 4.dp),
+            .padding(vertical = MaterialTheme.spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RadioButton(selected = selected, onClick = null)
-        Text(
+        BodyText(
             text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = 8.dp)
+            modifier = Modifier.padding(start = MaterialTheme.spacing.Small)
         )
     }
 }

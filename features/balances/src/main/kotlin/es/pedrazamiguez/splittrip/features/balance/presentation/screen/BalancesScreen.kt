@@ -21,17 +21,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CashBanknote
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DashboardShimmer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerBox
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.CashWithdrawalHistoryItem
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.ContributionHistoryItem
@@ -121,7 +125,19 @@ private fun BalancesBodyContent(
 ) {
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
-        loadingContent = { ShimmerLoadingList() }
+        loadingContent = {
+            DashboardShimmer(
+                bottomPadding = bottomPadding,
+                // Mirror the title+subtitle header above GroupPocketBalanceCard to keep the
+                // vertical layout stable during the loading→content transition.
+                headerContent = {
+                    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
+                        ShimmerBox(height = 36.dp, width = 200.dp)
+                        ShimmerBox(height = 14.dp, width = 260.dp)
+                    }
+                }
+            )
+        }
     ) {
         when {
             uiState.pocketBalance.formattedBalance.isEmpty() &&
@@ -157,12 +173,12 @@ private fun BalancesListContent(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 16.dp,
-            end = 16.dp,
-            bottom = 16.dp + bottomPadding
+            start = MaterialTheme.spacing.Default,
+            top = MaterialTheme.spacing.Default,
+            end = MaterialTheme.spacing.Default,
+            bottom = MaterialTheme.spacing.Default + bottomPadding
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         item(key = "header") {
             Column {
@@ -172,9 +188,8 @@ private fun BalancesListContent(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Text(
+                BodyText(
                     text = stringResource(R.string.balances_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -198,11 +213,9 @@ private fun BalancesListContent(
 private fun LazyListScope.memberBalancesSection(memberBalances: ImmutableList<MemberBalanceUiModel>) {
     if (memberBalances.isEmpty()) return
     item {
-        Text(
+        SectionHeadingText(
             text = stringResource(R.string.balances_member_balances_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }
     items(items = memberBalances, key = { "mb-${it.userId}" }) { memberBalance ->
@@ -216,11 +229,9 @@ private fun LazyListScope.activitySection(
 ) {
     if (activityItems.isEmpty()) return
     item {
-        Text(
+        SectionHeadingText(
             text = stringResource(R.string.balances_history_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }
     items(

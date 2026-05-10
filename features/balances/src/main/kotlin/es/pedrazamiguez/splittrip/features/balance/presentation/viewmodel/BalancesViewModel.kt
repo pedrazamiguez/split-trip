@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
+import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.MemberBalanceCashContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.BalancesUiAction
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandler
@@ -161,9 +162,11 @@ class BalancesViewModel(
                             currentUserId,
                             memberProfiles,
                             groupCurrency = currency,
-                            withdrawals = withdrawals,
-                            subunitsMap = subunitsMap,
-                            groupMemberIds = groupMemberIds
+                            cashContext = MemberBalanceCashContext(
+                                withdrawals = withdrawals,
+                                subunitsMap = subunitsMap,
+                                groupMemberIds = groupMemberIds
+                            )
                         ),
                         activityItems = balancesUiMapper.mapActivity(
                             contributions,

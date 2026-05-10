@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.contribution.presentation.component.
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -11,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.contribution.R
@@ -34,16 +34,12 @@ fun ContributionReviewStep(
                 value = uiState.selectedMemberDisplayName.ifBlank { none }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
             ReviewRow(
                 label = stringResource(R.string.contribution_review_amount),
                 value = uiState.formattedAmountWithCurrency.ifBlank {
                     uiState.amountInput.ifBlank { none }
                 }
             )
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             ReviewRow(
                 label = stringResource(R.string.contribution_review_scope),
@@ -67,9 +63,8 @@ private fun ReviewRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
+        BodyText(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(

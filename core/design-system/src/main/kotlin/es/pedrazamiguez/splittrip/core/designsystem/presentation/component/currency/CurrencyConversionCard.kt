@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,18 +17,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlertTriangle
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.InlineWarningBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 
 private const val EXCHANGE_RATE_FIELD_WEIGHT = 0.6f
 private const val GROUP_AMOUNT_FIELD_WEIGHT = 0.4f
@@ -65,7 +64,7 @@ fun CurrencyConversionCard(
             title = state.title,
             isLoadingRate = state.isLoadingRate
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(MaterialTheme.spacing.Medium))
         ConversionCardInputRow(
             state = state,
             onExchangeRateChanged = onExchangeRateChanged,
@@ -81,7 +80,17 @@ fun CurrencyConversionCard(
             exchangeRateLockedHint = state.exchangeRateLockedHint,
             isInsufficientCash = state.isInsufficientCash
         )
-        StaleRateBanner(isStale = state.isExchangeRateStale)
+        val staleRateWarning = if (state.isExchangeRateStale) {
+            UiText.StringResource(R.string.stale_rate_warning)
+        } else {
+            null
+        }
+        // Top padding on the AnimatedVisibility container animates in/out with the banner,
+        // matching the 8 dp gap the former StaleRateBanner Spacer provided.
+        InlineWarningBanner(
+            warning = staleRateWarning,
+            modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
+        )
     }
 }
 
@@ -92,14 +101,9 @@ private fun ConversionCardTitleRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        CardSectionLabelText(text = title)
         if (isLoadingRate) {
             CircularProgressIndicator(
                 modifier = Modifier.size(16.dp),
@@ -121,7 +125,7 @@ private fun ConversionCardInputRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         StyledOutlinedTextField(
             value = state.exchangeRateValue,
@@ -156,7 +160,7 @@ private fun ConversionCardLockedHint(
     isInsufficientCash: Boolean
 ) {
     exchangeRateLockedHint?.let { hint ->
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(MaterialTheme.spacing.Small))
         Text(
             text = hint.asString(),
             style = MaterialTheme.typography.bodySmall,
@@ -165,29 +169,6 @@ private fun ConversionCardLockedHint(
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             }
-        )
-    }
-}
-
-@Composable
-private fun StaleRateBanner(isStale: Boolean) {
-    if (!isStale) return
-
-    Spacer(Modifier.height(8.dp))
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Icon(
-            imageVector = TablerIcons.Outline.AlertTriangle,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-        Text(
-            text = stringResource(R.string.stale_rate_warning),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error
         )
     }
 }

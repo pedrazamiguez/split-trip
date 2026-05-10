@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.component.step.
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.subunit.R
 import es.pedrazamiguez.splittrip.features.subunit.presentation.model.MemberUiModel
@@ -50,8 +50,6 @@ private fun ReviewCardContent(uiState: CreateEditSubunitUiState, none: String) {
         value = uiState.name.ifBlank { none }
     )
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
     ReviewRow(
         label = stringResource(R.string.subunit_review_members),
         value = uiState.selectedMemberIds
@@ -59,8 +57,6 @@ private fun ReviewCardContent(uiState: CreateEditSubunitUiState, none: String) {
             .joinToString { it.displayName }
             .ifBlank { none }
     )
-
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
     ReviewSharesList(uiState = uiState, memberMap = memberMap, none = none)
 }
@@ -77,11 +73,7 @@ private fun ReviewSharesList(
     if (selectedMembers.isEmpty()) {
         ReviewRow(label = sharesLabel, value = none)
     } else {
-        Text(
-            text = sharesLabel,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        SecondaryBodyText(text = sharesLabel, maxLines = Int.MAX_VALUE)
         selectedMembers.forEach { member ->
             val shareText = uiState.memberShares[member.userId]
             val displayValue = if (shareText.isNullOrBlank()) none else "$shareText%"
@@ -96,11 +88,7 @@ private fun ReviewRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        SecondaryBodyText(text = label, maxLines = Int.MAX_VALUE)
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,

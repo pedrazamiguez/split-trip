@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -49,6 +51,10 @@ fun BottomNavigationBar(
 ) {
     val selectedIndex = items.indexOfFirst { it.route == selectedRoute }.coerceAtLeast(0)
 
+    // On gesture-nav devices the inset is ~0–20dp; on 3-button/2-button devices ~48–56dp.
+    // Adding it here lifts the pill above the opaque system bar in all navigation modes.
+    val navigationBarsInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.BottomCenter
@@ -59,8 +65,8 @@ fun BottomNavigationBar(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    // Height = Bar Height + Bottom Padding + Extra buffer (32.dp) for the smooth fade
-                    .height(NavBarDefaults.BarHeight + NavBarDefaults.BottomPadding + 32.dp)
+                    // Height = Bar Height + Bottom Padding + System Nav Bar + Extra buffer (32.dp) for the smooth fade
+                    .height(NavBarDefaults.BarHeight + NavBarDefaults.BottomPadding + navigationBarsInset + 32.dp)
                     .horizonGlassEffect(hazeState = hazeState) {
                         // Gradient Mask: Transparent (Top) -> Black (Bottom)
                         // This makes the blur "fade in" from top to bottom
@@ -79,7 +85,7 @@ fun BottomNavigationBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = NavBarDefaults.HorizontalPadding)
-                .padding(bottom = NavBarDefaults.BottomPadding)
+                .padding(bottom = NavBarDefaults.BottomPadding + navigationBarsInset)
                 .shadow(NavBarDefaults.ShadowElevation, CircleShape)
                 .clip(CircleShape)
                 .then(

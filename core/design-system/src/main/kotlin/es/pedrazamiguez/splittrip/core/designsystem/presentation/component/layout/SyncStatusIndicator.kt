@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,11 +28,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.R
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CloudOff
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.RefreshAlert
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.shape.ExpressiveShapes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.shape.RoundedPolygonShape
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import kotlinx.coroutines.delay
 
@@ -181,7 +182,7 @@ private fun SyncStatusContent(syncStatus: SyncStatus, showLabel: Boolean) {
                 .clip(shape)
                 .background(containerColor)
                 .padding(CONTAINER_PADDING),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -191,11 +192,7 @@ private fun SyncStatusContent(syncStatus: SyncStatus, showLabel: Boolean) {
                 tint = contentColor
             )
             if (showLabel) {
-                Text(
-                    text = contentDesc,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = contentColor
-                )
+                CaptionText(text = contentDesc, color = contentColor)
             }
         }
     }

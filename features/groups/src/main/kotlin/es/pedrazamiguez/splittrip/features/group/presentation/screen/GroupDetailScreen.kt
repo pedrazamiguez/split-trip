@@ -23,6 +23,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
@@ -34,6 +35,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.component.MemberAvatarStack
 import es.pedrazamiguez.splittrip.features.group.presentation.component.SelectedGroupCoverImage
@@ -98,7 +101,7 @@ private fun GroupDetailContent(
                 .padding(horizontal = CONTENT_HORIZONTAL_PADDING),
             verticalArrangement = Arrangement.spacedBy(SECTION_VERTICAL_SPACING)
         ) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
 
             GroupDetailMembersSection(group = group)
 
@@ -107,7 +110,7 @@ private fun GroupDetailContent(
                 onManageSubunits = onManageSubunits
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
 
             GroupDetailActions(
                 isActiveGroup = isActiveGroup,
@@ -115,7 +118,7 @@ private fun GroupDetailContent(
                 onManageSubunits = onManageSubunits
             )
 
-            Spacer(modifier = Modifier.height(24.dp + bottomPadding))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge + bottomPadding))
         }
     }
 }
@@ -128,7 +131,7 @@ private fun GroupDetailMembersSection(group: GroupUiModel) {
     )
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         if (group.memberAvatarUrls.isNotEmpty() || group.memberOverflowCount > 0) {
             MemberAvatarStack(
@@ -137,9 +140,8 @@ private fun GroupDetailMembersSection(group: GroupUiModel) {
             )
         }
         if (group.membersCountText.isNotEmpty()) {
-            Text(
+            BodyText(
                 text = group.membersCountText,
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -169,13 +171,12 @@ private fun GroupDetailSubunitsSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = MaterialTheme.spacing.Default, vertical = MaterialTheme.spacing.Medium),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
+            BodyText(
                 text = subunitsText,
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (subunitsCount > 0) {
@@ -197,7 +198,7 @@ private fun GroupDetailActions(
     onManageSubunits: () -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium),
         modifier = Modifier.fillMaxWidth()
     ) {
         if (isActiveGroup) {
@@ -234,12 +235,7 @@ private fun GroupDetailSectionLabel(
         verticalAlignment = Alignment.CenterVertically
     ) {
         icon()
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        LabelText(text = label)
     }
 }
 

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,10 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
@@ -84,12 +86,7 @@ fun AddExpenseScreen(
             }
 
             else -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                ShimmerLoadingList()
             }
         }
     }
@@ -245,7 +242,7 @@ private fun AddExpenseConfigFailedContent(onRetry: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(MaterialTheme.spacing.Section),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -255,19 +252,18 @@ private fun AddExpenseConfigFailedContent(onRetry: () -> Unit) {
             modifier = Modifier.size(64.dp),
             tint = MaterialTheme.colorScheme.error
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
         Text(
             text = stringResource(R.string.expense_error_load_group_config),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.error
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+        BodyText(
             text = stringResource(R.string.expense_error_config_retry_hint),
-            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
         SecondaryButton(
             text = stringResource(R.string.expense_error_retry_button),
             onClick = onRetry,

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CirclePlus
@@ -32,6 +33,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
@@ -63,8 +66,8 @@ fun ExpenseItem(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(MaterialTheme.spacing.Default),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
                 ExpenseItemTitleRow(expenseUiModel = expenseUiModel)
                 ExpenseItemMetaRow(expenseUiModel = expenseUiModel)
@@ -90,8 +93,8 @@ private fun ExpenseItemTitleRow(expenseUiModel: ExpenseUiModel) {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp, end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(start = MaterialTheme.spacing.Medium, end = MaterialTheme.spacing.Default),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
             Text(
                 text = expenseUiModel.title,
@@ -108,21 +111,19 @@ private fun ExpenseItemTitleRow(expenseUiModel: ExpenseUiModel) {
 
 @Composable
 private fun CategoryIconContainer(category: ExpenseCategory, contentDescription: String?) {
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier.size(44.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = category.toIconVector(),
-                contentDescription = contentDescription,
-                modifier = Modifier.size(22.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        Icon(
+            imageVector = category.toIconVector(),
+            contentDescription = contentDescription,
+            modifier = Modifier.size(22.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -130,24 +131,26 @@ private fun CategoryIconContainer(category: ExpenseCategory, contentDescription:
 private fun ExpenseAmountBadges(expenseUiModel: ExpenseUiModel) {
     Column(
         horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.tertiaryContainer
+        Box(
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.tertiaryContainer)
         ) {
             Text(
                 text = expenseUiModel.formattedAmount,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = MaterialTheme.spacing.Small)
             )
         }
         if (expenseUiModel.formattedOriginalAmount != null) {
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceVariant
+            Box(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Text(
                     text = expenseUiModel.formattedOriginalAmount,
@@ -194,12 +197,10 @@ private fun ExpenseItemBadgesRow(expenseUiModel: ExpenseUiModel, modifier: Modif
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (expenseUiModel.paymentMethodText.isNotEmpty()) {
-            Text(
+            BodyText(
                 text = expenseUiModel.paymentMethodText,
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 1
             )
         }
         if (expenseUiModel.hasAddOns) {
@@ -227,9 +228,8 @@ private fun AddOnBadge() {
             modifier = Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.primary
         )
-        Text(
+        SecondaryBodyText(
             text = stringResource(R.string.expense_add_ons_label),
-            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -256,9 +256,8 @@ private fun OutOfPocketBadge(
             modifier = Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.primary
         )
-        Text(
+        SecondaryBodyText(
             text = fundingSourceText,
-            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -273,7 +272,7 @@ private fun ScheduledBadge(badgeText: String, isPastDue: Boolean) {
     }
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(

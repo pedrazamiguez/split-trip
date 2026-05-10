@@ -257,9 +257,9 @@ class BalancesUiMapper(
      *
      * @param groupCurrency The group's base currency code, used to determine whether
      *                      to show equivalents for per-currency breakdowns.
-     * @param withdrawals Full withdrawal list for the group, used to build [MemberBalanceUiModel.cashBreakdown].
-     * @param subunitsMap Subunit lookup map, required for SUBUNIT-scoped withdrawal attribution.
-     * @param groupMemberIds Full member id list, required to compute equal GROUP-scope shares.
+     * @param cashContext   Supplementary cash context (withdrawals, subunit map, member IDs)
+     *                      needed to build per-member cash breakdowns. Defaults to an empty
+     *                      context for screens that do not display the cash breakdown section.
      */
     fun mapMemberBalances(
         balances: List<MemberBalance>,
@@ -267,9 +267,7 @@ class BalancesUiMapper(
         currentUserId: String?,
         memberProfiles: Map<String, User> = emptyMap(),
         groupCurrency: String = currency,
-        withdrawals: List<CashWithdrawal> = emptyList(),
-        subunitsMap: Map<String, Subunit> = emptyMap(),
-        groupMemberIds: List<String> = emptyList()
+        cashContext: MemberBalanceCashContext = MemberBalanceCashContext()
     ): ImmutableList<MemberBalanceUiModel> {
         val locale = localeProvider.getCurrentLocale()
         return balances
@@ -278,57 +276,65 @@ class BalancesUiMapper(
                     .thenByDescending { kotlin.math.abs(it.pocketBalance) }
             )
             .map { balance ->
-                val isNegativeCash = balance.cashInHand < 0
-                MemberBalanceUiModel(
-                    userId = balance.userId,
-                    displayName = resolveDisplayName(balance.userId, memberProfiles),
-                    isCurrentUser = balance.userId == currentUserId,
-                    formattedContributed = formatCurrencyAmount(balance.contributed, currency, locale),
-                    formattedCashInHand = if (isNegativeCash) {
-                        EM_DASH
-                    } else {
-                        formatCurrencyAmount(balance.cashInHand, currency, locale)
-                    },
-                    formattedTotalSpent = formatCurrencyAmount(balance.totalSpent, currency, locale),
-                    formattedPocketBalance = formatCurrencyAmount(balance.pocketBalance, currency, locale),
-                    formattedCashSpent = formatCurrencyAmount(balance.cashSpent, currency, locale),
-                    formattedNonCashSpent = formatCurrencyAmount(balance.nonCashSpent, currency, locale),
-                    isPositiveBalance = balance.pocketBalance >= 0,
-                    hasNegativeCashInHand = isNegativeCash,
-                    cashInHandByCurrency = if (isNegativeCash) {
-                        persistentListOf()
-                    } else {
-                        mapCurrencyBreakdowns(
-                            balance.cashInHandByCurrency,
-                            groupCurrency,
-                            locale
-                        )
-                    },
-                    cashSpentByCurrency = mapCurrencyBreakdowns(
-                        balance.cashSpentByCurrency,
-                        groupCurrency,
-                        locale
-                    ),
-                    nonCashSpentByCurrency = mapCurrencyBreakdowns(
-                        balance.nonCashSpentByCurrency,
-                        groupCurrency,
-                        locale
-                    ),
-                    cashBreakdown = if (isNegativeCash) {
-                        persistentListOf()
-                    } else {
-                        mapCashBreakdown(
-                            userId = balance.userId,
-                            withdrawals = withdrawals,
-                            subunitsMap = subunitsMap,
-                            groupMemberIds = groupMemberIds,
-                            groupCurrency = groupCurrency,
-                            locale = locale
-                        )
-                    }
+                mapSingleMemberBalance(
+                    balance = balance,
+                    currentUserId = currentUserId,
+                    currency = currency,
+                    groupCurrency = groupCurrency,
+                    memberProfiles = memberProfiles,
+                    cashContext = cashContext,
+                    locale = locale
                 )
             }
             .toImmutableList()
+    }
+
+    private fun mapSingleMemberBalance(
+        balance: MemberBalance,
+        currentUserId: String?,
+        currency: String,
+        groupCurrency: String,
+        memberProfiles: Map<String, User>,
+        cashContext: MemberBalanceCashContext,
+        locale: java.util.Locale
+    ): MemberBalanceUiModel {
+        val isNegativeCash = balance.cashInHand < 0
+        return MemberBalanceUiModel(
+            userId = balance.userId,
+            displayName = resolveDisplayName(balance.userId, memberProfiles),
+            isCurrentUser = balance.userId == currentUserId,
+            formattedContributed = formatCurrencyAmount(balance.contributed, currency, locale),
+            formattedCashInHand = if (isNegativeCash) {
+                EM_DASH
+            } else {
+                formatCurrencyAmount(balance.cashInHand, currency, locale)
+            },
+            formattedTotalSpent = formatCurrencyAmount(balance.totalSpent, currency, locale),
+            formattedPocketBalance = formatCurrencyAmount(balance.pocketBalance, currency, locale),
+            formattedCashSpent = formatCurrencyAmount(balance.cashSpent, currency, locale),
+            formattedNonCashSpent = formatCurrencyAmount(balance.nonCashSpent, currency, locale),
+            isPositiveBalance = balance.pocketBalance >= 0,
+            hasNegativeCashInHand = isNegativeCash,
+            cashInHandByCurrency = if (isNegativeCash) {
+                persistentListOf()
+            } else {
+                mapCurrencyBreakdowns(balance.cashInHandByCurrency, groupCurrency, locale)
+            },
+            cashSpentByCurrency = mapCurrencyBreakdowns(balance.cashSpentByCurrency, groupCurrency, locale),
+            nonCashSpentByCurrency = mapCurrencyBreakdowns(balance.nonCashSpentByCurrency, groupCurrency, locale),
+            cashBreakdown = if (isNegativeCash) {
+                persistentListOf()
+            } else {
+                mapCashBreakdown(
+                    userId = balance.userId,
+                    withdrawals = cashContext.withdrawals,
+                    subunitsMap = cashContext.subunitsMap,
+                    groupMemberIds = cashContext.groupMemberIds,
+                    groupCurrency = groupCurrency,
+                    locale = locale
+                )
+            }
+        )
     }
 
     /**
@@ -340,7 +346,7 @@ class BalancesUiMapper(
      * - USER → full remaining if this member made the withdrawal, else excluded.
      * - SUBUNIT → proportional share by [Subunit.memberShares] (BigDecimal, HALF_UP).
      *
-     * Items are ordered: GROUP scope → USER scope → SUBUNIT scope, then by date descending
+     * Items are ordered: GROUP scope → SUBUNIT scope → USER scope, then by date descending
      * within each scope group so the breakdown mirrors the pool priority used by FIFO.
      *
      * Exchange rate is omitted when the withdrawal currency equals the group currency
@@ -354,7 +360,7 @@ class BalancesUiMapper(
         groupCurrency: String,
         locale: java.util.Locale
     ): ImmutableList<CashBreakdownUiModel> {
-        val scopeOrder = mapOf(PayerType.GROUP to 0, PayerType.USER to 1, PayerType.SUBUNIT to 2)
+        val scopeOrder = mapOf(PayerType.GROUP to 0, PayerType.SUBUNIT to 1, PayerType.USER to 2)
         return withdrawals
             .sortedWith(
                 compareBy<CashWithdrawal> { scopeOrder[it.withdrawalScope] ?: 3 }

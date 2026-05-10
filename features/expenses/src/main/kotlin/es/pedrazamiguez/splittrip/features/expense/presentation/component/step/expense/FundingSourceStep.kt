@@ -3,11 +3,11 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.step.
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.FundingSourceSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -38,11 +38,10 @@ fun FundingSourceStep(
 
         AnimatedVisibility(visible = uiState.fundingSourceHint != null) {
             uiState.fundingSourceHint?.let { hint ->
-                Text(
+                SecondaryBodyText(
                     text = hint.asString(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    maxLines = Int.MAX_VALUE,
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraSmall)
                 )
             }
         }

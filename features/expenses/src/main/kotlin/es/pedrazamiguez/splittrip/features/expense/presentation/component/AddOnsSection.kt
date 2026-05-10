@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,10 +25,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -56,7 +56,7 @@ fun AddOnsSection(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         AddOnsSectionHeader(
             hasAddOns = hasAddOns,
@@ -93,12 +93,7 @@ private fun AddOnsSectionHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = stringResource(R.string.add_expense_add_ons_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        SectionHeadingText(text = stringResource(R.string.add_expense_add_ons_title))
 
         if (hasAddOns) {
             TextButton(onClick = onToggle) {
@@ -137,16 +132,9 @@ private fun AddOnsListCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
-            uiState.addOns.forEachIndexed { index, addOn ->
-                if (index > 0) {
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-                }
-
+            uiState.addOns.forEach { addOn ->
                 AddOnItemEditor(
                     addOn = addOn,
                     availableCurrencies = uiState.availableCurrencies,
@@ -194,18 +182,12 @@ private fun AddOnsSectionFooter(
     }
 
     addOnError?.let { errorUiText ->
-        Surface(
-            color = MaterialTheme.colorScheme.errorContainer,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = errorUiText.asString(),
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(12.dp)
-            )
-        }
+        Text(
+            text = errorUiText.asString(),
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(MaterialTheme.spacing.Medium)
+        )
     }
 
     TextButton(
@@ -217,7 +199,7 @@ private fun AddOnsSectionFooter(
             contentDescription = null,
             modifier = Modifier.size(18.dp)
         )
-        Spacer(Modifier.size(4.dp))
+        Spacer(Modifier.size(MaterialTheme.spacing.ExtraSmall))
         Text(
             text = stringResource(R.string.add_expense_add_on_button),
             style = MaterialTheme.typography.labelLarge

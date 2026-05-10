@@ -84,22 +84,64 @@ class CashRateDelegate(
      * uses the automatic scope-priority logic (personal pool first, GROUP fallback).
      */
     fun fetchCashRate() {
-        val state = _uiState.value
-        val groupId = state.loadedGroupId ?: return
-        val sourceCurrency = state.selectedCurrency?.code ?: return
-        val groupCurrency = state.groupCurrency?.code ?: return
+        val ctx = buildCashRateRequest(_uiState.value) ?: return
 
-        val isSameCurrency = sourceCurrency == groupCurrency
-        val sourceDecimalDigits = state.selectedCurrency.decimalDigits
-        val targetDecimalDigits = state.groupCurrency.decimalDigits
+        cashRateJob?.cancel()
+        cashRateJob = scope.launch {
+            _uiState.update { it.copy(isLoadingRate = true) }
+            try {
+                val result = previewCashExchangeRateUseCase(
+                    groupId = ctx.groupId,
+                    sourceCurrency = ctx.sourceCurrency,
+                    sourceAmountCents = ctx.sourceAmountCents,
+                    payerType = ctx.payerType,
+                    payerId = ctx.payerId,
+                    preferredWithdrawalScope = ctx.preferredScope,
+                    preferredWithdrawalOwnerId = ctx.preferredOwnerId
+                )
 
-        // Parse current source amount to cents (0 if blank/invalid)
-        val sourceAmountCents = splitPreviewService.parseAmountToCents(
-            state.sourceAmount,
-            sourceDecimalDigits
-        )
+                _uiState.update { current ->
+                    // Stale-result check: ignore if the user changed group or currency
+                    // while the request was in-flight.
+                    if (current.loadedGroupId != ctx.groupId ||
+                        current.selectedCurrency?.code != ctx.sourceCurrency
+                    ) {
+                        return@update current.copy(isLoadingRate = false)
+                    }
 
-        // Resolve scope context from the current funding source selection
+                    mapCashRateResult(
+                        current,
+                        result,
+                        ctx.targetDecimalDigits,
+                        ctx.sourceCurrency,
+                        !ctx.isSameCurrency
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to preview cash exchange rate for ${ctx.groupId}")
+                _uiState.update { it.copy(isLoadingRate = false) }
+            }
+        }
+    }
+
+    /**
+     * Collects all input values needed for a cash rate preview call.
+     * Returns `null` when the request should be skipped (missing required state or
+     * the pool selector is visible but no pool has been chosen yet).
+     */
+    private fun buildCashRateRequest(state: AddExpenseUiState): CashRateRequestContext? {
+        val groupId = state.loadedGroupId ?: return null
+        val selectedCurrency = state.selectedCurrency ?: return null
+        val groupCurrency = state.groupCurrency ?: return null
+
+        val sourceCurrency = selectedCurrency.code
+        val groupCurrencyCode = groupCurrency.code
+        val isSameCurrency = sourceCurrency == groupCurrencyCode
+        val sourceDecimalDigits = selectedCurrency.decimalDigits
+        val targetDecimalDigits = groupCurrency.decimalDigits
+
+        val sourceAmountCents = splitPreviewService.parseAmountToCents(state.sourceAmount, sourceDecimalDigits)
+
         val payerType = try {
             state.selectedFundingSource?.id?.let { PayerType.fromString(it) } ?: PayerType.GROUP
         } catch (_: IllegalArgumentException) {
@@ -116,52 +158,33 @@ class CashRateDelegate(
         val selectedPool = state.selectedWithdrawalPool
         // Pool selector is shown but no pool chosen yet — skip to avoid a false InsufficientCash
         // from the GROUP-only fallback path while the user's personal cash is still selectable.
-        if (selectedPool == null && state.availableWithdrawalPools.isNotEmpty()) return
-        val preferredScope = selectedPool?.scope
-        val preferredOwnerId = selectedPool?.ownerId
+        if (selectedPool == null && state.availableWithdrawalPools.isNotEmpty()) return null
 
-        // Capture request context for stale-result check
-        val requestedGroupId = groupId
-        val requestedSourceCurrency = sourceCurrency
-
-        // Cancel any previous in-flight cash rate request
-        cashRateJob?.cancel()
-        cashRateJob = scope.launch {
-            _uiState.update { it.copy(isLoadingRate = true) }
-            try {
-                val result = previewCashExchangeRateUseCase(
-                    groupId = requestedGroupId,
-                    sourceCurrency = requestedSourceCurrency,
-                    sourceAmountCents = sourceAmountCents,
-                    payerType = payerType,
-                    payerId = payerId,
-                    preferredWithdrawalScope = preferredScope,
-                    preferredWithdrawalOwnerId = preferredOwnerId
-                )
-
-                _uiState.update { current ->
-                    // Stale-result check: ignore if the user changed group or currency
-                    // while the request was in-flight.
-                    if (current.loadedGroupId != requestedGroupId ||
-                        current.selectedCurrency?.code != requestedSourceCurrency
-                    ) {
-                        return@update current.copy(isLoadingRate = false)
-                    }
-
-                    mapCashRateResult(
-                        current,
-                        result,
-                        targetDecimalDigits,
-                        requestedSourceCurrency,
-                        !isSameCurrency
-                    )
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to preview cash exchange rate")
-                _uiState.update { it.copy(isLoadingRate = false) }
-            }
-        }
+        return CashRateRequestContext(
+            groupId = groupId,
+            sourceCurrency = sourceCurrency,
+            sourceAmountCents = sourceAmountCents,
+            payerType = payerType,
+            payerId = payerId,
+            preferredScope = selectedPool?.scope,
+            preferredOwnerId = selectedPool?.ownerId,
+            isSameCurrency = isSameCurrency,
+            targetDecimalDigits = targetDecimalDigits
+        )
     }
+
+    /** Bundles derived request parameters to avoid a large local-variable list in [fetchCashRate]. */
+    private data class CashRateRequestContext(
+        val groupId: String,
+        val sourceCurrency: String,
+        val sourceAmountCents: Long,
+        val payerType: PayerType,
+        val payerId: String?,
+        val preferredScope: PayerType?,
+        val preferredOwnerId: String?,
+        val isSameCurrency: Boolean,
+        val targetDecimalDigits: Int
+    )
 
     /**
      * Maps a [CashRatePreviewResult] into an updated [AddExpenseUiState].

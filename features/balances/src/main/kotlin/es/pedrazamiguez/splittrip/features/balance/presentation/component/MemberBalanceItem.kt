@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +36,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BuildingBank
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Cash
@@ -141,7 +141,7 @@ private fun MemberBalanceCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = MaterialTheme.spacing.Default, vertical = MaterialTheme.spacing.Medium),
             content = { content() }
         )
     }
@@ -158,12 +158,12 @@ private fun MemberBalanceSummaryRow(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         Icon(imageVector = TablerIcons.Outline.User, contentDescription = null, tint = balanceColor)
         Column(modifier = Modifier.weight(1f)) {
             Text(text = displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
                 BreakdownLabel(
                     label = stringResource(R.string.balances_member_contributed_label),
                     value = memberBalance.formattedContributed
@@ -200,9 +200,8 @@ private fun MemberBalanceExpandedDetail(
     balanceColor: Color,
     onShowCashBreakdown: () -> Unit
 ) {
-    Column(modifier = Modifier.padding(top = 8.dp)) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-        Spacer(modifier = Modifier.height(8.dp))
+    Column(modifier = Modifier.padding(top = MaterialTheme.spacing.Small)) {
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
         DetailRow(
             label = stringResource(R.string.balances_member_pocket_balance),
@@ -210,7 +209,7 @@ private fun MemberBalanceExpandedDetail(
             valueColor = balanceColor,
             icon = TablerIcons.Outline.BuildingBank
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
 
         // Cash-in-hand row with info button to open the cash breakdown sheet
         CashInHandRow(
@@ -218,9 +217,7 @@ private fun MemberBalanceExpandedDetail(
             onShowCashBreakdown = onShowCashBreakdown
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
         SpendingBreakdownSection(memberBalance = memberBalance)
     }
@@ -269,7 +266,7 @@ private fun CashInHandRow(
 @Composable
 private fun SpendingBreakdownSection(memberBalance: MemberBalanceUiModel) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -289,7 +286,7 @@ private fun SpendingBreakdownSection(memberBalance: MemberBalanceUiModel) {
     if (memberBalance.cashSpentByCurrency.isEmpty() && memberBalance.nonCashSpentByCurrency.isEmpty()) {
         EmptyHintText(text = stringResource(R.string.balances_member_no_expenses))
     } else {
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
         if (memberBalance.cashSpentByCurrency.isNotEmpty()) {
             DetailRow(
                 label = stringResource(R.string.balances_member_cash_expenses),
@@ -322,7 +319,7 @@ private fun DetailRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) {
@@ -356,7 +353,7 @@ private fun CurrencyBreakdownRows(items: ImmutableList<CurrencyBreakdownUiModel>
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 20.dp, top = 2.dp, bottom = 2.dp),
+                .padding(start = MaterialTheme.spacing.Large, top = 2.dp, bottom = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -388,7 +385,7 @@ private fun CurrencyBreakdownRows(items: ImmutableList<CurrencyBreakdownUiModel>
 private fun EmptyHintText(text: String) {
     Text(
         text = text,
-        modifier = Modifier.padding(start = 20.dp, top = 4.dp),
+        modifier = Modifier.padding(start = MaterialTheme.spacing.Large, top = MaterialTheme.spacing.ExtraSmall),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
     )

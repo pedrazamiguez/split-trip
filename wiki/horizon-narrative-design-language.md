@@ -146,13 +146,68 @@ Used for **Title**, **Body**, and **Label** roles. Provides clarity for travel l
 | `labelMedium` | Medium | 12 sp | 16 sp | 0.50 sp |
 | `labelSmall` | Medium | 11 sp | 16 sp | 0.50 sp |
 
-### 3.3 Tabular Numerals
+### 3.3 Semantic Text Wrappers
+
+To enforce the dual-voice system without requiring per-call-site `style`/`fontWeight` arguments, a set of **semantic text wrapper composables** is provided in `core/design-system/.../component/text/TextComponents.kt`. Each wrapper fixes the correct `TextStyle`, `FontWeight`, and default `Color` for its semantic role:
+
+| Wrapper | Base Style | Typeface | Default Weight | Default Color |
+|---|---|---|---|---|
+| `ScreenTitleText` | `headlineLarge` (32 sp) | Plus Jakarta Sans | Bold | `onBackground` |
+| `SectionHeadingText` | `titleMedium` (16 sp) | Manrope | Bold | `onSurface` |
+| `CardTitleText` | `titleSmall` (14 sp) | Manrope | SemiBold | `onSurface` |
+| `BodyText` | `bodyMedium` (14 sp) | Manrope | Normal | `onSurface` |
+| `SecondaryBodyText` | `bodySmall` (12 sp) | Manrope | Normal | `onSurfaceVariant` |
+| `LabelText` | `labelLarge` (14 sp) | Manrope | SemiBold | `onSurface` |
+| `CaptionText` | `labelSmall` (11 sp) | Manrope | Medium | `onSurfaceVariant` |
+| `AmountText` | `titleMedium` (16 sp) | Manrope | Bold | `onSurface` (overridable) |
+
+**Semantic contract rules:**
+* Callers **cannot** pass `style` or `fontWeight` — those are sealed inside each wrapper.
+* An optional `color` parameter allows per-call-site overrides for semantic states (e.g., `MaterialTheme.colorScheme.error` for `AmountText` on negative balances, `MaterialTheme.colorScheme.primary` for highlighted values).
+* A `maxLines` parameter is available on all wrappers for truncation. The default varies by context: `CardTitleText`, `SecondaryBodyText`, `LabelText`, `CaptionText`, and `AmountText` default to `maxLines = 1`; `ScreenTitleText`, `SectionHeadingText`, and `BodyText` default to unlimited.
+
+**When to use each wrapper:**
+
+| Wrapper | Typical usage |
+|---|---|
+| `ScreenTitleText` | Hero headline on an onboarding or empty-state screen |
+| `SectionHeadingText` | Label above a group of related cards in a list |
+| `CardTitleText` | Primary name/title row inside a `FlatCard` |
+| `BodyText` | Descriptive copy, notes, paragraph text |
+| `SecondaryBodyText` | Date, member count, status — secondary metadata |
+| `LabelText` | Form field label, tab label, action label |
+| `CaptionText` | Timestamp, sync status, helper text below a field |
+| `AmountText` | Any monetary amount; pass `color = error` for negative balances |
+
+**Example:**
+```kotlin
+// ✅ Correct — semantic wrapper with explicit error colour for negative balance
+AmountText(
+    text = amountFormatted,
+    color = if (isNegative) MaterialTheme.colorScheme.error else Color.Unspecified,
+)
+
+// ✅ Correct — section label
+SectionHeadingText(text = stringResource(R.string.balances_section_title))
+
+// ❌ Avoid — raw Text with ad-hoc style arguments
+Text(
+    text = title,
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold,
+    color = MaterialTheme.colorScheme.onSurface,
+)
+```
+
+> **Implementation:** `TextComponents.kt` in `core/design-system/.../component/text/`
+
+### 3.4 Tabular Numerals
 
 All text styles include the `tnum` OpenType feature for **tabular (monospaced) numerals**. This ensures:
 - Decimal separators and currency digits align vertically in lists.
 - The `AnimatedAmount` rolling animation renders without layout jitter.
 
-### 3.4 Font Licensing
+### 3.5 Font Licensing
 
 Both typefaces are licensed under the **SIL Open Font License 1.1**:
 - `licenses/Plus_Jakarta_Sans_OFL.txt`
@@ -359,13 +414,40 @@ Powered by the `dev.chrisbanes.haze` library. Constants and the `Modifier.horizo
 
 Travel is about breathing room — the interface must never feel claustrophobic.
 
-| Context | Spacing |
-|---|---|
-| Between major screen sections | 24–48 dp |
-| Within cards (internal padding) | 16–20 dp |
-| Between list items | 16–24 dp (NO divider lines) |
-| Card corner radius | `shapes.large` (default) |
-| Page margins | 16–24 dp (never full-width edge-to-edge) |
+| Context | Spacing | Token(s) |
+|---|---|---|
+| Between major screen sections | 24–48 dp | `ExtraLarge` … `Screen` |
+| Within cards (internal padding) | 16–20 dp | `Default` … `Large` |
+| Between list items | 16–24 dp (NO divider lines) | `Default` … `ExtraLarge` |
+| Card corner radius | `shapes.large` (default) | — (shape token, not spacing) |
+| Page margins | 16–24 dp (never full-width edge-to-edge) | `Default` … `ExtraLarge` |
+
+### Spacing Token Scale
+
+The full token scale is defined in `SplitTripSpacing` and accessible via `MaterialTheme.spacing`:
+
+| Token | dp | Typical context |
+|---|---|---|
+| `None` | 0 | Explicit zero — prefer over bare `0.dp` for readability |
+| `ExtraSmall` | 4 | Icon padding, dense chip gaps |
+| `Small` | 8 | Intra-row gaps, compact label offsets |
+| `Medium` | 12 | Secondary row padding, tight card internals |
+| `Default` | 16 | Card internal padding, page margins |
+| `Large` | 20 | Generous card padding, top/bottom row spacing |
+| `ExtraLarge` | 24 | Section-to-section gaps, list item spacing |
+| `Section` | 32 | Major section separators |
+| `Screen` | 48 | Hero-area breathing room, large top/bottom screen padding |
+
+**Usage inside Composables:**
+
+```kotlin
+Column(
+    modifier = Modifier.padding(horizontal = MaterialTheme.spacing.Default),
+    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraLarge)
+) { … }
+```
+
+> **Implementation:** `Spacing.kt` in `core/design-system/.../foundation/`
 
 ---
 
@@ -442,6 +524,7 @@ The Horizon Narrative was implemented across 7 focused sub-issues:
 | `Theme.kt` | `core/design-system/.../foundation/` | `LightColorScheme` + `DarkColorScheme` from named constants |
 | `Typography.kt` | `core/design-system/.../foundation/` | Dual-voice type scale (Plus Jakarta Sans + Manrope) |
 | `GlassmorphismDefaults.kt` | `core/design-system/.../foundation/` | Glass-blur constants + `Modifier.horizonGlassEffect()` |
+| `Spacing.kt` | `core/design-system/.../foundation/` | `SplitTripSpacing` token scale + `MaterialTheme.spacing` extension |
 
 ### Component Files
 
@@ -457,6 +540,7 @@ The Horizon Narrative was implemented across 7 focused sub-issues:
 | `PassportChip.kt` | `core/design-system/.../component/chip/` | Signature travel chip with tone-stable colours |
 | `StyledOutlinedTextField.kt` | `core/design-system/.../component/input/` | Soft Field text input with `softFieldColors()` |
 | `StickyActionBar.kt` | `core/design-system/.../component/scaffold/` | Full-width bottom CTA bar (delegates to `GradientButton`) |
+| `TextComponents.kt` | `core/design-system/.../component/text/` | Semantic text wrappers (§3.3) |
 
 ---
 
@@ -467,7 +551,9 @@ All Horizon Narrative components include `@PreviewThemes` previews (light + dark
 | Preview File | Components |
 |---|---|
 | `ThemePreviews.kt` | Full Horizon colour palette swatch |
+| `SpacingPreviews.kt` | Spacing token scale (all 9 levels as labelled bar swatches) |
 | `FlatCardPreviews.kt` | Default card, ghost border variant, `SectionCard` |
 | `GradientButtonPreviews.kt` | Enabled, disabled, loading states |
 | `PassportChipPreviews.kt` | Selected/unselected, removable, overflow variants |
+| `TextComponentsPreviews.kt` | All semantic text wrappers (gallery + per-wrapper light/dark + locale variants) |
 

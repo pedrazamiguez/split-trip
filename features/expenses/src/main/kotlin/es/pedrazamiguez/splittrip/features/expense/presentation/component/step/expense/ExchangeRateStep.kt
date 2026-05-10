@@ -2,10 +2,11 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.step.
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyConversionCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyConversionCardState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
@@ -53,7 +54,7 @@ fun ExchangeRateStep(
         )
 
         if (uiState.availableWithdrawalPools.size > 1) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
             WithdrawalPoolSelectorSection(
                 pools = uiState.availableWithdrawalPools,
                 selectedPool = uiState.selectedWithdrawalPool,
@@ -64,7 +65,7 @@ fun ExchangeRateStep(
         }
 
         if (uiState.cashTranchePreviews.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
             CashTrancheFundedFromSection(tranches = uiState.cashTranchePreviews)
         }
     }

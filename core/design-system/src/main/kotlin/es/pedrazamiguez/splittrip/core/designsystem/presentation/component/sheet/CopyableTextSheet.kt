@@ -46,9 +46,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.R
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Copy
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -79,14 +82,14 @@ fun CopyableTextSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(MaterialTheme.spacing.ExtraLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)
         ) {
             CopyableIconHeader(icon = icon, isCopied = isCopied)
-            Text(text = title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+            SheetTitleText(text = title)
             CopyableTextContent(copyableText = copyableText, notAvailableText = notAvailableText)
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(MaterialTheme.spacing.Small))
             CopyActionButton(
                 copyableText = copyableText,
                 isCopied = isCopied,
@@ -163,13 +166,12 @@ private fun CopyableTextContent(copyableText: String?, notAvailableText: String)
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(MaterialTheme.spacing.Default)
             )
         }
     } else {
-        Text(
+        BodyText(
             text = notAvailableText,
-            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -200,7 +202,7 @@ private fun CopyActionButton(
                 modifier = Modifier.size(18.dp)
             )
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(MaterialTheme.spacing.Small))
         Text(
             text = if (isCopied) stringResource(R.string.action_copied) else stringResource(R.string.action_copy),
             style = MaterialTheme.typography.labelLarge

@@ -28,8 +28,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.DotsVertical
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 
 /**
  * Represents an action item in the ActionBottomSheet.
@@ -77,16 +79,16 @@ fun ActionBottomSheet(
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(bottom = 48.dp), // Essential for gesture navigation spacing
+                .padding(bottom = MaterialTheme.spacing.Screen), // Essential for gesture navigation spacing
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header section matching CopyableTextSheet style
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(MaterialTheme.spacing.ExtraLarge),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)
             ) {
                 // Icon header with background
                 Box(
@@ -105,11 +107,7 @@ fun ActionBottomSheet(
                 }
 
                 // Title
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                SheetTitleText(text = title)
             }
 
             // Actions list

@@ -8,7 +8,9 @@ import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
+import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.MemberBalanceCashContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityItemUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
@@ -181,5 +183,46 @@ fun MemberBalanceListPreviewHelper(
             )
         },
         content = content
+    )
+}
+
+/**
+ * Preview helper for [es.pedrazamiguez.splittrip.features.balance.presentation.component.CashBreakdownBottomSheet].
+ *
+ * Maps [memberBalance] + [withdrawals] through [BalancesUiMapper.mapMemberBalances] with a full
+ * [MemberBalanceCashContext], then passes `cashBreakdown` and `formattedCashInHand` to [content].
+ * Defaults exercise all three scope types (GROUP, SUBUNIT, USER) so all sections appear in the preview.
+ */
+@Composable
+fun CashBreakdownPreviewHelper(
+    memberBalance: MemberBalance = PREVIEW_MEMBER_BALANCE_FOR_BREAKDOWN,
+    withdrawals: List<CashWithdrawal> = listOf(
+        PREVIEW_CASH_WITHDRAWAL_GROUP,
+        PREVIEW_CASH_WITHDRAWAL_SUBUNIT,
+        PREVIEW_CASH_WITHDRAWAL_PERSONAL
+    ),
+    groupCurrency: String = "EUR",
+    content: @Composable (breakdown: ImmutableList<CashBreakdownUiModel>, formattedTotal: String) -> Unit
+) {
+    MappedPreview(
+        domain = Triple(memberBalance, withdrawals, groupCurrency),
+        mapper = { localeProvider, resourceProvider ->
+            BalancesUiMapper(localeProvider, resourceProvider)
+        },
+        transform = { mapper, (balance, wds, currency) ->
+            val uiModel = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = balance.userId,
+                groupCurrency = currency,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = wds,
+                    subunitsMap = mapOf(PREVIEW_SUBUNIT_FOR_BREAKDOWN.id to PREVIEW_SUBUNIT_FOR_BREAKDOWN),
+                    groupMemberIds = listOf("user-1", "user-2")
+                )
+            ).first()
+            uiModel.cashBreakdown to uiModel.formattedCashInHand
+        },
+        content = { (breakdown, total) -> content(breakdown, total) }
     )
 }

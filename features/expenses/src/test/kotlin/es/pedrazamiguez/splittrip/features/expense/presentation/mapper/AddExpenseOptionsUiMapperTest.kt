@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.CashTranchePreview
 import es.pedrazamiguez.splittrip.domain.model.Currency
+import es.pedrazamiguez.splittrip.domain.model.WithdrawalPoolOption
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toFundingSourceStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
@@ -19,6 +20,7 @@ import io.mockk.verify
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -479,6 +481,119 @@ class AddExpenseOptionsUiMapperTest {
             val result = mapper.mapCashTranchePreviews(emptyList(), sourceCurrency)
 
             assertTrue(result.isEmpty())
+        }
+    }
+
+    // ── MapWithdrawalPoolOptions ─────────────────────────────────────────────
+
+    @Nested
+    inner class MapWithdrawalPoolOptions {
+
+        @BeforeEach
+        fun setupPoolStrings() {
+            every {
+                resourceProvider.getString(R.string.add_expense_cash_pool_personal)
+            } returns "My personal cash"
+
+            every {
+                resourceProvider.getString(R.string.add_expense_cash_pool_group)
+            } returns "Group cash"
+
+            every { resourceProvider.getString(R.string.add_expense_cash_pool_subunit, "Alpha") } returns "Alpha cash"
+            every { resourceProvider.getString(R.string.add_expense_cash_pool_subunit, "Beta") } returns "Beta cash"
+            every {
+                resourceProvider.getString(R.string.add_expense_cash_pool_subunit_generic)
+            } returns "Subunit cash"
+        }
+
+        @Test
+        fun `returns empty list when pools is empty`() {
+            val result = mapper.mapWithdrawalPoolOptions(emptyList())
+
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `maps USER pool to personal cash label`() {
+            val pool = WithdrawalPoolOption(scope = PayerType.USER, ownerId = "user-1")
+
+            val result = mapper.mapWithdrawalPoolOptions(listOf(pool))
+
+            assertEquals(1, result.size)
+            assertEquals(PayerType.USER, result[0].scope)
+            assertEquals("user-1", result[0].ownerId)
+            assertEquals("My personal cash", result[0].displayLabel)
+        }
+
+        @Test
+        fun `maps GROUP pool to group cash label with null ownerId`() {
+            val pool = WithdrawalPoolOption(scope = PayerType.GROUP, ownerId = null)
+
+            val result = mapper.mapWithdrawalPoolOptions(listOf(pool))
+
+            assertEquals(1, result.size)
+            assertEquals(PayerType.GROUP, result[0].scope)
+            assertNull(result[0].ownerId)
+            assertEquals("Group cash", result[0].displayLabel)
+        }
+
+        @Test
+        fun `maps SUBUNIT pool with known name from lookup`() {
+            val pool = WithdrawalPoolOption(scope = PayerType.SUBUNIT, ownerId = "sub-1")
+            val lookup = mapOf("sub-1" to "Alpha")
+
+            val result = mapper.mapWithdrawalPoolOptions(listOf(pool), lookup)
+
+            assertEquals(1, result.size)
+            assertEquals(PayerType.SUBUNIT, result[0].scope)
+            assertEquals("sub-1", result[0].ownerId)
+            assertEquals("Alpha cash", result[0].displayLabel)
+        }
+
+        @Test
+        fun `maps SUBUNIT pool with unknown ownerId to generic label`() {
+            val pool = WithdrawalPoolOption(scope = PayerType.SUBUNIT, ownerId = "sub-99")
+            val lookup = mapOf("sub-1" to "Alpha")
+
+            val result = mapper.mapWithdrawalPoolOptions(listOf(pool), lookup)
+
+            assertEquals("Subunit cash", result[0].displayLabel)
+        }
+
+        @Test
+        fun `maps SUBUNIT pool with null ownerId to generic label`() {
+            val pool = WithdrawalPoolOption(scope = PayerType.SUBUNIT, ownerId = null)
+
+            val result = mapper.mapWithdrawalPoolOptions(listOf(pool))
+
+            assertEquals("Subunit cash", result[0].displayLabel)
+        }
+
+        @Test
+        fun `maps SUBUNIT pool with blank name in lookup to generic label`() {
+            val pool = WithdrawalPoolOption(scope = PayerType.SUBUNIT, ownerId = "sub-1")
+            val lookup = mapOf("sub-1" to "   ")
+
+            val result = mapper.mapWithdrawalPoolOptions(listOf(pool), lookup)
+
+            assertEquals("Subunit cash", result[0].displayLabel)
+        }
+
+        @Test
+        fun `maps multiple pools preserving order`() {
+            val pools = listOf(
+                WithdrawalPoolOption(scope = PayerType.GROUP, ownerId = null),
+                WithdrawalPoolOption(scope = PayerType.USER, ownerId = "user-1"),
+                WithdrawalPoolOption(scope = PayerType.SUBUNIT, ownerId = "sub-1")
+            )
+            val lookup = mapOf("sub-1" to "Alpha")
+
+            val result = mapper.mapWithdrawalPoolOptions(pools, lookup)
+
+            assertEquals(3, result.size)
+            assertEquals(PayerType.GROUP, result[0].scope)
+            assertEquals(PayerType.USER, result[1].scope)
+            assertEquals(PayerType.SUBUNIT, result[2].scope)
         }
     }
 }

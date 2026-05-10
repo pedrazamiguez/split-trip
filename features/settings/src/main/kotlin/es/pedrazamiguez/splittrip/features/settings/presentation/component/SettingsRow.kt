@@ -10,15 +10,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronRight
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LargeBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.settings.presentation.view.SettingItemView
 
 @Composable
@@ -48,21 +50,14 @@ fun SettingsRow(
             }
         },
         headlineContent = {
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.bodyLarge
-            )
+            LargeBodyText(text = item.title)
         },
         supportingContent = {
             if (descriptionContent != null) {
                 descriptionContent()
             } else {
                 item.description?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    SecondaryBodyText(text = it, maxLines = Int.MAX_VALUE)
                 }
             }
         },
@@ -80,6 +75,6 @@ fun SettingsRow(
         modifier = Modifier
             .clickable { item.onClick() }
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = MaterialTheme.spacing.Small)
     )
 }

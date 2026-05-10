@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
@@ -42,6 +43,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.StickyActionBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -166,8 +168,8 @@ private fun ExpensesScreenContent(
             onClick = onAddExpenseClick,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp)
-                .padding(bottom = bottomPadding + 4.dp),
+                .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
+                .padding(bottom = bottomPadding + MaterialTheme.spacing.ExtraSmall),
             sharedTransitionKey = ADD_EXPENSE_SHARED_ELEMENT_KEY
         )
     }
@@ -232,12 +234,12 @@ private fun ExpensesListContent(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 16.dp,
-            end = 16.dp,
-            bottom = 16.dp + bottomPadding + fabExtraPadding
+            start = MaterialTheme.spacing.Default,
+            top = MaterialTheme.spacing.Default,
+            end = MaterialTheme.spacing.Default,
+            bottom = MaterialTheme.spacing.Default + bottomPadding + fabExtraPadding
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         item(key = "header") {
             Column {
@@ -247,9 +249,8 @@ private fun ExpensesListContent(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Text(
+                BodyText(
                     text = stringResource(R.string.expenses_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
