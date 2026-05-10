@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 
 /**
@@ -83,7 +84,7 @@ internal fun FloatingNavItem(
                 indication = null,
                 onClick = onClick
             )
-            .padding(vertical = 4.dp),
+            .padding(vertical = MaterialTheme.spacing.ExtraSmall),
         contentAlignment = Alignment.Center
     ) {
         Column(

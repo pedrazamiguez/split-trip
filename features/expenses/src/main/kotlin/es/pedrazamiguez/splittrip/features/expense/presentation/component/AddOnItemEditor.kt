@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.CaretDownFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
@@ -75,7 +76,7 @@ fun AddOnItemEditor(
     val focusManager = LocalFocusManager.current
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         AddOnEditorHeader(
             addOn = addOn,
@@ -139,7 +140,7 @@ fun AddOnItemEditor(
             )
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
     }
 }
 
@@ -185,7 +186,7 @@ private fun AddOnChipSelectors(
     onEvent: (AddExpenseUiEvent) -> Unit
 ) {
     // ── Type Chips ──────────────────────────────────────────
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
         AddOnType.entries.forEach { type ->
             PassportChip(
                 label = stringResource(type.toStringRes()),
@@ -198,7 +199,7 @@ private fun AddOnChipSelectors(
     }
 
     // ── Mode Chips (On top / Included) ──────────────────────
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
         AddOnMode.entries.forEach { mode ->
             PassportChip(
                 label = stringResource(mode.toStringRes()),
@@ -211,7 +212,7 @@ private fun AddOnChipSelectors(
     }
 
     // ── Value Type Chips (Amount / Percentage) ──────────────
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
         AddOnValueType.entries.forEach { valueType ->
             PassportChip(
                 label = stringResource(valueType.toStringRes()),

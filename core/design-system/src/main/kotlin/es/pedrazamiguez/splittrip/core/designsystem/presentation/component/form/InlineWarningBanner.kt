@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlertTriangle
 
@@ -68,8 +69,8 @@ fun InlineWarningBanner(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.Medium, vertical = 10.dp)
             ) {
                 Icon(
                     imageVector = TablerIcons.Outline.AlertTriangle,

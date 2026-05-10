@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
@@ -64,7 +65,7 @@ fun EntitySplitEditor(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         entitySplits.forEach { entity ->
             EntitySplitRow(
@@ -135,9 +136,9 @@ private fun EntitySplitRowHeader(
                     Modifier
                 }
             )
-            .padding(vertical = 4.dp),
+            .padding(vertical = MaterialTheme.spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         if (isSubunitHeader) {
             SubunitGroupIcon(isExcluded = entity.isExcluded)
@@ -228,8 +229,12 @@ private fun EntitySplitAccordionContent(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 24.dp, top = 4.dp, bottom = 4.dp)
-                .padding(12.dp)
+                .padding(
+                    start = MaterialTheme.spacing.ExtraLarge,
+                    top = MaterialTheme.spacing.ExtraSmall,
+                    bottom = MaterialTheme.spacing.ExtraSmall
+                )
+                .padding(MaterialTheme.spacing.Medium)
         )
     }
 }
@@ -290,7 +295,7 @@ private fun EntityInputField(
     AnimatedVisibility(visible = !entity.isExcluded) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
             when {
                 isEqualMode -> Text(

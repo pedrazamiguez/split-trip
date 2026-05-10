@@ -5,9 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 /**
  * Standard outer wrapper for a single wizard step.
@@ -27,9 +28,8 @@ fun WizardStepLayout(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(top = 24.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(horizontal = MaterialTheme.spacing.Large, vertical = MaterialTheme.spacing.ExtraLarge),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
         content = content
     )
 }

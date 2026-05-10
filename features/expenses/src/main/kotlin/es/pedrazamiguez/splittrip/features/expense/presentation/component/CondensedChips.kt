@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,7 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Dots
@@ -87,8 +88,8 @@ fun <T> CondensedChips(
 
     FlowRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         visibleItems.forEach { item ->
             val id = itemId(item)

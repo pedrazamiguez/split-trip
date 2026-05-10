@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.LockFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.LockOpen
@@ -55,7 +56,7 @@ fun SplitEditor(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         splits.forEach { split ->
             SplitMemberRow(
@@ -88,9 +89,9 @@ private fun SplitMemberRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = MaterialTheme.spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         SplitMemberNameColumn(split = split, isEqualMode = isEqualMode, modifier = Modifier.weight(1f))
         SplitMemberInputField(
@@ -151,7 +152,7 @@ private fun SplitMemberInputField(
     AnimatedVisibility(visible = !split.isExcluded) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
             if (isEqualMode) {
                 Text(

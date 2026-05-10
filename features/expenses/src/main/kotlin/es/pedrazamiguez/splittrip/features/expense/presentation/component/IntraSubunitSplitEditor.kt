@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -57,7 +58,7 @@ fun IntraSubunitSplitEditor(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         // ── Level 2 split type label ──────────────────────────────
         Text(
@@ -111,7 +112,7 @@ private fun IntraSubunitMemberRow(
             .fillMaxWidth()
             .padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         // Member name
         Column(modifier = Modifier.weight(1f)) {
@@ -144,7 +145,7 @@ private fun IntraSubunitMemberRow(
         } else if (isPercentMode) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
             ) {
                 StyledOutlinedTextField(
                     value = member.percentageInput,
@@ -161,7 +162,7 @@ private fun IntraSubunitMemberRow(
             // EXACT mode
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
             ) {
                 StyledOutlinedTextField(
                     value = member.amountInput,

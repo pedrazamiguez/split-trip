@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
@@ -186,8 +187,8 @@ private fun GroupsScreenContent(
             onClick = onCreateGroupClick,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp)
-                .padding(bottom = bottomPadding + 4.dp),
+                .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
+                .padding(bottom = bottomPadding + MaterialTheme.spacing.ExtraSmall),
             sharedTransitionKey = CREATE_GROUP_SHARED_ELEMENT_KEY
         )
     }
@@ -286,12 +287,12 @@ private fun GroupsListContent(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 16.dp,
-            end = 16.dp,
-            bottom = 16.dp + bottomPadding + fabExtraPadding
+            start = MaterialTheme.spacing.Default,
+            top = MaterialTheme.spacing.Default,
+            end = MaterialTheme.spacing.Default,
+            bottom = MaterialTheme.spacing.Default + bottomPadding + fabExtraPadding
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         item(key = "header") { GroupsListHeader() }
 

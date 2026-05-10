@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CashBanknote
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
@@ -128,7 +129,7 @@ private fun BalancesBodyContent(
                 // Mirror the title+subtitle header above GroupPocketBalanceCard to keep the
                 // vertical layout stable during the loading→content transition.
                 headerContent = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
                         ShimmerBox(height = 36.dp, width = 200.dp)
                         ShimmerBox(height = 14.dp, width = 260.dp)
                     }
@@ -170,12 +171,12 @@ private fun BalancesListContent(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 16.dp,
-            end = 16.dp,
-            bottom = 16.dp + bottomPadding
+            start = MaterialTheme.spacing.Default,
+            top = MaterialTheme.spacing.Default,
+            end = MaterialTheme.spacing.Default,
+            bottom = MaterialTheme.spacing.Default + bottomPadding
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         item(key = "header") {
             Column {
@@ -215,7 +216,7 @@ private fun LazyListScope.memberBalancesSection(memberBalances: ImmutableList<Me
             text = stringResource(R.string.balances_member_balances_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }
     items(items = memberBalances, key = { "mb-${it.userId}" }) { memberBalance ->
@@ -233,7 +234,7 @@ private fun LazyListScope.activitySection(
             text = stringResource(R.string.balances_history_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }
     items(

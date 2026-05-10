@@ -16,7 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
@@ -52,7 +52,7 @@ private fun TitleNotesCard(
 ) {
     val focusManager = LocalFocusManager.current
 
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)) {
         Text(
             text = stringResource(R.string.withdrawal_details_title),
             style = MaterialTheme.typography.titleMedium,

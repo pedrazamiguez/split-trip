@@ -4,9 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowLeft
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowRight
@@ -47,8 +48,8 @@ fun WizardNavigationBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = MaterialTheme.spacing.Large, vertical = MaterialTheme.spacing.Medium),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         SecondaryButton(
             text = config.backLabel,

@@ -22,10 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.DoubleTapBackToExitHandler
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
@@ -57,7 +57,7 @@ fun LoginScreen(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
                 modifier = Modifier.fillMaxWidth(FORM_WIDTH_FRACTION).verticalScroll(rememberScrollState()).imePadding()
             ) {
                 LoginFormContent(
@@ -133,7 +133,7 @@ private fun GoogleSignInSection(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         Text(
             text = stringResource(R.string.login_or_divider),
@@ -156,6 +156,6 @@ private fun LoginErrorText(errorMessage: String) {
         text = errorMessage,
         color = MaterialTheme.colorScheme.error,
         style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(top = 8.dp)
+        modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
     )
 }

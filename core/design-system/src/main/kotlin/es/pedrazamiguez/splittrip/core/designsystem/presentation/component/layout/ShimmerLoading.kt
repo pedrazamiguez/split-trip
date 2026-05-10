@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 private const val SHIMMER_GRADIENT_OFFSET = 200f
 private const val TITLE_SHIMMER_WEIGHT = 0.6f
@@ -93,7 +94,7 @@ fun ShimmerBox(modifier: Modifier = Modifier, height: Dp = 16.dp, width: Dp? = n
 @Composable
 fun ShimmerItemCard(modifier: Modifier = Modifier) {
     FlatCard(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(MaterialTheme.spacing.Large)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -103,14 +104,14 @@ fun ShimmerItemCard(modifier: Modifier = Modifier) {
                     modifier = Modifier.weight(TITLE_SHIMMER_WEIGHT),
                     height = 20.dp
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.Default))
                 ShimmerBox(
                     width = 80.dp,
                     height = 24.dp
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -136,8 +137,8 @@ fun ShimmerItemCard(modifier: Modifier = Modifier) {
 fun ShimmerLoadingList(modifier: Modifier = Modifier, itemCount: Int = 5) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(MaterialTheme.spacing.Default),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         items(itemCount) {
             ShimmerItemCard()
@@ -152,41 +153,41 @@ fun ShimmerLoadingList(modifier: Modifier = Modifier, itemCount: Int = 5) {
 @Composable
 fun ShimmerDashboardCard(modifier: Modifier = Modifier) {
     FlatCard(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(MaterialTheme.spacing.Large)) {
             // Group name placeholder
             ShimmerBox(modifier = Modifier.fillMaxWidth(DASHBOARD_NAME_WIDTH_FRACTION), height = 14.dp)
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
             // Large balance placeholder
             ShimmerBox(modifier = Modifier.fillMaxWidth(DASHBOARD_BALANCE_WIDTH_FRACTION), height = 36.dp)
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
             // Stats row: contributed (left) / spent (right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
                     ShimmerBox(width = 80.dp, height = 12.dp)
                     ShimmerBox(width = 100.dp, height = 18.dp)
                 }
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
                 ) {
                     ShimmerBox(width = 70.dp, height = 12.dp)
                     ShimmerBox(width = 90.dp, height = 18.dp)
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
             // Two currency rows (e.g. THB, USD)
             repeat(2) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.Small),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -195,12 +196,12 @@ fun ShimmerDashboardCard(modifier: Modifier = Modifier) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
             // Two side-by-side button placeholders
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
             ) {
                 ShimmerBox(modifier = Modifier.weight(1f), height = BUTTON_SHIMMER_HEIGHT.dp)
                 ShimmerBox(modifier = Modifier.weight(1f), height = BUTTON_SHIMMER_HEIGHT.dp)
@@ -230,12 +231,12 @@ fun DashboardShimmer(
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 16.dp,
-            end = 16.dp,
-            bottom = 16.dp + bottomPadding
+            start = MaterialTheme.spacing.Default,
+            top = MaterialTheme.spacing.Default,
+            end = MaterialTheme.spacing.Default,
+            bottom = MaterialTheme.spacing.Default + bottomPadding
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         if (headerContent != null) {
             item {

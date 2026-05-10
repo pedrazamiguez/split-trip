@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranchePreviewUiModel
@@ -60,24 +61,24 @@ fun CashTrancheFundedFromSection(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
         FlatCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(MaterialTheme.spacing.Medium)) {
                 if (isMultiTranche) {
                     CashTrancheHeader(
                         trancheCount = tranches.size,
                         isExpanded = isExpanded,
                         onToggle = { isExpanded = !isExpanded }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
                 }
 
                 CashTrancheList(
                     tranches = if (isMultiTranche && !isExpanded) listOf(tranches.first()) else tranches
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
                 Text(
                     text = stringResource(R.string.add_expense_cash_tranche_disclaimer),
                     style = MaterialTheme.typography.bodySmall,

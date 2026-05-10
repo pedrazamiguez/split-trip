@@ -10,7 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 /**
  * Reusable card for grouped content sections across the app.
@@ -31,7 +31,7 @@ fun SectionCard(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         if (title != null) {
             Text(
@@ -44,8 +44,8 @@ fun SectionCard(
 
         FlatCard(modifier = Modifier.fillMaxWidth()) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(MaterialTheme.spacing.Large),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
                 content = content
             )
         }

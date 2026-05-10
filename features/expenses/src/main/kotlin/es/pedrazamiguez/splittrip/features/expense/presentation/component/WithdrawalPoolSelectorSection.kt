@@ -14,7 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
@@ -58,12 +58,12 @@ fun WithdrawalPoolSelectorSection(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
             pools.forEach { pool ->
                 val isSelected = pool == selectedPool

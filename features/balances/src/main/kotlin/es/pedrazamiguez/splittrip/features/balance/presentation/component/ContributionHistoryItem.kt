@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCardPay
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Link
@@ -64,9 +65,9 @@ fun ContributionHistoryItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = MaterialTheme.spacing.Default, vertical = MaterialTheme.spacing.Medium),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
             ) {
                 Icon(
                     imageVector = if (isLinked) TablerIcons.Outline.CreditCardPay else TablerIcons.Outline.Wallet,
@@ -148,7 +149,7 @@ private fun ContributionDateLine(dateText: String) {
 private fun LinkedContributionBadge() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
     ) {
         Icon(
             imageVector = TablerIcons.Outline.Link,
@@ -168,7 +169,7 @@ private fun LinkedContributionBadge() {
 private fun ContributionScopeBadge(contribution: ContributionUiModel) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
     ) {
         Icon(
             imageVector = when {

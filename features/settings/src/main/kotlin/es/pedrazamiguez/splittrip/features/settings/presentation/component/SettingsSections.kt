@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SettingsItemModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SettingsSectionModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.view.SettingItemView
@@ -58,7 +59,7 @@ fun LazyListScope.settingsSections(sections: List<SettingsSectionModel>) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = MaterialTheme.spacing.Default)
                     .clip(rowShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
             ) {

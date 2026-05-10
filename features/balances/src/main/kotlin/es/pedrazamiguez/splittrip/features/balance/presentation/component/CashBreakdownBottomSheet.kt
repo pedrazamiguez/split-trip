@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakdownUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -51,13 +52,18 @@ fun CashBreakdownBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 32.dp)
+                .padding(
+                    start = MaterialTheme.spacing.Large,
+                    end = MaterialTheme.spacing.Large,
+                    top = MaterialTheme.spacing.ExtraLarge,
+                    bottom = MaterialTheme.spacing.Section
+                )
         ) {
             Text(
                 text = stringResource(R.string.balances_cash_breakdown_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = MaterialTheme.spacing.Default)
             )
 
             if (breakdown.isEmpty()) {
@@ -69,7 +75,7 @@ fun CashBreakdownBottomSheet(
             } else {
                 CashBreakdownItemList(breakdown = breakdown)
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(MaterialTheme.spacing.Large))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -100,13 +106,13 @@ private fun CashBreakdownItemList(breakdown: ImmutableList<CashBreakdownUiModel>
     breakdown.forEach { item ->
         // Render a section header whenever the scope group changes
         if (item.scopeLabel != lastScopeLabel) {
-            if (lastScopeLabel.isNotEmpty()) Spacer(Modifier.height(16.dp))
+            if (lastScopeLabel.isNotEmpty()) Spacer(Modifier.height(MaterialTheme.spacing.Default))
             Text(
                 text = item.scopeLabel,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = MaterialTheme.spacing.ExtraSmall)
             )
             if (item.isEstimatedShare) {
                 Text(
@@ -127,7 +133,7 @@ private fun CashBreakdownEntryRow(item: CashBreakdownUiModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = MaterialTheme.spacing.ExtraSmall),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top
     ) {
@@ -161,7 +167,7 @@ private fun CashBreakdownEntryRow(item: CashBreakdownUiModel) {
         Column(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(2.dp),
-            modifier = Modifier.padding(start = 8.dp)
+            modifier = Modifier.padding(start = MaterialTheme.spacing.Small)
         ) {
             Text(
                 text = item.formattedNativeRemaining,

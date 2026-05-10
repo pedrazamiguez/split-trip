@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.LockFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.LockOpen
@@ -83,7 +84,7 @@ private fun ShareAllocationList(
     modifier: Modifier = Modifier
 ) {
     val selectedMembers = members.filter { it.userId in selectedMemberIds }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
         selectedMembers.forEachIndexed { index, member ->
             val isLastRow = index == selectedMembers.lastIndex
             val rowState = ShareRowState(
@@ -112,7 +113,7 @@ private fun ShareInputRow(
     onImeNext: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
         Text(
             text = state.displayName,
             style = MaterialTheme.typography.bodyMedium,
@@ -121,7 +122,7 @@ private fun ShareInputRow(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
             StyledOutlinedTextField(
                 value = state.shareText,

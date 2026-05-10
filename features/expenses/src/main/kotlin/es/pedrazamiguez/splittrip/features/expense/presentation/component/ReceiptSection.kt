@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.expense.R
 
 /**
@@ -23,7 +23,7 @@ internal fun ReceiptSection(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         Text(
             text = stringResource(R.string.add_expense_receipt_title),

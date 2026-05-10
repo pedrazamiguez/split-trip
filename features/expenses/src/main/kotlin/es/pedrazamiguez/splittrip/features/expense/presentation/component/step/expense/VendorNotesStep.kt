@@ -13,7 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -33,7 +33,7 @@ fun VendorNotesStep(
     val focusManager = LocalFocusManager.current
 
     WizardStepLayout(modifier = modifier) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
             Text(
                 text = stringResource(R.string.add_expense_vendor_helper),
                 style = MaterialTheme.typography.titleMedium,
@@ -50,7 +50,7 @@ fun VendorNotesStep(
             )
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
             Text(
                 text = stringResource(R.string.add_expense_notes_helper),
                 style = MaterialTheme.typography.titleMedium,
