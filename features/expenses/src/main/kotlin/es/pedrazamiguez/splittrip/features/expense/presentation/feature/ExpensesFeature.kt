@@ -19,7 +19,6 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
-import timber.log.Timber
 
 @Composable
 fun ExpensesFeature(
@@ -71,7 +70,7 @@ fun ExpensesFeature(
     ExpensesScreen(
         uiState = effectiveUiState,
         onExpenseClicked = { expenseId ->
-            Timber.d("Expense clicked: $expenseId")
+            navController.navigate(Routes.expenseDetailRoute(expenseId))
         },
         onAddExpenseClick = {
             navController.navigate(Routes.ADD_EXPENSE)

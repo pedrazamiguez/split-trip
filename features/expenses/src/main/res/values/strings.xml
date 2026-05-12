@@ -243,6 +243,18 @@
     <string name="expense_scope_everyone">everyone</string>
     <string name="expense_out_of_pocket">Out of pocket</string>
 
+    <!-- Expense Detail Screen -->
+    <string name="expense_detail_error_loading">Could not load expense details</string>
+    <string name="expense_detail_group_currency_label">Group amount</string>
+    <string name="expense_detail_rate_label">@ %1$s</string>
+    <string name="expense_detail_section_info">Payment Info</string>
+    <string name="expense_detail_paid_by_label">Paid by</string>
+    <string name="expense_detail_section_notes">Notes</string>
+    <string name="expense_detail_section_currency">Currency Details</string>
+    <string name="expense_detail_section_split">Split breakdown</string>
+    <string name="expense_detail_section_addons">Add-ons</string>
+    <string name="expense_detail_created_by">Added by %1$s</string>
+
     <!-- Withdrawal pool selection — shown in Exchange Rate step when multiple pools have funds -->
     <string name="add_expense_cash_pool_selection_title">Draw cash from</string>
     <string name="add_expense_cash_pool_personal">My personal cash</string>
