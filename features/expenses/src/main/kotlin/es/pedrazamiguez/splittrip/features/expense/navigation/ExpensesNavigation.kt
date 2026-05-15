@@ -1,10 +1,13 @@
 package es.pedrazamiguez.splittrip.features.expense.navigation
 
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedComposable
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.features.expense.presentation.feature.AddExpenseFeature
+import es.pedrazamiguez.splittrip.features.expense.presentation.feature.ExpenseDetailFeature
 import es.pedrazamiguez.splittrip.features.expense.presentation.feature.ExpensesFeature
 
 fun NavGraphBuilder.expensesGraph() {
@@ -19,5 +22,13 @@ fun NavGraphBuilder.expensesGraph() {
                 navController.popBackStack()
             }
         )
+    }
+
+    sharedComposable(
+        route = Routes.EXPENSE_DETAIL,
+        arguments = listOf(navArgument("expenseId") { type = NavType.StringType })
+    ) { backStackEntry ->
+        val expenseId = backStackEntry.arguments?.getString("expenseId") ?: return@sharedComposable
+        ExpenseDetailFeature(expenseId = expenseId)
     }
 }

@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.InlineWarningBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.SplitSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split.SplitSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 

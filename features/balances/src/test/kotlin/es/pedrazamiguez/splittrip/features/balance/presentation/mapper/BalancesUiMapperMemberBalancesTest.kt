@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.R
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceCashContext
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
