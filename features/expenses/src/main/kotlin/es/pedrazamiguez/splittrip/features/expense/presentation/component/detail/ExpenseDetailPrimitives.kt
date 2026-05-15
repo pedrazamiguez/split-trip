@@ -24,6 +24,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.
 
 internal val SECTION_ICON_SIZE = 16.dp
 
+private const val DETAIL_ROW_LABEL_WEIGHT = 0.4f
+private const val DETAIL_ROW_VALUE_WEIGHT = 0.6f
+
 @Composable
 internal fun DetailRow(label: String, value: String) {
     Row(
@@ -34,14 +37,14 @@ internal fun DetailRow(label: String, value: String) {
         SecondaryBodyText(
             text = label,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(0.4f)
+            modifier = Modifier.weight(DETAIL_ROW_LABEL_WEIGHT)
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
-            modifier = Modifier.weight(0.6f)
+            modifier = Modifier.weight(DETAIL_ROW_VALUE_WEIGHT)
         )
     }
 }

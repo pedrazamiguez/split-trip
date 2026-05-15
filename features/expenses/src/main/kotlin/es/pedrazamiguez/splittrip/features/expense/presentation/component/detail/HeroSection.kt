@@ -31,80 +31,93 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDet
 @Composable
 internal fun HeroSection(expense: ExpenseDetailUiModel) {
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
+        HeroTagRow(expense)
+        HeroAmountCard(expense)
+    }
+}
+
+@Composable
+private fun HeroTagRow(expense: ExpenseDetailUiModel) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CategoryChip(
+            icon = expense.category.toIconVector(),
+            label = expense.categoryText
+        )
+        StatusChip(text = expense.paymentStatusText)
         Row(
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            CategoryChip(
-                icon = expense.category.toIconVector(),
-                label = expense.categoryText
+            Icon(
+                imageVector = TablerIcons.Outline.Calendar,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            StatusChip(text = expense.paymentStatusText)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = TablerIcons.Outline.Calendar,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                CaptionText(
-                    text = expense.dateText,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            CaptionText(
+                text = expense.dateText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeroAmountCard(expense: ExpenseDetailUiModel) {
+    FlatCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(MaterialTheme.spacing.Default)) {
+            CaptionText(
+                text = stringResource(R.string.expense_review_amount).uppercase(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = expense.formattedGroupAmount,
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 40.sp
+            )
+            CaptionText(
+                text = expense.paidByText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (expense.isForeignCurrency && expense.formattedSourceAmount != null) {
+                Spacer(Modifier.height(MaterialTheme.spacing.Small))
+                ForeignCurrencyRow(expense)
             }
         }
+    }
+}
 
-        FlatCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(MaterialTheme.spacing.Default)) {
+@Composable
+private fun ForeignCurrencyRow(expense: ExpenseDetailUiModel) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        CaptionText(
+            text = stringResource(
+                R.string.expense_detail_amount_in_currency,
+                expense.groupCurrency
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Column(horizontalAlignment = Alignment.End) {
+            BodyText(
+                text = expense.formattedSourceAmount!!,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (expense.formattedExchangeRate != null) {
                 CaptionText(
-                    text = stringResource(R.string.expense_review_amount).uppercase(),
+                    text = stringResource(
+                        R.string.expense_detail_rate_label,
+                        expense.formattedExchangeRate
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = expense.formattedGroupAmount,
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 40.sp
-                )
-                CaptionText(
-                    text = expense.paidByText,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (expense.isForeignCurrency && expense.formattedSourceAmount != null) {
-                    Spacer(Modifier.height(MaterialTheme.spacing.Small))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        CaptionText(
-                            text = stringResource(
-                                R.string.expense_detail_amount_in_currency,
-                                expense.groupCurrency
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Column(horizontalAlignment = Alignment.End) {
-                            BodyText(
-                                text = expense.formattedSourceAmount,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (expense.formattedExchangeRate != null) {
-                                CaptionText(
-                                    text = stringResource(
-                                        R.string.expense_detail_rate_label,
-                                        expense.formattedExchangeRate
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
     }

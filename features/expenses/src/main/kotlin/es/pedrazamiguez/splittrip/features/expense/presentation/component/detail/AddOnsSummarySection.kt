@@ -42,29 +42,7 @@ internal fun AddOnsSummarySection(
                     .padding(MaterialTheme.spacing.Default),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
             ) {
-                addOns.forEach { addOn ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            BodyText(text = addOn.labelText)
-                            CaptionText(
-                                text = addOn.modeText.uppercase(),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        BodyText(
-                            text = if (addOn.isDiscount) "- ${addOn.formattedAmount}" else addOn.formattedAmount,
-                            color = if (addOn.isDiscount) {
-                                MaterialTheme.colorScheme.tertiary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
-                        )
-                    }
-                }
+                addOns.forEach { addOn -> AddOnRow(addOn) }
                 if (formattedEffectiveTotal != null) {
                     DetailRow(
                         label = stringResource(R.string.expense_review_effective_total),
@@ -73,5 +51,30 @@ internal fun AddOnsSummarySection(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AddOnRow(addOn: AddOnDetailUiModel) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            BodyText(text = addOn.labelText)
+            CaptionText(
+                text = addOn.modeText.uppercase(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        BodyText(
+            text = if (addOn.isDiscount) "- ${addOn.formattedAmount}" else addOn.formattedAmount,
+            color = if (addOn.isDiscount) {
+                MaterialTheme.colorScheme.tertiary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        )
     }
 }

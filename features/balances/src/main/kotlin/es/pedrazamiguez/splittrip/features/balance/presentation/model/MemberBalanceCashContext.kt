@@ -1,10 +1,10 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
+package es.pedrazamiguez.splittrip.features.balance.presentation.model
 
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 
 /**
- * Bundles the supplementary cash-related parameters needed by [BalancesUiMapper.mapMemberBalances]
+ * Bundles the supplementary cash-related parameters needed by [es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper.mapMemberBalances]
  * to build per-member cash breakdowns.
  *
  * Grouping these lower-frequency parameters reduces the public method's parameter count from 8 to 6,
