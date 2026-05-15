@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewLocales
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemes
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.ExpenseItem
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseItem
 
 @PreviewLocales
 @Composable

@@ -14,11 +14,13 @@ import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetAvailableWithdrawalPoolsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
@@ -36,10 +38,13 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.AddExpenseScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpenseDetailScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpensesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.AddExpenseViewModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpenseDetailViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesUseCases
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnCrudDelegate
@@ -255,4 +260,25 @@ val expensesUiModule = module {
 
     single { ExpensesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { AddExpenseScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { ExpenseDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
+
+    single {
+        ExpenseDetailUiMapper(
+            formattingHelper = get<FormattingHelper>(),
+            resourceProvider = get<ResourceProvider>(),
+            expenseCalculatorService = get<ExpenseCalculatorService>(),
+            addOnCalculationService = get<AddOnCalculationService>()
+        )
+    }
+
+    viewModel {
+        ExpenseDetailViewModel(
+            getExpenseByIdUseCase = get<GetExpenseByIdUseCase>(),
+            getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
+            getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>(),
+            deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
+            authenticationService = get<AuthenticationService>(),
+            expenseDetailUiMapper = get<ExpenseDetailUiMapper>()
+        )
+    }
 }

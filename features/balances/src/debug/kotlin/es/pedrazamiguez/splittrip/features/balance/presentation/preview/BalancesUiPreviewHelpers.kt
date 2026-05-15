@@ -8,12 +8,12 @@ import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
-import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.MemberBalanceCashContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityItemUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceCashContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
 import kotlinx.collections.immutable.ImmutableList
 

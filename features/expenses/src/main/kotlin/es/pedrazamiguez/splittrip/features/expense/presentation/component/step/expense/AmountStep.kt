@@ -13,8 +13,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.curre
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.R
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.CashTrancheFundedFromSection
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.WithdrawalPoolSelectorSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.CashTrancheFundedFromSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.WithdrawalPoolSelectorSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 
