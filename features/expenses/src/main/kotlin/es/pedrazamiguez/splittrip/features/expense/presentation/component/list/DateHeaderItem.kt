@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

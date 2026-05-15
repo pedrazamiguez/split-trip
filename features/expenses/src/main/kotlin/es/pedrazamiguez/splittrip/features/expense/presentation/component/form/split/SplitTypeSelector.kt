@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme

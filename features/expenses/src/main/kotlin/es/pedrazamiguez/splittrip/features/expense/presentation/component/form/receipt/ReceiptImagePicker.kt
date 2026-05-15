@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult

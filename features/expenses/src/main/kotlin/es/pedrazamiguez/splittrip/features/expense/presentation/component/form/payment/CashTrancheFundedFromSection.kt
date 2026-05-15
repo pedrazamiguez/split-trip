@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

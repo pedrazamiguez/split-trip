@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

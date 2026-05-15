@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -12,14 +12,14 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun CategoryChips(
-    categories: List<CategoryUiModel>,
-    selectedCategory: CategoryUiModel?,
-    onCategorySelected: (String) -> Unit,
+fun PaymentStatusChips(
+    paymentStatuses: List<PaymentStatusUiModel>,
+    selectedPaymentStatus: PaymentStatusUiModel?,
+    onPaymentStatusSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     FlowRow(
@@ -27,12 +27,12 @@ fun CategoryChips(
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
-        categories.forEach { category ->
-            val isSelected = selectedCategory?.id == category.id
+        paymentStatuses.forEach { status ->
+            val isSelected = selectedPaymentStatus?.id == status.id
             PassportChip(
-                label = category.displayText,
+                label = status.displayText,
                 selected = isSelected,
-                onClick = { onCategorySelected(category.id) },
+                onClick = { onPaymentStatusSelected(status.id) },
                 leadingIcon = if (isSelected) {
                     { Icon(TablerIcons.Outline.Check, contentDescription = null) }
                 } else {

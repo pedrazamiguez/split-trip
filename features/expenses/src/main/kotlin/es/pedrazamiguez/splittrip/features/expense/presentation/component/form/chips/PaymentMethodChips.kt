@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -12,14 +12,14 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PaymentStatusChips(
-    paymentStatuses: List<PaymentStatusUiModel>,
-    selectedPaymentStatus: PaymentStatusUiModel?,
-    onPaymentStatusSelected: (String) -> Unit,
+fun PaymentMethodChips(
+    paymentMethods: List<PaymentMethodUiModel>,
+    selectedPaymentMethod: PaymentMethodUiModel?,
+    onPaymentMethodSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     FlowRow(
@@ -27,12 +27,12 @@ fun PaymentStatusChips(
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
-        paymentStatuses.forEach { status ->
-            val isSelected = selectedPaymentStatus?.id == status.id
+        paymentMethods.forEach { method ->
+            val isSelected = selectedPaymentMethod?.id == method.id
             PassportChip(
-                label = status.displayText,
+                label = method.displayText,
                 selected = isSelected,
-                onClick = { onPaymentStatusSelected(status.id) },
+                onClick = { onPaymentMethodSelected(method.id) },
                 leadingIcon = if (isSelected) {
                     { Icon(TablerIcons.Outline.Check, contentDescription = null) }
                 } else {

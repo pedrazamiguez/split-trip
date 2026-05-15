@@ -47,8 +47,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.expense.R
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.DateHeaderItem
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.ExpenseItem
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.DateHeaderItem
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseItem
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesUiState

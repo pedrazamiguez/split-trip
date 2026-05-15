@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split
 
 /**
  * Groups all event callbacks for [EntitySplitEditor] to avoid exceeding the parameter limit.

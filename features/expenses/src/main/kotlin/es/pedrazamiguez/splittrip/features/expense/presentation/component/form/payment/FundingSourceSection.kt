@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,17 +10,19 @@ import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.features.expense.R
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.CondensedChips
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import kotlinx.collections.immutable.ImmutableList
 
 /**
- * Payment status selection using condensed chips.
+ * Funding source selection using condensed chips.
+ * Allows the user to choose between "Group Pocket" and "My Money".
  */
 @Composable
-internal fun PaymentStatusSection(
-    availablePaymentStatuses: ImmutableList<PaymentStatusUiModel>,
-    selectedPaymentStatus: PaymentStatusUiModel?,
-    onPaymentStatusSelected: (String) -> Unit,
+internal fun FundingSourceSection(
+    fundingSources: ImmutableList<FundingSourceUiModel>,
+    selectedFundingSource: FundingSourceUiModel?,
+    onFundingSourceSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
@@ -29,18 +31,18 @@ internal fun PaymentStatusSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        SectionHeadingText(text = stringResource(R.string.add_expense_payment_status_title))
+        SectionHeadingText(text = stringResource(R.string.funding_source_title))
 
         CondensedChips(
-            items = availablePaymentStatuses,
-            selectedId = selectedPaymentStatus?.id,
-            onItemSelected = { statusId ->
-                onPaymentStatusSelected(statusId)
+            items = fundingSources,
+            selectedId = selectedFundingSource?.id,
+            onItemSelected = { sourceId ->
+                onFundingSourceSelected(sourceId)
                 focusManager.clearFocus()
             },
             itemId = { it.id },
             itemLabel = { it.displayText },
-            visibleCount = 3
+            visibleCount = 2
         )
     }
 }

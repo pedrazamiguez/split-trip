@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -12,14 +12,14 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PaymentMethodChips(
-    paymentMethods: List<PaymentMethodUiModel>,
-    selectedPaymentMethod: PaymentMethodUiModel?,
-    onPaymentMethodSelected: (String) -> Unit,
+fun CategoryChips(
+    categories: List<CategoryUiModel>,
+    selectedCategory: CategoryUiModel?,
+    onCategorySelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     FlowRow(
@@ -27,12 +27,12 @@ fun PaymentMethodChips(
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
-        paymentMethods.forEach { method ->
-            val isSelected = selectedPaymentMethod?.id == method.id
+        categories.forEach { category ->
+            val isSelected = selectedCategory?.id == category.id
             PassportChip(
-                label = method.displayText,
+                label = category.displayText,
                 selected = isSelected,
-                onClick = { onPaymentMethodSelected(method.id) },
+                onClick = { onCategorySelected(category.id) },
                 leadingIcon = if (isSelected) {
                     { Icon(TablerIcons.Outline.Check, contentDescription = null) }
                 } else {
