@@ -76,10 +76,7 @@ private fun ExpenseDetailContent(
         }
 
         if (expense.cashTranches.isNotEmpty()) {
-            CashTranchesDetailSection(
-                tranches = expense.cashTranches,
-                sourceCurrency = expense.sourceCurrency
-            )
+            CashTranchesDetailSection(tranches = expense.cashTranches)
         }
 
         SplitBreakdownSection(

@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -22,6 +23,7 @@ import java.math.BigDecimal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -46,6 +48,7 @@ class ExpenseDetailViewModelTest {
 
     private lateinit var getExpenseByIdUseCase: GetExpenseByIdUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
+    private lateinit var getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase
     private lateinit var deleteExpenseUseCase: DeleteExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var expenseDetailUiMapper: ExpenseDetailUiMapper
@@ -98,9 +101,12 @@ class ExpenseDetailViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getExpenseByIdUseCase = mockk()
         getMemberProfilesUseCase = mockk()
+        getCashWithdrawalsFlowUseCase = mockk()
         deleteExpenseUseCase = mockk()
         authenticationService = mockk()
         expenseDetailUiMapper = mockk()
+
+        every { getCashWithdrawalsFlowUseCase(any()) } returns flowOf(emptyList())
 
         every { authenticationService.currentUserId() } returns testUserId
         coEvery { getMemberProfilesUseCase(any()) } returns mapOf(
@@ -368,6 +374,7 @@ class ExpenseDetailViewModelTest {
     private fun createViewModel() = ExpenseDetailViewModel(
         getExpenseByIdUseCase = getExpenseByIdUseCase,
         getMemberProfilesUseCase = getMemberProfilesUseCase,
+        getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
         deleteExpenseUseCase = deleteExpenseUseCase,
         authenticationService = authenticationService,
         expenseDetailUiMapper = expenseDetailUiMapper

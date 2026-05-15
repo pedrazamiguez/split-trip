@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
@@ -274,6 +275,7 @@ val expensesUiModule = module {
         ExpenseDetailViewModel(
             getExpenseByIdUseCase = get<GetExpenseByIdUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
+            getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>(),
             deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
             authenticationService = get<AuthenticationService>(),
             expenseDetailUiMapper = get<ExpenseDetailUiMapper>()

@@ -32,7 +32,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDet
 internal fun HeroSection(expense: ExpenseDetailUiModel) {
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             CategoryChip(
                 icon = expense.category.toIconVector(),
@@ -81,7 +82,10 @@ internal fun HeroSection(expense: ExpenseDetailUiModel) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         CaptionText(
-                            text = stringResource(R.string.expense_detail_group_currency_label),
+                            text = stringResource(
+                                R.string.expense_detail_amount_in_currency,
+                                expense.groupCurrency
+                            ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Column(horizontalAlignment = Alignment.End) {

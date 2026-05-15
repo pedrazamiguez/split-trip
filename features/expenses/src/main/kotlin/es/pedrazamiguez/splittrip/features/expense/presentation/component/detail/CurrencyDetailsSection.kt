@@ -38,7 +38,7 @@ internal fun CurrencyDetailsSection(expense: ExpenseDetailUiModel) {
             ) {
                 if (expense.formattedSourceAmount != null) {
                     DetailRow(
-                        label = "${expense.sourceCurrency} ${stringResource(R.string.expense_review_amount)}",
+                        label = stringResource(R.string.expense_detail_amount_in_currency, expense.sourceCurrency),
                         value = expense.formattedSourceAmount
                     )
                 }
@@ -49,7 +49,7 @@ internal fun CurrencyDetailsSection(expense: ExpenseDetailUiModel) {
                     )
                 }
                 DetailRow(
-                    label = "${expense.groupCurrency} ${stringResource(R.string.expense_review_group_amount)}",
+                    label = stringResource(R.string.expense_detail_amount_in_currency, expense.groupCurrency),
                     value = expense.formattedGroupAmount
                 )
             }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -41,6 +43,7 @@ import timber.log.Timber
 class ExpenseDetailViewModel(
     private val getExpenseByIdUseCase: GetExpenseByIdUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
+    private val getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
     private val authenticationService: AuthenticationService,
     private val expenseDetailUiMapper: ExpenseDetailUiMapper
@@ -85,7 +88,25 @@ class ExpenseDetailViewModel(
             }
 
             val currentUserId = authenticationService.currentUserId()
-            val uiModel = expenseDetailUiMapper.map(expense, memberProfiles, currentUserId)
+
+            val withdrawalLookup = if (expense.cashTranches.isNotEmpty()) {
+                val withdrawalIds = expense.cashTranches.map { it.withdrawalId }.toSet()
+                try {
+                    getCashWithdrawalsFlowUseCase(expense.groupId)
+                        .first()
+                        .filter { it.id in withdrawalIds }
+                        .associateBy { it.id }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to fetch withdrawals for expense $expenseId")
+                    emptyMap()
+                }
+            } else {
+                emptyMap()
+            }
+
+            val uiModel = expenseDetailUiMapper.map(expense, memberProfiles, currentUserId, withdrawalLookup)
 
             flowOf(ExpenseDetailUiState(expense = uiModel, isLoading = false))
         }

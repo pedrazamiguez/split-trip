@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -32,7 +33,8 @@ class ExpenseDetailUiMapper(
     fun map(
         expense: Expense,
         memberProfiles: Map<String, User>,
-        currentUserId: String?
+        currentUserId: String?,
+        withdrawalLookup: Map<String, CashWithdrawal> = emptyMap()
     ): ExpenseDetailUiModel {
         val (scheduledBadgeText, isScheduledPastDue) = buildScheduledBadge(expense)
         val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
@@ -84,7 +86,7 @@ class ExpenseDetailUiMapper(
             formattedEffectiveTotal = effectiveTotal?.let {
                 formattingHelper.formatCentsWithCurrency(it, expense.groupCurrency)
             },
-            cashTranches = mapCashTranches(expense.cashTranches, expense.sourceCurrency),
+            cashTranches = mapCashTranches(expense.cashTranches, expense.sourceCurrency, withdrawalLookup),
             receiptUri = expense.receiptLocalUri,
             createdByText = paidByName,
             createdAtText = formattingHelper.formatShortDate(expense.createdAt),
@@ -155,9 +157,23 @@ class ExpenseDetailUiMapper(
 
     private fun mapCashTranches(
         tranches: List<CashTranche>,
-        sourceCurrency: String
+        sourceCurrency: String,
+        withdrawalLookup: Map<String, CashWithdrawal>
     ): ImmutableList<CashTrancheDetailUiModel> = tranches.map { tranche ->
+        val withdrawal = withdrawalLookup[tranche.withdrawalId]
+        val withdrawalTitle = withdrawal?.title
+        val label = if (!withdrawalTitle.isNullOrBlank()) {
+            withdrawalTitle
+        } else {
+            val formattedDate = formattingHelper.formatShortDate(withdrawal?.createdAt)
+            if (formattedDate.isNotBlank()) {
+                resourceProvider.getString(R.string.add_expense_cash_tranche_atm_label, formattedDate)
+            } else {
+                resourceProvider.getString(R.string.add_expense_cash_tranche_atm_label_no_date)
+            }
+        }
         CashTrancheDetailUiModel(
+            withdrawalLabel = label,
             formattedAmountConsumed = formattingHelper.formatCentsWithCurrency(
                 tranche.amountConsumed,
                 sourceCurrency

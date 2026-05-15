@@ -24,8 +24,7 @@ import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 internal fun CashTranchesDetailSection(
-    tranches: ImmutableList<CashTrancheDetailUiModel>,
-    sourceCurrency: String
+    tranches: ImmutableList<CashTrancheDetailUiModel>
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
         Row(
@@ -33,7 +32,7 @@ internal fun CashTranchesDetailSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             SectionIcon(TablerIcons.Outline.Wallet)
-            LabelText(text = stringResource(R.string.add_expense_cash_tranche_funded_from))
+            LabelText(text = stringResource(R.string.expense_detail_cash_section_title))
         }
         FlatCard(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -45,9 +44,10 @@ internal fun CashTranchesDetailSection(
                 tranches.forEach { tranche ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SecondaryBodyText(text = sourceCurrency)
+                        SecondaryBodyText(text = tranche.withdrawalLabel)
                         BodyText(text = tranche.formattedAmountConsumed)
                     }
                 }
