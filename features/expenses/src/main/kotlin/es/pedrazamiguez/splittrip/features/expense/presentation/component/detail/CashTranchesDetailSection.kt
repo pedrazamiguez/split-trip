@@ -15,7 +15,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
@@ -42,24 +42,36 @@ internal fun CashTranchesDetailSection(
                     .padding(MaterialTheme.spacing.Default),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
-                tranches.forEach { tranche ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Column {
-                            SecondaryBodyText(text = tranche.withdrawalLabel)
-                            if (tranche.scopeText != null) {
-                                CaptionText(
-                                    text = tranche.scopeText,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        BodyText(text = tranche.formattedAmountConsumed)
-                    }
-                }
+                tranches.forEach { tranche -> TrancheRow(tranche) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrancheRow(tranche: CashTrancheDetailUiModel) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            SecondaryBodyText(text = tranche.withdrawalLabel)
+            if (tranche.scopeText != null) {
+                CaptionText(
+                    text = tranche.scopeText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            // tnum-aligned monetary value (Horizon Narrative §3.4)
+            AmountText(text = tranche.formattedAmountConsumed)
+            if (tranche.formattedRate != null) {
+                CaptionText(
+                    text = tranche.formattedRate,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

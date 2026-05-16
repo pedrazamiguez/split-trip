@@ -109,9 +109,11 @@ class ExpenseDetailViewModel(
                 emptyMap()
             }
 
-            val subunitNameLookup = if (withdrawalLookup.values.any {
+            val subunitNameLookup = if (
+                withdrawalLookup.values.any {
                     it.withdrawalScope == PayerType.SUBUNIT && !it.subunitId.isNullOrBlank()
-                }
+                } ||
+                expense.splits.any { !it.subunitId.isNullOrBlank() }
             ) {
                 try {
                     getGroupSubunitsUseCase(expense.groupId)

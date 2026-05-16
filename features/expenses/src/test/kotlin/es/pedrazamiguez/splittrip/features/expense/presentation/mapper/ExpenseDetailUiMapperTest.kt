@@ -373,6 +373,32 @@ class ExpenseDetailUiMapperTest {
             groupAmountCents = 200L
         )
 
+        private val includedTipAddOn = AddOn(
+            type = AddOnType.TIP,
+            mode = AddOnMode.INCLUDED,
+            valueType = AddOnValueType.EXACT,
+            amountCents = 500L,
+            groupAmountCents = 500L
+        )
+
+        private val includedDiscountAddOn = AddOn(
+            type = AddOnType.DISCOUNT,
+            mode = AddOnMode.INCLUDED,
+            valueType = AddOnValueType.PERCENTAGE,
+            amountCents = 18215L,
+            groupAmountCents = 18215L
+        )
+
+        private val foreignFeeAddOn = AddOn(
+            type = AddOnType.FEE,
+            mode = AddOnMode.ON_TOP,
+            valueType = AddOnValueType.EXACT,
+            amountCents = 500L,
+            currency = "GBP",
+            exchangeRate = BigDecimal("0.83"),
+            groupAmountCents = 415L
+        )
+
         @Test
         fun `has no add-ons for plain expense`() {
             val result = mapper.map(baseExpense, memberProfiles, currentUserId)
@@ -433,6 +459,107 @@ class ExpenseDetailUiMapperTest {
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
             assertTrue(result.addOns.first().labelText.contains("Service"))
+        }
+
+        @Test
+        fun `formattedIncludedBaseCost is null when no INCLUDED add-ons present`() {
+            val expense = baseExpense.copy(addOns = listOf(taxAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNull(result.formattedIncludedBaseCost)
+            assertFalse(result.hasIncludedAddOns)
+        }
+
+        @Test
+        fun `formattedIncludedBaseCost is non-null when INCLUDED non-discount add-on is present`() {
+            // Base cost (groupAmount) is already the decomposed value; reconstructed
+            // original = base + INCLUDED non-discount.
+            val expense = baseExpense.copy(
+                groupAmount = 4500L,
+                sourceAmount = 4500L,
+                addOns = listOf(includedTipAddOn)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNotNull(result.formattedIncludedBaseCost)
+            assertNotNull(result.formattedOriginalEnteredTotal)
+            assertTrue(result.hasIncludedAddOns)
+        }
+
+        @Test
+        fun `formattedIncludedBaseCost and formattedOriginalEnteredTotal are null for INCLUDED DISCOUNT only`() {
+            // INCLUDED DISCOUNTs are informational only — adjustForIncludedAddOns does NOT run
+            // for them, so expense.groupAmount == the total the user entered (= total paid).
+            // Showing a "Base cost" or "Total original" derived from this data would produce a
+            // value LOWER than the amount paid (nonsensical for a discount).
+            val expense = baseExpense.copy(
+                groupAmount = 182152L,
+                sourceAmount = 182152L,
+                addOns = listOf(includedDiscountAddOn)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNull(result.formattedIncludedBaseCost)
+            assertNull(result.formattedOriginalEnteredTotal)
+            assertTrue(result.hasIncludedAddOns)
+        }
+
+        @Test
+        fun `formattedOriginalEnteredTotal excludes INCLUDED DISCOUNT from reconstruction`() {
+            // Mixed: one INCLUDED TIP (base extraction DID run) + one INCLUDED DISCOUNT
+            // (informational). Original total = base + tip only; the discount must not be
+            // subtracted from the reconstruction (that would give a value below what was paid).
+            val expense = baseExpense.copy(
+                groupAmount = 4500L,
+                sourceAmount = 4500L,
+                addOns = listOf(includedTipAddOn, includedDiscountAddOn)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            // formattedIncludedBaseCost shown (non-discount extraction happened)
+            assertNotNull(result.formattedIncludedBaseCost)
+            // originalEntered = 4500 (base) + 500 (tip) = 5000 — discount NOT included
+            assertNotNull(result.formattedOriginalEnteredTotal)
+        }
+
+        @Test
+        fun `foreign-currency add-on exposes source amount and rate`() {
+            every { resourceProvider.getString(any(), any(), any(), any()) } returns "1 GBP = 0.83 EUR"
+            val expense = baseExpense.copy(addOns = listOf(foreignFeeAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            val mapped = result.addOns.first()
+            assertTrue(mapped.isForeignCurrency)
+            assertNotNull(mapped.formattedSourceAmount)
+            assertNotNull(mapped.formattedRate)
+            assertEquals("GBP", mapped.addOnCurrency)
+        }
+
+        @Test
+        fun `same-currency add-on hides foreign metadata`() {
+            val expense = baseExpense.copy(addOns = listOf(taxAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            val mapped = result.addOns.first()
+            assertFalse(mapped.isForeignCurrency)
+            assertNull(mapped.formattedSourceAmount)
+            assertNull(mapped.formattedRate)
+        }
+
+        @Test
+        fun `isIncluded flag mirrors add-on mode`() {
+            val expense = baseExpense.copy(addOns = listOf(includedTipAddOn, taxAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertTrue(result.addOns[0].isIncluded)
+            assertFalse(result.addOns[1].isIncluded)
         }
     }
 
@@ -555,6 +682,116 @@ class ExpenseDetailUiMapperTest {
             )
 
             assertNull(result.cashTranches.first().scopeText)
+        }
+
+        @Test
+        fun `formattedRate is non-null for foreign-currency withdrawal`() {
+            every {
+                resourceProvider.getString(any(), any(), any(), any())
+            } returns "1 EUR = 37.037 THB"
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-thb", amountConsumed = 1000L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w-thb",
+                groupId = "group-456",
+                currency = "THB",
+                exchangeRate = BigDecimal("37.037"),
+                withdrawalScope = PayerType.GROUP
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-thb" to withdrawal)
+            )
+
+            assertNotNull(result.cashTranches.first().formattedRate)
+        }
+
+        @Test
+        fun `formattedRate is null for same-currency withdrawal`() {
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-eur", amountConsumed = 1000L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w-eur",
+                groupId = "group-456",
+                currency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                withdrawalScope = PayerType.GROUP
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-eur" to withdrawal)
+            )
+
+            assertNull(result.cashTranches.first().formattedRate)
+        }
+    }
+
+    @Nested
+    inner class SubunitGroupedSplits {
+
+        @Test
+        fun `flat splits stay in splits and produce no groups`() {
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 2500L),
+                    ExpenseSplit(userId = otherUserId, amountCents = 2500L)
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals(2, result.splits.size)
+            assertTrue(result.splitGroups.isEmpty())
+        }
+
+        @Test
+        fun `subunit-keyed splits are grouped into SubunitSplitGroupUiModel`() {
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 1500L, subunitId = "sub-1"),
+                    ExpenseSplit(userId = otherUserId, amountCents = 1500L, subunitId = "sub-1"),
+                    ExpenseSplit(userId = "solo-user", amountCents = 2000L)
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cantalobos")
+            )
+
+            assertEquals(1, result.splits.size)
+            assertEquals(1, result.splitGroups.size)
+            val group = result.splitGroups.first()
+            assertEquals("sub-1", group.subunitId)
+            assertEquals("Cantalobos", group.subunitLabel)
+            assertEquals(2, group.memberCount)
+            assertEquals(2, group.members.size)
+        }
+
+        @Test
+        fun `subunit label falls back when name lookup is missing`() {
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 2500L, subunitId = "sub-x"),
+                    ExpenseSplit(userId = otherUserId, amountCents = 2500L, subunitId = "sub-x")
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals(1, result.splitGroups.size)
+            // Fallback comes from resourceProvider (mock returns "translated_string").
+            assertTrue(result.splitGroups.first().subunitLabel.isNotBlank())
         }
     }
 

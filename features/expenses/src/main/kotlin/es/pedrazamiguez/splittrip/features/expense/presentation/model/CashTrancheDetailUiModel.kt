@@ -14,5 +14,11 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.model
 data class CashTrancheDetailUiModel(
     val withdrawalLabel: String,
     val formattedAmountConsumed: String,
-    val scopeText: String? = null
+    val scopeText: String? = null,
+    /**
+     * Locked exchange rate captured on the source withdrawal, formatted as
+     * "1 X = Y Z" for display. Null for legacy tranches with no resolved
+     * withdrawal or same-currency withdrawals.
+     */
+    val formattedRate: String? = null
 )

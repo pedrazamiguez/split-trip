@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -20,34 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 
 internal val SECTION_ICON_SIZE = 16.dp
-
-private const val DETAIL_ROW_LABEL_WEIGHT = 0.4f
-private const val DETAIL_ROW_VALUE_WEIGHT = 0.6f
-
-@Composable
-internal fun DetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top
-    ) {
-        SecondaryBodyText(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(DETAIL_ROW_LABEL_WEIGHT)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = androidx.compose.ui.text.style.TextAlign.End,
-            modifier = Modifier.weight(DETAIL_ROW_VALUE_WEIGHT)
-        )
-    }
-}
 
 @Composable
 internal fun SectionIcon(imageVector: ImageVector) {
@@ -83,7 +56,7 @@ internal fun CategoryChip(
     }
 }
 
-/** Neutral surface chip. Used for payment status. */
+/** Neutral surface chip. Used for payment method and payment status. */
 @Composable
 internal fun StatusChip(text: String) {
     Box(
