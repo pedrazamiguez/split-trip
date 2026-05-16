@@ -253,10 +253,9 @@
     <string name="expense_detail_tranche_scope_personal">Efectivo personal</string>
     <string name="expense_detail_tranche_scope_subunit">Efectivo de %1$s</string>
     <string name="expense_detail_rate_label">@ %1$s</string>
-    <string name="expense_detail_section_info">Info de pago</string>
-    <string name="expense_detail_paid_by_label">Pagado por</string>
+
     <string name="expense_detail_section_notes">Notas</string>
-    <string name="expense_detail_section_currency">Detalles de divisa</string>
+
     <string name="expense_detail_section_split">Desglose de reparto</string>
     <string name="expense_detail_section_addons">Extras</string>
     <string name="expense_detail_created_by">Añadido por %1$s</string>
@@ -266,7 +265,7 @@
     <string name="expense_detail_breakdown_original_total">Total original</string>
     <string name="expense_detail_subunit_fallback_label">Subunidad</string>
     <string name="expense_detail_subunit_member_count">%1$d miembros</string>
-    <string name="expense_detail_addon_rate_full">1 %1$s = %2$s %3$s</string>
+    <string name="expense_detail_exchange_rate_full">1 %1$s = %2$s %3$s</string>
     <string name="expense_detail_receipt_thumbnail_cd">Foto del recibo</string>
     <string name="expense_detail_addon_mode_included">Incluido</string>
     <string name="expense_detail_addon_mode_on_top">Sumado</string>

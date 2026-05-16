@@ -75,55 +75,11 @@ private fun SubunitGroup(group: SubunitSplitGroupUiModel) {
     // animateContentSize keeps the surrounding card from "snapping" when members are
     // revealed (Horizon Narrative §6.2 — micro-interactions should glide, not jump).
     Column(modifier = Modifier.animateContentSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = !expanded },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = TablerIcons.Outline.UsersGroup,
-                    contentDescription = null,
-                    modifier = Modifier.size(SUBUNIT_ICON_SIZE),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Column {
-                    Text(
-                        text = group.subunitLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    CaptionText(
-                        text = stringResource(
-                            R.string.expense_detail_subunit_member_count,
-                            group.memberCount
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-            ) {
-                AmountText(text = group.formattedTotalAmount)
-                Icon(
-                    imageVector = if (expanded) {
-                        TablerIcons.Outline.ChevronUp
-                    } else {
-                        TablerIcons.Outline.ChevronDown
-                    },
-                    contentDescription = null,
-                    modifier = Modifier.size(CHEVRON_SIZE),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        SubunitGroupHeader(
+            group = group,
+            expanded = expanded,
+            onToggle = { expanded = !expanded }
+        )
         if (expanded) {
             Column(
                 modifier = Modifier
@@ -132,6 +88,56 @@ private fun SubunitGroup(group: SubunitSplitGroupUiModel) {
             ) {
                 group.members.forEach { member -> SplitRow(member) }
             }
+        }
+    }
+}
+
+@Composable
+private fun SubunitGroupHeader(
+    group: SubunitSplitGroupUiModel,
+    expanded: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = TablerIcons.Outline.UsersGroup,
+                contentDescription = null,
+                modifier = Modifier.size(SUBUNIT_ICON_SIZE),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Column {
+                Text(
+                    text = group.subunitLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                CaptionText(
+                    text = stringResource(R.string.expense_detail_subunit_member_count, group.memberCount),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+        ) {
+            AmountText(text = group.formattedTotalAmount)
+            Icon(
+                imageVector = if (expanded) TablerIcons.Outline.ChevronUp else TablerIcons.Outline.ChevronDown,
+                contentDescription = null,
+                modifier = Modifier.size(CHEVRON_SIZE),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

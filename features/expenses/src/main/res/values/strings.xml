@@ -252,10 +252,9 @@
     <string name="expense_detail_tranche_scope_personal">Personal cash</string>
     <string name="expense_detail_tranche_scope_subunit">%1$s cash</string>
     <string name="expense_detail_rate_label">@ %1$s</string>
-    <string name="expense_detail_section_info">Payment Info</string>
-    <string name="expense_detail_paid_by_label">Paid by</string>
+
     <string name="expense_detail_section_notes">Notes</string>
-    <string name="expense_detail_section_currency">Currency Details</string>
+
     <string name="expense_detail_section_split">Split breakdown</string>
     <string name="expense_detail_section_addons">Add-ons</string>
     <string name="expense_detail_created_by">Added by %1$s</string>
@@ -265,7 +264,7 @@
     <string name="expense_detail_breakdown_original_total">Original total</string>
     <string name="expense_detail_subunit_fallback_label">Subunit</string>
     <string name="expense_detail_subunit_member_count">%1$d members</string>
-    <string name="expense_detail_addon_rate_full">1 %1$s = %2$s %3$s</string>
+    <string name="expense_detail_exchange_rate_full">1 %1$s = %2$s %3$s</string>
     <string name="expense_detail_receipt_thumbnail_cd">Receipt photo</string>
     <string name="expense_detail_addon_mode_included">Included</string>
     <string name="expense_detail_addon_mode_on_top">On top</string>
