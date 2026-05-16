@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -460,6 +461,100 @@ class ExpenseDetailUiMapperTest {
             result.cashTranches.forEach {
                 assertTrue(it.formattedAmountConsumed.isNotBlank())
             }
+        }
+
+        @Test
+        fun `scopeText is null when withdrawal not found in lookup (legacy record)`() {
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-legacy", amountConsumed = 1000L))
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNull(result.cashTranches.first().scopeText)
+        }
+
+        @Test
+        fun `scopeText resolves to group label for GROUP-scoped withdrawal`() {
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-group", amountConsumed = 1000L))
+            )
+            val withdrawal = CashWithdrawal(id = "w-group", groupId = "group-456", withdrawalScope = PayerType.GROUP)
+            every { resourceProvider.getString(any()) } returns "translated_string"
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-group" to withdrawal)
+            )
+
+            assertNotNull(result.cashTranches.first().scopeText)
+        }
+
+        @Test
+        fun `scopeText resolves to personal label for USER-scoped withdrawal`() {
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-user", amountConsumed = 1000L))
+            )
+            val withdrawal = CashWithdrawal(id = "w-user", groupId = "group-456", withdrawalScope = PayerType.USER)
+            every { resourceProvider.getString(any()) } returns "translated_string"
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-user" to withdrawal)
+            )
+
+            assertNotNull(result.cashTranches.first().scopeText)
+        }
+
+        @Test
+        fun `scopeText resolves to subunit label when subunit name is found`() {
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-sub", amountConsumed = 1000L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w-sub",
+                groupId = "group-456",
+                withdrawalScope = PayerType.SUBUNIT,
+                subunitId = "sub-1"
+            )
+            every { resourceProvider.getString(any(), any()) } returns "Cabin cash"
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-sub" to withdrawal),
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            assertNotNull(result.cashTranches.first().scopeText)
+        }
+
+        @Test
+        fun `scopeText is null for SUBUNIT-scoped withdrawal when subunit name not found`() {
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-sub", amountConsumed = 1000L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w-sub",
+                groupId = "group-456",
+                withdrawalScope = PayerType.SUBUNIT,
+                subunitId = "sub-unknown"
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-sub" to withdrawal),
+                subunitNameLookup = emptyMap()
+            )
+
+            assertNull(result.cashTranches.first().scopeText)
         }
     }
 

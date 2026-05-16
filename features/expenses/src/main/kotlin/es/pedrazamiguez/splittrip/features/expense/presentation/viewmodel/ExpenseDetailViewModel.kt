@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
@@ -44,6 +46,7 @@ class ExpenseDetailViewModel(
     private val getExpenseByIdUseCase: GetExpenseByIdUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase,
+    private val getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
     private val authenticationService: AuthenticationService,
     private val expenseDetailUiMapper: ExpenseDetailUiMapper
@@ -106,7 +109,28 @@ class ExpenseDetailViewModel(
                 emptyMap()
             }
 
-            val uiModel = expenseDetailUiMapper.map(expense, memberProfiles, currentUserId, withdrawalLookup)
+            val subunitNameLookup = if (withdrawalLookup.values.any { it.withdrawalScope == PayerType.SUBUNIT }) {
+                try {
+                    getGroupSubunitsFlowUseCase(expense.groupId)
+                        .first()
+                        .associate { it.id to it.name }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to fetch subunits for expense $expenseId")
+                    emptyMap()
+                }
+            } else {
+                emptyMap()
+            }
+
+            val uiModel = expenseDetailUiMapper.map(
+                expense = expense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                withdrawalLookup = withdrawalLookup,
+                subunitNameLookup = subunitNameLookup
+            )
 
             flowOf(ExpenseDetailUiState(expense = uiModel, isLoading = false))
         }

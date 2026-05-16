@@ -276,6 +276,7 @@ val expensesUiModule = module {
             getExpenseByIdUseCase = get<GetExpenseByIdUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>(),
+            getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>(),
             deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
             authenticationService = get<AuthenticationService>(),
             expenseDetailUiMapper = get<ExpenseDetailUiMapper>()
