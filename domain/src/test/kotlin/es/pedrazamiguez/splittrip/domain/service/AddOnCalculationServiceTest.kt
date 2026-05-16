@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -532,6 +533,101 @@ class AddOnCalculationServiceTest {
         fun `handles single element`() {
             val result = addOnService.sumPercentagesFromInputs(listOf("42.5"))
             assertEquals(BigDecimal("42.5"), result)
+        }
+    }
+
+    // ── calculateIncludedDiscountPercentageCents ─────────────────────────
+
+    @Nested
+    inner class CalculateIncludedDiscountPercentageCents {
+
+        @Test
+        fun `10 percent on 1821_52 EUR returns 202_39 EUR (20239 cents) - issue 1078 scenario`() {
+            // baseCost = 182152 / 0.9 = 202391; discount = 202391 - 182152 = 20239
+            // Equivalent: 182152 * 10 / 90 = 20239.111 → 20239 (HALF_UP)
+            val result = addOnService.calculateIncludedDiscountPercentageCents(
+                sourceAmountCents = 182152L,
+                discountPercentage = BigDecimal("10")
+            )
+            assertEquals(20239L, result)
+        }
+
+        @Test
+        fun `does NOT use the buggy source × pct ÷ 100 formula`() {
+            // The buggy formula would return 18215 (10% of 1821.52).
+            // The correct formula returns 20239 (the actual embedded discount).
+            val buggy = 182152L * 10L / 100L
+            val result = addOnService.calculateIncludedDiscountPercentageCents(
+                sourceAmountCents = 182152L,
+                discountPercentage = BigDecimal("10")
+            )
+            assertEquals(20239L, result)
+            assertEquals(18215L, buggy)
+            assertNotEquals(buggy, result)
+        }
+
+        @Test
+        fun `25 percent on 7500 cents returns 2500 cents`() {
+            // baseCost = 7500 / 0.75 = 10000; discount = 2500
+            val result = addOnService.calculateIncludedDiscountPercentageCents(
+                sourceAmountCents = 7500L,
+                discountPercentage = BigDecimal("25")
+            )
+            assertEquals(2500L, result)
+        }
+
+        @Test
+        fun `zero percent returns zero`() {
+            val result = addOnService.calculateIncludedDiscountPercentageCents(
+                sourceAmountCents = 100000L,
+                discountPercentage = BigDecimal.ZERO
+            )
+            assertEquals(0L, result)
+        }
+
+        @Test
+        fun `negative percent returns zero`() {
+            val result = addOnService.calculateIncludedDiscountPercentageCents(
+                sourceAmountCents = 100000L,
+                discountPercentage = BigDecimal("-10")
+            )
+            assertEquals(0L, result)
+        }
+
+        @Test
+        fun `100 percent or above returns zero (degenerate - no base cost)`() {
+            assertEquals(
+                0L,
+                addOnService.calculateIncludedDiscountPercentageCents(
+                    sourceAmountCents = 100000L,
+                    discountPercentage = BigDecimal("100")
+                )
+            )
+            assertEquals(
+                0L,
+                addOnService.calculateIncludedDiscountPercentageCents(
+                    sourceAmountCents = 100000L,
+                    discountPercentage = BigDecimal("150")
+                )
+            )
+        }
+
+        @Test
+        fun `zero or negative source amount returns zero`() {
+            assertEquals(
+                0L,
+                addOnService.calculateIncludedDiscountPercentageCents(
+                    sourceAmountCents = 0L,
+                    discountPercentage = BigDecimal("10")
+                )
+            )
+            assertEquals(
+                0L,
+                addOnService.calculateIncludedDiscountPercentageCents(
+                    sourceAmountCents = -100L,
+                    discountPercentage = BigDecimal("10")
+                )
+            )
         }
     }
 }
