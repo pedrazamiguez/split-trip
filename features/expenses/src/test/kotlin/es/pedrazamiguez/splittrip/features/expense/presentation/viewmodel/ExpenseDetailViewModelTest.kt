@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
@@ -49,6 +50,7 @@ class ExpenseDetailViewModelTest {
     private lateinit var getExpenseByIdUseCase: GetExpenseByIdUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase
+    private lateinit var getGroupSubunitsUseCase: GetGroupSubunitsUseCase
     private lateinit var deleteExpenseUseCase: DeleteExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var expenseDetailUiMapper: ExpenseDetailUiMapper
@@ -102,17 +104,19 @@ class ExpenseDetailViewModelTest {
         getExpenseByIdUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         getCashWithdrawalsFlowUseCase = mockk()
+        getGroupSubunitsUseCase = mockk()
         deleteExpenseUseCase = mockk()
         authenticationService = mockk()
         expenseDetailUiMapper = mockk()
 
         every { getCashWithdrawalsFlowUseCase(any()) } returns flowOf(emptyList())
+        coEvery { getGroupSubunitsUseCase(any()) } returns emptyList()
 
         every { authenticationService.currentUserId() } returns testUserId
         coEvery { getMemberProfilesUseCase(any()) } returns mapOf(
             testUserId to User(userId = testUserId, displayName = "Alice", email = "alice@example.com")
         )
-        every { expenseDetailUiMapper.map(any(), any(), any()) } returns testUiModel
+        every { expenseDetailUiMapper.map(any(), any(), any(), any(), any()) } returns testUiModel
 
         viewModel = createViewModel()
     }
@@ -176,7 +180,7 @@ class ExpenseDetailViewModelTest {
             advanceUntilIdle()
 
             // Then — mapper was called once with the loaded data
-            coVerify(exactly = 1) { expenseDetailUiMapper.map(testExpense, any(), testUserId) }
+            coVerify(exactly = 1) { expenseDetailUiMapper.map(testExpense, any(), testUserId, any(), any()) }
 
             collectJob.cancel()
         }
@@ -375,6 +379,7 @@ class ExpenseDetailViewModelTest {
         getExpenseByIdUseCase = getExpenseByIdUseCase,
         getMemberProfilesUseCase = getMemberProfilesUseCase,
         getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
+        getGroupSubunitsUseCase = getGroupSubunitsUseCase,
         deleteExpenseUseCase = deleteExpenseUseCase,
         authenticationService = authenticationService,
         expenseDetailUiMapper = expenseDetailUiMapper

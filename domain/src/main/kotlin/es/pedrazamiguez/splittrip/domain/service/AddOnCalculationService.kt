@@ -56,6 +56,37 @@ class AddOnCalculationService(
         sourceAmountCents = sourceAmountCents
     )
 
+    /**
+     * Resolves the absolute discount amount in minor units for an INCLUDED DISCOUNT
+     * add-on whose user input is a PERCENTAGE.
+     *
+     * The generic [resolveAddOnAmountCents] formula (`source × pct / 100`) is wrong
+     * for this combination because the source amount the user entered is the
+     * **post-discount** price. The pre-discount base cost is
+     * `source / (1 − pct/100)`, so the embedded discount equals
+     * `source / (1 − pct/100) − source`, which simplifies to
+     * `source × pct / (100 − pct)`.
+     *
+     * @param sourceAmountCents   Paid (post-discount) amount in the add-on's currency minor units.
+     * @param discountPercentage  The discount percentage (e.g., `10` for 10 %).
+     * @return The embedded discount in minor units; `0` when [sourceAmountCents] is non-positive
+     *         or when [discountPercentage] is ≥ 100 (degenerate case — no positive base cost exists).
+     */
+    fun calculateIncludedDiscountPercentageCents(
+        sourceAmountCents: Long,
+        discountPercentage: BigDecimal
+    ): Long {
+        if (sourceAmountCents <= 0L) return 0L
+        if (discountPercentage.compareTo(BigDecimal.ZERO) <= 0) return 0L
+        val divisor = BigDecimal("100").subtract(discountPercentage)
+        if (divisor.compareTo(BigDecimal.ZERO) <= 0) return 0L
+        return BigDecimal(sourceAmountCents)
+            .multiply(discountPercentage)
+            .divide(divisor, 0, RoundingMode.HALF_UP)
+            .toLong()
+            .coerceAtLeast(0L)
+    }
+
     // ── Add-On Totals ───────────────────────────────────────────────────
 
     /**

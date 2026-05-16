@@ -249,15 +249,26 @@
     <string name="expense_detail_group_currency_label">Saldo del grupo</string>
     <string name="expense_detail_amount_in_currency">Importe en %1$s</string>
     <string name="expense_detail_cash_section_title">Pagado con</string>
+    <string name="expense_detail_tranche_scope_group">Efectivo del grupo</string>
+    <string name="expense_detail_tranche_scope_personal">Efectivo personal</string>
+    <string name="expense_detail_tranche_scope_subunit">Efectivo de %1$s</string>
     <string name="expense_detail_rate_label">@ %1$s</string>
-    <string name="expense_detail_section_info">Info de pago</string>
-    <string name="expense_detail_paid_by_label">Pagado por</string>
+
     <string name="expense_detail_section_notes">Notas</string>
-    <string name="expense_detail_section_currency">Detalles de divisa</string>
+
     <string name="expense_detail_section_split">Desglose de reparto</string>
     <string name="expense_detail_section_addons">Extras</string>
     <string name="expense_detail_created_by">Añadido por %1$s</string>
     <string name="expense_detail_split_you_badge">Tú</string>
+    <string name="expense_detail_section_breakdown">Desglose</string>
+    <string name="expense_detail_breakdown_base_cost">Coste base</string>
+    <string name="expense_detail_breakdown_original_total">Total original</string>
+    <string name="expense_detail_subunit_fallback_label">Subunidad</string>
+    <string name="expense_detail_subunit_member_count">%1$d miembros</string>
+    <string name="expense_detail_exchange_rate_full">1 %1$s = %2$s %3$s</string>
+    <string name="expense_detail_receipt_thumbnail_cd">Foto del recibo</string>
+    <string name="expense_detail_addon_mode_included">Incluido</string>
+    <string name="expense_detail_addon_mode_on_top">Sumado</string>
 
     <!-- Withdrawal pool selection — shown in Exchange Rate step when multiple pools have funds -->
     <string name="add_expense_cash_pool_selection_title">Usar efectivo de</string>
