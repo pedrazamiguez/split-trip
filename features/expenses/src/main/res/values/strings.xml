@@ -248,6 +248,9 @@
     <string name="expense_detail_group_currency_label">Group balance</string>
     <string name="expense_detail_amount_in_currency">Amount in %1$s</string>
     <string name="expense_detail_cash_section_title">Paid with</string>
+    <string name="expense_detail_tranche_scope_group">Group cash</string>
+    <string name="expense_detail_tranche_scope_personal">Personal cash</string>
+    <string name="expense_detail_tranche_scope_subunit">%1$s cash</string>
     <string name="expense_detail_rate_label">@ %1$s</string>
     <string name="expense_detail_section_info">Payment Info</string>
     <string name="expense_detail_paid_by_label">Paid by</string>

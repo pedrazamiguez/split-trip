@@ -34,7 +34,8 @@ class ExpenseDetailUiMapper(
         expense: Expense,
         memberProfiles: Map<String, User>,
         currentUserId: String?,
-        withdrawalLookup: Map<String, CashWithdrawal> = emptyMap()
+        withdrawalLookup: Map<String, CashWithdrawal> = emptyMap(),
+        subunitNameLookup: Map<String, String> = emptyMap()
     ): ExpenseDetailUiModel {
         val (scheduledBadgeText, isScheduledPastDue) = buildScheduledBadge(expense)
         val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
@@ -86,7 +87,12 @@ class ExpenseDetailUiMapper(
             formattedEffectiveTotal = effectiveTotal?.let {
                 formattingHelper.formatCentsWithCurrency(it, expense.groupCurrency)
             },
-            cashTranches = mapCashTranches(expense.cashTranches, expense.sourceCurrency, withdrawalLookup),
+            cashTranches = mapCashTranches(
+                expense.cashTranches,
+                expense.sourceCurrency,
+                withdrawalLookup,
+                subunitNameLookup
+            ),
             receiptUri = expense.receiptLocalUri,
             createdByText = paidByName,
             createdAtText = formattingHelper.formatShortDate(expense.createdAt),
@@ -158,7 +164,8 @@ class ExpenseDetailUiMapper(
     private fun mapCashTranches(
         tranches: List<CashTranche>,
         sourceCurrency: String,
-        withdrawalLookup: Map<String, CashWithdrawal>
+        withdrawalLookup: Map<String, CashWithdrawal>,
+        subunitNameLookup: Map<String, String>
     ): ImmutableList<CashTrancheDetailUiModel> = tranches.map { tranche ->
         val withdrawal = withdrawalLookup[tranche.withdrawalId]
         val withdrawalTitle = withdrawal?.title
@@ -172,14 +179,35 @@ class ExpenseDetailUiMapper(
                 resourceProvider.getString(R.string.add_expense_cash_tranche_atm_label_no_date)
             }
         }
+        val scopeText = resolveTrancheScopeText(withdrawal, subunitNameLookup)
         CashTrancheDetailUiModel(
             withdrawalLabel = label,
             formattedAmountConsumed = formattingHelper.formatCentsWithCurrency(
                 tranche.amountConsumed,
                 sourceCurrency
-            )
+            ),
+            scopeText = scopeText
         )
     }.toImmutableList()
+
+    private fun resolveTrancheScopeText(
+        withdrawal: CashWithdrawal?,
+        subunitNameLookup: Map<String, String>
+    ): String? {
+        if (withdrawal == null) return null
+        return when (withdrawal.withdrawalScope) {
+            PayerType.GROUP -> resourceProvider.getString(R.string.expense_detail_tranche_scope_group)
+            PayerType.USER -> resourceProvider.getString(R.string.expense_detail_tranche_scope_personal)
+            PayerType.SUBUNIT -> {
+                val name = withdrawal.subunitId?.let { subunitNameLookup[it] }
+                if (!name.isNullOrBlank()) {
+                    resourceProvider.getString(R.string.expense_detail_tranche_scope_subunit, name)
+                } else {
+                    null
+                }
+            }
+        }
+    }
 
     private fun buildScheduledBadge(expense: Expense): Pair<String?, Boolean> {
         val dueDate = expense.dueDate

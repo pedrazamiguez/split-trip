@@ -5,12 +5,14 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.model
  *
  * @param withdrawalLabel Display label for the source withdrawal
  *                        (title if available, fallback "ATM"/"Cajero").
- *                        Future: enriched with scope (personal/group/subunit)
- *                        once withdrawal lookup is available at detail-screen time.
  * @param formattedAmountConsumed Amount consumed from this withdrawal, formatted
  *                                with currency symbol (e.g. "฿ 45.00").
+ * @param scopeText Secondary caption identifying the pool scope (e.g. "Group cash",
+ *                  "Personal cash", "Cabin cash"). Null for legacy tranche records
+ *                  where the withdrawal can't be resolved — hidden in the UI.
  */
 data class CashTrancheDetailUiModel(
     val withdrawalLabel: String,
-    val formattedAmountConsumed: String
+    val formattedAmountConsumed: String,
+    val scopeText: String? = null
 )
