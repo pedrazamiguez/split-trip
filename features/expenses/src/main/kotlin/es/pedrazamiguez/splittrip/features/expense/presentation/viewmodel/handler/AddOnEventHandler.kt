@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import java.math.BigDecimal
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
@@ -483,12 +484,7 @@ class AddOnEventHandler(
         )
         if (addOn.valueType == AddOnValueType.PERCENTAGE && sourceAmountCents <= 0) return addOn
 
-        val resolvedCents = addOnCalculationService.resolveAddOnAmountCents(
-            normalizedInput = inputBd,
-            valueType = addOn.valueType,
-            decimalDigits = decimalDigits,
-            sourceAmountCents = sourceAmountCents
-        )
+        val resolvedCents = resolveAddOnAmountCentsForType(addOn, inputBd, decimalDigits, sourceAmountCents)
 
         // Convert to group currency using the add-on's own rate
         val groupAmountCents = convertAddOnToGroupCurrency(resolvedCents, addOn)
@@ -526,6 +522,36 @@ class AddOnEventHandler(
             amountCents,
             addOn.displayExchangeRate
         )
+    }
+
+    /**
+     * Routes percentage-based INCLUDED DISCOUNTs through the corrected formula
+     * `source × pct / (100 − pct)`. The generic resolver returns `source × pct / 100`,
+     * which under-reports the embedded discount because [sourceAmountCents] is the
+     * already-discounted price, not the original base cost.
+     */
+    private fun resolveAddOnAmountCentsForType(
+        addOn: AddOnUiModel,
+        inputBd: BigDecimal,
+        decimalDigits: Int,
+        sourceAmountCents: Long
+    ): Long {
+        val isIncludedDiscountPercentage = addOn.mode == AddOnMode.INCLUDED &&
+            addOn.type == AddOnType.DISCOUNT &&
+            addOn.valueType == AddOnValueType.PERCENTAGE
+        return if (isIncludedDiscountPercentage) {
+            addOnCalculationService.calculateIncludedDiscountPercentageCents(
+                sourceAmountCents = sourceAmountCents,
+                discountPercentage = inputBd
+            )
+        } else {
+            addOnCalculationService.resolveAddOnAmountCents(
+                normalizedInput = inputBd,
+                valueType = addOn.valueType,
+                decimalDigits = decimalDigits,
+                sourceAmountCents = sourceAmountCents
+            )
+        }
     }
 
     private fun exchangeRateLabelOrEmpty(

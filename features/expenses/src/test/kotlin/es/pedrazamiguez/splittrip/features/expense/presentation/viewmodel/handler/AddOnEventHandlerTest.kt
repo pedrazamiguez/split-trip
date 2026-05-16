@@ -1440,4 +1440,75 @@ class AddOnEventHandlerTest {
             assertEquals(500L, updated.groupAmountCents)
         }
     }
+
+    // ── INCLUDED DISCOUNT PERCENTAGE — Issue #1078 regression ────────────
+
+    @Nested
+    @DisplayName("resolveAddOnAmounts — INCLUDED DISCOUNT PERCENTAGE (issue 1078)")
+    inner class IncludedDiscountPercentage {
+
+        @Test
+        fun `10 percent on 1821_52 EUR resolves to 20239 cents, not buggy 18215`() = runTest {
+            // Reproduces the issue exactly: user enters 1821.52 EUR as the already-discounted
+            // price and adds a 10% INCLUDED DISCOUNT. The discount embedded in the original
+            // pre-discount price (2023.91 EUR) is 202.39 EUR, NOT 182.15 EUR (the buggy result).
+            uiState.value = baseState.copy(sourceAmount = "1821.52")
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.DISCOUNT)
+            val id = uiState.value.addOns[0].id
+            handler.handleModeChanged(id, AddOnMode.INCLUDED)
+            handler.handleValueTypeChanged(id, AddOnValueType.PERCENTAGE)
+
+            handler.handleAmountChanged(id, "10")
+
+            val addOn = uiState.value.addOns[0]
+            assertEquals(20239L, addOn.resolvedAmountCents)
+            assertEquals(20239L, addOn.groupAmountCents)
+        }
+
+        @Test
+        fun `ON_TOP DISCOUNT PERCENTAGE still uses generic formula (no regression)`() = runTest {
+            // Same input, but ON_TOP DISCOUNT must remain pct × source / 100 = 18215.
+            uiState.value = baseState.copy(sourceAmount = "1821.52")
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.DISCOUNT)
+            val id = uiState.value.addOns[0].id
+            handler.handleValueTypeChanged(id, AddOnValueType.PERCENTAGE)
+
+            handler.handleAmountChanged(id, "10")
+
+            assertEquals(AddOnMode.ON_TOP, uiState.value.addOns[0].mode)
+            assertEquals(18215L, uiState.value.addOns[0].resolvedAmountCents)
+        }
+
+        @Test
+        fun `INCLUDED non-discount PERCENTAGE still uses generic formula (no regression)`() = runTest {
+            // INCLUDED TIP 10% on 1821.52 must remain 18215 — only DISCOUNTs are corrected.
+            uiState.value = baseState.copy(sourceAmount = "1821.52")
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.TIP)
+            val id = uiState.value.addOns[0].id
+            handler.handleModeChanged(id, AddOnMode.INCLUDED)
+            handler.handleValueTypeChanged(id, AddOnValueType.PERCENTAGE)
+
+            handler.handleAmountChanged(id, "10")
+
+            assertEquals(18215L, uiState.value.addOns[0].resolvedAmountCents)
+        }
+
+        @Test
+        fun `INCLUDED DISCOUNT EXACT is unaffected (already correct)`() = runTest {
+            // EXACT amounts pass through directly — must NOT route through the new formula.
+            uiState.value = baseState.copy(sourceAmount = "1821.52")
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.DISCOUNT)
+            val id = uiState.value.addOns[0].id
+            handler.handleModeChanged(id, AddOnMode.INCLUDED)
+            // valueType defaults to EXACT — no change needed
+
+            handler.handleAmountChanged(id, "150")
+
+            assertEquals(15000L, uiState.value.addOns[0].resolvedAmountCents)
+        }
+    }
 }
