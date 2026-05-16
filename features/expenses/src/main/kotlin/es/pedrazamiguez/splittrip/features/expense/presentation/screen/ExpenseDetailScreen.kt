@@ -19,10 +19,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPaddin
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.features.expense.R
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.AddOnsSummarySection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.BreakdownCardSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.CashTranchesDetailSection
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.CurrencyDetailsSection
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.GeneralInfoSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.HeroSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.NotesSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.ProvenanceSection
@@ -52,6 +50,8 @@ private fun ExpenseDetailContent(
     expense: ExpenseDetailUiModel,
     modifier: Modifier = Modifier
 ) {
+    // Tab-screens MUST consume LocalBottomPadding so the floating nav bar does not
+    // cover the last card / sticky actions (Manifesto §7 — Bottom Padding rule).
     val bottomPadding = LocalBottomPadding.current
 
     Column(
@@ -65,14 +65,17 @@ private fun ExpenseDetailContent(
 
         HeroSection(expense = expense)
 
-        GeneralInfoSection(expense = expense)
-
         if (expense.notesText != null) {
             NotesSection(notesText = expense.notesText)
         }
 
-        if (expense.isForeignCurrency) {
-            CurrencyDetailsSection(expense = expense)
+        if (expense.hasAddOns || expense.formattedIncludedBaseCost != null) {
+            BreakdownCardSection(
+                addOns = expense.addOns,
+                formattedEffectiveTotal = expense.formattedEffectiveTotal,
+                formattedIncludedBaseCost = expense.formattedIncludedBaseCost,
+                formattedOriginalEnteredTotal = expense.formattedOriginalEnteredTotal
+            )
         }
 
         if (expense.cashTranches.isNotEmpty()) {
@@ -81,15 +84,9 @@ private fun ExpenseDetailContent(
 
         SplitBreakdownSection(
             splitTypeText = expense.splitTypeText,
-            splits = expense.splits
+            splits = expense.splits,
+            splitGroups = expense.splitGroups
         )
-
-        if (expense.hasAddOns) {
-            AddOnsSummarySection(
-                addOns = expense.addOns,
-                formattedEffectiveTotal = expense.formattedEffectiveTotal
-            )
-        }
 
         ProvenanceSection(expense = expense)
 

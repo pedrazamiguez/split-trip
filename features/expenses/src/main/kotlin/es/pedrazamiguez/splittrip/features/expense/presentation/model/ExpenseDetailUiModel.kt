@@ -38,11 +38,29 @@ data class ExpenseDetailUiModel(
     // Split
     val splitTypeText: String = "",
     val splits: ImmutableList<SplitDetailUiModel> = persistentListOf(),
+    /**
+     * Subunit-grouped splits. When non-empty, the screen renders these as collapsible
+     * containers above any solo entries in [splits]. Solo expenses (no subunit splits)
+     * keep this empty and render only [splits].
+     */
+    val splitGroups: ImmutableList<SubunitSplitGroupUiModel> = persistentListOf(),
 
     // Add-ons
     val hasAddOns: Boolean = false,
+    val hasIncludedAddOns: Boolean = false,
     val addOns: ImmutableList<AddOnDetailUiModel> = persistentListOf(),
     val formattedEffectiveTotal: String? = null,
+    /**
+     * Formatted decomposed base cost when INCLUDED add-ons are present (equal to the
+     * stored `groupAmount` — what the user "really" paid for the item before the
+     * embedded tip/fee). Null when no INCLUDED add-ons exist.
+     */
+    val formattedIncludedBaseCost: String? = null,
+    /**
+     * Formatted total the user originally entered, reconstructed from the base cost
+     * plus INCLUDED add-ons. Null when no INCLUDED add-ons exist.
+     */
+    val formattedOriginalEnteredTotal: String? = null,
 
     // Cash tranches
     val cashTranches: ImmutableList<CashTrancheDetailUiModel> = persistentListOf(),

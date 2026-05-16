@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -19,6 +20,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnDetai
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTrancheDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubunitSplitGroupUiModel
+import java.math.BigDecimal
 import java.time.LocalDate
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -46,6 +49,14 @@ class ExpenseDetailUiMapper(
         } else {
             null
         }
+        val hasIncludedAddOns = expense.addOns.any { it.mode == AddOnMode.INCLUDED }
+        val originalEnteredTotal = if (hasIncludedAddOns) {
+            buildOriginalEnteredTotal(expense.groupAmount, expense.addOns)
+        } else {
+            null
+        }
+
+        val (soloSplits, splitGroups) = mapSplits(expense, memberProfiles, currentUserId, subunitNameLookup)
 
         return ExpenseDetailUiModel(
             id = expense.id,
@@ -81,15 +92,26 @@ class ExpenseDetailUiMapper(
             isOutOfPocket = expense.payerType == PayerType.USER,
             fundingSourceText = buildFundingSourceText(expense, currentUserId, memberProfiles),
             splitTypeText = resourceProvider.getString(expense.splitType.toStringRes()),
-            splits = mapSplits(expense, memberProfiles, currentUserId),
+            splits = soloSplits,
+            splitGroups = splitGroups,
             hasAddOns = expense.addOns.isNotEmpty(),
+            hasIncludedAddOns = hasIncludedAddOns,
             addOns = mapAddOns(expense.addOns, expense.groupCurrency),
             formattedEffectiveTotal = effectiveTotal?.let {
+                formattingHelper.formatCentsWithCurrency(it, expense.groupCurrency)
+            },
+            formattedIncludedBaseCost = if (hasIncludedAddOns) {
+                formattingHelper.formatCentsWithCurrency(expense.groupAmount, expense.groupCurrency)
+            } else {
+                null
+            },
+            formattedOriginalEnteredTotal = originalEnteredTotal?.let {
                 formattingHelper.formatCentsWithCurrency(it, expense.groupCurrency)
             },
             cashTranches = mapCashTranches(
                 expense.cashTranches,
                 expense.sourceCurrency,
+                expense.groupCurrency,
                 withdrawalLookup,
                 subunitNameLookup
             ),
@@ -100,21 +122,74 @@ class ExpenseDetailUiMapper(
         )
     }
 
+    /**
+     * The decomposed [Expense.groupAmount] is the base cost when INCLUDED add-ons exist.
+     * Reconstructing the original user-entered total just sums back the non-discount
+     * INCLUDED amounts and re-subtracts INCLUDED discounts.
+     */
+    private fun buildOriginalEnteredTotal(baseGroupAmount: Long, addOns: List<AddOn>): Long {
+        val includedDelta = addOns
+            .filter { it.mode == AddOnMode.INCLUDED }
+            .sumOf {
+                if (it.type == AddOnType.DISCOUNT) -it.groupAmountCents else it.groupAmountCents
+            }
+        return (baseGroupAmount + includedDelta).coerceAtLeast(0L)
+    }
+
     private fun mapSplits(
         expense: Expense,
         memberProfiles: Map<String, User>,
-        currentUserId: String?
-    ): ImmutableList<SplitDetailUiModel> = expense.splits.map { split ->
-        mapSplitRow(split, expense, memberProfiles, currentUserId)
-    }.toImmutableList()
+        currentUserId: String?,
+        subunitNameLookup: Map<String, String>
+    ): Pair<ImmutableList<SplitDetailUiModel>, ImmutableList<SubunitSplitGroupUiModel>> {
+        val rows = expense.splits.map { split ->
+            split to mapSplitRow(split, expense, memberProfiles, currentUserId, subunitNameLookup)
+        }
+        val solo = rows.filter { it.first.subunitId.isNullOrBlank() }.map { it.second }
+        val grouped = rows
+            .filter { !it.first.subunitId.isNullOrBlank() }
+            .groupBy { it.first.subunitId!! }
+            .map { (subunitId, entries) ->
+                buildSubunitGroup(subunitId, entries.map { it.second }, expense, subunitNameLookup)
+            }
+        return solo.toImmutableList() to grouped.toImmutableList()
+    }
+
+    private fun buildSubunitGroup(
+        subunitId: String,
+        members: List<SplitDetailUiModel>,
+        expense: Expense,
+        subunitNameLookup: Map<String, String>
+    ): SubunitSplitGroupUiModel {
+        val label = subunitNameLookup[subunitId]
+            ?: resourceProvider.getString(R.string.expense_detail_subunit_fallback_label)
+        val totalSourceCents = expense.splits
+            .filter { it.subunitId == subunitId }
+            .sumOf { it.amountCents }
+        val totalGroupCents = expenseCalculatorService.computeProportionalAmount(
+            amount = totalSourceCents,
+            targetAmount = expense.groupAmount,
+            totalAmount = expense.sourceAmount
+        )
+        return SubunitSplitGroupUiModel(
+            subunitId = subunitId,
+            subunitLabel = label,
+            formattedTotalAmount = formattingHelper.formatCentsWithCurrency(
+                totalGroupCents,
+                expense.groupCurrency
+            ),
+            memberCount = members.size,
+            members = members.toImmutableList()
+        )
+    }
 
     private fun mapSplitRow(
         split: ExpenseSplit,
         expense: Expense,
         memberProfiles: Map<String, User>,
-        currentUserId: String?
+        currentUserId: String?,
+        subunitNameLookup: Map<String, String>
     ): SplitDetailUiModel {
-        // Convert split amount from source currency to group currency for display
         val groupAmountCents = expenseCalculatorService.computeProportionalAmount(
             amount = split.amountCents,
             targetAmount = expense.groupAmount,
@@ -133,7 +208,9 @@ class ExpenseDetailUiMapper(
             formattedAmount = formattedAmount,
             shareText = shareText,
             isCurrentUser = currentUserId != null && split.userId == currentUserId,
-            isExcluded = split.isExcluded
+            isExcluded = split.isExcluded,
+            subunitId = split.subunitId,
+            subunitLabel = split.subunitId?.let { subunitNameLookup[it] }
         )
     }
 
@@ -141,6 +218,7 @@ class ExpenseDetailUiMapper(
         addOns: List<AddOn>,
         groupCurrency: String
     ): ImmutableList<AddOnDetailUiModel> = addOns.map { addOn ->
+        val isForeign = addOn.currency != groupCurrency
         AddOnDetailUiModel(
             labelText = buildAddOnLabel(addOn),
             modeText = resourceProvider.getString(addOn.mode.toStringRes()),
@@ -148,6 +226,24 @@ class ExpenseDetailUiMapper(
                 addOn.groupAmountCents,
                 groupCurrency
             ),
+            formattedSourceAmount = if (isForeign) {
+                formattingHelper.formatCentsWithCurrency(addOn.amountCents, addOn.currency)
+            } else {
+                null
+            },
+            addOnCurrency = addOn.currency,
+            formattedRate = if (isForeign) {
+                resourceProvider.getString(
+                    R.string.expense_detail_addon_rate_full,
+                    addOn.currency,
+                    formattingHelper.formatRateForDisplay(addOn.exchangeRate.toPlainString()),
+                    groupCurrency
+                )
+            } else {
+                null
+            },
+            isForeignCurrency = isForeign,
+            isIncluded = addOn.mode == AddOnMode.INCLUDED,
             isDiscount = addOn.type == AddOnType.DISCOUNT
         )
     }.toImmutableList()
@@ -164,6 +260,7 @@ class ExpenseDetailUiMapper(
     private fun mapCashTranches(
         tranches: List<CashTranche>,
         sourceCurrency: String,
+        groupCurrency: String,
         withdrawalLookup: Map<String, CashWithdrawal>,
         subunitNameLookup: Map<String, String>
     ): ImmutableList<CashTrancheDetailUiModel> = tranches.map { tranche ->
@@ -180,15 +277,29 @@ class ExpenseDetailUiMapper(
             }
         }
         val scopeText = resolveTrancheScopeText(withdrawal, subunitNameLookup)
+        val formattedRate = buildTrancheRate(withdrawal, groupCurrency)
         CashTrancheDetailUiModel(
             withdrawalLabel = label,
             formattedAmountConsumed = formattingHelper.formatCentsWithCurrency(
                 tranche.amountConsumed,
                 sourceCurrency
             ),
-            scopeText = scopeText
+            scopeText = scopeText,
+            formattedRate = formattedRate
         )
     }.toImmutableList()
+
+    private fun buildTrancheRate(withdrawal: CashWithdrawal?, groupCurrency: String): String? {
+        if (withdrawal == null) return null
+        if (withdrawal.currency == groupCurrency) return null
+        if (withdrawal.exchangeRate.compareTo(BigDecimal.ZERO) == 0) return null
+        return resourceProvider.getString(
+            R.string.expense_detail_addon_rate_full,
+            groupCurrency,
+            formattingHelper.formatRateForDisplay(withdrawal.exchangeRate.toPlainString()),
+            withdrawal.currency
+        )
+    }
 
     private fun resolveTrancheScopeText(
         withdrawal: CashWithdrawal?,
