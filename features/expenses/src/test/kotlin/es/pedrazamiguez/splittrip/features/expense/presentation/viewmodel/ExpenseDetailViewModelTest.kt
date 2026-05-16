@@ -8,7 +8,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
@@ -50,7 +50,7 @@ class ExpenseDetailViewModelTest {
     private lateinit var getExpenseByIdUseCase: GetExpenseByIdUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase
-    private lateinit var getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase
+    private lateinit var getGroupSubunitsUseCase: GetGroupSubunitsUseCase
     private lateinit var deleteExpenseUseCase: DeleteExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var expenseDetailUiMapper: ExpenseDetailUiMapper
@@ -104,13 +104,13 @@ class ExpenseDetailViewModelTest {
         getExpenseByIdUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         getCashWithdrawalsFlowUseCase = mockk()
-        getGroupSubunitsFlowUseCase = mockk()
+        getGroupSubunitsUseCase = mockk()
         deleteExpenseUseCase = mockk()
         authenticationService = mockk()
         expenseDetailUiMapper = mockk()
 
         every { getCashWithdrawalsFlowUseCase(any()) } returns flowOf(emptyList())
-        every { getGroupSubunitsFlowUseCase(any()) } returns flowOf(emptyList())
+        coEvery { getGroupSubunitsUseCase(any()) } returns emptyList()
 
         every { authenticationService.currentUserId() } returns testUserId
         coEvery { getMemberProfilesUseCase(any()) } returns mapOf(
@@ -379,7 +379,7 @@ class ExpenseDetailViewModelTest {
         getExpenseByIdUseCase = getExpenseByIdUseCase,
         getMemberProfilesUseCase = getMemberProfilesUseCase,
         getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
-        getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
+        getGroupSubunitsUseCase = getGroupSubunitsUseCase,
         deleteExpenseUseCase = deleteExpenseUseCase,
         authenticationService = authenticationService,
         expenseDetailUiMapper = expenseDetailUiMapper

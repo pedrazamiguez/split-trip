@@ -46,7 +46,7 @@ internal fun CashTranchesDetailSection(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.Top
                     ) {
                         Column {
                             SecondaryBodyText(text = tranche.withdrawalLabel)

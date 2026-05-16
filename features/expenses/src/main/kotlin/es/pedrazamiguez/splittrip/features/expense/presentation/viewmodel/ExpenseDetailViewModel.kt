@@ -9,7 +9,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
@@ -46,7 +46,7 @@ class ExpenseDetailViewModel(
     private val getExpenseByIdUseCase: GetExpenseByIdUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase,
-    private val getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase,
+    private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
     private val authenticationService: AuthenticationService,
     private val expenseDetailUiMapper: ExpenseDetailUiMapper
@@ -109,10 +109,12 @@ class ExpenseDetailViewModel(
                 emptyMap()
             }
 
-            val subunitNameLookup = if (withdrawalLookup.values.any { it.withdrawalScope == PayerType.SUBUNIT }) {
+            val subunitNameLookup = if (withdrawalLookup.values.any {
+                    it.withdrawalScope == PayerType.SUBUNIT && !it.subunitId.isNullOrBlank()
+                }
+            ) {
                 try {
-                    getGroupSubunitsFlowUseCase(expense.groupId)
-                        .first()
+                    getGroupSubunitsUseCase(expense.groupId)
                         .associate { it.id to it.name }
                 } catch (e: CancellationException) {
                     throw e

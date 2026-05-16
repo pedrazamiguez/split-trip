@@ -32,6 +32,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCategor
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPaymentMethodUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.navigation.impl.ExpensesNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
@@ -276,7 +277,7 @@ val expensesUiModule = module {
             getExpenseByIdUseCase = get<GetExpenseByIdUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>(),
-            getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>(),
+            getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),
             deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
             authenticationService = get<AuthenticationService>(),
             expenseDetailUiMapper = get<ExpenseDetailUiMapper>()
