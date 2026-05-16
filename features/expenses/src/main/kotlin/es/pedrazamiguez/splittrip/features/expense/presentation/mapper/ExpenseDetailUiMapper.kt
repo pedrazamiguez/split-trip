@@ -50,7 +50,14 @@ class ExpenseDetailUiMapper(
             null
         }
         val hasIncludedAddOns = expense.addOns.any { it.mode == AddOnMode.INCLUDED }
-        val originalEnteredTotal = if (hasIncludedAddOns) {
+        // Base-cost extraction (adjustForIncludedAddOns in SubmitEventHandler) only runs for
+        // INCLUDED non-discount add-ons. For INCLUDED DISCOUNTs the expense.groupAmount is the
+        // total paid (unchanged), so there is no "base cost" or "original entered total" to
+        // reconstruct — those add-ons are informational only.
+        val hasIncludedNonDiscounts = expense.addOns.any {
+            it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT
+        }
+        val originalEnteredTotal = if (hasIncludedNonDiscounts) {
             buildOriginalEnteredTotal(expense.groupAmount, expense.addOns)
         } else {
             null
@@ -100,7 +107,10 @@ class ExpenseDetailUiMapper(
             formattedEffectiveTotal = effectiveTotal?.let {
                 formattingHelper.formatCentsWithCurrency(it, expense.groupCurrency)
             },
-            formattedIncludedBaseCost = if (hasIncludedAddOns) {
+            // Only show the decomposed base cost when INCLUDED non-discount add-ons are present
+            // (i.e. base-cost extraction actually ran). For INCLUDED-discount-only expenses the
+            // groupAmount IS the total paid — labelling it "Base cost" would be misleading.
+            formattedIncludedBaseCost = if (hasIncludedNonDiscounts) {
                 formattingHelper.formatCentsWithCurrency(expense.groupAmount, expense.groupCurrency)
             } else {
                 null
@@ -123,17 +133,25 @@ class ExpenseDetailUiMapper(
     }
 
     /**
-     * The decomposed [Expense.groupAmount] is the base cost when INCLUDED add-ons exist.
-     * Reconstructing the original user-entered total just sums back the non-discount
-     * INCLUDED amounts and re-subtracts INCLUDED discounts.
+     * Reconstructs the original user-entered total for expenses that have INCLUDED
+     * **non-discount** add-ons.
+     *
+     * When INCLUDED non-discount add-ons are present [SubmitEventHandler.adjustForIncludedAddOns]
+     * extracts the base cost and stores it in [Expense.groupAmount]. The original total the user
+     * typed is therefore `base + sum(INCLUDED non-discount amounts)`.
+     *
+     * INCLUDED DISCOUNT add-ons are deliberately excluded from this sum: those add-ons are
+     * informational only — the user already entered the post-discount price — and do **not**
+     * participate in base-cost extraction. Mixing them into this reconstruction would yield a
+     * value lower than the total paid, which is nonsensical for a discount.
+     *
+     * This function is only called when [hasIncludedNonDiscounts] is true.
      */
     private fun buildOriginalEnteredTotal(baseGroupAmount: Long, addOns: List<AddOn>): Long {
-        val includedDelta = addOns
-            .filter { it.mode == AddOnMode.INCLUDED }
-            .sumOf {
-                if (it.type == AddOnType.DISCOUNT) -it.groupAmountCents else it.groupAmountCents
-            }
-        return (baseGroupAmount + includedDelta).coerceAtLeast(0L)
+        val includedNonDiscountTotal = addOns
+            .filter { it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT }
+            .sumOf { it.groupAmountCents }
+        return (baseGroupAmount + includedNonDiscountTotal).coerceAtLeast(0L)
     }
 
     private fun mapSplits(

@@ -381,6 +381,14 @@ class ExpenseDetailUiMapperTest {
             groupAmountCents = 500L
         )
 
+        private val includedDiscountAddOn = AddOn(
+            type = AddOnType.DISCOUNT,
+            mode = AddOnMode.INCLUDED,
+            valueType = AddOnValueType.PERCENTAGE,
+            amountCents = 18215L,
+            groupAmountCents = 18215L
+        )
+
         private val foreignFeeAddOn = AddOn(
             type = AddOnType.FEE,
             mode = AddOnMode.ON_TOP,
@@ -464,7 +472,7 @@ class ExpenseDetailUiMapperTest {
         }
 
         @Test
-        fun `formattedIncludedBaseCost is non-null when INCLUDED add-on is present`() {
+        fun `formattedIncludedBaseCost is non-null when INCLUDED non-discount add-on is present`() {
             // Base cost (groupAmount) is already the decomposed value; reconstructed
             // original = base + INCLUDED non-discount.
             val expense = baseExpense.copy(
@@ -478,6 +486,44 @@ class ExpenseDetailUiMapperTest {
             assertNotNull(result.formattedIncludedBaseCost)
             assertNotNull(result.formattedOriginalEnteredTotal)
             assertTrue(result.hasIncludedAddOns)
+        }
+
+        @Test
+        fun `formattedIncludedBaseCost and formattedOriginalEnteredTotal are null for INCLUDED DISCOUNT only`() {
+            // INCLUDED DISCOUNTs are informational only — adjustForIncludedAddOns does NOT run
+            // for them, so expense.groupAmount == the total the user entered (= total paid).
+            // Showing a "Base cost" or "Total original" derived from this data would produce a
+            // value LOWER than the amount paid (nonsensical for a discount).
+            val expense = baseExpense.copy(
+                groupAmount = 182152L,
+                sourceAmount = 182152L,
+                addOns = listOf(includedDiscountAddOn)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNull(result.formattedIncludedBaseCost)
+            assertNull(result.formattedOriginalEnteredTotal)
+            assertTrue(result.hasIncludedAddOns)
+        }
+
+        @Test
+        fun `formattedOriginalEnteredTotal excludes INCLUDED DISCOUNT from reconstruction`() {
+            // Mixed: one INCLUDED TIP (base extraction DID run) + one INCLUDED DISCOUNT
+            // (informational). Original total = base + tip only; the discount must not be
+            // subtracted from the reconstruction (that would give a value below what was paid).
+            val expense = baseExpense.copy(
+                groupAmount = 4500L,
+                sourceAmount = 4500L,
+                addOns = listOf(includedTipAddOn, includedDiscountAddOn)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            // formattedIncludedBaseCost shown (non-discount extraction happened)
+            assertNotNull(result.formattedIncludedBaseCost)
+            // originalEntered = 4500 (base) + 500 (tip) = 5000 — discount NOT included
+            assertNotNull(result.formattedOriginalEnteredTotal)
         }
 
         @Test
