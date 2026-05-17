@@ -253,6 +253,7 @@ class ExpenseDetailUiMapper(
             formattedRate = if (isForeign) {
                 resourceProvider.getString(
                     R.string.expense_detail_exchange_rate_full,
+                    addOn.currency,
                     formattingHelper.formatRateForDisplay(addOn.exchangeRate.toPlainString()),
                     groupCurrency
                 )
@@ -312,8 +313,9 @@ class ExpenseDetailUiMapper(
         if (withdrawal.exchangeRate.compareTo(BigDecimal.ZERO) == 0) return null
         return resourceProvider.getString(
             R.string.expense_detail_exchange_rate_full,
+            withdrawal.currency,
             formattingHelper.formatRateForDisplay(withdrawal.exchangeRate.toPlainString()),
-            withdrawal.currency
+            groupCurrency
         )
     }
 
