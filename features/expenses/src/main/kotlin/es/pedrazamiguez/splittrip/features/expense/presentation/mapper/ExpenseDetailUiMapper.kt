@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
@@ -189,6 +190,12 @@ class ExpenseDetailUiMapper(
             targetAmount = expense.groupAmount,
             totalAmount = expense.sourceAmount
         )
+        val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
+        // Fall back to EQUAL for expenses saved before this field was introduced (splitType == null).
+        val intraType = expense.splits
+            .firstOrNull { it.subunitId == subunitId }
+            ?.splitType
+            ?: SplitType.EQUAL
         return SubunitSplitGroupUiModel(
             subunitId = subunitId,
             subunitLabel = label,
@@ -196,8 +203,14 @@ class ExpenseDetailUiMapper(
                 totalGroupCents,
                 expense.groupCurrency
             ),
+            formattedSourceTotalAmount = if (isForeignCurrency) {
+                formattingHelper.formatCentsWithCurrency(totalSourceCents, expense.sourceCurrency)
+            } else {
+                null
+            },
             memberCount = members.size,
-            members = members.toImmutableList()
+            members = members.toImmutableList(),
+            splitTypeText = resourceProvider.getString(intraType.toStringRes())
         )
     }
 
@@ -213,10 +226,16 @@ class ExpenseDetailUiMapper(
             targetAmount = expense.groupAmount,
             totalAmount = expense.sourceAmount
         )
+        val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
         val formattedAmount = if (split.isExcluded) {
             resourceProvider.getString(R.string.add_expense_split_member_excluded)
         } else {
             formattingHelper.formatCentsWithCurrency(groupAmountCents, expense.groupCurrency)
+        }
+        val formattedSourceAmount = if (isForeignCurrency && !split.isExcluded) {
+            formattingHelper.formatCentsWithCurrency(split.amountCents, expense.sourceCurrency)
+        } else {
+            null
         }
         val shareText = split.percentage?.let { pct ->
             "${formattingHelper.formatForDisplay(pct.toPlainString(), 1)}%"
@@ -224,6 +243,7 @@ class ExpenseDetailUiMapper(
         return SplitDetailUiModel(
             displayName = resolveDisplayName(split.userId, memberProfiles),
             formattedAmount = formattedAmount,
+            formattedSourceAmount = formattedSourceAmount,
             shareText = shareText,
             isCurrentUser = currentUserId != null && split.userId == currentUserId,
             isExcluded = split.isExcluded,

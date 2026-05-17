@@ -352,6 +352,50 @@ class ExpenseDetailUiMapperTest {
             assertNotNull(result.splits.first().formattedAmount)
             assertTrue(result.splits.first().formattedAmount.isNotBlank())
         }
+
+        @Test
+        fun `populates formattedSourceAmount for foreign currency expense`() {
+            // source 10000 CNY → group 126.30 EUR
+            val expense = baseExpense.copy(
+                sourceAmount = 100000L, // 1000.00 CNY
+                sourceCurrency = "CNY",
+                groupAmount = 12630L, // 126.30 EUR
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal("0.126297"),
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 60000L), // 600.00 CNY (60%)
+                    ExpenseSplit(userId = otherUserId, amountCents = 40000L) // 400.00 CNY (40%)
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            // First split should show both CNY and EUR amounts
+            val firstSplit = result.splits.first()
+            assertNotNull(firstSplit.formattedSourceAmount)
+            assertTrue(
+                firstSplit.formattedSourceAmount!!.contains("CNY") || firstSplit.formattedSourceAmount!!.contains("¥")
+            )
+            assertNotNull(firstSplit.formattedAmount)
+            assertTrue(firstSplit.formattedAmount.contains("EUR") || firstSplit.formattedAmount.contains("€"))
+        }
+
+        @Test
+        fun `formattedSourceAmount is null for same-currency expense`() {
+            val expense = baseExpense.copy(
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 5000L)
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNull(result.splits.first().formattedSourceAmount)
+        }
     }
 
     @Nested
@@ -792,6 +836,151 @@ class ExpenseDetailUiMapperTest {
             assertEquals(1, result.splitGroups.size)
             // Fallback comes from resourceProvider (mock returns "translated_string").
             assertTrue(result.splitGroups.first().subunitLabel.isNotBlank())
+        }
+
+        @Test
+        fun `splitTypeText uses PERCENT string when first subunit member has PERCENT splitType`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(
+                        userId = currentUserId,
+                        amountCents = 4250L,
+                        percentage = BigDecimal("85"),
+                        subunitId = "sub-1",
+                        splitType = SplitType.PERCENT
+                    ),
+                    ExpenseSplit(
+                        userId = otherUserId,
+                        amountCents = 750L,
+                        percentage = BigDecimal("15"),
+                        subunitId = "sub-1",
+                        splitType = SplitType.PERCENT
+                    )
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
+
+        @Test
+        fun `splitTypeText uses EQUAL string when first subunit member has EQUAL splitType`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(
+                        userId = currentUserId,
+                        amountCents = 2500L,
+                        subunitId = "sub-1",
+                        splitType = SplitType.EQUAL
+                    )
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
+
+        @Test
+        fun `splitTypeText falls back to EQUAL string when subunit member splitType is null`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            // Legacy expense — splitType not stored on member rows
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 2500L, subunitId = "sub-1"),
+                    ExpenseSplit(userId = otherUserId, amountCents = 2500L, subunitId = "sub-1")
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            // Null splitType on member → falls back to EQUAL → produces a non-blank string
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
+
+        @Test
+        fun `formattedSourceTotalAmount is populated for foreign currency subunit group`() {
+            val expense = baseExpense.copy(
+                sourceAmount = 100000L, // 1000.00 CNY
+                sourceCurrency = "CNY",
+                groupAmount = 12630L, // 126.30 EUR
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal("0.126297"),
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 53000L, subunitId = "sub-1"), // 530 CNY
+                    ExpenseSplit(userId = otherUserId, amountCents = 47000L, subunitId = "sub-1") // 470 CNY
+                    // Total for sub-1 = 1000 CNY
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Gays")
+            )
+
+            val group = result.splitGroups.first()
+            assertNotNull(group.formattedSourceTotalAmount)
+            assertTrue(
+                group.formattedSourceTotalAmount!!.contains("CNY") || group.formattedSourceTotalAmount!!.contains("¥")
+            )
+            assertNotNull(group.formattedTotalAmount)
+            assertTrue(group.formattedTotalAmount.contains("EUR") || group.formattedTotalAmount.contains("€"))
+        }
+
+        @Test
+        fun `formattedSourceTotalAmount is null for same-currency subunit group`() {
+            val expense = baseExpense.copy(
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 2500L, subunitId = "sub-1"),
+                    ExpenseSplit(userId = otherUserId, amountCents = 2500L, subunitId = "sub-1")
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Gays")
+            )
+
+            val group = result.splitGroups.first()
+            assertNull(group.formattedSourceTotalAmount)
         }
     }
 

@@ -35,7 +35,10 @@ class EntitySplitFlattenDelegate(
             if (entity.entityMembers.isEmpty()) {
                 result.add(buildSoloSplit(entity, splitType))
             } else {
-                result.addAll(buildMemberSplits(entity))
+                val intraType = entity.entitySplitType
+                    ?.let { runCatching { SplitType.valueOf(it.id) }.getOrNull() }
+                    ?: SplitType.EQUAL
+                result.addAll(buildMemberSplits(entity, intraType))
             }
         }
         return result
@@ -95,13 +98,18 @@ class EntitySplitFlattenDelegate(
             subunitId = null
         )
 
-    internal fun buildMemberSplits(entity: SplitUiModel): List<ExpenseSplit> =
+    internal fun buildMemberSplits(entity: SplitUiModel, intraType: SplitType): List<ExpenseSplit> =
         entity.entityMembers.map { member ->
             ExpenseSplit(
                 userId = member.userId,
                 amountCents = member.amountCents,
-                percentage = null,
-                subunitId = member.subunitId ?: entity.userId
+                percentage = if (intraType == SplitType.PERCENT) {
+                    splitPreviewService.parseToDecimalOrNull(member.percentageInput)
+                } else {
+                    null
+                },
+                subunitId = member.subunitId ?: entity.userId,
+                splitType = intraType
             )
         }
 }
