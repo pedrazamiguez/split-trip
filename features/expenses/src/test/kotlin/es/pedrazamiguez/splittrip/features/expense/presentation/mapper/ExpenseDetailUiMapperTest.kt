@@ -933,41 +933,31 @@ class ExpenseDetailUiMapperTest {
         )
 
         @Test
-        fun `add-on formattedRate contains source currency, rate, and group currency in EN locale`() {
+        fun `add-on formattedRate renders as 1 source equals rate target in EN locale`() {
             every { localeProvider.getCurrentLocale() } returns Locale.US
             stubRateString()
             val expense = baseExpense.copy(addOns = listOf(foreignFeeAddOn))
 
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
-            val formattedRate = result.addOns.first().formattedRate
-            assertNotNull(formattedRate)
-            // Source currency must appear
-            assertTrue(formattedRate!!.contains("GBP"))
-            // Target (group) currency must appear
-            assertTrue(formattedRate.contains("EUR"))
-            // Rate value must appear
-            assertTrue(formattedRate.contains("0.83"))
+            // Exact assertion verifies both presence and ordering: swapping source/target would fail.
+            assertEquals("1 GBP = 0.83 EUR", result.addOns.first().formattedRate)
         }
 
         @Test
-        fun `add-on formattedRate contains source currency, rate, and group currency in ES locale`() {
+        fun `add-on formattedRate renders as 1 source equals rate target in ES locale`() {
             every { localeProvider.getCurrentLocale() } returns Locale("es", "ES")
             stubRateString()
             val expense = baseExpense.copy(addOns = listOf(foreignFeeAddOn))
 
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
-            val formattedRate = result.addOns.first().formattedRate
-            assertNotNull(formattedRate)
-            assertTrue(formattedRate!!.contains("GBP"))
-            assertTrue(formattedRate.contains("EUR"))
-            // ES locale formats 0.83 with a comma decimal separator
-            assertTrue(formattedRate.contains("0,83"))
+            // ES locale formats the rate with a comma decimal separator (0,83 not 0.83).
+            assertEquals("1 GBP = 0,83 EUR", result.addOns.first().formattedRate)
         }
 
         @Test
-        fun `cash tranche formattedRate contains source currency, rate, and group currency in EN locale`() {
+        fun `cash tranche formattedRate renders as 1 source equals rate target in EN locale`() {
             every { localeProvider.getCurrentLocale() } returns Locale.US
             stubRateString()
             val expense = baseExpense.copy(
@@ -988,18 +978,12 @@ class ExpenseDetailUiMapperTest {
                 withdrawalLookup = mapOf("w-gbp" to withdrawal)
             )
 
-            val formattedRate = result.cashTranches.first().formattedRate
-            assertNotNull(formattedRate)
-            // Source currency (withdrawal currency) must appear first
-            assertTrue(formattedRate!!.contains("GBP"))
-            // Target (group) currency must appear
-            assertTrue(formattedRate.contains("EUR"))
-            // Rate value must appear
-            assertTrue(formattedRate.contains("0.83"))
+            // Exact assertion verifies both presence and ordering: swapping source/target would fail.
+            assertEquals("1 GBP = 0.83 EUR", result.cashTranches.first().formattedRate)
         }
 
         @Test
-        fun `cash tranche formattedRate contains source currency, rate, and group currency in ES locale`() {
+        fun `cash tranche formattedRate renders as 1 source equals rate target in ES locale`() {
             every { localeProvider.getCurrentLocale() } returns Locale("es", "ES")
             stubRateString()
             val expense = baseExpense.copy(
@@ -1020,12 +1004,8 @@ class ExpenseDetailUiMapperTest {
                 withdrawalLookup = mapOf("w-gbp" to withdrawal)
             )
 
-            val formattedRate = result.cashTranches.first().formattedRate
-            assertNotNull(formattedRate)
-            assertTrue(formattedRate!!.contains("GBP"))
-            assertTrue(formattedRate.contains("EUR"))
-            // ES locale formats 0.83 with a comma decimal separator
-            assertTrue(formattedRate.contains("0,83"))
+            // ES locale formats the rate with a comma decimal separator (0,83 not 0.83).
+            assertEquals("1 GBP = 0,83 EUR", result.cashTranches.first().formattedRate)
         }
     }
 }
