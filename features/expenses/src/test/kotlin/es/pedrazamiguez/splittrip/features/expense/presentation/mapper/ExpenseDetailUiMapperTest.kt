@@ -906,4 +906,126 @@ class ExpenseDetailUiMapperTest {
             assertFalse(result.isScheduledPastDue)
         }
     }
+
+    @Nested
+    inner class ForeignCurrencyRateFormatting {
+
+        // Stub that interpolates the actual args so assertions can verify all three components.
+        // The vararg is packed as an Array at invocation.args[1], so we access elements via the
+        // array rather than directly from the invocation args list.
+        private fun stubRateString() {
+            every {
+                resourceProvider.getString(any(), any(), any(), any())
+            } answers {
+                val varargs = it.invocation.args[1] as Array<*>
+                "1 ${varargs[0]} = ${varargs[1]} ${varargs[2]}"
+            }
+        }
+
+        private val foreignFeeAddOn = AddOn(
+            type = AddOnType.FEE,
+            mode = AddOnMode.ON_TOP,
+            valueType = AddOnValueType.EXACT,
+            amountCents = 500L,
+            currency = "GBP",
+            exchangeRate = BigDecimal("0.83"),
+            groupAmountCents = 415L
+        )
+
+        @Test
+        fun `add-on formattedRate contains source currency, rate, and group currency in EN locale`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            stubRateString()
+            val expense = baseExpense.copy(addOns = listOf(foreignFeeAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            val formattedRate = result.addOns.first().formattedRate
+            assertNotNull(formattedRate)
+            // Source currency must appear
+            assertTrue(formattedRate!!.contains("GBP"))
+            // Target (group) currency must appear
+            assertTrue(formattedRate.contains("EUR"))
+            // Rate value must appear
+            assertTrue(formattedRate.contains("0.83"))
+        }
+
+        @Test
+        fun `add-on formattedRate contains source currency, rate, and group currency in ES locale`() {
+            every { localeProvider.getCurrentLocale() } returns Locale("es", "ES")
+            stubRateString()
+            val expense = baseExpense.copy(addOns = listOf(foreignFeeAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            val formattedRate = result.addOns.first().formattedRate
+            assertNotNull(formattedRate)
+            assertTrue(formattedRate!!.contains("GBP"))
+            assertTrue(formattedRate.contains("EUR"))
+            // ES locale formats 0.83 with a comma decimal separator
+            assertTrue(formattedRate.contains("0,83"))
+        }
+
+        @Test
+        fun `cash tranche formattedRate contains source currency, rate, and group currency in EN locale`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            stubRateString()
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-gbp", amountConsumed = 500L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w-gbp",
+                groupId = "group-456",
+                currency = "GBP",
+                exchangeRate = BigDecimal("0.83"),
+                withdrawalScope = PayerType.GROUP
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-gbp" to withdrawal)
+            )
+
+            val formattedRate = result.cashTranches.first().formattedRate
+            assertNotNull(formattedRate)
+            // Source currency (withdrawal currency) must appear first
+            assertTrue(formattedRate!!.contains("GBP"))
+            // Target (group) currency must appear
+            assertTrue(formattedRate.contains("EUR"))
+            // Rate value must appear
+            assertTrue(formattedRate.contains("0.83"))
+        }
+
+        @Test
+        fun `cash tranche formattedRate contains source currency, rate, and group currency in ES locale`() {
+            every { localeProvider.getCurrentLocale() } returns Locale("es", "ES")
+            stubRateString()
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-gbp", amountConsumed = 500L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w-gbp",
+                groupId = "group-456",
+                currency = "GBP",
+                exchangeRate = BigDecimal("0.83"),
+                withdrawalScope = PayerType.GROUP
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-gbp" to withdrawal)
+            )
+
+            val formattedRate = result.cashTranches.first().formattedRate
+            assertNotNull(formattedRate)
+            assertTrue(formattedRate!!.contains("GBP"))
+            assertTrue(formattedRate.contains("EUR"))
+            // ES locale formats 0.83 with a comma decimal separator
+            assertTrue(formattedRate.contains("0,83"))
+        }
+    }
 }
