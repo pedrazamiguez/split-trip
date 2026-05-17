@@ -76,6 +76,9 @@ class AddContributionUiMapper(
     ): String {
         if (userId == null) return ""
         val member = members.firstOrNull { it.userId == userId } ?: return ""
+        // When no youLabel is provided, skip "you" personalisation and return the display
+        // name directly — avoids blank labels at call sites that don't supply the string.
+        if (youLabel.isBlank()) return member.displayName
         return DisplayNameResolver.resolve(
             userId = userId,
             currentUserId = if (member.isCurrentUser) userId else null,

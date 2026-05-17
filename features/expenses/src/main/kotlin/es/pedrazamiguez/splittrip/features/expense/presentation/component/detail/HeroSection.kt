@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -100,7 +101,8 @@ private fun HeroAmountContent(expense: ExpenseDetailUiModel) {
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Medium,
         textAlign = TextAlign.Center,
-        maxLines = 1
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
     )
     Text(
         text = expense.formattedGroupAmount,
@@ -118,7 +120,8 @@ private fun HeroAmountContent(expense: ExpenseDetailUiModel) {
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Medium,
         textAlign = TextAlign.Center,
-        maxLines = 1
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
     )
     if (expense.vendorText != null) {
         Text(
@@ -128,7 +131,8 @@ private fun HeroAmountContent(expense: ExpenseDetailUiModel) {
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
-            maxLines = 1
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
     if (expense.isForeignCurrency && expense.formattedSourceAmount != null) {
