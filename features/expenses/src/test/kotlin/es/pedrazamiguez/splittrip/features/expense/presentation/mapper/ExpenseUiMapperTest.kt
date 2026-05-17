@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
@@ -83,13 +84,24 @@ class ExpenseUiMapperTest {
 
         // Stub scheduled badge strings
         every { resourceProvider.getString(R.string.expense_scheduled_due_today) } returns "Due today"
+        every { resourceProvider.getString(R.string.expense_scheduled_due_tomorrow) } returns "Due tomorrow"
         every { resourceProvider.getString(R.string.expense_scheduled_paid) } returns "Paid"
         every { resourceProvider.getString(R.string.expense_scheduled_due_on, *anyVararg()) } answers {
             val varargs = it.invocation.args[1] as Array<*>
             "Due on ${varargs[0]}"
         }
 
-        mapper = ExpenseUiMapper(localeProvider, resourceProvider)
+        val formattingHelper = FormattingHelper(localeProvider)
+        val scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
+            formattingHelper = formattingHelper,
+            resourceProvider = resourceProvider
+        )
+
+        mapper = ExpenseUiMapper(
+            localeProvider = localeProvider,
+            resourceProvider = resourceProvider,
+            scheduledBadgeUiMapper = scheduledBadgeUiMapper
+        )
     }
 
     // ---------- formattedOriginalAmount ----------
@@ -579,6 +591,21 @@ class ExpenseUiMapperTest {
 
             assertEquals("Due today", result.scheduledBadgeText)
             assertTrue(result.isScheduledPastDue)
+        }
+
+        @Test
+        fun `scheduled expense due tomorrow shows due tomorrow`() {
+            val tomorrowDueDate = LocalDateTime.now().plusDays(1).withHour(12).withMinute(0)
+            val expense = Expense(
+                id = "e6",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = tomorrowDueDate
+            )
+
+            val result = mapper.map(expense)
+
+            assertEquals("Due tomorrow", result.scheduledBadgeText)
+            assertFalse(result.isScheduledPastDue)
         }
     }
 

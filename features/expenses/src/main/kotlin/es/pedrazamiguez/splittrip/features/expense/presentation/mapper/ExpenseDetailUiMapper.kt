@@ -25,7 +25,6 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDet
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubunitSplitGroupUiModel
 import java.math.BigDecimal
-import java.time.LocalDate
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -33,7 +32,8 @@ class ExpenseDetailUiMapper(
     private val formattingHelper: FormattingHelper,
     private val resourceProvider: ResourceProvider,
     private val expenseCalculatorService: ExpenseCalculatorService,
-    private val addOnCalculationService: AddOnCalculationService
+    private val addOnCalculationService: AddOnCalculationService,
+    private val scheduledBadgeUiMapper: ScheduledBadgeUiMapper
 ) {
 
     fun map(
@@ -43,7 +43,7 @@ class ExpenseDetailUiMapper(
         withdrawalLookup: Map<String, CashWithdrawal> = emptyMap(),
         subunitNameLookup: Map<String, String> = emptyMap()
     ): ExpenseDetailUiModel {
-        val (scheduledBadgeText, isScheduledPastDue) = buildScheduledBadge(expense)
+        val (scheduledBadgeText, isScheduledPastDue) = scheduledBadgeUiMapper.buildBadge(expense)
         val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
         val youLabel = resourceProvider.getString(R.string.you_label)
         val paidByName = resolveDisplayName(expense.createdBy, memberProfiles, currentUserId, youLabel)
@@ -377,23 +377,6 @@ class ExpenseDetailUiMapper(
                     null
                 }
             }
-        }
-    }
-
-    private fun buildScheduledBadge(expense: Expense): Pair<String?, Boolean> {
-        val dueDate = expense.dueDate
-        if (expense.paymentStatus != PaymentStatus.SCHEDULED || dueDate == null) return null to false
-        val dueDateLocal = dueDate.toLocalDate()
-        return when {
-            dueDateLocal.isEqual(LocalDate.now()) ->
-                resourceProvider.getString(R.string.expense_scheduled_due_today) to true
-            dueDateLocal.isBefore(LocalDate.now()) ->
-                resourceProvider.getString(R.string.expense_scheduled_paid) to true
-            else ->
-                resourceProvider.getString(
-                    R.string.expense_scheduled_due_on,
-                    formattingHelper.formatShortDate(dueDate)
-                ) to false
         }
     }
 

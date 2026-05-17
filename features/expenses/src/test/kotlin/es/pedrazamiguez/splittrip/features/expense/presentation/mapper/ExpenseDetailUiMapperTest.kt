@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.features.expense.R
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
@@ -78,12 +79,17 @@ class ExpenseDetailUiMapperTest {
         val formattingHelper = FormattingHelper(localeProvider)
         val expenseCalculatorService = ExpenseCalculatorService()
         val addOnCalculationService = AddOnCalculationService()
+        val scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
+            formattingHelper = formattingHelper,
+            resourceProvider = resourceProvider
+        )
 
         mapper = ExpenseDetailUiMapper(
             formattingHelper = formattingHelper,
             resourceProvider = resourceProvider,
             expenseCalculatorService = expenseCalculatorService,
-            addOnCalculationService = addOnCalculationService
+            addOnCalculationService = addOnCalculationService,
+            scheduledBadgeUiMapper = scheduledBadgeUiMapper
         )
     }
 
@@ -1107,6 +1113,19 @@ class ExpenseDetailUiMapperTest {
         @Test
         fun `isScheduledPastDue is false for non-scheduled expense`() {
             val result = mapper.map(baseExpense, memberProfiles, currentUserId)
+            assertFalse(result.isScheduledPastDue)
+        }
+
+        @Test
+        fun `scheduledBadgeText shows due tomorrow for scheduled expense due tomorrow`() {
+            // Stub only the specific resource ID so the test fails if the wrong branch is hit.
+            every { resourceProvider.getString(R.string.expense_scheduled_due_tomorrow) } returns "Due tomorrow"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(1).withHour(12).withMinute(0)
+            )
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+            assertEquals("Due tomorrow", result.scheduledBadgeText)
             assertFalse(result.isScheduledPastDue)
         }
     }

@@ -117,6 +117,7 @@
     <!-- Scheduled Payment Badge -->
     <string name="expense_scheduled_due_on">Vence el %1$s</string>
     <string name="expense_scheduled_due_today">Vence hoy</string>
+    <string name="expense_scheduled_due_tomorrow">Vence mañana</string>
     <string name="expense_scheduled_paid">Pagado</string>
 
     <!-- Split Types -->
