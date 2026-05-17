@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ScheduledBadgeUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -255,7 +256,11 @@ fun ExpenseDetailPreviewHelper(
                 formattingHelper = FormattingHelper(localeProvider),
                 resourceProvider = resourceProvider,
                 expenseCalculatorService = ExpenseCalculatorService(),
-                addOnCalculationService = AddOnCalculationService()
+                addOnCalculationService = AddOnCalculationService(),
+                scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
+                    formattingHelper = FormattingHelper(localeProvider),
+                    resourceProvider = resourceProvider
+                )
             )
         },
         transform = { mapper, domain ->

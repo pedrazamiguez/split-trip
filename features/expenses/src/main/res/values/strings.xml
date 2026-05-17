@@ -116,6 +116,7 @@
     <!-- Scheduled Payment Badge -->
     <string name="expense_scheduled_due_on">Due on %1$s</string>
     <string name="expense_scheduled_due_today">Due today</string>
+    <string name="expense_scheduled_due_tomorrow">Due tomorrow</string>
     <string name="expense_scheduled_paid">Paid</string>
 
     <!-- Split Types -->
