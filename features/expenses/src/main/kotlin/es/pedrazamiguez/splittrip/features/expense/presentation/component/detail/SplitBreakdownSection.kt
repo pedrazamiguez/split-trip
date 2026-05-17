@@ -18,19 +18,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Scale
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubunitSplitGroupUiModel
@@ -101,6 +102,8 @@ private fun SubunitGroupHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            // clip before clickable so the ripple is bounded by the card's corner radius
+            .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onToggle),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -110,7 +113,7 @@ private fun SubunitGroupHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = TablerIcons.Outline.UsersGroup,
+                imageVector = TablerIcons.Outline.Sitemap,
                 contentDescription = null,
                 modifier = Modifier.size(SUBUNIT_ICON_SIZE),
                 tint = MaterialTheme.colorScheme.primary
@@ -119,12 +122,19 @@ private fun SubunitGroupHeader(
                 Text(
                     text = group.subunitLabel,
                     style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                CaptionText(
-                    text = stringResource(R.string.expense_detail_subunit_member_count, group.memberCount),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CaptionText(
+                        text = stringResource(R.string.expense_detail_subunit_member_count, group.memberCount),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    SmallChip(text = group.splitTypeText, isPrimary = false)
+                }
             }
         }
         Row(
@@ -150,12 +160,15 @@ private fun SplitRow(split: SplitDetailUiModel) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            SecondaryBodyText(
+            Text(
                 text = if (split.isCurrentUser) {
                     stringResource(R.string.expense_detail_split_you_badge)
                 } else {
                     split.displayName
-                }
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
             )
             if (split.shareText != null) {
                 CaptionText(

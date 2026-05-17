@@ -159,6 +159,47 @@ val PREVIEW_EXPENSE_DETAIL_FOREIGN_ADDONS = Expense(
     createdAt = LocalDateTime.of(2026, 4, 6, 11, 20)
 )
 
+/**
+ * Scenario E — Two-level mixed strategy:
+ * Level 1 = EQUAL between entities; Level 2 = PERCENT within one subunit.
+ *
+ * Demonstrates per-subunit [splitTypeText] chip in the expense detail split card.
+ */
+val PREVIEW_EXPENSE_DETAIL_MIXED_LEVELS = Expense(
+    id = "exp-detail-mixed",
+    groupId = "group-1",
+    title = "Beach hotel split",
+    sourceAmount = 9000L,
+    sourceCurrency = "EUR",
+    groupAmount = 9000L,
+    groupCurrency = "EUR",
+    category = ExpenseCategory.LODGING,
+    paymentMethod = PaymentMethod.CREDIT_CARD,
+    paymentStatus = PaymentStatus.FINISHED,
+    splitType = SplitType.EQUAL,
+    createdBy = "user-antonio",
+    splits = listOf(
+        // Subunit "Cantalobos" — Level 2 PERCENT (85 % Antonio / 15 % Andrés)
+        ExpenseSplit(
+            userId = "user-antonio",
+            amountCents = 3825L,
+            percentage = BigDecimal("85"),
+            subunitId = "subunit-cantalobos",
+            splitType = SplitType.PERCENT
+        ),
+        ExpenseSplit(
+            userId = "user-andres",
+            amountCents = 675L,
+            percentage = BigDecimal("15"),
+            subunitId = "subunit-cantalobos",
+            splitType = SplitType.PERCENT
+        ),
+        // Solo member — Level 1 EQUAL
+        ExpenseSplit(userId = "user-maria", amountCents = 4500L)
+    ),
+    createdAt = LocalDateTime.of(2026, 4, 8, 15, 0)
+)
+
 val PREVIEW_DETAIL_MEMBER_PROFILES = mapOf(
     "user-antonio" to User(userId = "user-antonio", email = "antonio@test.com", displayName = "Antonio"),
     "user-maria" to User(userId = "user-maria", email = "maria@test.com", displayName = "Mara"),

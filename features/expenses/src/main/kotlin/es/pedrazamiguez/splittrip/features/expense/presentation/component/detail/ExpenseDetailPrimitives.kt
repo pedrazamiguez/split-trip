@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -70,33 +69,28 @@ internal fun StatusChip(text: String) {
 }
 
 /**
- * Small outlined chip used in two contexts:
+ * Small chip used in two contexts:
  * - [isPrimary] = true  → current user label in the split breakdown (primary colour)
- * - [isPrimary] = false → split-type label next to section header (neutral colour)
+ * - [isPrimary] = false → split-type label next to section header and subunit rows (filled surface)
  */
 @Composable
 internal fun SmallChip(text: String, isPrimary: Boolean) {
-    val borderColor = if (isPrimary) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+    val (backgroundColor, textColor) = if (isPrimary) {
+        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
     } else {
-        MaterialTheme.colorScheme.outlineVariant
-    }
-    val textColor = if (isPrimary) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+        MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurface
     }
     Box(
         modifier = Modifier
-            .clip(MaterialTheme.shapes.extraSmall)
-            .border(width = 1.dp, color = borderColor, shape = MaterialTheme.shapes.extraSmall)
-            .padding(horizontal = 5.dp, vertical = 1.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(backgroundColor)
+            .padding(horizontal = MaterialTheme.spacing.Small, vertical = 3.dp)
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             color = textColor,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
@@ -189,6 +190,11 @@ class ExpenseDetailUiMapper(
             targetAmount = expense.groupAmount,
             totalAmount = expense.sourceAmount
         )
+        // Fall back to EQUAL for expenses saved before this field was introduced (splitType == null).
+        val intraType = expense.splits
+            .firstOrNull { it.subunitId == subunitId }
+            ?.splitType
+            ?: SplitType.EQUAL
         return SubunitSplitGroupUiModel(
             subunitId = subunitId,
             subunitLabel = label,
@@ -197,7 +203,8 @@ class ExpenseDetailUiMapper(
                 expense.groupCurrency
             ),
             memberCount = members.size,
-            members = members.toImmutableList()
+            members = members.toImmutableList(),
+            splitTypeText = resourceProvider.getString(intraType.toStringRes())
         )
     }
 

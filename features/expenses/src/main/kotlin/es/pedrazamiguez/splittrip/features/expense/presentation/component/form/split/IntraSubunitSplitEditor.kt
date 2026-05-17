@@ -76,16 +76,20 @@ fun IntraSubunitSplitEditor(
         )
 
         // ── Member rows ───────────────────────────────────────────
-        members.forEach { member ->
-            IntraSubunitMemberRow(
-                member = member,
-                isEqualMode = isEqualMode,
-                isPercentMode = isPercentMode,
-                onAmountChanged = { amount -> onAmountChanged(member.userId, amount) },
-                onPercentageChanged = { pct -> onPercentageChanged(member.userId, pct) },
-                onShareLockToggled = { onShareLockToggled(member.userId) },
-                onDone = { focusManager.clearFocus() }
-            )
+        // Indenting only the member rows (not the selector above) ensures the
+        // SplitTypeSelector spans the full available width in all locales.
+        Column(modifier = Modifier.padding(start = MaterialTheme.spacing.ExtraLarge)) {
+            members.forEach { member ->
+                IntraSubunitMemberRow(
+                    member = member,
+                    isEqualMode = isEqualMode,
+                    isPercentMode = isPercentMode,
+                    onAmountChanged = { amount -> onAmountChanged(member.userId, amount) },
+                    onPercentageChanged = { pct -> onPercentageChanged(member.userId, pct) },
+                    onShareLockToggled = { onShareLockToggled(member.userId) },
+                    onDone = { focusManager.clearFocus() }
+                )
+            }
         }
     }
 }

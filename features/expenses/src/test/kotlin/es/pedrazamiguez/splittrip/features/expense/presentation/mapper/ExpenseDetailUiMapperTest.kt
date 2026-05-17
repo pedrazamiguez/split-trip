@@ -793,6 +793,96 @@ class ExpenseDetailUiMapperTest {
             // Fallback comes from resourceProvider (mock returns "translated_string").
             assertTrue(result.splitGroups.first().subunitLabel.isNotBlank())
         }
+
+        @Test
+        fun `splitTypeText uses PERCENT string when first subunit member has PERCENT splitType`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(
+                        userId = currentUserId,
+                        amountCents = 4250L,
+                        percentage = BigDecimal("85"),
+                        subunitId = "sub-1",
+                        splitType = SplitType.PERCENT
+                    ),
+                    ExpenseSplit(
+                        userId = otherUserId,
+                        amountCents = 750L,
+                        percentage = BigDecimal("15"),
+                        subunitId = "sub-1",
+                        splitType = SplitType.PERCENT
+                    )
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
+
+        @Test
+        fun `splitTypeText uses EQUAL string when first subunit member has EQUAL splitType`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(
+                        userId = currentUserId,
+                        amountCents = 2500L,
+                        subunitId = "sub-1",
+                        splitType = SplitType.EQUAL
+                    )
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
+
+        @Test
+        fun `splitTypeText falls back to EQUAL string when subunit member splitType is null`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            // Legacy expense — splitType not stored on member rows
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 2500L, subunitId = "sub-1"),
+                    ExpenseSplit(userId = otherUserId, amountCents = 2500L, subunitId = "sub-1")
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            // Null splitType on member → falls back to EQUAL → produces a non-blank string
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
     }
 
     @Nested
