@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.WithdrawalPoolOption
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toFundingSourceStringRes
+import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranchePreviewUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
@@ -57,7 +58,8 @@ class AddExpenseOptionsUiMapper(
         methods.map { method ->
             PaymentMethodUiModel(
                 id = method.name,
-                displayText = resourceProvider.getString(method.toStringRes())
+                displayText = resourceProvider.getString(method.toStringRes()),
+                icon = method.toIconVector()
             )
         }.toImmutableList()
 

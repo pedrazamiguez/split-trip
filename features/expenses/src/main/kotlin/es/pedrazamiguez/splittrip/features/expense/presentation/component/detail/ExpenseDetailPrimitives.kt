@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -55,7 +56,75 @@ internal fun CategoryChip(
     }
 }
 
-/** Neutral surface chip. Used for payment method and payment status. */
+/** Filled secondary-container chip with icon + label. Used for the payment method in the hero. */
+@Composable
+internal fun MethodChip(
+    icon: ImageVector,
+    label: String
+) {
+    Row(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(horizontal = MaterialTheme.spacing.Small, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        CaptionText(text = label, color = MaterialTheme.colorScheme.onSecondaryContainer)
+    }
+}
+
+/** Filled tertiary-container chip with icon + label. Used for the payment status in the hero. */
+@Composable
+internal fun StatusBadgeChip(
+    icon: ImageVector,
+    label: String
+) {
+    Row(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .padding(horizontal = MaterialTheme.spacing.Small, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+        CaptionText(text = label, color = MaterialTheme.colorScheme.onTertiaryContainer)
+    }
+}
+
+/**
+ * Outlined chip for the date in the hero. Uses a border tinted with [MaterialTheme.colorScheme.tertiary]
+ * to visually relate to the status chip without competing with it.
+ */
+@Composable
+internal fun DateChip(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.tertiary,
+                shape = MaterialTheme.shapes.small
+            )
+            .padding(horizontal = MaterialTheme.spacing.Small, vertical = 4.dp)
+    ) {
+        CaptionText(text = text, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Neutral surface chip. Used for standalone status text without an icon. */
 @Composable
 internal fun StatusChip(text: String) {
     Box(

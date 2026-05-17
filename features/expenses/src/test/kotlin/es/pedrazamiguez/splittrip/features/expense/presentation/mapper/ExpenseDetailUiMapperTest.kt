@@ -237,7 +237,8 @@ class ExpenseDetailUiMapperTest {
 
             val currentUserSplit = result.splits.find { it.isCurrentUser }
             assertNotNull(currentUserSplit)
-            assertEquals("Alice", currentUserSplit?.displayName)
+            // Current user's split shows the localised "You" label, not the raw profile name
+            assertEquals("translated_string", currentUserSplit?.displayName)
         }
 
         @Test
@@ -306,7 +307,20 @@ class ExpenseDetailUiMapperTest {
         }
 
         @Test
-        fun `resolves display name from member profiles`() {
+        fun `resolves display name from member profiles — other user gets profile name`() {
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(userId = otherUserId, amountCents = 5000L)
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Bob", result.splits.first().displayName)
+        }
+
+        @Test
+        fun `resolves display name — current user gets you label`() {
             val expense = baseExpense.copy(
                 splits = listOf(
                     ExpenseSplit(userId = currentUserId, amountCents = 5000L)
@@ -315,7 +329,8 @@ class ExpenseDetailUiMapperTest {
 
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
-            assertEquals("Alice", result.splits.first().displayName)
+            // The mapper resolves currentUserId to the localised "You" label (mocked as "translated_string")
+            assertEquals("translated_string", result.splits.first().displayName)
         }
 
         @Test
@@ -1195,6 +1210,95 @@ class ExpenseDetailUiMapperTest {
 
             // ES locale formats the rate with a comma decimal separator (0,83 not 0.83).
             assertEquals("1 GBP = 0,83 EUR", result.cashTranches.first().formattedRate)
+        }
+    }
+
+    @Nested
+    inner class PersonalisedPaidByText {
+
+        @Test
+        fun `paidByText uses paid_by_you when createdBy is the current user`() {
+            // The baseExpense already has createdBy = currentUserId
+            every { resourceProvider.getString(any()) } returns "Paid by you"
+
+            val result = mapper.map(baseExpense, memberProfiles, currentUserId)
+
+            // paid_by_you is a no-args string resource → getString(R.string.paid_by_you)
+            assertEquals("Paid by you", result.paidByText)
+        }
+
+        @Test
+        fun `paidByText uses paid_by template when createdBy is another member`() {
+            val expense = baseExpense.copy(createdBy = otherUserId)
+            every { resourceProvider.getString(any(), any()) } returns "Paid by Bob"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            // paid_by is a template resource → getString(R.string.paid_by, paidByName)
+            assertEquals("Paid by Bob", result.paidByText)
+        }
+
+        @Test
+        fun `paidByText contains member display name when payer is another member`() {
+            val expense = baseExpense.copy(createdBy = otherUserId)
+            // Capture the actual name passed into the template
+            every { resourceProvider.getString(any(), "Bob") } returns "Paid by Bob"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid by Bob", result.paidByText)
+        }
+    }
+
+    @Nested
+    inner class ExpenseScopeLabel {
+
+        @Test
+        fun `expenseScopeLabel maps to scope_group for GROUP payer`() {
+            val expense = baseExpense.copy(payerType = PayerType.GROUP)
+            every { resourceProvider.getString(any()) } returns "Group expense"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Group expense", result.expenseScopeLabel)
+        }
+
+        @Test
+        fun `expenseScopeLabel maps to scope_personal for USER payer`() {
+            val expense = baseExpense.copy(payerType = PayerType.USER)
+            every { resourceProvider.getString(any()) } returns "Personal"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Personal", result.expenseScopeLabel)
+        }
+
+        @Test
+        fun `expenseScopeLabel maps to scope_subunit for SUBUNIT payer`() {
+            val expense = baseExpense.copy(payerType = PayerType.SUBUNIT)
+            every { resourceProvider.getString(any()) } returns "Subunit"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Subunit", result.expenseScopeLabel)
+        }
+    }
+
+    @Nested
+    inner class IconFields {
+
+        @Test
+        fun `paymentMethodIcon is non-null for CREDIT_CARD`() {
+            val result = mapper.map(baseExpense, memberProfiles, currentUserId)
+
+            assertNotNull(result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `paymentStatusIcon is non-null for FINISHED`() {
+            val result = mapper.map(baseExpense, memberProfiles, currentUserId)
+
+            assertNotNull(result.paymentStatusIcon)
         }
     }
 }
