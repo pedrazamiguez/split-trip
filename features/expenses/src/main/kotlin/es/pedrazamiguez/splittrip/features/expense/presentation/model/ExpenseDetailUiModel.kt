@@ -1,5 +1,9 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.model
 
+import androidx.compose.ui.graphics.vector.ImageVector
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import kotlinx.collections.immutable.ImmutableList
@@ -23,7 +27,11 @@ data class ExpenseDetailUiModel(
 
     // Metadata
     val paymentMethodText: String = "",
+    val paymentMethodIcon: ImageVector = TablerIcons.Outline.CreditCard,
     val paymentStatusText: String = "",
+    val paymentStatusIcon: ImageVector = TablerIcons.Outline.CircleCheck,
+    /** Contextual role of this expense — e.g. "group expense", "personal expense". */
+    val expenseScopeLabel: String = "",
     val paidByText: String = "",
     val dateText: String = "",
     val vendorText: String? = null,

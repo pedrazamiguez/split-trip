@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.core.common.util.DisplayNameResolver
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatAmountWithCurrency
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.resolveCurrencySymbol
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
@@ -63,10 +64,23 @@ class AddContributionUiMapper(
     /**
      * Looks up the display name for a given userId from a pre-mapped member list.
      *
-     * @return The member's display name, or an empty string if not found.
+     * Returns [youLabel] when the member has [MemberOptionUiModel.isCurrentUser] set to `true`,
+     * delegating "you" personalisation to [DisplayNameResolver].
+     *
+     * @return The member's display name or [youLabel] for the current user; `""` if not found.
      */
     fun resolveDisplayName(
         userId: String?,
-        members: ImmutableList<MemberOptionUiModel>
-    ): String = members.firstOrNull { it.userId == userId }?.displayName ?: ""
+        members: ImmutableList<MemberOptionUiModel>,
+        youLabel: String = ""
+    ): String {
+        if (userId == null) return ""
+        val member = members.firstOrNull { it.userId == userId } ?: return ""
+        return DisplayNameResolver.resolve(
+            userId = userId,
+            currentUserId = if (member.isCurrentUser) userId else null,
+            youLabel = youLabel,
+            displayName = member.displayName
+        )
+    }
 }

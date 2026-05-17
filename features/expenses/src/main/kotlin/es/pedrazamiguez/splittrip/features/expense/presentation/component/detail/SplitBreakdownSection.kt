@@ -47,7 +47,10 @@ internal fun SplitBreakdownSection(
     splits: ImmutableList<SplitDetailUiModel>,
     splitGroups: ImmutableList<SubunitSplitGroupUiModel>
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
+    Column(
+        modifier = Modifier.padding(top = MaterialTheme.spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+    ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically

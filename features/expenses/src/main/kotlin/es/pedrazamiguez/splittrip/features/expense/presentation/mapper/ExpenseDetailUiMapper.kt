@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.common.util.DisplayNameResolver
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -16,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTrancheDetailUiModel
@@ -43,7 +45,13 @@ class ExpenseDetailUiMapper(
     ): ExpenseDetailUiModel {
         val (scheduledBadgeText, isScheduledPastDue) = buildScheduledBadge(expense)
         val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
-        val paidByName = resolveDisplayName(expense.createdBy, memberProfiles)
+        val youLabel = resourceProvider.getString(R.string.you_label)
+        val paidByName = resolveDisplayName(expense.createdBy, memberProfiles, currentUserId, youLabel)
+        val paidByText = if (expense.createdBy == currentUserId) {
+            resourceProvider.getString(R.string.paid_by_you)
+        } else {
+            resourceProvider.getString(R.string.paid_by, paidByName)
+        }
 
         val effectiveTotal = if (expense.addOns.isNotEmpty()) {
             addOnCalculationService.calculateEffectiveGroupAmount(expense.groupAmount, expense.addOns)
@@ -64,7 +72,7 @@ class ExpenseDetailUiMapper(
             null
         }
 
-        val (soloSplits, splitGroups) = mapSplits(expense, memberProfiles, currentUserId, subunitNameLookup)
+        val (soloSplits, splitGroups) = mapSplits(expense, memberProfiles, currentUserId, youLabel, subunitNameLookup)
 
         return ExpenseDetailUiModel(
             id = expense.id,
@@ -90,9 +98,17 @@ class ExpenseDetailUiMapper(
             },
             isForeignCurrency = isForeignCurrency,
             paymentMethodText = resourceProvider.getString(expense.paymentMethod.toStringRes()),
+            paymentMethodIcon = expense.paymentMethod.toIconVector(),
             paymentStatusText = resourceProvider.getString(expense.paymentStatus.toStringRes()),
-            paidByText = resourceProvider.getString(R.string.paid_by, paidByName),
-            dateText = formattingHelper.formatShortDate(expense.createdAt),
+            paymentStatusIcon = expense.paymentStatus.toIconVector(),
+            expenseScopeLabel = buildExpenseScopeLabel(expense.payerType),
+            paidByText = paidByText,
+            dateText = if (expense.paymentStatus == PaymentStatus.SCHEDULED && expense.dueDate != null) {
+                // For scheduled expenses the chip shows the due date, not the creation date.
+                formattingHelper.formatShortDate(expense.dueDate)
+            } else {
+                formattingHelper.formatShortDate(expense.createdAt)
+            },
             vendorText = expense.vendor?.takeIf { it.isNotBlank() },
             notesText = expense.notes?.takeIf { it.isNotBlank() },
             scheduledBadgeText = scheduledBadgeText,
@@ -127,7 +143,11 @@ class ExpenseDetailUiMapper(
                 subunitNameLookup
             ),
             receiptUri = expense.receiptLocalUri,
-            createdByText = paidByName,
+            createdByText = if (expense.createdBy == currentUserId) {
+                resourceProvider.getString(R.string.expense_detail_created_by_you)
+            } else {
+                resourceProvider.getString(R.string.expense_detail_created_by, paidByName)
+            },
             createdAtText = formattingHelper.formatShortDate(expense.createdAt),
             syncStatus = expense.syncStatus
         )
@@ -159,10 +179,11 @@ class ExpenseDetailUiMapper(
         expense: Expense,
         memberProfiles: Map<String, User>,
         currentUserId: String?,
+        youLabel: String,
         subunitNameLookup: Map<String, String>
     ): Pair<ImmutableList<SplitDetailUiModel>, ImmutableList<SubunitSplitGroupUiModel>> {
         val rows = expense.splits.map { split ->
-            split to mapSplitRow(split, expense, memberProfiles, currentUserId, subunitNameLookup)
+            split to mapSplitRow(split, expense, memberProfiles, currentUserId, youLabel, subunitNameLookup)
         }
         val solo = rows.filter { it.first.subunitId.isNullOrBlank() }.map { it.second }
         val grouped = rows
@@ -219,6 +240,7 @@ class ExpenseDetailUiMapper(
         expense: Expense,
         memberProfiles: Map<String, User>,
         currentUserId: String?,
+        youLabel: String,
         subunitNameLookup: Map<String, String>
     ): SplitDetailUiModel {
         val groupAmountCents = expenseCalculatorService.computeProportionalAmount(
@@ -241,7 +263,7 @@ class ExpenseDetailUiMapper(
             "${formattingHelper.formatForDisplay(pct.toPlainString(), 1)}%"
         }
         return SplitDetailUiModel(
-            displayName = resolveDisplayName(split.userId, memberProfiles),
+            displayName = resolveDisplayName(split.userId, memberProfiles, currentUserId, youLabel),
             formattedAmount = formattedAmount,
             formattedSourceAmount = formattedSourceAmount,
             shareText = shareText,
@@ -387,15 +409,30 @@ class ExpenseDetailUiMapper(
         } else {
             resourceProvider.getString(
                 R.string.expense_paid_by_member,
-                resolveDisplayName(payerId, memberProfiles)
+                resolveDisplayName(payerId, memberProfiles, currentUserId = null, youLabel = "")
             )
         }
     }
 
-    private fun resolveDisplayName(userId: String, memberProfiles: Map<String, User>): String {
-        val user = memberProfiles[userId] ?: return userId
-        return user.displayName?.takeIf { it.isNotBlank() }
-            ?: user.email.takeIf { it.isNotBlank() }
-            ?: userId
+    private fun buildExpenseScopeLabel(payerType: PayerType): String = when (payerType) {
+        PayerType.GROUP -> resourceProvider.getString(R.string.expense_scope_group)
+        PayerType.SUBUNIT -> resourceProvider.getString(R.string.expense_scope_subunit)
+        PayerType.USER -> resourceProvider.getString(R.string.expense_scope_personal)
+    }
+
+    private fun resolveDisplayName(
+        userId: String,
+        memberProfiles: Map<String, User>,
+        currentUserId: String?,
+        youLabel: String
+    ): String {
+        val user = memberProfiles[userId]
+        return DisplayNameResolver.resolve(
+            userId = userId,
+            currentUserId = currentUserId,
+            youLabel = youLabel,
+            displayName = user?.displayName,
+            email = user?.email ?: ""
+        )
     }
 }

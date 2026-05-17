@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,14 +20,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
@@ -38,12 +35,11 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIco
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 
 private val HERO_AMOUNT_SIZE = 40.sp
-private val HERO_ICON_SIZE = 14.dp
 private val RECEIPT_THUMBNAIL_HEIGHT = 160.dp
 
 @Composable
 internal fun HeroSection(expense: ExpenseDetailUiModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
         HeroTagRow(expense)
         // §4.4 ambient shadow: hero is the only screen element warranting an inset
         // tier so the page's information hierarchy reads top-to-bottom by elevation.
@@ -62,54 +58,77 @@ internal fun HeroSection(expense: ExpenseDetailUiModel) {
 @Composable
 private fun HeroTagRow(expense: ExpenseDetailUiModel) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
     ) {
-        CategoryChip(
-            icon = expense.category.toIconVector(),
-            label = expense.categoryText
-        )
-        StatusChip(text = expense.paymentMethodText)
-        StatusChip(text = expense.paymentStatusText)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        // Left column: identity chips (category + payment method)
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
-            Icon(
-                imageVector = TablerIcons.Outline.Calendar,
-                contentDescription = null,
-                modifier = Modifier.size(HERO_ICON_SIZE),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            CategoryChip(
+                icon = expense.category.toIconVector(),
+                label = expense.categoryText
             )
-            CaptionText(
-                text = expense.dateText,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            MethodChip(
+                icon = expense.paymentMethodIcon,
+                label = expense.paymentMethodText
             )
+        }
+
+        // Right column: state chips (payment status + date)
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        ) {
+            StatusBadgeChip(
+                icon = expense.paymentStatusIcon,
+                label = expense.paymentStatusText
+            )
+            DateChip(text = expense.dateText)
         }
     }
 }
 
 @Composable
 private fun HeroAmountContent(expense: ExpenseDetailUiModel) {
-    CaptionText(
-        text = stringResource(R.string.expense_review_amount).uppercase(),
-        color = MaterialTheme.colorScheme.onSurfaceVariant
+    Text(
+        text = expense.expenseScopeLabel.uppercase(),
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Medium,
+        textAlign = TextAlign.Center,
+        maxLines = 1
     )
     Text(
         text = expense.formattedGroupAmount,
+        modifier = Modifier.fillMaxWidth(),
         style = MaterialTheme.typography.displaySmall,
         fontWeight = FontWeight.ExtraBold,
         color = MaterialTheme.colorScheme.primary,
-        fontSize = HERO_AMOUNT_SIZE
+        fontSize = HERO_AMOUNT_SIZE,
+        textAlign = TextAlign.Center
     )
-    CaptionText(
+    Text(
         text = expense.paidByText,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Medium,
+        textAlign = TextAlign.Center,
+        maxLines = 1
     )
     if (expense.vendorText != null) {
-        CaptionText(
+        Text(
             text = expense.vendorText,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            maxLines = 1
         )
     }
     if (expense.isForeignCurrency && expense.formattedSourceAmount != null) {

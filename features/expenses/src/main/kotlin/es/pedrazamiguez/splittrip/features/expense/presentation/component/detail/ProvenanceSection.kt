@@ -9,11 +9,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusIndicator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
-import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 
 @Composable
@@ -30,7 +28,7 @@ internal fun ProvenanceSection(expense: ExpenseDetailUiModel) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
             CaptionText(
-                text = stringResource(R.string.expense_detail_created_by, expense.createdByText),
+                text = expense.createdByText,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             CaptionText(
