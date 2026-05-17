@@ -85,6 +85,27 @@ class EntitySplitFlattenDelegateTest {
         }
 
         @Test
+        fun `subunit entity flattenEntities propagates EQUAL intra-type to member splitType`() {
+            val members = listOf(makeSplit("m1", amountCents = 3000L, subunitId = "sub1"))
+            val entities = listOf(makeSplit("sub1", isEntityRow = true, entityMembers = members))
+
+            val result = delegate.flattenEntities(entities, SplitType.EQUAL)
+
+            assertEquals(SplitType.EQUAL, result[0].splitType)
+        }
+
+        @Test
+        fun `solo entity splitType is null regardless of outer splitType`() {
+            val entities = listOf(
+                makeSplit("u1", amountCents = 5000L, isEntityRow = true)
+            )
+
+            val result = delegate.flattenEntities(entities, SplitType.PERCENT)
+
+            assertNull(result[0].splitType)
+        }
+
+        @Test
         fun `excluded entities are skipped`() {
             val entities = listOf(
                 makeSplit("u1", amountCents = 5000L, isEntityRow = true),
@@ -267,21 +288,66 @@ class EntitySplitFlattenDelegateTest {
     inner class BuildMemberSplits {
 
         @Test
-        fun `maps all members with subunitId from entity`() {
+        fun `EQUAL intra-type maps all members with splitType EQUAL and no percentage`() {
             val members = listOf(
                 makeSplit("m1", amountCents = 3000L),
                 makeSplit("m2", amountCents = 2000L)
             )
             val entity = makeSplit("sub1", isEntityRow = true, entityMembers = members)
 
-            val result = delegate.buildMemberSplits(entity)
+            val result = delegate.buildMemberSplits(entity, SplitType.EQUAL)
 
             assertEquals(2, result.size)
             assertEquals("m1", result[0].userId)
             assertEquals(3000L, result[0].amountCents)
             assertEquals("sub1", result[0].subunitId)
-            assertEquals("m2", result[1].userId)
+            assertEquals(SplitType.EQUAL, result[0].splitType)
+            assertNull(result[0].percentage)
             assertEquals("sub1", result[1].subunitId)
+            assertEquals(SplitType.EQUAL, result[1].splitType)
+        }
+
+        @Test
+        fun `EXACT intra-type maps all members with splitType EXACT and no percentage`() {
+            val members = listOf(
+                makeSplit("m1", amountCents = 3000L),
+                makeSplit("m2", amountCents = 2000L)
+            )
+            val entity = makeSplit("sub1", isEntityRow = true, entityMembers = members)
+
+            val result = delegate.buildMemberSplits(entity, SplitType.EXACT)
+
+            result.forEach { split ->
+                assertEquals(SplitType.EXACT, split.splitType)
+                assertNull(split.percentage)
+            }
+        }
+
+        @Test
+        fun `PERCENT intra-type maps all members with splitType PERCENT and populated percentage`() {
+            val members = listOf(
+                makeSplit("m1", amountCents = 4250L, percentageInput = "85"),
+                makeSplit("m2", amountCents = 750L, percentageInput = "15")
+            )
+            val entity = makeSplit("sub1", isEntityRow = true, entityMembers = members)
+
+            val result = delegate.buildMemberSplits(entity, SplitType.PERCENT)
+
+            assertEquals(SplitType.PERCENT, result[0].splitType)
+            assertEquals(BigDecimal("85"), result[0].percentage)
+            assertEquals(SplitType.PERCENT, result[1].splitType)
+            assertEquals(BigDecimal("15"), result[1].percentage)
+        }
+
+        @Test
+        fun `PERCENT intra-type with blank percentageInput maps percentage to null`() {
+            val members = listOf(makeSplit("m1", amountCents = 5000L, percentageInput = ""))
+            val entity = makeSplit("sub1", isEntityRow = true, entityMembers = members)
+
+            val result = delegate.buildMemberSplits(entity, SplitType.PERCENT)
+
+            assertEquals(SplitType.PERCENT, result[0].splitType)
+            assertNull(result[0].percentage)
         }
 
         @Test
@@ -291,7 +357,7 @@ class EntitySplitFlattenDelegateTest {
             )
             val entity = makeSplit("sub1", isEntityRow = true, entityMembers = members)
 
-            val result = delegate.buildMemberSplits(entity)
+            val result = delegate.buildMemberSplits(entity, SplitType.EQUAL)
 
             assertEquals("explicit-sub", result[0].subunitId)
         }

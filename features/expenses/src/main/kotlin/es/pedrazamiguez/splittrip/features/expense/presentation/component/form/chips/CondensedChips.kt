@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -37,6 +38,8 @@ import es.pedrazamiguez.splittrip.features.expense.R
  * @param onItemSelected Callback when an item is selected.
  * @param itemId Extracts the unique ID from an item.
  * @param itemLabel Extracts the display label from an item.
+ * @param itemIcon Optional: extracts an [ImageVector] shown as a leading icon when unselected.
+ *                 When the chip is selected the checkmark replaces it (M3 filter-chip convention).
  * @param visibleCount How many chips to show before collapsing into "More".
  * @param modifier Modifier for the FlowRow container.
  */
@@ -49,6 +52,7 @@ fun <T> CondensedChips(
     onItemSelected: (String) -> Unit,
     itemId: (T) -> String,
     itemLabel: (T) -> String,
+    itemIcon: ((T) -> ImageVector?)? = null,
     visibleCount: Int = 3,
     modifier: Modifier = Modifier
 ) {
@@ -98,10 +102,14 @@ fun <T> CondensedChips(
                 label = itemLabel(item),
                 selected = isSelected,
                 onClick = { onItemSelected(id) },
-                leadingIcon = if (isSelected) {
-                    { Icon(TablerIcons.Outline.Check, contentDescription = null) }
-                } else {
-                    null
+                leadingIcon = when {
+                    isSelected -> {
+                        { Icon(TablerIcons.Outline.Check, contentDescription = null) }
+                    }
+                    itemIcon != null -> itemIcon(item)?.let { icon ->
+                        { Icon(icon, contentDescription = null) }
+                    }
+                    else -> null
                 }
             )
         }
@@ -112,7 +120,8 @@ fun <T> CondensedChips(
                 selectedId = selectedId,
                 onItemSelected = onItemSelected,
                 itemId = itemId,
-                itemLabel = itemLabel
+                itemLabel = itemLabel,
+                itemIcon = itemIcon
             )
         }
     }
@@ -124,7 +133,8 @@ private fun <T> OverflowPassportChip(
     selectedId: String?,
     onItemSelected: (String) -> Unit,
     itemId: (T) -> String,
-    itemLabel: (T) -> String
+    itemLabel: (T) -> String,
+    itemIcon: ((T) -> ImageVector?)? = null
 ) {
     Box {
         var expanded by remember { mutableStateOf(false) }
@@ -149,6 +159,7 @@ private fun <T> OverflowPassportChip(
         ) {
             overflowItems.forEach { item ->
                 val id = itemId(item)
+                val isSelected = selectedId == id
                 DropdownMenuItem(
                     text = {
                         Text(
@@ -161,10 +172,14 @@ private fun <T> OverflowPassportChip(
                         onItemSelected(id)
                         expanded = false
                     },
-                    leadingIcon = if (selectedId == id) {
-                        { Icon(TablerIcons.Outline.Check, contentDescription = null) }
-                    } else {
-                        null
+                    leadingIcon = when {
+                        isSelected -> {
+                            { Icon(TablerIcons.Outline.Check, contentDescription = null) }
+                        }
+                        itemIcon != null -> itemIcon(item)?.let { icon ->
+                            { Icon(icon, contentDescription = null) }
+                        }
+                        else -> null
                     }
                 )
             }

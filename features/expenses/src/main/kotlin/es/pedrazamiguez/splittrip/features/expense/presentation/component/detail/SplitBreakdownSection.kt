@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.detai
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,18 +20,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Scale
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubunitSplitGroupUiModel
@@ -46,7 +47,10 @@ internal fun SplitBreakdownSection(
     splits: ImmutableList<SplitDetailUiModel>,
     splitGroups: ImmutableList<SubunitSplitGroupUiModel>
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
+    Column(
+        modifier = Modifier.padding(top = MaterialTheme.spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+    ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -101,7 +105,11 @@ private fun SubunitGroupHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onToggle),
+            .clickable(
+                onClick = onToggle,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -110,7 +118,7 @@ private fun SubunitGroupHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = TablerIcons.Outline.UsersGroup,
+                imageVector = TablerIcons.Outline.Sitemap,
                 contentDescription = null,
                 modifier = Modifier.size(SUBUNIT_ICON_SIZE),
                 tint = MaterialTheme.colorScheme.primary
@@ -119,19 +127,34 @@ private fun SubunitGroupHeader(
                 Text(
                     text = group.subunitLabel,
                     style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                CaptionText(
-                    text = stringResource(R.string.expense_detail_subunit_member_count, group.memberCount),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CaptionText(
+                        text = stringResource(R.string.expense_detail_subunit_member_count, group.memberCount),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    SmallChip(text = group.splitTypeText, isPrimary = false)
+                }
             }
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
-            AmountText(text = group.formattedTotalAmount)
+            Column(horizontalAlignment = Alignment.End) {
+                AmountText(text = group.formattedTotalAmount)
+                if (group.formattedSourceTotalAmount != null) {
+                    CaptionText(
+                        text = group.formattedSourceTotalAmount,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             Icon(
                 imageVector = if (expanded) TablerIcons.Outline.ChevronUp else TablerIcons.Outline.ChevronDown,
                 contentDescription = null,
@@ -150,12 +173,15 @@ private fun SplitRow(split: SplitDetailUiModel) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            SecondaryBodyText(
+            Text(
                 text = if (split.isCurrentUser) {
                     stringResource(R.string.expense_detail_split_you_badge)
                 } else {
                     split.displayName
-                }
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
             )
             if (split.shareText != null) {
                 CaptionText(
@@ -164,13 +190,25 @@ private fun SplitRow(split: SplitDetailUiModel) {
                 )
             }
         }
-        AmountText(
-            text = split.formattedAmount,
-            color = if (split.isExcluded) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
+        // Reserve trailing space to align with header's chevron icon (ExtraSmall spacing + 18dp icon)
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.padding(end = MaterialTheme.spacing.ExtraSmall + CHEVRON_SIZE)
+        ) {
+            AmountText(
+                text = split.formattedAmount,
+                color = if (split.isExcluded) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
+            )
+            if (split.formattedSourceAmount != null) {
+                CaptionText(
+                    text = split.formattedSourceAmount,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        )
+        }
     }
 }

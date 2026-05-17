@@ -7,7 +7,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatSourceAmount
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
-import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -16,11 +15,14 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
-import java.time.LocalDate
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
-class ExpenseUiMapper(private val localeProvider: LocaleProvider, private val resourceProvider: ResourceProvider) {
+class ExpenseUiMapper(
+    private val localeProvider: LocaleProvider,
+    private val resourceProvider: ResourceProvider,
+    private val scheduledBadgeUiMapper: ScheduledBadgeUiMapper
+) {
 
     fun map(
         expense: Expense,
@@ -30,7 +32,7 @@ class ExpenseUiMapper(private val localeProvider: LocaleProvider, private val re
         subunits: Map<String, Subunit> = emptyMap()
     ): ExpenseUiModel {
         val appLocale = localeProvider.getCurrentLocale()
-        val (badgeText, isPastDue) = buildScheduledBadge(expense, appLocale)
+        val (badgeText, isPastDue) = scheduledBadgeUiMapper.buildBadge(expense)
         val outOfPocket = expense.payerType == PayerType.USER
         val pairedContribution = pairedContributions[expense.id]
         val effectivePayerId = expense.payerId ?: expense.createdBy.takeIf { it.isNotBlank() }
@@ -125,36 +127,6 @@ class ExpenseUiMapper(private val localeProvider: LocaleProvider, private val re
                 )
             }
             .toImmutableList()
-    }
-
-    /**
-     * Builds the scheduled-payment badge for the expense item.
-     *
-     * @return Pair of (badgeText, isPastDue).
-     *         badgeText is null when the expense is not SCHEDULED.
-     */
-    private fun buildScheduledBadge(expense: Expense, locale: java.util.Locale): Pair<String?, Boolean> {
-        if (expense.paymentStatus != PaymentStatus.SCHEDULED) return null to false
-
-        val dueDate = expense.dueDate ?: return null to false
-        val today = LocalDate.now()
-        val dueDateLocal = dueDate.toLocalDate()
-
-        return when {
-            dueDateLocal.isEqual(today) -> {
-                resourceProvider.getString(R.string.expense_scheduled_due_today) to true
-            }
-            dueDateLocal.isBefore(today) -> {
-                resourceProvider.getString(R.string.expense_scheduled_paid) to true
-            }
-            else -> {
-                val formattedDate = dueDate.formatShortDate(locale)
-                resourceProvider.getString(
-                    R.string.expense_scheduled_due_on,
-                    formattedDate
-                ) to false
-            }
-        }
     }
 
     /**

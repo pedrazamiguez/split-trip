@@ -231,7 +231,6 @@ private fun EntitySplitAccordionContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = MaterialTheme.spacing.ExtraLarge,
                     top = MaterialTheme.spacing.ExtraSmall,
                     bottom = MaterialTheme.spacing.ExtraSmall
                 )

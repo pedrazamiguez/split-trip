@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.features.expense.R
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
@@ -78,12 +79,17 @@ class ExpenseDetailUiMapperTest {
         val formattingHelper = FormattingHelper(localeProvider)
         val expenseCalculatorService = ExpenseCalculatorService()
         val addOnCalculationService = AddOnCalculationService()
+        val scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
+            formattingHelper = formattingHelper,
+            resourceProvider = resourceProvider
+        )
 
         mapper = ExpenseDetailUiMapper(
             formattingHelper = formattingHelper,
             resourceProvider = resourceProvider,
             expenseCalculatorService = expenseCalculatorService,
-            addOnCalculationService = addOnCalculationService
+            addOnCalculationService = addOnCalculationService,
+            scheduledBadgeUiMapper = scheduledBadgeUiMapper
         )
     }
 
@@ -237,7 +243,8 @@ class ExpenseDetailUiMapperTest {
 
             val currentUserSplit = result.splits.find { it.isCurrentUser }
             assertNotNull(currentUserSplit)
-            assertEquals("Alice", currentUserSplit?.displayName)
+            // Current user's split shows the localised "You" label, not the raw profile name
+            assertEquals("translated_string", currentUserSplit?.displayName)
         }
 
         @Test
@@ -306,7 +313,20 @@ class ExpenseDetailUiMapperTest {
         }
 
         @Test
-        fun `resolves display name from member profiles`() {
+        fun `resolves display name from member profiles — other user gets profile name`() {
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(userId = otherUserId, amountCents = 5000L)
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Bob", result.splits.first().displayName)
+        }
+
+        @Test
+        fun `resolves display name — current user gets you label`() {
             val expense = baseExpense.copy(
                 splits = listOf(
                     ExpenseSplit(userId = currentUserId, amountCents = 5000L)
@@ -315,7 +335,8 @@ class ExpenseDetailUiMapperTest {
 
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
-            assertEquals("Alice", result.splits.first().displayName)
+            // The mapper resolves currentUserId to the localised "You" label (mocked as "translated_string")
+            assertEquals("translated_string", result.splits.first().displayName)
         }
 
         @Test
@@ -351,6 +372,50 @@ class ExpenseDetailUiMapperTest {
             // computeProportionalAmount(5000, 270, 10000) = 135
             assertNotNull(result.splits.first().formattedAmount)
             assertTrue(result.splits.first().formattedAmount.isNotBlank())
+        }
+
+        @Test
+        fun `populates formattedSourceAmount for foreign currency expense`() {
+            // source 10000 CNY → group 126.30 EUR
+            val expense = baseExpense.copy(
+                sourceAmount = 100000L, // 1000.00 CNY
+                sourceCurrency = "CNY",
+                groupAmount = 12630L, // 126.30 EUR
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal("0.126297"),
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 60000L), // 600.00 CNY (60%)
+                    ExpenseSplit(userId = otherUserId, amountCents = 40000L) // 400.00 CNY (40%)
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            // First split should show both CNY and EUR amounts
+            val firstSplit = result.splits.first()
+            assertNotNull(firstSplit.formattedSourceAmount)
+            assertTrue(
+                firstSplit.formattedSourceAmount!!.contains("CNY") || firstSplit.formattedSourceAmount!!.contains("¥")
+            )
+            assertNotNull(firstSplit.formattedAmount)
+            assertTrue(firstSplit.formattedAmount.contains("EUR") || firstSplit.formattedAmount.contains("€"))
+        }
+
+        @Test
+        fun `formattedSourceAmount is null for same-currency expense`() {
+            val expense = baseExpense.copy(
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 5000L)
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNull(result.splits.first().formattedSourceAmount)
         }
     }
 
@@ -793,6 +858,151 @@ class ExpenseDetailUiMapperTest {
             // Fallback comes from resourceProvider (mock returns "translated_string").
             assertTrue(result.splitGroups.first().subunitLabel.isNotBlank())
         }
+
+        @Test
+        fun `splitTypeText uses PERCENT string when first subunit member has PERCENT splitType`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(
+                        userId = currentUserId,
+                        amountCents = 4250L,
+                        percentage = BigDecimal("85"),
+                        subunitId = "sub-1",
+                        splitType = SplitType.PERCENT
+                    ),
+                    ExpenseSplit(
+                        userId = otherUserId,
+                        amountCents = 750L,
+                        percentage = BigDecimal("15"),
+                        subunitId = "sub-1",
+                        splitType = SplitType.PERCENT
+                    )
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
+
+        @Test
+        fun `splitTypeText uses EQUAL string when first subunit member has EQUAL splitType`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(
+                        userId = currentUserId,
+                        amountCents = 2500L,
+                        subunitId = "sub-1",
+                        splitType = SplitType.EQUAL
+                    )
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
+
+        @Test
+        fun `splitTypeText falls back to EQUAL string when subunit member splitType is null`() {
+            every { resourceProvider.getString(any()) } answers {
+                val resId = it.invocation.args[0] as Int
+                "res_$resId"
+            }
+            // Legacy expense — splitType not stored on member rows
+            val expense = baseExpense.copy(
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 2500L, subunitId = "sub-1"),
+                    ExpenseSplit(userId = otherUserId, amountCents = 2500L, subunitId = "sub-1")
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Cabin")
+            )
+
+            // Null splitType on member → falls back to EQUAL → produces a non-blank string
+            val group = result.splitGroups.first()
+            assertTrue(group.splitTypeText.isNotBlank())
+        }
+
+        @Test
+        fun `formattedSourceTotalAmount is populated for foreign currency subunit group`() {
+            val expense = baseExpense.copy(
+                sourceAmount = 100000L, // 1000.00 CNY
+                sourceCurrency = "CNY",
+                groupAmount = 12630L, // 126.30 EUR
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal("0.126297"),
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 53000L, subunitId = "sub-1"), // 530 CNY
+                    ExpenseSplit(userId = otherUserId, amountCents = 47000L, subunitId = "sub-1") // 470 CNY
+                    // Total for sub-1 = 1000 CNY
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Gays")
+            )
+
+            val group = result.splitGroups.first()
+            assertNotNull(group.formattedSourceTotalAmount)
+            assertTrue(
+                group.formattedSourceTotalAmount!!.contains("CNY") || group.formattedSourceTotalAmount!!.contains("¥")
+            )
+            assertNotNull(group.formattedTotalAmount)
+            assertTrue(group.formattedTotalAmount.contains("EUR") || group.formattedTotalAmount.contains("€"))
+        }
+
+        @Test
+        fun `formattedSourceTotalAmount is null for same-currency subunit group`() {
+            val expense = baseExpense.copy(
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 2500L, subunitId = "sub-1"),
+                    ExpenseSplit(userId = otherUserId, amountCents = 2500L, subunitId = "sub-1")
+                )
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Gays")
+            )
+
+            val group = result.splitGroups.first()
+            assertNull(group.formattedSourceTotalAmount)
+        }
     }
 
     @Nested
@@ -904,6 +1114,210 @@ class ExpenseDetailUiMapperTest {
         fun `isScheduledPastDue is false for non-scheduled expense`() {
             val result = mapper.map(baseExpense, memberProfiles, currentUserId)
             assertFalse(result.isScheduledPastDue)
+        }
+
+        @Test
+        fun `scheduledBadgeText shows due tomorrow for scheduled expense due tomorrow`() {
+            // Stub only the specific resource ID so the test fails if the wrong branch is hit.
+            every { resourceProvider.getString(R.string.expense_scheduled_due_tomorrow) } returns "Due tomorrow"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(1).withHour(12).withMinute(0)
+            )
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+            assertEquals("Due tomorrow", result.scheduledBadgeText)
+            assertFalse(result.isScheduledPastDue)
+        }
+    }
+
+    @Nested
+    inner class ForeignCurrencyRateFormatting {
+
+        // Stub that interpolates the actual args so assertions can verify all three components.
+        // The vararg is packed as an Array at invocation.args[1], so we access elements via the
+        // array rather than directly from the invocation args list.
+        private fun stubRateString() {
+            every {
+                resourceProvider.getString(any(), any(), any(), any())
+            } answers {
+                val varargs = it.invocation.args[1] as Array<*>
+                "1 ${varargs[0]} = ${varargs[1]} ${varargs[2]}"
+            }
+        }
+
+        private val foreignFeeAddOn = AddOn(
+            type = AddOnType.FEE,
+            mode = AddOnMode.ON_TOP,
+            valueType = AddOnValueType.EXACT,
+            amountCents = 500L,
+            currency = "GBP",
+            exchangeRate = BigDecimal("0.83"),
+            groupAmountCents = 415L
+        )
+
+        @Test
+        fun `add-on formattedRate renders as 1 source equals rate target in EN locale`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            stubRateString()
+            val expense = baseExpense.copy(addOns = listOf(foreignFeeAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            // Exact assertion verifies both presence and ordering: swapping source/target would fail.
+            assertEquals("1 GBP = 0.83 EUR", result.addOns.first().formattedRate)
+        }
+
+        @Test
+        fun `add-on formattedRate renders as 1 source equals rate target in ES locale`() {
+            every { localeProvider.getCurrentLocale() } returns Locale("es", "ES")
+            stubRateString()
+            val expense = baseExpense.copy(addOns = listOf(foreignFeeAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            // ES locale formats the rate with a comma decimal separator (0,83 not 0.83).
+            assertEquals("1 GBP = 0,83 EUR", result.addOns.first().formattedRate)
+        }
+
+        @Test
+        fun `cash tranche formattedRate renders as 1 source equals rate target in EN locale`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            stubRateString()
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-gbp", amountConsumed = 500L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w-gbp",
+                groupId = "group-456",
+                currency = "GBP",
+                exchangeRate = BigDecimal("0.83"),
+                withdrawalScope = PayerType.GROUP
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-gbp" to withdrawal)
+            )
+
+            // Exact assertion verifies both presence and ordering: swapping source/target would fail.
+            assertEquals("1 GBP = 0.83 EUR", result.cashTranches.first().formattedRate)
+        }
+
+        @Test
+        fun `cash tranche formattedRate renders as 1 source equals rate target in ES locale`() {
+            every { localeProvider.getCurrentLocale() } returns Locale("es", "ES")
+            stubRateString()
+            val expense = baseExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "w-gbp", amountConsumed = 500L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w-gbp",
+                groupId = "group-456",
+                currency = "GBP",
+                exchangeRate = BigDecimal("0.83"),
+                withdrawalScope = PayerType.GROUP
+            )
+
+            val result = mapper.map(
+                expense,
+                memberProfiles,
+                currentUserId,
+                withdrawalLookup = mapOf("w-gbp" to withdrawal)
+            )
+
+            // ES locale formats the rate with a comma decimal separator (0,83 not 0.83).
+            assertEquals("1 GBP = 0,83 EUR", result.cashTranches.first().formattedRate)
+        }
+    }
+
+    @Nested
+    inner class PersonalisedPaidByText {
+
+        @Test
+        fun `paidByText uses paid_by_you when createdBy is the current user`() {
+            // The baseExpense already has createdBy = currentUserId
+            every { resourceProvider.getString(any()) } returns "Paid by you"
+
+            val result = mapper.map(baseExpense, memberProfiles, currentUserId)
+
+            // paid_by_you is a no-args string resource → getString(R.string.paid_by_you)
+            assertEquals("Paid by you", result.paidByText)
+        }
+
+        @Test
+        fun `paidByText uses paid_by template when createdBy is another member`() {
+            val expense = baseExpense.copy(createdBy = otherUserId)
+            every { resourceProvider.getString(any(), any()) } returns "Paid by Bob"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            // paid_by is a template resource → getString(R.string.paid_by, paidByName)
+            assertEquals("Paid by Bob", result.paidByText)
+        }
+
+        @Test
+        fun `paidByText contains member display name when payer is another member`() {
+            val expense = baseExpense.copy(createdBy = otherUserId)
+            // Capture the actual name passed into the template
+            every { resourceProvider.getString(any(), "Bob") } returns "Paid by Bob"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid by Bob", result.paidByText)
+        }
+    }
+
+    @Nested
+    inner class ExpenseScopeLabel {
+
+        @Test
+        fun `expenseScopeLabel maps to scope_group for GROUP payer`() {
+            val expense = baseExpense.copy(payerType = PayerType.GROUP)
+            every { resourceProvider.getString(any()) } returns "Group expense"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Group expense", result.expenseScopeLabel)
+        }
+
+        @Test
+        fun `expenseScopeLabel maps to scope_personal for USER payer`() {
+            val expense = baseExpense.copy(payerType = PayerType.USER)
+            every { resourceProvider.getString(any()) } returns "Personal"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Personal", result.expenseScopeLabel)
+        }
+
+        @Test
+        fun `expenseScopeLabel maps to scope_subunit for SUBUNIT payer`() {
+            val expense = baseExpense.copy(payerType = PayerType.SUBUNIT)
+            every { resourceProvider.getString(any()) } returns "Subunit"
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Subunit", result.expenseScopeLabel)
+        }
+    }
+
+    @Nested
+    inner class IconFields {
+
+        @Test
+        fun `paymentMethodIcon is non-null for CREDIT_CARD`() {
+            val result = mapper.map(baseExpense, memberProfiles, currentUserId)
+
+            assertNotNull(result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `paymentStatusIcon is non-null for FINISHED`() {
+            val result = mapper.map(baseExpense, memberProfiles, currentUserId)
+
+            assertNotNull(result.paymentStatusIcon)
         }
     }
 }

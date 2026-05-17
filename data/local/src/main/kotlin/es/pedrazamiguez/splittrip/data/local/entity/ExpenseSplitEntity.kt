@@ -25,5 +25,6 @@ data class ExpenseSplitEntity(
     val percentage: String?,
     val isExcluded: Boolean,
     val isCoveredById: String?,
-    val subunitId: String? = null
+    val subunitId: String? = null,
+    val splitType: String? = null
 )

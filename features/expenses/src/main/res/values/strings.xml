@@ -24,6 +24,8 @@
     <string name="expense_error_config_retry_hint">Check your connection and try again</string>
     <string name="expense_error_retry_button">Try again</string>
     <string name="paid_by">Paid by %1$s</string>
+    <string name="paid_by_you">Paid by you</string>
+    <string name="you_label">You</string>
 
     <!-- Expense Actions -->
     <string name="expense_actions_title">Expense \"%1$s\"</string>
@@ -114,6 +116,7 @@
     <!-- Scheduled Payment Badge -->
     <string name="expense_scheduled_due_on">Due on %1$s</string>
     <string name="expense_scheduled_due_today">Due today</string>
+    <string name="expense_scheduled_due_tomorrow">Due tomorrow</string>
     <string name="expense_scheduled_paid">Paid</string>
 
     <!-- Split Types -->
@@ -258,6 +261,7 @@
     <string name="expense_detail_section_split">Split breakdown</string>
     <string name="expense_detail_section_addons">Add-ons</string>
     <string name="expense_detail_created_by">Added by %1$s</string>
+    <string name="expense_detail_created_by_you">Added by you</string>
     <string name="expense_detail_split_you_badge">You</string>
     <string name="expense_detail_section_breakdown">Breakdown</string>
     <string name="expense_detail_breakdown_base_cost">Base cost</string>
@@ -268,6 +272,11 @@
     <string name="expense_detail_receipt_thumbnail_cd">Receipt photo</string>
     <string name="expense_detail_addon_mode_included">Included</string>
     <string name="expense_detail_addon_mode_on_top">On top</string>
+
+    <!-- Expense scope labels — shown as the hero card header in place of "IMPORTE" -->
+    <string name="expense_scope_group">group expense</string>
+    <string name="expense_scope_subunit">subunit expense</string>
+    <string name="expense_scope_personal">personal expense</string>
 
     <!-- Withdrawal pool selection — shown in Exchange Rate step when multiple pools have funds -->
     <string name="add_expense_cash_pool_selection_title">Draw cash from</string>

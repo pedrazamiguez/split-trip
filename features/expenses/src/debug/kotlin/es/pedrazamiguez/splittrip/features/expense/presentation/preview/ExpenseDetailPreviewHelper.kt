@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ScheduledBadgeUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -159,6 +160,49 @@ val PREVIEW_EXPENSE_DETAIL_FOREIGN_ADDONS = Expense(
     createdAt = LocalDateTime.of(2026, 4, 6, 11, 20)
 )
 
+/**
+ * Scenario E — Two-level mixed strategy:
+ * Level 1 = EQUAL between entities; Level 2 = PERCENT within one subunit.
+ *
+ * Demonstrates per-subunit [splitTypeText] chip in the expense detail split card.
+ */
+val PREVIEW_EXPENSE_DETAIL_MIXED_LEVELS = Expense(
+    id = "exp-detail-mixed",
+    groupId = "group-1",
+    title = "Beach hotel split",
+    sourceAmount = 100000L, // 1000.00 CNY
+    sourceCurrency = "CNY",
+    groupAmount = 12630L, // 126.30 EUR (@ 0.126297)
+    groupCurrency = "EUR",
+    exchangeRate = BigDecimal("0.126297"),
+    category = ExpenseCategory.LODGING,
+    paymentMethod = PaymentMethod.CREDIT_CARD,
+    paymentStatus = PaymentStatus.FINISHED,
+    splitType = SplitType.EQUAL,
+    createdBy = "user-antonio",
+    splits = listOf(
+        // Subunit "Cantalobos" — Level 2 PERCENT (85 % Antonio / 15 % Andrés)
+        // Total for subunit: 53000 CNY (669.77 EUR) split 85/15
+        ExpenseSplit(
+            userId = "user-antonio",
+            amountCents = 45050L, // 450.50 CNY (85% of 530 CNY subunit share)
+            percentage = BigDecimal("85"),
+            subunitId = "subunit-cantalobos",
+            splitType = SplitType.PERCENT
+        ),
+        ExpenseSplit(
+            userId = "user-andres",
+            amountCents = 7950L, // 79.50 CNY (15% of 530 CNY subunit share)
+            percentage = BigDecimal("15"),
+            subunitId = "subunit-cantalobos",
+            splitType = SplitType.PERCENT
+        ),
+        // Solo member — Level 1 EQUAL (47000 CNY = 593.60 EUR)
+        ExpenseSplit(userId = "user-maria", amountCents = 47000L)
+    ),
+    createdAt = LocalDateTime.of(2026, 4, 8, 15, 0)
+)
+
 val PREVIEW_DETAIL_MEMBER_PROFILES = mapOf(
     "user-antonio" to User(userId = "user-antonio", email = "antonio@test.com", displayName = "Antonio"),
     "user-maria" to User(userId = "user-maria", email = "maria@test.com", displayName = "Mara"),
@@ -208,11 +252,16 @@ fun ExpenseDetailPreviewHelper(
         mapper = { localeProvider, resourceProvider ->
             // Mapper is stateless — both domain services have empty constructors and
             // safe defaults, so we can instantiate them inline for previews.
+            val formattingHelper = FormattingHelper(localeProvider)
             ExpenseDetailUiMapper(
-                formattingHelper = FormattingHelper(localeProvider),
+                formattingHelper = formattingHelper,
                 resourceProvider = resourceProvider,
                 expenseCalculatorService = ExpenseCalculatorService(),
-                addOnCalculationService = AddOnCalculationService()
+                addOnCalculationService = AddOnCalculationService(),
+                scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
+                    formattingHelper = formattingHelper,
+                    resourceProvider = resourceProvider
+                )
             )
         },
         transform = { mapper, domain ->

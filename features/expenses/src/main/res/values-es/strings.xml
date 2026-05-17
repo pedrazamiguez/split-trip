@@ -25,6 +25,8 @@
     <string name="expense_error_config_retry_hint">Revisa tu conexión e inténtalo de nuevo</string>
     <string name="expense_error_retry_button">Reintentar</string>
     <string name="paid_by">Pagado por %1$s</string>
+    <string name="paid_by_you">Pagado por ti</string>
+    <string name="you_label">tú</string>
 
     <!-- Expense Actions -->
     <string name="expense_actions_title">Gasto \"%1$s\"</string>
@@ -115,6 +117,7 @@
     <!-- Scheduled Payment Badge -->
     <string name="expense_scheduled_due_on">Vence el %1$s</string>
     <string name="expense_scheduled_due_today">Vence hoy</string>
+    <string name="expense_scheduled_due_tomorrow">Vence mañana</string>
     <string name="expense_scheduled_paid">Pagado</string>
 
     <!-- Split Types -->
@@ -259,6 +262,7 @@
     <string name="expense_detail_section_split">Desglose de reparto</string>
     <string name="expense_detail_section_addons">Extras</string>
     <string name="expense_detail_created_by">Añadido por %1$s</string>
+    <string name="expense_detail_created_by_you">Añadido por ti</string>
     <string name="expense_detail_split_you_badge">Tú</string>
     <string name="expense_detail_section_breakdown">Desglose</string>
     <string name="expense_detail_breakdown_base_cost">Coste base</string>
@@ -269,6 +273,11 @@
     <string name="expense_detail_receipt_thumbnail_cd">Foto del recibo</string>
     <string name="expense_detail_addon_mode_included">Incluido</string>
     <string name="expense_detail_addon_mode_on_top">Sumado</string>
+
+    <!-- Expense scope labels — shown as the hero card header in place of "IMPORTE" -->
+    <string name="expense_scope_group">gasto grupal</string>
+    <string name="expense_scope_subunit">gasto de subunidad</string>
+    <string name="expense_scope_personal">gasto personal</string>
 
     <!-- Withdrawal pool selection — shown in Exchange Rate step when multiple pools have funds -->
     <string name="add_expense_cash_pool_selection_title">Usar efectivo de</string>

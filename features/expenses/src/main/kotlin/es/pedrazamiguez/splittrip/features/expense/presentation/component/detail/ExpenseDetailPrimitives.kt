@@ -56,7 +56,75 @@ internal fun CategoryChip(
     }
 }
 
-/** Neutral surface chip. Used for payment method and payment status. */
+/** Filled secondary-container chip with icon + label. Used for the payment method in the hero. */
+@Composable
+internal fun MethodChip(
+    icon: ImageVector,
+    label: String
+) {
+    Row(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(horizontal = MaterialTheme.spacing.Small, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        CaptionText(text = label, color = MaterialTheme.colorScheme.onSecondaryContainer)
+    }
+}
+
+/** Filled tertiary-container chip with icon + label. Used for the payment status in the hero. */
+@Composable
+internal fun StatusBadgeChip(
+    icon: ImageVector,
+    label: String
+) {
+    Row(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .padding(horizontal = MaterialTheme.spacing.Small, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+        CaptionText(text = label, color = MaterialTheme.colorScheme.onTertiaryContainer)
+    }
+}
+
+/**
+ * Outlined chip for the date in the hero. Uses a border tinted with [MaterialTheme.colorScheme.tertiary]
+ * to visually relate to the status chip without competing with it.
+ */
+@Composable
+internal fun DateChip(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.tertiary,
+                shape = MaterialTheme.shapes.small
+            )
+            .padding(horizontal = MaterialTheme.spacing.Small, vertical = 4.dp)
+    ) {
+        CaptionText(text = text, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Neutral surface chip. Used for standalone status text without an icon. */
 @Composable
 internal fun StatusChip(text: String) {
     Box(
@@ -70,33 +138,28 @@ internal fun StatusChip(text: String) {
 }
 
 /**
- * Small outlined chip used in two contexts:
+ * Small chip used in two contexts:
  * - [isPrimary] = true  → current user label in the split breakdown (primary colour)
- * - [isPrimary] = false → split-type label next to section header (neutral colour)
+ * - [isPrimary] = false → split-type label next to section header and subunit rows (filled surface)
  */
 @Composable
 internal fun SmallChip(text: String, isPrimary: Boolean) {
-    val borderColor = if (isPrimary) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+    val (backgroundColor, textColor) = if (isPrimary) {
+        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
     } else {
-        MaterialTheme.colorScheme.outlineVariant
-    }
-    val textColor = if (isPrimary) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+        MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurface
     }
     Box(
         modifier = Modifier
-            .clip(MaterialTheme.shapes.extraSmall)
-            .border(width = 1.dp, color = borderColor, shape = MaterialTheme.shapes.extraSmall)
-            .padding(horizontal = 5.dp, vertical = 1.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(backgroundColor)
+            .padding(horizontal = MaterialTheme.spacing.Small, vertical = 3.dp)
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             color = textColor,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

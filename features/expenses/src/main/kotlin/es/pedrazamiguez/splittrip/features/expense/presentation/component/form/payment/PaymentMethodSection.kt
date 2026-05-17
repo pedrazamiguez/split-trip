@@ -41,6 +41,7 @@ internal fun PaymentMethodSection(
             },
             itemId = { it.id },
             itemLabel = { it.displayText },
+            itemIcon = { it.icon },
             visibleCount = 6
         )
     }

@@ -15,5 +15,6 @@ data class ExpenseSplitDocument(
     @get:PropertyName("coveredById") @set:PropertyName("coveredById")
     var isCoveredById: String? = null,
     @get:PropertyName("coveredByRef") @set:PropertyName("coveredByRef")
-    var isCoveredByRef: DocumentReference? = null
+    var isCoveredByRef: DocumentReference? = null,
+    val splitType: String? = null
 )
