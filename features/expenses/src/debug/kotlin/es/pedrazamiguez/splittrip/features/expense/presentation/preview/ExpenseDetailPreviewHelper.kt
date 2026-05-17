@@ -252,13 +252,14 @@ fun ExpenseDetailPreviewHelper(
         mapper = { localeProvider, resourceProvider ->
             // Mapper is stateless — both domain services have empty constructors and
             // safe defaults, so we can instantiate them inline for previews.
+            val formattingHelper = FormattingHelper(localeProvider)
             ExpenseDetailUiMapper(
-                formattingHelper = FormattingHelper(localeProvider),
+                formattingHelper = formattingHelper,
                 resourceProvider = resourceProvider,
                 expenseCalculatorService = ExpenseCalculatorService(),
                 addOnCalculationService = AddOnCalculationService(),
                 scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
-                    formattingHelper = FormattingHelper(localeProvider),
+                    formattingHelper = formattingHelper,
                     resourceProvider = resourceProvider
                 )
             )

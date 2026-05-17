@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
+import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.MappedPreview
 import es.pedrazamiguez.splittrip.domain.model.Contribution
@@ -12,6 +14,16 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.Scheduled
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 import kotlinx.collections.immutable.ImmutableList
+
+private fun buildExpenseUiMapper(localeProvider: LocaleProvider, resourceProvider: ResourceProvider): ExpenseUiMapper =
+    ExpenseUiMapper(
+        localeProvider = localeProvider,
+        resourceProvider = resourceProvider,
+        scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
+            formattingHelper = FormattingHelper(localeProvider),
+            resourceProvider = resourceProvider
+        )
+    )
 
 @Composable
 fun ExpenseItemPreviewHelper(
@@ -25,14 +37,7 @@ fun ExpenseItemPreviewHelper(
     MappedPreview(
         domain = domainExpense,
         mapper = { localeProvider, resourceProvider ->
-            ExpenseUiMapper(
-                localeProvider = localeProvider,
-                resourceProvider = resourceProvider,
-                scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
-                    formattingHelper = FormattingHelper(localeProvider),
-                    resourceProvider = resourceProvider
-                )
-            )
+            buildExpenseUiMapper(localeProvider, resourceProvider)
         },
         transform = { mapper, domain ->
             mapper.map(domain, memberProfiles, currentUserId, pairedContributions, subunits)
@@ -53,14 +58,7 @@ fun ExpenseListPreviewHelper(
     MappedPreview(
         domain = domainExpenses,
         mapper = { localeProvider, resourceProvider ->
-            ExpenseUiMapper(
-                localeProvider = localeProvider,
-                resourceProvider = resourceProvider,
-                scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
-                    formattingHelper = FormattingHelper(localeProvider),
-                    resourceProvider = resourceProvider
-                )
-            )
+            buildExpenseUiMapper(localeProvider, resourceProvider)
         },
         transform = { mapper, domain ->
             mapper.mapGroupedByDate(domain, memberProfiles, currentUserId, pairedContributions, subunits)

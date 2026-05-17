@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.features.expense.R
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
@@ -1117,7 +1118,8 @@ class ExpenseDetailUiMapperTest {
 
         @Test
         fun `scheduledBadgeText shows due tomorrow for scheduled expense due tomorrow`() {
-            every { resourceProvider.getString(any()) } returns "Due tomorrow"
+            // Stub only the specific resource ID so the test fails if the wrong branch is hit.
+            every { resourceProvider.getString(R.string.expense_scheduled_due_tomorrow) } returns "Due tomorrow"
             val expense = baseExpense.copy(
                 paymentStatus = PaymentStatus.SCHEDULED,
                 dueDate = LocalDateTime.now().plusDays(1).withHour(12).withMinute(0)
