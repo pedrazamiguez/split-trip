@@ -15,6 +15,8 @@ data class SubunitSplitGroupUiModel(
     val subunitLabel: String,
     /** Sum of all members' group-currency amounts, already formatted. */
     val formattedTotalAmount: String,
+    /** Sum of all members' source-currency amounts; non-null only for foreign-currency expenses. */
+    val formattedSourceTotalAmount: String? = null,
     val memberCount: Int,
     val members: ImmutableList<SplitDetailUiModel>,
     /** The Level 2 (intra-subunit) split type label, e.g. "Porcentaje". */

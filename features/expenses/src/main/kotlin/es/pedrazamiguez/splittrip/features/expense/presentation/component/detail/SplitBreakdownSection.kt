@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.detai
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -102,9 +102,11 @@ private fun SubunitGroupHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            // clip before clickable so the ripple is bounded by the card's corner radius
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onToggle),
+            .clickable(
+                onClick = onToggle,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -141,7 +143,15 @@ private fun SubunitGroupHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
         ) {
-            AmountText(text = group.formattedTotalAmount)
+            Column(horizontalAlignment = Alignment.End) {
+                AmountText(text = group.formattedTotalAmount)
+                if (group.formattedSourceTotalAmount != null) {
+                    CaptionText(
+                        text = group.formattedSourceTotalAmount,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             Icon(
                 imageVector = if (expanded) TablerIcons.Outline.ChevronUp else TablerIcons.Outline.ChevronDown,
                 contentDescription = null,
@@ -177,13 +187,25 @@ private fun SplitRow(split: SplitDetailUiModel) {
                 )
             }
         }
-        AmountText(
-            text = split.formattedAmount,
-            color = if (split.isExcluded) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
+        // Reserve trailing space to align with header's chevron icon (ExtraSmall spacing + 18dp icon)
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.padding(end = MaterialTheme.spacing.ExtraSmall + CHEVRON_SIZE)
+        ) {
+            AmountText(
+                text = split.formattedAmount,
+                color = if (split.isExcluded) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
+            )
+            if (split.formattedSourceAmount != null) {
+                CaptionText(
+                    text = split.formattedSourceAmount,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        )
+        }
     }
 }

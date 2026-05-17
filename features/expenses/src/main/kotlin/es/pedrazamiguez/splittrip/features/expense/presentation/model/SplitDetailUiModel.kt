@@ -4,6 +4,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.model
 data class SplitDetailUiModel(
     val displayName: String,
     val formattedAmount: String,
+    /** Formatted source currency amount; non-null only for foreign-currency expenses. */
+    val formattedSourceAmount: String? = null,
     /** Formatted share percentage (e.g. "33.3%"); null for EQUAL splits. */
     val shareText: String? = null,
     val isCurrentUser: Boolean = false,

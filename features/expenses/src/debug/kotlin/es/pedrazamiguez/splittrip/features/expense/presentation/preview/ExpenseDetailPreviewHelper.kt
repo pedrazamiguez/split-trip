@@ -169,10 +169,11 @@ val PREVIEW_EXPENSE_DETAIL_MIXED_LEVELS = Expense(
     id = "exp-detail-mixed",
     groupId = "group-1",
     title = "Beach hotel split",
-    sourceAmount = 9000L,
-    sourceCurrency = "EUR",
-    groupAmount = 9000L,
+    sourceAmount = 100000L, // 1000.00 CNY
+    sourceCurrency = "CNY",
+    groupAmount = 12630L, // 126.30 EUR (@ 0.126297)
     groupCurrency = "EUR",
+    exchangeRate = BigDecimal("0.126297"),
     category = ExpenseCategory.LODGING,
     paymentMethod = PaymentMethod.CREDIT_CARD,
     paymentStatus = PaymentStatus.FINISHED,
@@ -180,22 +181,23 @@ val PREVIEW_EXPENSE_DETAIL_MIXED_LEVELS = Expense(
     createdBy = "user-antonio",
     splits = listOf(
         // Subunit "Cantalobos" — Level 2 PERCENT (85 % Antonio / 15 % Andrés)
+        // Total for subunit: 53000 CNY (669.77 EUR) split 85/15
         ExpenseSplit(
             userId = "user-antonio",
-            amountCents = 3825L,
+            amountCents = 45050L, // 450.50 CNY (85% of 530 CNY subunit share)
             percentage = BigDecimal("85"),
             subunitId = "subunit-cantalobos",
             splitType = SplitType.PERCENT
         ),
         ExpenseSplit(
             userId = "user-andres",
-            amountCents = 675L,
+            amountCents = 7950L, // 79.50 CNY (15% of 530 CNY subunit share)
             percentage = BigDecimal("15"),
             subunitId = "subunit-cantalobos",
             splitType = SplitType.PERCENT
         ),
-        // Solo member — Level 1 EQUAL
-        ExpenseSplit(userId = "user-maria", amountCents = 4500L)
+        // Solo member — Level 1 EQUAL (47000 CNY = 593.60 EUR)
+        ExpenseSplit(userId = "user-maria", amountCents = 47000L)
     ),
     createdAt = LocalDateTime.of(2026, 4, 8, 15, 0)
 )
