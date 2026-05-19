@@ -40,5 +40,12 @@ interface LocalExpenseDataSource {
      */
     suspend fun getPendingSyncExpenseIds(groupId: String): List<String>
 
+    /**
+     * Persists the Firebase Storage download URL for an expense's receipt.
+     * Called by the repository after a successful background upload so that the URL
+     * survives app restarts and is included in subsequent Firestore sync writes.
+     */
+    suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String)
+
     suspend fun clearAllExpenses()
 }

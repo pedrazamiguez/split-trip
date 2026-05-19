@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
@@ -23,6 +24,7 @@ class ExpenseRepositoryImpl(
     private val cloudExpenseDataSource: CloudExpenseDataSource,
     private val localExpenseDataSource: LocalExpenseDataSource,
     private val authenticationService: AuthenticationService,
+    private val cloudStorageDataSource: CloudStorageDataSource,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ExpenseRepository {
 
@@ -48,6 +50,7 @@ class ExpenseRepositoryImpl(
                 cloudExpenseDataSource.addExpense(groupId, expenseWithMetadata)
                 localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
                 Timber.d("Expense synced to cloud: ${expenseWithMetadata.id}")
+                uploadReceiptInBackground(expenseWithMetadata)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -222,6 +225,36 @@ class ExpenseRepositoryImpl(
                 // Server unreachable — keep as PENDING_SYNC
                 Timber.d(e, "Cannot confirm expense $id — server unreachable")
             }
+        }
+    }
+
+    override suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String) {
+        localExpenseDataSource.updateReceiptRemoteUrl(expenseId, remoteUrl)
+    }
+
+    /**
+     * Uploads the receipt to Firebase Cloud Storage if the expense has an attachment with a
+     * local path but no remote URL yet.  Called inside the syncScope after the Firestore write
+     * succeeds so that connectivity issues during upload do not block the expense save.
+     * On success, persists the download URL to Room so it is included in the next sync write.
+     */
+    private suspend fun uploadReceiptInBackground(expense: Expense) {
+        val attachment = expense.receiptAttachment ?: return
+        if (attachment.remoteUrl != null) return // already uploaded
+
+        try {
+            val remoteUrl = cloudStorageDataSource.uploadReceipt(
+                expenseId = expense.id,
+                localPath = attachment.localUri,
+                mimeType = attachment.mimeType
+            )
+            localExpenseDataSource.updateReceiptRemoteUrl(expense.id, remoteUrl)
+            Timber.d("Receipt uploaded for expense ${expense.id}: $remoteUrl")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Non-fatal: the expense is already saved; upload will be retried on next sync.
+            Timber.w(e, "Failed to upload receipt for expense ${expense.id}")
         }
     }
 

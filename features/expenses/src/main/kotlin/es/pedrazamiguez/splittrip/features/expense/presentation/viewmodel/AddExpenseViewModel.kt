@@ -249,6 +249,10 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.RemoveReceiptImage ->
                 formEventHandler.handleReceiptImageChanged(null)
 
+            // RequestPickerSource is intercepted in AddExpenseFeature before reaching the
+            // ViewModel. If it somehow arrives, a no-op is the safe fallback.
+            is AddExpenseUiEvent.RequestPickerSource -> Unit
+
             // ── Add-Ons ─────────────────────────────────────────────────
             is AddExpenseUiEvent.AddOnAdded ->
                 addOnEventHandler.handleAddOnAdded(event.type)

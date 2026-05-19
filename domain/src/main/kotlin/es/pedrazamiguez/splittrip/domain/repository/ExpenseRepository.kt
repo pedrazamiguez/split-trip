@@ -42,4 +42,14 @@ interface ExpenseRepository {
     fun getGroupExpensesFlow(groupId: String): Flow<List<Expense>>
 
     suspend fun deleteExpense(groupId: String, expenseId: String)
+
+    /**
+     * Writes the Firebase Storage download URL for an expense's receipt to local Room
+     * so that subsequent Firestore sync writes include the remote URL in the document.
+     *
+     * Called by the repository internally after a successful [CloudStorageDataSource.uploadReceipt].
+     * Exposed on the interface so future use cases can also trigger remote URL persistence
+     * (e.g. after a cross-device download).
+     */
+    suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String)
 }

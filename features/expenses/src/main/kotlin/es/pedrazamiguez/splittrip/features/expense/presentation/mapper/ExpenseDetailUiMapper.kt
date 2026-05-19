@@ -142,7 +142,7 @@ class ExpenseDetailUiMapper(
                 withdrawalLookup,
                 subunitNameLookup
             ),
-            receiptUri = expense.receiptLocalUri,
+            receiptUri = expense.receiptAttachment?.localUri,
             createdByText = if (expense.createdBy == currentUserId) {
                 resourceProvider.getString(R.string.expense_detail_created_by_you)
             } else {

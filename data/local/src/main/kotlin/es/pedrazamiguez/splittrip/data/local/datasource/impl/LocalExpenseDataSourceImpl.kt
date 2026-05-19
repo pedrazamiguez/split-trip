@@ -101,6 +101,10 @@ class LocalExpenseDataSourceImpl(
     override suspend fun getPendingSyncExpenseIds(groupId: String): List<String> =
         expenseDao.getPendingSyncExpenseIds(groupId)
 
+    override suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String) {
+        expenseDao.updateReceiptRemoteUrl(expenseId, remoteUrl)
+    }
+
     override suspend fun clearAllExpenses() {
         expenseDao.clearAllExpenses()
     }

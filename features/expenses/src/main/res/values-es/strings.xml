@@ -107,7 +107,11 @@
     <string name="add_expense_due_date_confirm">OK</string>
     <string name="add_expense_due_date_cancel">Cancelar</string>
     <string name="add_expense_receipt_title">Recibo</string>
-    <string name="add_expense_receipt_attach">Adjuntar foto</string>
+    <string name="add_expense_receipt_attach">Adjuntar recibo</string>
+    <string name="add_expense_receipt_attach_camera">Hacer foto</string>
+    <string name="add_expense_receipt_attach_gallery">Elegir de galería</string>
+    <string name="add_expense_receipt_attach_document">Adjuntar documento</string>
+    <string name="add_expense_receipt_attach_error">No se pudo adjuntar el recibo. Inténtalo de nuevo.</string>
     <string name="add_expense_receipt_remove">Eliminar foto</string>
     <string name="add_expense_receipt_image_description">Foto del recibo</string>
 

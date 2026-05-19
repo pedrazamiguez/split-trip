@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import java.math.BigDecimal
 
 private val cashTrancheConverter = CashTrancheListConverter()
@@ -39,7 +40,12 @@ fun ExpenseEntity.toDomain(): Expense {
             runCatching { PaymentStatus.fromString(it) }.getOrDefault(PaymentStatus.FINISHED)
         } ?: PaymentStatus.FINISHED,
         dueDate = dueDateMillis?.toLocalDateTimeUtc(),
-        receiptLocalUri = receiptLocalUri,
+        receiptAttachment = buildReceiptAttachment(
+            receiptLocalUri,
+            receiptMimeType,
+            receiptCapturedAtMillis,
+            receiptRemoteUrl
+        ),
         cashTranches = cashTrancheConverter.toCashTrancheList(cashTranchesJson) ?: emptyList(),
         addOns = addOnConverter.toAddOnList(addOnsJson) ?: emptyList(),
         splitType = runCatching { SplitType.fromString(splitType) }.getOrDefault(SplitType.EQUAL),
@@ -71,7 +77,10 @@ fun Expense.toEntity(): ExpenseEntity {
         paymentMethod = paymentMethod.name,
         paymentStatus = paymentStatus.name,
         dueDateMillis = dueDate?.toEpochMillisUtc(),
-        receiptLocalUri = receiptLocalUri,
+        receiptLocalUri = receiptAttachment?.localUri,
+        receiptMimeType = receiptAttachment?.mimeType,
+        receiptCapturedAtMillis = receiptAttachment?.capturedAtMillis,
+        receiptRemoteUrl = receiptAttachment?.remoteUrl,
         createdBy = createdBy,
         payerType = payerType.name,
         payerId = payerId,
@@ -87,3 +96,24 @@ fun Expense.toEntity(): ExpenseEntity {
 fun List<ExpenseEntity>.toDomain(): List<Expense> = map { it.toDomain() }
 
 fun List<Expense>.toEntity(): List<ExpenseEntity> = map { it.toEntity() }
+
+/**
+ * Reconstructs a [ReceiptAttachment] from the four nullable columns stored in Room.
+ * Returns null when no receipt has been attached (all columns are null), or when only
+ * [localUri] is present (legacy row from before v28 migration — treated as no attachment
+ * because [mimeType] and [capturedAtMillis] are mandatory for the attachment model).
+ */
+private fun buildReceiptAttachment(
+    localUri: String?,
+    mimeType: String?,
+    capturedAtMillis: Long?,
+    remoteUrl: String?
+): ReceiptAttachment? {
+    if (localUri.isNullOrBlank() || mimeType.isNullOrBlank() || capturedAtMillis == null) return null
+    return ReceiptAttachment(
+        localUri = localUri,
+        mimeType = mimeType,
+        capturedAtMillis = capturedAtMillis,
+        remoteUrl = remoteUrl
+    )
+}

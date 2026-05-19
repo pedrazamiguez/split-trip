@@ -136,7 +136,7 @@ class AddExpenseUiMapper(
             paymentMethod = paymentMethod,
             paymentStatus = paymentStatus,
             dueDate = dueDate,
-            receiptLocalUri = state.receiptUri,
+            receiptAttachment = state.receiptAttachment,
             splitType = splitType,
             splits = splits,
             payerType = payerType,

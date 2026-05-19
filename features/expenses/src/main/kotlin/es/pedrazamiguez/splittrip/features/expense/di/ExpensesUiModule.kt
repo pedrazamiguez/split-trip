@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowU
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetAvailableWithdrawalPoolsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
@@ -252,7 +253,8 @@ val expensesUiModule = module {
         )
 
         val formHandler = FormEventHandler(
-            addExpenseUiMapper = addExpenseUiMapper
+            addExpenseUiMapper = addExpenseUiMapper,
+            attachReceiptUseCase = get<AttachReceiptUseCase>()
         )
 
         AddExpenseViewModel(

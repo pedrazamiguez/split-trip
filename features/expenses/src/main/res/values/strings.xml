@@ -106,7 +106,11 @@
     <string name="add_expense_due_date_confirm">OK</string>
     <string name="add_expense_due_date_cancel">Cancel</string>
     <string name="add_expense_receipt_title">Receipt</string>
-    <string name="add_expense_receipt_attach">Attach photo</string>
+    <string name="add_expense_receipt_attach">Attach receipt</string>
+    <string name="add_expense_receipt_attach_camera">Take photo</string>
+    <string name="add_expense_receipt_attach_gallery">Choose from gallery</string>
+    <string name="add_expense_receipt_attach_document">Attach document</string>
+    <string name="add_expense_receipt_attach_error">Could not attach receipt. Please try again.</string>
     <string name="add_expense_receipt_remove">Remove photo</string>
     <string name="add_expense_receipt_image_description">Receipt photo</string>
 

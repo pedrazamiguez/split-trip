@@ -1,9 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt
 
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,16 +35,10 @@ import es.pedrazamiguez.splittrip.features.expense.R
 @Composable
 fun ReceiptImagePicker(
     receiptUri: String?,
-    onImageSelected: (String) -> Unit,
+    onPickerRequested: () -> Unit,
     onRemoveImage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        uri?.let { onImageSelected(it.toString()) }
-    }
-
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
@@ -55,13 +46,7 @@ fun ReceiptImagePicker(
         if (receiptUri != null) {
             ReceiptImagePreview(receiptUri = receiptUri, onRemoveImage = onRemoveImage)
         } else {
-            ReceiptPickerPlaceholder(
-                onClick = {
-                    photoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                }
-            )
+            ReceiptPickerPlaceholder(onClick = onPickerRequested)
         }
     }
 }

@@ -41,6 +41,8 @@ class ExpenseEntityMapperTest {
         paymentStatus = "FINISHED",
         dueDateMillis = testTimestampMillis,
         receiptLocalUri = "file://receipt.jpg",
+        receiptMimeType = "image/webp",
+        receiptCapturedAtMillis = testTimestampMillis,
         createdBy = "user-1",
         payerType = "USER",
         payerId = "user-payer",
@@ -148,7 +150,8 @@ class ExpenseEntityMapperTest {
             val expense = fullEntity.toDomain()
             assertEquals("Restaurant", expense.vendor)
             assertEquals("Team lunch", expense.notes)
-            assertEquals("file://receipt.jpg", expense.receiptLocalUri)
+            assertEquals("file://receipt.jpg", expense.receiptAttachment?.localUri)
+            assertEquals("image/webp", expense.receiptAttachment?.mimeType)
         }
 
         @Test
@@ -248,7 +251,7 @@ class ExpenseEntityMapperTest {
             paymentMethod = PaymentMethod.CASH,
             paymentStatus = PaymentStatus.SCHEDULED,
             dueDate = testTimestamp,
-            receiptLocalUri = null,
+            receiptAttachment = null,
             cashTranches = emptyList(),
             addOns = emptyList(),
             splitType = SplitType.PERCENT,

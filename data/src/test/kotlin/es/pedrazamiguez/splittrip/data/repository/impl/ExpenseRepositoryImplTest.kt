@@ -39,6 +39,8 @@ class ExpenseRepositoryImplTest {
     private lateinit var cloudExpenseDataSource: CloudExpenseDataSource
     private lateinit var localExpenseDataSource: LocalExpenseDataSource
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var cloudStorageDataSource:
+        es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var repository: ExpenseRepositoryImpl
 
@@ -79,11 +81,13 @@ class ExpenseRepositoryImplTest {
         cloudExpenseDataSource = mockk()
         localExpenseDataSource = mockk(relaxed = true)
         authenticationService = mockk()
+        cloudStorageDataSource = mockk(relaxed = true)
         every { authenticationService.currentUserId() } returns testUserId
         repository = ExpenseRepositoryImpl(
             cloudExpenseDataSource,
             localExpenseDataSource,
             authenticationService,
+            cloudStorageDataSource,
             testDispatcher
         )
     }
@@ -619,6 +623,7 @@ class ExpenseRepositoryImplTest {
                 cloudExpenseDataSource,
                 localExpenseDataSource,
                 authenticationService,
+                cloudStorageDataSource,
                 testDispatcher
             )
 
