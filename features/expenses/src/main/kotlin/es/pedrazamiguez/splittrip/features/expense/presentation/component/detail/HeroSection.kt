@@ -1,6 +1,10 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,9 +19,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -39,6 +49,10 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
+import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 private val HERO_AMOUNT_SIZE = 40.sp
 private val RECEIPT_THUMBNAIL_HEIGHT = 160.dp
@@ -182,6 +196,63 @@ private fun ForeignCurrencyRow(expense: ExpenseDetailUiModel) {
     }
 }
 
+private fun isPdf(uriString: String, mimeType: String?): Boolean {
+    if (mimeType == MIME_PDF) return true
+    val uri = Uri.parse(uriString)
+    val path = if (uri.scheme == "file") uri.path.orEmpty() else uriString
+    if (path.lowercase().endsWith(".pdf")) return true
+    val lastSegment = uri.lastPathSegment.orEmpty().lowercase()
+    if (lastSegment.endsWith(".pdf") || lastSegment.contains(".pdf?")) return true
+    return false
+}
+
+@Composable
+private fun rememberPdfThumbnail(pdfUriString: String): Bitmap? {
+    var bitmap by remember(pdfUriString) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(pdfUriString) {
+        withContext(Dispatchers.IO) {
+            try {
+                val uri = Uri.parse(pdfUriString)
+                val isLocalFile = uri.scheme == "file" || uri.scheme.isNullOrEmpty()
+                if (isLocalFile) {
+                    val filePath = if (uri.scheme == "file") uri.path.orEmpty() else pdfUriString
+                    val file = File(filePath)
+                    if (file.exists() && file.length() > 0) {
+                        var pfd: ParcelFileDescriptor? = null
+                        var renderer: PdfRenderer? = null
+                        var page: PdfRenderer.Page? = null
+                        try {
+                            pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+                            renderer = PdfRenderer(pfd)
+                            if (renderer.pageCount > 0) {
+                                page = renderer.openPage(0)
+                                val aspectRatio = page.width.toFloat() / page.height.toFloat()
+                                val targetWidth = (aspectRatio * 480).toInt()
+                                val destBitmap = Bitmap.createBitmap(
+                                    targetWidth.coerceAtLeast(1),
+                                    480,
+                                    Bitmap.Config.ARGB_8888
+                                )
+                                val canvas = android.graphics.Canvas(destBitmap)
+                                canvas.drawColor(android.graphics.Color.WHITE)
+                                page.render(destBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                bitmap = destBitmap
+                            }
+                        } finally {
+                            page?.close()
+                            renderer?.close()
+                            pfd?.close()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to render PDF thumbnail for $pdfUriString")
+            }
+        }
+    }
+    return bitmap
+}
+
 @Composable
 private fun ReceiptThumbnail(receiptUri: String, mimeType: String?) {
     Box(
@@ -191,23 +262,35 @@ private fun ReceiptThumbnail(receiptUri: String, mimeType: String?) {
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
     ) {
-        if (mimeType == MIME_PDF) {
-            // PDFs cannot be rendered inline — show an informational placeholder instead.
-            Column(
-                modifier = Modifier.matchParentSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = TablerIcons.Outline.Receipt,
-                    contentDescription = null,
-                    modifier = Modifier.size(36.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+        if (isPdf(receiptUri, mimeType)) {
+            val pdfBitmap = rememberPdfThumbnail(receiptUri)
+            if (pdfBitmap != null) {
+                Image(
+                    bitmap = pdfBitmap.asImageBitmap(),
+                    contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(MaterialTheme.shapes.large)
                 )
-                BodyText(
-                    text = stringResource(R.string.expense_detail_receipt_pdf_label),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            } else {
+                // PDFs cannot be rendered inline — show an informational placeholder instead.
+                Column(
+                    modifier = Modifier.matchParentSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = TablerIcons.Outline.Receipt,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    BodyText(
+                        text = stringResource(R.string.expense_detail_receipt_pdf_label),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         } else {
             AsyncImage(
