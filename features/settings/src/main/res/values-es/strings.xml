@@ -76,4 +76,20 @@
     <string name="notification_prefs_expenses_description">Gastos añadidos, actualizados o eliminados</string>
     <string name="notification_prefs_financial_title">Actividad financiera</string>
     <string name="notification_prefs_financial_description">Retiradas de efectivo y aportaciones</string>
+
+    <!-- Developer Services Playground -->
+    <string name="developer_services_playground_title">Pruebas de Servicios</string>
+    <string name="developer_services_selected_attachment">Adjunto Seleccionado</string>
+    <string name="developer_services_no_document_selected">Ningún documento seleccionado. Elige una imagen (JPEG, PNG, WEBP, BMP) o PDF para ejecutar OCR.</string>
+    <string name="developer_services_name">Nombre:</string>
+    <string name="developer_services_type">Tipo:</string>
+    <string name="developer_services_uri">URI:</string>
+    <string name="developer_services_select_document">Seleccionar Documento</string>
+    <string name="developer_services_clear">Limpiar</string>
+    <string name="developer_services_ocr_operations">Operaciones OCR</string>
+    <string name="developer_services_run_ocr">Ejecutar Motor OCR</string>
+    <string name="developer_services_extracted_raw_text">Texto Plano Extraído</string>
+    <string name="developer_services_extracted_blocks">Bloques Extraídos (%1$d)</string>
+    <string name="developer_services_block_index">Bloque #%1$d</string>
+    <string name="developer_services_ocr_error_fallback">Fallo en el procesamiento OCR</string>
 </resources>

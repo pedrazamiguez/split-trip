@@ -3,16 +3,19 @@ package es.pedrazamiguez.splittrip.features.settings.di
 import android.app.Application
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DefaultCurrencyScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DeveloperServicesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.NotificationPreferencesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.SettingsScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.AppVersionViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DefaultCurrencyViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.InstallationIdViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
@@ -46,7 +49,14 @@ val settingsUiModule = module {
         )
     }
 
+    viewModel {
+        DeveloperServicesViewModel(
+            receiptOcrService = get<ReceiptOcrService>()
+        )
+    }
+
     single { DefaultCurrencyScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { NotificationPreferencesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { SettingsScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { DeveloperServicesScreenUiProviderImpl() } bind ScreenUiProvider::class
 }

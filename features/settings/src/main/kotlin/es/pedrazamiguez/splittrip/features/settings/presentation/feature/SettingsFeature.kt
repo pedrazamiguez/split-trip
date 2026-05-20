@@ -76,7 +76,10 @@ fun SettingsFeature(
             onDefaultCurrencyClick = {
                 navController.navigate(Routes.SETTINGS_DEFAULT_CURRENCY)
             },
-            onLogoutClick = { showLogoutDialog = true }
+            onLogoutClick = { showLogoutDialog = true },
+            onDeveloperServicesTestClick = {
+                navController.navigate(Routes.SETTINGS_DEVELOPER_SERVICES)
+            }
         )
     }
 

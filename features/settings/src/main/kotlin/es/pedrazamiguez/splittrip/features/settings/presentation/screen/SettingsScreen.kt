@@ -19,14 +19,16 @@ fun SettingsScreen(
     hasNotificationPermission: Boolean = false,
     currentCurrency: Currency? = null,
     onDefaultCurrencyClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {}
+    onLogoutClick: () -> Unit = {},
+    onDeveloperServicesTestClick: () -> Unit = {}
 ) {
     val sections = buildSettingsSections(
         onNotificationsClick = onNotificationsClick,
         onNotificationSwitchToggle = onNotificationSwitchToggle,
         hasNotificationPermission = hasNotificationPermission,
         currentCurrency = currentCurrency,
-        onDefaultCurrencyClick = onDefaultCurrencyClick
+        onDefaultCurrencyClick = onDefaultCurrencyClick,
+        onServicesTestClick = onDeveloperServicesTestClick
     )
 
     LazyColumn(
