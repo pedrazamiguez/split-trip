@@ -1,13 +1,11 @@
 package es.pedrazamiguez.splittrip.data.service
 
-import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
-import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import io.mockk.clearAllMocks
@@ -33,7 +31,6 @@ class MLKitOcrServiceTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var context: Context
-    private lateinit var contentResolver: ContentResolver
     private lateinit var recogniser: TextRecognizer
     private lateinit var pdfPageRenderer: PdfPageRenderer
     private lateinit var service: MLKitOcrService
@@ -41,12 +38,8 @@ class MLKitOcrServiceTest {
     @BeforeEach
     fun setUp() {
         context = mockk(relaxed = true)
-        contentResolver = mockk(relaxed = true)
-        every { context.contentResolver } returns contentResolver
-
         recogniser = mockk(relaxed = true)
-        mockkStatic(TextRecognition::class)
-        every { TextRecognition.getClient(any()) } returns recogniser
+        pdfPageRenderer = mockk(relaxed = true)
 
         mockkStatic(InputImage::class)
         mockkStatic(Uri::class)
@@ -55,9 +48,13 @@ class MLKitOcrServiceTest {
         val mockUri = mockk<Uri>(relaxed = true)
         every { Uri.parse(any()) } returns mockUri
 
-        pdfPageRenderer = mockk(relaxed = true)
-
-        service = MLKitOcrService(context, testDispatcher, pdfPageRenderer)
+        service = MLKitOcrService(
+            context = context,
+            defaultDispatcher = testDispatcher,
+            ioDispatcher = testDispatcher,
+            pdfPageRenderer = pdfPageRenderer,
+            recogniser = recogniser
+        )
     }
 
     @AfterEach
@@ -118,10 +115,6 @@ class MLKitOcrServiceTest {
         every { recogniser.process(mockInputImage) } returns completedTask
 
         val result = service.recogniseText(attachment)
-
-        if (result.isFailure) {
-            println("PDF TEST FAILURE EXCEPTION: " + result.exceptionOrNull()?.stackTraceToString())
-        }
 
         assertTrue(result.isSuccess)
         assertEquals("PDF Page 1 text", result.getOrThrow().fullText)
