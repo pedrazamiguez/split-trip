@@ -6,8 +6,8 @@ import kotlinx.collections.immutable.ImmutableList
 /**
  * Value object representing the raw output of the OCR process.
  *
- * @param fullText The full recognized raw text block.
- * @param blocks The individual lines/blocks of recognized text.
+ * @param fullText The full recognised raw text block.
+ * @param blocks The individual lines/blocks of recognised text.
  * @param recognisedAt The timestamp when the OCR process occurred.
  */
 data class RawReceiptText(

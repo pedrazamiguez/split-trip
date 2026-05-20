@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import java.io.IOException
 import java.time.Instant
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
@@ -36,30 +37,62 @@ internal class PdfPageRendererImpl(private val context: Context) : PdfPageRender
     override fun renderFirstPage(uri: Uri): Bitmap {
         val parcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r")
             ?: throw IOException("Could not open file descriptor for $uri")
-        parcelFileDescriptor.use { pfd ->
-            val pdfRenderer = PdfRenderer(pfd)
-            pdfRenderer.use { renderer ->
+        return parcelFileDescriptor.use { pfd ->
+            PdfRenderer(pfd).use { renderer ->
                 if (renderer.pageCount == 0) {
                     throw IOException("PDF has no pages")
                 }
-                val page = renderer.openPage(0)
-                page.use { pg ->
-                    // Prevent OOM by downscaling extremely large scanned PDFs
-                    val maxDimension = 2048.0
-                    var width = pg.width
-                    var height = pg.height
-                    if (width > maxDimension || height > maxDimension) {
-                        val scale = maxDimension / maxOf(width, height)
-                        width = (width * scale).toInt().coerceAtLeast(1)
-                        height = (height * scale).toInt().coerceAtLeast(1)
-                    }
-
-                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                    pg.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    return bitmap
+                renderer.openPage(0).use { pg ->
+                    renderPage(pg)
                 }
             }
         }
+    }
+
+    private fun renderPage(page: PdfRenderer.Page): Bitmap {
+        // Prevent OOM by downscaling extremely large scanned PDFs
+        val maxDimension = 2048.0
+        var width = page.width
+        var height = page.height
+        if (width > maxDimension || height > maxDimension) {
+            val scale = maxDimension / maxOf(width, height)
+            width = (width * scale).toInt().coerceAtLeast(1)
+            height = (height * scale).toInt().coerceAtLeast(1)
+        }
+
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+        return bitmap
+    }
+}
+
+/**
+ * Internal interface representing the OCR processor engine, abstracted for unit testability.
+ */
+internal interface OcrEngine {
+    suspend fun process(image: InputImage): OcrResult
+}
+
+/**
+ * DTO representing the output of the OCR processing engine.
+ */
+internal data class OcrResult(
+    val text: String,
+    val blocks: List<String>
+)
+
+/**
+ * Concrete implementation of [OcrEngine] using Google's ML Kit [TextRecognizer].
+ */
+internal class MLKitOcrEngine(
+    private val recogniser: TextRecognizer
+) : OcrEngine {
+    override suspend fun process(image: InputImage): OcrResult {
+        val visionText = recogniser.process(image).await()
+        return OcrResult(
+            text = visionText.text,
+            blocks = visionText.textBlocks.map { it.text }
+        )
     }
 }
 
@@ -72,18 +105,18 @@ internal class MLKitOcrService(
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val pdfPageRenderer: PdfPageRenderer = PdfPageRendererImpl(context),
-    private val recogniser: TextRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val ocrEngine: OcrEngine = MLKitOcrEngine(TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS))
 ) : ReceiptOcrService {
 
-    override suspend fun recogniseText(attachment: ReceiptAttachment): Result<RawReceiptText> =
-        runCatching {
-            val mimeType = attachment.mimeType.lowercase()
+    override suspend fun recogniseText(attachment: ReceiptAttachment): Result<RawReceiptText> {
+        var renderedBitmap: Bitmap? = null
+        return try {
+            val mimeType = attachment.mimeType.lowercase(java.util.Locale.ROOT)
             require(mimeType in SUPPORTED_MIME_TYPES) {
                 "Unsupported MIME type: ${attachment.mimeType}"
             }
 
             val uri = Uri.parse(attachment.localUri)
-            var renderedBitmap: Bitmap? = null
 
             // Perform potentially blocking/heavy resource loading on the IO dispatcher
             val inputImage = withContext(ioDispatcher) {
@@ -96,34 +129,43 @@ internal class MLKitOcrService(
                         InputImage.fromFilePath(context, uri)
                     }
                 } catch (e: Exception) {
+                    renderedBitmap?.recycle()
+                    renderedBitmap = null
+                    if (e is CancellationException) throw e
                     throw IOException("Failed to load image from URI: ${attachment.localUri}", e)
                 }
             }
 
             // Perform CPU-heavy ML Kit OCR process and mapping on the Default dispatcher
-            withContext(defaultDispatcher) {
-                try {
-                    val visionText = recogniser.process(inputImage).await()
-                    val blocks = visionText.textBlocks.map { block ->
-                        TextBlock(
-                            text = block.text,
-                            confidence = null
-                        )
-                    }.toImmutableList()
-
-                    // Safe length/blocks count log to prevent exposing raw financial PII data
-                    Timber.d("OCR completed: extracted ${blocks.size} blocks (${visionText.text.length} chars)")
-
-                    RawReceiptText(
-                        fullText = visionText.text,
-                        blocks = blocks,
-                        recognisedAt = Instant.now()
-                    )
-                } finally {
-                    renderedBitmap?.recycle()
-                }
+            val ocrResult = withContext(defaultDispatcher) {
+                ocrEngine.process(inputImage)
             }
+            val blocks = ocrResult.blocks.map { blockText ->
+                TextBlock(
+                    text = blockText,
+                    confidence = null
+                )
+            }.toImmutableList()
+
+            // Safe length/blocks count log to prevent exposing raw financial PII data
+            Timber.d("OCR completed: extracted ${blocks.size} blocks (${ocrResult.text.length} chars)")
+
+            Result.success(
+                RawReceiptText(
+                    fullText = ocrResult.text,
+                    blocks = blocks,
+                    recognisedAt = Instant.now()
+                )
+            )
+        } catch (e: Exception) {
+            renderedBitmap?.recycle()
+            renderedBitmap = null
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        } finally {
+            renderedBitmap?.recycle()
         }
+    }
 
     private companion object {
         val SUPPORTED_MIME_TYPES = setOf(

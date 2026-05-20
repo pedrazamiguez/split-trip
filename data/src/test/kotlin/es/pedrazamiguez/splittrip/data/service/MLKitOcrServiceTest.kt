@@ -3,12 +3,10 @@ package es.pedrazamiguez.splittrip.data.service
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
-import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.Text
-import com.google.mlkit.vision.text.TextRecognizer
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import io.mockk.clearAllMocks
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
@@ -31,14 +29,14 @@ class MLKitOcrServiceTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var context: Context
-    private lateinit var recogniser: TextRecognizer
+    private lateinit var ocrEngine: OcrEngine
     private lateinit var pdfPageRenderer: PdfPageRenderer
     private lateinit var service: MLKitOcrService
 
     @BeforeEach
     fun setUp() {
         context = mockk(relaxed = true)
-        recogniser = mockk(relaxed = true)
+        ocrEngine = mockk(relaxed = true)
         pdfPageRenderer = mockk(relaxed = true)
 
         mockkStatic(InputImage::class)
@@ -53,7 +51,7 @@ class MLKitOcrServiceTest {
             defaultDispatcher = testDispatcher,
             ioDispatcher = testDispatcher,
             pdfPageRenderer = pdfPageRenderer,
-            recogniser = recogniser
+            ocrEngine = ocrEngine
         )
     }
 
@@ -74,13 +72,8 @@ class MLKitOcrServiceTest {
         val mockInputImage = mockk<InputImage>()
         every { InputImage.fromFilePath(context, any<Uri>()) } returns mockInputImage
 
-        // Construct real Text and Text.TextBlock instances using Java reflection to bypass MockK class transformation limits.
-        val block1 = createTextBlock("Line 1")
-        val block2 = createTextBlock("Line 2")
-        val textInstance = createText("Full OCR text", listOf(block1, block2))
-
-        val completedTask = Tasks.forResult(textInstance)
-        every { recogniser.process(mockInputImage) } returns completedTask
+        val ocrResult = OcrResult("Full OCR text", listOf("Line 1", "Line 2"))
+        coEvery { ocrEngine.process(mockInputImage) } returns ocrResult
 
         val result = service.recogniseText(attachment)
 
@@ -109,10 +102,8 @@ class MLKitOcrServiceTest {
         val mockInputImage = mockk<InputImage>()
         every { InputImage.fromBitmap(mockBitmap, 0) } returns mockInputImage
 
-        val textInstance = createText("PDF Page 1 text", emptyList())
-
-        val completedTask = Tasks.forResult(textInstance)
-        every { recogniser.process(mockInputImage) } returns completedTask
+        val ocrResult = OcrResult("PDF Page 1 text", emptyList())
+        coEvery { ocrEngine.process(mockInputImage) } returns ocrResult
 
         val result = service.recogniseText(attachment)
 
@@ -164,35 +155,11 @@ class MLKitOcrServiceTest {
         val mockInputImage = mockk<InputImage>()
         every { InputImage.fromFilePath(context, any<Uri>()) } returns mockInputImage
 
-        val failedTask = Tasks.forException<Text>(Exception("OCR Engine Error"))
-        every { recogniser.process(mockInputImage) } returns failedTask
+        coEvery { ocrEngine.process(mockInputImage) } throws Exception("OCR Engine Error")
 
         val result = service.recogniseText(attachment)
 
         assertTrue(result.isFailure)
         assertEquals("OCR Engine Error", result.exceptionOrNull()?.message)
-    }
-
-    private fun createText(text: String, textBlocks: List<Text.TextBlock>): Text {
-        val constructor = Text::class.java.declaredConstructors.first {
-            it.parameterTypes.size == 2 && it.parameterTypes[0] == String::class.java
-        }
-        constructor.isAccessible = true
-        return constructor.newInstance(text, textBlocks) as Text
-    }
-
-    private fun createTextBlock(text: String): Text.TextBlock {
-        val constructor = Text.TextBlock::class.java.declaredConstructors.first {
-            it.parameterTypes.size == 6 && it.parameterTypes[0] == String::class.java
-        }
-        constructor.isAccessible = true
-        return constructor.newInstance(
-            text, // text
-            null, // boundingBox
-            emptyList<Any>(), // cornerPoints
-            "en", // recognizedLanguage
-            null, // frameToCanvasMatrix
-            emptyList<Any>() // lines
-        ) as Text.TextBlock
     }
 }

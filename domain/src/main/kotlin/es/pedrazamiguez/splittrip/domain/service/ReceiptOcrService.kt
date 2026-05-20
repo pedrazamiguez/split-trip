@@ -11,7 +11,7 @@ interface ReceiptOcrService {
     /**
      * OCRs the provided [attachment] and returns the extracted raw text blocks.
      *
-     * @param attachment The receipt attachment to recognize.
+     * @param attachment The receipt attachment to recognise.
      * @return A [Result] containing the [RawReceiptText] on success, or a failure exception.
      */
     suspend fun recogniseText(attachment: ReceiptAttachment): Result<RawReceiptText>
