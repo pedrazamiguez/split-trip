@@ -113,35 +113,11 @@ private fun SubunitGroupHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = TablerIcons.Outline.Sitemap,
-                contentDescription = null,
-                modifier = Modifier.size(SUBUNIT_ICON_SIZE),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Column {
-                Text(
-                    text = group.subunitLabel,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CaptionText(
-                        text = stringResource(R.string.expense_detail_subunit_member_count, group.memberCount),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    SmallChip(text = group.splitTypeText, isPrimary = false)
-                }
-            }
-        }
+        SubunitGroupHeaderInfo(
+            label = group.subunitLabel,
+            memberCount = group.memberCount,
+            splitTypeText = group.splitTypeText
+        )
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
@@ -161,6 +137,43 @@ private fun SubunitGroupHeader(
                 modifier = Modifier.size(CHEVRON_SIZE),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun SubunitGroupHeaderInfo(
+    label: String,
+    memberCount: Int,
+    splitTypeText: String
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = TablerIcons.Outline.Sitemap,
+            contentDescription = null,
+            modifier = Modifier.size(SUBUNIT_ICON_SIZE),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CaptionText(
+                    text = stringResource(R.string.expense_detail_subunit_member_count, memberCount),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                SmallChip(text = splitTypeText, isPrimary = false)
+            }
         }
     }
 }

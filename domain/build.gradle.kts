@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.kotlinx.collections.immutable)
     implementation(libs.koin.core)
     implementation(libs.kotlinx.coroutines.core)
 

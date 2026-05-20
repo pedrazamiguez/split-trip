@@ -68,7 +68,7 @@ apply(plugin = "io.gitlab.arturbosch.detekt")
 configure<DetektExtension> {
     config.setFrom(files("${rootProject.projectDir}/config/detekt/detekt.yml"))
     buildUponDefaultConfig = true
-    ignoreFailures = true
+    ignoreFailures = false
 }
 
 tasks.withType<Detekt>().configureEach {

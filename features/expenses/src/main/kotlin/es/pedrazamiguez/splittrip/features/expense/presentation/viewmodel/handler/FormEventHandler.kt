@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
@@ -12,6 +13,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * Handles simple form field events that contain inline branching logic:
@@ -23,10 +26,13 @@ import kotlinx.coroutines.flow.update
  * [ConfigEventHandler]'s [PostConfigAction] callback.
  */
 class FormEventHandler(
-    private val addExpenseUiMapper: AddExpenseUiMapper
+    private val addExpenseUiMapper: AddExpenseUiMapper,
+    private val attachReceiptUseCase: AttachReceiptUseCase
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
+    private lateinit var _actionsFlow: MutableSharedFlow<AddExpenseUiAction>
+    private lateinit var _scope: CoroutineScope
 
     /**
      * Callback for post-form-update actions that require cross-handler communication.
@@ -34,12 +40,16 @@ class FormEventHandler(
      */
     private var formPostCallback: ((FormPostAction) -> Unit)? = null
 
+    private var attachReceiptJob: kotlinx.coroutines.Job? = null
+
     override fun bind(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
         actionsFlow: MutableSharedFlow<AddExpenseUiAction>,
         scope: CoroutineScope
     ) {
         _uiState = stateFlow
+        _actionsFlow = actionsFlow
+        _scope = scope
     }
 
     /**
@@ -177,7 +187,31 @@ class FormEventHandler(
     }
 
     fun handleReceiptImageChanged(uri: String?) {
-        _uiState.update { it.copy(receiptUri = uri) }
+        attachReceiptJob?.cancel()
+        if (uri == null) {
+            _uiState.update { it.copy(receiptUri = null, receiptAttachment = null) }
+            return
+        }
+        // Copy + compress the file asynchronously so the UI thread is not blocked.
+        // The state is updated when the use case resolves; if it fails a pill error is shown.
+        attachReceiptJob = _scope.launch {
+            attachReceiptUseCase(uri)
+                .onSuccess { attachment ->
+                    _uiState.update {
+                        it.copy(
+                            receiptUri = attachment.localUri,
+                            receiptAttachment = attachment
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    if (e is kotlin.coroutines.cancellation.CancellationException) throw e
+                    Timber.e(e, "Failed to attach receipt from URI: $uri")
+                    _actionsFlow.emit(
+                        AddExpenseUiAction.ShowError(UiText.StringResource(R.string.add_expense_receipt_attach_error))
+                    )
+                }
+        }
     }
 
     /**

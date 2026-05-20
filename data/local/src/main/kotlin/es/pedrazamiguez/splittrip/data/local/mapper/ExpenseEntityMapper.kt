@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import java.math.BigDecimal
 
 private val cashTrancheConverter = CashTrancheListConverter()
@@ -39,7 +40,12 @@ fun ExpenseEntity.toDomain(): Expense {
             runCatching { PaymentStatus.fromString(it) }.getOrDefault(PaymentStatus.FINISHED)
         } ?: PaymentStatus.FINISHED,
         dueDate = dueDateMillis?.toLocalDateTimeUtc(),
-        receiptLocalUri = receiptLocalUri,
+        receiptAttachment = buildReceiptAttachment(
+            receiptLocalUri,
+            receiptMimeType,
+            receiptCapturedAtMillis,
+            receiptRemoteUrl
+        ),
         cashTranches = cashTrancheConverter.toCashTrancheList(cashTranchesJson) ?: emptyList(),
         addOns = addOnConverter.toAddOnList(addOnsJson) ?: emptyList(),
         splitType = runCatching { SplitType.fromString(splitType) }.getOrDefault(SplitType.EQUAL),
@@ -71,7 +77,10 @@ fun Expense.toEntity(): ExpenseEntity {
         paymentMethod = paymentMethod.name,
         paymentStatus = paymentStatus.name,
         dueDateMillis = dueDate?.toEpochMillisUtc(),
-        receiptLocalUri = receiptLocalUri,
+        receiptLocalUri = receiptAttachment?.localUri,
+        receiptMimeType = receiptAttachment?.mimeType,
+        receiptCapturedAtMillis = receiptAttachment?.capturedAtMillis,
+        receiptRemoteUrl = receiptAttachment?.remoteUrl,
         createdBy = createdBy,
         payerType = payerType.name,
         payerId = payerId,
@@ -87,3 +96,31 @@ fun Expense.toEntity(): ExpenseEntity {
 fun List<ExpenseEntity>.toDomain(): List<Expense> = map { it.toDomain() }
 
 fun List<Expense>.toEntity(): List<ExpenseEntity> = map { it.toEntity() }
+
+/**
+ * Reconstructs a [ReceiptAttachment] from the four nullable columns stored in Room.
+ *
+ * Returns null only when there is truly no attachment (no local file AND no remote URL).
+ *
+ * - **Normal** (device that attached the receipt): [localUri] is a `file://` URI, [mimeType]
+ *   and [capturedAtMillis] are populated.
+ * - **Remote-only** (synced from another device): [localUri] is blank, but [remoteUrl] is present.
+ *   We preserve the attachment so the detail screen can display the image via the remote URL.
+ * - **Legacy** (pre-v28 row, backfilled by migration): [mimeType] defaults to `"image/jpeg"`,
+ *   [capturedAtMillis] defaults to `0`.
+ */
+private fun buildReceiptAttachment(
+    localUri: String?,
+    mimeType: String?,
+    capturedAtMillis: Long?,
+    remoteUrl: String?
+): ReceiptAttachment? {
+    // No attachment at all: both local and remote are absent.
+    if (localUri.isNullOrBlank() && remoteUrl.isNullOrBlank()) return null
+    return ReceiptAttachment(
+        localUri = localUri.orEmpty(),
+        mimeType = if (mimeType.isNullOrBlank()) "image/jpeg" else mimeType,
+        capturedAtMillis = capturedAtMillis ?: 0L,
+        remoteUrl = remoteUrl
+    )
+}

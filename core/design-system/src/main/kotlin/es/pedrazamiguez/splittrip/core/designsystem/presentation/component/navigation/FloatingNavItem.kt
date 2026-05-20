@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.main.presentation.component.navbar
+package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -25,21 +25,17 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
 
-/**
- * A single navigation item in the floating bottom bar.
- * Features bouncy scale animation, icon bounce, and color transitions.
- */
+/** A single item in [FloatingNavigationBar] with bouncy scale, icon bounce, and color animations. */
 @Suppress("LongMethod") // Compose UI builder DSL
 @Composable
 internal fun FloatingNavItem(
-    item: NavigationProvider,
+    item: FloatingNavTab,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Bouncy scale animation
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.15f else 0.95f,
         animationSpec = spring(
@@ -49,7 +45,6 @@ internal fun FloatingNavItem(
         label = "scaleAnimation"
     )
 
-    // Icon vertical bounce
     val iconOffsetY by animateFloatAsState(
         targetValue = if (isSelected) -2f else 0f,
         animationSpec = spring(
@@ -69,7 +64,6 @@ internal fun FloatingNavItem(
         label = "contentColorAnimation"
     )
 
-    // Label alpha animation
     val labelAlpha by animateFloatAsState(
         targetValue = if (isSelected) 1f else 0.7f,
         animationSpec = spring(stiffness = Spring.StiffnessMedium),
@@ -95,9 +89,7 @@ internal fun FloatingNavItem(
                 modifier = Modifier
                     .size(24.dp)
                     .scale(scale)
-                    .graphicsLayer {
-                        translationY = iconOffsetY
-                    },
+                    .graphicsLayer { translationY = iconOffsetY },
                 contentAlignment = Alignment.Center
             ) {
                 item.Icon(isSelected = isSelected, tint = contentColor)

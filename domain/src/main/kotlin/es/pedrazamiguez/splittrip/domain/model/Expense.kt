@@ -34,7 +34,7 @@ data class Expense(
     val paymentMethod: PaymentMethod = PaymentMethod.OTHER,
     val paymentStatus: PaymentStatus = PaymentStatus.FINISHED,
     val dueDate: LocalDateTime? = null,
-    val receiptLocalUri: String? = null,
+    val receiptAttachment: ReceiptAttachment? = null,
     val cashTranches: List<CashTranche> = emptyList(),
     val splitType: SplitType = SplitType.EQUAL,
     val splits: List<ExpenseSplit> = emptyList(),

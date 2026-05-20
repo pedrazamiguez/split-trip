@@ -40,6 +40,9 @@ dependencies {
     // Other dependencies
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.play.services.mlkit.text.recognition)
+    implementation(libs.google.ai.edge.aicore)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.koin.core)

@@ -236,10 +236,19 @@ Before creating any new service, utility, formatter, or UI component, **check th
 
 ## AI Agent Behavior Rules (CRITICAL)
 
-- **Read before you act:** Before ANY implementation, read `.github/copilot-instructions.md`, `AGENTS.md`, and all relevant `wiki/*.md` articles — including `wiki/core-services-catalog.md` for existing services and components. Study existing reference implementations in the codebase.
+- **Internalize Core Architecture Documents:** Before proposing any action or writing code, you MUST read and internalize all project documentation, including `.github/copilot-instructions.md`, `DESIGN.md`, `AGENTS.md`, and all files in the `wiki/` directory (e.g., `add-ons-architecture.md`, `offline-first-architecture.md`, `horizon-narrative-design-language.md`, `core-services-catalog.md`). Do not rely solely on baseline knowledge.
+- **No Pragmatic Patches:** You will provide clean, production-ready code. Quick hacks, "temporary" patches, or code that compromises modularity and Clean Architecture boundaries are strictly prohibited.
+- **Strict Math:** Precision-sensitive math (e.g., balances, shares, exchange rates, currency amounts) MUST use `BigDecimal` with an explicit scale and rounding mode. Using `Double` or `Float` is strictly prohibited.
+- **Offline-First Protocol:** Save to Room first (instant UI update) and generate UUIDs and timestamps locally, then sync to Firestore in the background using the reusable sync delegates.
+- **The 600-Line Limit:** Production source files must NOT exceed 600 lines. Extract ViewModels event handlers, delegates, or component composables to keep files clean and within this hard limit.
+- **Design System (Horizon Narrative):** Adhere to the "Horizon Narrative" design language. This includes using Outfit/Inter/Jakarta Sans typography, tonal layering, glassmorphism, gradients, no raw 1px borders, and applying `LocalBottomPadding` to all bottom-anchored elements on tab screens.
+- **Establish a Baseline:** Before editing any files, run the full local validation check suite (`make check`) to establish the initial status of the codebase. Resolve any pre-existing violations on files you will touch before making other changes.
+- **File-Size Guards:** Always verify a file's line count using `wc -l` before and after editing it. If editing will push the file near or over 600 lines, extract event handlers, delegates, or components first.
+- **Commenting Policy:** Comment the *why*, never the *what*. Completely avoid/delete redundant comments that merely restate what code does.
+- **Local Verification Gate (MANDATORY):** Before declaring any task, issue, or review comment done, completed, addressed, or accomplished, you MUST run `make check` locally and ensure there are 0 failures. Never leave verification for CI/CD or the user to discover.
 - **NEVER push code** to any remote branch without explicit user permission.
 - **NEVER create Pull Requests** without explicit user permission and confirmation of branch naming convention (see `wiki/branching-versioning-release-strategy.md`), target branch, and PR format.
 - **NEVER comment on GitHub issues or PRs** without the user explicitly requesting it.
 - **NEVER merge PRs or close issues** autonomously.
-- **Compliance checklist before generating code:** (1) ViewModels only inject UseCases/Mappers/Services? (2) Formatting only in Mappers? (3) BigDecimal for all decimal math? (4) Handler delegation for >5 events? (5) `LocalBottomPadding` for tab screens? (6) Feature/Screen split correct? (7) MVI triad complete? (8) Hot flows with `AppConstants.FLOW_RETENTION_TIME` and `AppConstants.FLOW_REPLAY_EXPIRATION`? (9) Offline-first Room-first reads? (10) `ImmutableList` in UiState?
+- **Compliance checklist before generating code:** (1) ViewModels only inject UseCases/Mappers/Services? (2) Formatting only in Mappers? (3) BigDecimal for all decimal math? (4) Handler delegation for >5 events? (5) `LocalBottomPadding` for tab screens? (6) Feature/Screen split correct? (7) MVI triad complete? (8) Hot flows with `AppConstants.FLOW_RETENTION_TIME` and `AppConstants.FLOW_REPLAY_EXPIRATION`? (9) Offline-first Room-first reads? (10) `ImmutableList` in UiState? (11) Local verification suite (`make check`) executed and passing with 0 failures?
 

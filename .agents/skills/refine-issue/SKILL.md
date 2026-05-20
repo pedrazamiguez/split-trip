@@ -1,6 +1,21 @@
+---
+name: refine-issue
+description: Turn an idea, problem description, or bug report into a well-formed GitHub issue.
+mode: agent
+tools:
+  - codebase
+  - githubRepo
+  - terminalLastCommand
+arguments:
+  - name: description
+    description: The plain English description of the feature, bug, or improvement.
+    required: true
+---
+# Refine Issue
+
 I want to create a GitHub issue for the following idea or problem:
 
-> [describe the feature, bug, or improvement in plain English here]
+> $DESCRIPTION
 
 ---
 
@@ -14,9 +29,9 @@ Turn the description above into a well-formed GitHub issue ready to be picked up
 
 Before drafting the issue, read the following to ensure the issue is grounded in the actual architecture and constraints of the project:
 
-- `.github/copilot-instructions.md`
-- `AGENTS.md`
-- `DESIGN.md`
+- [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)
+- [AGENTS.md](../../../AGENTS.md)
+- [DESIGN.md](../../../DESIGN.md)
 - Any relevant `wiki/*.md` articles related to the topic
 - Any existing issues or PRs that overlap with or inform this idea (search GitHub)
 
@@ -37,7 +52,7 @@ A short, imperative sentence (e.g. "Extract `CashRateResultDelegate` from `Curre
 ### Proposed Solution
 - High-level description of the change.
 - Which modules, layers, or files are involved.
-- Any architecture patterns from `AGENTS.md` or `.github/copilot-instructions.md` that apply (e.g. Delegate sub-pattern, offline-first, MVI triad).
+- Any architecture patterns from [AGENTS.md](../../../AGENTS.md) or [.github/copilot-instructions.md](../../../.github/copilot-instructions.md) that apply (e.g. Delegate sub-pattern, offline-first, MVI triad).
 - Reference similar, existing implementations in the codebase where relevant.
 
 ### Acceptance Criteria
@@ -59,7 +74,7 @@ Link any parent issues, child issues, or prior PRs that provide context.
 ## Step 3 — Review before posting
 
 Before presenting the draft, verify:
-- The proposed solution aligns with the architecture rules in `AGENTS.md`.
+- The proposed solution aligns with the architecture rules in [AGENTS.md](../../../AGENTS.md).
 - The acceptance criteria are concrete and testable, not vague.
 - The scope is narrow enough to be completed in a single PR.
 - No implementation details that belong in a PR description have leaked into the issue.

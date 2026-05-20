@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Cash
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.receipt.ReceiptAttachmentHandler
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
@@ -50,12 +51,11 @@ fun AddExpenseFeature(
     val state by addExpenseViewModel.uiState.collectAsStateWithLifecycle()
     val selectedGroupId = sharedViewModel.selectedGroupId.collectAsStateWithLifecycle()
 
-    // Tracks the pending conflict-resolution action; non-null while the sheet is visible.
     var conflictResolution by remember {
         mutableStateOf<AddExpenseUiAction.ShowCashConflictResolution?>(null)
     }
+    var showReceiptSourceSheet by remember { mutableStateOf(false) }
 
-    // Intercept system back — delegate to wizard navigation
     BackHandler { addExpenseViewModel.onEvent(AddExpenseUiEvent.PreviousStep) }
 
     ObserveAddExpenseActions(
@@ -75,10 +75,26 @@ fun AddExpenseFeature(
         )
     }
 
+    ReceiptAttachmentHandler(
+        showSheet = showReceiptSourceSheet,
+        onDismissSheet = { showReceiptSourceSheet = false },
+        onReceiptSelected = { uriString ->
+            addExpenseViewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected(uriString))
+        }
+    )
+
     AddExpenseScreen(
         groupId = selectedGroupId.value,
         uiState = state,
-        onEvent = { event -> addExpenseViewModel.onEvent(event, onAddExpenseSuccess) }
+        onEvent = { event ->
+            // RequestPickerSource is a pure-UI concern — handle it in the Feature
+            // so the ViewModel never touches source selection or launcher APIs.
+            if (event is AddExpenseUiEvent.RequestPickerSource) {
+                showReceiptSourceSheet = true
+            } else {
+                addExpenseViewModel.onEvent(event, onAddExpenseSuccess)
+            }
+        }
     )
 }
 

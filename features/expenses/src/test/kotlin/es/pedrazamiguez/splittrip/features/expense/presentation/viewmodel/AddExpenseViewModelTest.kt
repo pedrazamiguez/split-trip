@@ -24,6 +24,7 @@ import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
@@ -300,8 +301,21 @@ class AddExpenseViewModelTest {
             addOnCrudDelegate = addOnCrudDelegate
         )
 
+        val attachReceiptUseCase: AttachReceiptUseCase = mockk {
+            coEvery { this@mockk(any()) } answers {
+                val uri = firstArg<String>()
+                Result.success(
+                    es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                        localUri = uri,
+                        mimeType = "image/webp",
+                        capturedAtMillis = 1716000000000L
+                    )
+                )
+            }
+        }
         val formHandler = FormEventHandler(
-            addExpenseUiMapper = addExpenseUiMapper
+            addExpenseUiMapper = addExpenseUiMapper,
+            attachReceiptUseCase = attachReceiptUseCase
         )
 
         viewModel = AddExpenseViewModel(
@@ -1260,6 +1274,7 @@ class AddExpenseViewModelTest {
         @Test
         fun `ReceiptImageSelected sets uri`() = runTest {
             viewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected("content://image/1"))
+            advanceUntilIdle()
 
             assertEquals("content://image/1", viewModel.uiState.value.receiptUri)
         }
@@ -1267,6 +1282,7 @@ class AddExpenseViewModelTest {
         @Test
         fun `RemoveReceiptImage clears uri`() = runTest {
             viewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected("content://image/1"))
+            advanceUntilIdle()
             assertNotNull(viewModel.uiState.value.receiptUri)
 
             viewModel.onEvent(AddExpenseUiEvent.RemoveReceiptImage)

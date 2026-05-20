@@ -15,6 +15,7 @@ object Routes {
     const val SETTINGS = "settings"
     const val SETTINGS_DEFAULT_CURRENCY = "settings_default_currency"
     const val SETTINGS_NOTIFICATIONS = "settings_notifications"
+    const val SETTINGS_DEVELOPER_SERVICES = "settings_developer_services"
     const val GROUP_DETAIL = "group_detail/{groupId}"
     const val EXPENSE_DETAIL = "expense_detail/{expenseId}"
     const val MANAGE_SUBUNITS = "manage_subunits/{groupId}"

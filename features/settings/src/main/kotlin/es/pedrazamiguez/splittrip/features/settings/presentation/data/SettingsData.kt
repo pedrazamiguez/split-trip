@@ -51,7 +51,8 @@ fun buildSettingsSections(
     onNotificationSwitchToggle: () -> Unit,
     hasNotificationPermission: Boolean,
     currentCurrency: Currency?,
-    onDefaultCurrencyClick: () -> Unit
+    onDefaultCurrencyClick: () -> Unit,
+    onServicesTestClick: () -> Unit
 ): List<SettingsSectionModel> = listOf(
     accountSection(),
     preferencesSection(
@@ -61,7 +62,7 @@ fun buildSettingsSections(
         currentCurrency = currentCurrency,
         onDefaultCurrencyClick = onDefaultCurrencyClick
     ),
-    developerSection(),
+    developerSection(onServicesTestClick = onServicesTestClick),
     supportSection(),
     aboutSection()
 )
@@ -153,7 +154,7 @@ private fun CurrencyDescription(currentCurrency: Currency?) {
     }
 }
 
-private fun developerSection() = SettingsSectionModel(
+private fun developerSection(onServicesTestClick: () -> Unit) = SettingsSectionModel(
     titleRes = R.string.settings_section_developer,
     items = listOf(
         SettingsItemModel.Standard(
@@ -174,7 +175,8 @@ private fun developerSection() = SettingsSectionModel(
         SettingsItemModel.Standard(
             icon = TablerIcons.Outline.Hammer,
             titleRes = R.string.settings_developer_services_title,
-            descriptionRes = R.string.settings_developer_services_description
+            descriptionRes = R.string.settings_developer_services_description,
+            onClick = onServicesTestClick
         )
     )
 )

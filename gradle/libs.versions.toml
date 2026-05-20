@@ -39,6 +39,8 @@ koin = "4.2.1"
 
 # Firebase
 firebaseBom = "34.12.0"
+mlkitTextRecognition = "19.0.0"
+googleAiEdgeAicore = "0.0.1-exp02"
 
 # KotlinX & Coroutines
 coroutines = "1.10.2"
@@ -101,6 +103,8 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
 firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity" }
 firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug" }
+play-services-mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }
+google-ai-edge-aicore = { group = "com.google.ai.edge.aicore", name = "aicore", version.ref = "googleAiEdgeAicore" }
 
 # Coroutines
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }

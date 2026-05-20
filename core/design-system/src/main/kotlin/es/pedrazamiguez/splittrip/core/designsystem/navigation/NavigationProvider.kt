@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavGraphBuilder
 
-interface NavigationProvider {
+interface NavigationProvider : FloatingNavTab {
 
     val route: String
 
@@ -12,11 +12,14 @@ interface NavigationProvider {
 
     val requiresSelectedGroup: Boolean
 
-    @Composable
-    fun Icon(isSelected: Boolean, tint: Color = Color.Unspecified)
+    // Satisfy FloatingNavTab.id via the navigation route — no change required in implementations.
+    override val id: String get() = route
 
     @Composable
-    fun getLabel(): String
+    override fun Icon(isSelected: Boolean, tint: Color)
+
+    @Composable
+    override fun getLabel(): String
 
     fun buildGraph(builder: NavGraphBuilder)
 }

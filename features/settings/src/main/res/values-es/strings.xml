@@ -39,7 +39,7 @@
     <string name="settings_developer_assets_title">Recursos</string>
     <string name="settings_developer_assets_description">Imágenes y animaciones</string>
     <string name="settings_developer_services_title">Pruebas de Servicios</string>
-    <string name="settings_developer_services_description">Probar servicios backend</string>
+    <string name="settings_developer_services_description">Probar servicios del dispositivo</string>
 
     <!-- Support & Feedback Section -->
     <string name="settings_section_support">Ayuda y Feedback</string>
@@ -76,4 +76,51 @@
     <string name="notification_prefs_expenses_description">Gastos añadidos, actualizados o eliminados</string>
     <string name="notification_prefs_financial_title">Actividad financiera</string>
     <string name="notification_prefs_financial_description">Retiradas de efectivo y aportaciones</string>
+
+    <!-- Developer Services Playground -->
+    <string name="developer_services_selected_attachment">Adjunto Seleccionado</string>
+    <string name="developer_services_no_document_selected">Ningún documento seleccionado. Elige una imagen (JPEG, PNG, WEBP, BMP) o PDF para ejecutar OCR.</string>
+    <string name="developer_services_name">Nombre:</string>
+    <string name="developer_services_type">Tipo:</string>
+    <string name="developer_services_uri">URI:</string>
+    <string name="developer_services_select_document">Seleccionar Documento</string>
+    <string name="developer_services_clear">Limpiar</string>
+    <string name="developer_services_ocr_operations">Operaciones OCR</string>
+    <string name="developer_services_run_ocr">Ejecutar Motor OCR</string>
+    <string name="developer_services_extracted_raw_text">Texto Plano Extraído</string>
+    <string name="developer_services_extracted_blocks">Bloques Extraídos (%1$d)</string>
+    <string name="developer_services_block_index">Bloque #%1$d</string>
+    <string name="developer_services_ocr_error_fallback">Fallo en el procesamiento OCR</string>
+    <string name="developer_services_extraction_operations">Operaciones de Extracción</string>
+    <string name="developer_services_extraction_capability">Capacidad del dispositivo: %1$s</string>
+    <string name="developer_services_run_extraction">Ejecutar Extracción de Recibo</string>
+    <string name="developer_services_extraction_results">Datos del Recibo Extraídos</string>
+    <string name="developer_services_extraction_amount">Importe:</string>
+    <string name="developer_services_extraction_currency">Moneda:</string>
+    <string name="developer_services_extraction_date">Fecha:</string>
+    <string name="developer_services_extraction_title">Título:</string>
+    <string name="developer_services_extraction_source">Fuente:</string>
+    <string name="developer_services_extraction_confidence">Confianza:</string>
+    <string name="developer_services_extraction_error_fallback">Error en la extracción del recibo</string>
+    <string name="developer_services_extraction_source_ai_core">Gemini Nano</string>
+    <string name="developer_services_extraction_source_no_op">No Disponible</string>
+    <string name="developer_services_extraction_confidence_high">Alta</string>
+    <string name="developer_services_extraction_confidence_medium">Media</string>
+    <string name="developer_services_extraction_confidence_low">Baja</string>
+    <string name="developer_services_extraction_capability_on_device">IA en Dispositivo</string>
+    <string name="developer_services_extraction_capability_unsupported">No Compatible</string>
+    <string name="developer_services_extraction_na">—</string>
+
+    <!-- Developer services navigation tabs -->
+    <string name="developer_services_tab_ocr">OCR</string>
+    <string name="developer_services_tab_ai_extraction">Extracción</string>
+    <string name="developer_services_tab_avatar">Avatares</string>
+
+    <!-- AI Extraction tab -->
+    <string name="developer_services_ai_no_receipt">Selecciona una foto de recibo o PDF para extraer datos con IA en el dispositivo</string>
+    <string name="developer_services_ai_select_receipt">Seleccionar recibo</string>
+
+    <!-- Avatar Generation tab (placeholder) -->
+    <string name="developer_services_avatar_title">Generación de Avatares con IA</string>
+    <string name="developer_services_avatar_subtitle">Próximamente</string>
 </resources>

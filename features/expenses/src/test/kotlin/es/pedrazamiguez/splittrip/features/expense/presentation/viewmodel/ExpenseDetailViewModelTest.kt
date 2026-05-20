@@ -7,7 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
@@ -47,7 +47,7 @@ class ExpenseDetailViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var getExpenseByIdUseCase: GetExpenseByIdUseCase
+    private lateinit var getExpenseByIdFlowUseCase: GetExpenseByIdFlowUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase
     private lateinit var getGroupSubunitsUseCase: GetGroupSubunitsUseCase
@@ -101,7 +101,7 @@ class ExpenseDetailViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        getExpenseByIdUseCase = mockk()
+        getExpenseByIdFlowUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         getCashWithdrawalsFlowUseCase = mockk()
         getGroupSubunitsUseCase = mockk()
@@ -152,7 +152,7 @@ class ExpenseDetailViewModelTest {
         @Test
         fun `loads expense when setExpenseId is called`() = runTest(testDispatcher) {
             // Given
-            coEvery { getExpenseByIdUseCase(testExpenseId) } returns testExpense
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
             // When
@@ -172,7 +172,7 @@ class ExpenseDetailViewModelTest {
         @Test
         fun `calls mapper with expense, member profiles and current user`() = runTest(testDispatcher) {
             // Given
-            coEvery { getExpenseByIdUseCase(testExpenseId) } returns testExpense
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
             // When
@@ -180,7 +180,7 @@ class ExpenseDetailViewModelTest {
             advanceUntilIdle()
 
             // Then — mapper was called once with the loaded data
-            coVerify(exactly = 1) { expenseDetailUiMapper.map(testExpense, any(), testUserId, any(), any()) }
+            io.mockk.verify(exactly = 1) { expenseDetailUiMapper.map(testExpense, any(), testUserId, any(), any()) }
 
             collectJob.cancel()
         }
@@ -188,7 +188,7 @@ class ExpenseDetailViewModelTest {
         @Test
         fun `shows error state when expense not found`() = runTest(testDispatcher) {
             // Given
-            coEvery { getExpenseByIdUseCase(testExpenseId) } returns null
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(null)
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
             // When
@@ -207,7 +207,7 @@ class ExpenseDetailViewModelTest {
         @Test
         fun `shows error state when getExpenseByIdUseCase throws`() = runTest(testDispatcher) {
             // Given
-            coEvery { getExpenseByIdUseCase(testExpenseId) } throws RuntimeException("DB error")
+            every { getExpenseByIdFlowUseCase(testExpenseId) } throws RuntimeException("DB error")
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
             // When
@@ -226,7 +226,7 @@ class ExpenseDetailViewModelTest {
         @Test
         fun `falls back to empty profiles when getMemberProfilesUseCase throws`() = runTest(testDispatcher) {
             // Given
-            coEvery { getExpenseByIdUseCase(testExpenseId) } returns testExpense
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
             coEvery { getMemberProfilesUseCase(any()) } throws RuntimeException("Network error")
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
@@ -246,7 +246,7 @@ class ExpenseDetailViewModelTest {
         @Test
         fun `setExpenseId with same id does not reload`() = runTest(testDispatcher) {
             // Given
-            coEvery { getExpenseByIdUseCase(testExpenseId) } returns testExpense
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
             // When
@@ -256,7 +256,7 @@ class ExpenseDetailViewModelTest {
             advanceUntilIdle()
 
             // Then — use case called only once
-            coVerify(exactly = 1) { getExpenseByIdUseCase(testExpenseId) }
+            io.mockk.verify(exactly = 1) { getExpenseByIdFlowUseCase(testExpenseId) }
 
             collectJob.cancel()
         }
@@ -265,8 +265,8 @@ class ExpenseDetailViewModelTest {
         fun `setExpenseId with different id reloads`() = runTest(testDispatcher) {
             // Given
             val otherId = "expense-999"
-            coEvery { getExpenseByIdUseCase(testExpenseId) } returns testExpense
-            coEvery { getExpenseByIdUseCase(otherId) } returns testExpense.copy(id = otherId)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
+            every { getExpenseByIdFlowUseCase(otherId) } returns flowOf(testExpense.copy(id = otherId))
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
             // When
@@ -276,8 +276,8 @@ class ExpenseDetailViewModelTest {
             advanceUntilIdle()
 
             // Then — each id was loaded once
-            coVerify(exactly = 1) { getExpenseByIdUseCase(testExpenseId) }
-            coVerify(exactly = 1) { getExpenseByIdUseCase(otherId) }
+            io.mockk.verify(exactly = 1) { getExpenseByIdFlowUseCase(testExpenseId) }
+            io.mockk.verify(exactly = 1) { getExpenseByIdFlowUseCase(otherId) }
 
             collectJob.cancel()
         }
@@ -290,7 +290,7 @@ class ExpenseDetailViewModelTest {
         fun `DeleteConfirmed calls deleteExpenseUseCase with correct groupId and expenseId`() =
             runTest(testDispatcher) {
                 // Given
-                coEvery { getExpenseByIdUseCase(testExpenseId) } returns testExpense
+                every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
                 coEvery { deleteExpenseUseCase(any(), any()) } just Runs
                 val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
                 viewModel.setExpenseId(testExpenseId)
@@ -309,7 +309,7 @@ class ExpenseDetailViewModelTest {
         @Test
         fun `DeleteConfirmed emits DeleteSuccess action on success`() = runTest(testDispatcher) {
             // Given
-            coEvery { getExpenseByIdUseCase(testExpenseId) } returns testExpense
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
             coEvery { deleteExpenseUseCase(any(), any()) } just Runs
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
             viewModel.setExpenseId(testExpenseId)
@@ -337,7 +337,7 @@ class ExpenseDetailViewModelTest {
         @Test
         fun `DeleteConfirmed emits ShowError action when deletion fails`() = runTest(testDispatcher) {
             // Given
-            coEvery { getExpenseByIdUseCase(testExpenseId) } returns testExpense
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
             coEvery { deleteExpenseUseCase(any(), any()) } throws RuntimeException("Delete failed")
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
             viewModel.setExpenseId(testExpenseId)
@@ -376,7 +376,7 @@ class ExpenseDetailViewModelTest {
     }
 
     private fun createViewModel() = ExpenseDetailViewModel(
-        getExpenseByIdUseCase = getExpenseByIdUseCase,
+        getExpenseByIdFlowUseCase = getExpenseByIdFlowUseCase,
         getMemberProfilesUseCase = getMemberProfilesUseCase,
         getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
         getGroupSubunitsUseCase = getGroupSubunitsUseCase,

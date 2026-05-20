@@ -75,6 +75,8 @@ data class ExpenseDetailUiModel(
 
     // Receipt
     val receiptUri: String? = null,
+    /** MIME type of the attached receipt (e.g. `image/webp`, `application/pdf`). Null when no receipt. */
+    val receiptMimeType: String? = null,
 
     // Provenance
     val createdByText: String = "",

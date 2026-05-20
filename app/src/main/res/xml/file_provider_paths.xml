@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FileProvider paths for receipt camera capture.
+    Grants the system camera app temporary write access to a file inside app-specific
+    storage so TakePicture can write the captured image without READ_EXTERNAL_STORAGE.
+    Using `files-path` (filesDir) keeps receipts in the same location as ReceiptStorageServiceImpl.
+-->
+<paths>
+    <files-path name="receipts" path="receipts/" />
+</paths>
