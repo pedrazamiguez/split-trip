@@ -1,14 +1,19 @@
 package es.pedrazamiguez.splittrip.data.di
 
 import es.pedrazamiguez.splittrip.data.repository.impl.ExpenseRepositoryImpl
+import es.pedrazamiguez.splittrip.data.service.AICoreCapabilityProvider
+import es.pedrazamiguez.splittrip.data.service.AICoreReceiptParser
 import es.pedrazamiguez.splittrip.data.service.MLKitOcrService
+import es.pedrazamiguez.splittrip.data.service.ReceiptExtractionServiceImpl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import kotlinx.coroutines.Dispatchers
+import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 val expensesDataModule = module {
@@ -24,7 +29,26 @@ val expensesDataModule = module {
 
     single<ReceiptOcrService> {
         MLKitOcrService(
-            context = get(),
+            context = androidContext(),
+            defaultDispatcher = Dispatchers.Default
+        )
+    }
+
+    single<AICoreCapabilityProvider> {
+        AICoreCapabilityProvider(context = androidContext())
+    }
+
+    single<AICoreReceiptParser> {
+        AICoreReceiptParser(
+            appContext = androidContext(),
+            defaultDispatcher = Dispatchers.Default
+        )
+    }
+
+    single<ReceiptExtractionService> {
+        ReceiptExtractionServiceImpl(
+            aiCoreCapabilityProvider = get<AICoreCapabilityProvider>(),
+            aiCoreReceiptParser = get<AICoreReceiptParser>(),
             defaultDispatcher = Dispatchers.Default
         )
     }
