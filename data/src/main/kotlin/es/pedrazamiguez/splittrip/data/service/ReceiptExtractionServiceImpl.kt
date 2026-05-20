@@ -13,7 +13,7 @@ import timber.log.Timber
 
 internal class ReceiptExtractionServiceImpl(
     private val aiCoreCapabilityProvider: AICoreCapabilityProvider,
-    private val aiCoreReceiptParser: AICoreReceiptParser,
+    private val aiCoreReceiptParser: Lazy<AICoreReceiptParser>,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ReceiptExtractionService {
 
@@ -30,7 +30,7 @@ internal class ReceiptExtractionServiceImpl(
         }
 
         val startMs = System.currentTimeMillis()
-        val result = aiCoreReceiptParser.parse(rawText).recover { error ->
+        val result = aiCoreReceiptParser.value.parse(rawText).recover { error ->
             Timber.w(
                 error,
                 "ReceiptExtractionService: AICore parser failed mid-flight — falling back to NO_OP (elapsed=%dms)",

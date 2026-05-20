@@ -2,11 +2,14 @@ package es.pedrazamiguez.splittrip.data.service
 
 import com.google.ai.edge.aicore.Candidate
 import com.google.ai.edge.aicore.GenerativeModel
+import es.pedrazamiguez.splittrip.data.BuildConfig
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import java.time.LocalDate
+import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -23,22 +26,27 @@ internal class AICoreReceiptParser(
     private val preparationMutex = Mutex()
 
     suspend fun parse(rawText: RawReceiptText): Result<ExtractedReceipt> = withContext(defaultDispatcher) {
-        runCatching {
+        try {
             if (rawText.fullText.isBlank()) {
                 Timber.d("AICoreReceiptParser: raw text is blank — returning empty receipt")
-                return@runCatching emptyAiCoreReceipt()
+                Result.success(emptyAiCoreReceipt())
+            } else {
+                val cleanJson = runInference(rawText.fullText)
+                if (cleanJson == null) {
+                    Result.success(emptyAiCoreReceipt())
+                } else {
+                    Timber.d(
+                        "AICoreReceiptParser: parsing JSON response: %s",
+                        cleanJson.take(MAX_LOG_JSON_PREVIEW_CHARS)
+                    )
+                    Result.success(parseJsonToReceipt(cleanJson))
+                }
             }
-
-            val cleanJson = runInference(rawText.fullText)
-                ?: return@runCatching emptyAiCoreReceipt()
-
-            Timber.d(
-                "AICoreReceiptParser: parsing JSON response: %s",
-                cleanJson.take(MAX_LOG_JSON_PREVIEW_CHARS)
-            )
-            parseJsonToReceipt(cleanJson)
-        }.onFailure {
-            Timber.e(it, "AICoreReceiptParser: extraction failed")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "AICoreReceiptParser: extraction failed")
+            Result.failure(e)
         }
     }
 
@@ -81,11 +89,18 @@ internal class AICoreReceiptParser(
         return if (cleanJson.startsWith("{")) {
             cleanJson
         } else {
-            Timber.w(
-                "AICoreReceiptParser: not valid JSON (first %d chars: '%s')",
-                MAX_LOG_JSON_PREVIEW_CHARS,
-                cleanJson.take(MAX_LOG_JSON_PREVIEW_CHARS)
-            )
+            if (BuildConfig.DEBUG) {
+                Timber.w(
+                    "AICoreReceiptParser: not valid JSON (first %d chars: '%s')",
+                    MAX_LOG_JSON_PREVIEW_CHARS,
+                    cleanJson.take(MAX_LOG_JSON_PREVIEW_CHARS)
+                )
+            } else {
+                Timber.w(
+                    "AICoreReceiptParser: not valid JSON (length=%d)",
+                    cleanJson.length
+                )
+            }
             null
         }
     }
@@ -97,7 +112,7 @@ internal class AICoreReceiptParser(
         val amount = amountStr?.toBigDecimalOrNull()
 
         val currency = jsonObject.optString("currency")
-            .takeIf { it.isNotEmpty() && it != "null" }?.uppercase()
+            .takeIf { it.isNotEmpty() && it != "null" }?.uppercase(Locale.ROOT)
 
         val dateStr = jsonObject.optString("date").takeIf { it.isNotEmpty() && it != "null" }
         val date = dateStr?.let {

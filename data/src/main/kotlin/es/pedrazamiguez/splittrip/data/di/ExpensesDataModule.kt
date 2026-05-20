@@ -61,7 +61,7 @@ val expensesDataModule = module {
     single<ReceiptExtractionService> {
         ReceiptExtractionServiceImpl(
             aiCoreCapabilityProvider = get<AICoreCapabilityProvider>(),
-            aiCoreReceiptParser = get<AICoreReceiptParser>(),
+            aiCoreReceiptParser = lazy { get<AICoreReceiptParser>() },
             defaultDispatcher = Dispatchers.Default
         )
     }

@@ -27,6 +27,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ShoppingBag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
+import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
+import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.R
 
 private val FIELD_ICON_SIZE = 18.dp
@@ -34,7 +37,7 @@ private val FIELD_ICON_SIZE = 18.dp
 @Composable
 fun ExtractionOperationsCard(
     isLoading: Boolean,
-    capability: String?,
+    capability: ExtractionCapability?,
     onRunExtractionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -85,8 +88,8 @@ fun ExtractionResultsCard(
     currency: String?,
     date: String?,
     title: String?,
-    source: String?,
-    confidence: String?,
+    source: ExtractionSource?,
+    confidence: ExtractionConfidence?,
     modifier: Modifier = Modifier
 ) {
     SectionCard(
@@ -159,7 +162,7 @@ private fun ExtractionFieldRow(
 
 @Composable
 private fun ExtractionSourceRow(
-    source: String?,
+    source: ExtractionSource?,
     modifier: Modifier = Modifier
 ) {
     val (label, isAiCore) = resolveSourceLabel(source)
@@ -190,7 +193,7 @@ private fun ExtractionSourceRow(
 
 @Composable
 private fun ExtractionConfidenceRow(
-    confidence: String?,
+    confidence: ExtractionConfidence?,
     modifier: Modifier = Modifier
 ) {
     val (label, color) = resolveConfidenceLabel(confidence)
@@ -220,24 +223,26 @@ private fun ExtractionConfidenceRow(
 }
 
 @Composable
-private fun resolveCapabilityLabel(capability: String): Pair<String, Boolean> = when (capability) {
-    "ON_DEVICE_AI" -> stringResource(R.string.developer_services_extraction_capability_on_device) to true
-    else -> stringResource(R.string.developer_services_extraction_capability_unsupported) to false
+private fun resolveCapabilityLabel(capability: ExtractionCapability): Pair<String, Boolean> = when (capability) {
+    ExtractionCapability.ON_DEVICE_AI -> stringResource(R.string.developer_services_extraction_capability_on_device) to
+        true
+    ExtractionCapability.UNSUPPORTED -> stringResource(R.string.developer_services_extraction_capability_unsupported) to
+        false
 }
 
 @Composable
-private fun resolveSourceLabel(source: String?): Pair<String, Boolean> = when (source) {
-    "AI_CORE" -> stringResource(R.string.developer_services_extraction_source_ai_core) to true
+private fun resolveSourceLabel(source: ExtractionSource?): Pair<String, Boolean> = when (source) {
+    ExtractionSource.AI_CORE -> stringResource(R.string.developer_services_extraction_source_ai_core) to true
     else -> stringResource(R.string.developer_services_extraction_source_no_op) to false
 }
 
 @Composable
 private fun resolveConfidenceLabel(
-    confidence: String?
+    confidence: ExtractionConfidence?
 ): Pair<String, androidx.compose.ui.graphics.Color> = when (confidence) {
-    "HIGH" -> stringResource(R.string.developer_services_extraction_confidence_high) to
+    ExtractionConfidence.HIGH -> stringResource(R.string.developer_services_extraction_confidence_high) to
         MaterialTheme.colorScheme.tertiary
-    "MEDIUM" -> stringResource(R.string.developer_services_extraction_confidence_medium) to
+    ExtractionConfidence.MEDIUM -> stringResource(R.string.developer_services_extraction_confidence_medium) to
         MaterialTheme.colorScheme.secondary
     else -> stringResource(R.string.developer_services_extraction_confidence_low) to MaterialTheme.colorScheme.error
 }

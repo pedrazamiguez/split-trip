@@ -3,6 +3,9 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
+import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
+import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
@@ -37,9 +40,9 @@ data class DeveloperServicesUiState(
     val extractedCurrency: String? = null,
     val extractedDate: String? = null,
     val extractedTitle: String? = null,
-    val extractionSource: String? = null,
-    val extractionConfidence: String? = null,
-    val extractionCapability: String? = null,
+    val extractionSource: ExtractionSource? = null,
+    val extractionConfidence: ExtractionConfidence? = null,
+    val extractionCapability: ExtractionCapability? = null,
     val extractionErrorMessage: UiText? = null
 )
 
@@ -140,7 +143,7 @@ class DeveloperServicesViewModel(
                             ocrStatus = OcrStatus.Success,
                             extractedText = rawReceipt.fullText,
                             textBlocks = rawReceipt.blocks.map { block -> block.text }.toImmutableList(),
-                            extractionCapability = receiptExtractionService.capability().name
+                            extractionCapability = receiptExtractionService.capability()
                         )
                     }
                 }
@@ -185,7 +188,7 @@ class DeveloperServicesViewModel(
                 .onSuccess { rawReceipt ->
                     lastRawReceiptText = rawReceipt
                     _uiState.update {
-                        it.copy(extractionCapability = receiptExtractionService.capability().name)
+                        it.copy(extractionCapability = receiptExtractionService.capability())
                     }
                     runExtractionInternal(rawReceipt)
                 }
@@ -210,8 +213,8 @@ class DeveloperServicesViewModel(
                         extractedCurrency = receipt.currency,
                         extractedDate = receipt.date?.toString(),
                         extractedTitle = receipt.title,
-                        extractionSource = receipt.source.name,
-                        extractionConfidence = receipt.confidence.name
+                        extractionSource = receipt.source,
+                        extractionConfidence = receipt.confidence
                     )
                 }
             }

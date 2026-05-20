@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -25,7 +26,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.EmailStamp
@@ -88,7 +92,15 @@ private fun ServiceNavigationBar(
     selectedTab: DeveloperServicesTab,
     onTabSelected: (DeveloperServicesTab) -> Unit
 ) {
-    NavigationBar {
+    val pillShape = RoundedCornerShape(50)
+    NavigationBar(
+        modifier = Modifier
+            .padding(horizontal = MaterialTheme.spacing.Large, vertical = MaterialTheme.spacing.Medium)
+            .shadow(elevation = 8.dp, shape = pillShape)
+            .clip(pillShape),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        tonalElevation = 0.dp
+    ) {
         NavigationBarItem(
             selected = selectedTab is DeveloperServicesTab.Ocr,
             onClick = { onTabSelected(DeveloperServicesTab.Ocr) },

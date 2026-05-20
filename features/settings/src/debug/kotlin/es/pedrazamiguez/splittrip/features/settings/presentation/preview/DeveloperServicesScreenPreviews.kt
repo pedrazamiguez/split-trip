@@ -3,6 +3,8 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.preview
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
+import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
+import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.DeveloperServicesScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesTab
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiState
@@ -69,8 +71,8 @@ private fun DeveloperServicesScreenAiSuccessPreview() {
                 extractedCurrency = "THB",
                 extractedDate = "2026-05-20",
                 extractedTitle = "7-Eleven",
-                extractionSource = "AI_CORE",
-                extractionConfidence = "HIGH"
+                extractionSource = ExtractionSource.AI_CORE,
+                extractionConfidence = ExtractionConfidence.HIGH
             ),
             onSelectOcrFileClick = {},
             onSelectReceiptForAiClick = {},

@@ -237,8 +237,8 @@ class DeveloperServicesViewModelTest {
             assertEquals("EUR", state.extractedCurrency)
             assertEquals("2026-05-20", state.extractedDate)
             assertEquals("Test Store", state.extractedTitle)
-            assertEquals("AI_CORE", state.extractionSource)
-            assertEquals("HIGH", state.extractionConfidence)
+            assertEquals(ExtractionSource.AI_CORE, state.extractionSource)
+            assertEquals(ExtractionConfidence.HIGH, state.extractionConfidence)
             assertNull(state.extractionErrorMessage)
         }
 

@@ -44,7 +44,7 @@ class ReceiptExtractionServiceImplTest {
         aiCoreReceiptParser = mockk()
         service = ReceiptExtractionServiceImpl(
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
-            aiCoreReceiptParser = aiCoreReceiptParser,
+            aiCoreReceiptParser = lazy { aiCoreReceiptParser },
             defaultDispatcher = testDispatcher
         )
     }
