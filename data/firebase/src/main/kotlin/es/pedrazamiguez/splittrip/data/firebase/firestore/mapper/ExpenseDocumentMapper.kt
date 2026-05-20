@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.mapper
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AddOnDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AttachmentDocument
@@ -116,7 +117,13 @@ private fun buildReceiptAttachmentDocuments(
     attachment: es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment?
 ): List<AttachmentDocument> {
     val remoteUrl = attachment?.remoteUrl ?: return emptyList()
-    return listOf(AttachmentDocument(path = remoteUrl, mime = attachment.mimeType))
+    return listOf(
+        AttachmentDocument(
+            path = remoteUrl,
+            mime = attachment.mimeType,
+            uploadedAt = Timestamp.now()
+        )
+    )
 }
 
 private fun AddOn.toAddOnDocument() = AddOnDocument(

@@ -66,6 +66,9 @@ fun AddExpenseFeature(
     var showReceiptSourceSheet by remember { mutableStateOf(false) }
 
     // Camera launcher — requires a pre-created file URI via FileProvider.
+    // cameraTempFile tracks the underlying .jpg so we can delete it after AttachReceiptUseCase
+    // compresses it into a stable WebP — preventing the orphaned temp file from accumulating.
+    var cameraTempFile by remember { mutableStateOf<File?>(null) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -75,6 +78,10 @@ fun AddExpenseFeature(
                 addExpenseViewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected(uri.toString()))
             }
         }
+        // Delete the temp .jpg regardless of capture success; the stable WebP produced by
+        // AttachReceiptUseCase is the authoritative file from this point on.
+        cameraTempFile?.delete()
+        cameraTempFile = null
         cameraImageUri = null
     }
 
@@ -115,8 +122,10 @@ fun AddExpenseFeature(
         ReceiptSourceSelectionSheet(
             onCameraSelected = {
                 showReceiptSourceSheet = false
-                cameraImageUri = createCameraUri(context)
-                cameraImageUri?.let { cameraLauncher.launch(it) }
+                val (tempFile, uri) = createCameraUri(context)
+                cameraTempFile = tempFile
+                cameraImageUri = uri
+                cameraLauncher.launch(uri)
             },
             onGallerySelected = {
                 showReceiptSourceSheet = false
@@ -226,18 +235,21 @@ private fun CashConflictResolutionSheet(
 }
 
 /**
- * Creates a temporary file inside [filesDir]/receipts/ and returns a [FileProvider] URI
- * that can be passed to [TakePicture]. The file is later replaced by the stable WebP copy
- * produced by [ReceiptStorageServiceImpl] when the [ReceiptImageSelected] event fires.
+ * Creates a temporary file inside [filesDir]/receipts/ and returns both the [File] and a
+ * [FileProvider] URI that can be passed to [TakePicture].
+ *
+ * The caller is responsible for deleting the temp file once [ReceiptStorageServiceImpl] has
+ * compressed it into a stable WebP copy (see [AddExpenseFeature] camera launcher callback).
  */
-private fun createCameraUri(context: Context): Uri {
+private fun createCameraUri(context: Context): Pair<File, Uri> {
     val receiptsDir = File(context.filesDir, "receipts").also { it.mkdirs() }
     val tempFile = File.createTempFile("camera_", ".jpg", receiptsDir)
-    return FileProvider.getUriForFile(
+    val uri = FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",
         tempFile
     )
+    return tempFile to uri
 }
 
 @Composable

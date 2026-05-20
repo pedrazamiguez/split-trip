@@ -142,7 +142,10 @@ class ExpenseDetailUiMapper(
                 withdrawalLookup,
                 subunitNameLookup
             ),
-            receiptUri = expense.receiptAttachment?.localUri,
+            // Prefer the local file:// URI for display; fall back to the remote HTTPS URL when
+            // the file has not been downloaded on this device (cloud-only attachment, localUri = "").
+            receiptUri = expense.receiptAttachment?.let { it.localUri.ifBlank { it.remoteUrl } },
+            receiptMimeType = expense.receiptAttachment?.mimeType,
             createdByText = if (expense.createdBy == currentUserId) {
                 resourceProvider.getString(R.string.expense_detail_created_by_you)
             } else {

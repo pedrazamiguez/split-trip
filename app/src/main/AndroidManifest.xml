@@ -63,7 +63,7 @@
             FileProvider for camera capture URIs.
             The system camera app needs a content:// URI pointing to a file inside our
             app-specific storage so TakePicture can write the captured image.
-            authorities must match the string used in ReceiptCameraUriProvider.
+            The authority "${applicationId}.fileprovider" must match the string used in createCameraUri().
         -->
         <provider
             android:name="androidx.core.content.FileProvider"

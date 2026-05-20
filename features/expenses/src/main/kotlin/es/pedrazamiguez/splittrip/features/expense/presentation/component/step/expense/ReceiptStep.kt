@@ -19,6 +19,7 @@ fun ReceiptStep(
     WizardStepLayout(modifier = modifier) {
         ReceiptSection(
             receiptUri = uiState.receiptUri,
+            mimeType = uiState.receiptAttachment?.mimeType,
             onPickerRequested = { onEvent(AddExpenseUiEvent.RequestPickerSource) },
             onRemoveImage = { onEvent(AddExpenseUiEvent.RemoveReceiptImage) }
         )

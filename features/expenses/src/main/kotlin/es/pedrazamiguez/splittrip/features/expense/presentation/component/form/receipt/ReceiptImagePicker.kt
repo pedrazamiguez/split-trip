@@ -28,6 +28,7 @@ import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Camera
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -35,6 +36,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 @Composable
 fun ReceiptImagePicker(
     receiptUri: String?,
+    mimeType: String?,
     onPickerRequested: () -> Unit,
     onRemoveImage: () -> Unit,
     modifier: Modifier = Modifier
@@ -44,7 +46,11 @@ fun ReceiptImagePicker(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         if (receiptUri != null) {
-            ReceiptImagePreview(receiptUri = receiptUri, onRemoveImage = onRemoveImage)
+            if (mimeType == MIME_PDF) {
+                ReceiptPdfPreview(onRemoveImage = onRemoveImage)
+            } else {
+                ReceiptImagePreview(receiptUri = receiptUri, onRemoveImage = onRemoveImage)
+            }
         } else {
             ReceiptPickerPlaceholder(onClick = onPickerRequested)
         }
@@ -86,6 +92,51 @@ private fun ReceiptImagePreview(receiptUri: String, onRemoveImage: () -> Unit) {
     }
 }
 
+/**
+ * Placeholder shown when the user attaches a PDF file.
+ * PDFs cannot be previewed inline; the icon confirms the file was received.
+ */
+@Composable
+private fun ReceiptPdfPreview(onRemoveImage: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .clip(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+    ) {
+        Column(
+            modifier = Modifier.matchParentSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = TablerIcons.Outline.Receipt,
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            BodyText(
+                text = stringResource(R.string.add_expense_receipt_pdf_attached),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraSmall)
+            )
+        }
+        IconButton(
+            onClick = onRemoveImage,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(MaterialTheme.spacing.ExtraSmall)
+        ) {
+            Icon(
+                imageVector = TablerIcons.Outline.X,
+                contentDescription = stringResource(R.string.add_expense_receipt_remove),
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
 @Composable
 private fun ReceiptPickerPlaceholder(onClick: () -> Unit) {
     Row(
@@ -111,3 +162,5 @@ private fun ReceiptPickerPlaceholder(onClick: () -> Unit) {
         )
     }
 }
+
+private const val MIME_PDF = "application/pdf"

@@ -9,15 +9,23 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - [receiptCapturedAtMillis] — Epoch millis when the file was attached locally
  * - [receiptRemoteUrl]        — Firebase Storage download URL; NULL until upload completes
  *
- * Existing rows receive NULL for all three columns, which the read-path maps to a
- * null [ReceiptAttachment] — backward-compatible with receipts attached before this
- * migration (those rows still have a non-null [receiptLocalUri] and will continue to
- * display correctly once the mapper constructs the attachment from available columns).
+ * **Backward-compatibility for pre-v28 rows:**
+ * Rows that already have a non-null [receiptLocalUri] are backfilled with
+ * `receiptMimeType = 'image/jpeg'` and `receiptCapturedAtMillis = 0` so that
+ * [buildReceiptAttachment] can still reconstruct a valid [ReceiptAttachment] for them.
+ * Without this backfill the mapper would treat them as "no attachment" because [mimeType]
+ * would be null, and the receipt would silently disappear from the UI after the upgrade.
  */
 internal val MIGRATION_27_28 = object : Migration(27, 28) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE expenses ADD COLUMN receiptMimeType TEXT")
         db.execSQL("ALTER TABLE expenses ADD COLUMN receiptCapturedAtMillis INTEGER")
         db.execSQL("ALTER TABLE expenses ADD COLUMN receiptRemoteUrl TEXT")
+        // Backfill legacy rows that already had a receipt before schema v28.
+        db.execSQL(
+            """UPDATE expenses
+               SET receiptMimeType = 'image/jpeg', receiptCapturedAtMillis = 0
+               WHERE receiptLocalUri IS NOT NULL"""
+        )
     }
 }

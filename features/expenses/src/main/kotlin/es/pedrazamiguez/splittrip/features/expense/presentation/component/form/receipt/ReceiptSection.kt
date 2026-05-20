@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 @Composable
 internal fun ReceiptSection(
     receiptUri: String?,
+    mimeType: String?,
     onPickerRequested: () -> Unit,
     onRemoveImage: () -> Unit,
     modifier: Modifier = Modifier
@@ -27,6 +28,7 @@ internal fun ReceiptSection(
         SectionHeadingText(text = stringResource(R.string.add_expense_receipt_title))
         ReceiptImagePicker(
             receiptUri = receiptUri,
+            mimeType = mimeType,
             onPickerRequested = onPickerRequested,
             onRemoveImage = onRemoveImage
         )

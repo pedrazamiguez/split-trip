@@ -99,9 +99,15 @@ fun List<Expense>.toEntity(): List<ExpenseEntity> = map { it.toEntity() }
 
 /**
  * Reconstructs a [ReceiptAttachment] from the four nullable columns stored in Room.
- * Returns null when no receipt has been attached (all columns are null), or when only
- * [localUri] is present (legacy row from before v28 migration — treated as no attachment
- * because [mimeType] and [capturedAtMillis] are mandatory for the attachment model).
+ *
+ * Returns null only when there is truly no attachment (no local file AND no remote URL).
+ *
+ * - **Normal** (device that attached the receipt): [localUri] is a `file://` URI, [mimeType]
+ *   and [capturedAtMillis] are populated.
+ * - **Remote-only** (synced from another device): [localUri] is blank, but [remoteUrl] is present.
+ *   We preserve the attachment so the detail screen can display the image via the remote URL.
+ * - **Legacy** (pre-v28 row, backfilled by migration): [mimeType] defaults to `"image/jpeg"`,
+ *   [capturedAtMillis] defaults to `0`.
  */
 private fun buildReceiptAttachment(
     localUri: String?,
@@ -109,11 +115,15 @@ private fun buildReceiptAttachment(
     capturedAtMillis: Long?,
     remoteUrl: String?
 ): ReceiptAttachment? {
-    if (localUri.isNullOrBlank() || mimeType.isNullOrBlank() || capturedAtMillis == null) return null
+    // No attachment at all: both local and remote are absent.
+    if (localUri.isNullOrBlank() && remoteUrl.isNullOrBlank()) return null
+    // mimeType is mandatory for a valid attachment; rows that have neither local nor remote
+    // are already handled above, so here at least one source is present.
+    if (mimeType.isNullOrBlank()) return null
     return ReceiptAttachment(
-        localUri = localUri,
+        localUri = localUri.orEmpty(),
         mimeType = mimeType,
-        capturedAtMillis = capturedAtMillis,
+        capturedAtMillis = capturedAtMillis ?: 0L,
         remoteUrl = remoteUrl
     )
 }

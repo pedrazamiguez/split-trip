@@ -236,7 +236,12 @@ class ExpenseRepositoryImpl(
      * Uploads the receipt to Firebase Cloud Storage if the expense has an attachment with a
      * local path but no remote URL yet.  Called inside the syncScope after the Firestore write
      * succeeds so that connectivity issues during upload do not block the expense save.
-     * On success, persists the download URL to Room so it is included in the next sync write.
+     *
+     * On success:
+     * 1. Persists the download URL to Room.
+     * 2. Reloads the updated expense from Room and **re-syncs it to Firestore** so other
+     *    devices immediately see the attachment. Without step 2 the expense would already
+     *    be SYNCED and no subsequent cloud write would carry the remote URL.
      */
     private suspend fun uploadReceiptInBackground(expense: Expense) {
         val attachment = expense.receiptAttachment ?: return
@@ -250,10 +255,18 @@ class ExpenseRepositoryImpl(
             )
             localExpenseDataSource.updateReceiptRemoteUrl(expense.id, remoteUrl)
             Timber.d("Receipt uploaded for expense ${expense.id}: $remoteUrl")
+
+            // Re-sync to Firestore so the attachment appears for other users/devices.
+            val updatedExpense = localExpenseDataSource.getExpenseById(expense.id)
+            if (updatedExpense != null) {
+                cloudExpenseDataSource.addExpense(expense.groupId, updatedExpense)
+                Timber.d("Receipt URL synced to Firestore for expense ${expense.id}")
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // Non-fatal: the expense is already saved; upload will be retried on next sync.
+            // Non-fatal: the expense is already saved. The next addExpense retry (e.g. after the
+            // device comes back online) will re-attempt the upload via uploadReceiptInBackground.
             Timber.w(e, "Failed to upload receipt for expense ${expense.id}")
         }
     }

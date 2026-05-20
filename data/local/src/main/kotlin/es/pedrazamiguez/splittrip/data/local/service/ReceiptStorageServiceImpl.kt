@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.core.net.toUri
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import java.io.File
@@ -17,7 +18,11 @@ import timber.log.Timber
 /**
  * Copies a user-selected file from a content:// or file:// URI into the app's
  * private files directory (`filesDir/receipts/`) and compresses image types to
- * WebP lossless to reduce on-device storage.
+ * WebP to reduce on-device storage.
+ *
+ * On API 30+, `WEBP_LOSSLESS` guarantees lossless compression.
+ * On API < 30, the legacy `WEBP` format is used; this is lossy at quality < 100
+ * but since [WEBP_QUALITY] is set to 100 the output is visually lossless in practice.
  *
  * PDFs and other non-image MIME types are copied verbatim with their original extension.
  *
@@ -46,16 +51,21 @@ internal class ReceiptStorageServiceImpl(
             Timber.d("Receipt saved: ${destFile.absolutePath} ($actualMime)")
 
             ReceiptAttachment(
-                localUri = destFile.absolutePath,
+                // Store a proper file:// URI so Coil's Uri.parse() can load it without a scheme.
+                localUri = destFile.toUri().toString(),
                 mimeType = actualMime,
                 capturedAtMillis = System.currentTimeMillis()
             )
         }
 
     /**
-     * Decodes the source bitmap and re-encodes it as WebP lossless.
-     * WebP delivers significantly smaller files than JPEG/PNG without quality loss,
-     * reducing both on-device storage and Firebase Storage bandwidth.
+     * Decodes the source bitmap with OOM-safe downsampling (max [MAX_IMAGE_DIMENSION] px on
+     * either axis) and re-encodes it as WebP.
+     *
+     * On API 30+ `WEBP_LOSSLESS` is used (truly lossless).
+     * On API < 30 the legacy `WEBP` encoder is used at quality 100; it is not guaranteed
+     * lossless by the spec but in practice produces visually lossless output.
+     *
      * Returns the saved file and its MIME type.
      */
     private fun compressImage(
@@ -64,21 +74,33 @@ internal class ReceiptStorageServiceImpl(
         dir: File,
         uniqueId: String
     ): Pair<File, String> {
+        // Pass 1: decode only bounds — no pixels allocated
+        val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
+        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, boundsOpts) }
+
+        // Compute a power-of-2 sample size so neither dimension exceeds MAX_IMAGE_DIMENSION
+        val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight)
+
+        // Pass 2: decode at reduced resolution to avoid OOM on high-res photos
+        val bitmap = resolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(
+                input,
+                null,
+                BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
+            )
+        } ?: error("Could not decode image from $uri")
+
         val destFile = File(dir, "$uniqueId$WEBP_EXT")
-        resolver.openInputStream(uri)?.use { input ->
-            val bitmap = BitmapFactory.decodeStream(input)
-                ?: throw IllegalStateException("Could not decode image from $uri")
-            FileOutputStream(destFile).use { output ->
-                @Suppress("DEPRECATION") // WEBP_LOSSLESS added in API 30; WEBP is lossless on pre-30
-                val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                    Bitmap.CompressFormat.WEBP_LOSSLESS
-                } else {
-                    Bitmap.CompressFormat.WEBP
-                }
-                bitmap.compress(format, WEBP_QUALITY, output)
-                bitmap.recycle()
+        FileOutputStream(destFile).use { output ->
+            @Suppress("DEPRECATION") // WEBP_LOSSLESS added in API 30; WEBP used on < 30 (see KDoc)
+            val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                Bitmap.CompressFormat.WEBP_LOSSLESS
+            } else {
+                Bitmap.CompressFormat.WEBP
             }
-        } ?: throw IllegalStateException("Could not open input stream for $uri")
+            bitmap.compress(format, WEBP_QUALITY, output)
+            bitmap.recycle()
+        }
         return destFile to WEBP_MIME
     }
 
@@ -94,8 +116,20 @@ internal class ReceiptStorageServiceImpl(
         val destFile = File(dir, "$uniqueId$ext")
         resolver.openInputStream(uri)?.use { input ->
             FileOutputStream(destFile).use { output -> input.copyTo(output) }
-        } ?: throw IllegalStateException("Could not open input stream for $uri")
+        } ?: error("Could not open input stream for $uri")
         return destFile to mimeType
+    }
+
+    /**
+     * Returns the smallest power-of-2 sample size that keeps both dimensions within
+     * [MAX_IMAGE_DIMENSION]. Returns 1 when the image is already small enough.
+     */
+    private fun calculateInSampleSize(width: Int, height: Int): Int {
+        var inSampleSize = 1
+        while ((height / inSampleSize) > MAX_IMAGE_DIMENSION || (width / inSampleSize) > MAX_IMAGE_DIMENSION) {
+            inSampleSize *= 2
+        }
+        return inSampleSize
     }
 
     private companion object {
@@ -107,6 +141,10 @@ internal class ReceiptStorageServiceImpl(
 
         // Quality param is ignored for WEBP_LOSSLESS but required by the API signature.
         const val WEBP_QUALITY = 100
+
+        /** Max width/height in pixels before downsampling kicks in. */
+        const val MAX_IMAGE_DIMENSION = 2048
+
         val MIME_TO_EXT = mapOf(
             "application/pdf" to ".pdf",
             "image/jpeg" to ".jpg",

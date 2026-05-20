@@ -22,7 +22,15 @@ internal class CloudStorageDataSourceImpl(
         localPath: String,
         mimeType: String
     ): String {
-        val file = File(localPath)
+        // localPath may be a raw filesystem path OR a file:// URI (from ReceiptStorageServiceImpl).
+        // Normalise to a plain path before creating a File.
+        val resolvedPath = if (localPath.startsWith("file://")) {
+            android.net.Uri.parse(localPath).path
+                ?: error("Could not resolve filesystem path from URI: $localPath")
+        } else {
+            localPath
+        }
+        val file = File(resolvedPath)
         val extension = file.extension.ifBlank { "bin" }
         val ref = storage.reference.child("$RECEIPTS_PREFIX/$expenseId/receipt.$extension")
 

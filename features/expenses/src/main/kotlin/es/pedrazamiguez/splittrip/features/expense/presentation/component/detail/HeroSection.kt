@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,8 +30,11 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
@@ -47,7 +52,10 @@ internal fun HeroSection(expense: ExpenseDetailUiModel) {
         FlatCard(modifier = Modifier.fillMaxWidth(), elevation = 8.dp) {
             Column(modifier = Modifier.padding(MaterialTheme.spacing.Default)) {
                 if (expense.receiptUri != null) {
-                    ReceiptThumbnail(expense.receiptUri)
+                    ReceiptThumbnail(
+                        receiptUri = expense.receiptUri,
+                        mimeType = expense.receiptMimeType
+                    )
                     Spacer(Modifier.height(MaterialTheme.spacing.Medium))
                 }
                 HeroAmountContent(expense)
@@ -175,7 +183,7 @@ private fun ForeignCurrencyRow(expense: ExpenseDetailUiModel) {
 }
 
 @Composable
-private fun ReceiptThumbnail(receiptUri: String) {
+private fun ReceiptThumbnail(receiptUri: String, mimeType: String?) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -183,16 +191,38 @@ private fun ReceiptThumbnail(receiptUri: String) {
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(Uri.parse(receiptUri))
-                .crossfade(true)
-                .build(),
-            contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .matchParentSize()
-                .clip(MaterialTheme.shapes.large)
-        )
+        if (mimeType == MIME_PDF) {
+            // PDFs cannot be rendered inline — show an informational placeholder instead.
+            Column(
+                modifier = Modifier.matchParentSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = TablerIcons.Outline.Receipt,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                BodyText(
+                    text = stringResource(R.string.expense_detail_receipt_pdf_label),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(Uri.parse(receiptUri))
+                    .crossfade(true)
+                    .build(),
+                contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(MaterialTheme.shapes.large)
+            )
+        }
     }
 }
+
+private const val MIME_PDF = "application/pdf"
