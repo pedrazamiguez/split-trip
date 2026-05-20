@@ -10,6 +10,8 @@ interface LocalExpenseDataSource {
 
     suspend fun getExpenseById(expenseId: String): Expense?
 
+    fun getExpenseByIdFlow(expenseId: String): Flow<Expense?>
+
     suspend fun saveExpenses(expenses: List<Expense>)
 
     suspend fun saveExpense(expense: Expense)

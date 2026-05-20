@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.data.local.service
 
-import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -42,20 +41,49 @@ internal class ReceiptStorageServiceImpl(
             val receiptsDir = File(context.filesDir, RECEIPTS_DIR).also { it.mkdirs() }
             val uniqueId = UUID.randomUUID().toString()
 
-            val (destFile, actualMime) = if (mimeType.startsWith("image/")) {
-                compressImage(resolver, uri, receiptsDir, uniqueId)
-            } else {
-                copyVerbatim(resolver, uri, receiptsDir, uniqueId, mimeType)
+            // Copy ContentResolver stream to a temporary file first.
+            // This avoids reading the content URI stream multiple times (which fails for pipe-backed/picker/camera streams).
+            val tempFile = File(context.cacheDir, "temp_receipt_$uniqueId").also { it.parentFile?.mkdirs() }
+            try {
+                resolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                } ?: error("Could not open input stream for $uri")
+
+                val (destFile, actualMime) = if (mimeType.startsWith("image/")) {
+                    compressImage(tempFile, receiptsDir, uniqueId)
+                } else {
+                    copyVerbatim(tempFile, receiptsDir, uniqueId, mimeType)
+                }
+
+                Timber.d("Receipt saved: ${destFile.absolutePath} ($actualMime)")
+
+                ReceiptAttachment(
+                    // Store a proper file:// URI so Coil's Uri.parse() can load it without a scheme.
+                    localUri = destFile.toUri().toString(),
+                    mimeType = actualMime,
+                    capturedAtMillis = System.currentTimeMillis()
+                )
+            } finally {
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
+                // Clean up source if it was a camera temp file
+                if (uri.authority == "${context.packageName}.fileprovider" &&
+                    uri.lastPathSegment?.startsWith("camera_") == true
+                ) {
+                    try {
+                        val sourceFile = File(File(context.filesDir, RECEIPTS_DIR), uri.lastPathSegment!!)
+                        if (sourceFile.exists()) {
+                            sourceFile.delete()
+                            Timber.d("Camera temp file deleted: ${sourceFile.absolutePath}")
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to delete camera temp file: $sourceUri")
+                    }
+                }
             }
-
-            Timber.d("Receipt saved: ${destFile.absolutePath} ($actualMime)")
-
-            ReceiptAttachment(
-                // Store a proper file:// URI so Coil's Uri.parse() can load it without a scheme.
-                localUri = destFile.toUri().toString(),
-                mimeType = actualMime,
-                capturedAtMillis = System.currentTimeMillis()
-            )
         }
 
     /**
@@ -69,26 +97,22 @@ internal class ReceiptStorageServiceImpl(
      * Returns the saved file and its MIME type.
      */
     private fun compressImage(
-        resolver: ContentResolver,
-        uri: Uri,
+        tempFile: File,
         dir: File,
         uniqueId: String
     ): Pair<File, String> {
-        // Pass 1: decode only bounds — no pixels allocated
+        // Pass 1: decode only bounds from temporary file — no pixels allocated
         val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, boundsOpts) }
+        BitmapFactory.decodeFile(tempFile.absolutePath, boundsOpts)
 
         // Compute a power-of-2 sample size so neither dimension exceeds MAX_IMAGE_DIMENSION
         val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight)
 
         // Pass 2: decode at reduced resolution to avoid OOM on high-res photos
-        val bitmap = resolver.openInputStream(uri)?.use { input ->
-            BitmapFactory.decodeStream(
-                input,
-                null,
-                BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
-            )
-        } ?: error("Could not decode image from $uri")
+        val bitmap = BitmapFactory.decodeFile(
+            tempFile.absolutePath,
+            BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
+        ) ?: error("Could not decode image from temporary file")
 
         val destFile = File(dir, "$uniqueId$WEBP_EXT")
         FileOutputStream(destFile).use { output ->
@@ -106,17 +130,17 @@ internal class ReceiptStorageServiceImpl(
 
     /** Streams the source content directly to a file without decoding, preserving the original bytes. */
     private fun copyVerbatim(
-        resolver: ContentResolver,
-        uri: Uri,
+        tempFile: File,
         dir: File,
         uniqueId: String,
         mimeType: String
     ): Pair<File, String> {
         val ext = MIME_TO_EXT[mimeType] ?: DEFAULT_EXT
         val destFile = File(dir, "$uniqueId$ext")
-        resolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(destFile).use { output -> input.copyTo(output) }
-        } ?: error("Could not open input stream for $uri")
+        if (!tempFile.renameTo(destFile)) {
+            // fallback if rename fails (e.g. across partitions)
+            tempFile.copyTo(destFile, overwrite = true)
+        }
         return destFile to mimeType
     }
 

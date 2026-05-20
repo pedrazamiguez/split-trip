@@ -39,6 +39,8 @@ interface ExpenseRepository {
 
     suspend fun getExpenseById(expenseId: String): Expense?
 
+    fun getExpenseByIdFlow(expenseId: String): Flow<Expense?>
+
     fun getGroupExpensesFlow(groupId: String): Flow<List<Expense>>
 
     suspend fun deleteExpense(groupId: String, expenseId: String)

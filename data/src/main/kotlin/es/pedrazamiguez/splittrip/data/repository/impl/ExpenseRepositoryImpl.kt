@@ -98,6 +98,9 @@ class ExpenseRepositoryImpl(
             )
             localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
             Timber.d("Cash expense committed via Firestore transaction: ${expenseWithMetadata.id}")
+            syncScope.launch {
+                uploadReceiptInBackground(expenseWithMetadata)
+            }
             return true
         } catch (e: CashConflictException) {
             // Concurrent modification detected — rollback local write and surface to caller
@@ -120,6 +123,10 @@ class ExpenseRepositoryImpl(
     }
 
     override suspend fun getExpenseById(expenseId: String): Expense? = localExpenseDataSource.getExpenseById(expenseId)
+
+    override fun getExpenseByIdFlow(expenseId: String): Flow<Expense?> = localExpenseDataSource.getExpenseByIdFlow(
+        expenseId
+    )
 
     override suspend fun deleteExpense(groupId: String, expenseId: String) {
         // Delete from local first - UI updates instantly via Flow

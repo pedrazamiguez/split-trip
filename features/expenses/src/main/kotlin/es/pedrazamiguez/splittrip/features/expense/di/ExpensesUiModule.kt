@@ -21,7 +21,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetAvailableWithdrawalPoolsUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
@@ -286,7 +286,7 @@ val expensesUiModule = module {
 
     viewModel {
         ExpenseDetailViewModel(
-            getExpenseByIdUseCase = get<GetExpenseByIdUseCase>(),
+            getExpenseByIdFlowUseCase = get<GetExpenseByIdFlowUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>(),
             getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),

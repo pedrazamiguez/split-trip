@@ -117,12 +117,9 @@ private fun buildReceiptAttachment(
 ): ReceiptAttachment? {
     // No attachment at all: both local and remote are absent.
     if (localUri.isNullOrBlank() && remoteUrl.isNullOrBlank()) return null
-    // mimeType is mandatory for a valid attachment; rows that have neither local nor remote
-    // are already handled above, so here at least one source is present.
-    if (mimeType.isNullOrBlank()) return null
     return ReceiptAttachment(
         localUri = localUri.orEmpty(),
-        mimeType = mimeType,
+        mimeType = if (mimeType.isNullOrBlank()) "image/jpeg" else mimeType,
         capturedAtMillis = capturedAtMillis ?: 0L,
         remoteUrl = remoteUrl
     )

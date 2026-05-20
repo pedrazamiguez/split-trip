@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * Handles simple form field events that contain inline branching logic:
@@ -200,7 +201,8 @@ class FormEventHandler(
                         )
                     }
                 }
-                .onFailure {
+                .onFailure { e ->
+                    Timber.e(e, "Failed to attach receipt from URI: $uri")
                     _actionsFlow.emit(
                         AddExpenseUiAction.ShowError(UiText.StringResource(R.string.add_expense_receipt_attach_error))
                     )

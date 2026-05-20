@@ -155,6 +155,19 @@ class ExpenseEntityMapperTest {
         }
 
         @Test
+        fun `maps receiptAttachment with null or blank mimeType using default image jpeg`() {
+            val entityWithNullMime = fullEntity.copy(receiptMimeType = null)
+            val expenseNull = entityWithNullMime.toDomain()
+            assertNotNull(expenseNull.receiptAttachment)
+            assertEquals("image/jpeg", expenseNull.receiptAttachment?.mimeType)
+
+            val entityWithBlankMime = fullEntity.copy(receiptMimeType = "")
+            val expenseBlank = entityWithBlankMime.toDomain()
+            assertNotNull(expenseBlank.receiptAttachment)
+            assertEquals("image/jpeg", expenseBlank.receiptAttachment?.mimeType)
+        }
+
+        @Test
         fun `maps payerId from entity to domain when non-null`() {
             val expense = fullEntity.toDomain()
             assertEquals("user-payer", expense.payerId)

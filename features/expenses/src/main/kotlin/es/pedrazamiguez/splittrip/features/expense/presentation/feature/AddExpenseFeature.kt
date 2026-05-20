@@ -77,10 +77,11 @@ fun AddExpenseFeature(
             cameraImageUri?.let { uri ->
                 addExpenseViewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected(uri.toString()))
             }
+        } else {
+            // Delete the temp .jpg if capture failed; for successful capture, the temp file
+            // is cleaned up asynchronously by ReceiptStorageServiceImpl after compression.
+            cameraTempFile?.delete()
         }
-        // Delete the temp .jpg regardless of capture success; the stable WebP produced by
-        // AttachReceiptUseCase is the authoritative file from this point on.
-        cameraTempFile?.delete()
         cameraTempFile = null
         cameraImageUri = null
     }

@@ -17,6 +17,12 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses WHERE id = :expenseId")
     suspend fun getExpenseById(expenseId: String): ExpenseEntity?
 
+    @Query("SELECT * FROM expenses WHERE id = :expenseId")
+    fun getExpenseByIdFlow(expenseId: String): Flow<ExpenseEntity?>
+
+    @Query("SELECT * FROM expenses WHERE groupId = :groupId")
+    suspend fun getExpensesByGroupId(groupId: String): List<ExpenseEntity>
+
     @Upsert
     suspend fun insertExpenses(expenses: List<ExpenseEntity>)
 
@@ -90,15 +96,30 @@ interface ExpenseDao {
      */
     @Transaction
     suspend fun replaceExpensesForGroup(groupId: String, expenses: List<ExpenseEntity>) {
+        // Capture existing local expenses to preserve their local receipt URIs.
+        // Firestore documents do not contain on-device file paths, so an upsert of remote state
+        // would otherwise overwrite and wipe out localUri references.
+        val existingExpenses = getExpensesByGroupId(groupId).associateBy { it.id }
+        val mergedExpenses = expenses.map { remote ->
+            val local = existingExpenses[remote.id]
+            if (local != null) {
+                remote.copy(
+                    receiptLocalUri = local.receiptLocalUri?.takeIf { it.isNotBlank() } ?: remote.receiptLocalUri
+                )
+            } else {
+                remote
+            }
+        }
+
         // Step 1: Capture non-SYNCED statuses before the upsert overwrites them
         val unsyncedStatuses = getUnsyncedExpenseStatuses(groupId)
         val unsyncedIds = unsyncedStatuses.map { it.id }.toSet()
 
-        val remoteIds = expenses.map { it.id }.toSet()
+        val remoteIds = mergedExpenses.map { it.id }.toSet()
         val localIds = getExpenseIdsByGroupId(groupId)
 
         // Step 2: Upsert remote expenses (sets syncStatus to SYNCED for all)
-        insertExpenses(expenses)
+        insertExpenses(mergedExpenses)
 
         // Step 3: Restore ALL non-SYNCED statuses that were captured before the upsert.
         // The upsert sets syncStatus to SYNCED for all items (including those that were
