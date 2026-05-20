@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.data.service
 
 import com.google.ai.edge.aicore.Candidate
 import com.google.ai.edge.aicore.GenerativeModel
-import es.pedrazamiguez.splittrip.data.BuildConfig
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
@@ -35,10 +34,7 @@ internal class AICoreReceiptParser(
                 if (cleanJson == null) {
                     Result.success(emptyAiCoreReceipt())
                 } else {
-                    Timber.d(
-                        "AICoreReceiptParser: parsing JSON response: %s",
-                        cleanJson.take(MAX_LOG_JSON_PREVIEW_CHARS)
-                    )
+                    Timber.d("AICoreReceiptParser: parsing JSON response (%d chars)", cleanJson.length)
                     Result.success(parseJsonToReceipt(cleanJson))
                 }
             }
@@ -67,7 +63,7 @@ internal class AICoreReceiptParser(
         ensureEngineReady()
 
         val truncatedText = ocrText.take(MAX_OCR_INPUT_CHARS)
-        Timber.d("AICoreReceiptParser: ocr text (%d chars):\n%s", truncatedText.length, truncatedText)
+        Timber.d("AICoreReceiptParser: ocr text: %d chars", truncatedText.length)
         Timber.d("AICoreReceiptParser: sending prompt (text length=%d chars)", truncatedText.length)
         val inferenceStartMs = System.currentTimeMillis()
         val response = generativeModel.generateContent(buildPrompt(truncatedText))
@@ -75,11 +71,9 @@ internal class AICoreReceiptParser(
         val rawText = response.text?.trim() ?: ""
         val finishReason = response.candidates.firstOrNull()?.finishReason
         Timber.d(
-            "AICoreReceiptParser: inference in ${inferenceMs}ms — " +
-                "length=%d, finishReason=%s, starts='%s'",
+            "AICoreReceiptParser: inference in ${inferenceMs}ms — length=%d, finishReason=%s",
             rawText.length,
-            finishReason,
-            rawText.take(MAX_LOG_RAW_PREVIEW_CHARS)
+            finishReason
         )
         if (finishReason == Candidate.FinishReason.MAX_TOKENS) {
             Timber.w("AICoreReceiptParser: response truncated at maxOutputTokens — consider shortening the input")
@@ -89,18 +83,7 @@ internal class AICoreReceiptParser(
         return if (cleanJson.startsWith("{")) {
             cleanJson
         } else {
-            if (BuildConfig.DEBUG) {
-                Timber.w(
-                    "AICoreReceiptParser: not valid JSON (first %d chars: '%s')",
-                    MAX_LOG_JSON_PREVIEW_CHARS,
-                    cleanJson.take(MAX_LOG_JSON_PREVIEW_CHARS)
-                )
-            } else {
-                Timber.w(
-                    "AICoreReceiptParser: not valid JSON (length=%d)",
-                    cleanJson.length
-                )
-            }
+            Timber.w("AICoreReceiptParser: not valid JSON (length=%d)", cleanJson.length)
             null
         }
     }
@@ -134,11 +117,9 @@ internal class AICoreReceiptParser(
         }
 
         Timber.d(
-            "AICoreReceiptParser: parsed — amount=%s, currency=%s, date=%s, title=%s, confidence=%s",
-            amount,
-            currency,
-            date,
-            title,
+            "AICoreReceiptParser: parsed %d/%d fields — confidence=%s",
+            extractedFieldsCount,
+            FIELD_COUNT_ALL,
             confidence
         )
 
@@ -156,8 +137,6 @@ internal class AICoreReceiptParser(
         private const val FIELD_COUNT_ALL = 4
         private const val FIELD_COUNT_THREE = 3
         private const val FIELD_COUNT_TWO = 2
-        private const val MAX_LOG_RAW_PREVIEW_CHARS = 200
-        private const val MAX_LOG_JSON_PREVIEW_CHARS = 300
 
         // Increased from 400: Thai/Asian receipts list items before the total;
         // truncating too early misses the grand total line at the bottom.

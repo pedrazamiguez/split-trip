@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
@@ -42,7 +41,6 @@ data class DeveloperServicesUiState(
     val extractedTitle: String? = null,
     val extractionSource: ExtractionSource? = null,
     val extractionConfidence: ExtractionConfidence? = null,
-    val extractionCapability: ExtractionCapability? = null,
     val extractionErrorMessage: UiText? = null
 )
 
@@ -64,7 +62,6 @@ sealed interface DeveloperServicesUiEvent {
     data class FileSelected(val uri: String, val name: String, val mimeType: String) : DeveloperServicesUiEvent
     data class SwitchTab(val tab: DeveloperServicesTab) : DeveloperServicesUiEvent
     data object RunOcr : DeveloperServicesUiEvent
-    data object RunExtraction : DeveloperServicesUiEvent
     data object RunOcrAndExtract : DeveloperServicesUiEvent
     data object Reset : DeveloperServicesUiEvent
 }
@@ -84,7 +81,6 @@ class DeveloperServicesViewModel(
             is DeveloperServicesUiEvent.FileSelected -> handleFileSelected(event.uri, event.name, event.mimeType)
             is DeveloperServicesUiEvent.SwitchTab -> _uiState.update { it.copy(selectedTab = event.tab) }
             is DeveloperServicesUiEvent.RunOcr -> runOcr()
-            is DeveloperServicesUiEvent.RunExtraction -> runExtraction()
             is DeveloperServicesUiEvent.RunOcrAndExtract -> runOcrAndExtract()
             is DeveloperServicesUiEvent.Reset -> reset()
         }
@@ -108,7 +104,6 @@ class DeveloperServicesViewModel(
                 extractedTitle = null,
                 extractionSource = null,
                 extractionConfidence = null,
-                extractionCapability = null,
                 extractionErrorMessage = null
             )
         }
@@ -142,8 +137,7 @@ class DeveloperServicesViewModel(
                         it.copy(
                             ocrStatus = OcrStatus.Success,
                             extractedText = rawReceipt.fullText,
-                            textBlocks = rawReceipt.blocks.map { block -> block.text }.toImmutableList(),
-                            extractionCapability = receiptExtractionService.capability()
+                            textBlocks = rawReceipt.blocks.map { block -> block.text }.toImmutableList()
                         )
                     }
                 }
@@ -156,16 +150,6 @@ class DeveloperServicesViewModel(
                     }
                 }
         }
-    }
-
-    private fun runExtraction() {
-        val rawText = lastRawReceiptText ?: return
-
-        _uiState.update {
-            it.copy(extractionStatus = ExtractionStatus.Loading, extractionErrorMessage = null)
-        }
-
-        viewModelScope.launch { runExtractionInternal(rawText) }
     }
 
     private fun runOcrAndExtract() {
@@ -187,9 +171,6 @@ class DeveloperServicesViewModel(
             receiptOcrService.recogniseText(attachment)
                 .onSuccess { rawReceipt ->
                     lastRawReceiptText = rawReceipt
-                    _uiState.update {
-                        it.copy(extractionCapability = receiptExtractionService.capability())
-                    }
                     runExtractionInternal(rawReceipt)
                 }
                 .onFailure { error ->

@@ -3,9 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,62 +23,12 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CurrencyEuro
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ShoppingBag
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
-import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.R
 
 private val FIELD_ICON_SIZE = 18.dp
-
-@Composable
-fun ExtractionOperationsCard(
-    isLoading: Boolean,
-    capability: ExtractionCapability?,
-    onRunExtractionClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    SectionCard(
-        title = stringResource(R.string.developer_services_extraction_operations),
-        modifier = modifier
-    ) {
-        if (capability != null) {
-            val (label, isSupported) = resolveCapabilityLabel(capability)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-            ) {
-                Icon(
-                    imageVector = TablerIcons.Outline.InfoCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(FIELD_ICON_SIZE),
-                    tint = if (isSupported) {
-                        MaterialTheme.colorScheme.tertiary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-                Text(
-                    text = stringResource(R.string.developer_services_extraction_capability, label),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isSupported) {
-                        MaterialTheme.colorScheme.tertiary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-            }
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
-        }
-        GradientButton(
-            text = stringResource(R.string.developer_services_run_extraction),
-            onClick = onRunExtractionClick,
-            isLoading = isLoading,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
 
 @Composable
 fun ExtractionResultsCard(
@@ -220,14 +168,6 @@ private fun ExtractionConfidenceRow(
             color = color
         )
     }
-}
-
-@Composable
-private fun resolveCapabilityLabel(capability: ExtractionCapability): Pair<String, Boolean> = when (capability) {
-    ExtractionCapability.ON_DEVICE_AI -> stringResource(R.string.developer_services_extraction_capability_on_device) to
-        true
-    ExtractionCapability.UNSUPPORTED -> stringResource(R.string.developer_services_extraction_capability_unsupported) to
-        false
 }
 
 @Composable
