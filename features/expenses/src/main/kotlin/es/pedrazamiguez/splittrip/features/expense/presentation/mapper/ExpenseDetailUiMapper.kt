@@ -47,17 +47,9 @@ class ExpenseDetailUiMapper(
         val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
         val youLabel = resourceProvider.getString(R.string.you_label)
         val paidByName = resolveDisplayName(expense.createdBy, memberProfiles, currentUserId, youLabel)
-        val paidByText = if (expense.createdBy == currentUserId) {
-            resourceProvider.getString(R.string.paid_by_you)
-        } else {
-            resourceProvider.getString(R.string.paid_by, paidByName)
-        }
+        val paidByText = resolvePaidByText(expense.createdBy, currentUserId, paidByName)
 
-        val effectiveTotal = if (expense.addOns.isNotEmpty()) {
-            addOnCalculationService.calculateEffectiveGroupAmount(expense.groupAmount, expense.addOns)
-        } else {
-            null
-        }
+        val effectiveTotal = resolveEffectiveTotal(expense.groupAmount, expense.addOns)
         val hasIncludedAddOns = expense.addOns.any { it.mode == AddOnMode.INCLUDED }
         // Base-cost extraction (adjustForIncludedAddOns in SubmitEventHandler) only runs for
         // INCLUDED non-discount add-ons. For INCLUDED DISCOUNTs the expense.groupAmount is the
@@ -103,12 +95,7 @@ class ExpenseDetailUiMapper(
             paymentStatusIcon = expense.paymentStatus.toIconVector(),
             expenseScopeLabel = buildExpenseScopeLabel(expense.payerType),
             paidByText = paidByText,
-            dateText = if (expense.paymentStatus == PaymentStatus.SCHEDULED && expense.dueDate != null) {
-                // For scheduled expenses the chip shows the due date, not the creation date.
-                formattingHelper.formatShortDate(expense.dueDate)
-            } else {
-                formattingHelper.formatShortDate(expense.createdAt)
-            },
+            dateText = resolveDateText(expense),
             vendorText = expense.vendor?.takeIf { it.isNotBlank() },
             notesText = expense.notes?.takeIf { it.isNotBlank() },
             scheduledBadgeText = scheduledBadgeText,
@@ -146,14 +133,43 @@ class ExpenseDetailUiMapper(
             // the file has not been downloaded on this device (cloud-only attachment, localUri = "").
             receiptUri = expense.receiptAttachment?.let { it.localUri.ifBlank { it.remoteUrl } },
             receiptMimeType = expense.receiptAttachment?.mimeType,
-            createdByText = if (expense.createdBy == currentUserId) {
-                resourceProvider.getString(R.string.expense_detail_created_by_you)
-            } else {
-                resourceProvider.getString(R.string.expense_detail_created_by, paidByName)
-            },
+            createdByText = resolveCreatedByText(expense.createdBy, currentUserId, paidByName),
             createdAtText = formattingHelper.formatShortDate(expense.createdAt),
             syncStatus = expense.syncStatus
         )
+    }
+
+    private fun resolvePaidByText(createdBy: String, currentUserId: String?, paidByName: String): String {
+        return if (createdBy == currentUserId) {
+            resourceProvider.getString(R.string.paid_by_you)
+        } else {
+            resourceProvider.getString(R.string.paid_by, paidByName)
+        }
+    }
+
+    private fun resolveEffectiveTotal(groupAmount: Long, addOns: List<AddOn>): Long? {
+        return if (addOns.isNotEmpty()) {
+            addOnCalculationService.calculateEffectiveGroupAmount(groupAmount, addOns)
+        } else {
+            null
+        }
+    }
+
+    private fun resolveDateText(expense: Expense): String {
+        return if (expense.paymentStatus == PaymentStatus.SCHEDULED && expense.dueDate != null) {
+            // For scheduled expenses the chip shows the due date, not the creation date.
+            formattingHelper.formatShortDate(expense.dueDate)
+        } else {
+            formattingHelper.formatShortDate(expense.createdAt)
+        }
+    }
+
+    private fun resolveCreatedByText(createdBy: String, currentUserId: String?, paidByName: String): String {
+        return if (createdBy == currentUserId) {
+            resourceProvider.getString(R.string.expense_detail_created_by_you)
+        } else {
+            resourceProvider.getString(R.string.expense_detail_created_by, paidByName)
+        }
     }
 
     /**

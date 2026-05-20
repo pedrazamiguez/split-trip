@@ -239,8 +239,9 @@ private fun CashConflictResolutionSheet(
  * Creates a temporary file inside [filesDir]/receipts/ and returns both the [File] and a
  * [FileProvider] URI that can be passed to [TakePicture].
  *
- * The caller is responsible for deleting the temp file once [ReceiptStorageServiceImpl] has
- * compressed it into a stable WebP copy (see [AddExpenseFeature] camera launcher callback).
+ * The temporary file is automatically cleaned up:
+ * 1. If capture fails or is cancelled, it is deleted in the camera launcher callback in [AddExpenseFeature].
+ * 2. If capture succeeds, it is deleted inside [ReceiptStorageServiceImpl] after copying/compressing.
  */
 private fun createCameraUri(context: Context): Pair<File, Uri> {
     val receiptsDir = File(context.filesDir, "receipts").also { it.mkdirs() }

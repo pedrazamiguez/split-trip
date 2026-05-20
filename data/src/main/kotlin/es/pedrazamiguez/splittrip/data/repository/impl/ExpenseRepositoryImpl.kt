@@ -38,6 +38,12 @@ class ExpenseRepositoryImpl(
      */
     private val cloudSubscriptionJobs = ConcurrentHashMap<String, Job>()
 
+    /**
+     * Tracks active receipt upload Jobs per expenseId.
+     * Prevents duplicate/concurrent uploads of the same receipt.
+     */
+    private val receiptUploadJobs = ConcurrentHashMap<String, Job>()
+
     override suspend fun addExpense(groupId: String, expense: Expense) {
         val expenseWithMetadata = buildExpenseWithMetadata(groupId, expense)
 
@@ -50,9 +56,7 @@ class ExpenseRepositoryImpl(
                 cloudExpenseDataSource.addExpense(groupId, expenseWithMetadata)
                 localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
                 Timber.d("Expense synced to cloud: ${expenseWithMetadata.id}")
-                syncScope.launch {
-                    uploadReceiptInBackground(expenseWithMetadata)
-                }
+                scheduleReceiptUpload(expenseWithMetadata)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -100,9 +104,7 @@ class ExpenseRepositoryImpl(
             )
             localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
             Timber.d("Cash expense committed via Firestore transaction: ${expenseWithMetadata.id}")
-            syncScope.launch {
-                uploadReceiptInBackground(expenseWithMetadata)
-            }
+            scheduleReceiptUpload(expenseWithMetadata)
             return true
         } catch (e: CashConflictException) {
             // Concurrent modification detected — rollback local write and surface to caller
@@ -247,11 +249,22 @@ class ExpenseRepositoryImpl(
         val expenseIds = localExpenseDataSource.getExpenseIdsByGroup(groupId)
         for (id in expenseIds) {
             val expense = localExpenseDataSource.getExpenseById(id) ?: continue
-            val attachment = expense.receiptAttachment
-            if (attachment != null && attachment.localUri.isNotBlank() && attachment.remoteUrl.isNullOrBlank()) {
-                syncScope.launch {
-                    uploadReceiptInBackground(expense)
-                }
+            scheduleReceiptUpload(expense)
+        }
+    }
+
+    private fun scheduleReceiptUpload(expense: Expense) {
+        val attachment = expense.receiptAttachment ?: return
+        if (attachment.localUri.isBlank() || !attachment.remoteUrl.isNullOrBlank()) return
+
+        val existingJob = receiptUploadJobs[expense.id]
+        if (existingJob != null && existingJob.isActive) return
+
+        receiptUploadJobs[expense.id] = syncScope.launch {
+            try {
+                uploadReceiptInBackground(expense)
+            } finally {
+                receiptUploadJobs.remove(expense.id)
             }
         }
     }
@@ -273,7 +286,7 @@ class ExpenseRepositoryImpl(
      */
     private suspend fun uploadReceiptInBackground(expense: Expense) {
         val attachment = expense.receiptAttachment ?: return
-        if (attachment.remoteUrl != null) return // already uploaded
+        if (!attachment.remoteUrl.isNullOrBlank()) return // already uploaded
 
         try {
             val remoteUrl = cloudStorageDataSource.uploadReceipt(

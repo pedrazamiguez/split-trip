@@ -104,11 +104,17 @@ interface ExpenseDao {
             val local = existingExpenses[remote.id]
             if (local != null) {
                 remote.copy(
+                    // receiptLocalUri is only stored on-device, so always preserve the local path.
                     receiptLocalUri = local.receiptLocalUri?.takeIf { it.isNotBlank() } ?: remote.receiptLocalUri,
-                    receiptRemoteUrl = local.receiptRemoteUrl?.takeIf { it.isNotBlank() } ?: remote.receiptRemoteUrl,
-                    receiptMimeType = local.receiptMimeType?.takeIf { it.isNotBlank() } ?: remote.receiptMimeType,
-                    receiptCapturedAtMillis =
-                    local.receiptCapturedAtMillis?.takeIf { it != 0L } ?: remote.receiptCapturedAtMillis
+                    // For remote-backed columns, prefer the incoming remote updates, falling back
+                    // to the local cache only if the remote value is blank/null/0.
+                    receiptRemoteUrl = remote.receiptRemoteUrl?.takeIf { it.isNotBlank() } ?: local.receiptRemoteUrl,
+                    receiptMimeType = remote.receiptMimeType?.takeIf { it.isNotBlank() } ?: local.receiptMimeType,
+                    receiptCapturedAtMillis = if (remote.receiptCapturedAtMillis != 0L) {
+                        remote.receiptCapturedAtMillis
+                    } else {
+                        local.receiptCapturedAtMillis
+                    }
                 )
             } else {
                 remote

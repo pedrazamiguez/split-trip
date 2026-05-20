@@ -40,6 +40,8 @@ class FormEventHandler(
      */
     private var formPostCallback: ((FormPostAction) -> Unit)? = null
 
+    private var attachReceiptJob: kotlinx.coroutines.Job? = null
+
     override fun bind(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
         actionsFlow: MutableSharedFlow<AddExpenseUiAction>,
@@ -185,13 +187,14 @@ class FormEventHandler(
     }
 
     fun handleReceiptImageChanged(uri: String?) {
+        attachReceiptJob?.cancel()
         if (uri == null) {
             _uiState.update { it.copy(receiptUri = null, receiptAttachment = null) }
             return
         }
         // Copy + compress the file asynchronously so the UI thread is not blocked.
         // The state is updated when the use case resolves; if it fails a pill error is shown.
-        _scope.launch {
+        attachReceiptJob = _scope.launch {
             attachReceiptUseCase(uri)
                 .onSuccess { attachment ->
                     _uiState.update {
@@ -202,6 +205,7 @@ class FormEventHandler(
                     }
                 }
                 .onFailure { e ->
+                    if (e is kotlin.coroutines.cancellation.CancellationException) throw e
                     Timber.e(e, "Failed to attach receipt from URI: $uri")
                     _actionsFlow.emit(
                         AddExpenseUiAction.ShowError(UiText.StringResource(R.string.add_expense_receipt_attach_error))

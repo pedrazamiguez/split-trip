@@ -240,18 +240,22 @@ private fun renderPdfFirstPage(file: File): Bitmap? {
 private fun rememberPdfThumbnail(pdfUriString: String): Bitmap? {
     var bitmap by remember(pdfUriString) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(pdfUriString) {
-        withContext(Dispatchers.IO) {
+        val rendered = withContext(Dispatchers.IO) {
             try {
                 val uri = Uri.parse(pdfUriString)
                 val isLocalFile = uri.scheme == "file" || uri.scheme.isNullOrEmpty()
                 if (isLocalFile) {
                     val filePath = if (uri.scheme == "file") uri.path.orEmpty() else pdfUriString
-                    bitmap = renderPdfFirstPage(File(filePath))
+                    renderPdfFirstPage(File(filePath))
+                } else {
+                    null
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to render PDF thumbnail for $pdfUriString")
+                null
             }
         }
+        bitmap = rendered
     }
     return bitmap
 }

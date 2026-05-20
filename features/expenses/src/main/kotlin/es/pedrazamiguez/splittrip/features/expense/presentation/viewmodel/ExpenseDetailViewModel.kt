@@ -60,6 +60,13 @@ class ExpenseDetailViewModel(
     val uiState: StateFlow<ExpenseDetailUiState> = _expenseId
         .filter { it.isNotBlank() }
         .flatMapLatest { expenseId ->
+            var cachedUserIds = emptySet<String>()
+            var cachedProfiles = emptyMap<String, es.pedrazamiguez.splittrip.domain.model.User>()
+            var cachedWithdrawalIds = emptySet<String>()
+            var cachedWithdrawals = emptyMap<String, es.pedrazamiguez.splittrip.domain.model.CashWithdrawal>()
+            var cachedSubunitGroupId = ""
+            var cachedSubunits = emptyMap<String, String>()
+
             getExpenseByIdFlowUseCase(expenseId)
                 .flatMapLatest { expense ->
                     if (expense == null) {
@@ -72,22 +79,26 @@ class ExpenseDetailViewModel(
                         add(expense.createdBy)
                         expense.payerId?.let { add(it) }
                         expense.splits.forEach { add(it.userId) }
-                    }.toList()
+                    }
 
-                    val memberProfiles = try {
-                        getMemberProfilesUseCase(allUserIds)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Timber.w(e, "Failed to fetch member profiles for expense $expenseId")
-                        emptyMap()
+                    if (allUserIds != cachedUserIds) {
+                        cachedUserIds = allUserIds
+                        cachedProfiles = try {
+                            getMemberProfilesUseCase(allUserIds.toList())
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to fetch member profiles for expense $expenseId")
+                            emptyMap()
+                        }
                     }
 
                     val currentUserId = authenticationService.currentUserId()
 
-                    val withdrawalLookup = if (expense.cashTranches.isNotEmpty()) {
-                        val withdrawalIds = expense.cashTranches.map { it.withdrawalId }.toSet()
-                        try {
+                    val withdrawalIds = expense.cashTranches.map { it.withdrawalId }.toSet()
+                    if (withdrawalIds.isNotEmpty() && withdrawalIds != cachedWithdrawalIds) {
+                        cachedWithdrawalIds = withdrawalIds
+                        cachedWithdrawals = try {
                             getCashWithdrawalsFlowUseCase(expense.groupId)
                                 .first()
                                 .filter { it.id in withdrawalIds }
@@ -98,17 +109,19 @@ class ExpenseDetailViewModel(
                             Timber.w(e, "Failed to fetch withdrawals for expense $expenseId")
                             emptyMap()
                         }
-                    } else {
-                        emptyMap()
+                    } else if (withdrawalIds.isEmpty()) {
+                        cachedWithdrawalIds = emptySet()
+                        cachedWithdrawals = emptyMap()
                     }
 
-                    val subunitNameLookup = if (
-                        withdrawalLookup.values.any {
-                            it.withdrawalScope == PayerType.SUBUNIT && !it.subunitId.isNullOrBlank()
-                        } ||
+                    val needsSubunits = cachedWithdrawals.values.any {
+                        it.withdrawalScope == PayerType.SUBUNIT && !it.subunitId.isNullOrBlank()
+                    } ||
                         expense.splits.any { !it.subunitId.isNullOrBlank() }
-                    ) {
-                        try {
+
+                    if (needsSubunits && cachedSubunitGroupId != expense.groupId) {
+                        cachedSubunitGroupId = expense.groupId
+                        cachedSubunits = try {
                             getGroupSubunitsUseCase(expense.groupId)
                                 .associate { it.id to it.name }
                         } catch (e: CancellationException) {
@@ -117,16 +130,17 @@ class ExpenseDetailViewModel(
                             Timber.w(e, "Failed to fetch subunits for expense $expenseId")
                             emptyMap()
                         }
-                    } else {
-                        emptyMap()
+                    } else if (!needsSubunits) {
+                        cachedSubunitGroupId = ""
+                        cachedSubunits = emptyMap()
                     }
 
                     val uiModel = expenseDetailUiMapper.map(
                         expense = expense,
-                        memberProfiles = memberProfiles,
+                        memberProfiles = cachedProfiles,
                         currentUserId = currentUserId,
-                        withdrawalLookup = withdrawalLookup,
-                        subunitNameLookup = subunitNameLookup
+                        withdrawalLookup = cachedWithdrawals,
+                        subunitNameLookup = cachedSubunits
                     )
 
                     flowOf(ExpenseDetailUiState(expense = uiModel, isLoading = false))
