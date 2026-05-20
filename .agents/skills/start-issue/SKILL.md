@@ -1,6 +1,24 @@
-Start working on this issue
+---
+name: start-issue
+description: Start working on a GitHub issue end-to-end.
+mode: agent
+tools:
+  - codebase
+  - githubRepo
+  - terminalLastCommand
+arguments:
+  - name: issue_url
+    description: The URL of the GitHub issue to start working on.
+    required: true
+  - name: issue_number
+    description: The number of the GitHub issue to start working on.
+    required: false
+---
+# Start Issue
 
-https://github.com/pedrazamiguez/split-trip/issues/xxxx
+Start working on this issue:
+- Issue URL: $ISSUE_URL
+- Issue Number: $ISSUE_NUMBER
 
 We're already on the correct branch with the latest changes from develop.
 
@@ -10,10 +28,10 @@ We're already on the correct branch with the latest changes from develop.
 
 Read each of the following before writing a single line of code:
 
-- `.github/copilot-instructions.md`
-- `AGENTS.md`
-- `DESIGN.md`
-- All relevant `wiki/*.md` articles (especially `wiki/core-services-catalog.md`)
+- [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)
+- [AGENTS.md](../../../AGENTS.md)
+- [DESIGN.md](../../../DESIGN.md)
+- All relevant `wiki/*.md` articles (especially [wiki/core-services-catalog.md](../../../wiki/core-services-catalog.md))
 - The issue itself, including ALL parent/linked issues and every comment thread
 
 ---
@@ -60,7 +78,7 @@ Post your implementation plan as a comment on the issue before writing code. The
 
 - Summary of changes per file
 - Any pre-existing violations found in Step 2 and how they will be handled
-- Architecture compliance checklist (from `AGENTS.md`) confirmed for each new/modified component
+- Architecture compliance checklist (from [AGENTS.md](../../../AGENTS.md)) confirmed for each new/modified component
 
 Stick to the posted plan. If the plan needs to change, update the comment.
 
@@ -68,16 +86,14 @@ Stick to the posted plan. If the plan needs to change, update the comment.
 
 ## Step 5 — Implement
 
-Follow the architecture constraints in `.github/copilot-instructions.md` and `AGENTS.md` strictly.  
-Take into account detekt rules, ktlint formatting, new code coverage, and the 600-line file-size limit at all times.
+Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md) strictly. Ensure you adhere to the project quality and style standards, including detekt rules, ktlint formatting, test coverage requirements, and the 600-line file-size limit.
 
-**Core Reminders:**
-- **No Pragmatic Patches:** Write clean, modular, production-ready code. Do not use quick hacks or temporary workarounds.
+**Core Reminders (refer to [AGENTS.md](../../../AGENTS.md) for details):**
+- **No Pragmatic Patches:** Write clean, modular, production-ready code. Do not use temporary workarounds.
 - **BigDecimal Math:** Use `BigDecimal` with an explicit scale and rounding mode for all precision-sensitive calculations (never `Double` or `Float`).
-- **Offline-First Protocol:** Generate UUIDs and timestamps locally, write to Room first, and sync to Firestore in the background using reusable sync delegates.
-- **Design System:** Comply with the "Horizon Narrative" guidelines (no raw 1px borders, Outfitt/Inter/Jakarta Sans typography, tonal layering, and bottom padding via `LocalBottomPadding` on tab screens).
-
-**Commenting policy:** Comment the *why*, never the *what*. If a comment only restates what the code already says, delete it. Add a comment only when the reasoning behind a decision would not be obvious to the next reader from the code alone.
+- **Offline-First Protocol:** Generate UUIDs and timestamps locally, write to Room first, and sync to Firestore in the background using the reusable sync delegates.
+- **Design System:** Comply with the "Horizon Narrative" guidelines (no raw 1px borders, Outfit/Inter/Jakarta Sans typography, tonal layering, and bottom padding via `LocalBottomPadding` on tab screens).
+- **Commenting Policy:** Comment the *why*, never the *what*. Avoid redundant comments. Do not reference GitHub issues or documentation sections in comments to simplify maintenance.
 
 ---
 
