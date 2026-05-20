@@ -79,7 +79,6 @@
     <string name="notification_prefs_financial_description">Cash withdrawals and contributions</string>
 
     <!-- Developer Services Playground -->
-    <string name="developer_services_playground_title">Services Playground</string>
     <string name="developer_services_selected_attachment">Selected Attachment</string>
     <string name="developer_services_no_document_selected">No document selected. Pick an image (JPEG, PNG, WEBP, BMP) or PDF to run OCR.</string>
     <string name="developer_services_name">Name:</string>

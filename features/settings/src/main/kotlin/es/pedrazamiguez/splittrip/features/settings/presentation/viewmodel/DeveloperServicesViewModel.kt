@@ -29,7 +29,7 @@ sealed interface OcrStatus {
     data object Idle : OcrStatus
     data object Loading : OcrStatus
     data object Success : OcrStatus
-    data class Error(val message: String) : OcrStatus
+    data object Error : OcrStatus
 }
 
 sealed interface DeveloperServicesUiEvent {
@@ -105,7 +105,7 @@ class DeveloperServicesViewModel(
                     }
                     _uiState.update {
                         it.copy(
-                            ocrStatus = OcrStatus.Error(errorMsg ?: "OCR processing failed"),
+                            ocrStatus = OcrStatus.Error,
                             errorMessage = uiText
                         )
                     }

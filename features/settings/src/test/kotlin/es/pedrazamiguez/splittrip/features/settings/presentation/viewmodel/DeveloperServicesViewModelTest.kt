@@ -156,8 +156,7 @@ class DeveloperServicesViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertTrue(state.ocrStatus is OcrStatus.Error)
-            assertEquals("OCR Engine error", (state.ocrStatus as OcrStatus.Error).message)
+            assertEquals(OcrStatus.Error, state.ocrStatus)
             assertEquals(UiText.DynamicString("OCR Engine error"), state.errorMessage)
         }
     }

@@ -17,8 +17,8 @@ private fun DeveloperServicesScreenIdlePreview() {
                 selectedFileUri = null,
                 ocrStatus = OcrStatus.Idle
             ),
-            onEvent = {},
-            onBackClick = {}
+            onSelectClick = {},
+            onEvent = {}
         )
     }
 }
@@ -34,8 +34,8 @@ private fun DeveloperServicesScreenSelectedPreview() {
                 selectedFileMimeType = "application/pdf",
                 ocrStatus = OcrStatus.Idle
             ),
-            onEvent = {},
-            onBackClick = {}
+            onSelectClick = {},
+            onEvent = {}
         )
     }
 }
@@ -51,8 +51,8 @@ private fun DeveloperServicesScreenLoadingPreview() {
                 selectedFileMimeType = "application/pdf",
                 ocrStatus = OcrStatus.Loading
             ),
-            onEvent = {},
-            onBackClick = {}
+            onSelectClick = {},
+            onEvent = {}
         )
     }
 }
@@ -70,8 +70,8 @@ private fun DeveloperServicesScreenSuccessPreview() {
                 extractedText = "Total Amount: EUR 42.50\nDate: 2026-05-20",
                 textBlocks = persistentListOf("Total Amount: EUR 42.50", "Date: 2026-05-20")
             ),
-            onEvent = {},
-            onBackClick = {}
+            onSelectClick = {},
+            onEvent = {}
         )
     }
 }

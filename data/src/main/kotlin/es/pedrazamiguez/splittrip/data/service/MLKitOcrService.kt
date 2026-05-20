@@ -50,12 +50,12 @@ internal class PdfPageRendererImpl(private val context: Context) : PdfPageRender
     }
 
     private fun renderPage(page: PdfRenderer.Page): Bitmap {
-        // Prevent OOM by downscaling extremely large scanned PDFs
-        val maxDimension = 2048.0
+        val maxDimension = 2048
         var width = page.width
         var height = page.height
-        if (width > maxDimension || height > maxDimension) {
-            val scale = maxDimension / maxOf(width, height)
+        val maxDim = maxOf(width, height)
+        if (maxDim > maxDimension) {
+            val scale = maxDimension.toDouble() / maxDim
             width = (width * scale).toInt().coerceAtLeast(1)
             height = (height * scale).toInt().coerceAtLeast(1)
         }
@@ -128,10 +128,13 @@ internal class MLKitOcrService(
                     } else {
                         InputImage.fromFilePath(context, uri)
                     }
+                } catch (e: CancellationException) {
+                    renderedBitmap?.recycle()
+                    renderedBitmap = null
+                    throw e
                 } catch (e: Exception) {
                     renderedBitmap?.recycle()
                     renderedBitmap = null
-                    if (e is CancellationException) throw e
                     throw IOException("Failed to load image from URI: ${attachment.localUri}", e)
                 }
             }
@@ -157,10 +160,13 @@ internal class MLKitOcrService(
                     recognisedAt = Instant.now()
                 )
             )
+        } catch (e: CancellationException) {
+            renderedBitmap?.recycle()
+            renderedBitmap = null
+            throw e
         } catch (e: Exception) {
             renderedBitmap?.recycle()
             renderedBitmap = null
-            if (e is CancellationException) throw e
             Result.failure(e)
         } finally {
             renderedBitmap?.recycle()

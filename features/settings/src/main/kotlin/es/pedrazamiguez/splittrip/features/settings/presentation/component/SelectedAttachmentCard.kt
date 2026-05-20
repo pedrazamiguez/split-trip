@@ -16,6 +16,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
 import es.pedrazamiguez.splittrip.features.settings.R
 
+private const val URI_TAKE_LAST_LENGTH = 30
+private const val URI_PAD_START_LENGTH = 35
+
 @Composable
 fun SelectedAttachmentCard(
     selectedFileUri: String?,
@@ -37,51 +40,20 @@ fun SelectedAttachmentCard(
             )
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.developer_services_name),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = selectedFileName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.developer_services_type),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = selectedFileMimeType,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.developer_services_uri),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = selectedFileUri.takeLast(30).padStart(35, '.'),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
+                AttachmentMetadataRow(
+                    label = stringResource(R.string.developer_services_name),
+                    value = selectedFileName
+                )
+                AttachmentMetadataRow(
+                    label = stringResource(R.string.developer_services_type),
+                    value = selectedFileMimeType
+                )
+                AttachmentMetadataRow(
+                    label = stringResource(R.string.developer_services_uri),
+                    value = selectedFileUri.takeLast(URI_TAKE_LAST_LENGTH)
+                        .padStart(URI_PAD_START_LENGTH, '.'),
+                    isUri = true
+                )
             }
         }
 
@@ -105,5 +77,29 @@ fun SelectedAttachmentCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun AttachmentMetadataRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    isUri: Boolean = false
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = if (isUri) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+            color = if (isUri) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+        )
     }
 }

@@ -78,7 +78,6 @@
     <string name="notification_prefs_financial_description">Retiradas de efectivo y aportaciones</string>
 
     <!-- Developer Services Playground -->
-    <string name="developer_services_playground_title">Pruebas de Servicios</string>
     <string name="developer_services_selected_attachment">Adjunto Seleccionado</string>
     <string name="developer_services_no_document_selected">Ningún documento seleccionado. Elige una imagen (JPEG, PNG, WEBP, BMP) o PDF para ejecutar OCR.</string>
     <string name="developer_services_name">Nombre:</string>
