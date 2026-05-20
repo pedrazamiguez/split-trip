@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.di
 import android.app.Application
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
@@ -51,7 +52,8 @@ val settingsUiModule = module {
 
     viewModel {
         DeveloperServicesViewModel(
-            receiptOcrService = get<ReceiptOcrService>()
+            receiptOcrService = get<ReceiptOcrService>(),
+            receiptExtractionService = get<ReceiptExtractionService>()
         )
     }
 

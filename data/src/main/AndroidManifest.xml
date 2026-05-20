@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        AICore (Gemini Nano) declares minSdk 31, but this app targets minSdk 26.
+        Runtime gating in AICoreCapabilityProvider ensures AICore APIs are only
+        called on SDK >= 34 with a supported device, so this override is safe.
+    -->
+    <uses-sdk tools:overrideLibrary="com.google.ai.edge.aicore" />
+
+</manifest>

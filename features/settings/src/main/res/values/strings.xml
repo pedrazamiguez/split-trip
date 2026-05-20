@@ -40,7 +40,7 @@
     <string name="settings_developer_assets_title">Assets</string>
     <string name="settings_developer_assets_description">Images &amp; animations</string>
     <string name="settings_developer_services_title">Services Playground</string>
-    <string name="settings_developer_services_description">Test backend services</string>
+    <string name="settings_developer_services_description">Test on-device services</string>
 
     <!-- Support & Feedback Section -->
     <string name="settings_section_support">Help &amp; Feedback</string>
@@ -92,4 +92,36 @@
     <string name="developer_services_extracted_blocks">Extracted Blocks (%1$d)</string>
     <string name="developer_services_block_index">Block #%1$d</string>
     <string name="developer_services_ocr_error_fallback">OCR processing failed</string>
+    <string name="developer_services_extraction_operations">Extraction Operations</string>
+    <string name="developer_services_extraction_capability">Device capability: %1$s</string>
+    <string name="developer_services_run_extraction">Run Receipt Extraction</string>
+    <string name="developer_services_extraction_results">Extracted Receipt Data</string>
+    <string name="developer_services_extraction_amount">Amount:</string>
+    <string name="developer_services_extraction_currency">Currency:</string>
+    <string name="developer_services_extraction_date">Date:</string>
+    <string name="developer_services_extraction_title">Title:</string>
+    <string name="developer_services_extraction_source">Source:</string>
+    <string name="developer_services_extraction_confidence">Confidence:</string>
+    <string name="developer_services_extraction_error_fallback">Receipt extraction failed</string>
+    <string name="developer_services_extraction_source_ai_core">Gemini Nano</string>
+    <string name="developer_services_extraction_source_no_op">Not Available</string>
+    <string name="developer_services_extraction_confidence_high">High</string>
+    <string name="developer_services_extraction_confidence_medium">Medium</string>
+    <string name="developer_services_extraction_confidence_low">Low</string>
+    <string name="developer_services_extraction_capability_on_device">On-Device AI</string>
+    <string name="developer_services_extraction_capability_unsupported">Not Supported</string>
+    <string name="developer_services_extraction_na">—</string>
+
+    <!-- Developer services navigation tabs -->
+    <string name="developer_services_tab_ocr">OCR</string>
+    <string name="developer_services_tab_ai_extraction">Parser</string>
+    <string name="developer_services_tab_avatar">Avatars</string>
+
+    <!-- AI Extraction tab -->
+    <string name="developer_services_ai_no_receipt">Select a receipt photo or PDF to extract data using on-device AI</string>
+    <string name="developer_services_ai_select_receipt">Select Receipt</string>
+
+    <!-- Avatar Generation tab (placeholder) -->
+    <string name="developer_services_avatar_title">AI Avatar Generation</string>
+    <string name="developer_services_avatar_subtitle">Coming soon</string>
 </resources>

@@ -3,7 +3,11 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
+import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
+import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.features.settings.R
 import kotlinx.collections.immutable.ImmutableList
@@ -15,14 +19,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+sealed interface DeveloperServicesTab {
+    data object Ocr : DeveloperServicesTab
+    data object AiExtraction : DeveloperServicesTab
+    data object AvatarGen : DeveloperServicesTab
+}
+
 data class DeveloperServicesUiState(
+    val selectedTab: DeveloperServicesTab = DeveloperServicesTab.Ocr,
     val selectedFileUri: String? = null,
     val selectedFileName: String = "",
     val selectedFileMimeType: String = "",
     val ocrStatus: OcrStatus = OcrStatus.Idle,
     val extractedText: String = "",
     val textBlocks: ImmutableList<String> = persistentListOf(),
-    val errorMessage: UiText? = null
+    val errorMessage: UiText? = null,
+    val extractionStatus: ExtractionStatus = ExtractionStatus.Idle,
+    val extractedAmount: String? = null,
+    val extractedCurrency: String? = null,
+    val extractedDate: String? = null,
+    val extractedTitle: String? = null,
+    val extractionSource: ExtractionSource? = null,
+    val extractionConfidence: ExtractionConfidence? = null,
+    val extractionErrorMessage: UiText? = null
 )
 
 sealed interface OcrStatus {
@@ -32,28 +51,43 @@ sealed interface OcrStatus {
     data object Error : OcrStatus
 }
 
+sealed interface ExtractionStatus {
+    data object Idle : ExtractionStatus
+    data object Loading : ExtractionStatus
+    data object Success : ExtractionStatus
+    data object Error : ExtractionStatus
+}
+
 sealed interface DeveloperServicesUiEvent {
     data class FileSelected(val uri: String, val name: String, val mimeType: String) : DeveloperServicesUiEvent
+    data class SwitchTab(val tab: DeveloperServicesTab) : DeveloperServicesUiEvent
     data object RunOcr : DeveloperServicesUiEvent
+    data object RunOcrAndExtract : DeveloperServicesUiEvent
     data object Reset : DeveloperServicesUiEvent
 }
 
 class DeveloperServicesViewModel(
-    private val receiptOcrService: ReceiptOcrService
+    private val receiptOcrService: ReceiptOcrService,
+    private val receiptExtractionService: ReceiptExtractionService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeveloperServicesUiState())
     val uiState: StateFlow<DeveloperServicesUiState> = _uiState.asStateFlow()
 
+    private var lastRawReceiptText: RawReceiptText? = null
+
     fun onEvent(event: DeveloperServicesUiEvent) {
         when (event) {
             is DeveloperServicesUiEvent.FileSelected -> handleFileSelected(event.uri, event.name, event.mimeType)
+            is DeveloperServicesUiEvent.SwitchTab -> _uiState.update { it.copy(selectedTab = event.tab) }
             is DeveloperServicesUiEvent.RunOcr -> runOcr()
+            is DeveloperServicesUiEvent.RunOcrAndExtract -> runOcrAndExtract()
             is DeveloperServicesUiEvent.Reset -> reset()
         }
     }
 
     private fun handleFileSelected(uri: String, name: String, mimeType: String) {
+        lastRawReceiptText = null
         _uiState.update {
             it.copy(
                 selectedFileUri = uri,
@@ -62,7 +96,15 @@ class DeveloperServicesViewModel(
                 ocrStatus = OcrStatus.Idle,
                 extractedText = "",
                 textBlocks = persistentListOf(),
-                errorMessage = null
+                errorMessage = null,
+                extractionStatus = ExtractionStatus.Idle,
+                extractedAmount = null,
+                extractedCurrency = null,
+                extractedDate = null,
+                extractedTitle = null,
+                extractionSource = null,
+                extractionConfidence = null,
+                extractionErrorMessage = null
             )
         }
     }
@@ -75,7 +117,9 @@ class DeveloperServicesViewModel(
         _uiState.update {
             it.copy(
                 ocrStatus = OcrStatus.Loading,
-                errorMessage = null
+                errorMessage = null,
+                extractionStatus = ExtractionStatus.Idle,
+                extractionErrorMessage = null
             )
         }
 
@@ -88,6 +132,7 @@ class DeveloperServicesViewModel(
 
             receiptOcrService.recogniseText(attachment)
                 .onSuccess { rawReceipt ->
+                    lastRawReceiptText = rawReceipt
                     _uiState.update {
                         it.copy(
                             ocrStatus = OcrStatus.Success,
@@ -97,23 +142,80 @@ class DeveloperServicesViewModel(
                     }
                 }
                 .onFailure { error ->
-                    val errorMsg = error.localizedMessage
-                    val uiText = if (errorMsg != null) {
-                        UiText.DynamicString(errorMsg)
-                    } else {
-                        UiText.StringResource(R.string.developer_services_ocr_error_fallback)
-                    }
                     _uiState.update {
                         it.copy(
                             ocrStatus = OcrStatus.Error,
-                            errorMessage = uiText
+                            errorMessage = error.toUiText(R.string.developer_services_ocr_error_fallback)
                         )
                     }
                 }
         }
     }
 
+    private fun runOcrAndExtract() {
+        val currentState = _uiState.value
+        val uriString = currentState.selectedFileUri ?: return
+        val mimeType = currentState.selectedFileMimeType
+
+        _uiState.update {
+            it.copy(extractionStatus = ExtractionStatus.Loading, extractionErrorMessage = null)
+        }
+
+        viewModelScope.launch {
+            val attachment = ReceiptAttachment(
+                localUri = uriString,
+                mimeType = mimeType,
+                capturedAtMillis = System.currentTimeMillis()
+            )
+
+            receiptOcrService.recogniseText(attachment)
+                .onSuccess { rawReceipt ->
+                    lastRawReceiptText = rawReceipt
+                    runExtractionInternal(rawReceipt)
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            extractionStatus = ExtractionStatus.Error,
+                            extractionErrorMessage = error.toUiText(R.string.developer_services_ocr_error_fallback)
+                        )
+                    }
+                }
+        }
+    }
+
+    private suspend fun runExtractionInternal(rawText: RawReceiptText) {
+        receiptExtractionService.extract(rawText)
+            .onSuccess { receipt ->
+                _uiState.update {
+                    it.copy(
+                        extractionStatus = ExtractionStatus.Success,
+                        extractedAmount = receipt.amount?.toPlainString(),
+                        extractedCurrency = receipt.currency,
+                        extractedDate = receipt.date?.toString(),
+                        extractedTitle = receipt.title,
+                        extractionSource = receipt.source,
+                        extractionConfidence = receipt.confidence
+                    )
+                }
+            }
+            .onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        extractionStatus = ExtractionStatus.Error,
+                        extractionErrorMessage = error.toUiText(R.string.developer_services_extraction_error_fallback)
+                    )
+                }
+            }
+    }
+
     private fun reset() {
-        _uiState.value = DeveloperServicesUiState()
+        lastRawReceiptText = null
+        _uiState.value = DeveloperServicesUiState(selectedTab = _uiState.value.selectedTab)
+    }
+
+    private fun Throwable.toUiText(fallbackRes: Int): UiText {
+        val msg = localizedMessage
+        return if (msg != null) UiText.DynamicString(msg) else UiText.StringResource(fallbackRes)
     }
 }
