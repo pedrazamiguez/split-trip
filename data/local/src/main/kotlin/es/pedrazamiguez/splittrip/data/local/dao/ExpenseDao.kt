@@ -104,7 +104,11 @@ interface ExpenseDao {
             val local = existingExpenses[remote.id]
             if (local != null) {
                 remote.copy(
-                    receiptLocalUri = local.receiptLocalUri?.takeIf { it.isNotBlank() } ?: remote.receiptLocalUri
+                    receiptLocalUri = local.receiptLocalUri?.takeIf { it.isNotBlank() } ?: remote.receiptLocalUri,
+                    receiptRemoteUrl = local.receiptRemoteUrl?.takeIf { it.isNotBlank() } ?: remote.receiptRemoteUrl,
+                    receiptMimeType = local.receiptMimeType?.takeIf { it.isNotBlank() } ?: remote.receiptMimeType,
+                    receiptCapturedAtMillis =
+                    local.receiptCapturedAtMillis?.takeIf { it != 0L } ?: remote.receiptCapturedAtMillis
                 )
             } else {
                 remote

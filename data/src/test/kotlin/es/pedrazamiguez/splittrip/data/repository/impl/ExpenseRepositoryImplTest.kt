@@ -753,4 +753,111 @@ class ExpenseRepositoryImplTest {
             coVerify(exactly = 0) { cloudExpenseDataSource.verifyExpenseOnServer(any(), any()) }
         }
     }
+
+    @Nested
+    inner class ReceiptUpload {
+
+        @Test
+        fun `uploads receipt and updates cloud after successful save`() = runTest(testDispatcher) {
+            // Given
+            val expenseWithReceipt = testExpense.copy(
+                receiptAttachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                    localUri = "file:///path/to/local/file.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 123456789L,
+                    remoteUrl = null
+                )
+            )
+            val remoteUrl = "https://firebasestorage.googleapis.com/.../receipt.webp"
+
+            coEvery { localExpenseDataSource.saveExpense(any()) } just Runs
+            coEvery { cloudExpenseDataSource.addExpense(testGroupId, any()) } just Runs
+            coEvery { localExpenseDataSource.updateSyncStatus(any(), any()) } just Runs
+            coEvery { cloudStorageDataSource.uploadReceipt(any(), any(), any()) } returns remoteUrl
+            coEvery { localExpenseDataSource.updateReceiptRemoteUrl(any(), any()) } just Runs
+
+            // For the re-fetch inside uploadReceiptInBackground
+            val updatedExpense = expenseWithReceipt.copy(
+                receiptAttachment = expenseWithReceipt.receiptAttachment?.copy(remoteUrl = remoteUrl)
+            )
+            coEvery { localExpenseDataSource.getExpenseById(any()) } returns updatedExpense
+
+            // When
+            repository.addExpense(testGroupId, expenseWithReceipt)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                cloudStorageDataSource.uploadReceipt(
+                    expenseId = any(),
+                    localPath = "file:///path/to/local/file.jpg",
+                    mimeType = "image/jpeg"
+                )
+            }
+            coVerify(exactly = 1) {
+                localExpenseDataSource.updateReceiptRemoteUrl(any(), remoteUrl)
+            }
+            // First addExpense before upload, second addExpense after upload to sync remoteUrl
+            coVerify(exactly = 2) {
+                cloudExpenseDataSource.addExpense(testGroupId, any())
+            }
+        }
+
+        @Test
+        fun `retryPendingReceiptUploads uploads pending receipts`() = runTest(
+            testDispatcher
+        ) {
+            // Given
+            val expenseId = "synced-expense-with-pending-receipt"
+            val expenseWithPendingReceipt = testExpense.copy(
+                id = expenseId,
+                syncStatus = SyncStatus.SYNCED,
+                receiptAttachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                    localUri = "file:///path/to/local/file.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 123456789L,
+                    remoteUrl = null
+                )
+            )
+            val remoteUrl = "https://firebasestorage.googleapis.com/.../receipt.webp"
+            val updatedExpense = expenseWithPendingReceipt.copy(
+                receiptAttachment = expenseWithPendingReceipt.receiptAttachment
+                    ?.copy(remoteUrl = remoteUrl)
+            )
+
+            every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns
+                flowOf(listOf(expenseWithPendingReceipt))
+            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns
+                flowOf(listOf(expenseWithPendingReceipt))
+            coEvery { localExpenseDataSource.replaceExpensesForGroup(testGroupId, any()) } just Runs
+            coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns emptyList()
+
+            coEvery { localExpenseDataSource.getExpenseIdsByGroup(testGroupId) } returns listOf(expenseId)
+            coEvery { localExpenseDataSource.getExpenseById(expenseId) } returnsMany
+                listOf(expenseWithPendingReceipt, updatedExpense)
+
+            coEvery { cloudStorageDataSource.uploadReceipt(any(), any(), any()) } returns remoteUrl
+            coEvery { localExpenseDataSource.updateReceiptRemoteUrl(expenseId, remoteUrl) } just Runs
+            coEvery { cloudExpenseDataSource.addExpense(testGroupId, any()) } just Runs
+
+            // When
+            repository.getGroupExpensesFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                cloudStorageDataSource.uploadReceipt(
+                    expenseId = expenseId,
+                    localPath = "file:///path/to/local/file.jpg",
+                    mimeType = "image/jpeg"
+                )
+            }
+            coVerify(exactly = 1) {
+                localExpenseDataSource.updateReceiptRemoteUrl(expenseId, remoteUrl)
+            }
+            coVerify(exactly = 1) {
+                cloudExpenseDataSource.addExpense(testGroupId, any())
+            }
+        }
+    }
 }

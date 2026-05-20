@@ -36,7 +36,20 @@ internal class ReceiptStorageServiceImpl(
         withContext(Dispatchers.IO) {
             val uri = Uri.parse(sourceUri)
             val resolver = context.contentResolver
-            val mimeType = resolver.getType(uri) ?: FALLBACK_MIME
+            var mimeType = resolver.getType(uri)
+            if (mimeType.isNullOrBlank() || mimeType == FALLBACK_MIME) {
+                val fileExtension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(sourceUri)
+                    .ifBlank {
+                        val path = uri.path.orEmpty()
+                        val dotIndex = path.lastIndexOf('.')
+                        if (dotIndex != -1) path.substring(dotIndex + 1) else ""
+                    }
+                if (fileExtension.isNotEmpty()) {
+                    mimeType =
+                        android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension.lowercase())
+                }
+            }
+            val finalMime = mimeType ?: FALLBACK_MIME
 
             val receiptsDir = File(context.filesDir, RECEIPTS_DIR).also { it.mkdirs() }
             val uniqueId = UUID.randomUUID().toString()
@@ -51,10 +64,10 @@ internal class ReceiptStorageServiceImpl(
                     }
                 } ?: error("Could not open input stream for $uri")
 
-                val (destFile, actualMime) = if (mimeType.startsWith("image/")) {
+                val (destFile, actualMime) = if (finalMime.startsWith("image/")) {
                     compressImage(tempFile, receiptsDir, uniqueId)
                 } else {
-                    copyVerbatim(tempFile, receiptsDir, uniqueId, mimeType)
+                    copyVerbatim(tempFile, receiptsDir, uniqueId, finalMime)
                 }
 
                 Timber.d("Receipt saved: ${destFile.absolutePath} ($actualMime)")

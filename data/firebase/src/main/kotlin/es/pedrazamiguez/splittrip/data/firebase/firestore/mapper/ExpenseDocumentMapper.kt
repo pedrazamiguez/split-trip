@@ -121,7 +121,7 @@ private fun buildReceiptAttachmentDocuments(
         AttachmentDocument(
             path = remoteUrl,
             mime = attachment.mimeType,
-            uploadedAt = Timestamp.now()
+            uploadedAt = Timestamp(java.util.Date(attachment.capturedAtMillis))
         )
     )
 }

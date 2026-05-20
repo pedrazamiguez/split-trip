@@ -50,7 +50,9 @@ class ExpenseRepositoryImpl(
                 cloudExpenseDataSource.addExpense(groupId, expenseWithMetadata)
                 localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
                 Timber.d("Expense synced to cloud: ${expenseWithMetadata.id}")
-                uploadReceiptInBackground(expenseWithMetadata)
+                syncScope.launch {
+                    uploadReceiptInBackground(expenseWithMetadata)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -196,6 +198,7 @@ class ExpenseRepositoryImpl(
                         Timber.d("Real-time sync: ${remoteExpenses.size} expenses for group $groupId")
                         localExpenseDataSource.replaceExpensesForGroup(groupId, remoteExpenses)
                         confirmPendingSyncExpenses(groupId)
+                        retryPendingReceiptUploads(groupId)
                     } catch (e: Exception) {
                         Timber.w(e, "Error reconciling expenses from cloud snapshot")
                     }
@@ -231,6 +234,24 @@ class ExpenseRepositoryImpl(
             } catch (e: Exception) {
                 // Server unreachable — keep as PENDING_SYNC
                 Timber.d(e, "Cannot confirm expense $id — server unreachable")
+            }
+        }
+    }
+
+    /**
+     * Scans for expenses in the group that have a local receipt but no remote URL,
+     * and schedules background uploads for them. This acts as a retry mechanism
+     * if the initial upload was interrupted or failed.
+     */
+    private suspend fun retryPendingReceiptUploads(groupId: String) {
+        val expenseIds = localExpenseDataSource.getExpenseIdsByGroup(groupId)
+        for (id in expenseIds) {
+            val expense = localExpenseDataSource.getExpenseById(id) ?: continue
+            val attachment = expense.receiptAttachment
+            if (attachment != null && attachment.localUri.isNotBlank() && attachment.remoteUrl.isNullOrBlank()) {
+                syncScope.launch {
+                    uploadReceiptInBackground(expense)
+                }
             }
         }
     }
