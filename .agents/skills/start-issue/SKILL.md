@@ -20,7 +20,15 @@ Start working on this issue:
 - Issue URL: $ISSUE_URL
 - Issue Number: $ISSUE_NUMBER
 
-We're already on the correct branch with the latest changes from develop.
+---
+
+## Step 0 — Branch validation
+
+Before writing any code or performing checks, verify your local Git state:
+1. Ensure you are on the correct branch for this task.
+2. If starting work on a new issue, ensure a branch has been created from `develop` following the branch naming convention.
+3. If this is a hotfix, ensure the branch has been created from `main`.
+4. Pull the latest changes from the remote repository to guarantee your branch is fully up-to-date with `develop` or `main`.
 
 ---
 
