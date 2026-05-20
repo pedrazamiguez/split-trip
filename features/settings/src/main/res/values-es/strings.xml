@@ -112,8 +112,8 @@
     <string name="developer_services_extraction_na">—</string>
 
     <!-- Developer services navigation tabs -->
-    <string name="developer_services_tab_ocr">Escáner OCR</string>
-    <string name="developer_services_tab_ai_extraction">Extracción IA</string>
+    <string name="developer_services_tab_ocr">OCR</string>
+    <string name="developer_services_tab_ai_extraction">Extracción</string>
     <string name="developer_services_tab_avatar">Avatares</string>
 
     <!-- AI Extraction tab -->

@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.main.presentation.component.navbar
+package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -17,10 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * A sliding indicator that animates between navigation items.
- * Uses a bouncy spring animation for a playful, expressive feel.
- */
+/** Sliding indicator that animates between navigation items with a bouncy spring. */
 @Composable
 internal fun SlidingIndicator(
     selectedIndex: Int,
@@ -29,12 +26,9 @@ internal fun SlidingIndicator(
     containerWidth: Dp,
     modifier: Modifier = Modifier
 ) {
-    // Calculate spacing between items based on SpaceEvenly arrangement
     val totalItemsWidth = itemWidth * itemCount
     val totalSpacing = containerWidth - totalItemsWidth
     val spacingPerGap = totalSpacing / (itemCount + 1)
-
-    // Calculate the actual position of each item
     val itemOffset = spacingPerGap + (itemWidth + spacingPerGap) * selectedIndex
 
     val indicatorOffset by animateDpAsState(
@@ -46,13 +40,11 @@ internal fun SlidingIndicator(
         label = "indicatorOffset"
     )
 
-    val indicatorHeight = NavBarDefaults.BarHeight - 16.dp
-
     Box(
         modifier = modifier
             .offset(x = indicatorOffset)
             .width(itemWidth)
-            .height(indicatorHeight)
+            .height(NavBarDefaults.BarHeight - 16.dp)
             .clip(RoundedCornerShape(NavBarDefaults.INDICATOR_CORNER_RADIUS))
             .background(MaterialTheme.colorScheme.primaryContainer)
     )

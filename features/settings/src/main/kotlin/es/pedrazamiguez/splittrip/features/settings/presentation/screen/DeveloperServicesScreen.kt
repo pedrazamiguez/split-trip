@@ -18,27 +18,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.EmailStamp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.TextScan2
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.ExtractedRawTextCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.ExtractedTextBlockCard
@@ -51,6 +48,57 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Devel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.ExtractionStatus
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.OcrStatus
 import kotlinx.collections.immutable.ImmutableList
+
+// ─── Tab items ────────────────────────────────────────────────────────────────
+
+private object OcrTabItem : FloatingNavTab {
+    override val id = "ocr"
+
+    @Composable
+    override fun Icon(isSelected: Boolean, tint: Color) =
+        Icon(TablerIcons.Outline.TextScan2, contentDescription = null, tint = tint)
+
+    @Composable
+    override fun getLabel() = stringResource(R.string.developer_services_tab_ocr)
+}
+
+private object AiExtractionTabItem : FloatingNavTab {
+    override val id = "ai_extraction"
+
+    @Composable
+    override fun Icon(isSelected: Boolean, tint: Color) =
+        Icon(TablerIcons.Outline.PhotoAi, contentDescription = null, tint = tint)
+
+    @Composable
+    override fun getLabel() = stringResource(R.string.developer_services_tab_ai_extraction)
+}
+
+private object AvatarGenTabItem : FloatingNavTab {
+    override val id = "avatar_gen"
+
+    @Composable
+    override fun Icon(isSelected: Boolean, tint: Color) =
+        Icon(TablerIcons.Outline.EmailStamp, contentDescription = null, tint = tint)
+
+    @Composable
+    override fun getLabel() = stringResource(R.string.developer_services_tab_avatar)
+}
+
+private val SERVICE_TABS = listOf(OcrTabItem, AiExtractionTabItem, AvatarGenTabItem)
+
+private fun DeveloperServicesTab.toNavId() = when (this) {
+    DeveloperServicesTab.Ocr -> OcrTabItem.id
+    DeveloperServicesTab.AiExtraction -> AiExtractionTabItem.id
+    DeveloperServicesTab.AvatarGen -> AvatarGenTabItem.id
+}
+
+private fun String.toDeveloperServicesTab() = when (this) {
+    AiExtractionTabItem.id -> DeveloperServicesTab.AiExtraction
+    AvatarGenTabItem.id -> DeveloperServicesTab.AvatarGen
+    else -> DeveloperServicesTab.Ocr
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 @Composable
 fun DeveloperServicesScreen(
@@ -80,44 +128,13 @@ fun DeveloperServicesScreen(
             }
         }
 
-        ServiceNavigationBar(
-            selectedTab = uiState.selectedTab,
-            onTabSelected = { onEvent(DeveloperServicesUiEvent.SwitchTab(it)) }
-        )
-    }
-}
-
-@Composable
-private fun ServiceNavigationBar(
-    selectedTab: DeveloperServicesTab,
-    onTabSelected: (DeveloperServicesTab) -> Unit
-) {
-    val pillShape = RoundedCornerShape(50)
-    NavigationBar(
-        modifier = Modifier
-            .padding(horizontal = MaterialTheme.spacing.Large, vertical = MaterialTheme.spacing.Medium)
-            .shadow(elevation = 8.dp, shape = pillShape)
-            .clip(pillShape),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        tonalElevation = 0.dp
-    ) {
-        NavigationBarItem(
-            selected = selectedTab is DeveloperServicesTab.Ocr,
-            onClick = { onTabSelected(DeveloperServicesTab.Ocr) },
-            icon = { Icon(TablerIcons.Outline.TextScan2, contentDescription = null) },
-            label = { Text(stringResource(R.string.developer_services_tab_ocr)) }
-        )
-        NavigationBarItem(
-            selected = selectedTab is DeveloperServicesTab.AiExtraction,
-            onClick = { onTabSelected(DeveloperServicesTab.AiExtraction) },
-            icon = { Icon(TablerIcons.Outline.PhotoAi, contentDescription = null) },
-            label = { Text(stringResource(R.string.developer_services_tab_ai_extraction)) }
-        )
-        NavigationBarItem(
-            selected = selectedTab is DeveloperServicesTab.AvatarGen,
-            onClick = { onTabSelected(DeveloperServicesTab.AvatarGen) },
-            icon = { Icon(TablerIcons.Outline.EmailStamp, contentDescription = null) },
-            label = { Text(stringResource(R.string.developer_services_tab_avatar)) }
+        FloatingNavigationBar(
+            selectedId = uiState.selectedTab.toNavId(),
+            onTabSelected = { id ->
+                onEvent(DeveloperServicesUiEvent.SwitchTab(id.toDeveloperServicesTab()))
+            },
+            items = SERVICE_TABS
+            // No hazeState — this screen has no scrollable hazeSource behind the bar.
         )
     }
 }
