@@ -70,6 +70,7 @@ class DeveloperServicesViewModelTest {
         assertEquals("", state.extractedText)
         assertTrue(state.textBlocks.isEmpty())
         assertNull(state.errorMessage)
+        assertEquals(DeveloperServicesTab.Ocr, state.selectedTab)
     }
 
     @Nested
@@ -263,8 +264,9 @@ class DeveloperServicesViewModelTest {
     inner class ResetEvent {
 
         @Test
-        fun `clears all state`() = runTest(testDispatcher) {
+        fun `clears all state but preserves selected tab`() = runTest(testDispatcher) {
             val viewModel = createViewModel()
+            viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AiExtraction))
             viewModel.onEvent(
                 DeveloperServicesUiEvent.FileSelected(
                     uri = "content://media/external/file/123",
@@ -294,6 +296,124 @@ class DeveloperServicesViewModelTest {
             assertEquals("", state.extractedText)
             assertTrue(state.textBlocks.isEmpty())
             assertNull(state.errorMessage)
+            assertEquals(DeveloperServicesTab.AiExtraction, state.selectedTab)
+        }
+    }
+
+    @Nested
+    @DisplayName("SwitchTab Event")
+    inner class SwitchTabEvent {
+
+        @Test
+        fun `updates selected tab`() {
+            val viewModel = createViewModel()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AiExtraction))
+            assertEquals(DeveloperServicesTab.AiExtraction, viewModel.uiState.value.selectedTab)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AvatarGen))
+            assertEquals(DeveloperServicesTab.AvatarGen, viewModel.uiState.value.selectedTab)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.Ocr))
+            assertEquals(DeveloperServicesTab.Ocr, viewModel.uiState.value.selectedTab)
+        }
+
+        @Test
+        fun `preserves other state when switching tabs`() {
+            val viewModel = createViewModel()
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/123",
+                    name = "receipt.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+
+            viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AiExtraction))
+
+            val state = viewModel.uiState.value
+            assertEquals("content://media/external/file/123", state.selectedFileUri)
+            assertEquals(DeveloperServicesTab.AiExtraction, state.selectedTab)
+        }
+    }
+
+    @Nested
+    @DisplayName("RunOcrAndExtract Event")
+    inner class RunOcrAndExtractEvent {
+
+        @Test
+        fun `does nothing if no file is selected`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+            advanceUntilIdle()
+
+            assertEquals(ExtractionStatus.Idle, viewModel.uiState.value.extractionStatus)
+        }
+
+        @Test
+        fun `sets loading then success on OCR and extraction success`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/123",
+                    name = "receipt.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+
+            val rawReceiptText = RawReceiptText(
+                fullText = "Total 991.00 THB",
+                blocks = persistentListOf(TextBlock(text = "Total 991.00 THB", confidence = 1.0f)),
+                recognisedAt = Instant.EPOCH
+            )
+            val extracted = ExtractedReceipt(
+                amount = BigDecimal("991.00"),
+                currency = "THB",
+                date = LocalDate.of(2026, 5, 20),
+                title = "7-Eleven",
+                source = ExtractionSource.AI_CORE,
+                confidence = ExtractionConfidence.HIGH
+            )
+
+            coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { receiptExtractionService.extract(any()) } returns Result.success(extracted)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+            assertEquals(ExtractionStatus.Loading, viewModel.uiState.value.extractionStatus)
+
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ExtractionStatus.Success, state.extractionStatus)
+            assertEquals("991.00", state.extractedAmount)
+            assertEquals("THB", state.extractedCurrency)
+            assertEquals("2026-05-20", state.extractedDate)
+            assertEquals("7-Eleven", state.extractedTitle)
+            assertEquals(OcrStatus.Idle, state.ocrStatus)
+        }
+
+        @Test
+        fun `maps OCR failure to extraction error state`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/123",
+                    name = "receipt.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+
+            coEvery { receiptOcrService.recogniseText(any()) } returns Result.failure(RuntimeException("OCR failed"))
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ExtractionStatus.Error, state.extractionStatus)
+            assertEquals(UiText.DynamicString("OCR failed"), state.extractionErrorMessage)
+            assertEquals(OcrStatus.Idle, state.ocrStatus)
         }
     }
 }

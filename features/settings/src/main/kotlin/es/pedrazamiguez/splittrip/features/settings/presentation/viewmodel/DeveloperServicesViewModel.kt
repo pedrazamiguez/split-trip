@@ -17,7 +17,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+sealed interface DeveloperServicesTab {
+    data object Ocr : DeveloperServicesTab
+    data object AiExtraction : DeveloperServicesTab
+    data object AvatarGen : DeveloperServicesTab
+}
+
 data class DeveloperServicesUiState(
+    val selectedTab: DeveloperServicesTab = DeveloperServicesTab.Ocr,
     val selectedFileUri: String? = null,
     val selectedFileName: String = "",
     val selectedFileMimeType: String = "",
@@ -52,8 +59,10 @@ sealed interface ExtractionStatus {
 
 sealed interface DeveloperServicesUiEvent {
     data class FileSelected(val uri: String, val name: String, val mimeType: String) : DeveloperServicesUiEvent
+    data class SwitchTab(val tab: DeveloperServicesTab) : DeveloperServicesUiEvent
     data object RunOcr : DeveloperServicesUiEvent
     data object RunExtraction : DeveloperServicesUiEvent
+    data object RunOcrAndExtract : DeveloperServicesUiEvent
     data object Reset : DeveloperServicesUiEvent
 }
 
@@ -70,8 +79,10 @@ class DeveloperServicesViewModel(
     fun onEvent(event: DeveloperServicesUiEvent) {
         when (event) {
             is DeveloperServicesUiEvent.FileSelected -> handleFileSelected(event.uri, event.name, event.mimeType)
+            is DeveloperServicesUiEvent.SwitchTab -> _uiState.update { it.copy(selectedTab = event.tab) }
             is DeveloperServicesUiEvent.RunOcr -> runOcr()
             is DeveloperServicesUiEvent.RunExtraction -> runExtraction()
+            is DeveloperServicesUiEvent.RunOcrAndExtract -> runOcrAndExtract()
             is DeveloperServicesUiEvent.Reset -> reset()
         }
     }
@@ -134,16 +145,10 @@ class DeveloperServicesViewModel(
                     }
                 }
                 .onFailure { error ->
-                    val errorMsg = error.localizedMessage
-                    val uiText = if (errorMsg != null) {
-                        UiText.DynamicString(errorMsg)
-                    } else {
-                        UiText.StringResource(R.string.developer_services_ocr_error_fallback)
-                    }
                     _uiState.update {
                         it.copy(
                             ocrStatus = OcrStatus.Error,
-                            errorMessage = uiText
+                            errorMessage = error.toUiText(R.string.developer_services_ocr_error_fallback)
                         )
                     }
                 }
@@ -154,46 +159,79 @@ class DeveloperServicesViewModel(
         val rawText = lastRawReceiptText ?: return
 
         _uiState.update {
-            it.copy(
-                extractionStatus = ExtractionStatus.Loading,
-                extractionErrorMessage = null
-            )
+            it.copy(extractionStatus = ExtractionStatus.Loading, extractionErrorMessage = null)
+        }
+
+        viewModelScope.launch { runExtractionInternal(rawText) }
+    }
+
+    private fun runOcrAndExtract() {
+        val currentState = _uiState.value
+        val uriString = currentState.selectedFileUri ?: return
+        val mimeType = currentState.selectedFileMimeType
+
+        _uiState.update {
+            it.copy(extractionStatus = ExtractionStatus.Loading, extractionErrorMessage = null)
         }
 
         viewModelScope.launch {
-            receiptExtractionService.extract(rawText)
-                .onSuccess { receipt ->
+            val attachment = ReceiptAttachment(
+                localUri = uriString,
+                mimeType = mimeType,
+                capturedAtMillis = System.currentTimeMillis()
+            )
+
+            receiptOcrService.recogniseText(attachment)
+                .onSuccess { rawReceipt ->
+                    lastRawReceiptText = rawReceipt
                     _uiState.update {
-                        it.copy(
-                            extractionStatus = ExtractionStatus.Success,
-                            extractedAmount = receipt.amount?.toPlainString(),
-                            extractedCurrency = receipt.currency,
-                            extractedDate = receipt.date?.toString(),
-                            extractedTitle = receipt.title,
-                            extractionSource = receipt.source.name,
-                            extractionConfidence = receipt.confidence.name
-                        )
+                        it.copy(extractionCapability = receiptExtractionService.capability().name)
                     }
+                    runExtractionInternal(rawReceipt)
                 }
                 .onFailure { error ->
-                    val errorMsg = error.localizedMessage
-                    val uiText = if (errorMsg != null) {
-                        UiText.DynamicString(errorMsg)
-                    } else {
-                        UiText.StringResource(R.string.developer_services_extraction_error_fallback)
-                    }
                     _uiState.update {
                         it.copy(
                             extractionStatus = ExtractionStatus.Error,
-                            extractionErrorMessage = uiText
+                            extractionErrorMessage = error.toUiText(R.string.developer_services_ocr_error_fallback)
                         )
                     }
                 }
         }
     }
 
+    private suspend fun runExtractionInternal(rawText: RawReceiptText) {
+        receiptExtractionService.extract(rawText)
+            .onSuccess { receipt ->
+                _uiState.update {
+                    it.copy(
+                        extractionStatus = ExtractionStatus.Success,
+                        extractedAmount = receipt.amount?.toPlainString(),
+                        extractedCurrency = receipt.currency,
+                        extractedDate = receipt.date?.toString(),
+                        extractedTitle = receipt.title,
+                        extractionSource = receipt.source.name,
+                        extractionConfidence = receipt.confidence.name
+                    )
+                }
+            }
+            .onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        extractionStatus = ExtractionStatus.Error,
+                        extractionErrorMessage = error.toUiText(R.string.developer_services_extraction_error_fallback)
+                    )
+                }
+            }
+    }
+
     private fun reset() {
         lastRawReceiptText = null
-        _uiState.value = DeveloperServicesUiState()
+        _uiState.value = DeveloperServicesUiState(selectedTab = _uiState.value.selectedTab)
+    }
+
+    private fun Throwable.toUiText(fallbackRes: Int): UiText {
+        val msg = localizedMessage
+        return if (msg != null) UiText.DynamicString(msg) else UiText.StringResource(fallbackRes)
     }
 }

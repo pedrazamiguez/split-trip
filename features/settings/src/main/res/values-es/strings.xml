@@ -39,7 +39,7 @@
     <string name="settings_developer_assets_title">Recursos</string>
     <string name="settings_developer_assets_description">Imágenes y animaciones</string>
     <string name="settings_developer_services_title">Pruebas de Servicios</string>
-    <string name="settings_developer_services_description">Probar servicios backend</string>
+    <string name="settings_developer_services_description">Probar servicios del dispositivo</string>
 
     <!-- Support & Feedback Section -->
     <string name="settings_section_support">Ayuda y Feedback</string>
@@ -110,4 +110,17 @@
     <string name="developer_services_extraction_capability_on_device">IA en Dispositivo</string>
     <string name="developer_services_extraction_capability_unsupported">No Compatible</string>
     <string name="developer_services_extraction_na">—</string>
+
+    <!-- Developer services navigation tabs -->
+    <string name="developer_services_tab_ocr">Escáner OCR</string>
+    <string name="developer_services_tab_ai_extraction">Extracción IA</string>
+    <string name="developer_services_tab_avatar">Avatares</string>
+
+    <!-- AI Extraction tab -->
+    <string name="developer_services_ai_no_receipt">Selecciona una foto de recibo o PDF para extraer datos con IA en el dispositivo</string>
+    <string name="developer_services_ai_select_receipt">Seleccionar recibo</string>
+
+    <!-- Avatar Generation tab (placeholder) -->
+    <string name="developer_services_avatar_title">Generación de Avatares con IA</string>
+    <string name="developer_services_avatar_subtitle">Próximamente</string>
 </resources>
