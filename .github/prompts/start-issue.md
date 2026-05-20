@@ -71,6 +71,12 @@ Stick to the posted plan. If the plan needs to change, update the comment.
 Follow the architecture constraints in `.github/copilot-instructions.md` and `AGENTS.md` strictly.  
 Take into account detekt rules, ktlint formatting, new code coverage, and the 600-line file-size limit at all times.
 
+**Core Reminders:**
+- **No Pragmatic Patches:** Write clean, modular, production-ready code. Do not use quick hacks or temporary workarounds.
+- **BigDecimal Math:** Use `BigDecimal` with an explicit scale and rounding mode for all precision-sensitive calculations (never `Double` or `Float`).
+- **Offline-First Protocol:** Generate UUIDs and timestamps locally, write to Room first, and sync to Firestore in the background using reusable sync delegates.
+- **Design System:** Comply with the "Horizon Narrative" guidelines (no raw 1px borders, Outfitt/Inter/Jakarta Sans typography, tonal layering, and bottom padding via `LocalBottomPadding` on tab screens).
+
 **Commenting policy:** Comment the *why*, never the *what*. If a comment only restates what the code already says, delete it. Add a comment only when the reasoning behind a decision would not be obvious to the next reader from the code alone.
 
 ---

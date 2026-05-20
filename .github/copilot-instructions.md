@@ -524,6 +524,21 @@ These rules govern how AI assistants (Copilot, agents) interact with this codeba
 * ❌ **Bad:** Jumping straight into code generation without reading the architecture docs.
 * ✅ **Good:** Reading all relevant instruction files, studying existing patterns, then proposing a plan that aligns with the documented architecture.
 
+**No Pragmatic Patches (STRICT):**
+* You will provide clean, production-ready code. Quick hacks, "temporary" patches, or code that compromises modularity and Clean Architecture boundaries are strictly prohibited.
+
+**Establish a Baseline:**
+* Before editing any files, run the full local validation check suite (`make check`) to establish the initial status of the codebase. Resolve any pre-existing violations on files you will touch before making other changes.
+
+**File-Size Guards:**
+* Always verify a file's line count using `wc -l` before and after editing it. If editing will push the file near or over 600 lines, extract event handlers, delegates, or components first.
+
+**Commenting Policy:**
+* Comment the *why*, never the *what*. Completely avoid/delete redundant comments that merely restate what code does.
+
+**Local Verification Gate (MANDATORY):**
+* Before declaring any task, issue, or review comment done, completed, addressed, or accomplished, you MUST run `make check` locally and ensure there are 0 failures. Never leave verification for CI/CD or the user to discover.
+
 **No Autonomous Git/GitHub Operations (STRICT):**
 * ❌ **NEVER** push code to any remote branch without explicit user permission.
 * ❌ **NEVER** create Pull Requests without explicit user permission and confirmation of:
@@ -546,4 +561,5 @@ The AI agent must mentally verify each of these before writing code:
 8. **Hot Flows:** Using `stateIn(WhileSubscribed(AppConstants.FLOW_RETENTION_TIME, AppConstants.FLOW_REPLAY_EXPIRATION))`? No `LaunchedEffect(Unit)` for data loading?
 9. **Offline-First:** Room-first reads? Local UUID generation? Cloud sync in background?
 10. **ImmutableList:** Collections in UiState using `ImmutableList` from kotlinx-immutable?
+11. **Local Verification Gate:** Local verification suite (`make check`) executed and passing with 0 failures?
 

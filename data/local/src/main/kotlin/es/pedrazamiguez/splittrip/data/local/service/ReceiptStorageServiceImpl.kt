@@ -35,34 +35,14 @@ internal class ReceiptStorageServiceImpl(
     override suspend fun copyAndCompress(sourceUri: String): ReceiptAttachment =
         withContext(Dispatchers.IO) {
             val uri = Uri.parse(sourceUri)
-            val resolver = context.contentResolver
-            var mimeType = resolver.getType(uri)
-            if (mimeType.isNullOrBlank() || mimeType == FALLBACK_MIME) {
-                val fileExtension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(sourceUri)
-                    .ifBlank {
-                        val path = uri.path.orEmpty()
-                        val dotIndex = path.lastIndexOf('.')
-                        if (dotIndex != -1) path.substring(dotIndex + 1) else ""
-                    }
-                if (fileExtension.isNotEmpty()) {
-                    mimeType =
-                        android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension.lowercase())
-                }
-            }
-            val finalMime = mimeType ?: FALLBACK_MIME
+            val finalMime = resolveMimeType(uri, sourceUri)
 
             val receiptsDir = File(context.filesDir, RECEIPTS_DIR).also { it.mkdirs() }
             val uniqueId = UUID.randomUUID().toString()
 
-            // Copy ContentResolver stream to a temporary file first.
-            // This avoids reading the content URI stream multiple times (which fails for pipe-backed/picker/camera streams).
             val tempFile = File(context.cacheDir, "temp_receipt_$uniqueId").also { it.parentFile?.mkdirs() }
             try {
-                resolver.openInputStream(uri)?.use { input ->
-                    FileOutputStream(tempFile).use { output ->
-                        input.copyTo(output)
-                    }
-                } ?: error("Could not open input stream for $uri")
+                copyToTempFile(uri, tempFile)
 
                 val (destFile, actualMime) = if (finalMime.startsWith("image/")) {
                     compressImage(tempFile, receiptsDir, uniqueId)
@@ -73,7 +53,6 @@ internal class ReceiptStorageServiceImpl(
                 Timber.d("Receipt saved: ${destFile.absolutePath} ($actualMime)")
 
                 ReceiptAttachment(
-                    // Store a proper file:// URI so Coil's Uri.parse() can load it without a scheme.
                     localUri = destFile.toUri().toString(),
                     mimeType = actualMime,
                     capturedAtMillis = System.currentTimeMillis()
@@ -82,22 +61,55 @@ internal class ReceiptStorageServiceImpl(
                 if (tempFile.exists()) {
                     tempFile.delete()
                 }
-                // Clean up source if it was a camera temp file
-                if (uri.authority == "${context.packageName}.fileprovider" &&
-                    uri.lastPathSegment?.startsWith("camera_") == true
-                ) {
-                    try {
-                        val sourceFile = File(File(context.filesDir, RECEIPTS_DIR), uri.lastPathSegment!!)
-                        if (sourceFile.exists()) {
-                            sourceFile.delete()
-                            Timber.d("Camera temp file deleted: ${sourceFile.absolutePath}")
-                        }
-                    } catch (e: Exception) {
-                        Timber.e(e, "Failed to delete camera temp file: $sourceUri")
-                    }
+                cleanUpSourceCameraFile(uri, sourceUri)
+            }
+        }
+
+    private fun resolveMimeType(uri: Uri, sourceUri: String): String {
+        val resolver = context.contentResolver
+        var mimeType = resolver.getType(uri)
+        if (mimeType.isNullOrBlank() || mimeType == FALLBACK_MIME) {
+            val fileExtension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(sourceUri)
+                .ifBlank {
+                    val path = uri.path.orEmpty()
+                    val dotIndex = path.lastIndexOf('.')
+                    if (dotIndex != -1) path.substring(dotIndex + 1) else ""
+                }
+            if (fileExtension.isNotEmpty()) {
+                val inferredMime = android.webkit.MimeTypeMap.getSingleton()
+                    .getMimeTypeFromExtension(fileExtension.lowercase())
+                if (!inferredMime.isNullOrBlank()) {
+                    mimeType = inferredMime
                 }
             }
         }
+        return mimeType ?: FALLBACK_MIME
+    }
+
+    private fun copyToTempFile(uri: Uri, tempFile: File) {
+        val resolver = context.contentResolver
+        resolver.openInputStream(uri)?.use { input ->
+            FileOutputStream(tempFile).use { output ->
+                input.copyTo(output)
+            }
+        } ?: error("Could not open input stream for $uri")
+    }
+
+    private fun cleanUpSourceCameraFile(uri: Uri, sourceUri: String) {
+        if (uri.authority == "${context.packageName}.fileprovider" &&
+            uri.lastPathSegment?.startsWith("camera_") == true
+        ) {
+            try {
+                val sourceFile = File(File(context.filesDir, RECEIPTS_DIR), uri.lastPathSegment!!)
+                if (sourceFile.exists()) {
+                    sourceFile.delete()
+                    Timber.d("Camera temp file deleted: ${sourceFile.absolutePath}")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to delete camera temp file: $sourceUri")
+            }
+        }
+    }
 
     /**
      * Decodes the source bitmap with OOM-safe downsampling (max [MAX_IMAGE_DIMENSION] px on

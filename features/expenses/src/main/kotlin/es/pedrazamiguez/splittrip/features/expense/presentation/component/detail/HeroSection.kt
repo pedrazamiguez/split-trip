@@ -206,6 +206,36 @@ private fun isPdf(uriString: String, mimeType: String?): Boolean {
     return false
 }
 
+private fun renderPdfFirstPage(file: File): Bitmap? {
+    if (!file.exists() || file.length() == 0L) return null
+    var pfd: ParcelFileDescriptor? = null
+    var renderer: PdfRenderer? = null
+    var page: PdfRenderer.Page? = null
+    try {
+        pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        renderer = PdfRenderer(pfd)
+        if (renderer.pageCount > 0) {
+            page = renderer.openPage(0)
+            val aspectRatio = page.width.toFloat() / page.height.toFloat()
+            val targetWidth = (aspectRatio * 480).toInt()
+            val destBitmap = Bitmap.createBitmap(
+                targetWidth.coerceAtLeast(1),
+                480,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(destBitmap)
+            canvas.drawColor(android.graphics.Color.WHITE)
+            page.render(destBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+            return destBitmap
+        }
+    } finally {
+        page?.close()
+        renderer?.close()
+        pfd?.close()
+    }
+    return null
+}
+
 @Composable
 private fun rememberPdfThumbnail(pdfUriString: String): Bitmap? {
     var bitmap by remember(pdfUriString) { mutableStateOf<Bitmap?>(null) }
@@ -216,34 +246,7 @@ private fun rememberPdfThumbnail(pdfUriString: String): Bitmap? {
                 val isLocalFile = uri.scheme == "file" || uri.scheme.isNullOrEmpty()
                 if (isLocalFile) {
                     val filePath = if (uri.scheme == "file") uri.path.orEmpty() else pdfUriString
-                    val file = File(filePath)
-                    if (file.exists() && file.length() > 0) {
-                        var pfd: ParcelFileDescriptor? = null
-                        var renderer: PdfRenderer? = null
-                        var page: PdfRenderer.Page? = null
-                        try {
-                            pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-                            renderer = PdfRenderer(pfd)
-                            if (renderer.pageCount > 0) {
-                                page = renderer.openPage(0)
-                                val aspectRatio = page.width.toFloat() / page.height.toFloat()
-                                val targetWidth = (aspectRatio * 480).toInt()
-                                val destBitmap = Bitmap.createBitmap(
-                                    targetWidth.coerceAtLeast(1),
-                                    480,
-                                    Bitmap.Config.ARGB_8888
-                                )
-                                val canvas = android.graphics.Canvas(destBitmap)
-                                canvas.drawColor(android.graphics.Color.WHITE)
-                                page.render(destBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                                bitmap = destBitmap
-                            }
-                        } finally {
-                            page?.close()
-                            renderer?.close()
-                            pfd?.close()
-                        }
-                    }
+                    bitmap = renderPdfFirstPage(File(filePath))
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to render PDF thumbnail for $pdfUriString")
