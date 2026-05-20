@@ -4,6 +4,8 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
@@ -11,6 +13,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMet
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.collections.immutable.persistentListOf
@@ -18,6 +21,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -32,6 +36,7 @@ class FormEventHandlerTest {
 
     private lateinit var handler: FormEventHandler
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
+    private lateinit var attachReceiptUseCase: AttachReceiptUseCase
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actions: MutableSharedFlow<AddExpenseUiAction>
     private val capturedPostActions = mutableListOf<FormPostAction>()
@@ -48,9 +53,13 @@ class FormEventHandlerTest {
     @BeforeEach
     fun setUp() {
         addExpenseUiMapper = mockk(relaxed = true)
+        attachReceiptUseCase = mockk(relaxed = true)
         capturedPostActions.clear()
 
-        handler = FormEventHandler(addExpenseUiMapper = addExpenseUiMapper)
+        handler = FormEventHandler(
+            addExpenseUiMapper = addExpenseUiMapper,
+            attachReceiptUseCase = attachReceiptUseCase
+        )
         handler.setFormPostCallback { capturedPostActions.add(it) }
 
         uiState = MutableStateFlow(
@@ -63,7 +72,8 @@ class FormEventHandlerTest {
             )
         )
         actions = MutableSharedFlow()
-        handler.bind(uiState, actions, TestScope())
+        // UnconfinedTestDispatcher runs coroutines eagerly so no advanceUntilIdle() is needed
+        handler.bind(uiState, actions, TestScope(UnconfinedTestDispatcher()))
     }
 
     @Nested
@@ -317,9 +327,18 @@ class FormEventHandlerTest {
         }
 
         @Test
-        fun `sets receipt URI when uri is non-null`() = runTest {
+        fun `sets receipt URI and attachment when use case succeeds`() = runTest {
+            val attachment = ReceiptAttachment(
+                localUri = "/data/user/0/receipts/abc.webp",
+                mimeType = "image/webp",
+                capturedAtMillis = 1716000000000L
+            )
+            coEvery { attachReceiptUseCase("content://image/1") } returns Result.success(attachment)
+
             handler.handleReceiptImageChanged("content://image/1")
-            assertEquals("content://image/1", uiState.value.receiptUri)
+
+            assertEquals("/data/user/0/receipts/abc.webp", uiState.value.receiptUri)
+            assertEquals(attachment, uiState.value.receiptAttachment)
         }
 
         @Test
@@ -329,6 +348,7 @@ class FormEventHandlerTest {
             handler.handleReceiptImageChanged(null)
 
             assertNull(uiState.value.receiptUri)
+            assertNull(uiState.value.receiptAttachment)
         }
     }
 

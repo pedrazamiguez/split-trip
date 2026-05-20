@@ -10,6 +10,8 @@ interface LocalExpenseDataSource {
 
     suspend fun getExpenseById(expenseId: String): Expense?
 
+    fun getExpenseByIdFlow(expenseId: String): Flow<Expense?>
+
     suspend fun saveExpenses(expenses: List<Expense>)
 
     suspend fun saveExpense(expense: Expense)
@@ -39,6 +41,13 @@ interface LocalExpenseDataSource {
      * and transition PENDING_SYNC items to SYNCED.
      */
     suspend fun getPendingSyncExpenseIds(groupId: String): List<String>
+
+    /**
+     * Persists the Firebase Storage download URL for an expense's receipt.
+     * Called by the repository after a successful background upload so that the URL
+     * survives app restarts and is included in subsequent Firestore sync writes.
+     */
+    suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String)
 
     suspend fun clearAllExpenses()
 }

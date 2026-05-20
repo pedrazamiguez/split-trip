@@ -650,7 +650,12 @@ class AddExpenseUiMapperTest {
         }
 
         @Test
-        fun `maps receipt URI from state`() {
+        fun `maps receipt attachment from state`() {
+            val attachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                localUri = "/data/user/0/receipts/abc.webp",
+                mimeType = "image/webp",
+                capturedAtMillis = 1716000000000L
+            )
             val state = AddExpenseUiState(
                 expenseTitle = "Dinner",
                 sourceAmount = "80.00",
@@ -659,17 +664,18 @@ class AddExpenseUiMapperTest {
                 displayExchangeRate = "1.0",
                 calculatedGroupAmount = "",
                 selectedPaymentMethod = cashPaymentMethod,
-                receiptUri = "content://media/photo/123"
+                receiptUri = "/data/user/0/receipts/abc.webp",
+                receiptAttachment = attachment
             )
 
             val result = mapper.mapToDomain(state, "group-123")
 
             assertTrue(result.isSuccess)
-            assertEquals("content://media/photo/123", result.getOrThrow().receiptLocalUri)
+            assertEquals(attachment, result.getOrThrow().receiptAttachment)
         }
 
         @Test
-        fun `receipt URI is null when not provided`() {
+        fun `receipt attachment is null when not provided`() {
             val state = AddExpenseUiState(
                 expenseTitle = "Dinner",
                 sourceAmount = "80.00",
@@ -678,13 +684,14 @@ class AddExpenseUiMapperTest {
                 displayExchangeRate = "1.0",
                 calculatedGroupAmount = "",
                 selectedPaymentMethod = cashPaymentMethod,
-                receiptUri = null
+                receiptUri = null,
+                receiptAttachment = null
             )
 
             val result = mapper.mapToDomain(state, "group-123")
 
             assertTrue(result.isSuccess)
-            assertNull(result.getOrThrow().receiptLocalUri)
+            assertNull(result.getOrThrow().receiptAttachment)
         }
     }
 

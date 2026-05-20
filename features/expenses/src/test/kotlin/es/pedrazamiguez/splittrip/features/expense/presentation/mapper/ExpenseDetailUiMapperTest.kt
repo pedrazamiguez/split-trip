@@ -1084,7 +1084,12 @@ class ExpenseDetailUiMapperTest {
 
         @Test
         fun `receiptUri is mapped from expense`() {
-            val expense = baseExpense.copy(receiptLocalUri = "file:///storage/receipt.jpg")
+            val attachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                localUri = "file:///storage/receipt.jpg",
+                mimeType = "image/webp",
+                capturedAtMillis = 1716000000000L
+            )
+            val expense = baseExpense.copy(receiptAttachment = attachment)
             val result = mapper.map(expense, memberProfiles, currentUserId)
             assertEquals("file:///storage/receipt.jpg", result.receiptUri)
         }

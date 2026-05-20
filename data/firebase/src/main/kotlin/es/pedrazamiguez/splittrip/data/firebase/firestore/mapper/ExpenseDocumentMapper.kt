@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.mapper
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AddOnDocument
+import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AttachmentDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocument
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -14,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -51,7 +54,10 @@ fun Expense.toDocument(expenseId: String, groupId: String, groupDocRef: Document
         createdBy = userId,
         lastUpdatedBy = userId,
         createdAt = createdAt?.toTimestampUtc(),
-        lastUpdatedAt = lastUpdatedAt?.toTimestampUtc()
+        lastUpdatedAt = lastUpdatedAt?.toTimestampUtc(),
+        // Only include the attachment in the Firestore document once it has a remote URL.
+        // The local URI is an on-device path with no meaning on other devices.
+        attachments = buildReceiptAttachmentDocuments(receiptAttachment)
     )
 
 fun ExpenseDocument.toDomain(): Expense {
@@ -90,11 +96,35 @@ fun ExpenseDocument.toDomain(): Expense {
         payerType = resolvedPayerType,
         payerId = payerId.takeUnless { resolvedPayerType == PayerType.GROUP },
         createdAt = createdAt.toLocalDateTimeUtc(),
-        lastUpdatedAt = lastUpdatedAt.toLocalDateTimeUtc()
+        lastUpdatedAt = lastUpdatedAt.toLocalDateTimeUtc(),
+        // Restore the first attachment as a ReceiptAttachment if it has a remote URL.
+        // localUri is intentionally left blank — the file does not exist on this device yet.
+        receiptAttachment = attachments.firstOrNull()?.let { doc ->
+            val remoteUrl = doc.path.ifBlank { null } ?: return@let null
+            ReceiptAttachment(
+                localUri = "",
+                mimeType = doc.mime ?: "application/octet-stream",
+                capturedAtMillis = doc.uploadedAt?.toDate()?.time ?: 0L,
+                remoteUrl = remoteUrl
+            )
+        }
     )
 }
 
 // ── AddOn ↔ AddOnDocument mappers ────────────────────────────────────
+
+private fun buildReceiptAttachmentDocuments(
+    attachment: es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment?
+): List<AttachmentDocument> {
+    val remoteUrl = attachment?.remoteUrl ?: return emptyList()
+    return listOf(
+        AttachmentDocument(
+            path = remoteUrl,
+            mime = attachment.mimeType,
+            uploadedAt = Timestamp(java.util.Date(attachment.capturedAtMillis))
+        )
+    )
+}
 
 private fun AddOn.toAddOnDocument() = AddOnDocument(
     id = id,

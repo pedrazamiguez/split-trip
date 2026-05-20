@@ -33,6 +33,13 @@ sealed interface AddExpenseUiEvent {
     data class DueDateSelected(val dateMillis: Long) : AddExpenseUiEvent
     data class ReceiptImageSelected(val uri: String) : AddExpenseUiEvent
     data object RemoveReceiptImage : AddExpenseUiEvent
+
+    /**
+     * Signals the Feature layer to show the receipt source selection sheet
+     * (camera / gallery / document). Handled in [AddExpenseFeature] before
+     * reaching the ViewModel so the ViewModel stays context-free.
+     */
+    data object RequestPickerSource : AddExpenseUiEvent
     data class SubmitAddExpense(val groupId: String?) : AddExpenseUiEvent
 
     // Split events

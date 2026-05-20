@@ -1,6 +1,10 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,12 +14,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -28,12 +40,19 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
+import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 private val HERO_AMOUNT_SIZE = 40.sp
 private val RECEIPT_THUMBNAIL_HEIGHT = 160.dp
@@ -47,7 +66,10 @@ internal fun HeroSection(expense: ExpenseDetailUiModel) {
         FlatCard(modifier = Modifier.fillMaxWidth(), elevation = 8.dp) {
             Column(modifier = Modifier.padding(MaterialTheme.spacing.Default)) {
                 if (expense.receiptUri != null) {
-                    ReceiptThumbnail(expense.receiptUri)
+                    ReceiptThumbnail(
+                        receiptUri = expense.receiptUri,
+                        mimeType = expense.receiptMimeType
+                    )
                     Spacer(Modifier.height(MaterialTheme.spacing.Medium))
                 }
                 HeroAmountContent(expense)
@@ -174,8 +196,72 @@ private fun ForeignCurrencyRow(expense: ExpenseDetailUiModel) {
     }
 }
 
+private fun isPdf(uriString: String, mimeType: String?): Boolean {
+    if (mimeType == MIME_PDF) return true
+    val uri = Uri.parse(uriString)
+    val path = if (uri.scheme == "file") uri.path.orEmpty() else uriString
+    if (path.lowercase().endsWith(".pdf")) return true
+    val lastSegment = uri.lastPathSegment.orEmpty().lowercase()
+    if (lastSegment.endsWith(".pdf") || lastSegment.contains(".pdf?")) return true
+    return false
+}
+
+private fun renderPdfFirstPage(file: File): Bitmap? {
+    if (!file.exists() || file.length() == 0L) return null
+    var pfd: ParcelFileDescriptor? = null
+    var renderer: PdfRenderer? = null
+    var page: PdfRenderer.Page? = null
+    try {
+        pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        renderer = PdfRenderer(pfd)
+        if (renderer.pageCount > 0) {
+            page = renderer.openPage(0)
+            val aspectRatio = page.width.toFloat() / page.height.toFloat()
+            val targetWidth = (aspectRatio * 480).toInt()
+            val destBitmap = Bitmap.createBitmap(
+                targetWidth.coerceAtLeast(1),
+                480,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(destBitmap)
+            canvas.drawColor(android.graphics.Color.WHITE)
+            page.render(destBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+            return destBitmap
+        }
+    } finally {
+        page?.close()
+        renderer?.close()
+        pfd?.close()
+    }
+    return null
+}
+
 @Composable
-private fun ReceiptThumbnail(receiptUri: String) {
+private fun rememberPdfThumbnail(pdfUriString: String): Bitmap? {
+    var bitmap by remember(pdfUriString) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(pdfUriString) {
+        val rendered = withContext(Dispatchers.IO) {
+            try {
+                val uri = Uri.parse(pdfUriString)
+                val isLocalFile = uri.scheme == "file" || uri.scheme.isNullOrEmpty()
+                if (isLocalFile) {
+                    val filePath = if (uri.scheme == "file") uri.path.orEmpty() else pdfUriString
+                    renderPdfFirstPage(File(filePath))
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to render PDF thumbnail for $pdfUriString")
+                null
+            }
+        }
+        bitmap = rendered
+    }
+    return bitmap
+}
+
+@Composable
+private fun ReceiptThumbnail(receiptUri: String, mimeType: String?) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -183,16 +269,50 @@ private fun ReceiptThumbnail(receiptUri: String) {
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(Uri.parse(receiptUri))
-                .crossfade(true)
-                .build(),
-            contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .matchParentSize()
-                .clip(MaterialTheme.shapes.large)
-        )
+        if (isPdf(receiptUri, mimeType)) {
+            val pdfBitmap = rememberPdfThumbnail(receiptUri)
+            if (pdfBitmap != null) {
+                Image(
+                    bitmap = pdfBitmap.asImageBitmap(),
+                    contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(MaterialTheme.shapes.large)
+                )
+            } else {
+                // PDFs cannot be rendered inline — show an informational placeholder instead.
+                Column(
+                    modifier = Modifier.matchParentSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = TablerIcons.Outline.Receipt,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    BodyText(
+                        text = stringResource(R.string.expense_detail_receipt_pdf_label),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(Uri.parse(receiptUri))
+                    .crossfade(true)
+                    .build(),
+                contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(MaterialTheme.shapes.large)
+            )
+        }
     }
 }
+
+private const val MIME_PDF = "application/pdf"

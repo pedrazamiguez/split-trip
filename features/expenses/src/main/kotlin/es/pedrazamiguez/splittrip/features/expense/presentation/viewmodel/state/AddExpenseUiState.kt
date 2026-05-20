@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranchePreviewUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
@@ -124,7 +125,9 @@ data class AddExpenseUiState(
     val formattedDueDate: String = "",
 
     // Receipt image
+    // receiptUri holds the stable local file:// path for Coil display after AttachReceiptUseCase runs.
     val receiptUri: String? = null,
+    val receiptAttachment: ReceiptAttachment? = null,
 
     // Pre-formatted labels for the exchange rate section
     val exchangeRateLabel: String = "",

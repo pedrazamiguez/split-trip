@@ -19,11 +19,13 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl.Firest
 import es.pedrazamiguez.splittrip.data.firebase.installation.service.impl.CloudMetadataServiceImpl
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.factory.NotificationHandlerFactory
 import es.pedrazamiguez.splittrip.data.firebase.messaging.repository.impl.FirebaseDeviceRepositoryImpl
+import es.pedrazamiguez.splittrip.data.firebase.storage.CloudStorageDataSourceImpl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudNotificationDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.repository.DeviceRepository
@@ -116,5 +118,9 @@ val dataFirebaseModule = module {
         FirestoreUserDataSourceImpl(
             firestore = get<FirebaseFirestore>()
         )
+    }
+
+    single<CloudStorageDataSource> {
+        CloudStorageDataSourceImpl(storage = get<FirebaseStorage>())
     }
 }

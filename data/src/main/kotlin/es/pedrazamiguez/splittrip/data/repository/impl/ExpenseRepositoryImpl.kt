@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
@@ -23,6 +24,7 @@ class ExpenseRepositoryImpl(
     private val cloudExpenseDataSource: CloudExpenseDataSource,
     private val localExpenseDataSource: LocalExpenseDataSource,
     private val authenticationService: AuthenticationService,
+    private val cloudStorageDataSource: CloudStorageDataSource,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ExpenseRepository {
 
@@ -36,6 +38,12 @@ class ExpenseRepositoryImpl(
      */
     private val cloudSubscriptionJobs = ConcurrentHashMap<String, Job>()
 
+    /**
+     * Tracks active receipt upload Jobs per expenseId.
+     * Prevents duplicate/concurrent uploads of the same receipt.
+     */
+    private val receiptUploadJobs = ConcurrentHashMap<String, Job>()
+
     override suspend fun addExpense(groupId: String, expense: Expense) {
         val expenseWithMetadata = buildExpenseWithMetadata(groupId, expense)
 
@@ -48,6 +56,7 @@ class ExpenseRepositoryImpl(
                 cloudExpenseDataSource.addExpense(groupId, expenseWithMetadata)
                 localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
                 Timber.d("Expense synced to cloud: ${expenseWithMetadata.id}")
+                scheduleReceiptUpload(expenseWithMetadata)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -95,6 +104,7 @@ class ExpenseRepositoryImpl(
             )
             localExpenseDataSource.updateSyncStatus(expenseWithMetadata.id, SyncStatus.SYNCED)
             Timber.d("Cash expense committed via Firestore transaction: ${expenseWithMetadata.id}")
+            scheduleReceiptUpload(expenseWithMetadata)
             return true
         } catch (e: CashConflictException) {
             // Concurrent modification detected — rollback local write and surface to caller
@@ -117,6 +127,10 @@ class ExpenseRepositoryImpl(
     }
 
     override suspend fun getExpenseById(expenseId: String): Expense? = localExpenseDataSource.getExpenseById(expenseId)
+
+    override fun getExpenseByIdFlow(expenseId: String): Flow<Expense?> = localExpenseDataSource.getExpenseByIdFlow(
+        expenseId
+    )
 
     override suspend fun deleteExpense(groupId: String, expenseId: String) {
         // Delete from local first - UI updates instantly via Flow
@@ -186,6 +200,7 @@ class ExpenseRepositoryImpl(
                         Timber.d("Real-time sync: ${remoteExpenses.size} expenses for group $groupId")
                         localExpenseDataSource.replaceExpensesForGroup(groupId, remoteExpenses)
                         confirmPendingSyncExpenses(groupId)
+                        retryPendingReceiptUploads(groupId)
                     } catch (e: Exception) {
                         Timber.w(e, "Error reconciling expenses from cloud snapshot")
                     }
@@ -222,6 +237,78 @@ class ExpenseRepositoryImpl(
                 // Server unreachable — keep as PENDING_SYNC
                 Timber.d(e, "Cannot confirm expense $id — server unreachable")
             }
+        }
+    }
+
+    /**
+     * Scans for expenses in the group that have a local receipt but no remote URL,
+     * and schedules background uploads for them. This acts as a retry mechanism
+     * if the initial upload was interrupted or failed.
+     */
+    private suspend fun retryPendingReceiptUploads(groupId: String) {
+        val expenseIds = localExpenseDataSource.getExpenseIdsByGroup(groupId)
+        for (id in expenseIds) {
+            val expense = localExpenseDataSource.getExpenseById(id) ?: continue
+            scheduleReceiptUpload(expense)
+        }
+    }
+
+    private fun scheduleReceiptUpload(expense: Expense) {
+        val attachment = expense.receiptAttachment ?: return
+        if (attachment.localUri.isBlank() || !attachment.remoteUrl.isNullOrBlank()) return
+
+        val existingJob = receiptUploadJobs[expense.id]
+        if (existingJob != null && existingJob.isActive) return
+
+        receiptUploadJobs[expense.id] = syncScope.launch {
+            try {
+                uploadReceiptInBackground(expense)
+            } finally {
+                receiptUploadJobs.remove(expense.id)
+            }
+        }
+    }
+
+    override suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String) {
+        localExpenseDataSource.updateReceiptRemoteUrl(expenseId, remoteUrl)
+    }
+
+    /**
+     * Uploads the receipt to Firebase Cloud Storage if the expense has an attachment with a
+     * local path but no remote URL yet.  Called inside the syncScope after the Firestore write
+     * succeeds so that connectivity issues during upload do not block the expense save.
+     *
+     * On success:
+     * 1. Persists the download URL to Room.
+     * 2. Reloads the updated expense from Room and **re-syncs it to Firestore** so other
+     *    devices immediately see the attachment. Without step 2 the expense would already
+     *    be SYNCED and no subsequent cloud write would carry the remote URL.
+     */
+    private suspend fun uploadReceiptInBackground(expense: Expense) {
+        val attachment = expense.receiptAttachment ?: return
+        if (!attachment.remoteUrl.isNullOrBlank()) return // already uploaded
+
+        try {
+            val remoteUrl = cloudStorageDataSource.uploadReceipt(
+                expenseId = expense.id,
+                localPath = attachment.localUri,
+                mimeType = attachment.mimeType
+            )
+            localExpenseDataSource.updateReceiptRemoteUrl(expense.id, remoteUrl)
+            Timber.d("Receipt uploaded for expense ${expense.id}: $remoteUrl")
+
+            // Re-sync to Firestore so the attachment appears for other users/devices.
+            val updatedExpense = localExpenseDataSource.getExpenseById(expense.id)
+            if (updatedExpense != null) {
+                cloudExpenseDataSource.addExpense(expense.groupId, updatedExpense)
+                Timber.d("Receipt URL synced to Firestore for expense ${expense.id}")
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Non-fatal: the expense is already saved. The next addExpense retry (e.g. after the
+            // device comes back online) will re-attempt the upload via uploadReceiptInBackground.
+            Timber.w(e, "Failed to upload receipt for expense ${expense.id}")
         }
     }
 

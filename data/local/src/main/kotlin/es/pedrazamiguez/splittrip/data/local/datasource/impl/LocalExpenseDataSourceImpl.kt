@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
 class LocalExpenseDataSourceImpl(
@@ -41,6 +42,18 @@ class LocalExpenseDataSourceImpl(
         expenseDao.getExpenseById(expenseId)?.toDomain()?.let { expense ->
             val splitEntities = expenseSplitDao.getSplitsByExpenseId(expenseId)
             expense.copy(splits = splitEntities.toDomainSplits())
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override fun getExpenseByIdFlow(expenseId: String): Flow<Expense?> =
+        expenseDao.getExpenseByIdFlow(expenseId).flatMapLatest { entity ->
+            if (entity == null) {
+                kotlinx.coroutines.flow.flowOf(null)
+            } else {
+                expenseSplitDao.getSplitsByExpenseIdFlow(expenseId).map { splits ->
+                    entity.toDomain().copy(splits = splits.toDomainSplits())
+                }
+            }
         }
 
     override suspend fun saveExpenses(expenses: List<Expense>) {
@@ -100,6 +113,10 @@ class LocalExpenseDataSourceImpl(
 
     override suspend fun getPendingSyncExpenseIds(groupId: String): List<String> =
         expenseDao.getPendingSyncExpenseIds(groupId)
+
+    override suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String) {
+        expenseDao.updateReceiptRemoteUrl(expenseId, remoteUrl)
+    }
 
     override suspend fun clearAllExpenses() {
         expenseDao.clearAllExpenses()
