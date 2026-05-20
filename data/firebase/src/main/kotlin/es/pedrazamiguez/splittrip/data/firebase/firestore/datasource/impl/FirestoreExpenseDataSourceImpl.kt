@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
+@Suppress("TooManyFunctions")
 class FirestoreExpenseDataSourceImpl(
     private val firestore: FirebaseFirestore,
     private val authenticationService: AuthenticationService

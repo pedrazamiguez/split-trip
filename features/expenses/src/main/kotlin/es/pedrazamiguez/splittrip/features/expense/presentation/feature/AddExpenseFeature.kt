@@ -65,41 +65,6 @@ fun AddExpenseFeature(
     // Non-null while the receipt source selection sheet is visible.
     var showReceiptSourceSheet by remember { mutableStateOf(false) }
 
-    // Camera launcher — requires a pre-created file URI via FileProvider.
-    // cameraTempFile tracks the underlying .jpg so we can delete it after AttachReceiptUseCase
-    // compresses it into a stable WebP — preventing the orphaned temp file from accumulating.
-    var cameraTempFile by remember { mutableStateOf<File?>(null) }
-    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { captured ->
-        if (captured) {
-            cameraImageUri?.let { uri ->
-                addExpenseViewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected(uri.toString()))
-            }
-        } else {
-            // Delete the temp .jpg if capture failed; for successful capture, the temp file
-            // is cleaned up asynchronously by ReceiptStorageServiceImpl after compression.
-            cameraTempFile?.delete()
-        }
-        cameraTempFile = null
-        cameraImageUri = null
-    }
-
-    // Gallery launcher — uses the photo picker introduced in Android 13.
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        uri?.let { addExpenseViewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected(it.toString())) }
-    }
-
-    // Document picker — surface PDFs and images in the system file manager.
-    val documentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        uri?.let { addExpenseViewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected(it.toString())) }
-    }
-
     BackHandler { addExpenseViewModel.onEvent(AddExpenseUiEvent.PreviousStep) }
 
     ObserveAddExpenseActions(
@@ -119,28 +84,13 @@ fun AddExpenseFeature(
         )
     }
 
-    if (showReceiptSourceSheet) {
-        ReceiptSourceSelectionSheet(
-            onCameraSelected = {
-                showReceiptSourceSheet = false
-                val (tempFile, uri) = createCameraUri(context)
-                cameraTempFile = tempFile
-                cameraImageUri = uri
-                cameraLauncher.launch(uri)
-            },
-            onGallerySelected = {
-                showReceiptSourceSheet = false
-                galleryLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-            },
-            onDocumentSelected = {
-                showReceiptSourceSheet = false
-                documentLauncher.launch(arrayOf("image/*", "application/pdf"))
-            },
-            onDismiss = { showReceiptSourceSheet = false }
-        )
-    }
+    ReceiptAttachmentHandler(
+        showSheet = showReceiptSourceSheet,
+        onDismissSheet = { showReceiptSourceSheet = false },
+        onReceiptSelected = { uriString ->
+            addExpenseViewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected(uriString))
+        }
+    )
 
     AddExpenseScreen(
         groupId = selectedGroupId.value,
@@ -155,6 +105,70 @@ fun AddExpenseFeature(
             }
         }
     )
+}
+
+@Composable
+private fun ReceiptAttachmentHandler(
+    showSheet: Boolean,
+    onDismissSheet: () -> Unit,
+    onReceiptSelected: (String) -> Unit
+) {
+    val context = LocalContext.current
+    var cameraTempFile by remember { mutableStateOf<File?>(null) }
+    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { captured ->
+        if (captured) {
+            cameraImageUri?.let { uri ->
+                onReceiptSelected(uri.toString())
+            }
+        } else {
+            // Delete the temp .jpg if capture failed; for successful capture, the temp file
+            // is cleaned up asynchronously by ReceiptStorageServiceImpl after compression.
+            cameraTempFile?.delete()
+        }
+        cameraTempFile = null
+        cameraImageUri = null
+    }
+
+    // Gallery launcher — uses the photo picker introduced in Android 13.
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        uri?.let { onReceiptSelected(it.toString()) }
+    }
+
+    // Document picker — surface PDFs and images in the system file manager.
+    val documentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let { onReceiptSelected(it.toString()) }
+    }
+
+    if (showSheet) {
+        ReceiptSourceSelectionSheet(
+            onCameraSelected = {
+                onDismissSheet()
+                val (tempFile, uri) = createCameraUri(context)
+                cameraTempFile = tempFile
+                cameraImageUri = uri
+                cameraLauncher.launch(uri)
+            },
+            onGallerySelected = {
+                onDismissSheet()
+                galleryLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            },
+            onDocumentSelected = {
+                onDismissSheet()
+                documentLauncher.launch(arrayOf("image/*", "application/pdf"))
+            },
+            onDismiss = onDismissSheet
+        )
+    }
 }
 
 @Composable

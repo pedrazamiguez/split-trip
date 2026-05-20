@@ -77,4 +77,19 @@
     <string name="notification_prefs_expenses_description">Expenses added, updated, or deleted</string>
     <string name="notification_prefs_financial_title">Financial Activity</string>
     <string name="notification_prefs_financial_description">Cash withdrawals and contributions</string>
+
+    <!-- Developer Services Playground -->
+    <string name="developer_services_selected_attachment">Selected Attachment</string>
+    <string name="developer_services_no_document_selected">No document selected. Pick an image (JPEG, PNG, WEBP, BMP) or PDF to run OCR.</string>
+    <string name="developer_services_name">Name:</string>
+    <string name="developer_services_type">Type:</string>
+    <string name="developer_services_uri">URI:</string>
+    <string name="developer_services_select_document">Select Document</string>
+    <string name="developer_services_clear">Clear</string>
+    <string name="developer_services_ocr_operations">OCR Operations</string>
+    <string name="developer_services_run_ocr">Run OCR Engine</string>
+    <string name="developer_services_extracted_raw_text">Extracted Raw Text</string>
+    <string name="developer_services_extracted_blocks">Extracted Blocks (%1$d)</string>
+    <string name="developer_services_block_index">Block #%1$d</string>
+    <string name="developer_services_ocr_error_fallback">OCR processing failed</string>
 </resources>

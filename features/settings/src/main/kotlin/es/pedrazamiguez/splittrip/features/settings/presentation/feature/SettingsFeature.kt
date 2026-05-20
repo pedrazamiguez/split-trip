@@ -22,6 +22,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.permission.checkNotification
 import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestNotificationPermission
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
+import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.SettingsScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
@@ -47,6 +48,38 @@ fun SettingsFeature(
         }
     }
 
+    SettingsFeatureContent(
+        navController = navController,
+        settingsViewModel = settingsViewModel,
+        hasPermission = hasPermission,
+        currentCurrency = currentCurrency,
+        onLogoutClick = { showLogoutDialog = true }
+    )
+
+    if (showLogoutDialog) {
+        LogoutConfirmationDialog(
+            onConfirm = {
+                showLogoutDialog = false
+                settingsViewModel.signOut {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.MAIN) { inclusive = true }
+                    }
+                }
+            },
+            onDismiss = { showLogoutDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun SettingsFeatureContent(
+    navController: NavHostController,
+    settingsViewModel: SettingsViewModel,
+    hasPermission: Boolean,
+    currentCurrency: Currency?,
+    onLogoutClick: () -> Unit
+) {
+    val context = LocalContext.current
     val requestPermission = rememberRequestNotificationPermission { isGranted ->
         settingsViewModel.updateNotificationPermission(isGranted)
     }
@@ -76,24 +109,24 @@ fun SettingsFeature(
             onDefaultCurrencyClick = {
                 navController.navigate(Routes.SETTINGS_DEFAULT_CURRENCY)
             },
-            onLogoutClick = { showLogoutDialog = true }
+            onLogoutClick = onLogoutClick,
+            onDeveloperServicesTestClick = {
+                navController.navigate(Routes.SETTINGS_DEVELOPER_SERVICES)
+            }
         )
     }
+}
 
-    if (showLogoutDialog) {
-        DestructiveConfirmationDialog(
-            title = stringResource(R.string.settings_logout_dialog_title),
-            text = stringResource(R.string.settings_logout_dialog_text),
-            confirmLabel = stringResource(R.string.settings_logout_dialog_confirm),
-            onConfirm = {
-                showLogoutDialog = false
-                settingsViewModel.signOut {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.MAIN) { inclusive = true }
-                    }
-                }
-            },
-            onDismiss = { showLogoutDialog = false }
-        )
-    }
+@Composable
+private fun LogoutConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    DestructiveConfirmationDialog(
+        title = stringResource(R.string.settings_logout_dialog_title),
+        text = stringResource(R.string.settings_logout_dialog_text),
+        confirmLabel = stringResource(R.string.settings_logout_dialog_confirm),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss
+    )
 }
