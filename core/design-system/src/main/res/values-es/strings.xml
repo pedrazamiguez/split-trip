@@ -99,7 +99,13 @@
     <string name="preview_action_edit_group">Editar grupo</string>
     <string name="preview_action_delete_group">Eliminar grupo</string>
     <string name="preview_action_share">Compartir</string>
-    <string name="preview_sheet_app_version">Versión de la app</string>
-    <string name="preview_sheet_installation_id">ID de instalación</string>
+    <string name="preview_sheet_app_version">Versin de la app</string>
+    <string name="preview_sheet_installation_id">ID de instalacin</string>
     <string name="preview_sheet_not_available">No disponible</string>
+
+    <!-- Receipt attachment picker -->
+    <string name="receipt_attach_title">Adjuntar recibo</string>
+    <string name="receipt_attach_camera">Hacer foto</string>
+    <string name="receipt_attach_gallery">Elegir de galería</string>
+    <string name="receipt_attach_document">Adjuntar documento</string>
 </resources>

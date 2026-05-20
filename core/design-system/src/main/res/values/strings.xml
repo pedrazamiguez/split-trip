@@ -102,4 +102,10 @@
     <string name="preview_sheet_app_version">App Version</string>
     <string name="preview_sheet_installation_id">Installation ID</string>
     <string name="preview_sheet_not_available">Not available</string>
+
+    <!-- Receipt attachment picker -->
+    <string name="receipt_attach_title">Attach receipt</string>
+    <string name="receipt_attach_camera">Take photo</string>
+    <string name="receipt_attach_gallery">Choose from gallery</string>
+    <string name="receipt_attach_document">Attach document</string>
 </resources>

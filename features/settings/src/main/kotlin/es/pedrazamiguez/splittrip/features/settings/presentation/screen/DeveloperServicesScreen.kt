@@ -21,10 +21,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.ExtractedRawTextCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.ExtractedTextBlockCard
+import es.pedrazamiguez.splittrip.features.settings.presentation.component.ExtractionOperationsCard
+import es.pedrazamiguez.splittrip.features.settings.presentation.component.ExtractionResultsCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.OcrOperationsCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.SelectedAttachmentCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiEvent
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiState
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.ExtractionStatus
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.OcrStatus
 import kotlinx.collections.immutable.ImmutableList
 
@@ -99,6 +102,42 @@ private fun DeveloperServicesList(
 
         if (uiState.ocrStatus is OcrStatus.Success && uiState.textBlocks.isNotEmpty()) {
             extractedBlocksSection(uiState.textBlocks)
+        }
+
+        extractionSection(uiState, onEvent)
+    }
+}
+
+private fun LazyListScope.extractionSection(
+    uiState: DeveloperServicesUiState,
+    onEvent: (DeveloperServicesUiEvent) -> Unit
+) {
+    if (uiState.ocrStatus !is OcrStatus.Success) return
+
+    item {
+        ExtractionOperationsCard(
+            isLoading = uiState.extractionStatus is ExtractionStatus.Loading,
+            capability = uiState.extractionCapability,
+            onRunExtractionClick = { onEvent(DeveloperServicesUiEvent.RunExtraction) }
+        )
+    }
+
+    if (uiState.extractionErrorMessage != null) {
+        item {
+            FormErrorBanner(error = uiState.extractionErrorMessage)
+        }
+    }
+
+    if (uiState.extractionStatus is ExtractionStatus.Success) {
+        item {
+            ExtractionResultsCard(
+                amount = uiState.extractedAmount,
+                currency = uiState.extractedCurrency,
+                date = uiState.extractedDate,
+                title = uiState.extractedTitle,
+                source = uiState.extractionSource,
+                confidence = uiState.extractionConfidence
+            )
         }
     }
 }

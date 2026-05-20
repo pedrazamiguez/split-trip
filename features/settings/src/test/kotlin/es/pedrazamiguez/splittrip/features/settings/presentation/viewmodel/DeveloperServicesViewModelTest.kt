@@ -1,16 +1,25 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
+import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
+import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.TextBlock
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
+import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -30,11 +39,13 @@ class DeveloperServicesViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var receiptOcrService: ReceiptOcrService
+    private lateinit var receiptExtractionService: ReceiptExtractionService
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         receiptOcrService = mockk()
+        receiptExtractionService = mockk()
     }
 
     @AfterEach
@@ -42,7 +53,10 @@ class DeveloperServicesViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel() = DeveloperServicesViewModel(receiptOcrService = receiptOcrService)
+    private fun createViewModel() = DeveloperServicesViewModel(
+        receiptOcrService = receiptOcrService,
+        receiptExtractionService = receiptExtractionService
+    )
 
     @Test
     fun `initial state is idle and empty`() {
@@ -118,6 +132,7 @@ class DeveloperServicesViewModelTest {
             )
 
             coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
 
             viewModel.onEvent(DeveloperServicesUiEvent.RunOcr)
 
@@ -162,6 +177,88 @@ class DeveloperServicesViewModelTest {
     }
 
     @Nested
+    @DisplayName("RunExtraction Event")
+    inner class RunExtractionEvent {
+
+        private suspend fun TestScope.prepareOcrSuccess(viewModel: DeveloperServicesViewModel) {
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/123",
+                    name = "receipt.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+            val rawReceiptText = RawReceiptText(
+                fullText = "Total amount: 50.00 EUR",
+                blocks = persistentListOf(TextBlock(text = "Total amount: 50.00 EUR", confidence = 1.0f)),
+                recognisedAt = Instant.EPOCH
+            )
+            coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcr)
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `does nothing if OCR has not been run yet`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunExtraction)
+            advanceUntilIdle()
+
+            assertEquals(ExtractionStatus.Idle, viewModel.uiState.value.extractionStatus)
+        }
+
+        @Test
+        fun `successful extraction maps to success state`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            prepareOcrSuccess(viewModel)
+
+            val extracted = ExtractedReceipt(
+                amount = BigDecimal("50.00"),
+                currency = "EUR",
+                date = LocalDate.of(2026, 5, 20),
+                title = "Test Store",
+                source = ExtractionSource.AI_CORE,
+                confidence = ExtractionConfidence.HIGH
+            )
+            coEvery { receiptExtractionService.extract(any()) } returns Result.success(extracted)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunExtraction)
+            assertEquals(ExtractionStatus.Loading, viewModel.uiState.value.extractionStatus)
+
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ExtractionStatus.Success, state.extractionStatus)
+            assertEquals("50.00", state.extractedAmount)
+            assertEquals("EUR", state.extractedCurrency)
+            assertEquals("2026-05-20", state.extractedDate)
+            assertEquals("Test Store", state.extractedTitle)
+            assertEquals("AI_CORE", state.extractionSource)
+            assertEquals("HIGH", state.extractionConfidence)
+            assertNull(state.extractionErrorMessage)
+        }
+
+        @Test
+        fun `failed extraction maps to error state`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            prepareOcrSuccess(viewModel)
+
+            val exception = RuntimeException("AICore model not available")
+            coEvery { receiptExtractionService.extract(any()) } returns Result.failure(exception)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunExtraction)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ExtractionStatus.Error, state.extractionStatus)
+            assertEquals(UiText.DynamicString("AICore model not available"), state.extractionErrorMessage)
+        }
+    }
+
+    @Nested
     @DisplayName("Reset Event")
     inner class ResetEvent {
 
@@ -182,6 +279,7 @@ class DeveloperServicesViewModelTest {
                 recognisedAt = Instant.EPOCH
             )
             coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
 
             viewModel.onEvent(DeveloperServicesUiEvent.RunOcr)
             advanceUntilIdle()

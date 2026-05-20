@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.data.di
 
+import com.google.ai.edge.aicore.GenerativeModel
+import com.google.ai.edge.aicore.generationConfig
 import es.pedrazamiguez.splittrip.data.repository.impl.ExpenseRepositoryImpl
 import es.pedrazamiguez.splittrip.data.service.AICoreCapabilityProvider
 import es.pedrazamiguez.splittrip.data.service.AICoreReceiptParser
@@ -17,6 +19,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 val expensesDataModule = module {
+
     single<ExpenseRepository> {
         ExpenseRepositoryImpl(
             cloudExpenseDataSource = get<CloudExpenseDataSource>(),
@@ -38,9 +41,19 @@ val expensesDataModule = module {
         AICoreCapabilityProvider(context = androidContext())
     }
 
+    single<GenerativeModel> {
+        GenerativeModel(
+            generationConfig = generationConfig {
+                context = androidContext().applicationContext
+                temperature = AICORE_TEMPERATURE
+                maxOutputTokens = AICORE_MAX_OUTPUT_TOKENS
+            }
+        )
+    }
+
     single<AICoreReceiptParser> {
         AICoreReceiptParser(
-            appContext = androidContext(),
+            generativeModel = get<GenerativeModel>(),
             defaultDispatcher = Dispatchers.Default
         )
     }
@@ -53,3 +66,6 @@ val expensesDataModule = module {
         )
     }
 }
+
+private const val AICORE_MAX_OUTPUT_TOKENS = 150
+private const val AICORE_TEMPERATURE = 0.7f

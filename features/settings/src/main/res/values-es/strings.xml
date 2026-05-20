@@ -91,4 +91,23 @@
     <string name="developer_services_extracted_blocks">Bloques Extraídos (%1$d)</string>
     <string name="developer_services_block_index">Bloque #%1$d</string>
     <string name="developer_services_ocr_error_fallback">Fallo en el procesamiento OCR</string>
+    <string name="developer_services_extraction_operations">Operaciones de Extracción</string>
+    <string name="developer_services_extraction_capability">Capacidad del dispositivo: %1$s</string>
+    <string name="developer_services_run_extraction">Ejecutar Extracción de Recibo</string>
+    <string name="developer_services_extraction_results">Datos del Recibo Extraídos</string>
+    <string name="developer_services_extraction_amount">Importe:</string>
+    <string name="developer_services_extraction_currency">Moneda:</string>
+    <string name="developer_services_extraction_date">Fecha:</string>
+    <string name="developer_services_extraction_title">Título:</string>
+    <string name="developer_services_extraction_source">Fuente:</string>
+    <string name="developer_services_extraction_confidence">Confianza:</string>
+    <string name="developer_services_extraction_error_fallback">Error en la extracción del recibo</string>
+    <string name="developer_services_extraction_source_ai_core">Gemini Nano</string>
+    <string name="developer_services_extraction_source_no_op">No Disponible</string>
+    <string name="developer_services_extraction_confidence_high">Alta</string>
+    <string name="developer_services_extraction_confidence_medium">Media</string>
+    <string name="developer_services_extraction_confidence_low">Baja</string>
+    <string name="developer_services_extraction_capability_on_device">IA en Dispositivo</string>
+    <string name="developer_services_extraction_capability_unsupported">No Compatible</string>
+    <string name="developer_services_extraction_na">—</string>
 </resources>

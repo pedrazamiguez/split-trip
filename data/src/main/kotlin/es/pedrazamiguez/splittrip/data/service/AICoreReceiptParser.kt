@@ -1,8 +1,7 @@
 package es.pedrazamiguez.splittrip.data.service
 
-import android.content.Context
+import com.google.ai.edge.aicore.Candidate
 import com.google.ai.edge.aicore.GenerativeModel
-import com.google.ai.edge.aicore.generationConfig
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
@@ -10,51 +9,84 @@ import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import java.time.LocalDate
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import timber.log.Timber
 
-/**
- * On-device receipt text parser using Android AICore (Gemini Nano).
- */
 internal class AICoreReceiptParser(
-    private val appContext: Context,
-    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val generativeModelProvider: (() -> GenerativeModel)? = null
+    private val generativeModel: GenerativeModel,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private fun createModel(): GenerativeModel {
-        return generativeModelProvider?.invoke() ?: GenerativeModel(
-            generationConfig = generationConfig {
-                context = appContext.applicationContext
-                temperature = 0.0f
-                maxOutputTokens = PARSER_MAX_OUTPUT_TOKENS
-            }
-        )
-    }
+    @Volatile private var enginePrepared = false
+    private val preparationMutex = Mutex()
 
-    /**
-     * Sends the OCR receipt text blocks to Gemini Nano via AICore.
-     * Parses the response into an [ExtractedReceipt].
-     */
     suspend fun parse(rawText: RawReceiptText): Result<ExtractedReceipt> = withContext(defaultDispatcher) {
         runCatching {
             if (rawText.fullText.isBlank()) {
+                Timber.d("AICoreReceiptParser: raw text is blank — returning empty receipt")
                 return@runCatching emptyAiCoreReceipt()
             }
 
-            val model = createModel()
+            val cleanJson = runInference(rawText.fullText)
+                ?: return@runCatching emptyAiCoreReceipt()
 
-            val prompt = buildPrompt(rawText.fullText)
-            val response = model.generateContent(prompt)
-            val jsonStr = response.text?.trim() ?: ""
-            val cleanJson = jsonStr
-                .removePrefix("```json")
-                .removeSuffix("```")
-                .trim()
-
+            Timber.d(
+                "AICoreReceiptParser: parsing JSON response: %s",
+                cleanJson.take(MAX_LOG_JSON_PREVIEW_CHARS)
+            )
             parseJsonToReceipt(cleanJson)
         }.onFailure {
-            Timber.e(it, "AICoreReceiptParser failed to extract receipt data")
+            Timber.e(it, "AICoreReceiptParser: extraction failed")
+        }
+    }
+
+    private suspend fun ensureEngineReady() {
+        if (enginePrepared) return
+        preparationMutex.withLock {
+            if (!enginePrepared) {
+                Timber.d("AICoreReceiptParser: preparing inference engine (loading weights into NPU)…")
+                val startMs = System.currentTimeMillis()
+                generativeModel.prepareInferenceEngine()
+                enginePrepared = true
+                Timber.d("AICoreReceiptParser: inference engine ready in ${System.currentTimeMillis() - startMs}ms")
+            }
+        }
+    }
+
+    private suspend fun runInference(ocrText: String): String? {
+        ensureEngineReady()
+
+        val truncatedText = ocrText.take(MAX_OCR_INPUT_CHARS)
+        Timber.d("AICoreReceiptParser: ocr text (%d chars):\n%s", truncatedText.length, truncatedText)
+        Timber.d("AICoreReceiptParser: sending prompt (text length=%d chars)", truncatedText.length)
+        val inferenceStartMs = System.currentTimeMillis()
+        val response = generativeModel.generateContent(buildPrompt(truncatedText))
+        val inferenceMs = System.currentTimeMillis() - inferenceStartMs
+        val rawText = response.text?.trim() ?: ""
+        val finishReason = response.candidates.firstOrNull()?.finishReason
+        Timber.d(
+            "AICoreReceiptParser: inference in ${inferenceMs}ms — " +
+                "length=%d, finishReason=%s, starts='%s'",
+            rawText.length,
+            finishReason,
+            rawText.take(MAX_LOG_RAW_PREVIEW_CHARS)
+        )
+        if (finishReason == Candidate.FinishReason.MAX_TOKENS) {
+            Timber.w("AICoreReceiptParser: response truncated at maxOutputTokens — consider shortening the input")
+        }
+
+        val cleanJson = rawText.removePrefix("```json").removeSuffix("```").trim()
+        return if (cleanJson.startsWith("{")) {
+            cleanJson
+        } else {
+            Timber.w(
+                "AICoreReceiptParser: not valid JSON (first %d chars: '%s')",
+                MAX_LOG_JSON_PREVIEW_CHARS,
+                cleanJson.take(MAX_LOG_JSON_PREVIEW_CHARS)
+            )
+            null
         }
     }
 
@@ -72,6 +104,7 @@ internal class AICoreReceiptParser(
             try {
                 LocalDate.parse(it)
             } catch (_: Exception) {
+                Timber.w("AICoreReceiptParser: failed to parse date string '%s'", it)
                 null
             }
         }
@@ -85,6 +118,15 @@ internal class AICoreReceiptParser(
             else -> ExtractionConfidence.LOW
         }
 
+        Timber.d(
+            "AICoreReceiptParser: parsed — amount=%s, currency=%s, date=%s, title=%s, confidence=%s",
+            amount,
+            currency,
+            date,
+            title,
+            confidence
+        )
+
         return ExtractedReceipt(
             amount = amount,
             currency = currency,
@@ -96,10 +138,15 @@ internal class AICoreReceiptParser(
     }
 
     companion object {
-        private const val PARSER_MAX_OUTPUT_TOKENS = 512
         private const val FIELD_COUNT_ALL = 4
         private const val FIELD_COUNT_THREE = 3
         private const val FIELD_COUNT_TWO = 2
+        private const val MAX_LOG_RAW_PREVIEW_CHARS = 200
+        private const val MAX_LOG_JSON_PREVIEW_CHARS = 300
+
+        // Increased from 400: Thai/Asian receipts list items before the total;
+        // truncating too early misses the grand total line at the bottom.
+        private const val MAX_OCR_INPUT_CHARS = 900
 
         private fun emptyAiCoreReceipt() = ExtractedReceipt(
             amount = null,
@@ -110,17 +157,14 @@ internal class AICoreReceiptParser(
             confidence = ExtractionConfidence.LOW
         )
 
-        private fun buildPrompt(ocrText: String): String = """
-            You are an expert receipt data extractor. Analyze the following OCR raw text from a receipt and extract:
-            - amount (the total paid, as a decimal number like 12.34 or null if not found)
-            - currency (the 3-letter ISO 4217 code like USD, EUR, GBP, or null if not found)
-            - date (the transaction date in YYYY-MM-DD format, or null if not found)
-            - title (the merchant name/store name, or null if not found)
-
-            Provide the output ONLY as a valid JSON object with the keys "amount", "currency", "date", "title". Do not include any other text, markdown formatting (like ```json), or explanations.
-
-            OCR Raw Text:
-            $ocrText
-        """.trimIndent()
+        // Few-shot completion: multi-item example teaches the model to pick the GRAND TOTAL,
+        // not an individual item price. The "Output:" suffix triggers JSON completion.
+        private fun buildPrompt(ocrText: String): String =
+            "Grand total, ISO-4217 currency, date YYYY-MM-DD, merchant name.\n" +
+                "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10\n" +
+                "Output: {\"amount\":\"50.00\",\"currency\":\"USD\"," +
+                "\"date\":\"2025-03-10\",\"title\":\"Quick Mart\"}\n" +
+                "Input: $ocrText\n" +
+                "Output:"
     }
 }
