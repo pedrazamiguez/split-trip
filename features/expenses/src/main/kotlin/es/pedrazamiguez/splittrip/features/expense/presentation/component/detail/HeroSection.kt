@@ -49,7 +49,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
-import es.pedrazamiguez.splittrip.core.designsystem.transition.fabSharedTransitionModifier
+import es.pedrazamiguez.splittrip.core.designsystem.transition.receiptSharedElementModifier
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
@@ -275,17 +275,11 @@ private fun ReceiptThumbnail(
     onClick: (() -> Unit)? = null
 ) {
     val isPdf = isPdf(receiptUri, mimeType)
-    val sharedTransitionModifier = if (!isPdf) {
-        fabSharedTransitionModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY)
-    } else {
-        Modifier
-    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(RECEIPT_THUMBNAIL_HEIGHT)
-            .then(sharedTransitionModifier)
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .then(
@@ -299,7 +293,10 @@ private fun ReceiptThumbnail(
         if (isPdf) {
             PdfThumbnailContent(receiptUri = receiptUri)
         } else {
-            ImageThumbnailContent(receiptUri = receiptUri)
+            ImageThumbnailContent(
+                receiptUri = receiptUri,
+                modifier = receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY)
+            )
         }
     }
 }
@@ -338,7 +335,10 @@ private fun BoxScope.PdfThumbnailContent(receiptUri: String) {
 }
 
 @Composable
-private fun BoxScope.ImageThumbnailContent(receiptUri: String) {
+private fun BoxScope.ImageThumbnailContent(
+    receiptUri: String,
+    modifier: Modifier = Modifier
+) {
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
             .data(Uri.parse(receiptUri))
@@ -346,7 +346,7 @@ private fun BoxScope.ImageThumbnailContent(receiptUri: String) {
             .build(),
         contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
         contentScale = ContentScale.Crop,
-        modifier = Modifier
+        modifier = modifier
             .matchParentSize()
             .clip(MaterialTheme.shapes.large)
     )

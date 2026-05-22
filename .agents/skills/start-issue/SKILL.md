@@ -66,12 +66,13 @@ If the result exceeds 600 lines, refactor immediately — do not move on.
 
 ## Step 3 — Post implementation plan as an issue comment
 
-Post your implementation plan as a comment on the issue before writing code. The comment must include:
+You MUST automatically post your implementation plan as a comment on the GitHub issue using the github-mcp-server tool `add_issue_comment` before writing code. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
 
+The comment must include:
 - Summary of changes per file
 - Architecture compliance checklist (from [AGENTS.md](../../../AGENTS.md)) confirmed for each new/modified component
 
-Stick to the posted plan. If the plan needs to change, update the comment.
+Stick to the posted plan. If the plan needs to change, update the comment on the issue (also automatically using the github-mcp-server).
 
 ---
 

@@ -38,7 +38,6 @@ fun NavGraphBuilder.expensesGraph() {
         arguments = listOf(navArgument("receiptUri") { type = NavType.StringType })
     ) { backStackEntry ->
         val receiptUri = backStackEntry.arguments?.getString("receiptUri") ?: return@sharedComposable
-        val decodedUri = java.net.URLDecoder.decode(receiptUri, "UTF-8")
-        ReceiptViewerFeature(receiptUri = decodedUri)
+        ReceiptViewerFeature(receiptUri = receiptUri)
     }
 }

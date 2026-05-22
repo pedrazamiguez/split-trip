@@ -32,7 +32,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
-import es.pedrazamiguez.splittrip.core.designsystem.transition.fabSharedTransitionModifier
+import es.pedrazamiguez.splittrip.core.designsystem.transition.receiptSharedElementModifier
 import es.pedrazamiguez.splittrip.features.expense.R
 
 @Composable
@@ -70,13 +70,10 @@ private fun ReceiptImagePreview(
     onRemoveImage: () -> Unit,
     onViewImage: (() -> Unit)? = null
 ) {
-    val sharedTransitionModifier = fabSharedTransitionModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY)
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .then(sharedTransitionModifier)
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
     ) {
@@ -89,6 +86,7 @@ private fun ReceiptImagePreview(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .matchParentSize()
+                .then(receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY))
                 .clip(MaterialTheme.shapes.large)
                 .clickable(enabled = onViewImage != null) { onViewImage?.invoke() }
         )

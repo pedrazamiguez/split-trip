@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.screen
 
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -24,8 +27,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
@@ -33,7 +39,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
-import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
+import es.pedrazamiguez.splittrip.core.designsystem.transition.receiptSharedElementModifier
 import es.pedrazamiguez.splittrip.features.expense.R
 
 private const val MIN_ZOOM_SCALE = 1f
@@ -47,10 +53,9 @@ fun ReceiptViewerScreen(
 ) {
     val hazeState = remember { HazeState() }
 
-    SharedTransitionSurface(
-        sharedElementKey = SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY,
+    Surface(
         color = Color.Black,
-        modifier = modifier
+        modifier = modifier.fillMaxSize()
     ) {
         Box(
             modifier = Modifier
@@ -63,7 +68,8 @@ fun ReceiptViewerScreen(
         ) {
             ZoomableImageContainer(
                 receiptUri = receiptUri,
-                hazeState = hazeState
+                hazeState = hazeState,
+                onClose = onClose
             )
 
             ReceiptViewerTopBar(
@@ -78,7 +84,8 @@ fun ReceiptViewerScreen(
 @Composable
 private fun ZoomableImageContainer(
     receiptUri: String,
-    hazeState: HazeState
+    hazeState: HazeState,
+    onClose: () -> Unit
 ) {
     var scale by remember { mutableFloatStateOf(MIN_ZOOM_SCALE) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -90,9 +97,13 @@ private fun ZoomableImageContainer(
         contentAlignment = Alignment.Center
     ) {
         AsyncImage(
-            model = receiptUri,
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(Uri.parse(receiptUri))
+                .crossfade(true)
+                .build(),
             contentDescription = stringResource(R.string.receipt_viewer_image_cd),
             modifier = Modifier
+                .then(receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY))
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
@@ -113,7 +124,11 @@ private fun ZoomableImageContainer(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = {} // No-op to block background tap from closing
+                    onClick = {
+                        if (scale == MIN_ZOOM_SCALE) {
+                            onClose()
+                        }
+                    }
                 ),
             contentScale = ContentScale.Fit
         )
@@ -129,7 +144,7 @@ private fun ReceiptViewerTopBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .horizonGlassEffect(hazeState = hazeState)
+            .horizonGlassEffect(hazeState = hazeState, darkTheme = true)
             .statusBarsPadding()
             .padding(MaterialTheme.spacing.Medium)
     ) {
@@ -143,5 +158,12 @@ private fun ReceiptViewerTopBar(
                 tint = Color.White
             )
         }
+
+        Text(
+            text = stringResource(R.string.add_expense_receipt_title),
+            modifier = Modifier.align(Alignment.Center),
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }

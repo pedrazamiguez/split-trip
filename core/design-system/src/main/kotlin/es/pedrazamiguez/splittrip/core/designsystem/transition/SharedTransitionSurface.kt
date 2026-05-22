@@ -93,3 +93,34 @@ fun fabSharedTransitionModifier(key: String): Modifier {
         Modifier
     }
 }
+
+/**
+ * Builds the [Modifier] for a receipt thumbnail → full-screen receipt viewer shared-element transition.
+ *
+ * This is used to morph the receipt image smoothly from the detail view/form thumbnail to the
+ * full-screen viewer. It uses [Modifier.sharedElement] to transition only the image content,
+ * preventing container distortion.
+ *
+ * @param key The shared-element key that pairs thumbnail and viewer.
+ * @return A [Modifier] with `sharedElement` applied, or [Modifier] if the transition scope is not available.
+ */
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun receiptSharedElementModifier(key: String): Modifier {
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
+
+    return if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+        with(sharedTransitionScope) {
+            Modifier.sharedElement(
+                sharedContentState = rememberSharedContentState(key = key),
+                animatedVisibilityScope = animatedVisibilityScope,
+                boundsTransform = { _, _ ->
+                    spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+                }
+            )
+        }
+    } else {
+        Modifier
+    }
+}

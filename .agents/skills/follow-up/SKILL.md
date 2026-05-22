@@ -62,9 +62,19 @@ Read and analyze all of the following before doing any implementation planning o
    - Use the appropriate file viewing/image tool to inspect the image contents.
 4. **Locate the affected code**: Search the codebase for the features, ViewModels, Screens, or Services associated with the issue.
 
+## Step 3 — Post Implementation Plan as an Issue Comment
+
+If the triage in Step 2 reveals that code changes are required, you MUST automatically post your proposed implementation plan/changes as a comment on the GitHub issue using the github-mcp-server tool `add_issue_comment` before writing code. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
+
+The comment must include:
+- Summary of proposed changes per file
+- Architecture compliance checklist (from [AGENTS.md](../../../AGENTS.md)) confirmed for each new/modified component
+
+Stick to the plan. If the plan needs to change, update the comment on the issue (also automatically using the github-mcp-server).
+
 ---
 
-## Step 3 — File-Size Guard (600-line hard limit, enforced by Konsist)
+## Step 4 — File-Size Guard (600-line hard limit, enforced by Konsist)
 
 Before editing any file, check its current line count:
 ```bash
@@ -80,7 +90,7 @@ If the result exceeds 600 lines, refactor immediately — do not move on.
 
 ---
 
-## Step 4 — Implement
+## Step 5 — Implement
 
 Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md) strictly.
 
@@ -93,7 +103,7 @@ Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.git
 
 ---
 
-## Step 5 — Local Verification Gate (run BEFORE declaring done)
+## Step 6 — Local Verification Gate (run BEFORE declaring done)
 
 Do not consider the work complete until ALL of the following pass locally:
 ```bash
