@@ -10,4 +10,5 @@ package es.pedrazamiguez.splittrip.core.designsystem.navigation
 object SharedElementKeys {
     const val ADD_CONTRIBUTION = "add_contribution_container"
     const val ADD_CASH_WITHDRAWAL = "add_cash_withdrawal_container"
+    const val RECEIPT_VIEWER_SHARED_ELEMENT_KEY = "receipt_viewer_container"
 }

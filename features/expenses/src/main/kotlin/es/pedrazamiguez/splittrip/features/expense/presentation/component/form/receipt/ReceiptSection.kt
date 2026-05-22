@@ -19,7 +19,8 @@ internal fun ReceiptSection(
     mimeType: String?,
     onPickerRequested: () -> Unit,
     onRemoveImage: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onViewImage: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier,
@@ -30,7 +31,8 @@ internal fun ReceiptSection(
             receiptUri = receiptUri,
             mimeType = mimeType,
             onPickerRequested = onPickerRequested,
-            onRemoveImage = onRemoveImage
+            onRemoveImage = onRemoveImage,
+            onViewImage = onViewImage
         )
     }
 }

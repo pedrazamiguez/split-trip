@@ -29,7 +29,6 @@ Explore and incorporate the following feedback or alternative approaches:
 Load and examine the current plan and the proposed feedback:
 1. Locate and read the existing implementation plan file (e.g. `implementation_plan.md`).
 2. Read the review feedback, comments, or alternative proposals.
-3. Verify the baseline checks (`make check`) remain fully green before making revisions.
 
 ---
 

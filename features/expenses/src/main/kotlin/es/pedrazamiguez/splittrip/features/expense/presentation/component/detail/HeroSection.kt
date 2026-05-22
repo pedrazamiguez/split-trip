@@ -6,8 +6,10 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,10 +44,12 @@ import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
+import es.pedrazamiguez.splittrip.core.designsystem.transition.receiptSharedElementModifier
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
@@ -58,7 +62,10 @@ private val HERO_AMOUNT_SIZE = 40.sp
 private val RECEIPT_THUMBNAIL_HEIGHT = 160.dp
 
 @Composable
-internal fun HeroSection(expense: ExpenseDetailUiModel) {
+internal fun HeroSection(
+    expense: ExpenseDetailUiModel,
+    onReceiptTap: (() -> Unit)? = null
+) {
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
         HeroTagRow(expense)
         // §4.4 ambient shadow: hero is the only screen element warranting an inset
@@ -68,7 +75,8 @@ internal fun HeroSection(expense: ExpenseDetailUiModel) {
                 if (expense.receiptUri != null) {
                     ReceiptThumbnail(
                         receiptUri = expense.receiptUri,
-                        mimeType = expense.receiptMimeType
+                        mimeType = expense.receiptMimeType,
+                        onClick = onReceiptTap
                     )
                     Spacer(Modifier.height(MaterialTheme.spacing.Medium))
                 }
@@ -261,58 +269,87 @@ private fun rememberPdfThumbnail(pdfUriString: String): Bitmap? {
 }
 
 @Composable
-private fun ReceiptThumbnail(receiptUri: String, mimeType: String?) {
+private fun ReceiptThumbnail(
+    receiptUri: String,
+    mimeType: String?,
+    onClick: (() -> Unit)? = null
+) {
+    val isPdf = isPdf(receiptUri, mimeType)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(RECEIPT_THUMBNAIL_HEIGHT)
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-    ) {
-        if (isPdf(receiptUri, mimeType)) {
-            val pdfBitmap = rememberPdfThumbnail(receiptUri)
-            if (pdfBitmap != null) {
-                Image(
-                    bitmap = pdfBitmap.asImageBitmap(),
-                    contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clip(MaterialTheme.shapes.large)
-                )
-            } else {
-                // PDFs cannot be rendered inline — show an informational placeholder instead.
-                Column(
-                    modifier = Modifier.matchParentSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = TablerIcons.Outline.Receipt,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    BodyText(
-                        text = stringResource(R.string.expense_detail_receipt_pdf_label),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            .then(
+                if (onClick != null && !isPdf) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
                 }
-            }
+            )
+    ) {
+        if (isPdf) {
+            PdfThumbnailContent(receiptUri = receiptUri)
         } else {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(Uri.parse(receiptUri))
-                    .crossfade(true)
-                    .build(),
-                contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .matchParentSize()
-                    .clip(MaterialTheme.shapes.large)
+            ImageThumbnailContent(
+                receiptUri = receiptUri,
+                modifier = receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY)
             )
         }
     }
+}
+
+@Composable
+private fun BoxScope.PdfThumbnailContent(receiptUri: String) {
+    val pdfBitmap = rememberPdfThumbnail(receiptUri)
+    if (pdfBitmap != null) {
+        Image(
+            bitmap = pdfBitmap.asImageBitmap(),
+            contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .matchParentSize()
+                .clip(MaterialTheme.shapes.large)
+        )
+    } else {
+        // PDFs cannot be rendered inline — show an informational placeholder instead.
+        Column(
+            modifier = Modifier.matchParentSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = TablerIcons.Outline.Receipt,
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            BodyText(
+                text = stringResource(R.string.expense_detail_receipt_pdf_label),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.ImageThumbnailContent(
+    receiptUri: String,
+    modifier: Modifier = Modifier
+) {
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(Uri.parse(receiptUri))
+            .crossfade(true)
+            .build(),
+        contentDescription = stringResource(R.string.expense_detail_receipt_thumbnail_cd),
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .matchParentSize()
+            .clip(MaterialTheme.shapes.large)
+    )
 }
 
 private const val MIME_PDF = "application/pdf"

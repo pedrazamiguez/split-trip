@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpenseDetailScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpenseDetailViewModel
@@ -43,5 +44,10 @@ fun ExpenseDetailFeature(
         }
     }
 
-    ExpenseDetailScreen(uiState = uiState)
+    ExpenseDetailScreen(
+        uiState = uiState,
+        onReceiptTap = uiState.expense?.receiptUri?.let { uri ->
+            { navController.navigate(Routes.receiptViewerRoute(uri)) }
+        }
+    )
 }

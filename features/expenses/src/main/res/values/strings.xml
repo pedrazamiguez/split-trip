@@ -296,4 +296,6 @@
     <string name="add_expense_personal_cash_split_warning">You\'re spending from your personal cash.\nMake sure it\'s intentional to share this with others.</string>
     <!-- Subunit cash split warning — %1$s is the subunit pool display label (e.g. "Caris cash") -->
     <string name="add_expense_subunit_cash_split_warning">You\'re spending from %1$s.\nMake sure it\'s intentional to share this with others.</string>
+    <string name="receipt_viewer_image_cd">Receipt full image</string>
+    <string name="receipt_viewer_close_cd">Close viewer</string>
 </resources>

@@ -297,4 +297,6 @@
     <string name="add_expense_personal_cash_split_warning">Estás gastando de tu efectivo personal.\nAsegúrate de que es tu intención compartir este gasto con los demás.</string>
     <!-- Subunit cash split warning — %1$s is the subunit pool display label (e.g. "Efectivo de Caris") -->
     <string name="add_expense_subunit_cash_split_warning">Estás usando %1$s.\nAsegúrate de que es tu intención compartir este gasto con los demás.</string>
+    <string name="receipt_viewer_image_cd">Imagen del recibo</string>
+    <string name="receipt_viewer_close_cd">Cerrar visor</string>
 </resources>
