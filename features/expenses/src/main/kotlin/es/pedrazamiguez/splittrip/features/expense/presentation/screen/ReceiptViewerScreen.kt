@@ -23,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -54,7 +53,7 @@ fun ReceiptViewerScreen(
     val hazeState = remember { HazeState() }
 
     Surface(
-        color = Color.Black,
+        color = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) {
         Box(
@@ -144,26 +143,29 @@ private fun ReceiptViewerTopBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .horizonGlassEffect(hazeState = hazeState, darkTheme = true)
+            .horizonGlassEffect(hazeState = hazeState)
             .statusBarsPadding()
-            .padding(MaterialTheme.spacing.Medium)
+            .padding(
+                horizontal = MaterialTheme.spacing.Default,
+                vertical = MaterialTheme.spacing.ExtraSmall
+            )
     ) {
+        Text(
+            text = stringResource(R.string.add_expense_receipt_title),
+            modifier = Modifier.align(Alignment.Center),
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.titleMedium
+        )
+
         IconButton(
             onClick = onClose,
-            modifier = Modifier.align(Alignment.CenterStart)
+            modifier = Modifier.align(Alignment.CenterEnd)
         ) {
             Icon(
                 imageVector = TablerIcons.Outline.X,
                 contentDescription = stringResource(R.string.receipt_viewer_close_cd),
-                tint = Color.White
+                tint = MaterialTheme.colorScheme.onBackground
             )
         }
-
-        Text(
-            text = stringResource(R.string.add_expense_receipt_title),
-            modifier = Modifier.align(Alignment.Center),
-            color = Color.White,
-            style = MaterialTheme.typography.titleMedium
-        )
     }
 }
