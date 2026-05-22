@@ -27,8 +27,8 @@ class AICoreReceiptParserTest {
         // Simulates a 5-page flight receipt (~6 000 chars).
         val text = "X".repeat(6_000)
         val result = AICoreReceiptParser.smartTruncate(text)
-        // head(600) + "\n…\n"(3) + tail(2400) = 3003 — the ellipsis separator is tiny overhead
-        assertTrue(result.length <= 3_003, "Expected ≤3003 chars, got ${result.length}")
+        // head(600) + "\n…\n"(3) + tail(2397) = 3000
+        assertTrue(result.length <= 3_000, "Expected ≤3000 chars, got ${result.length}")
     }
 
     @Test

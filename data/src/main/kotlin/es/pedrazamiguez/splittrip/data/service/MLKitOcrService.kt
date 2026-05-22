@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /**
- * Interface representing PDF first-page rendering logic, separated for unit-testability.
+ * Interface representing PDF rendering logic (page count and page-specific rendering), separated for unit-testability.
  */
 internal interface PdfPageRenderer {
     fun renderFirstPage(uri: Uri): Bitmap
@@ -167,16 +167,23 @@ internal class MLKitOcrService(
         fullTextBuilder: StringBuilder,
         textBlocks: MutableList<TextBlock>
     ) {
-        val pageCount = withContext(ioDispatcher) {
-            try {
-                pdfPageRenderer.getPageCount(uri)
-            } catch (e: Exception) {
-                throw IOException("Failed to read PDF page count from URI: $uri", e)
-            }
+        val pageCount = readPageCount(uri)
+        if (pageCount <= 0) {
+            throw IOException("PDF has no pages")
         }
         val pagesToProcess = minOf(pageCount, MAX_PDF_PAGES)
         for (pageIndex in 0 until pagesToProcess) {
             processPdfPage(uri, pageIndex, fullTextBuilder, textBlocks)
+        }
+    }
+
+    private suspend fun readPageCount(uri: Uri): Int = withContext(ioDispatcher) {
+        try {
+            pdfPageRenderer.getPageCount(uri)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw IOException("Failed to read PDF page count from URI: $uri", e)
         }
     }
 

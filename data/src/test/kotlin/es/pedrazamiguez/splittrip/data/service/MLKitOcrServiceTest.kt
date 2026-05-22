@@ -245,6 +245,43 @@ class MLKitOcrServiceTest {
     }
 
     @Test
+    fun `recogniseText when PDF page count reading throws CancellationException rethrows`() = runTest(testDispatcher) {
+        val attachment = ReceiptAttachment(
+            localUri = "file:///path/to/receipt.pdf",
+            mimeType = "application/pdf",
+            capturedAtMillis = 123456789L
+        )
+
+        every { pdfPageRenderer.getPageCount(any()) } throws
+            kotlinx.coroutines.CancellationException("Page count cancelled")
+
+        try {
+            service.recogniseText(attachment)
+            org.junit.jupiter.api.Assertions.fail("Expected CancellationException")
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            assertEquals("Page count cancelled", e.message)
+        }
+    }
+
+    @Test
+    fun `recogniseText when PDF has 0 pages returns failure`() = runTest(testDispatcher) {
+        val attachment = ReceiptAttachment(
+            localUri = "file:///path/to/receipt.pdf",
+            mimeType = "application/pdf",
+            capturedAtMillis = 123456789L
+        )
+
+        every { pdfPageRenderer.getPageCount(any()) } returns 0
+
+        val result = service.recogniseText(attachment)
+
+        assertTrue(result.isFailure)
+        val exception = result.exceptionOrNull()
+        assertTrue(exception is IOException)
+        assertEquals("PDF has no pages", exception?.message)
+    }
+
+    @Test
     fun `recogniseText when PDF cancellation occurs recycles bitmap and rethrows`() = runTest(
         testDispatcher
     ) {

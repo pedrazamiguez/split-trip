@@ -147,7 +147,8 @@ internal class AICoreReceiptParser(
         // Tail captures fare breakdown and grand total (bottom of document).
         // Together they stay within MAX_OCR_INPUT_CHARS even for long multi-page receipts.
         private const val OCR_INPUT_HEAD_CHARS = 600
-        private const val OCR_INPUT_TAIL_CHARS = MAX_OCR_INPUT_CHARS - OCR_INPUT_HEAD_CHARS
+        private const val SEPARATOR = "\n…\n"
+        private const val OCR_INPUT_TAIL_CHARS = MAX_OCR_INPUT_CHARS - OCR_INPUT_HEAD_CHARS - SEPARATOR.length
 
         /**
          * Returns at most [MAX_OCR_INPUT_CHARS] of [text].
@@ -161,7 +162,7 @@ internal class AICoreReceiptParser(
             if (text.length <= MAX_OCR_INPUT_CHARS) return text
             val head = text.take(OCR_INPUT_HEAD_CHARS)
             val tail = text.takeLast(OCR_INPUT_TAIL_CHARS)
-            return "$head\n…\n$tail"
+            return "$head$SEPARATOR$tail"
         }
 
         private fun emptyAiCoreReceipt() = ExtractedReceipt(
