@@ -46,6 +46,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.Scheduled
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.AddExpenseScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpenseDetailScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpensesScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ReceiptViewerScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.AddExpenseViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpenseDetailViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesUseCases
@@ -273,6 +274,7 @@ val expensesUiModule = module {
     single { ExpensesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { AddExpenseScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { ExpenseDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { ReceiptViewerScreenUiProviderImpl() } bind ScreenUiProvider::class
 
     single {
         ExpenseDetailUiMapper(

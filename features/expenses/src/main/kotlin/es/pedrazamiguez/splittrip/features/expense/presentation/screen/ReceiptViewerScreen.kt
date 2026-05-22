@@ -6,14 +6,14 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -34,7 +35,6 @@ import coil3.request.crossfade
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
@@ -134,38 +134,34 @@ private fun ZoomableImageContainer(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReceiptViewerTopBar(
     hazeState: HazeState,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    CenterAlignedTopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.add_expense_receipt_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+        },
+        actions = {
+            IconButton(onClick = onClose) {
+                Icon(
+                    imageVector = TablerIcons.Outline.X,
+                    contentDescription = stringResource(R.string.receipt_viewer_close_cd)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = Color.Transparent,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            actionIconContentColor = MaterialTheme.colorScheme.onBackground
+        ),
         modifier = modifier
-            .fillMaxWidth()
             .horizonGlassEffect(hazeState = hazeState)
-            .statusBarsPadding()
-            .padding(
-                horizontal = MaterialTheme.spacing.Default,
-                vertical = MaterialTheme.spacing.ExtraSmall
-            )
-    ) {
-        Text(
-            text = stringResource(R.string.add_expense_receipt_title),
-            modifier = Modifier.align(Alignment.Center),
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier.align(Alignment.CenterEnd)
-        ) {
-            Icon(
-                imageVector = TablerIcons.Outline.X,
-                contentDescription = stringResource(R.string.receipt_viewer_close_cd),
-                tint = MaterialTheme.colorScheme.onBackground
-            )
-        }
-    }
+    )
 }
