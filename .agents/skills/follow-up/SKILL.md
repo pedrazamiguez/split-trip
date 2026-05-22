@@ -8,13 +8,13 @@ tools:
   - terminalLastCommand
 arguments:
   - name: issue_number
-    description: The number of the GitHub issue we are following up on.
+    description: The number of the GitHub issue to follow up on. You must read and analyze this issue and its comments first to get the necessary context.
     required: true
   - name: follow_up_description
     description: An explanation of what needs to be checked, fixed, or done.
     required: true
   - name: screenshot_path
-    description: Optional path to a screenshot or image demonstrating the issue or unexpected behavior.
+    description: Optional path to a screenshot or image demonstrating the issue. This path is automatically populated by the system when a screenshot is attached to the conversation (the user does not write this path manually).
     required: false
 ---
 # Follow-Up on Issue
@@ -44,21 +44,23 @@ Because this follow-up may be initiated in a new conversation without prior cont
 
 ## Step 1 — Read Everything First (mandatory, no shortcuts)
 
-Read each of the following before writing a single line of code:
-- [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)
-- [AGENTS.md](../../../AGENTS.md)
-- [DESIGN.md](../../../DESIGN.md)
-- All relevant `wiki/*.md` articles (especially [wiki/core-services-catalog.md](../../../wiki/core-services-catalog.md) and [wiki/offline-first-architecture.md](../../../wiki/offline-first-architecture.md))
-- The GitHub issue `$ISSUE_NUMBER`, including ALL parent/linked issues and every comment thread, to understand the historical context and initial implementation.
+Read and analyze all of the following before doing any implementation planning or writing code:
+1. **GitHub Issue & Comments**: Fetch, read, and analyze the referenced GitHub issue `$ISSUE_NUMBER` and all its comment threads using the `issue_read` tool (owner: `pedrazamiguez`, repo: `split-trip`, methods: `get` and `get_comments`) to understand the complete historical context and initial implementation.
+2. **Project Guidelines**:
+   - [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)
+   - [AGENTS.md](../../../AGENTS.md)
+   - [DESIGN.md](../../../DESIGN.md)
+3. **Documentation**: All relevant `wiki/*.md` articles (especially [wiki/core-services-catalog.md](../../../wiki/core-services-catalog.md) and [wiki/offline-first-architecture.md](../../../wiki/offline-first-architecture.md)).
 
 ---
 
 ## Step 2 — Triage the Follow-Up Request & Screenshot
 
-1. **Understand the problem**: Read the `$FOLLOW_UP_DESCRIPTION` carefully.
-2. **Review Screenshot**: If `$SCREENSHOT_PATH` is provided, view the screenshot/image to see the visual discrepancy, crash, or unexpected UI state:
-   - Use the appropriate tool to inspect the image contents.
-3. **Locate the affected code**: Search the codebase for the features, ViewModels, Screens, or Services associated with the issue.
+1. **Analyze the Issue Context**: Review the notes and context gathered from the GitHub issue comments and description.
+2. **Understand the problem**: Read the `$FOLLOW_UP_DESCRIPTION` carefully and reconcile it with the issue context.
+3. **Review Screenshot**: If `$SCREENSHOT_PATH` is provided, view the attached screenshot/image to see the visual discrepancy, crash, or unexpected UI state:
+   - Use the appropriate file viewing/image tool to inspect the image contents.
+4. **Locate the affected code**: Search the codebase for the features, ViewModels, Screens, or Services associated with the issue.
 
 ---
 
