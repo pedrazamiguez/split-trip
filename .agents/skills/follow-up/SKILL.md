@@ -53,21 +53,7 @@ Read each of the following before writing a single line of code:
 
 ---
 
-## Step 2 — Establish a Baseline (run BEFORE touching any file)
-
-Run the full local check suite to know exactly what the codebase state is before you make any changes:
-```bash
-make check   # Konsist architecture rules + all unit tests + debug compilation
-```
-
-**Interpret the results:**
-- If a check **passes** → it is your responsibility to keep it passing after your changes.
-- If a check **fails on a file you will touch** → fix the pre-existing violation as part of this task.
-- If a check **fails on a file you will NOT touch** → document it and ask the user how to proceed. Do NOT push changes that leave these new-to-this-PR failures unresolved.
-
----
-
-## Step 3 — Triage the Follow-Up Request & Screenshot
+## Step 2 — Triage the Follow-Up Request & Screenshot
 
 1. **Understand the problem**: Read the `$FOLLOW_UP_DESCRIPTION` carefully.
 2. **Review Screenshot**: If `$SCREENSHOT_PATH` is provided, view the screenshot/image to see the visual discrepancy, crash, or unexpected UI state:
@@ -76,7 +62,7 @@ make check   # Konsist architecture rules + all unit tests + debug compilation
 
 ---
 
-## Step 4 — File-Size Guard (600-line hard limit, enforced by Konsist)
+## Step 3 — File-Size Guard (600-line hard limit, enforced by Konsist)
 
 Before editing any file, check its current line count:
 ```bash
@@ -92,7 +78,7 @@ If the result exceeds 600 lines, refactor immediately — do not move on.
 
 ---
 
-## Step 5 — Implement
+## Step 4 — Implement
 
 Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md) strictly.
 
@@ -105,7 +91,7 @@ Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.git
 
 ---
 
-## Step 6 — Local Verification Gate (run BEFORE declaring done)
+## Step 5 — Local Verification Gate (run BEFORE declaring done)
 
 Do not consider the work complete until ALL of the following pass locally:
 ```bash

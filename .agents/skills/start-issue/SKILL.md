@@ -44,23 +44,7 @@ Read each of the following before writing a single line of code:
 
 ---
 
-## Step 2 — Establish a baseline (run BEFORE touching any file)
-
-Run the full local check suite to know exactly what the codebase state is before you make changes:
-
-```bash
-make check   # Konsist architecture rules + all unit tests + debug compilation
-```
-
-**Interpret the results:**
-
-- If a check **passes** → it is your responsibility to keep it passing after your changes.
-- If a check **fails on a file you will touch** → fix the pre-existing violation as part of this PR before introducing your changes.
-- If a check **fails on a file you will NOT touch** → document it in your implementation plan comment on the issue and ask the user how to proceed. Do NOT push changes that leave these new-to-this-PR failures unresolved.
-
----
-
-## Step 3 — File-size guard (600-line hard limit, enforced by Konsist)
+## Step 2 — File-size guard (600-line hard limit, enforced by Konsist)
 
 Before editing any file, check its current line count:
 
@@ -80,19 +64,18 @@ If the result exceeds 600 lines, refactor immediately — do not move on.
 
 ---
 
-## Step 4 — Post implementation plan as an issue comment
+## Step 3 — Post implementation plan as an issue comment
 
 Post your implementation plan as a comment on the issue before writing code. The comment must include:
 
 - Summary of changes per file
-- Any pre-existing violations found in Step 2 and how they will be handled
 - Architecture compliance checklist (from [AGENTS.md](../../../AGENTS.md)) confirmed for each new/modified component
 
 Stick to the posted plan. If the plan needs to change, update the comment.
 
 ---
 
-## Step 5 — Implement
+## Step 4 — Implement
 
 Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md) strictly. Ensure you adhere to the project quality and style standards, including detekt rules, ktlint formatting, test coverage requirements, and the 600-line file-size limit.
 
@@ -105,7 +88,7 @@ Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.git
 
 ---
 
-## Step 6 — Local verification gate (run BEFORE declaring done)
+## Step 5 — Local verification gate (run BEFORE declaring done)
 
 Do not consider the work complete until ALL of the following pass locally:
 
