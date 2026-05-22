@@ -49,5 +49,11 @@ interface LocalExpenseDataSource {
      */
     suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String)
 
+    /**
+     * Persists the stable local URI for an expense's receipt.
+     * Called by the repository after a successful background download.
+     */
+    suspend fun updateReceiptLocalUri(expenseId: String, localUri: String)
+
     suspend fun clearAllExpenses()
 }

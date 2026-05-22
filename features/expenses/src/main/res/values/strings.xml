@@ -298,4 +298,6 @@
     <string name="add_expense_subunit_cash_split_warning">You\'re spending from %1$s.\nMake sure it\'s intentional to share this with others.</string>
     <string name="receipt_viewer_image_cd">Receipt full image</string>
     <string name="receipt_viewer_close_cd">Close viewer</string>
+    <string name="receipt_viewer_pdf_error">Failed to load PDF receipt</string>
+    <string name="receipt_viewer_pdf_page_cd">PDF page %1$d</string>
 </resources>

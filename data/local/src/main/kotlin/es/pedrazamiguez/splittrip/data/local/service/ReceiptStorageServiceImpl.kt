@@ -65,6 +65,63 @@ internal class ReceiptStorageServiceImpl(
             }
         }
 
+    override suspend fun downloadAndStore(remoteUrl: String): ReceiptAttachment =
+        withContext(Dispatchers.IO) {
+            val uri = Uri.parse(remoteUrl)
+            val receiptsDir = File(context.filesDir, RECEIPTS_DIR).also { it.mkdirs() }
+            val uniqueId = UUID.randomUUID().toString()
+            val tempFile = File(context.cacheDir, "download_receipt_$uniqueId").also { it.parentFile?.mkdirs() }
+
+            var connection: java.net.HttpURLConnection? = null
+            try {
+                val url = java.net.URL(remoteUrl)
+                connection = url.openConnection() as java.net.HttpURLConnection
+                connection.connectTimeout = CONNECTION_TIMEOUT_MS
+                connection.readTimeout = CONNECTION_TIMEOUT_MS
+                connection.requestMethod = "GET"
+                connection.connect()
+
+                if (connection.responseCode != java.net.HttpURLConnection.HTTP_OK) {
+                    error("Failed to download file: HTTP ${connection.responseCode}")
+                }
+
+                connection.inputStream.use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                var contentType = connection.contentType ?: ""
+                if (contentType.contains(";")) {
+                    contentType = contentType.substringBefore(";")
+                }
+
+                val finalMime = if (contentType.isNotBlank() && contentType != "application/octet-stream") {
+                    contentType
+                } else {
+                    resolveMimeType(uri, remoteUrl)
+                }
+
+                val (destFile, actualMime) = if (finalMime.startsWith("image/")) {
+                    compressImage(tempFile, receiptsDir, uniqueId)
+                } else {
+                    copyVerbatim(tempFile, receiptsDir, uniqueId, finalMime)
+                }
+
+                ReceiptAttachment(
+                    localUri = destFile.toUri().toString(),
+                    mimeType = actualMime,
+                    capturedAtMillis = System.currentTimeMillis(),
+                    remoteUrl = remoteUrl
+                )
+            } finally {
+                connection?.disconnect()
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
+            }
+        }
+
     private fun resolveMimeType(uri: Uri, sourceUri: String): String {
         val resolver = context.contentResolver
         var mimeType = resolver.getType(uri)
@@ -183,6 +240,7 @@ internal class ReceiptStorageServiceImpl(
 
     private companion object {
         const val RECEIPTS_DIR = "receipts"
+        const val CONNECTION_TIMEOUT_MS = 10000
         const val WEBP_EXT = ".webp"
         const val WEBP_MIME = "image/webp"
         const val FALLBACK_MIME = "application/octet-stream"

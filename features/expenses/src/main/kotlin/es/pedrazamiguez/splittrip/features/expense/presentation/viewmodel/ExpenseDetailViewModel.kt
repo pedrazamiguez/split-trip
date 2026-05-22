@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -48,9 +49,12 @@ class ExpenseDetailViewModel(
     private val getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase,
     private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
+    private val downloadReceiptUseCase: DownloadReceiptUseCase,
     private val authenticationService: AuthenticationService,
     private val expenseDetailUiMapper: ExpenseDetailUiMapper
 ) : ViewModel() {
+
+    private val downloadJobs = java.util.concurrent.ConcurrentHashMap<String, kotlinx.coroutines.Job>()
 
     private val _expenseId = MutableStateFlow("")
 
@@ -73,6 +77,11 @@ class ExpenseDetailViewModel(
                         return@flatMapLatest flowOf(
                             ExpenseDetailUiState(isLoading = false, hasError = true)
                         )
+                    }
+
+                    val attachment = expense.receiptAttachment
+                    if (shouldDownloadPdf(attachment)) {
+                        triggerReceiptDownload(expense.id, attachment?.remoteUrl.orEmpty())
                     }
 
                     val allUserIds = buildSet {
@@ -195,5 +204,25 @@ class ExpenseDetailViewModel(
                 )
             }
         }
+    }
+    private fun triggerReceiptDownload(expenseId: String, remoteUrl: String) {
+        if (downloadJobs.containsKey(expenseId)) return
+        downloadJobs[expenseId] = viewModelScope.launch {
+            try {
+                downloadReceiptUseCase(expenseId, remoteUrl)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to download remote PDF receipt for expense $expenseId")
+            } finally {
+                downloadJobs.remove(expenseId)
+            }
+        }
+    }
+
+    private fun shouldDownloadPdf(attachment: es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment?): Boolean {
+        if (attachment == null) return false
+        val isPdf = attachment.mimeType == "application/pdf"
+        val hasNoLocal = attachment.localUri.isBlank()
+        val hasRemote = !attachment.remoteUrl.isNullOrBlank()
+        return isPdf && hasNoLocal && hasRemote
     }
 }

@@ -45,6 +45,15 @@ private const val MIN_ZOOM_SCALE = 1f
 private const val MAX_ZOOM_SCALE = 5f
 private const val ZOOM_EPSILON = 0.01f
 
+private fun isPdf(uriString: String): Boolean {
+    val uri = Uri.parse(uriString)
+    val path = if (uri.scheme == "file") uri.path.orEmpty() else uriString
+    if (path.lowercase().endsWith(".pdf")) return true
+    val lastSegment = uri.lastPathSegment.orEmpty().lowercase()
+    if (lastSegment.endsWith(".pdf") || lastSegment.contains(".pdf?")) return true
+    return false
+}
+
 @Composable
 fun ReceiptViewerScreen(
     receiptUri: String,
@@ -52,6 +61,7 @@ fun ReceiptViewerScreen(
     modifier: Modifier = Modifier
 ) {
     val hazeState = remember { HazeState() }
+    val isPdf = remember(receiptUri) { isPdf(receiptUri) }
 
     Surface(
         color = MaterialTheme.colorScheme.background,
@@ -66,11 +76,20 @@ fun ReceiptViewerScreen(
                     onClick = onClose
                 )
         ) {
-            ZoomableImageContainer(
-                receiptUri = receiptUri,
-                hazeState = hazeState,
-                onClose = onClose
-            )
+            if (isPdf) {
+                PdfViewerContent(
+                    pdfUriString = receiptUri,
+                    hazeState = hazeState,
+                    onClose = onClose,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                ZoomableImageContainer(
+                    receiptUri = receiptUri,
+                    hazeState = hazeState,
+                    onClose = onClose
+                )
+            }
 
             ReceiptViewerTopBar(
                 hazeState = hazeState,
