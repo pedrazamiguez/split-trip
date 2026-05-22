@@ -40,6 +40,7 @@ sealed interface AddExpenseUiEvent {
      * reaching the ViewModel so the ViewModel stays context-free.
      */
     data object RequestPickerSource : AddExpenseUiEvent
+    data object ViewReceiptFullScreen : AddExpenseUiEvent
     data class SubmitAddExpense(val groupId: String?) : AddExpenseUiEvent
 
     // Split events

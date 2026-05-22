@@ -89,10 +89,20 @@ fun AddExpenseFeature(
         onEvent = { event ->
             // RequestPickerSource is a pure-UI concern — handle it in the Feature
             // so the ViewModel never touches source selection or launcher APIs.
-            if (event is AddExpenseUiEvent.RequestPickerSource) {
-                showReceiptSourceSheet = true
-            } else {
-                addExpenseViewModel.onEvent(event, onAddExpenseSuccess)
+            when (event) {
+                is AddExpenseUiEvent.RequestPickerSource -> {
+                    showReceiptSourceSheet = true
+                }
+                is AddExpenseUiEvent.ViewReceiptFullScreen -> {
+                    state.receiptUri?.let { uri ->
+                        navController.navigate(
+                            es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes.receiptViewerRoute(uri)
+                        )
+                    }
+                }
+                else -> {
+                    addExpenseViewModel.onEvent(event, onAddExpenseSuccess)
+                }
             }
         }
     )

@@ -31,7 +31,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 @Composable
 fun ExpenseDetailScreen(
     uiState: ExpenseDetailUiState = ExpenseDetailUiState(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onReceiptTap: (() -> Unit)? = null
 ) {
     when {
         uiState.isLoading -> ShimmerLoadingList()
@@ -41,14 +42,19 @@ fun ExpenseDetailScreen(
                 icon = TablerIcons.Outline.Receipt
             )
         }
-        else -> ExpenseDetailContent(expense = uiState.expense, modifier = modifier)
+        else -> ExpenseDetailContent(
+            expense = uiState.expense,
+            modifier = modifier,
+            onReceiptTap = onReceiptTap
+        )
     }
 }
 
 @Composable
 private fun ExpenseDetailContent(
     expense: ExpenseDetailUiModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onReceiptTap: (() -> Unit)? = null
 ) {
     // Tab-screens MUST consume LocalBottomPadding so the floating nav bar does not
     // cover the last card / sticky actions (Manifesto §7 — Bottom Padding rule).
@@ -63,7 +69,7 @@ private fun ExpenseDetailContent(
     ) {
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
 
-        HeroSection(expense = expense)
+        HeroSection(expense = expense, onReceiptTap = onReceiptTap)
 
         if (expense.notesText != null) {
             NotesSection(notesText = expense.notesText)

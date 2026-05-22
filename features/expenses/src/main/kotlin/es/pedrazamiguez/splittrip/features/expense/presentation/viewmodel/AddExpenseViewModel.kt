@@ -253,6 +253,8 @@ class AddExpenseViewModel(
             // ViewModel. If it somehow arrives, a no-op is the safe fallback.
             is AddExpenseUiEvent.RequestPickerSource -> Unit
 
+            is AddExpenseUiEvent.ViewReceiptFullScreen -> Unit
+
             // ── Add-Ons ─────────────────────────────────────────────────
             is AddExpenseUiEvent.AddOnAdded ->
                 addOnEventHandler.handleAddOnAdded(event.type)

@@ -30,7 +30,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Camera
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.transition.fabSharedTransitionModifier
 import es.pedrazamiguez.splittrip.features.expense.R
 
 @Composable
@@ -39,7 +41,8 @@ fun ReceiptImagePicker(
     mimeType: String?,
     onPickerRequested: () -> Unit,
     onRemoveImage: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onViewImage: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -49,7 +52,11 @@ fun ReceiptImagePicker(
             if (mimeType == MIME_PDF) {
                 ReceiptPdfPreview(onRemoveImage = onRemoveImage)
             } else {
-                ReceiptImagePreview(receiptUri = receiptUri, onRemoveImage = onRemoveImage)
+                ReceiptImagePreview(
+                    receiptUri = receiptUri,
+                    onRemoveImage = onRemoveImage,
+                    onViewImage = onViewImage
+                )
             }
         } else {
             ReceiptPickerPlaceholder(onClick = onPickerRequested)
@@ -58,11 +65,18 @@ fun ReceiptImagePicker(
 }
 
 @Composable
-private fun ReceiptImagePreview(receiptUri: String, onRemoveImage: () -> Unit) {
+private fun ReceiptImagePreview(
+    receiptUri: String,
+    onRemoveImage: () -> Unit,
+    onViewImage: (() -> Unit)? = null
+) {
+    val sharedTransitionModifier = fabSharedTransitionModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
+            .then(sharedTransitionModifier)
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
     ) {
@@ -76,6 +90,7 @@ private fun ReceiptImagePreview(receiptUri: String, onRemoveImage: () -> Unit) {
             modifier = Modifier
                 .matchParentSize()
                 .clip(MaterialTheme.shapes.large)
+                .clickable(enabled = onViewImage != null) { onViewImage?.invoke() }
         )
         IconButton(
             onClick = onRemoveImage,

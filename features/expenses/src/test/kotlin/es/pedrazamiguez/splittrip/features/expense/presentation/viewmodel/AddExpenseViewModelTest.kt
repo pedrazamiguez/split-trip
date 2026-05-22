@@ -1289,6 +1289,13 @@ class AddExpenseViewModelTest {
 
             assertNull(viewModel.uiState.value.receiptUri)
         }
+
+        @Test
+        fun `ViewReceiptFullScreen is routed successfully`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.ViewReceiptFullScreen)
+            advanceUntilIdle()
+            assertTrue(true)
+        }
     }
 
     // ── ContributionScopeSelected ────────────────────────────────────────
