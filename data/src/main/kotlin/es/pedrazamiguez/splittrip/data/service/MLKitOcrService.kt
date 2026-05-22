@@ -23,10 +23,12 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /**
- * Interface representing PDF first-page rendering logic, separated for unit-testability.
+ * Interface representing PDF rendering logic (page count and page-specific rendering), separated for unit-testability.
  */
 internal interface PdfPageRenderer {
     fun renderFirstPage(uri: Uri): Bitmap
+    fun getPageCount(uri: Uri): Int
+    fun renderPage(uri: Uri, pageIndex: Int): Bitmap
 }
 
 /**
@@ -34,7 +36,19 @@ internal interface PdfPageRenderer {
  * with OOM-safe downsampling bounded to a maximum page dimension.
  */
 internal class PdfPageRendererImpl(private val context: Context) : PdfPageRenderer {
-    override fun renderFirstPage(uri: Uri): Bitmap {
+    override fun renderFirstPage(uri: Uri): Bitmap = renderPage(uri, 0)
+
+    override fun getPageCount(uri: Uri): Int {
+        val parcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r")
+            ?: throw IOException("Could not open file descriptor for $uri")
+        return parcelFileDescriptor.use { pfd ->
+            PdfRenderer(pfd).use { renderer ->
+                renderer.pageCount
+            }
+        }
+    }
+
+    override fun renderPage(uri: Uri, pageIndex: Int): Bitmap {
         val parcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r")
             ?: throw IOException("Could not open file descriptor for $uri")
         return parcelFileDescriptor.use { pfd ->
@@ -42,7 +56,10 @@ internal class PdfPageRendererImpl(private val context: Context) : PdfPageRender
                 if (renderer.pageCount == 0) {
                     throw IOException("PDF has no pages")
                 }
-                renderer.openPage(0).use { pg ->
+                require(pageIndex in 0 until renderer.pageCount) {
+                    "Page index $pageIndex out of bounds for PDF with ${renderer.pageCount} pages"
+                }
+                renderer.openPage(pageIndex).use { pg ->
                     renderPage(pg)
                 }
             }
@@ -109,7 +126,6 @@ internal class MLKitOcrService(
 ) : ReceiptOcrService {
 
     override suspend fun recogniseText(attachment: ReceiptAttachment): Result<RawReceiptText> {
-        var renderedBitmap: Bitmap? = null
         return try {
             val mimeType = attachment.mimeType.lowercase(java.util.Locale.ROOT)
             require(mimeType in SUPPORTED_MIME_TYPES) {
@@ -117,49 +133,89 @@ internal class MLKitOcrService(
             }
 
             val uri = Uri.parse(attachment.localUri)
+            val fullTextBuilder = StringBuilder()
+            val textBlocks = mutableListOf<TextBlock>()
 
-            // Perform potentially blocking/heavy resource loading on the IO dispatcher
-            val inputImage = withContext(ioDispatcher) {
-                try {
-                    if (mimeType == "application/pdf") {
-                        val bitmap = pdfPageRenderer.renderFirstPage(uri)
-                        renderedBitmap = bitmap
-                        InputImage.fromBitmap(bitmap, 0)
-                    } else {
-                        InputImage.fromFilePath(context, uri)
-                    }
-                } catch (e: CancellationException) {
-                    renderedBitmap?.recycle()
-                    renderedBitmap = null
-                    throw e
-                } catch (e: Exception) {
-                    renderedBitmap?.recycle()
-                    renderedBitmap = null
-                    throw IOException("Failed to load image from URI: ${attachment.localUri}", e)
-                }
+            if (mimeType == "application/pdf") {
+                processPdf(uri, fullTextBuilder, textBlocks)
+            } else {
+                processImage(uri, fullTextBuilder, textBlocks)
             }
 
-            // Perform CPU-heavy ML Kit OCR process and mapping on the Default dispatcher
-            val ocrResult = withContext(defaultDispatcher) {
-                ocrEngine.process(inputImage)
-            }
-            val blocks = ocrResult.blocks.map { blockText ->
-                TextBlock(
-                    text = blockText,
-                    confidence = null
-                )
-            }.toImmutableList()
+            val finalFullText = fullTextBuilder.toString()
+            val finalBlocks = textBlocks.toImmutableList()
 
             // Safe length/blocks count log to prevent exposing raw financial PII data
-            Timber.d("OCR completed: extracted ${blocks.size} blocks (${ocrResult.text.length} chars)")
+            Timber.d("OCR completed: extracted ${finalBlocks.size} blocks (${finalFullText.length} chars)")
 
             Result.success(
                 RawReceiptText(
-                    fullText = ocrResult.text,
-                    blocks = blocks,
+                    fullText = finalFullText,
+                    blocks = finalBlocks,
                     recognisedAt = Instant.now()
                 )
             )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun processPdf(
+        uri: Uri,
+        fullTextBuilder: StringBuilder,
+        textBlocks: MutableList<TextBlock>
+    ) {
+        val pageCount = readPageCount(uri)
+        if (pageCount <= 0) {
+            throw IOException("PDF has no pages")
+        }
+        val pagesToProcess = minOf(pageCount, MAX_PDF_PAGES)
+        for (pageIndex in 0 until pagesToProcess) {
+            processPdfPage(uri, pageIndex, fullTextBuilder, textBlocks)
+        }
+    }
+
+    private suspend fun readPageCount(uri: Uri): Int = withContext(ioDispatcher) {
+        try {
+            pdfPageRenderer.getPageCount(uri)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw IOException("Failed to read PDF page count from URI: $uri", e)
+        }
+    }
+
+    private suspend fun processPdfPage(
+        uri: Uri,
+        pageIndex: Int,
+        fullTextBuilder: StringBuilder,
+        textBlocks: MutableList<TextBlock>
+    ) {
+        var renderedBitmap: Bitmap? = null
+        try {
+            renderedBitmap = withContext(ioDispatcher) {
+                pdfPageRenderer.renderPage(uri, pageIndex)
+            }
+            val inputImage = InputImage.fromBitmap(renderedBitmap, 0)
+            val ocrResult = withContext(defaultDispatcher) {
+                ocrEngine.process(inputImage)
+            }
+            if (ocrResult.text.isNotEmpty()) {
+                if (fullTextBuilder.isNotEmpty()) {
+                    fullTextBuilder.append("\n\n")
+                }
+                fullTextBuilder.append(ocrResult.text)
+            }
+            ocrResult.blocks.forEach { blockText ->
+                textBlocks.add(
+                    TextBlock(
+                        text = blockText,
+                        confidence = null
+                    )
+                )
+            }
         } catch (e: CancellationException) {
             renderedBitmap?.recycle()
             renderedBitmap = null
@@ -167,13 +223,43 @@ internal class MLKitOcrService(
         } catch (e: Exception) {
             renderedBitmap?.recycle()
             renderedBitmap = null
-            Result.failure(e)
+            throw IOException("Failed to load or process PDF page $pageIndex from URI: $uri", e)
         } finally {
             renderedBitmap?.recycle()
         }
     }
 
+    private suspend fun processImage(
+        uri: Uri,
+        fullTextBuilder: StringBuilder,
+        textBlocks: MutableList<TextBlock>
+    ) {
+        val inputImage = withContext(ioDispatcher) {
+            try {
+                InputImage.fromFilePath(context, uri)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                throw IOException("Failed to load image from URI: $uri", e)
+            }
+        }
+        val ocrResult = withContext(defaultDispatcher) {
+            ocrEngine.process(inputImage)
+        }
+        fullTextBuilder.append(ocrResult.text)
+        ocrResult.blocks.forEach { blockText ->
+            textBlocks.add(
+                TextBlock(
+                    text = blockText,
+                    confidence = null
+                )
+            )
+        }
+    }
+
     private companion object {
+        const val MAX_PDF_PAGES = 5
+
         val SUPPORTED_MIME_TYPES = setOf(
             "image/jpeg",
             "image/jpg",

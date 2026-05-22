@@ -268,13 +268,21 @@ private fun AiExtractionTabContent(
             }
         }
 
-        GradientButton(
-            text = stringResource(R.string.developer_services_ai_select_receipt),
-            onClick = onSelectReceiptForAiClick,
-            modifier = Modifier.fillMaxWidth()
-        )
+        AnimatedVisibility(
+            visible = uiState.extractionStatus !is ExtractionStatus.Loading,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column {
+                GradientButton(
+                    text = stringResource(R.string.developer_services_ai_select_receipt),
+                    onClick = onSelectReceiptForAiClick,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+            }
+        }
     }
 }
 

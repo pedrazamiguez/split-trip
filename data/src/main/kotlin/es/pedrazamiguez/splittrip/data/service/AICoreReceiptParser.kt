@@ -62,8 +62,8 @@ internal class AICoreReceiptParser(
     private suspend fun runInference(ocrText: String): String? {
         ensureEngineReady()
 
-        val truncatedText = ocrText.take(MAX_OCR_INPUT_CHARS)
-        Timber.d("AICoreReceiptParser: ocr text: %d chars", truncatedText.length)
+        val truncatedText = smartTruncate(ocrText)
+        Timber.d("AICoreReceiptParser: ocr text: %d chars (raw=%d)", truncatedText.length, ocrText.length)
         Timber.d("AICoreReceiptParser: sending prompt (text length=%d chars)", truncatedText.length)
         val inferenceStartMs = System.currentTimeMillis()
         val response = generativeModel.generateContent(buildPrompt(truncatedText))
@@ -138,9 +138,32 @@ internal class AICoreReceiptParser(
         private const val FIELD_COUNT_THREE = 3
         private const val FIELD_COUNT_TWO = 2
 
-        // Increased from 400: Thai/Asian receipts list items before the total;
-        // truncating too early misses the grand total line at the bottom.
-        private const val MAX_OCR_INPUT_CHARS = 900
+        // Multi-page PDFs (up to 5 pages) easily exceed 900 chars. The grand total on a
+        // flight receipt always appears near the end, so a head-only `.take()` misses it.
+        // Budget raised to 3 000 chars — well within Gemini Nano's 8k-token context window.
+        private const val MAX_OCR_INPUT_CHARS = 3_000
+
+        // Head captures merchant/airline name and booking reference (top of document).
+        // Tail captures fare breakdown and grand total (bottom of document).
+        // Together they stay within MAX_OCR_INPUT_CHARS even for long multi-page receipts.
+        private const val OCR_INPUT_HEAD_CHARS = 600
+        private const val SEPARATOR = "\n…\n"
+        private const val OCR_INPUT_TAIL_CHARS = MAX_OCR_INPUT_CHARS - OCR_INPUT_HEAD_CHARS - SEPARATOR.length
+
+        /**
+         * Returns at most [MAX_OCR_INPUT_CHARS] of [text].
+         *
+         * When truncation is needed we keep the first [OCR_INPUT_HEAD_CHARS] (merchant/airline
+         * name, booking ref) and the last [OCR_INPUT_TAIL_CHARS] (fare breakdown, grand total)
+         * rather than blindly taking the head. This ensures the grand total — which appears at
+         * the bottom of multi-page flight receipts — is always present in the prompt.
+         */
+        internal fun smartTruncate(text: String): String {
+            if (text.length <= MAX_OCR_INPUT_CHARS) return text
+            val head = text.take(OCR_INPUT_HEAD_CHARS)
+            val tail = text.takeLast(OCR_INPUT_TAIL_CHARS)
+            return "$head$SEPARATOR$tail"
+        }
 
         private fun emptyAiCoreReceipt() = ExtractedReceipt(
             amount = null,
