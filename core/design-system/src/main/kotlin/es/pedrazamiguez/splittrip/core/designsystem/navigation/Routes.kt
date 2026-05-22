@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.core.designsystem.navigation
 
+import android.net.Uri
+
 object Routes {
     const val LOGIN = "login"
     const val ONBOARDING = "onboarding"
@@ -34,7 +36,7 @@ object Routes {
     }
 
     fun receiptViewerRoute(receiptUri: String): String {
-        val encodedUri = java.net.URLEncoder.encode(receiptUri, "UTF-8")
+        val encodedUri = Uri.encode(receiptUri)
         return "receipt_viewer/$encodedUri"
     }
 }

@@ -43,6 +43,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 
 private const val MIN_ZOOM_SCALE = 1f
 private const val MAX_ZOOM_SCALE = 5f
+private const val ZOOM_EPSILON = 0.01f
 
 @Composable
 fun ReceiptViewerScreen(
@@ -106,11 +107,13 @@ private fun ZoomableImageContainer(
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(MIN_ZOOM_SCALE, MAX_ZOOM_SCALE)
-                        if (scale > MIN_ZOOM_SCALE) {
-                            offset += pan
-                        } else {
+                        val targetScale = (scale * zoom).coerceIn(MIN_ZOOM_SCALE, MAX_ZOOM_SCALE)
+                        if (targetScale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
+                            scale = MIN_ZOOM_SCALE
                             offset = Offset.Zero
+                        } else {
+                            scale = targetScale
+                            offset += pan
                         }
                     }
                 }
@@ -124,7 +127,7 @@ private fun ZoomableImageContainer(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {
-                        if (scale == MIN_ZOOM_SCALE) {
+                        if (scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
                             onClose()
                         }
                     }

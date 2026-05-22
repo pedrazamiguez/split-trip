@@ -1291,10 +1291,17 @@ class AddExpenseViewModelTest {
         }
 
         @Test
-        fun `ViewReceiptFullScreen is routed successfully`() = runTest {
+        fun `ViewReceiptFullScreen is a viewModel no-op and does not change state or emit actions`() = runTest {
+            val beforeState = viewModel.uiState.value
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            val job = launch { viewModel.actions.collect { emittedActions.add(it) } }
+
             viewModel.onEvent(AddExpenseUiEvent.ViewReceiptFullScreen)
             advanceUntilIdle()
-            assertTrue(true)
+            job.cancel()
+
+            assertEquals(beforeState, viewModel.uiState.value)
+            assertTrue(emittedActions.isEmpty())
         }
     }
 
