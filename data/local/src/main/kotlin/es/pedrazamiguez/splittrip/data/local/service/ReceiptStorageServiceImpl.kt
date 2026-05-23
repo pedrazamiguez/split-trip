@@ -210,7 +210,11 @@ internal class ReceiptStorageServiceImpl(
         FileOutputStream(destFile).use { output ->
             @Suppress("DEPRECATION") // WEBP_LOSSLESS added in API 30; WEBP used on < 30 (see KDoc)
             val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                Bitmap.CompressFormat.WEBP_LOSSLESS
+                try {
+                    Bitmap.CompressFormat.valueOf("WEBP_LOSSLESS")
+                } catch (_: Throwable) {
+                    Bitmap.CompressFormat.WEBP
+                }
             } else {
                 Bitmap.CompressFormat.WEBP
             }
