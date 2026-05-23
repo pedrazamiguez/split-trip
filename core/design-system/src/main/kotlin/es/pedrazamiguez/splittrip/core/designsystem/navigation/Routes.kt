@@ -38,6 +38,6 @@ object Routes {
     fun receiptViewerRoute(receiptUri: String, mimeType: String? = null): String {
         val encodedUri = Uri.encode(receiptUri)
         val base = "receipt_viewer/$encodedUri"
-        return if (mimeType != null) "$base?mimeType=$mimeType" else base
+        return if (mimeType != null) "$base?mimeType=${Uri.encode(mimeType)}" else base
     }
 }

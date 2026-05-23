@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
+import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -479,7 +480,7 @@ class ExpenseDetailViewModelTest {
         }
 
         @Test
-        fun `does not retry download when previous download failed`() = runTest(testDispatcher) {
+        fun `does not retry download when previous download failed with terminal error`() = runTest(testDispatcher) {
             // Given
             val pdfAttachment = ReceiptAttachment(
                 localUri = "",
@@ -488,9 +489,10 @@ class ExpenseDetailViewModelTest {
                 remoteUrl = "https://example.com/receipt.pdf"
             )
             val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
-            coEvery { downloadReceiptUseCase(testExpenseId, any()) } throws RuntimeException("Network Error")
+            val exception = TerminalDownloadException(404, "Not Found")
+            coEvery { downloadReceiptUseCase(testExpenseId, any()) } returns Result.failure(exception)
 
-            val flow = kotlinx.coroutines.flow.MutableSharedFlow<Expense?>()
+            val flow = kotlinx.coroutines.flow.MutableSharedFlow<Expense?>(replay = 1)
             every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
@@ -504,8 +506,75 @@ class ExpenseDetailViewModelTest {
             flow.emit(expenseWithPdf)
             advanceUntilIdle()
 
-            // Then - download should only be triggered once
+            // Then - download should only be triggered once (blacklisted)
             coVerify(exactly = 1) { downloadReceiptUseCase(testExpenseId, "https://example.com/receipt.pdf") }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `retries download when previous download failed with recoverable error`() = runTest(testDispatcher) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.pdf"
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            // Transient 503 Service Unavailable or general exception is recoverable
+            val exception = TerminalDownloadException(503, "Service Unavailable")
+            coEvery { downloadReceiptUseCase(testExpenseId, any()) } returns Result.failure(exception)
+
+            val flow = kotlinx.coroutines.flow.MutableSharedFlow<Expense?>(replay = 1)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setExpenseId(testExpenseId)
+
+            // First emission
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Second emission (re-trigger)
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Then - download should be retried (not blacklisted)
+            coVerify(exactly = 2) { downloadReceiptUseCase(testExpenseId, "https://example.com/receipt.pdf") }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `retries download when RetryReceiptDownload event is received`() = runTest(testDispatcher) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.pdf"
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            val exception = TerminalDownloadException(404, "Not Found")
+            coEvery { downloadReceiptUseCase(testExpenseId, any()) } returns Result.failure(exception)
+
+            val flow = kotlinx.coroutines.flow.MutableSharedFlow<Expense?>(replay = 1)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setExpenseId(testExpenseId)
+
+            // First emission triggers first download and blacklists it
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Trigger retry event
+            viewModel.onEvent(ExpenseDetailUiEvent.RetryReceiptDownload)
+            advanceUntilIdle()
+
+            // Then - download should be triggered twice
+            coVerify(exactly = 2) { downloadReceiptUseCase(testExpenseId, "https://example.com/receipt.pdf") }
 
             collectJob.cancel()
         }

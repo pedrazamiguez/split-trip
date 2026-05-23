@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
+import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import java.io.File
@@ -92,7 +93,10 @@ internal class ReceiptStorageServiceImpl(
                 connection.connect()
 
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                    error("Failed to download file: HTTP ${connection.responseCode}")
+                    throw TerminalDownloadException(
+                        responseCode = connection.responseCode,
+                        message = "Failed to download file: HTTP ${connection.responseCode}"
+                    )
                 }
 
                 connection.inputStream.use { input ->

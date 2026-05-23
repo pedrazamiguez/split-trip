@@ -276,6 +276,7 @@
     <string name="expense_detail_exchange_rate_full">1 %1$s = %2$s %3$s</string>
     <string name="expense_detail_receipt_thumbnail_cd">Receipt photo</string>
     <string name="expense_detail_receipt_pdf_label">PDF attached</string>
+    <string name="expense_detail_receipt_download_failed">Failed to download remote receipt</string>
     <string name="expense_detail_addon_mode_included">Included</string>
     <string name="expense_detail_addon_mode_on_top">On top</string>
 

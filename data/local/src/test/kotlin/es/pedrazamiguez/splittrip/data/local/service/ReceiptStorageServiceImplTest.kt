@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
+import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -89,7 +90,8 @@ class ReceiptStorageServiceImplTest {
         try {
             service.downloadAndStore(remoteUrl)
             org.junit.Assert.fail("Expected an exception to be thrown")
-        } catch (e: Exception) {
+        } catch (e: TerminalDownloadException) {
+            assertEquals(404, e.responseCode)
             assertTrue(e.message?.contains("Failed to download file: HTTP 404") == true)
         }
     }

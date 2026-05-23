@@ -277,6 +277,7 @@
     <string name="expense_detail_exchange_rate_full">1 %1$s = %2$s %3$s</string>
     <string name="expense_detail_receipt_thumbnail_cd">Foto del recibo</string>
     <string name="expense_detail_receipt_pdf_label">PDF adjunto</string>
+    <string name="expense_detail_receipt_download_failed">No se pudo descargar el recibo remoto</string>
     <string name="expense_detail_addon_mode_included">Incluido</string>
     <string name="expense_detail_addon_mode_on_top">Sumado</string>
 

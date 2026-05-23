@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -188,6 +189,7 @@ class ExpenseDetailViewModel(
     fun onEvent(event: ExpenseDetailUiEvent) {
         when (event) {
             ExpenseDetailUiEvent.DeleteConfirmed -> handleDelete()
+            ExpenseDetailUiEvent.RetryReceiptDownload -> handleRetryReceiptDownload()
         }
     }
 
@@ -212,14 +214,54 @@ class ExpenseDetailViewModel(
         }
     }
 
+    private fun handleRetryReceiptDownload() {
+        val expenseId = _expenseId.value
+        if (expenseId.isBlank()) return
+        failedDownloads.remove(expenseId)
+        viewModelScope.launch {
+            try {
+                val expense = getExpenseByIdFlowUseCase(expenseId).first()
+                if (expense != null) {
+                    val attachment = expense.receiptAttachment
+                    if (shouldDownloadPdf(attachment)) {
+                        triggerReceiptDownload(expense.id, attachment?.remoteUrl.orEmpty())
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to retry receipt download for expense $expenseId")
+            }
+        }
+    }
+
     private fun triggerReceiptDownload(expenseId: String, remoteUrl: String) {
-        if (downloadJobs.containsKey(expenseId)) return
+        if (downloadJobs.containsKey(expenseId)) {
+            return
+        }
         downloadJobs[expenseId] = viewModelScope.launch {
             try {
-                downloadReceiptUseCase(expenseId, remoteUrl)
+                val result = downloadReceiptUseCase(expenseId, remoteUrl)
+                result.onFailure { e ->
+                    val isTerminal = when (e) {
+                        is TerminalDownloadException -> e.responseCode in 400..499
+                        else -> false
+                    }
+                    if (isTerminal) {
+                        failedDownloads.add(expenseId)
+                    }
+                    _actions.send(
+                        ExpenseDetailUiAction.ShowError(
+                            UiText.StringResource(R.string.expense_detail_receipt_download_failed)
+                        )
+                    )
+                }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to download remote PDF receipt for expense $expenseId")
+                Timber.e(e, "Failed to download receipt")
                 failedDownloads.add(expenseId)
+                _actions.send(
+                    ExpenseDetailUiAction.ShowError(
+                        UiText.StringResource(R.string.expense_detail_receipt_download_failed)
+                    )
+                )
             } finally {
                 downloadJobs.remove(expenseId)
             }
