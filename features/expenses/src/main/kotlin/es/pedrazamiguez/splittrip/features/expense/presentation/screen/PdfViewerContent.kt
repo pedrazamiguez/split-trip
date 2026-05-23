@@ -14,8 +14,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +44,7 @@ import dev.chrisbanes.haze.hazeSource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
@@ -134,6 +138,10 @@ private fun PdfPagesListView(
 ) {
     var scale by remember { mutableFloatStateOf(MIN_ZOOM_SCALE) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    val bottomPadding = LocalBottomPadding.current
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val topPadding = 64.dp + statusBarHeight + MaterialTheme.spacing.Default
+    val finalBottomPadding = bottomPadding + MaterialTheme.spacing.Default
 
     Box(
         modifier = modifier
@@ -170,8 +178,12 @@ private fun PdfPagesListView(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            // vertical = 80.dp leaves room for the floating top bar / close button
-            contentPadding = PaddingValues(vertical = 80.dp, horizontal = MaterialTheme.spacing.Default),
+            contentPadding = PaddingValues(
+                top = topPadding,
+                bottom = finalBottomPadding,
+                start = MaterialTheme.spacing.Default,
+                end = MaterialTheme.spacing.Default
+            ),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
             userScrollEnabled = scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON
         ) {
