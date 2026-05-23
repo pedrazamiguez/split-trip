@@ -12,7 +12,9 @@ import java.util.Locale
  * disk I/O and the installed package set does not change within a process lifetime.
  */
 internal class AICoreCapabilityProvider(
-    private val context: Context
+    private val context: Context,
+    private val sdkInt: Int = Build.VERSION.SDK_INT,
+    private val manufacturer: String = Build.MANUFACTURER
 ) {
     @Volatile private var cachedIsSupported: Boolean? = null
 
@@ -21,9 +23,9 @@ internal class AICoreCapabilityProvider(
     }
 
     private fun computeIsSupported(): Boolean {
-        val sdkSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-        val manufacturer = Build.MANUFACTURER.lowercase(Locale.ROOT)
-        val manufacturerSupported = manufacturer.contains("google") || manufacturer.contains("samsung")
+        val sdkSupported = sdkInt >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+        val manufacturerLower = manufacturer.lowercase(Locale.ROOT)
+        val manufacturerSupported = manufacturerLower.contains("google") || manufacturerLower.contains("samsung")
         if (!sdkSupported || !manufacturerSupported) return false
         return try {
             @Suppress("DEPRECATION")

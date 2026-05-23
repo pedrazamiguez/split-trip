@@ -277,6 +277,7 @@
     <string name="expense_detail_exchange_rate_full">1 %1$s = %2$s %3$s</string>
     <string name="expense_detail_receipt_thumbnail_cd">Foto del recibo</string>
     <string name="expense_detail_receipt_pdf_label">PDF adjunto</string>
+    <string name="expense_detail_receipt_download_failed">No se pudo descargar el recibo remoto</string>
     <string name="expense_detail_addon_mode_included">Incluido</string>
     <string name="expense_detail_addon_mode_on_top">Sumado</string>
 
@@ -299,4 +300,6 @@
     <string name="add_expense_subunit_cash_split_warning">Estás usando %1$s.\nAsegúrate de que es tu intención compartir este gasto con los demás.</string>
     <string name="receipt_viewer_image_cd">Imagen del recibo</string>
     <string name="receipt_viewer_close_cd">Cerrar visor</string>
+    <string name="receipt_viewer_pdf_error">Error al cargar el recibo PDF</string>
+    <string name="receipt_viewer_pdf_page_cd">Página PDF %1$d</string>
 </resources>

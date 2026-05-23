@@ -8,12 +8,14 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ReceiptVi
 @Composable
 fun ReceiptViewerFeature(
     receiptUri: String,
+    mimeType: String?,
     modifier: Modifier = Modifier
 ) {
     val navController = LocalTabNavController.current
 
     ReceiptViewerScreen(
         receiptUri = receiptUri,
+        mimeType = mimeType,
         onClose = { navController.popBackStack() },
         modifier = modifier
     )

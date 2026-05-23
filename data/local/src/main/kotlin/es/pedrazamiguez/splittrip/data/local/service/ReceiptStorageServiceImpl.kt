@@ -4,15 +4,24 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
+import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import java.io.File
 import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+
+internal fun interface HttpConnectionFactory {
+    fun openConnection(url: String): HttpURLConnection
+}
 
 /**
  * Copies a user-selected file from a content:// or file:// URI into the app's
@@ -29,7 +38,10 @@ import timber.log.Timber
  * transient content:// URI granted by the OS picker.
  */
 internal class ReceiptStorageServiceImpl(
-    private val context: Context
+    private val context: Context,
+    private val connectionFactory: HttpConnectionFactory = HttpConnectionFactory { url ->
+        URL(url).openConnection() as HttpURLConnection
+    }
 ) : ReceiptStorageService {
 
     override suspend fun copyAndCompress(sourceUri: String): ReceiptAttachment =
@@ -65,18 +77,77 @@ internal class ReceiptStorageServiceImpl(
             }
         }
 
+    override suspend fun downloadAndStore(remoteUrl: String): ReceiptAttachment =
+        withContext(Dispatchers.IO) {
+            val uri = Uri.parse(remoteUrl)
+            val receiptsDir = File(context.filesDir, RECEIPTS_DIR).also { it.mkdirs() }
+            val uniqueId = UUID.randomUUID().toString()
+            val tempFile = File(context.cacheDir, "download_receipt_$uniqueId").also { it.parentFile?.mkdirs() }
+
+            var connection: HttpURLConnection? = null
+            try {
+                connection = connectionFactory.openConnection(remoteUrl)
+                connection.connectTimeout = CONNECTION_TIMEOUT_MS
+                connection.readTimeout = CONNECTION_TIMEOUT_MS
+                connection.requestMethod = "GET"
+                connection.connect()
+
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                    throw TerminalDownloadException(
+                        responseCode = connection.responseCode,
+                        message = "Failed to download file: HTTP ${connection.responseCode}"
+                    )
+                }
+
+                connection.inputStream.use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                var contentType = connection.contentType ?: ""
+                if (contentType.contains(";")) {
+                    contentType = contentType.substringBefore(";")
+                }
+
+                val finalMime = if (contentType.isNotBlank() && contentType != "application/octet-stream") {
+                    contentType
+                } else {
+                    resolveMimeType(uri, remoteUrl)
+                }
+
+                val (destFile, actualMime) = if (finalMime.startsWith("image/")) {
+                    compressImage(tempFile, receiptsDir, uniqueId)
+                } else {
+                    copyVerbatim(tempFile, receiptsDir, uniqueId, finalMime)
+                }
+
+                ReceiptAttachment(
+                    localUri = destFile.toUri().toString(),
+                    mimeType = actualMime,
+                    capturedAtMillis = System.currentTimeMillis(),
+                    remoteUrl = remoteUrl
+                )
+            } finally {
+                connection?.disconnect()
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
+            }
+        }
+
     private fun resolveMimeType(uri: Uri, sourceUri: String): String {
         val resolver = context.contentResolver
         var mimeType = resolver.getType(uri)
         if (mimeType.isNullOrBlank() || mimeType == FALLBACK_MIME) {
-            val fileExtension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(sourceUri)
+            val fileExtension = MimeTypeMap.getFileExtensionFromUrl(sourceUri)
                 .ifBlank {
                     val path = uri.path.orEmpty()
                     val dotIndex = path.lastIndexOf('.')
                     if (dotIndex != -1) path.substring(dotIndex + 1) else ""
                 }
             if (fileExtension.isNotEmpty()) {
-                val inferredMime = android.webkit.MimeTypeMap.getSingleton()
+                val inferredMime = MimeTypeMap.getSingleton()
                     .getMimeTypeFromExtension(fileExtension.lowercase())
                 if (!inferredMime.isNullOrBlank()) {
                     mimeType = inferredMime
@@ -142,8 +213,12 @@ internal class ReceiptStorageServiceImpl(
         val destFile = File(dir, "$uniqueId$WEBP_EXT")
         FileOutputStream(destFile).use { output ->
             @Suppress("DEPRECATION") // WEBP_LOSSLESS added in API 30; WEBP used on < 30 (see KDoc)
-            val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                Bitmap.CompressFormat.WEBP_LOSSLESS
+            val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                try {
+                    Bitmap.CompressFormat.valueOf("WEBP_LOSSLESS")
+                } catch (_: Throwable) {
+                    Bitmap.CompressFormat.WEBP
+                }
             } else {
                 Bitmap.CompressFormat.WEBP
             }
@@ -183,6 +258,7 @@ internal class ReceiptStorageServiceImpl(
 
     private companion object {
         const val RECEIPTS_DIR = "receipts"
+        const val CONNECTION_TIMEOUT_MS = 10000
         const val WEBP_EXT = ".webp"
         const val WEBP_MIME = "image/webp"
         const val FALLBACK_MIME = "application/octet-stream"

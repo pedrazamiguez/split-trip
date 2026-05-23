@@ -35,9 +35,17 @@ fun NavGraphBuilder.expensesGraph() {
 
     sharedComposable(
         route = Routes.RECEIPT_VIEWER,
-        arguments = listOf(navArgument("receiptUri") { type = NavType.StringType })
+        arguments = listOf(
+            navArgument("receiptUri") { type = NavType.StringType },
+            navArgument("mimeType") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
     ) { backStackEntry ->
         val receiptUri = backStackEntry.arguments?.getString("receiptUri") ?: return@sharedComposable
-        ReceiptViewerFeature(receiptUri = receiptUri)
+        val mimeType = backStackEntry.arguments?.getString("mimeType")
+        ReceiptViewerFeature(receiptUri = receiptUri, mimeType = mimeType)
     }
 }

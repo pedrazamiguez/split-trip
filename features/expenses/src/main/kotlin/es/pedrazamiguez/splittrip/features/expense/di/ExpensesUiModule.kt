@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetAvailableWithdrawalPoolsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
@@ -293,6 +294,7 @@ val expensesUiModule = module {
             getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>(),
             getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),
             deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
+            downloadReceiptUseCase = get<DownloadReceiptUseCase>(),
             authenticationService = get<AuthenticationService>(),
             expenseDetailUiMapper = get<ExpenseDetailUiMapper>()
         )

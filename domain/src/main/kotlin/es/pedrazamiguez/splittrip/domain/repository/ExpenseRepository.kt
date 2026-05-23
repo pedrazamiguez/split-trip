@@ -54,4 +54,10 @@ interface ExpenseRepository {
      * (e.g. after a cross-device download).
      */
     suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String)
+
+    /**
+     * Writes the local URI for an expense's receipt to local Room so that subsequent
+     * reads can load the file from on-device storage.
+     */
+    suspend fun updateReceiptLocalUri(expenseId: String, localUri: String)
 }

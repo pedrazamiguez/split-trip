@@ -74,6 +74,9 @@ interface ExpenseDao {
     @Query("UPDATE expenses SET receiptRemoteUrl = :remoteUrl WHERE id = :expenseId")
     suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String)
 
+    @Query("UPDATE expenses SET receiptLocalUri = :localUri WHERE id = :expenseId")
+    suspend fun updateReceiptLocalUri(expenseId: String, localUri: String)
+
     /**
      * Reconciles local expenses for a group with the authoritative cloud snapshot.
      *

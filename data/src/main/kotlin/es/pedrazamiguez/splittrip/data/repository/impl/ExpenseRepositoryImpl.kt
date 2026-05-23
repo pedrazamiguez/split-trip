@@ -273,6 +273,10 @@ class ExpenseRepositoryImpl(
         localExpenseDataSource.updateReceiptRemoteUrl(expenseId, remoteUrl)
     }
 
+    override suspend fun updateReceiptLocalUri(expenseId: String, localUri: String) {
+        localExpenseDataSource.updateReceiptLocalUri(expenseId, localUri)
+    }
+
     /**
      * Uploads the receipt to Firebase Cloud Storage if the expense has an attachment with a
      * local path but no remote URL yet.  Called inside the syncScope after the Firestore write

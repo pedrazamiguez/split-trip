@@ -53,7 +53,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.transition.receiptSharedElem
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -214,50 +213,60 @@ private fun isPdf(uriString: String, mimeType: String?): Boolean {
     return false
 }
 
-private fun renderPdfFirstPage(file: File): Bitmap? {
-    if (!file.exists() || file.length() == 0L) return null
+private fun renderPdfFirstPage(context: android.content.Context, uri: Uri): Bitmap? {
     var pfd: ParcelFileDescriptor? = null
     var renderer: PdfRenderer? = null
     var page: PdfRenderer.Page? = null
     try {
-        pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        renderer = PdfRenderer(pfd)
-        if (renderer.pageCount > 0) {
-            page = renderer.openPage(0)
-            val aspectRatio = page.width.toFloat() / page.height.toFloat()
-            val targetWidth = (aspectRatio * 480).toInt()
-            val destBitmap = Bitmap.createBitmap(
-                targetWidth.coerceAtLeast(1),
-                480,
-                Bitmap.Config.ARGB_8888
-            )
-            val canvas = android.graphics.Canvas(destBitmap)
-            canvas.drawColor(android.graphics.Color.WHITE)
-            page.render(destBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            return destBitmap
+        pfd = context.contentResolver.openFileDescriptor(uri, "r")
+        if (pfd != null) {
+            renderer = PdfRenderer(pfd)
+            if (renderer.pageCount > 0) {
+                page = renderer.openPage(0)
+                val aspectRatio = page.width.toFloat() / page.height.toFloat()
+                val targetWidth = (aspectRatio * 480).toInt()
+                val destBitmap = Bitmap.createBitmap(
+                    targetWidth.coerceAtLeast(1),
+                    480,
+                    Bitmap.Config.ARGB_8888
+                )
+                val canvas = android.graphics.Canvas(destBitmap)
+                canvas.drawColor(android.graphics.Color.WHITE)
+                page.render(destBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                return destBitmap
+            }
         }
+    } catch (e: Exception) {
+        Timber.e(e, "Failed to render PDF page for $uri")
     } finally {
-        page?.close()
-        renderer?.close()
-        pfd?.close()
+        try {
+            page?.close()
+        } catch (e: Exception) {
+            Timber.e(e)
+        }
+        try {
+            renderer?.close()
+        } catch (e: Exception) {
+            Timber.e(e)
+        }
+        try {
+            pfd?.close()
+        } catch (e: Exception) {
+            Timber.e(e)
+        }
     }
     return null
 }
 
 @Composable
 private fun rememberPdfThumbnail(pdfUriString: String): Bitmap? {
+    val context = LocalContext.current
     var bitmap by remember(pdfUriString) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(pdfUriString) {
         val rendered = withContext(Dispatchers.IO) {
             try {
                 val uri = Uri.parse(pdfUriString)
-                val isLocalFile = uri.scheme == "file" || uri.scheme.isNullOrEmpty()
-                if (isLocalFile) {
-                    val filePath = if (uri.scheme == "file") uri.path.orEmpty() else pdfUriString
-                    renderPdfFirstPage(File(filePath))
-                } else {
-                    null
-                }
+                renderPdfFirstPage(context, uri)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to render PDF thumbnail for $pdfUriString")
                 null
@@ -283,7 +292,7 @@ private fun ReceiptThumbnail(
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .then(
-                if (onClick != null && !isPdf) {
+                if (onClick != null) {
                     Modifier.clickable(onClick = onClick)
                 } else {
                     Modifier
