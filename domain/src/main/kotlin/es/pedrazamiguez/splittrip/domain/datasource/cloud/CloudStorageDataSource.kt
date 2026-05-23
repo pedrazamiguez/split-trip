@@ -21,4 +21,11 @@ interface CloudStorageDataSource {
      * @return A publicly accessible HTTPS download URL.
      */
     suspend fun uploadReceipt(expenseId: String, localPath: String, mimeType: String): String
+
+    /**
+     * Deletes all remote receipt objects associated with the given [expenseId].
+     *
+     * @param expenseId Unique expense identifier.
+     */
+    suspend fun deleteReceipt(expenseId: String)
 }

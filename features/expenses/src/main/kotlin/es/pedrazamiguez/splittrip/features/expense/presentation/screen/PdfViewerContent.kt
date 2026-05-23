@@ -55,7 +55,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -86,7 +86,11 @@ private class PdfResourceHolder(
         } catch (e: Exception) {
             Timber.e(e, "Failed to close ParcelFileDescriptor")
         }
-        tempFile?.delete()
+        tempFile?.let { file ->
+            if (file.exists() && !file.delete()) {
+                Timber.w("Failed to delete temp PDF file: ${file.absolutePath}")
+            }
+        }
     }
 }
 
@@ -160,7 +164,11 @@ private fun initializePdfResources(context: Context, pdfUriString: String): PdfR
     } catch (e: Exception) {
         localRenderer?.close()
         localPfd?.close()
-        localTempFile?.delete()
+        localTempFile?.let { file ->
+            if (file.exists() && !file.delete()) {
+                Timber.w("Failed to delete temp PDF file: ${file.absolutePath}")
+            }
+        }
         throw e
     }
 }
@@ -369,7 +377,7 @@ private fun renderPageToBitmap(renderer: PdfRenderer, pageIndex: Int): Bitmap {
 }
 
 private fun downloadUrlToFile(remoteUrl: String, tempFile: File) {
-    val url = URL(remoteUrl)
+    val url = URI(remoteUrl).toURL()
     val connection = url.openConnection() as HttpURLConnection
     try {
         connection.connectTimeout = HTTP_TIMEOUT_MS

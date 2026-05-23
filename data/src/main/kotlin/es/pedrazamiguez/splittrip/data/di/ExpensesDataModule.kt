@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -26,6 +27,7 @@ val expensesDataModule = module {
             localExpenseDataSource = get<LocalExpenseDataSource>(),
             authenticationService = get<AuthenticationService>(),
             cloudStorageDataSource = get<CloudStorageDataSource>(),
+            receiptStorageService = get<ReceiptStorageService>(),
             ioDispatcher = Dispatchers.IO
         )
     }

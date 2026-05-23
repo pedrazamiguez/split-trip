@@ -43,7 +43,7 @@ class ExpenseDetailScreenUiProviderImpl(
                 onBack = { navController.popBackStack() },
                 actions = {
                     // Edit — placeholder until the edit screen is implemented
-                    IconButton(onClick = { /* TODO: navigate to edit screen */ }) {
+                    IconButton(onClick = { /* Navigate to edit screen once implemented */ }) {
                         Icon(
                             imageVector = TablerIcons.Outline.Edit,
                             contentDescription = stringResource(R.string.action_edit_expense)

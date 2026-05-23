@@ -89,4 +89,32 @@ class CloudStorageDataSourceImplTest {
         assertEquals("https://firebase.storage/receipt.jpg", url)
         verify(exactly = 1) { rootRef.child("receipts/expense-456/receipt.jpg") }
     }
+
+    @Test
+    fun `deleteReceipt lists and deletes all files under prefix`() = runTest {
+        val mockListResult = mockk<com.google.firebase.storage.ListResult>()
+        val mockListTask = mockk<Task<com.google.firebase.storage.ListResult>>()
+
+        val mockItem1 = mockk<StorageReference>()
+        val mockItem2 = mockk<StorageReference>()
+        every { mockItem1.path } returns "receipts/expense-123/receipt.jpg"
+        every { mockItem2.path } returns "receipts/expense-123/thumbnail.jpg"
+
+        val mockDeleteTask1 = mockk<Task<Void>>()
+        val mockDeleteTask2 = mockk<Task<Void>>()
+        every { mockItem1.delete() } returns mockDeleteTask1
+        every { mockItem2.delete() } returns mockDeleteTask2
+        coEvery { mockDeleteTask1.await() } returns mockk()
+        coEvery { mockDeleteTask2.await() } returns mockk()
+
+        every { childRef.listAll() } returns mockListTask
+        coEvery { mockListTask.await() } returns mockListResult
+        every { mockListResult.items } returns listOf(mockItem1, mockItem2)
+
+        dataSource.deleteReceipt("expense-123")
+
+        verify(exactly = 1) { rootRef.child("receipts/expense-123") }
+        verify(exactly = 1) { mockItem1.delete() }
+        verify(exactly = 1) { mockItem2.delete() }
+    }
 }
