@@ -136,6 +136,31 @@ internal class ReceiptStorageServiceImpl(
             }
         }
 
+    override suspend fun deleteLocalFile(localUri: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val uri = Uri.parse(localUri)
+                val path = uri.path
+                if (path != null) {
+                    val file = File(path)
+                    if (file.exists()) {
+                        if (file.delete()) {
+                            Timber.d("Successfully deleted local receipt file: $path")
+                        } else {
+                            Timber.w("Failed to delete local receipt file: $path")
+                        }
+                    } else {
+                        Timber.d("Local receipt file does not exist: $path")
+                    }
+                } else {
+                    Timber.w("Could not extract path from localUri: $localUri")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error deleting local receipt file for URI: $localUri")
+            }
+        }
+    }
+
     private fun resolveMimeType(uri: Uri, sourceUri: String): String {
         val resolver = context.contentResolver
         var mimeType = resolver.getType(uri)

@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -39,6 +40,7 @@ class ExpenseRepositoryImplCashConflictTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var cloudStorageDataSource:
         es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
+    private lateinit var receiptStorageService: ReceiptStorageService
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var repository: ExpenseRepositoryImpl
 
@@ -69,12 +71,14 @@ class ExpenseRepositoryImplCashConflictTest {
         localExpenseDataSource = mockk(relaxed = true)
         authenticationService = mockk()
         cloudStorageDataSource = mockk(relaxed = true)
+        receiptStorageService = mockk(relaxed = true)
         every { authenticationService.currentUserId() } returns testUserId
         repository = ExpenseRepositoryImpl(
             cloudExpenseDataSource,
             localExpenseDataSource,
             authenticationService,
             cloudStorageDataSource,
+            receiptStorageService,
             testDispatcher
         )
     }

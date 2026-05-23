@@ -44,6 +44,20 @@ internal class CloudStorageDataSourceImpl(
         return downloadUrl
     }
 
+    override suspend fun deleteReceipt(expenseId: String) {
+        val folderRef = storage.reference.child("$RECEIPTS_PREFIX/$expenseId")
+        try {
+            val listResult = folderRef.listAll().await()
+            listResult.items.forEach { item ->
+                item.delete().await()
+                Timber.d("Deleted remote receipt file: ${item.path}")
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to delete remote receipt files for expense $expenseId")
+            throw e
+        }
+    }
+
     private companion object {
         const val RECEIPTS_PREFIX = "receipts"
     }

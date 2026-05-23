@@ -30,4 +30,11 @@ interface ReceiptStorageService {
      * @return A [ReceiptAttachment] with the stable `file://` local URI.
      */
     suspend fun downloadAndStore(remoteUrl: String): ReceiptAttachment
+
+    /**
+     * Deletes the local receipt file at the specified [localUri].
+     *
+     * @param localUri Stable local URI (file://) of the receipt.
+     */
+    suspend fun deleteLocalFile(localUri: String)
 }

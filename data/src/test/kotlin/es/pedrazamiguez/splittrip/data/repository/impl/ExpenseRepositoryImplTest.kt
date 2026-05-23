@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -41,6 +42,7 @@ class ExpenseRepositoryImplTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var cloudStorageDataSource:
         es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
+    private lateinit var receiptStorageService: ReceiptStorageService
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var repository: ExpenseRepositoryImpl
 
@@ -82,12 +84,14 @@ class ExpenseRepositoryImplTest {
         localExpenseDataSource = mockk(relaxed = true)
         authenticationService = mockk()
         cloudStorageDataSource = mockk(relaxed = true)
+        receiptStorageService = mockk(relaxed = true)
         every { authenticationService.currentUserId() } returns testUserId
         repository = ExpenseRepositoryImpl(
             cloudExpenseDataSource,
             localExpenseDataSource,
             authenticationService,
             cloudStorageDataSource,
+            receiptStorageService,
             testDispatcher
         )
     }
@@ -624,6 +628,7 @@ class ExpenseRepositoryImplTest {
                 localExpenseDataSource,
                 authenticationService,
                 cloudStorageDataSource,
+                receiptStorageService,
                 testDispatcher
             )
 
@@ -692,6 +697,104 @@ class ExpenseRepositoryImplTest {
             coVerify(exactly = 1) {
                 cloudExpenseDataSource.deleteExpense(testGroupId, expenseId)
             }
+        }
+
+        @Test
+        fun `deleteExpense with receipt deletes local file and cloud storage receipt`() = runTest(testDispatcher) {
+            val expenseId = "expense-with-receipt"
+            val expense = testExpense.copy(
+                id = expenseId,
+                receiptAttachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                    localUri = "file:///path/to/local/file.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 123456789L,
+                    remoteUrl = "https://remote.url/file.jpg"
+                )
+            )
+            coEvery { localExpenseDataSource.getExpenseById(expenseId) } returns expense
+            coEvery { localExpenseDataSource.deleteExpense(expenseId) } just Runs
+            coEvery { receiptStorageService.deleteLocalFile(any()) } just Runs
+            coEvery { cloudExpenseDataSource.deleteExpense(any(), any()) } just Runs
+            coEvery { cloudStorageDataSource.deleteReceipt(any()) } just Runs
+
+            repository.deleteExpense(testGroupId, expenseId)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { receiptStorageService.deleteLocalFile("file:///path/to/local/file.jpg") }
+            coVerify(exactly = 1) { cloudStorageDataSource.deleteReceipt(expenseId) }
+            coVerify(exactly = 1) { cloudExpenseDataSource.deleteExpense(testGroupId, expenseId) }
+        }
+
+        @Test
+        fun `deleteExpense with no receipt completes without deleting files`() = runTest(testDispatcher) {
+            val expenseId = "expense-no-receipt"
+            val expense = testExpense.copy(
+                id = expenseId,
+                receiptAttachment = null
+            )
+            coEvery { localExpenseDataSource.getExpenseById(expenseId) } returns expense
+            coEvery { localExpenseDataSource.deleteExpense(expenseId) } just Runs
+            coEvery { cloudExpenseDataSource.deleteExpense(any(), any()) } just Runs
+
+            repository.deleteExpense(testGroupId, expenseId)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { receiptStorageService.deleteLocalFile(any()) }
+            coVerify(exactly = 0) { cloudStorageDataSource.deleteReceipt(any()) }
+            coVerify(exactly = 1) { cloudExpenseDataSource.deleteExpense(testGroupId, expenseId) }
+        }
+
+        @Test
+        fun `deleteExpense with local-only receipt deletes local file and skips cloud delete`() = runTest(
+            testDispatcher
+        ) {
+            val expenseId = "expense-local-only"
+            val expense = testExpense.copy(
+                id = expenseId,
+                receiptAttachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                    localUri = "file:///path/to/local/file.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 123456789L,
+                    remoteUrl = null
+                )
+            )
+            coEvery { localExpenseDataSource.getExpenseById(expenseId) } returns expense
+            coEvery { localExpenseDataSource.deleteExpense(expenseId) } just Runs
+            coEvery { receiptStorageService.deleteLocalFile(any()) } just Runs
+            coEvery { cloudExpenseDataSource.deleteExpense(any(), any()) } just Runs
+
+            repository.deleteExpense(testGroupId, expenseId)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { receiptStorageService.deleteLocalFile("file:///path/to/local/file.jpg") }
+            coVerify(exactly = 0) { cloudStorageDataSource.deleteReceipt(any()) }
+            coVerify(exactly = 1) { cloudExpenseDataSource.deleteExpense(testGroupId, expenseId) }
+        }
+
+        @Test
+        fun `deleteExpense with cloud receipt delete failure completes successfully`() = runTest(testDispatcher) {
+            val expenseId = "expense-cloud-fail"
+            val expense = testExpense.copy(
+                id = expenseId,
+                receiptAttachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                    localUri = "file:///path/to/local/file.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 123456789L,
+                    remoteUrl = "https://remote.url/file.jpg"
+                )
+            )
+            coEvery { localExpenseDataSource.getExpenseById(expenseId) } returns expense
+            coEvery { localExpenseDataSource.deleteExpense(expenseId) } just Runs
+            coEvery { receiptStorageService.deleteLocalFile(any()) } just Runs
+            coEvery { cloudExpenseDataSource.deleteExpense(any(), any()) } just Runs
+            coEvery { cloudStorageDataSource.deleteReceipt(any()) } throws RuntimeException("Cloud error")
+
+            repository.deleteExpense(testGroupId, expenseId)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { receiptStorageService.deleteLocalFile("file:///path/to/local/file.jpg") }
+            coVerify(exactly = 1) { cloudStorageDataSource.deleteReceipt(expenseId) }
+            coVerify(exactly = 1) { cloudExpenseDataSource.deleteExpense(testGroupId, expenseId) }
         }
     }
 

@@ -277,4 +277,28 @@ class ReceiptStorageServiceImplTest {
         tempFilesDir.deleteRecursively()
         tempCacheDir.deleteRecursively()
     }
+
+    @Test
+    fun deleteLocalFile_existingFile_deletesFile() = runTest {
+        // Given
+        val receiptsDir = File(context.filesDir, "receipts").also { it.mkdirs() }
+        val testFile = File(receiptsDir, "test_receipt.pdf").also { it.writeText("test content") }
+        val localUri = testFile.toURI().toString()
+
+        // When
+        service.deleteLocalFile(localUri)
+
+        // Then
+        assertTrue("File should be deleted", !testFile.exists())
+    }
+
+    @Test
+    fun deleteLocalFile_nonExistentFile_completesWithoutError() = runTest {
+        // Given
+        val localUri = "file:///non/existent/file.pdf"
+
+        // When/Then
+        // Should not throw any exception
+        service.deleteLocalFile(localUri)
+    }
 }

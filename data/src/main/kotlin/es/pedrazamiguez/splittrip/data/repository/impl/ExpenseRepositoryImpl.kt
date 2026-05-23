@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
@@ -25,6 +26,7 @@ class ExpenseRepositoryImpl(
     private val localExpenseDataSource: LocalExpenseDataSource,
     private val authenticationService: AuthenticationService,
     private val cloudStorageDataSource: CloudStorageDataSource,
+    private val receiptStorageService: ReceiptStorageService,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ExpenseRepository {
 
@@ -133,8 +135,20 @@ class ExpenseRepositoryImpl(
     )
 
     override suspend fun deleteExpense(groupId: String, expenseId: String) {
+        val expense = localExpenseDataSource.getExpenseById(expenseId)
+        val attachment = expense?.receiptAttachment
+
         // Delete from local first - UI updates instantly via Flow
         localExpenseDataSource.deleteExpense(expenseId)
+
+        // Delete local file immediately (best-effort, non-fatal)
+        if (attachment != null && attachment.localUri.isNotBlank()) {
+            try {
+                receiptStorageService.deleteLocalFile(attachment.localUri)
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to delete local receipt file: ${attachment.localUri}")
+            }
+        }
 
         // Always queue cloud deletion, even for PENDING_SYNC entities.
         // Firestore SDK guarantees write ordering: the queued SET (from addExpense)
@@ -145,6 +159,15 @@ class ExpenseRepositoryImpl(
                 Timber.d("Expense deletion synced to cloud: $expenseId")
             } catch (e: Exception) {
                 Timber.w(e, "Failed to sync expense deletion to cloud, will retry later")
+            }
+
+            if (attachment != null && !attachment.remoteUrl.isNullOrBlank()) {
+                try {
+                    cloudStorageDataSource.deleteReceipt(expenseId)
+                    Timber.d("Cloud receipt deletion synced to cloud: $expenseId")
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to delete remote receipt for expense $expenseId")
+                }
             }
         }
     }
