@@ -44,10 +44,11 @@ fun ExpenseDetailFeature(
         }
     }
 
+    val expense = uiState.expense
     ExpenseDetailScreen(
         uiState = uiState,
-        onReceiptTap = uiState.expense?.receiptUri?.let { uri ->
-            { navController.navigate(Routes.receiptViewerRoute(uri)) }
+        onReceiptTap = expense?.receiptUri?.let { uri ->
+            { navController.navigate(Routes.receiptViewerRoute(uri, expense.receiptMimeType)) }
         }
     )
 }

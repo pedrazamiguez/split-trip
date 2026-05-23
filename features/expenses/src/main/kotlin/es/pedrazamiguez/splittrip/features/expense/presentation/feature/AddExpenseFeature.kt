@@ -96,7 +96,10 @@ fun AddExpenseFeature(
                 is AddExpenseUiEvent.ViewReceiptFullScreen -> {
                     state.receiptUri?.let { uri ->
                         navController.navigate(
-                            es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes.receiptViewerRoute(uri)
+                            es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes.receiptViewerRoute(
+                                uri,
+                                state.receiptAttachment?.mimeType
+                            )
                         )
                     }
                 }

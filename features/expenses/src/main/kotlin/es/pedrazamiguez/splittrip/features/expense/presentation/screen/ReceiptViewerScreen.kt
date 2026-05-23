@@ -51,17 +51,22 @@ private fun isPdf(uriString: String): Boolean {
     if (path.lowercase().endsWith(".pdf")) return true
     val lastSegment = uri.lastPathSegment.orEmpty().lowercase()
     if (lastSegment.endsWith(".pdf") || lastSegment.contains(".pdf?")) return true
+    val decodedPath = Uri.decode(uriString).lowercase()
+    if (decodedPath.substringBefore('?').endsWith(".pdf")) return true
     return false
 }
 
 @Composable
 fun ReceiptViewerScreen(
     receiptUri: String,
+    mimeType: String? = null,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val hazeState = remember { HazeState() }
-    val isPdf = remember(receiptUri) { isPdf(receiptUri) }
+    val isPdf = remember(receiptUri, mimeType) {
+        mimeType == "application/pdf" || isPdf(receiptUri)
+    }
 
     Surface(
         color = MaterialTheme.colorScheme.background,

@@ -7,10 +7,6 @@ import io.mockk.mockk
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLConnection
-import java.net.URLStreamHandler
-import java.net.URLStreamHandlerFactory
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -27,49 +23,18 @@ class ReceiptStorageServiceImplTest {
     private lateinit var context: Context
     private lateinit var service: ReceiptStorageServiceImpl
     private lateinit var mockConnection: HttpURLConnection
-
-    companion object {
-        private var factoryRegistered = false
-
-        @Volatile
-        private var mockConnectionInstance: HttpURLConnection? = null
-
-        private fun registerFactoryIfNeeded() {
-            if (!factoryRegistered) {
-                try {
-                    URL.setURLStreamHandlerFactory(object : URLStreamHandlerFactory {
-                        override fun createURLStreamHandler(protocol: String): URLStreamHandler? {
-                            if (protocol == "http" || protocol == "https") {
-                                return object : URLStreamHandler() {
-                                    override fun openConnection(u: URL?): URLConnection {
-                                        return mockConnectionInstance
-                                            ?: error("Mock Connection not set")
-                                    }
-                                }
-                            }
-                            return null
-                        }
-                    })
-                    factoryRegistered = true
-                } catch (ignored: Error) {
-                    // Already set, ignore
-                }
-            }
-        }
-    }
+    private lateinit var mockConnectionFactory: HttpConnectionFactory
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        service = ReceiptStorageServiceImpl(context)
         mockConnection = mockk(relaxed = true)
-        registerFactoryIfNeeded()
-        mockConnectionInstance = mockConnection
+        mockConnectionFactory = HttpConnectionFactory { mockConnection }
+        service = ReceiptStorageServiceImpl(context, mockConnectionFactory)
     }
 
     @After
     fun tearDown() {
-        mockConnectionInstance = null
         val receiptsDir = File(context.filesDir, "receipts")
         if (receiptsDir.exists()) {
             receiptsDir.deleteRecursively()

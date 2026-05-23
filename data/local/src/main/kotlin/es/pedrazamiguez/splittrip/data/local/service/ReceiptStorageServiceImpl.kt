@@ -4,15 +4,23 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import java.io.File
 import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+
+internal fun interface HttpConnectionFactory {
+    fun openConnection(url: String): HttpURLConnection
+}
 
 /**
  * Copies a user-selected file from a content:// or file:// URI into the app's
@@ -29,7 +37,10 @@ import timber.log.Timber
  * transient content:// URI granted by the OS picker.
  */
 internal class ReceiptStorageServiceImpl(
-    private val context: Context
+    private val context: Context,
+    private val connectionFactory: HttpConnectionFactory = HttpConnectionFactory { url ->
+        URL(url).openConnection() as HttpURLConnection
+    }
 ) : ReceiptStorageService {
 
     override suspend fun copyAndCompress(sourceUri: String): ReceiptAttachment =
@@ -72,16 +83,15 @@ internal class ReceiptStorageServiceImpl(
             val uniqueId = UUID.randomUUID().toString()
             val tempFile = File(context.cacheDir, "download_receipt_$uniqueId").also { it.parentFile?.mkdirs() }
 
-            var connection: java.net.HttpURLConnection? = null
+            var connection: HttpURLConnection? = null
             try {
-                val url = java.net.URL(remoteUrl)
-                connection = url.openConnection() as java.net.HttpURLConnection
+                connection = connectionFactory.openConnection(remoteUrl)
                 connection.connectTimeout = CONNECTION_TIMEOUT_MS
                 connection.readTimeout = CONNECTION_TIMEOUT_MS
                 connection.requestMethod = "GET"
                 connection.connect()
 
-                if (connection.responseCode != java.net.HttpURLConnection.HTTP_OK) {
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
                     error("Failed to download file: HTTP ${connection.responseCode}")
                 }
 
@@ -126,14 +136,14 @@ internal class ReceiptStorageServiceImpl(
         val resolver = context.contentResolver
         var mimeType = resolver.getType(uri)
         if (mimeType.isNullOrBlank() || mimeType == FALLBACK_MIME) {
-            val fileExtension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(sourceUri)
+            val fileExtension = MimeTypeMap.getFileExtensionFromUrl(sourceUri)
                 .ifBlank {
                     val path = uri.path.orEmpty()
                     val dotIndex = path.lastIndexOf('.')
                     if (dotIndex != -1) path.substring(dotIndex + 1) else ""
                 }
             if (fileExtension.isNotEmpty()) {
-                val inferredMime = android.webkit.MimeTypeMap.getSingleton()
+                val inferredMime = MimeTypeMap.getSingleton()
                     .getMimeTypeFromExtension(fileExtension.lowercase())
                 if (!inferredMime.isNullOrBlank()) {
                     mimeType = inferredMime
@@ -199,7 +209,7 @@ internal class ReceiptStorageServiceImpl(
         val destFile = File(dir, "$uniqueId$WEBP_EXT")
         FileOutputStream(destFile).use { output ->
             @Suppress("DEPRECATION") // WEBP_LOSSLESS added in API 30; WEBP used on < 30 (see KDoc)
-            val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 Bitmap.CompressFormat.WEBP_LOSSLESS
             } else {
                 Bitmap.CompressFormat.WEBP

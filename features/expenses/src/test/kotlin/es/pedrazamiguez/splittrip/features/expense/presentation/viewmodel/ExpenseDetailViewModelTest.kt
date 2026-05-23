@@ -477,6 +477,38 @@ class ExpenseDetailViewModelTest {
 
             collectJob.cancel()
         }
+
+        @Test
+        fun `does not retry download when previous download failed`() = runTest(testDispatcher) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.pdf"
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            coEvery { downloadReceiptUseCase(testExpenseId, any()) } throws RuntimeException("Network Error")
+
+            val flow = kotlinx.coroutines.flow.MutableSharedFlow<Expense?>()
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setExpenseId(testExpenseId)
+
+            // First emission
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Second emission (re-trigger)
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Then - download should only be triggered once
+            coVerify(exactly = 1) { downloadReceiptUseCase(testExpenseId, "https://example.com/receipt.pdf") }
+
+            collectJob.cancel()
+        }
     }
 
     private fun createViewModel() = ExpenseDetailViewModel(

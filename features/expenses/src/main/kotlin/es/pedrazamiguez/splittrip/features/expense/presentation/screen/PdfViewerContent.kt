@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.screen
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -43,6 +47,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.features.expense.R
 import java.io.File
 import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -164,8 +170,9 @@ private fun PdfPagesListView(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 80.dp, horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            // vertical = 80.dp leaves room for the floating top bar / close button
+            contentPadding = PaddingValues(vertical = 80.dp, horizontal = MaterialTheme.spacing.Default),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
             userScrollEnabled = scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON
         ) {
             items(pages.size) { index ->
@@ -194,25 +201,35 @@ private fun PdfPageItem(bitmap: Bitmap, pageNumber: Int, modifier: Modifier = Mo
 
 private suspend fun loadPdfPages(context: Context, pdfUriString: String): List<Bitmap> {
     val uri = Uri.parse(pdfUriString)
-    val targetUri = if (uri.scheme == "http" || uri.scheme == "https") {
-        val tempFile = File(context.cacheDir, "temp_viewer_${UUID.randomUUID()}.pdf")
-        downloadUrlToFile(pdfUriString, tempFile)
-        Uri.fromFile(tempFile)
+    val isRemote = uri.scheme == "http" || uri.scheme == "https"
+    val tempFile = if (isRemote) {
+        File(context.cacheDir, "temp_viewer_${UUID.randomUUID()}.pdf")
     } else {
-        uri
+        null
     }
 
-    val pfd = context.contentResolver.openFileDescriptor(targetUri, "r") ?: return emptyList()
-    var renderer: PdfRenderer? = null
     try {
-        renderer = PdfRenderer(pfd)
-        val list = mutableListOf<Bitmap>()
-        for (i in 0 until renderer.pageCount) {
-            list.add(renderPageToBitmap(renderer, i))
+        val targetUri = if (tempFile != null) {
+            downloadUrlToFile(pdfUriString, tempFile)
+            Uri.fromFile(tempFile)
+        } else {
+            uri
         }
-        return list
+
+        val pfd = context.contentResolver.openFileDescriptor(targetUri, "r") ?: return emptyList()
+        var renderer: PdfRenderer? = null
+        try {
+            renderer = PdfRenderer(pfd)
+            val list = mutableListOf<Bitmap>()
+            for (i in 0 until renderer.pageCount) {
+                list.add(renderPageToBitmap(renderer, i))
+            }
+            return list
+        } finally {
+            closeRendererAndPfd(renderer, pfd)
+        }
     } finally {
-        closeRendererAndPfd(renderer, pfd)
+        tempFile?.delete()
     }
 }
 
@@ -220,11 +237,18 @@ private fun renderPageToBitmap(renderer: PdfRenderer, pageIndex: Int): Bitmap {
     var page: PdfRenderer.Page? = null
     try {
         page = renderer.openPage(pageIndex)
-        val width = page.width * 2
-        val height = page.height * 2
+        val maxDimension = 2048
+        var width = page.width * 2
+        var height = page.height * 2
+        val maxDim = maxOf(width, height)
+        if (maxDim > maxDimension) {
+            val scale = maxDimension.toDouble() / maxDim
+            width = (width * scale).toInt().coerceAtLeast(1)
+            height = (height * scale).toInt().coerceAtLeast(1)
+        }
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(bitmap)
-        canvas.drawColor(android.graphics.Color.WHITE)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.WHITE)
         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
         return bitmap
     } finally {
@@ -233,14 +257,14 @@ private fun renderPageToBitmap(renderer: PdfRenderer, pageIndex: Int): Bitmap {
 }
 
 private fun downloadUrlToFile(remoteUrl: String, tempFile: File) {
-    val url = java.net.URL(remoteUrl)
-    val connection = url.openConnection() as java.net.HttpURLConnection
+    val url = URL(remoteUrl)
+    val connection = url.openConnection() as HttpURLConnection
     try {
         connection.connectTimeout = HTTP_TIMEOUT_MS
         connection.readTimeout = HTTP_TIMEOUT_MS
         connection.requestMethod = "GET"
         connection.connect()
-        if (connection.responseCode != java.net.HttpURLConnection.HTTP_OK) {
+        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
             error("HTTP error code: ${connection.responseCode}")
         }
         connection.inputStream.use { input ->

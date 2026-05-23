@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
@@ -17,8 +20,10 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDe
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpenseDetailUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpenseDetailUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpenseDetailUiState
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -54,7 +59,8 @@ class ExpenseDetailViewModel(
     private val expenseDetailUiMapper: ExpenseDetailUiMapper
 ) : ViewModel() {
 
-    private val downloadJobs = java.util.concurrent.ConcurrentHashMap<String, kotlinx.coroutines.Job>()
+    private val downloadJobs = ConcurrentHashMap<String, Job>()
+    private val failedDownloads = ConcurrentHashMap.newKeySet<String>()
 
     private val _expenseId = MutableStateFlow("")
 
@@ -65,9 +71,9 @@ class ExpenseDetailViewModel(
         .filter { it.isNotBlank() }
         .flatMapLatest { expenseId ->
             var cachedUserIds = emptySet<String>()
-            var cachedProfiles = emptyMap<String, es.pedrazamiguez.splittrip.domain.model.User>()
+            var cachedProfiles = emptyMap<String, User>()
             var cachedWithdrawalIds = emptySet<String>()
-            var cachedWithdrawals = emptyMap<String, es.pedrazamiguez.splittrip.domain.model.CashWithdrawal>()
+            var cachedWithdrawals = emptyMap<String, CashWithdrawal>()
             var cachedSubunitGroupId = ""
             var cachedSubunits = emptyMap<String, String>()
 
@@ -80,7 +86,7 @@ class ExpenseDetailViewModel(
                     }
 
                     val attachment = expense.receiptAttachment
-                    if (shouldDownloadPdf(attachment)) {
+                    if (shouldDownloadPdf(attachment) && !failedDownloads.contains(expense.id)) {
                         triggerReceiptDownload(expense.id, attachment?.remoteUrl.orEmpty())
                     }
 
@@ -205,6 +211,7 @@ class ExpenseDetailViewModel(
             }
         }
     }
+
     private fun triggerReceiptDownload(expenseId: String, remoteUrl: String) {
         if (downloadJobs.containsKey(expenseId)) return
         downloadJobs[expenseId] = viewModelScope.launch {
@@ -212,13 +219,14 @@ class ExpenseDetailViewModel(
                 downloadReceiptUseCase(expenseId, remoteUrl)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to download remote PDF receipt for expense $expenseId")
+                failedDownloads.add(expenseId)
             } finally {
                 downloadJobs.remove(expenseId)
             }
         }
     }
 
-    private fun shouldDownloadPdf(attachment: es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment?): Boolean {
+    private fun shouldDownloadPdf(attachment: ReceiptAttachment?): Boolean {
         if (attachment == null) return false
         val isPdf = attachment.mimeType == "application/pdf"
         val hasNoLocal = attachment.localUri.isBlank()
