@@ -13,7 +13,7 @@ import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -40,7 +40,7 @@ internal fun interface HttpConnectionFactory {
 internal class ReceiptStorageServiceImpl(
     private val context: Context,
     private val connectionFactory: HttpConnectionFactory = HttpConnectionFactory { url ->
-        URL(url).openConnection() as HttpURLConnection
+        URI(url).toURL().openConnection() as HttpURLConnection
     }
 ) : ReceiptStorageService {
 
@@ -139,25 +139,38 @@ internal class ReceiptStorageServiceImpl(
     override suspend fun deleteLocalFile(localUri: String) {
         withContext(Dispatchers.IO) {
             try {
-                val uri = Uri.parse(localUri)
-                val path = uri.path
-                if (path != null) {
-                    val file = File(path)
-                    if (file.exists()) {
-                        if (file.delete()) {
-                            Timber.d("Successfully deleted local receipt file: $path")
-                        } else {
-                            Timber.w("Failed to delete local receipt file: $path")
-                        }
-                    } else {
-                        Timber.d("Local receipt file does not exist: $path")
-                    }
-                } else {
-                    Timber.w("Could not extract path from localUri: $localUri")
-                }
+                performDeleteLocalFile(localUri)
             } catch (e: Exception) {
                 Timber.e(e, "Error deleting local receipt file for URI: $localUri")
             }
+        }
+    }
+
+    private fun performDeleteLocalFile(localUri: String) {
+        val uri = Uri.parse(localUri)
+        if (uri.scheme != "file") {
+            Timber.w("Refusing to delete file: scheme is not 'file' in localUri: $localUri")
+            return
+        }
+        val path = uri.path
+        if (path == null) {
+            Timber.w("Could not extract path from localUri: $localUri")
+            return
+        }
+        val file = File(path).canonicalFile
+        val receiptsDir = File(context.filesDir, RECEIPTS_DIR).canonicalFile
+        if (!file.path.startsWith(receiptsDir.path + File.separator)) {
+            Timber.w("Refusing to delete file outside receipts directory: $path")
+            return
+        }
+        if (!file.exists()) {
+            Timber.d("Local receipt file does not exist: $path")
+            return
+        }
+        if (file.delete()) {
+            Timber.d("Successfully deleted local receipt file: $path")
+        } else {
+            Timber.w("Failed to delete local receipt file: $path")
         }
     }
 

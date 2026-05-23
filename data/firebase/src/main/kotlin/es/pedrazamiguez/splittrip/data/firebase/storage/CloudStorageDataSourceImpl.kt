@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.firebase.storage
 import com.google.firebase.storage.FirebaseStorage
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import java.io.File
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
@@ -52,6 +53,8 @@ internal class CloudStorageDataSourceImpl(
                 item.delete().await()
                 Timber.d("Deleted remote receipt file: ${item.path}")
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.w(e, "Failed to delete remote receipt files for expense $expenseId")
             throw e

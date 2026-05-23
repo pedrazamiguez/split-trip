@@ -301,4 +301,32 @@ class ReceiptStorageServiceImplTest {
         // Should not throw any exception
         service.deleteLocalFile(localUri)
     }
+
+    @Test
+    fun deleteLocalFile_invalidScheme_refusesToDelete() = runTest {
+        // Given
+        val receiptsDir = File(context.filesDir, "receipts").also { it.mkdirs() }
+        val testFile = File(receiptsDir, "test_receipt.pdf").also { it.writeText("test content") }
+        val invalidUri = "http://example.com/receipts/test_receipt.pdf"
+
+        // When
+        service.deleteLocalFile(invalidUri)
+
+        // Then
+        assertTrue("File should NOT be deleted", testFile.exists())
+    }
+
+    @Test
+    fun deleteLocalFile_outsideReceiptsDirectory_refusesToDelete() = runTest {
+        // Given
+        val outsideFile = File(context.filesDir, "outside_file.pdf").also { it.writeText("sensitive content") }
+        val localUri = outsideFile.toURI().toString()
+
+        // When
+        service.deleteLocalFile(localUri)
+
+        // Then
+        assertTrue("File outside receipts directory should NOT be deleted", outsideFile.exists())
+        outsideFile.delete() // clean up
+    }
 }

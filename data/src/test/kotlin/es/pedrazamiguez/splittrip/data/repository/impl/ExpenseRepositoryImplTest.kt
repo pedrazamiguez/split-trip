@@ -17,6 +17,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import java.io.IOException
 import java.time.LocalDateTime
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -795,6 +796,32 @@ class ExpenseRepositoryImplTest {
             coVerify(exactly = 1) { receiptStorageService.deleteLocalFile("file:///path/to/local/file.jpg") }
             coVerify(exactly = 1) { cloudStorageDataSource.deleteReceipt(expenseId) }
             coVerify(exactly = 1) { cloudExpenseDataSource.deleteExpense(testGroupId, expenseId) }
+        }
+
+        @Test
+        fun `deleteExpense propagates CancellationException when deleteLocalFile throws it`() = runTest(
+            testDispatcher
+        ) {
+            val expenseId = "expense-cancel"
+            val expense = testExpense.copy(
+                id = expenseId,
+                receiptAttachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                    localUri = "file:///path/to/local/file.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 123456789L,
+                    remoteUrl = null
+                )
+            )
+            coEvery { localExpenseDataSource.getExpenseById(expenseId) } returns expense
+            coEvery { localExpenseDataSource.deleteExpense(expenseId) } just Runs
+            coEvery { receiptStorageService.deleteLocalFile(any()) } throws CancellationException("Cancelled")
+
+            try {
+                repository.deleteExpense(testGroupId, expenseId)
+                org.junit.jupiter.api.Assertions.fail("Expected CancellationException")
+            } catch (e: CancellationException) {
+                assertEquals("Cancelled", e.message)
+            }
         }
     }
 
