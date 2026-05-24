@@ -126,7 +126,25 @@ firebase deploy --only functions
 
 The `.github/workflows/deploy-firebase.yml` workflow automatically deploys functions when changes are pushed to `main` in the `functions/` directory.
 
-**Required GitHub Secret:** `FIREBASE_TOKEN` — generate with `firebase login:ci`.
+**Required GitHub Secret:** `FIREBASE_SERVICE_ACCOUNT_JSON` — Google Service Account JSON key.
+
+The Service Account must be granted the following minimum IAM roles for deployment to succeed:
+*   **Cloud Functions Admin** (`roles/cloudfunctions.admin`) — to deploy and manage Cloud Functions.
+*   **Service Account User** (`roles/iam.serviceAccountUser`) — on the Google Cloud project to run the deployment as the service account.
+*   **Firebase Rules Admin** (`roles/firebaserules.admin`) — to deploy and update Firestore security rules.
+*   **Cloud Datastore Index Admin** (`roles/datastore.indexAdmin`) — to deploy Firestore indexes.
+*   **Artifact Registry Writer** (`roles/artifactregistry.writer`) — to upload 2nd-gen Cloud Functions container images.
+
+#### Local Verification of Service Account Credentials
+To test your service account configuration locally before committing:
+```bash
+# 1. Export the path to your service account key JSON file
+export GOOGLE_APPLICATION_CREDENTIALS="/absolute/path/to/service-account-key.json"
+
+# 2. Run the deploy command with debug enabled to verify permissions
+firebase deploy --only functions,firestore --debug
+```
+If the command completes successfully, the credentials are valid and have the correct roles. Remember to clear the environment variable afterwards: `unset GOOGLE_APPLICATION_CREDENTIALS`.
 
 ## Stale Token Cleanup
 
