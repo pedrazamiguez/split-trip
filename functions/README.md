@@ -128,10 +128,10 @@ The `.github/workflows/deploy-firebase.yml` workflow automatically deploys funct
 
 **Required GitHub Secret:** `FIREBASE_SERVICE_ACCOUNT_JSON` — Google Service Account JSON key.
 
-The Service Account must be granted the following minimum IAM roles for deployment to succeed:
-*   **Firebase Admin** (`roles/firebase.admin`) — to read project configuration and manage Firebase services.
+The Service Account is configured with the following IAM roles for deployment. Note that this list reflects the standard roles configured for this project; in production environments adhering strictly to the principle of least privilege, these can be restricted further:
+*   **Firebase Admin** (`roles/firebase.admin`) — to read project configuration and manage Firebase services. *Note: This is a broad project-level admin role. For a more restricted setup, replace it with specific Firebase sub-roles tailored to your deployment targets.*
 *   **Cloud Functions Admin** (`roles/cloudfunctions.admin`) — to deploy and manage Cloud Functions.
-*   **Service Account User** (`roles/iam.serviceAccountUser`) — on the Google Cloud project to run the deployment as the service account.
+*   **Service Account User** (`roles/iam.serviceAccountUser`) — to run the deployment as the service account. *Note: To avoid over-granting permissions at the project level, it is best practice to grant this role only on the specific runtime service account resource (e.g., the Functions runtime service account) that the deployer needs to impersonate.*
 *   **Firebase Rules Admin** (`roles/firebaserules.admin`) — to deploy and update Firestore security rules.
 *   **Cloud Datastore Index Admin** (`roles/datastore.indexAdmin`) — to deploy Firestore indexes.
 *   **Artifact Registry Writer** (`roles/artifactregistry.writer`) — to upload 2nd-gen Cloud Functions container images.
