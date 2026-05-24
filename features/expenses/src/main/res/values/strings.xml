@@ -276,6 +276,7 @@
     <string name="expense_detail_exchange_rate_full">1 %1$s = %2$s %3$s</string>
     <string name="expense_detail_receipt_thumbnail_cd">Receipt photo</string>
     <string name="expense_detail_receipt_pdf_label">PDF attached</string>
+    <string name="expense_detail_receipt_download_failed">Failed to download remote receipt</string>
     <string name="expense_detail_addon_mode_included">Included</string>
     <string name="expense_detail_addon_mode_on_top">On top</string>
 
@@ -296,4 +297,30 @@
     <string name="add_expense_personal_cash_split_warning">You\'re spending from your personal cash.\nMake sure it\'s intentional to share this with others.</string>
     <!-- Subunit cash split warning — %1$s is the subunit pool display label (e.g. "Caris cash") -->
     <string name="add_expense_subunit_cash_split_warning">You\'re spending from %1$s.\nMake sure it\'s intentional to share this with others.</string>
+    <string name="receipt_viewer_image_cd">Receipt full image</string>
+    <string name="receipt_viewer_close_cd">Close viewer</string>
+    <string name="receipt_viewer_pdf_error">Failed to load PDF receipt</string>
+    <string name="receipt_viewer_pdf_page_cd">PDF page %1$d</string>
+
+    <!-- Receipt Auto-fill -->
+    <string name="expense_autofill_in_progress">Analyzing receipt…</string>
+    <string name="expense_autofill_success">Receipt scanned successfully</string>
+    <string name="expense_autofill_failed">Could not read receipt fields</string>
+    <string name="expense_autofill_unavailable">AI features are not supported on this device</string>
+    <string name="expense_autofill_banner_title">Auto-filled from receipt</string>
+    <string name="expense_autofill_banner_dismiss_cd">Dismiss auto-fill banner</string>
+    <string name="add_expense_date">Date</string>
+    <string name="expense_autofill_switch_manual">Enter manually</string>
+    <string name="expense_autofill_switch_ai">Scan receipt</string>
+    <string name="expense_autofill_ai_select_receipt">Attach &amp; Scan Receipt</string>
+    <string name="expense_autofill_ai_title">AI Receipt Scan</string>
+    <string name="expense_autofill_ai_subtitle">Powered by Gemini Nano</string>
+    <string name="expense_autofill_ai_description">Scan your receipt to automatically fill in the expense details using on-device AI.</string>
+    <string name="expense_autofill_ai_disclaimer">AI-powered extraction is best-effort. Please review and verify all details before submitting.</string>
+    <string name="expense_autofill_prompt_title">Scan receipt instead?</string>
+    <string name="expense_autofill_prompt_description">On-device AI can automatically read the title, amount, currency, and date from a receipt.</string>
+    <string name="expense_field_vendor">Vendor</string>
+    <string name="expense_field_payment_method">Payment method</string>
+    <string name="expense_field_time">Time</string>
+    <string name="expense_field_notes">Notes</string>
 </resources>

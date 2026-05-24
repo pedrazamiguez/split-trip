@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.core.designsystem.navigation
 
+import android.net.Uri
+
 object Routes {
     const val LOGIN = "login"
     const val ONBOARDING = "onboarding"
@@ -20,6 +22,7 @@ object Routes {
     const val EXPENSE_DETAIL = "expense_detail/{expenseId}"
     const val MANAGE_SUBUNITS = "manage_subunits/{groupId}"
     const val CREATE_EDIT_SUBUNIT = "create_edit_subunit/{groupId}?subunitId={subunitId}"
+    const val RECEIPT_VIEWER = "receipt_viewer/{receiptUri}?mimeType={mimeType}"
 
     fun groupDetailRoute(groupId: String) = "group_detail/$groupId"
 
@@ -30,5 +33,11 @@ object Routes {
     fun createEditSubunitRoute(groupId: String, subunitId: String? = null): String {
         val base = "create_edit_subunit/$groupId"
         return if (subunitId != null) "$base?subunitId=$subunitId" else base
+    }
+
+    fun receiptViewerRoute(receiptUri: String, mimeType: String? = null): String {
+        val encodedUri = Uri.encode(receiptUri)
+        val base = "receipt_viewer/$encodedUri"
+        return if (mimeType != null) "$base?mimeType=${Uri.encode(mimeType)}" else base
     }
 }

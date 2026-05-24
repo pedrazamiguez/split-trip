@@ -1,17 +1,22 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.screen
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -19,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,14 +32,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
@@ -115,26 +126,13 @@ private fun ExpenseWizard(
         modifier = modifier
             .fillMaxSize()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            WizardStepIndicator(
-                stepLabels = orderedLabels,
-                currentStepIndex = uiState.currentStepIndex,
-                optionalStepIndices = uiState.optionalStepIndices,
-                skipToReviewLabel = if (uiState.isOnOptionalStep) skipToReviewLabel else null,
-                onSkipToReview = if (uiState.isOnOptionalStep) {
-                    { onEvent(AddExpenseUiEvent.JumpToReview) }
-                } else {
-                    null
-                },
-                onStepClicked = { onEvent(AddExpenseUiEvent.JumpToStep(it)) }
-            )
-
-            WizardStepContent(
-                uiState = uiState,
-                onEvent = onEvent,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        ExpenseWizardBody(
+            uiState = uiState,
+            orderedLabels = orderedLabels,
+            skipToReviewLabel = skipToReviewLabel,
+            onEvent = onEvent,
+            modifier = Modifier.fillMaxSize()
+        )
 
         WizardNavigationBar(
             config = WizardNavigationBarConfig(
@@ -152,6 +150,49 @@ private fun ExpenseWizard(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = bottomPadding)
+        )
+    }
+}
+
+@Composable
+private fun ExpenseWizardBody(
+    uiState: AddExpenseUiState,
+    orderedLabels: List<String>,
+    skipToReviewLabel: String,
+    onEvent: (AddExpenseUiEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        WizardStepIndicator(
+            stepLabels = orderedLabels,
+            currentStepIndex = uiState.currentStepIndex,
+            optionalStepIndices = uiState.optionalStepIndices,
+            skipToReviewLabel = if (uiState.canSkipToReview) skipToReviewLabel else null,
+            onSkipToReview = if (uiState.canSkipToReview) {
+                { onEvent(AddExpenseUiEvent.JumpToReview) }
+            } else {
+                null
+            },
+            onStepClicked = { onEvent(AddExpenseUiEvent.JumpToStep(it)) }
+        )
+
+        AnimatedVisibility(
+            visible = uiState.autoFillBanner != null,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            uiState.autoFillBanner?.let { banner ->
+                AutoFillBanner(
+                    banner = banner,
+                    onDismiss = { onEvent(AddExpenseUiEvent.DismissAutoFillBanner) }
+                )
+            }
+        }
+
+        WizardStepContent(
+            uiState = uiState,
+            onEvent = onEvent,
+            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -315,5 +356,60 @@ private fun rememberStepLabelMap(): Map<AddExpenseStep, String> {
             AddExpenseStep.ADD_ONS to addOnsLabel,
             AddExpenseStep.REVIEW to reviewLabel
         )
+    }
+}
+
+@Composable
+private fun AutoFillBanner(
+    banner: es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AutoFillBanner,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val fieldsString = remember(banner.fields, context) {
+        banner.fields.map { it.asString(context) }.joinToString(", ")
+    }
+
+    FlatCard(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = MaterialTheme.shapes.medium,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = MaterialTheme.spacing.Medium, vertical = MaterialTheme.spacing.Small)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(MaterialTheme.spacing.Medium)
+        ) {
+            Icon(
+                imageVector = TablerIcons.Outline.Receipt,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.size(MaterialTheme.spacing.Medium))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.expense_autofill_banner_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = fieldsString,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+            }
+            IconButton(
+                onClick = onDismiss
+            ) {
+                Icon(
+                    imageVector = TablerIcons.Outline.X,
+                    contentDescription = stringResource(R.string.expense_autofill_banner_dismiss_cd),
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
     }
 }

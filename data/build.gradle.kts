@@ -52,4 +52,5 @@ dependencies {
     // Unit Testing (extras — common test deps provided by convention plugin)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.koin.test)
+    testImplementation("org.json:json:20240303")
 }

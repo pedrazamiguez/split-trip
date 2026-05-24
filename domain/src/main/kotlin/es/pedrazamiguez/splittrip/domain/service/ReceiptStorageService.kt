@@ -22,4 +22,19 @@ interface ReceiptStorageService {
      * @throws IllegalStateException if the file could not be written to app storage.
      */
     suspend fun copyAndCompress(sourceUri: String): ReceiptAttachment
+
+    /**
+     * Downloads the file from [remoteUrl] and stores it locally under `filesDir/receipts/`.
+     *
+     * @param remoteUrl The download URL of the remote receipt file.
+     * @return A [ReceiptAttachment] with the stable `file://` local URI.
+     */
+    suspend fun downloadAndStore(remoteUrl: String): ReceiptAttachment
+
+    /**
+     * Deletes the local receipt file at the specified [localUri].
+     *
+     * @param localUri Stable local URI (file://) of the receipt.
+     */
+    suspend fun deleteLocalFile(localUri: String)
 }

@@ -277,6 +277,7 @@
     <string name="expense_detail_exchange_rate_full">1 %1$s = %2$s %3$s</string>
     <string name="expense_detail_receipt_thumbnail_cd">Foto del recibo</string>
     <string name="expense_detail_receipt_pdf_label">PDF adjunto</string>
+    <string name="expense_detail_receipt_download_failed">No se pudo descargar el recibo remoto</string>
     <string name="expense_detail_addon_mode_included">Incluido</string>
     <string name="expense_detail_addon_mode_on_top">Sumado</string>
 
@@ -297,4 +298,30 @@
     <string name="add_expense_personal_cash_split_warning">Estás gastando de tu efectivo personal.\nAsegúrate de que es tu intención compartir este gasto con los demás.</string>
     <!-- Subunit cash split warning — %1$s is the subunit pool display label (e.g. "Efectivo de Caris") -->
     <string name="add_expense_subunit_cash_split_warning">Estás usando %1$s.\nAsegúrate de que es tu intención compartir este gasto con los demás.</string>
+    <string name="receipt_viewer_image_cd">Imagen del recibo</string>
+    <string name="receipt_viewer_close_cd">Cerrar visor</string>
+    <string name="receipt_viewer_pdf_error">Error al cargar el recibo PDF</string>
+    <string name="receipt_viewer_pdf_page_cd">Página PDF %1$d</string>
+
+    <!-- Receipt Auto-fill -->
+    <string name="expense_autofill_in_progress">Analizando recibo…</string>
+    <string name="expense_autofill_success">Recibo escaneado con éxito</string>
+    <string name="expense_autofill_failed">No se pudieron leer los campos del recibo</string>
+    <string name="expense_autofill_unavailable">Las funciones de IA no son compatibles con este dispositivo</string>
+    <string name="expense_autofill_banner_title">Rellenado automáticamente desde el recibo</string>
+    <string name="expense_autofill_banner_dismiss_cd">Descartar aviso de rellenado automático</string>
+    <string name="add_expense_date">Fecha</string>
+    <string name="expense_autofill_switch_manual">Introducir manualmente</string>
+    <string name="expense_autofill_switch_ai">Escanear recibo</string>
+    <string name="expense_autofill_ai_select_receipt">Adjuntar y escanear recibo</string>
+    <string name="expense_autofill_ai_title">Escáner de recibos con IA</string>
+    <string name="expense_autofill_ai_subtitle">Tecnología de Gemini Nano</string>
+    <string name="expense_autofill_ai_description">Escanea tu recibo para rellenar automáticamente los detalles del gasto utilizando la IA del dispositivo.</string>
+    <string name="expense_autofill_ai_disclaimer">La extracción con IA es aproximada. Por favor, revisa y confirma todos los campos antes de guardar.</string>
+    <string name="expense_autofill_prompt_title">¿Escanear recibo en su lugar?</string>
+    <string name="expense_autofill_prompt_description">La IA del dispositivo puede extraer automáticamente el título, importe, moneda y fecha del recibo.</string>
+    <string name="expense_field_vendor">Comercio</string>
+    <string name="expense_field_payment_method">Método de pago</string>
+    <string name="expense_field_time">Hora</string>
+    <string name="expense_field_notes">Notas</string>
 </resources>

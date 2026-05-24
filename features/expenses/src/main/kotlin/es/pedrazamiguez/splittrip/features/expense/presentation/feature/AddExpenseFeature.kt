@@ -89,10 +89,23 @@ fun AddExpenseFeature(
         onEvent = { event ->
             // RequestPickerSource is a pure-UI concern — handle it in the Feature
             // so the ViewModel never touches source selection or launcher APIs.
-            if (event is AddExpenseUiEvent.RequestPickerSource) {
-                showReceiptSourceSheet = true
-            } else {
-                addExpenseViewModel.onEvent(event, onAddExpenseSuccess)
+            when (event) {
+                is AddExpenseUiEvent.RequestPickerSource -> {
+                    showReceiptSourceSheet = true
+                }
+                is AddExpenseUiEvent.ViewReceiptFullScreen -> {
+                    state.receiptUri?.let { uri ->
+                        navController.navigate(
+                            es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes.receiptViewerRoute(
+                                uri,
+                                state.receiptAttachment?.mimeType
+                            )
+                        )
+                    }
+                }
+                else -> {
+                    addExpenseViewModel.onEvent(event, onAddExpenseSuccess)
+                }
             }
         }
     )
@@ -110,6 +123,9 @@ private fun ObserveAddExpenseActions(
         viewModel.actions.collectLatest { action ->
             when (action) {
                 is AddExpenseUiAction.ShowError ->
+                    pillController.showPill(message = action.message.asString(context))
+
+                is AddExpenseUiAction.ShowPill ->
                     pillController.showPill(message = action.message.asString(context))
 
                 is AddExpenseUiAction.ShowCashConflictResolution -> {

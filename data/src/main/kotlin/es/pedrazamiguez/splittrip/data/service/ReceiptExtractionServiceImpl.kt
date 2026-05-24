@@ -59,7 +59,12 @@ internal class ReceiptExtractionServiceImpl(
             amount = null,
             currency = null,
             date = null,
+            time = null,
             title = null,
+            vendor = null,
+            category = null,
+            paymentMethod = null,
+            notes = null,
             source = ExtractionSource.NO_OP,
             confidence = ExtractionConfidence.LOW
         )

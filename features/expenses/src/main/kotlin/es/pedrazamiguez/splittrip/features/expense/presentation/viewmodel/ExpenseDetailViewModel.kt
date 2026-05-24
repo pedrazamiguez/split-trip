@@ -5,9 +5,14 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -16,8 +21,10 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDe
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpenseDetailUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpenseDetailUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpenseDetailUiState
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,9 +55,13 @@ class ExpenseDetailViewModel(
     private val getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase,
     private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
+    private val downloadReceiptUseCase: DownloadReceiptUseCase,
     private val authenticationService: AuthenticationService,
     private val expenseDetailUiMapper: ExpenseDetailUiMapper
 ) : ViewModel() {
+
+    private val downloadJobs = ConcurrentHashMap<String, Job>()
+    private val failedDownloads = ConcurrentHashMap.newKeySet<String>()
 
     private val _expenseId = MutableStateFlow("")
 
@@ -61,9 +72,9 @@ class ExpenseDetailViewModel(
         .filter { it.isNotBlank() }
         .flatMapLatest { expenseId ->
             var cachedUserIds = emptySet<String>()
-            var cachedProfiles = emptyMap<String, es.pedrazamiguez.splittrip.domain.model.User>()
+            var cachedProfiles = emptyMap<String, User>()
             var cachedWithdrawalIds = emptySet<String>()
-            var cachedWithdrawals = emptyMap<String, es.pedrazamiguez.splittrip.domain.model.CashWithdrawal>()
+            var cachedWithdrawals = emptyMap<String, CashWithdrawal>()
             var cachedSubunitGroupId = ""
             var cachedSubunits = emptyMap<String, String>()
 
@@ -73,6 +84,11 @@ class ExpenseDetailViewModel(
                         return@flatMapLatest flowOf(
                             ExpenseDetailUiState(isLoading = false, hasError = true)
                         )
+                    }
+
+                    val attachment = expense.receiptAttachment
+                    if (shouldDownloadPdf(attachment) && !failedDownloads.contains(expense.id)) {
+                        triggerReceiptDownload(expense.id, attachment?.remoteUrl.orEmpty())
                     }
 
                     val allUserIds = buildSet {
@@ -173,6 +189,7 @@ class ExpenseDetailViewModel(
     fun onEvent(event: ExpenseDetailUiEvent) {
         when (event) {
             ExpenseDetailUiEvent.DeleteConfirmed -> handleDelete()
+            ExpenseDetailUiEvent.RetryReceiptDownload -> handleRetryReceiptDownload()
         }
     }
 
@@ -195,5 +212,67 @@ class ExpenseDetailViewModel(
                 )
             }
         }
+    }
+
+    private fun handleRetryReceiptDownload() {
+        val expenseId = _expenseId.value
+        if (expenseId.isBlank()) return
+        failedDownloads.remove(expenseId)
+        viewModelScope.launch {
+            try {
+                val expense = getExpenseByIdFlowUseCase(expenseId).first()
+                if (expense != null) {
+                    val attachment = expense.receiptAttachment
+                    if (shouldDownloadPdf(attachment)) {
+                        triggerReceiptDownload(expense.id, attachment?.remoteUrl.orEmpty())
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to retry receipt download for expense $expenseId")
+            }
+        }
+    }
+
+    private fun triggerReceiptDownload(expenseId: String, remoteUrl: String) {
+        if (downloadJobs.containsKey(expenseId)) {
+            return
+        }
+        downloadJobs[expenseId] = viewModelScope.launch {
+            try {
+                val result = downloadReceiptUseCase(expenseId, remoteUrl)
+                result.onFailure { e ->
+                    val isTerminal = when (e) {
+                        is TerminalDownloadException -> e.responseCode in 400..499
+                        else -> false
+                    }
+                    if (isTerminal) {
+                        failedDownloads.add(expenseId)
+                    }
+                    _actions.send(
+                        ExpenseDetailUiAction.ShowError(
+                            UiText.StringResource(R.string.expense_detail_receipt_download_failed)
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to download receipt")
+                failedDownloads.add(expenseId)
+                _actions.send(
+                    ExpenseDetailUiAction.ShowError(
+                        UiText.StringResource(R.string.expense_detail_receipt_download_failed)
+                    )
+                )
+            } finally {
+                downloadJobs.remove(expenseId)
+            }
+        }
+    }
+
+    private fun shouldDownloadPdf(attachment: ReceiptAttachment?): Boolean {
+        if (attachment == null) return false
+        val isPdf = attachment.mimeType == "application/pdf"
+        val hasNoLocal = attachment.localUri.isBlank()
+        val hasRemote = !attachment.remoteUrl.isNullOrBlank()
+        return isPdf && hasNoLocal && hasRemote
     }
 }

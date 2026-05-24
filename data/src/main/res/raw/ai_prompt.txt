@@ -1,0 +1,17 @@
+Extract the following fields from the receipt in JSON format:
+- Grand total as a decimal string (amount).
+- ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).
+- Date of the transaction in YYYY-MM-DD format (date).
+- Time of the transaction in HH:MM format (time).
+- Merchant or store name (vendor).
+- Guessed brief description of what was purchased, maximum 3-4 words (title).
+- Category (must be one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
+- Payment method (must be one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
+- Any relevant notes or identifiers like booking code, reservation ID, locator ("localizador") code, ticket ID, seats, flight or train numbers, reference number, etc. (notes).
+
+Write the "title" in English. Keep it brief and descriptive, e.g. "Flight to Barcelona" instead of just "flight", "Dinner at restaurant" instead of just "dinner", "Grocery shopping" instead of just "grocery store". Do not write full sentences. Max 3-4 words.
+
+Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
+Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+Input: %1$s
+Output:

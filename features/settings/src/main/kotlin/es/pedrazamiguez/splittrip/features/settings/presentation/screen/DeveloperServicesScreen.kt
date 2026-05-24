@@ -246,7 +246,12 @@ private fun AiExtractionTabContent(
                             amount = uiState.extractedAmount,
                             currency = uiState.extractedCurrency,
                             date = uiState.extractedDate,
+                            time = uiState.extractedTime,
                             title = uiState.extractedTitle,
+                            vendor = uiState.extractedVendor,
+                            paymentMethod = uiState.extractedPaymentMethod,
+                            category = uiState.extractedCategory,
+                            notes = uiState.extractedNotes,
                             source = uiState.extractionSource,
                             confidence = uiState.extractionConfidence
                         )
@@ -268,13 +273,21 @@ private fun AiExtractionTabContent(
             }
         }
 
-        GradientButton(
-            text = stringResource(R.string.developer_services_ai_select_receipt),
-            onClick = onSelectReceiptForAiClick,
-            modifier = Modifier.fillMaxWidth()
-        )
+        AnimatedVisibility(
+            visible = uiState.extractionStatus !is ExtractionStatus.Loading,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column {
+                GradientButton(
+                    text = stringResource(R.string.developer_services_ai_select_receipt),
+                    onClick = onSelectReceiptForAiClick,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+            }
+        }
     }
 }
 

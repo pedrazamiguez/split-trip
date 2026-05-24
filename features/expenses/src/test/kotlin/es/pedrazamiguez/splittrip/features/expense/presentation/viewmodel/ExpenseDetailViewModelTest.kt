@@ -2,11 +2,14 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
+import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -52,6 +55,7 @@ class ExpenseDetailViewModelTest {
     private lateinit var getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase
     private lateinit var getGroupSubunitsUseCase: GetGroupSubunitsUseCase
     private lateinit var deleteExpenseUseCase: DeleteExpenseUseCase
+    private lateinit var downloadReceiptUseCase: DownloadReceiptUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var expenseDetailUiMapper: ExpenseDetailUiMapper
     private lateinit var viewModel: ExpenseDetailViewModel
@@ -106,6 +110,7 @@ class ExpenseDetailViewModelTest {
         getCashWithdrawalsFlowUseCase = mockk()
         getGroupSubunitsUseCase = mockk()
         deleteExpenseUseCase = mockk()
+        downloadReceiptUseCase = mockk(relaxed = true)
         authenticationService = mockk()
         expenseDetailUiMapper = mockk()
 
@@ -375,12 +380,213 @@ class ExpenseDetailViewModelTest {
         }
     }
 
+    @Nested
+    inner class ReceiptDownload {
+
+        @Test
+        fun `triggers downloadReceiptUseCase when PDF receipt has remoteUrl and blank localUri`() = runTest(
+            testDispatcher
+        ) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.pdf"
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(expenseWithPdf)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { downloadReceiptUseCase(testExpenseId, "https://example.com/receipt.pdf") }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `does not trigger downloadReceiptUseCase when PDF receipt already has localUri`() = runTest(
+            testDispatcher
+        ) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "file:///local/receipt.pdf",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.pdf"
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(expenseWithPdf)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 0) { downloadReceiptUseCase(any(), any()) }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `does not trigger downloadReceiptUseCase when PDF receipt has no remoteUrl`() = runTest(testDispatcher) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = null
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(expenseWithPdf)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 0) { downloadReceiptUseCase(any(), any()) }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `does not trigger downloadReceiptUseCase when receipt is not PDF`() = runTest(testDispatcher) {
+            // Given
+            val imageAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "image/webp",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.webp"
+            )
+            val expenseWithImage = testExpense.copy(receiptAttachment = imageAttachment)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(expenseWithImage)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 0) { downloadReceiptUseCase(any(), any()) }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `does not retry download when previous download failed with terminal error`() = runTest(testDispatcher) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.pdf"
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            val exception = TerminalDownloadException(404, "Not Found")
+            coEvery { downloadReceiptUseCase(testExpenseId, any()) } returns Result.failure(exception)
+
+            val flow = kotlinx.coroutines.flow.MutableSharedFlow<Expense?>(replay = 1)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setExpenseId(testExpenseId)
+
+            // First emission
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Second emission (re-trigger)
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Then - download should only be triggered once (blacklisted)
+            coVerify(exactly = 1) { downloadReceiptUseCase(testExpenseId, "https://example.com/receipt.pdf") }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `retries download when previous download failed with recoverable error`() = runTest(testDispatcher) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.pdf"
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            // Transient 503 Service Unavailable or general exception is recoverable
+            val exception = TerminalDownloadException(503, "Service Unavailable")
+            coEvery { downloadReceiptUseCase(testExpenseId, any()) } returns Result.failure(exception)
+
+            val flow = kotlinx.coroutines.flow.MutableSharedFlow<Expense?>(replay = 1)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setExpenseId(testExpenseId)
+
+            // First emission
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Second emission (re-trigger)
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Then - download should be retried (not blacklisted)
+            coVerify(exactly = 2) { downloadReceiptUseCase(testExpenseId, "https://example.com/receipt.pdf") }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `retries download when RetryReceiptDownload event is received`() = runTest(testDispatcher) {
+            // Given
+            val pdfAttachment = ReceiptAttachment(
+                localUri = "",
+                mimeType = "application/pdf",
+                capturedAtMillis = 1000L,
+                remoteUrl = "https://example.com/receipt.pdf"
+            )
+            val expenseWithPdf = testExpense.copy(receiptAttachment = pdfAttachment)
+            val exception = TerminalDownloadException(404, "Not Found")
+            coEvery { downloadReceiptUseCase(testExpenseId, any()) } returns Result.failure(exception)
+
+            val flow = kotlinx.coroutines.flow.MutableSharedFlow<Expense?>(replay = 1)
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setExpenseId(testExpenseId)
+
+            // First emission triggers first download and blacklists it
+            flow.emit(expenseWithPdf)
+            advanceUntilIdle()
+
+            // Trigger retry event
+            viewModel.onEvent(ExpenseDetailUiEvent.RetryReceiptDownload)
+            advanceUntilIdle()
+
+            // Then - download should be triggered twice
+            coVerify(exactly = 2) { downloadReceiptUseCase(testExpenseId, "https://example.com/receipt.pdf") }
+
+            collectJob.cancel()
+        }
+    }
+
     private fun createViewModel() = ExpenseDetailViewModel(
         getExpenseByIdFlowUseCase = getExpenseByIdFlowUseCase,
         getMemberProfilesUseCase = getMemberProfilesUseCase,
         getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
         getGroupSubunitsUseCase = getGroupSubunitsUseCase,
         deleteExpenseUseCase = deleteExpenseUseCase,
+        downloadReceiptUseCase = downloadReceiptUseCase,
         authenticationService = authenticationService,
         expenseDetailUiMapper = expenseDetailUiMapper
     )

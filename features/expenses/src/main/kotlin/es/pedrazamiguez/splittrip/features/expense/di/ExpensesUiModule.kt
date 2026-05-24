@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
@@ -20,6 +21,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetAvailableWithdrawalPoolsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
@@ -46,6 +49,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.Scheduled
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.AddExpenseScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpenseDetailScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpensesScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ReceiptViewerScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.AddExpenseViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpenseDetailViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesUseCases
@@ -59,6 +63,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.FormEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.IntraSubunitSplitDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ReceiptAutoFillEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SaveLastUsedPreferencesBundle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitRowMappingDelegate
@@ -205,7 +210,8 @@ val expensesUiModule = module {
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             authenticationService = get<AuthenticationService>(),
             addExpenseOptionsMapper = addExpenseOptionsUiMapper,
-            addExpenseSplitMapper = addExpenseSplitUiMapper
+            addExpenseSplitMapper = addExpenseSplitUiMapper,
+            receiptExtractionService = get<ReceiptExtractionService>()
         )
 
         val submitResultDelegate = SubmitResultDelegate(
@@ -257,6 +263,12 @@ val expensesUiModule = module {
             attachReceiptUseCase = get<AttachReceiptUseCase>()
         )
 
+        val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
+            extractReceiptFieldsUseCase = get<ExtractReceiptFieldsUseCase>(),
+            receiptExtractionService = get<ReceiptExtractionService>(),
+            formattingHelper = formattingHelper
+        )
+
         AddExpenseViewModel(
             configEventHandler = configHandler,
             currencyEventHandler = currencyHandler,
@@ -264,7 +276,8 @@ val expensesUiModule = module {
             subunitSplitEventHandler = subunitSplitHandler,
             addOnEventHandler = addOnHandler,
             submitEventHandler = submitHandler,
-            formEventHandler = formHandler
+            formEventHandler = formHandler,
+            receiptAutoFillEventHandler = receiptAutoFillEventHandler
         )
     }
 
@@ -273,6 +286,7 @@ val expensesUiModule = module {
     single { ExpensesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { AddExpenseScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { ExpenseDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { ReceiptViewerScreenUiProviderImpl() } bind ScreenUiProvider::class
 
     single {
         ExpenseDetailUiMapper(
@@ -291,6 +305,7 @@ val expensesUiModule = module {
             getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>(),
             getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),
             deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
+            downloadReceiptUseCase = get<DownloadReceiptUseCase>(),
             authenticationService = get<AuthenticationService>(),
             expenseDetailUiMapper = get<ExpenseDetailUiMapper>()
         )

@@ -118,6 +118,10 @@ class LocalExpenseDataSourceImpl(
         expenseDao.updateReceiptRemoteUrl(expenseId, remoteUrl)
     }
 
+    override suspend fun updateReceiptLocalUri(expenseId: String, localUri: String) {
+        expenseDao.updateReceiptLocalUri(expenseId, localUri)
+    }
+
     override suspend fun clearAllExpenses() {
         expenseDao.clearAllExpenses()
     }

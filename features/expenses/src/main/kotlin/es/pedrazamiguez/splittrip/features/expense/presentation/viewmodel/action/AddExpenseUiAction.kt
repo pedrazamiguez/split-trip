@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 sealed interface AddExpenseUiAction {
     data object None : AddExpenseUiAction
     data class ShowError(val message: UiText) : AddExpenseUiAction
+    data class ShowPill(val message: UiText) : AddExpenseUiAction
     data object NavigateBack : AddExpenseUiAction
 
     /**
