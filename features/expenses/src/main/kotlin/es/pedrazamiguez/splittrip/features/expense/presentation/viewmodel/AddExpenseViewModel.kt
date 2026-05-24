@@ -70,7 +70,9 @@ class AddExpenseViewModel(
         }
 
         formEventHandler.setOnReceiptAttached { attachment ->
-            receiptAutoFillEventHandler.handleReceiptAttached(attachment)
+            if (_uiState.value.isAiModeActive) {
+                receiptAutoFillEventHandler.handleReceiptAttached(attachment)
+            }
         }
 
         // Wire post-config callback: ViewModel routes cross-handler actions

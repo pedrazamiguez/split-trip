@@ -38,7 +38,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
-import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
@@ -402,8 +401,7 @@ private fun AutoFillBanner(
                 )
             }
             IconButton(
-                onClick = onDismiss,
-                modifier = Modifier.size(24.dp)
+                onClick = onDismiss
             ) {
                 Icon(
                     imageVector = TablerIcons.Outline.X,

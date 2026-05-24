@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
@@ -9,7 +10,9 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
+import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -52,7 +55,7 @@ class ReceiptAutoFillEventHandlerTest {
     private val eur = CurrencyUiModel(code = "EUR", displayText = "EUR (€)", decimalDigits = 2)
     private val usd = CurrencyUiModel(code = "USD", displayText = "USD ($)", decimalDigits = 2)
     private val foodCategory = CategoryUiModel(id = "FOOD", displayText = "Food")
-    private val cashPaymentMethod = es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel(
+    private val cashPaymentMethod = PaymentMethodUiModel(
         id = "CASH",
         displayText = "Cash"
     )
@@ -82,7 +85,8 @@ class ReceiptAutoFillEventHandlerTest {
                 availableCurrencies = persistentListOf(eur, usd),
                 selectedCurrency = eur,
                 availableCategories = persistentListOf(foodCategory),
-                paymentMethods = persistentListOf(cashPaymentMethod)
+                paymentMethods = persistentListOf(cashPaymentMethod),
+                isAiModeActive = true
             )
         )
         actions = MutableSharedFlow(replay = 10)
@@ -198,11 +202,8 @@ class ReceiptAutoFillEventHandlerTest {
             assertEquals(ExtractionSource.AI_CORE, uiState.value.autoFillBanner?.source)
             assertTrue(
                 uiState.value.autoFillBanner?.fields?.contains(
-                    es.pedrazamiguez.splittrip.core.common.presentation.UiText.StringResource(
-                        es.pedrazamiguez.splittrip.features.expense.R.string.expense_field_notes
-                    )
-                ) ==
-                    true
+                    UiText.StringResource(R.string.expense_field_notes)
+                ) == true
             )
         }
 
@@ -238,11 +239,179 @@ class ReceiptAutoFillEventHandlerTest {
             assertEquals("ENTERTAINMENT", capturedCategorySelections.single())
             assertTrue(
                 uiState.value.autoFillBanner?.fields?.contains(
-                    es.pedrazamiguez.splittrip.core.common.presentation.UiText.StringResource(
-                        es.pedrazamiguez.splittrip.features.expense.R.string.add_expense_category_title
-                    )
+                    UiText.StringResource(R.string.add_expense_category_title)
                 ) == true
             )
+        }
+
+        @Test
+        fun `does not extract fields when AI mode is disabled`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            uiState.value = uiState.value.copy(isAiModeActive = false)
+
+            handler.handleReceiptAttached(attachment)
+
+            io.mockk.coVerify(exactly = 0) { extractReceiptFieldsUseCase(any()) }
+        }
+
+        @Test
+        fun `does not overwrite pre-populated values`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Starbucks",
+                    amount = BigDecimal("12.50"),
+                    currency = "USD",
+                    date = LocalDate.of(2025, 1, 1),
+                    time = java.time.LocalTime.of(10, 30),
+                    vendor = "Starbucks Store",
+                    category = "FOOD",
+                    paymentMethod = "CASH",
+                    notes = "my locator",
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+
+            uiState.value = uiState.value.copy(
+                expenseTitle = "Pre-populated Title",
+                vendor = "Pre-populated Vendor",
+                notes = "Pre-populated Notes",
+                sourceAmount = "10.00",
+                expenseDateMillis = 9999L,
+                selectedCurrency = usd,
+                selectedPaymentMethod = cashPaymentMethod
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals("Pre-populated Title", uiState.value.expenseTitle)
+            assertEquals("Pre-populated Vendor", uiState.value.vendor)
+            assertEquals("Pre-populated Notes", uiState.value.notes)
+            assertEquals(9999L, uiState.value.expenseDateMillis)
+            assertTrue(capturedCurrencySelections.isEmpty())
+            assertTrue(capturedAmountChanges.isEmpty())
+            assertTrue(capturedPaymentMethodSelections.isEmpty())
+        }
+
+        @Test
+        fun `does not overwrite payment method if user changed it from default before scan`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Starbucks",
+                    amount = BigDecimal("12.50"),
+                    currency = "USD",
+                    date = LocalDate.of(2025, 1, 1),
+                    time = java.time.LocalTime.of(10, 30),
+                    vendor = "Starbucks Store",
+                    category = "FOOD",
+                    paymentMethod = "CREDIT_CARD",
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+
+            val creditCardPaymentMethod = PaymentMethodUiModel(
+                id = "CREDIT_CARD",
+                displayText = "Credit Card"
+            )
+
+            uiState.value = uiState.value.copy(
+                paymentMethods = persistentListOf(cashPaymentMethod, creditCardPaymentMethod),
+                selectedPaymentMethod = creditCardPaymentMethod
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertTrue(capturedPaymentMethodSelections.isEmpty())
+        }
+
+        @Test
+        fun `does not overwrite fields changed while extraction is in-flight`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } answers {
+                uiState.value = uiState.value.copy(
+                    expenseTitle = "In-flight Title",
+                    vendor = "In-flight Vendor",
+                    notes = "In-flight Notes",
+                    expenseDateMillis = 8888L,
+                    selectedCurrency = usd,
+                    selectedPaymentMethod = cashPaymentMethod
+                )
+                Result.success(
+                    ExtractedReceipt(
+                        title = "Extracted Title",
+                        amount = BigDecimal("12.50"),
+                        currency = "EUR",
+                        date = LocalDate.of(2025, 1, 1),
+                        time = java.time.LocalTime.of(10, 30),
+                        vendor = "Extracted Vendor",
+                        category = "FOOD",
+                        paymentMethod = "CREDIT_CARD",
+                        notes = "Extracted Notes",
+                        confidence = ExtractionConfidence.HIGH,
+                        source = ExtractionSource.AI_CORE
+                    )
+                )
+            }
+
+            uiState.value = uiState.value.copy(
+                expenseTitle = "",
+                vendor = "",
+                notes = "",
+                expenseDateMillis = null,
+                selectedCurrency = eur,
+                selectedPaymentMethod = cashPaymentMethod
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals("In-flight Title", uiState.value.expenseTitle)
+            assertEquals("In-flight Vendor", uiState.value.vendor)
+            assertEquals("In-flight Notes", uiState.value.notes)
+            assertEquals(8888L, uiState.value.expenseDateMillis)
+            assertTrue(capturedCurrencySelections.isEmpty())
+            assertTrue(capturedPaymentMethodSelections.isEmpty())
+        }
+
+        @Test
+        fun `rounds extracted amount and handles overflow safely`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Starbucks",
+                    amount = BigDecimal("12.34567"),
+                    currency = "EUR",
+                    date = LocalDate.of(2025, 1, 1),
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+            every { formattingHelper.formatCentsValue(1235L, 2) } returns "12.35"
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals("12.35", capturedAmountChanges.single())
+        }
+
+        @Test
+        fun `handles extracted amount overflow safely`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Starbucks",
+                    amount = BigDecimal("92233720368547758079223372036854775807"),
+                    currency = "EUR",
+                    date = LocalDate.of(2025, 1, 1),
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertTrue(capturedAmountChanges.isEmpty())
         }
     }
 }

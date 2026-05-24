@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -9,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -70,6 +72,9 @@ class ReceiptAutoFillEventHandler(
      * the device, runs OCR and extracts structured fields, then merges them.
      */
     fun handleReceiptAttached(attachment: ReceiptAttachment) {
+        val state = _uiState.value
+        if (!state.isAiModeActive) return
+
         val capability = receiptExtractionService.capability()
         if (capability != ExtractionCapability.ON_DEVICE_AI) {
             scope.launch {
@@ -82,6 +87,9 @@ class ReceiptAutoFillEventHandler(
             return
         }
 
+        val preScanCurrency = state.selectedCurrency
+        val preScanPaymentMethod = state.selectedPaymentMethod
+
         scope.launch {
             _actionsFlow.emit(
                 AddExpenseUiAction.ShowPill(
@@ -91,7 +99,7 @@ class ReceiptAutoFillEventHandler(
 
             extractReceiptFieldsUseCase(attachment)
                 .onSuccess { extracted ->
-                    mergeExtractedFields(extracted)
+                    mergeExtractedFields(extracted, preScanCurrency, preScanPaymentMethod)
                 }
                 .onFailure { error ->
                     Timber.e(error, "Receipt auto-fill failed")
@@ -130,17 +138,20 @@ class ReceiptAutoFillEventHandler(
         _uiState.update { it.copy(autoFillBanner = null) }
     }
 
-    private suspend fun mergeExtractedFields(extracted: ExtractedReceipt) {
-        val state = _uiState.value
+    private suspend fun mergeExtractedFields(
+        extracted: ExtractedReceipt,
+        preScanCurrency: CurrencyUiModel?,
+        preScanPaymentMethod: PaymentMethodUiModel?
+    ) {
         val bannerFields = mutableListOf<UiText>()
 
-        tryMergeTitleAndVendor(extracted, state, bannerFields)
-        tryMergeDate(extracted, state, bannerFields)
-        tryMergeCurrency(extracted, state, bannerFields)
-        tryMergeAmount(extracted, state, bannerFields)
-        tryMergeCategory(extracted, state, bannerFields)
-        tryMergePaymentMethod(extracted, state, bannerFields)
-        tryMergeNotes(extracted, state, bannerFields)
+        tryMergeTitleAndVendor(extracted, bannerFields)
+        tryMergeDate(extracted, bannerFields)
+        tryMergeCurrency(extracted, preScanCurrency, bannerFields)
+        tryMergeAmount(extracted, bannerFields)
+        tryMergeCategory(extracted, bannerFields)
+        tryMergePaymentMethod(extracted, preScanPaymentMethod, bannerFields)
+        tryMergeNotes(extracted, bannerFields)
 
         // 5. Update banner state and notify success
         if (bannerFields.isNotEmpty()) {
@@ -162,11 +173,11 @@ class ReceiptAutoFillEventHandler(
 
     private fun tryMergeTitleAndVendor(
         extracted: ExtractedReceipt,
-        state: AddExpenseUiState,
         bannerFields: MutableList<UiText>
     ) {
         val extractedTitle = extracted.title ?: extracted.vendor
-        if (state.expenseTitle.isBlank() &&
+        val stateTitle = _uiState.value
+        if (stateTitle.expenseTitle.isBlank() &&
             !extractedTitle.isNullOrBlank() &&
             extracted.confidence == ExtractionConfidence.HIGH
         ) {
@@ -175,7 +186,8 @@ class ReceiptAutoFillEventHandler(
         }
 
         val extractedVendor = extracted.vendor
-        if (state.vendor.isBlank() &&
+        val stateVendor = _uiState.value
+        if (stateVendor.vendor.isBlank() &&
             !extractedVendor.isNullOrBlank() &&
             extracted.confidence == ExtractionConfidence.HIGH
         ) {
@@ -186,11 +198,11 @@ class ReceiptAutoFillEventHandler(
 
     private fun tryMergeDate(
         extracted: ExtractedReceipt,
-        state: AddExpenseUiState,
         bannerFields: MutableList<UiText>
     ) {
         val extractedDate = extracted.date
-        if (state.expenseDateMillis == null && extractedDate != null) {
+        val currentState = _uiState.value
+        if (currentState.expenseDateMillis == null && extractedDate != null) {
             val extractedTime = extracted.time
             val localDateTime = if (extractedTime != null) {
                 extractedDate.atTime(extractedTime)
@@ -208,16 +220,18 @@ class ReceiptAutoFillEventHandler(
 
     private fun tryMergeCurrency(
         extracted: ExtractedReceipt,
-        state: AddExpenseUiState,
+        preScanCurrency: CurrencyUiModel?,
         bannerFields: MutableList<UiText>
     ) {
         val extractedCurrencyCode = extracted.currency
-        val currentCurrency = state.selectedCurrency
+        val currentState = _uiState.value
+        val currentCurrency = currentState.selectedCurrency
         val shouldPreFillCurrency = !extractedCurrencyCode.isNullOrBlank() &&
+            currentCurrency == preScanCurrency &&
             extractedCurrencyCode != currentCurrency?.code
 
         if (shouldPreFillCurrency) {
-            val matchingCurrency = state.availableCurrencies
+            val matchingCurrency = currentState.availableCurrencies
                 .find { it.code.equals(extractedCurrencyCode, ignoreCase = true) }
             if (matchingCurrency != null) {
                 onCurrencySelected?.invoke(matchingCurrency.code)
@@ -228,35 +242,40 @@ class ReceiptAutoFillEventHandler(
 
     private fun tryMergeAmount(
         extracted: ExtractedReceipt,
-        state: AddExpenseUiState,
         bannerFields: MutableList<UiText>
     ) {
         val extractedAmount = extracted.amount
-        if (state.sourceAmount.isBlank() &&
+        val currentState = _uiState.value
+        if (currentState.sourceAmount.isBlank() &&
             extractedAmount != null &&
             extractedAmount > BigDecimal.ZERO
         ) {
             // Re-read selected currency decimal places in case currency changed
             val decimalDigits = _uiState.value.selectedCurrency?.decimalDigits ?: 2
-            val cents = extractedAmount.movePointRight(decimalDigits).toLong()
-            val amountString = formattingHelper.formatCentsValue(cents, decimalDigits)
-            onAmountChanged?.invoke(amountString)
-            bannerFields.add(UiText.StringResource(R.string.expense_field_amount))
+            try {
+                val scaledAmount = extractedAmount.setScale(decimalDigits, java.math.RoundingMode.HALF_UP)
+                val cents = scaledAmount.movePointRight(decimalDigits).longValueExact()
+                val amountString = formattingHelper.formatCentsValue(cents, decimalDigits)
+                onAmountChanged?.invoke(amountString)
+                bannerFields.add(UiText.StringResource(R.string.expense_field_amount))
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to convert extracted amount to cents")
+            }
         }
     }
 
     private fun tryMergeCategory(
         extracted: ExtractedReceipt,
-        state: AddExpenseUiState,
         bannerFields: MutableList<UiText>
     ) {
         val extractedCategory = extracted.category
-        val currentCategory = state.selectedCategory
+        val currentState = _uiState.value
+        val currentCategory = currentState.selectedCategory
         val shouldPreFillCategory = !extractedCategory.isNullOrBlank() &&
             !extractedCategory.equals(currentCategory?.id, ignoreCase = true)
 
         if (shouldPreFillCategory) {
-            val matchingCategory = state.availableCategories
+            val matchingCategory = currentState.availableCategories
                 .find { it.id.equals(extractedCategory, ignoreCase = true) }
             if (matchingCategory != null) {
                 onCategorySelected?.invoke(matchingCategory.id)
@@ -267,12 +286,22 @@ class ReceiptAutoFillEventHandler(
 
     private fun tryMergePaymentMethod(
         extracted: ExtractedReceipt,
-        state: AddExpenseUiState,
+        preScanPaymentMethod: PaymentMethodUiModel?,
         bannerFields: MutableList<UiText>
     ) {
         val extractedPaymentMethod = extracted.paymentMethod
-        if (!extractedPaymentMethod.isNullOrBlank()) {
-            val matchingMethod = state.paymentMethods
+        val currentState = _uiState.value
+        val defaultPaymentMethod = currentState.paymentMethods.firstOrNull()
+        val shouldPreFillPaymentMethod = !extractedPaymentMethod.isNullOrBlank() &&
+            currentState.selectedPaymentMethod == preScanPaymentMethod &&
+            (
+                currentState.selectedPaymentMethod == null ||
+                    currentState.selectedPaymentMethod == defaultPaymentMethod
+                ) &&
+            !extractedPaymentMethod.equals(currentState.selectedPaymentMethod?.id, ignoreCase = true)
+
+        if (shouldPreFillPaymentMethod) {
+            val matchingMethod = currentState.paymentMethods
                 .find { it.id.equals(extractedPaymentMethod, ignoreCase = true) }
             if (matchingMethod != null) {
                 onPaymentMethodSelected?.invoke(matchingMethod.id)
@@ -283,11 +312,11 @@ class ReceiptAutoFillEventHandler(
 
     private fun tryMergeNotes(
         extracted: ExtractedReceipt,
-        state: AddExpenseUiState,
         bannerFields: MutableList<UiText>
     ) {
         val extractedNotes = extracted.notes
-        if (state.notes.isBlank() && !extractedNotes.isNullOrBlank()) {
+        val currentState = _uiState.value
+        if (currentState.notes.isBlank() && !extractedNotes.isNullOrBlank()) {
             _uiState.update { it.copy(notes = extractedNotes) }
             bannerFields.add(UiText.StringResource(R.string.expense_field_notes))
         }
