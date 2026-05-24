@@ -205,5 +205,44 @@ class ReceiptAutoFillEventHandlerTest {
                     true
             )
         }
+
+        @Test
+        fun `extracts category even when a different category is already selected`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Theater Ticket",
+                    amount = BigDecimal("45.00"),
+                    currency = "EUR",
+                    date = LocalDate.of(2025, 1, 1),
+                    time = java.time.LocalTime.of(19, 0),
+                    vendor = "Teatro Lope de Vega",
+                    category = "ENTERTAINMENT",
+                    paymentMethod = "CREDIT_CARD",
+                    notes = "Localizador: XYZ123",
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+            every { formattingHelper.formatCentsValue(4500L, 2) } returns "45.00"
+
+            val otherCategory = CategoryUiModel(id = "OTHER", displayText = "Other")
+            val entertainmentCategory = CategoryUiModel(id = "ENTERTAINMENT", displayText = "Entertainment")
+            uiState.value = uiState.value.copy(
+                availableCategories = persistentListOf(foodCategory, otherCategory, entertainmentCategory),
+                selectedCategory = foodCategory
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals("ENTERTAINMENT", capturedCategorySelections.single())
+            assertTrue(
+                uiState.value.autoFillBanner?.fields?.contains(
+                    es.pedrazamiguez.splittrip.core.common.presentation.UiText.StringResource(
+                        es.pedrazamiguez.splittrip.features.expense.R.string.add_expense_category_title
+                    )
+                ) == true
+            )
+        }
     }
 }

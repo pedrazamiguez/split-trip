@@ -251,10 +251,11 @@ class ReceiptAutoFillEventHandler(
         bannerFields: MutableList<UiText>
     ) {
         val extractedCategory = extracted.category
-        val shouldPreFillCategory = state.selectedCategory == null ||
-            state.selectedCategory.id == es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory.OTHER.name
+        val currentCategory = state.selectedCategory
+        val shouldPreFillCategory = !extractedCategory.isNullOrBlank() &&
+            !extractedCategory.equals(currentCategory?.id, ignoreCase = true)
 
-        if (shouldPreFillCategory && !extractedCategory.isNullOrBlank()) {
+        if (shouldPreFillCategory) {
             val matchingCategory = state.availableCategories
                 .find { it.id.equals(extractedCategory, ignoreCase = true) }
             if (matchingCategory != null) {

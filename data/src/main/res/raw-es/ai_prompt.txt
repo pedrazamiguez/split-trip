@@ -1,8 +1,8 @@
-Grand total, ISO-4217 currency, date YYYY-MM-DD, time HH:MM (24-hour format), merchant/store name (vendor), guessed title/description of what was purchased (title), category (one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER), and payment method (one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER).
+Grand total, ISO-4217 currency (si no se puede determinar la moneda, usa EUR), fecha YYYY-MM-DD, hora HH:MM (formato de 24 horas), nombre del comercio (vendor), título o descripción estimada de la compra (title), categoría (una de: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER), método de pago (uno de: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER), y cualquier nota o identificador relevante como código de reserva, localizador, ID de ticket, asientos, números de vuelo o tren, número de referencia, etc. (notes).
 
 Escribe el "title" en español. Que sea breve y descriptivo, ej. "Vuelo a Barcelona" en lugar de "flight" o "vuelo", "Cena en restaurante" en lugar de "dinner" o "cena", "Compra de supermercado" en lugar de "grocery store" o "supermercado". No escribas frases completas. Máximo 3-4 palabras.
 
-Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash
-Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks","category":"FOOD","paymentMethod":"CASH"}
+Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
+Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
 Input: %1$s
 Output:

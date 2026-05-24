@@ -262,13 +262,14 @@ internal class AICoreReceiptParser(
                 "ENTERTAINMENT, SHOPPING, OTHER), " +
                 "payment method (one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, " +
                 "BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER), " +
-                "and relevant notes or identifiers like booking code, locator (localizador) code, " +
-                "reference or ticket ID (notes).\n" +
+                "and any relevant notes or identifiers like booking code, reservation ID, " +
+                "locator (\"localizador\") code, ticket ID, seats, flight or train numbers, " +
+                "reference number, etc. (notes).\n" +
                 "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD " +
-                "2025-03-10 13:45 Cash BOOKID: ABC123D\n" +
+                "2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B\n" +
                 "Output: {\"amount\":\"50.00\",\"currency\":\"USD\",\"date\":\"2025-03-10\",\"time\":\"13:45\"," +
                 "\"vendor\":\"Quick Mart\",\"title\":\"Snacks\",\"category\":\"FOOD\"," +
-                "\"paymentMethod\":\"CASH\",\"notes\":\"Book ID: ABC123D\"}\n" +
+                "\"paymentMethod\":\"CASH\",\"notes\":\"Book ID: ABC123D, Seats: 14A, 14B\"}\n" +
                 "Input: %1\$s\n" +
                 "Output:"
     }
