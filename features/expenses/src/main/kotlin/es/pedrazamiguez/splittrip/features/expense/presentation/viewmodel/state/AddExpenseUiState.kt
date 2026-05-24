@@ -249,6 +249,11 @@ data class AddExpenseUiState(
     val isOnOptionalStep: Boolean
         get() = currentStep.isOptional
 
+    /** Whether the user can skip to the review step from the current step. */
+    val canSkipToReview: Boolean
+        get() = currentStep.isOptional &&
+            applicableSteps.indexOf(currentStep) > applicableSteps.indexOf(AddExpenseStep.AMOUNT)
+
     /**
      * Zero-based indices of optional steps within [applicableSteps].
      *

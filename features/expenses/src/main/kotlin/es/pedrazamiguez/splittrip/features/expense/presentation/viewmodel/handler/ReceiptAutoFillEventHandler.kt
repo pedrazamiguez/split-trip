@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+@Suppress("TooManyFunctions")
 class ReceiptAutoFillEventHandler(
     private val extractReceiptFieldsUseCase: ExtractReceiptFieldsUseCase,
     private val receiptExtractionService: ReceiptExtractionService,
@@ -35,6 +36,8 @@ class ReceiptAutoFillEventHandler(
 
     private var onCurrencySelected: ((String) -> Unit)? = null
     private var onAmountChanged: ((String) -> Unit)? = null
+    private var onCategorySelected: ((String) -> Unit)? = null
+    private var onPaymentMethodSelected: ((String) -> Unit)? = null
 
     override fun bind(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
@@ -52,6 +55,14 @@ class ReceiptAutoFillEventHandler(
 
     fun setOnAmountChanged(callback: (String) -> Unit) {
         onAmountChanged = callback
+    }
+
+    fun setOnCategorySelected(callback: (String) -> Unit) {
+        onCategorySelected = callback
+    }
+
+    fun setOnPaymentMethodSelected(callback: (String) -> Unit) {
+        onPaymentMethodSelected = callback
     }
 
     /**
@@ -123,10 +134,12 @@ class ReceiptAutoFillEventHandler(
         val state = _uiState.value
         val bannerFields = mutableListOf<UiText>()
 
-        tryMergeTitle(extracted, state, bannerFields)
+        tryMergeTitleAndVendor(extracted, state, bannerFields)
         tryMergeDate(extracted, state, bannerFields)
         tryMergeCurrency(extracted, state, bannerFields)
         tryMergeAmount(extracted, state, bannerFields)
+        tryMergeCategory(extracted, state, bannerFields)
+        tryMergePaymentMethod(extracted, state, bannerFields)
 
         // 5. Update banner state and notify success
         if (bannerFields.isNotEmpty()) {
@@ -146,19 +159,27 @@ class ReceiptAutoFillEventHandler(
         }
     }
 
-    private fun tryMergeTitle(
+    private fun tryMergeTitleAndVendor(
         extracted: ExtractedReceipt,
         state: AddExpenseUiState,
         bannerFields: MutableList<UiText>
     ) {
-        val extractedTitle = extracted.title
-        val shouldPreFillTitle = state.expenseTitle.isBlank() &&
+        val extractedTitle = extracted.title ?: extracted.vendor
+        if (state.expenseTitle.isBlank() &&
             !extractedTitle.isNullOrBlank() &&
             extracted.confidence == ExtractionConfidence.HIGH
-
-        if (shouldPreFillTitle && extractedTitle != null) {
+        ) {
             _uiState.update { it.copy(expenseTitle = extractedTitle, isTitleValid = true) }
             bannerFields.add(UiText.StringResource(R.string.expense_field_title))
+        }
+
+        val extractedVendor = extracted.vendor
+        if (state.vendor.isBlank() &&
+            !extractedVendor.isNullOrBlank() &&
+            extracted.confidence == ExtractionConfidence.HIGH
+        ) {
+            _uiState.update { it.copy(vendor = extractedVendor) }
+            bannerFields.add(UiText.StringResource(R.string.expense_field_vendor))
         }
     }
 
@@ -168,11 +189,19 @@ class ReceiptAutoFillEventHandler(
         bannerFields: MutableList<UiText>
     ) {
         val extractedDate = extracted.date
-        val shouldPreFillDate = state.expenseDateMillis == null && extractedDate != null
-        if (shouldPreFillDate && extractedDate != null) {
-            val dateMillis = extractedDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        if (state.expenseDateMillis == null && extractedDate != null) {
+            val extractedTime = extracted.time
+            val localDateTime = if (extractedTime != null) {
+                extractedDate.atTime(extractedTime)
+            } else {
+                extractedDate.atStartOfDay()
+            }
+            val dateMillis = localDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
             _uiState.update { it.copy(expenseDateMillis = dateMillis) }
             bannerFields.add(UiText.StringResource(R.string.add_expense_date))
+            if (extractedTime != null) {
+                bannerFields.add(UiText.StringResource(R.string.expense_field_time))
+            }
         }
     }
 
@@ -202,17 +231,51 @@ class ReceiptAutoFillEventHandler(
         bannerFields: MutableList<UiText>
     ) {
         val extractedAmount = extracted.amount
-        val shouldPreFillAmount = state.sourceAmount.isBlank() &&
+        if (state.sourceAmount.isBlank() &&
             extractedAmount != null &&
             extractedAmount > BigDecimal.ZERO
-
-        if (shouldPreFillAmount && extractedAmount != null) {
+        ) {
             // Re-read selected currency decimal places in case currency changed
             val decimalDigits = _uiState.value.selectedCurrency?.decimalDigits ?: 2
             val cents = extractedAmount.movePointRight(decimalDigits).toLong()
             val amountString = formattingHelper.formatCentsValue(cents, decimalDigits)
             onAmountChanged?.invoke(amountString)
             bannerFields.add(UiText.StringResource(R.string.expense_field_amount))
+        }
+    }
+
+    private fun tryMergeCategory(
+        extracted: ExtractedReceipt,
+        state: AddExpenseUiState,
+        bannerFields: MutableList<UiText>
+    ) {
+        val extractedCategory = extracted.category
+        val shouldPreFillCategory = state.selectedCategory == null ||
+            state.selectedCategory.id == es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory.OTHER.name
+
+        if (shouldPreFillCategory && !extractedCategory.isNullOrBlank()) {
+            val matchingCategory = state.availableCategories
+                .find { it.id.equals(extractedCategory, ignoreCase = true) }
+            if (matchingCategory != null) {
+                onCategorySelected?.invoke(matchingCategory.id)
+                bannerFields.add(UiText.StringResource(R.string.add_expense_category_title))
+            }
+        }
+    }
+
+    private fun tryMergePaymentMethod(
+        extracted: ExtractedReceipt,
+        state: AddExpenseUiState,
+        bannerFields: MutableList<UiText>
+    ) {
+        val extractedPaymentMethod = extracted.paymentMethod
+        if (!extractedPaymentMethod.isNullOrBlank()) {
+            val matchingMethod = state.paymentMethods
+                .find { it.id.equals(extractedPaymentMethod, ignoreCase = true) }
+            if (matchingMethod != null) {
+                onPaymentMethodSelected?.invoke(matchingMethod.id)
+                bannerFields.add(UiText.StringResource(R.string.expense_field_payment_method))
+            }
         }
     }
 }

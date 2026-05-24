@@ -98,7 +98,10 @@
     <string name="developer_services_extraction_amount">Importe:</string>
     <string name="developer_services_extraction_currency">Moneda:</string>
     <string name="developer_services_extraction_date">Fecha:</string>
+    <string name="developer_services_extraction_time">Hora:</string>
     <string name="developer_services_extraction_title">Título:</string>
+    <string name="developer_services_extraction_vendor">Comercio:</string>
+    <string name="developer_services_extraction_payment_method">Método de pago:</string>
     <string name="developer_services_extraction_source">Fuente:</string>
     <string name="developer_services_extraction_confidence">Confianza:</string>
     <string name="developer_services_extraction_error_fallback">Error en la extracción del recibo</string>

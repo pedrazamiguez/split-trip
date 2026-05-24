@@ -88,6 +88,52 @@ internal class AICoreReceiptParser(
         }
     }
 
+    private fun parseDate(jsonObject: JSONObject): LocalDate? {
+        val dateStr = jsonObject.optString("date").takeIf { it.isNotEmpty() && it != "null" }
+        return dateStr?.let {
+            try {
+                LocalDate.parse(it)
+            } catch (_: Exception) {
+                Timber.w("AICoreReceiptParser: failed to parse date string '%s'", it)
+                null
+            }
+        }
+    }
+
+    private fun parseTime(jsonObject: JSONObject): java.time.LocalTime? {
+        val timeStr = jsonObject.optString("time").takeIf { it.isNotEmpty() && it != "null" }
+        return timeStr?.let {
+            try {
+                java.time.LocalTime.parse(it)
+            } catch (_: Exception) {
+                Timber.w("AICoreReceiptParser: failed to parse time string '%s'", it)
+                null
+            }
+        }
+    }
+
+    private fun parseCategory(jsonObject: JSONObject): String? {
+        val categoryStr = jsonObject.optString("category").takeIf { it.isNotEmpty() && it != "null" }
+        return categoryStr?.let {
+            try {
+                es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory.fromString(it).name
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
+    private fun parsePaymentMethod(jsonObject: JSONObject): String? {
+        val paymentMethodStr = jsonObject.optString("paymentMethod").takeIf { it.isNotEmpty() && it != "null" }
+        return paymentMethodStr?.let {
+            try {
+                es.pedrazamiguez.splittrip.domain.enums.PaymentMethod.fromString(it).name
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
     private fun parseJsonToReceipt(cleanJson: String): ExtractedReceipt {
         val jsonObject = JSONObject(cleanJson)
 
@@ -97,19 +143,16 @@ internal class AICoreReceiptParser(
         val currency = jsonObject.optString("currency")
             .takeIf { it.isNotEmpty() && it != "null" }?.uppercase(Locale.ROOT)
 
-        val dateStr = jsonObject.optString("date").takeIf { it.isNotEmpty() && it != "null" }
-        val date = dateStr?.let {
-            try {
-                LocalDate.parse(it)
-            } catch (_: Exception) {
-                Timber.w("AICoreReceiptParser: failed to parse date string '%s'", it)
-                null
-            }
-        }
+        val date = parseDate(jsonObject)
+        val time = parseTime(jsonObject)
 
         val title = jsonObject.optString("title").takeIf { it.isNotEmpty() && it != "null" }
+        val vendor = jsonObject.optString("vendor").takeIf { it.isNotEmpty() && it != "null" }
 
-        val extractedFieldsCount = listOfNotNull(amount, currency, date, title).size
+        val category = parseCategory(jsonObject)
+        val paymentMethod = parsePaymentMethod(jsonObject)
+
+        val extractedFieldsCount = listOfNotNull(amount, currency, date, title ?: vendor).size
         val confidence = when (extractedFieldsCount) {
             FIELD_COUNT_ALL -> ExtractionConfidence.HIGH
             FIELD_COUNT_THREE, FIELD_COUNT_TWO -> ExtractionConfidence.MEDIUM
@@ -127,7 +170,11 @@ internal class AICoreReceiptParser(
             amount = amount,
             currency = currency,
             date = date,
+            time = time,
             title = title,
+            vendor = vendor,
+            category = category,
+            paymentMethod = paymentMethod,
             source = ExtractionSource.AI_CORE,
             confidence = confidence
         )
@@ -169,7 +216,11 @@ internal class AICoreReceiptParser(
             amount = null,
             currency = null,
             date = null,
+            time = null,
             title = null,
+            vendor = null,
+            category = null,
+            paymentMethod = null,
             source = ExtractionSource.AI_CORE,
             confidence = ExtractionConfidence.LOW
         )
@@ -177,10 +228,15 @@ internal class AICoreReceiptParser(
         // Few-shot completion: multi-item example teaches the model to pick the GRAND TOTAL,
         // not an individual item price. The "Output:" suffix triggers JSON completion.
         private fun buildPrompt(ocrText: String): String =
-            "Grand total, ISO-4217 currency, date YYYY-MM-DD, merchant name.\n" +
-                "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10\n" +
-                "Output: {\"amount\":\"50.00\",\"currency\":\"USD\"," +
-                "\"date\":\"2025-03-10\",\"title\":\"Quick Mart\"}\n" +
+            "Grand total, ISO-4217 currency, date YYYY-MM-DD, time HH:MM (24-hour format), " +
+                "merchant/store name (vendor), guessed title/description of what was purchased (title), " +
+                "category (one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, " +
+                "ENTERTAINMENT, SHOPPING, OTHER), " +
+                "and payment method (one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, " +
+                "BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER).\n" +
+                "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash\n" +
+                "Output: {\"amount\":\"50.00\",\"currency\":\"USD\",\"date\":\"2025-03-10\",\"time\":\"13:45\"," +
+                "\"vendor\":\"Quick Mart\",\"title\":\"Snacks\",\"category\":\"FOOD\",\"paymentMethod\":\"CASH\"}\n" +
                 "Input: $ocrText\n" +
                 "Output:"
     }

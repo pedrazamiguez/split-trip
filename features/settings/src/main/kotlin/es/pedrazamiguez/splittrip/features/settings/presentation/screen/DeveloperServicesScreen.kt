@@ -246,7 +246,10 @@ private fun AiExtractionTabContent(
                             amount = uiState.extractedAmount,
                             currency = uiState.extractedCurrency,
                             date = uiState.extractedDate,
+                            time = uiState.extractedTime,
                             title = uiState.extractedTitle,
+                            vendor = uiState.extractedVendor,
+                            paymentMethod = uiState.extractedPaymentMethod,
                             source = uiState.extractionSource,
                             confidence = uiState.extractionConfidence
                         )

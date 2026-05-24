@@ -168,8 +168,8 @@ private fun ExpenseWizardBody(
             stepLabels = orderedLabels,
             currentStepIndex = uiState.currentStepIndex,
             optionalStepIndices = uiState.optionalStepIndices,
-            skipToReviewLabel = if (uiState.isOnOptionalStep) skipToReviewLabel else null,
-            onSkipToReview = if (uiState.isOnOptionalStep) {
+            skipToReviewLabel = if (uiState.canSkipToReview) skipToReviewLabel else null,
+            onSkipToReview = if (uiState.canSkipToReview) {
                 { onEvent(AddExpenseUiEvent.JumpToReview) }
             } else {
                 null

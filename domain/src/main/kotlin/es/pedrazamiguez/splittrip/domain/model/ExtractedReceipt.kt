@@ -17,7 +17,11 @@ data class ExtractedReceipt(
     val amount: BigDecimal?,
     val currency: String?,
     val date: LocalDate?,
+    val time: java.time.LocalTime? = null,
     val title: String?,
+    val vendor: String? = null,
+    val category: String? = null,
+    val paymentMethod: String? = null,
     val source: ExtractionSource,
     val confidence: ExtractionConfidence
 )

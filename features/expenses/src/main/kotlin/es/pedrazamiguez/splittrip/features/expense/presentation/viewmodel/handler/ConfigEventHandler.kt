@@ -27,6 +27,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMet
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -154,6 +155,7 @@ class ConfigEventHandler(
                 loadedGroupId = groupId,
                 isAiCapable = isAiCapable,
                 isAiModeActive = isAiCapable,
+                currentStep = if (isAiCapable) AddExpenseStep.RECEIPT else AddExpenseStep.TITLE,
                 groupName = config.group.name,
                 currentUserId = currentUserId,
                 groupCurrency = defaults.mappedGroupCurrency,

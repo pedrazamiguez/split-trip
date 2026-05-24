@@ -62,6 +62,12 @@ class AddExpenseViewModel(
         receiptAutoFillEventHandler.setOnAmountChanged { amount ->
             onEvent(AddExpenseUiEvent.SourceAmountChanged(amount))
         }
+        receiptAutoFillEventHandler.setOnCategorySelected { categoryId ->
+            onEvent(AddExpenseUiEvent.CategorySelected(categoryId))
+        }
+        receiptAutoFillEventHandler.setOnPaymentMethodSelected { methodId ->
+            onEvent(AddExpenseUiEvent.PaymentMethodSelected(methodId))
+        }
 
         formEventHandler.setOnReceiptAttached { attachment ->
             receiptAutoFillEventHandler.handleReceiptAttached(attachment)

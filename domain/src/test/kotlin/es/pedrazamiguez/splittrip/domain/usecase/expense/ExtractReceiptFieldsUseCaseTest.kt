@@ -42,7 +42,11 @@ class ExtractReceiptFieldsUseCaseTest {
         amount = BigDecimal("50.00"),
         currency = "EUR",
         date = LocalDate.of(2026, 5, 23),
+        time = java.time.LocalTime.of(19, 30),
         title = "Dinner",
+        vendor = "Restaurant",
+        category = null,
+        paymentMethod = "CASH",
         source = ExtractionSource.AI_CORE,
         confidence = ExtractionConfidence.HIGH
     )

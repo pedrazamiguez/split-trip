@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.domain.model.Currency
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.GroupExpenseConfig
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -251,6 +252,9 @@ class AddExpenseViewModelTest {
             )
         )
 
+        val mockReceiptExtractionService = mockk<ReceiptExtractionService>()
+        every { mockReceiptExtractionService.capability() } returns ExtractionCapability.UNSUPPORTED
+
         val configHandler = ConfigEventHandler(
             getGroupExpenseConfigUseCase = getGroupExpenseConfigUseCase,
             getGroupLastUsedCurrencyUseCase = getGroupLastUsedCurrencyUseCase,
@@ -260,7 +264,7 @@ class AddExpenseViewModelTest {
             authenticationService = authenticationService,
             addExpenseOptionsMapper = addExpenseOptionsMapper,
             addExpenseSplitMapper = addExpenseSplitMapper,
-            receiptExtractionService = mockk(relaxed = true)
+            receiptExtractionService = mockReceiptExtractionService
         )
 
         val submitHandler = SubmitEventHandler(

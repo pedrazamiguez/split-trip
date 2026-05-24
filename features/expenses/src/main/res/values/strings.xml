@@ -311,7 +311,13 @@
     <string name="add_expense_date">Date</string>
     <string name="expense_autofill_switch_manual">Enter manually</string>
     <string name="expense_autofill_switch_ai">Scan receipt</string>
+    <string name="expense_autofill_ai_title">AI Receipt Scan</string>
+    <string name="expense_autofill_ai_subtitle">Powered by Gemini Nano</string>
     <string name="expense_autofill_ai_description">Scan your receipt to automatically fill in the expense details using on-device AI.</string>
+    <string name="expense_autofill_ai_disclaimer">AI-powered extraction is best-effort. Please review and verify all details before submitting.</string>
     <string name="expense_autofill_prompt_title">Scan receipt instead?</string>
     <string name="expense_autofill_prompt_description">On-device AI can automatically read the title, amount, currency, and date from a receipt.</string>
+    <string name="expense_field_vendor">Vendor</string>
+    <string name="expense_field_payment_method">Payment method</string>
+    <string name="expense_field_time">Time</string>
 </resources>
