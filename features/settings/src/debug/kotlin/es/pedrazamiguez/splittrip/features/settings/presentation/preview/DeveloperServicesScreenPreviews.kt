@@ -71,6 +71,7 @@ private fun DeveloperServicesScreenAiSuccessPreview() {
                 extractedCurrency = "THB",
                 extractedDate = "2026-05-20",
                 extractedTitle = "7-Eleven",
+                extractedNotes = "Locator: ABC123D",
                 extractionSource = ExtractionSource.AI_CORE,
                 extractionConfidence = ExtractionConfidence.HIGH
             ),

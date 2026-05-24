@@ -19,6 +19,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Cash
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Category
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Clock
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCardPay
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CurrencyEuro
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
@@ -30,12 +33,18 @@ import es.pedrazamiguez.splittrip.features.settings.R
 
 private val FIELD_ICON_SIZE = 18.dp
 
+@Suppress("LongParameterList")
 @Composable
 fun ExtractionResultsCard(
     amount: String?,
     currency: String?,
     date: String?,
+    time: String?,
     title: String?,
+    vendor: String?,
+    paymentMethod: String?,
+    category: String?,
+    notes: String?,
     source: ExtractionSource?,
     confidence: ExtractionConfidence?,
     modifier: Modifier = Modifier
@@ -45,30 +54,47 @@ fun ExtractionResultsCard(
         modifier = modifier
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-            ExtractionFieldRow(
-                icon = TablerIcons.Outline.Cash,
-                label = stringResource(R.string.developer_services_extraction_amount),
-                value = amount
+            val fields = listOf(
+                Triple(TablerIcons.Outline.Cash, stringResource(R.string.developer_services_extraction_amount), amount),
+                Triple(
+                    TablerIcons.Outline.CurrencyEuro,
+                    stringResource(R.string.developer_services_extraction_currency),
+                    currency
+                ),
+                Triple(TablerIcons.Outline.Calendar, stringResource(R.string.developer_services_extraction_date), date),
+                Triple(TablerIcons.Outline.Clock, stringResource(R.string.developer_services_extraction_time), time),
+                Triple(
+                    TablerIcons.Outline.Receipt,
+                    stringResource(R.string.developer_services_extraction_title),
+                    title
+                ),
+                Triple(
+                    TablerIcons.Outline.ShoppingBag,
+                    stringResource(R.string.developer_services_extraction_vendor),
+                    vendor
+                ),
+                Triple(
+                    TablerIcons.Outline.CreditCardPay,
+                    stringResource(R.string.developer_services_extraction_payment_method),
+                    paymentMethod
+                ),
+                Triple(
+                    TablerIcons.Outline.Category,
+                    stringResource(R.string.developer_services_extraction_category),
+                    category
+                ),
+                Triple(
+                    TablerIcons.Outline.InfoCircle,
+                    stringResource(R.string.developer_services_extraction_notes),
+                    notes
+                )
             )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            ExtractionFieldRow(
-                icon = TablerIcons.Outline.CurrencyEuro,
-                label = stringResource(R.string.developer_services_extraction_currency),
-                value = currency
-            )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            ExtractionFieldRow(
-                icon = TablerIcons.Outline.Calendar,
-                label = stringResource(R.string.developer_services_extraction_date),
-                value = date
-            )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            ExtractionFieldRow(
-                icon = TablerIcons.Outline.ShoppingBag,
-                label = stringResource(R.string.developer_services_extraction_title),
-                value = title
-            )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+            fields.forEach { (icon, label, value) ->
+                ExtractionFieldRow(icon = icon, label = label, value = value)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            }
+
             ExtractionSourceRow(source = source)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ExtractionConfidenceRow(confidence = confidence)

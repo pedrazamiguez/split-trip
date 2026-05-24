@@ -67,6 +67,11 @@ class DeveloperServicesViewModelTest {
         assertEquals("", state.extractedText)
         assertTrue(state.textBlocks.isEmpty())
         assertNull(state.errorMessage)
+        assertNull(state.extractedTime)
+        assertNull(state.extractedVendor)
+        assertNull(state.extractedPaymentMethod)
+        assertNull(state.extractedCategory)
+        assertNull(state.extractedNotes)
         assertEquals(DeveloperServicesTab.Ocr, state.selectedTab)
     }
 
@@ -94,6 +99,11 @@ class DeveloperServicesViewModelTest {
             assertEquals("", state.extractedText)
             assertTrue(state.textBlocks.isEmpty())
             assertNull(state.errorMessage)
+            assertNull(state.extractedTime)
+            assertNull(state.extractedVendor)
+            assertNull(state.extractedPaymentMethod)
+            assertNull(state.extractedCategory)
+            assertNull(state.extractedNotes)
         }
     }
 
@@ -284,7 +294,12 @@ class DeveloperServicesViewModelTest {
                 amount = BigDecimal("991.00"),
                 currency = "THB",
                 date = LocalDate.of(2026, 5, 20),
-                title = "7-Eleven",
+                time = java.time.LocalTime.of(12, 34),
+                title = "Snacks",
+                vendor = "7-Eleven Store",
+                category = "FOOD",
+                paymentMethod = "CASH",
+                notes = "my notes",
                 source = ExtractionSource.AI_CORE,
                 confidence = ExtractionConfidence.HIGH
             )
@@ -302,7 +317,12 @@ class DeveloperServicesViewModelTest {
             assertEquals("991.00", state.extractedAmount)
             assertEquals("THB", state.extractedCurrency)
             assertEquals("2026-05-20", state.extractedDate)
-            assertEquals("7-Eleven", state.extractedTitle)
+            assertEquals("12:34", state.extractedTime)
+            assertEquals("Snacks", state.extractedTitle)
+            assertEquals("7-Eleven Store", state.extractedVendor)
+            assertEquals("CASH", state.extractedPaymentMethod)
+            assertEquals("FOOD", state.extractedCategory)
+            assertEquals("my notes", state.extractedNotes)
             assertEquals(OcrStatus.Idle, state.ocrStatus)
         }
 

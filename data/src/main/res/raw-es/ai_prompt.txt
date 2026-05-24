@@ -1,0 +1,17 @@
+Extrae los siguientes campos del recibo en formato JSON:
+- Importe total de la compra como una cadena decimal (amount).
+- Código de moneda ISO-4217. Si no se puede determinar, usa EUR (currency).
+- Fecha de la transacción en formato YYYY-MM-DD (date).
+- Hora de la transacción en formato HH:MM de 24 horas (time).
+- Nombre del comercio o proveedor (vendor).
+- Título o descripción breve estimada de lo comprado, máximo 3-4 palabras (title).
+- Categoría (debe ser una de: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
+- Método de pago (debe ser uno de: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
+- Notas o identificadores relevantes como código de reserva, localizador, ID de ticket, asientos, números de vuelo o tren, número de referencia, etc. (notes).
+
+Escribe el "title" en español. Que sea breve y descriptivo, ej. "Vuelo a Barcelona" en lugar de "flight" o "vuelo", "Cena en restaurante" en lugar de "dinner" o "cena", "Compra de supermercado" en lugar de "grocery store" o "supermercado". No escribas frases completas. Máximo 3-4 palabras.
+
+Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
+Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Meriendas","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+Input: %1$s
+Output:

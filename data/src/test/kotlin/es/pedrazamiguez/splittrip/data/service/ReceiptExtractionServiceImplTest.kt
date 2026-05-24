@@ -86,7 +86,11 @@ class ReceiptExtractionServiceImplTest {
         assertNull(receipt.amount)
         assertNull(receipt.currency)
         assertNull(receipt.date)
+        assertNull(receipt.time)
         assertNull(receipt.title)
+        assertNull(receipt.vendor)
+        assertNull(receipt.paymentMethod)
+        assertNull(receipt.notes)
     }
 
     @Test
@@ -99,7 +103,12 @@ class ReceiptExtractionServiceImplTest {
             amount = BigDecimal("12.34"),
             currency = "EUR",
             date = LocalDate.of(2026, 5, 20),
-            title = "Store Name",
+            time = java.time.LocalTime.of(15, 30),
+            title = "Lunch",
+            vendor = "Store Name",
+            category = "FOOD",
+            paymentMethod = "DEBIT_CARD",
+            notes = "Book ID: 123",
             source = ExtractionSource.AI_CORE,
             confidence = ExtractionConfidence.HIGH
         )
@@ -112,7 +121,12 @@ class ReceiptExtractionServiceImplTest {
         assertEquals(BigDecimal("12.34"), receipt.amount)
         assertEquals("EUR", receipt.currency)
         assertEquals(LocalDate.of(2026, 5, 20), receipt.date)
-        assertEquals("Store Name", receipt.title)
+        assertEquals(java.time.LocalTime.of(15, 30), receipt.time)
+        assertEquals("Lunch", receipt.title)
+        assertEquals("Store Name", receipt.vendor)
+        assertEquals("FOOD", receipt.category)
+        assertEquals("DEBIT_CARD", receipt.paymentMethod)
+        assertEquals("Book ID: 123", receipt.notes)
         assertEquals(ExtractionSource.AI_CORE, receipt.source)
         assertEquals(ExtractionConfidence.HIGH, receipt.confidence)
     }
@@ -133,6 +147,10 @@ class ReceiptExtractionServiceImplTest {
         assertNull(receipt.amount)
         assertNull(receipt.currency)
         assertNull(receipt.date)
+        assertNull(receipt.time)
         assertNull(receipt.title)
+        assertNull(receipt.vendor)
+        assertNull(receipt.paymentMethod)
+        assertNull(receipt.notes)
     }
 }

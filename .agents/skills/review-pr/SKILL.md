@@ -31,7 +31,6 @@ For each review comment or thread:
    - ✅ **Valid** — address it with a code change.
    - ℹ️ **Partially valid** — address the spirit of the comment, explain any deviation in a reply.
    - ❌ **False positive** — reply with a clear technical reason why no change is needed.
-3. **Reply to every comment**, even if no code change is made. Never leave a thread unanswered.
 
 ---
 
@@ -69,3 +68,13 @@ make check   # Konsist architecture rules + all unit tests + debug compilation �
 ```
 
 If any check fails, fix it before finishing. Do not leave failures for CI to catch.
+
+---
+
+## Step 5 — Post replies on GitHub
+
+Once all changes are implemented and verified, you MUST reply to every comment/thread on GitHub using the `add_reply_to_pull_request_comment` tool from the GitHub MCP server:
+
+1. **Reply to every unresolved comment** to explain the outcome (e.g. how it was fixed, or the technical reason why no change was needed).
+2. **Mandatory action:** Since the user initiated this PR review task, you are **explicitly requested and authorized** to reply to these comments. This does not violate the rule against unsolicited comments.
+3. **Completion:** Never finish the task or declare it done without posting these replies. Do not ask for separate permission to reply.

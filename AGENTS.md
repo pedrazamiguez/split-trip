@@ -248,7 +248,7 @@ Before creating any new service, utility, formatter, or UI component, **check th
 - **Local Verification Gate (MANDATORY):** Before declaring any task, issue, or review comment done, completed, addressed, or accomplished, you MUST run `make check` locally and ensure there are 0 failures. Never leave verification for CI/CD or the user to discover.
 - **NEVER push code** to any remote branch without explicit user permission.
 - **NEVER create Pull Requests** without explicit user permission and confirmation of branch naming convention (see `wiki/branching-versioning-release-strategy.md`), target branch, and PR format.
-- **NEVER comment on GitHub issues or PRs** without the user explicitly requesting it.
+- **NEVER comment on GitHub issues or PRs** without the user explicitly requesting it (note: initiating a review/triage task, such as via the review-pr skill, constitutes an explicit request/mandate to reply to all relevant comments/threads on that PR with their outcomes).
 - **NEVER merge PRs or close issues** autonomously.
 - **Compliance checklist before generating code:** (1) ViewModels only inject UseCases/Mappers/Services? (2) Formatting only in Mappers? (3) BigDecimal for all decimal math? (4) Handler delegation for >5 events? (5) `LocalBottomPadding` for tab screens? (6) Feature/Screen split correct? (7) MVI triad complete? (8) Hot flows with `AppConstants.FLOW_RETENTION_TIME` and `AppConstants.FLOW_REPLAY_EXPIRATION`? (9) Offline-first Room-first reads? (10) `ImmutableList` in UiState? (11) Local verification suite (`make check`) executed and passing with 0 failures?
 

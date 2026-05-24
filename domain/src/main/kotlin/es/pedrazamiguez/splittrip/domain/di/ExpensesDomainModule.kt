@@ -12,6 +12,8 @@ import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.addon.AddOnResolverFactory
@@ -22,6 +24,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetAvailableWithdrawalPoolsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
@@ -87,6 +90,12 @@ val expensesDomainModule = module {
         DownloadReceiptUseCase(
             receiptStorageService = get<ReceiptStorageService>(),
             expenseRepository = get<ExpenseRepository>()
+        )
+    }
+    factory {
+        ExtractReceiptFieldsUseCase(
+            ocrService = get<ReceiptOcrService>(),
+            extractionService = get<ReceiptExtractionService>()
         )
     }
 }

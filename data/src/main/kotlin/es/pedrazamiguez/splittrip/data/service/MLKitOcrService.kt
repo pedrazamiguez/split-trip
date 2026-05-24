@@ -78,6 +78,7 @@ internal class PdfPageRendererImpl(private val context: Context) : PdfPageRender
         }
 
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(android.graphics.Color.WHITE)
         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
         return bitmap
     }
