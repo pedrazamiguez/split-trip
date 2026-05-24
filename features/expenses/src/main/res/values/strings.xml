@@ -308,6 +308,7 @@
     <string name="expense_autofill_failed">Could not read receipt fields</string>
     <string name="expense_autofill_unavailable">AI features are not supported on this device</string>
     <string name="expense_autofill_banner_title">Auto-filled from receipt</string>
+    <string name="expense_autofill_banner_dismiss_cd">Dismiss auto-fill banner</string>
     <string name="add_expense_date">Date</string>
     <string name="expense_autofill_switch_manual">Enter manually</string>
     <string name="expense_autofill_switch_ai">Scan receipt</string>

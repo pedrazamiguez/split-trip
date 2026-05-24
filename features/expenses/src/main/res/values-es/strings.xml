@@ -309,6 +309,7 @@
     <string name="expense_autofill_failed">No se pudieron leer los campos del recibo</string>
     <string name="expense_autofill_unavailable">Las funciones de IA no son compatibles con este dispositivo</string>
     <string name="expense_autofill_banner_title">Rellenado automáticamente desde el recibo</string>
+    <string name="expense_autofill_banner_dismiss_cd">Descartar aviso de rellenado automático</string>
     <string name="add_expense_date">Fecha</string>
     <string name="expense_autofill_switch_manual">Introducir manualmente</string>
     <string name="expense_autofill_switch_ai">Escanear recibo</string>

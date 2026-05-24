@@ -205,7 +205,7 @@ internal class AICoreReceiptParser(
 
     private fun buildPrompt(ocrText: String): String {
         val template = loadPromptTemplate()
-        return String.format(template, ocrText)
+        return template.replace("%1\$s", ocrText)
     }
 
     companion object {

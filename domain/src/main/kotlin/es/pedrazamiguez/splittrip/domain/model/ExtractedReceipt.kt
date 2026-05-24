@@ -9,7 +9,11 @@ import java.time.LocalDate
  * @param amount The total transaction amount.
  * @param currency The ISO 4217 currency code.
  * @param date The transaction date.
- * @param title The best-effort merchant/store name.
+ * @param time The transaction time.
+ * @param title A brief description of what was purchased.
+ * @param vendor The best-effort merchant/store name.
+ * @param category The guessed category name.
+ * @param paymentMethod The transaction payment method.
  * @param notes Any relevant notes or identifiers like booking code/locator.
  * @param source The strategy source used for extraction.
  * @param confidence The overall extraction confidence.
