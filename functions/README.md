@@ -129,6 +129,7 @@ The `.github/workflows/deploy-firebase.yml` workflow automatically deploys funct
 **Required GitHub Secret:** `FIREBASE_SERVICE_ACCOUNT_JSON` — Google Service Account JSON key.
 
 The Service Account must be granted the following minimum IAM roles for deployment to succeed:
+*   **Firebase Admin** (`roles/firebase.admin`) — to read project configuration and manage Firebase services.
 *   **Cloud Functions Admin** (`roles/cloudfunctions.admin`) — to deploy and manage Cloud Functions.
 *   **Service Account User** (`roles/iam.serviceAccountUser`) — on the Google Cloud project to run the deployment as the service account.
 *   **Firebase Rules Admin** (`roles/firebaserules.admin`) — to deploy and update Firestore security rules.
@@ -145,6 +146,14 @@ export GOOGLE_APPLICATION_CREDENTIALS="/absolute/path/to/service-account-key.jso
 firebase deploy --only functions,firestore --debug
 ```
 If the command completes successfully, the credentials are valid and have the correct roles. Remember to clear the environment variable afterwards: `unset GOOGLE_APPLICATION_CREDENTIALS`.
+
+#### Troubleshooting: Cloud Billing API Error
+If you get an error saying `Cloud Billing API has not been used in project before or it is disabled`, this is because the Firebase CLI needs to query billing info to verify Blaze plan limits, but Service Accounts cannot auto-enable Google APIs on the fly. 
+
+To fix this:
+1. Open the [Cloud Billing API overview in GCP Console](https://console.developers.google.com/apis/api/cloudbilling.googleapis.com/overview) for your project.
+2. Click **Enable**.
+3. Re-run your deployment command.
 
 ## Stale Token Cleanup
 
