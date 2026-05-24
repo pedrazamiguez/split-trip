@@ -302,4 +302,17 @@
     <string name="receipt_viewer_close_cd">Cerrar visor</string>
     <string name="receipt_viewer_pdf_error">Error al cargar el recibo PDF</string>
     <string name="receipt_viewer_pdf_page_cd">Página PDF %1$d</string>
+
+    <!-- Receipt Auto-fill -->
+    <string name="expense_autofill_in_progress">Analizando recibo…</string>
+    <string name="expense_autofill_success">Recibo escaneado con éxito</string>
+    <string name="expense_autofill_failed">No se pudieron leer los campos del recibo</string>
+    <string name="expense_autofill_unavailable">Las funciones de IA no son compatibles con este dispositivo</string>
+    <string name="expense_autofill_banner_title">Rellenado automáticamente desde el recibo</string>
+    <string name="add_expense_date">Fecha</string>
+    <string name="expense_autofill_switch_manual">Introducir manualmente</string>
+    <string name="expense_autofill_switch_ai">Escanear recibo</string>
+    <string name="expense_autofill_ai_description">Escanea tu recibo para rellenar automáticamente los detalles del gasto utilizando la IA del dispositivo.</string>
+    <string name="expense_autofill_prompt_title">¿Escanear recibo en su lugar?</string>
+    <string name="expense_autofill_prompt_description">La IA del dispositivo puede extraer automáticamente el título, importe, moneda y fecha del recibo.</string>
 </resources>

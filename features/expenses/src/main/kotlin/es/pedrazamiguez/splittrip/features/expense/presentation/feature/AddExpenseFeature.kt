@@ -125,6 +125,9 @@ private fun ObserveAddExpenseActions(
                 is AddExpenseUiAction.ShowError ->
                     pillController.showPill(message = action.message.asString(context))
 
+                is AddExpenseUiAction.ShowPill ->
+                    pillController.showPill(message = action.message.asString(context))
+
                 is AddExpenseUiAction.ShowCashConflictResolution -> {
                     // Refresh the tranche preview with the latest Room data immediately,
                     // then surface the guided resolution sheet to the user.

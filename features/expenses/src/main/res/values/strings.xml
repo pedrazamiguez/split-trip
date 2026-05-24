@@ -301,4 +301,17 @@
     <string name="receipt_viewer_close_cd">Close viewer</string>
     <string name="receipt_viewer_pdf_error">Failed to load PDF receipt</string>
     <string name="receipt_viewer_pdf_page_cd">PDF page %1$d</string>
+
+    <!-- Receipt Auto-fill -->
+    <string name="expense_autofill_in_progress">Analyzing receipt…</string>
+    <string name="expense_autofill_success">Receipt scanned successfully</string>
+    <string name="expense_autofill_failed">Could not read receipt fields</string>
+    <string name="expense_autofill_unavailable">AI features are not supported on this device</string>
+    <string name="expense_autofill_banner_title">Auto-filled from receipt</string>
+    <string name="add_expense_date">Date</string>
+    <string name="expense_autofill_switch_manual">Enter manually</string>
+    <string name="expense_autofill_switch_ai">Scan receipt</string>
+    <string name="expense_autofill_ai_description">Scan your receipt to automatically fill in the expense details using on-device AI.</string>
+    <string name="expense_autofill_prompt_title">Scan receipt instead?</string>
+    <string name="expense_autofill_prompt_description">On-device AI can automatically read the title, amount, currency, and date from a receipt.</string>
 </resources>

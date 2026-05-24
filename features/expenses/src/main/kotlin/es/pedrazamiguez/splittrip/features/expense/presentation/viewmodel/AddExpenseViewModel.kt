@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.FormEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.FormPostAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.PostConfigAction
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ReceiptAutoFillEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
@@ -32,7 +33,8 @@ class AddExpenseViewModel(
     private val subunitSplitEventHandler: SubunitSplitEventHandler,
     private val addOnEventHandler: AddOnEventHandler,
     private val submitEventHandler: SubmitEventHandler,
-    private val formEventHandler: FormEventHandler
+    private val formEventHandler: FormEventHandler,
+    private val receiptAutoFillEventHandler: ReceiptAutoFillEventHandler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddExpenseUiState())
@@ -52,6 +54,18 @@ class AddExpenseViewModel(
         addOnEventHandler.bind(_uiState, _actions, viewModelScope)
         submitEventHandler.bind(_uiState, _actions, viewModelScope)
         formEventHandler.bind(_uiState, _actions, viewModelScope)
+        receiptAutoFillEventHandler.bind(_uiState, _actions, viewModelScope)
+
+        receiptAutoFillEventHandler.setOnCurrencySelected { currencyCode ->
+            onEvent(AddExpenseUiEvent.CurrencySelected(currencyCode))
+        }
+        receiptAutoFillEventHandler.setOnAmountChanged { amount ->
+            onEvent(AddExpenseUiEvent.SourceAmountChanged(amount))
+        }
+
+        formEventHandler.setOnReceiptAttached { attachment ->
+            receiptAutoFillEventHandler.handleReceiptAttached(attachment)
+        }
 
         // Wire post-config callback: ViewModel routes cross-handler actions
         configEventHandler.setPostConfigCallback { action ->
@@ -313,6 +327,13 @@ class AddExpenseViewModel(
             // ── Conflict Resolution ──────────────────────────────────────
             is AddExpenseUiEvent.ResolutionAmountSelected ->
                 formEventHandler.handleSourceAmountChanged(event.amount)
+
+            // ── AI Auto-fill ────────────────────────────────────────────
+            is AddExpenseUiEvent.SetAiModeActive ->
+                receiptAutoFillEventHandler.handleSetAiModeActive(event.active)
+
+            AddExpenseUiEvent.DismissAutoFillBanner ->
+                receiptAutoFillEventHandler.handleDismissAutoFillBanner()
 
             // ── Wizard Navigation ────────────────────────────────────────
             AddExpenseUiEvent.NextStep -> navigateNext()

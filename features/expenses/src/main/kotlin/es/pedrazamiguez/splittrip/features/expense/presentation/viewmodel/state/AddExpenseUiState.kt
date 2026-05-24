@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranchePreviewUiModel
@@ -178,11 +179,17 @@ data class AddExpenseUiState(
     val isAmountValid: Boolean = true,
     val isDueDateValid: Boolean = true,
 
+    // ── AI Auto-fill ────────────────────────────────────────────────────
+    val isAiCapable: Boolean = false,
+    val isAiModeActive: Boolean = false,
+    val autoFillBanner: AutoFillBanner? = null,
+    val expenseDateMillis: Long? = null,
+
     // ── Wizard ──────────────────────────────────────────────────────────
     val currentStep: AddExpenseStep = AddExpenseStep.TITLE,
     /**
-     * When non-null, the user jumped from this step to REVIEW via "Skip to Review".
-     * Pressing Back on REVIEW returns to this step instead of the previous sequential one.
+     * Jumps from this step to REVIEW via "Skip to Review".
+     * Back returns here instead of previous step.
      */
     val jumpedFromStep: AddExpenseStep? = null
 ) {
@@ -212,11 +219,19 @@ data class AddExpenseUiState(
 
     /** Ordered list of steps that are currently applicable. */
     val applicableSteps: List<AddExpenseStep>
-        get() = AddExpenseStep.applicableSteps(
-            showContributionScopeStep = showContributionScopeStep,
-            showExchangeRateSection = showExchangeRateSection,
-            hasSplit = memberIds.size > 1
-        )
+        get() {
+            val baseSteps = AddExpenseStep.applicableSteps(
+                showContributionScopeStep = showContributionScopeStep,
+                showExchangeRateSection = showExchangeRateSection,
+                hasSplit = memberIds.size > 1
+            )
+            return if (isAiCapable && isAiModeActive) {
+                val withoutReceipt = baseSteps.filter { it != AddExpenseStep.RECEIPT }
+                listOf(AddExpenseStep.RECEIPT) + withoutReceipt
+            } else {
+                baseSteps
+            }
+        }
 
     /** Zero-based index of the current step within [applicableSteps]. */
     val currentStepIndex: Int
@@ -302,3 +317,11 @@ data class AddExpenseUiState(
             AddExpenseStep.REVIEW -> isFormValid
         }
 }
+
+/**
+ * Visual model for the receipt auto-fill banner showing which fields were pre-filled.
+ */
+data class AutoFillBanner(
+    val fields: ImmutableList<UiText>,
+    val source: ExtractionSource
+)

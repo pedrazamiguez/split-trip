@@ -102,7 +102,8 @@ class ConfigEventHandlerTest {
                 FormattingHelper(localeProvider),
                 splitPreviewService,
                 EntitySplitFlattenDelegate(splitPreviewService, remainderDistributionService)
-            )
+            ),
+            receiptExtractionService = mockk(relaxed = true)
         )
         handler.setPostConfigCallback { capturedActions.add(it) }
 

@@ -8,9 +8,11 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.GroupExpenseConfig
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
@@ -53,7 +55,8 @@ class ConfigEventHandler(
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val authenticationService: AuthenticationService,
     private val addExpenseOptionsMapper: AddExpenseOptionsUiMapper,
-    private val addExpenseSplitMapper: AddExpenseSplitUiMapper
+    private val addExpenseSplitMapper: AddExpenseSplitUiMapper,
+    private val receiptExtractionService: ReceiptExtractionService
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -129,18 +132,7 @@ class ConfigEventHandler(
         groupId: String,
         config: GroupExpenseConfig
     ) {
-        val lastUsedCode = getGroupLastUsedCurrencyUseCase(groupId).firstOrNull()
-        val recentPaymentMethodIds =
-            getGroupLastUsedPaymentMethodUseCase(groupId).firstOrNull() ?: emptyList()
-        val recentCategoryIds =
-            getGroupLastUsedCategoryUseCase(groupId).firstOrNull() ?: emptyList()
-
-        val defaults = resolveDefaultSelections(
-            config,
-            lastUsedCode,
-            recentPaymentMethodIds,
-            recentCategoryIds
-        )
+        val defaults = resolveDefaults(groupId, config)
 
         val memberIds = config.group.members
         val memberProfiles = getMemberProfilesUseCase(memberIds)
@@ -152,12 +144,16 @@ class ConfigEventHandler(
         val currentUserId = authenticationService.currentUserId()
         val userSubunitOptions = filterSubunitsForCurrentUser(currentUserId, config)
 
+        val isAiCapable = receiptExtractionService.capability() == ExtractionCapability.ON_DEVICE_AI
+
         _uiState.update {
             it.copy(
                 isLoading = false,
                 isConfigLoaded = true,
                 configLoadFailed = false,
                 loadedGroupId = groupId,
+                isAiCapable = isAiCapable,
+                isAiModeActive = isAiCapable,
                 groupName = config.group.name,
                 currentUserId = currentUserId,
                 groupCurrency = defaults.mappedGroupCurrency,
@@ -189,6 +185,24 @@ class ConfigEventHandler(
             config,
             memberIds,
             memberProfiles
+        )
+    }
+
+    private suspend fun resolveDefaults(
+        groupId: String,
+        config: GroupExpenseConfig
+    ): ConfigDefaults {
+        val lastUsedCode = getGroupLastUsedCurrencyUseCase(groupId).firstOrNull()
+        val recentPaymentMethodIds =
+            getGroupLastUsedPaymentMethodUseCase(groupId).firstOrNull() ?: emptyList()
+        val recentCategoryIds =
+            getGroupLastUsedCategoryUseCase(groupId).firstOrNull() ?: emptyList()
+
+        return resolveDefaultSelections(
+            config,
+            lastUsedCode,
+            recentPaymentMethodIds,
+            recentCategoryIds
         )
     }
 

@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
@@ -25,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
@@ -50,6 +52,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.FormEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.IntraSubunitSplitDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ReceiptAutoFillEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SaveLastUsedPreferencesBundle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitRowMappingDelegate
@@ -256,7 +259,8 @@ class AddExpenseViewModelTest {
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             authenticationService = authenticationService,
             addExpenseOptionsMapper = addExpenseOptionsMapper,
-            addExpenseSplitMapper = addExpenseSplitMapper
+            addExpenseSplitMapper = addExpenseSplitMapper,
+            receiptExtractionService = mockk(relaxed = true)
         )
 
         val submitHandler = SubmitEventHandler(
@@ -318,6 +322,12 @@ class AddExpenseViewModelTest {
             attachReceiptUseCase = attachReceiptUseCase
         )
 
+        val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
+            extractReceiptFieldsUseCase = mockk<ExtractReceiptFieldsUseCase>(relaxed = true),
+            receiptExtractionService = mockk<ReceiptExtractionService>(relaxed = true),
+            formattingHelper = formattingHelper
+        )
+
         viewModel = AddExpenseViewModel(
             configEventHandler = configHandler,
             currencyEventHandler = currencyHandler,
@@ -325,7 +335,8 @@ class AddExpenseViewModelTest {
             subunitSplitEventHandler = subunitSplitHandler,
             addOnEventHandler = addOnHandler,
             submitEventHandler = submitHandler,
-            formEventHandler = formHandler
+            formEventHandler = formHandler,
+            receiptAutoFillEventHandler = receiptAutoFillEventHandler
         )
     }
 

@@ -120,6 +120,9 @@ class AddExpenseUiMapper(
         } ?: PayerType.GROUP
 
         val payerId = if (payerType == PayerType.USER) state.currentUserId else null
+        val createdAt = state.expenseDateMillis?.let {
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneOffset.UTC)
+        }
 
         val expense = Expense(
             groupId = groupId,
@@ -140,7 +143,8 @@ class AddExpenseUiMapper(
             splitType = splitType,
             splits = splits,
             payerType = payerType,
-            payerId = payerId
+            payerId = payerId,
+            createdAt = createdAt
         )
         Result.success(expense)
     } catch (e: Exception) {

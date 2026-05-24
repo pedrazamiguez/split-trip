@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
@@ -39,6 +40,7 @@ class FormEventHandler(
      * Set by the ViewModel during initialization via [setFormPostCallback].
      */
     private var formPostCallback: ((FormPostAction) -> Unit)? = null
+    private var onReceiptAttached: ((ReceiptAttachment) -> Unit)? = null
 
     private var attachReceiptJob: kotlinx.coroutines.Job? = null
 
@@ -60,6 +62,13 @@ class FormEventHandler(
         formPostCallback = callback
     }
 
+    /**
+     * Registers the callback for receipt attachment success.
+     */
+    fun setOnReceiptAttached(callback: (ReceiptAttachment) -> Unit) {
+        onReceiptAttached = callback
+    }
+
     fun handleTitleChanged(title: String) {
         _uiState.update {
             it.copy(
@@ -71,7 +80,7 @@ class FormEventHandler(
     }
 
     fun handleSourceAmountChanged(amount: String) {
-        val isValid = isAmountInputValid(amount)
+        val isValid = validateAmountInput(amount)
         _uiState.update {
             it.copy(
                 sourceAmount = amount,
@@ -203,6 +212,7 @@ class FormEventHandler(
                             receiptAttachment = attachment
                         )
                     }
+                    onReceiptAttached?.invoke(attachment)
                 }
                 .onFailure { e ->
                     if (e is kotlin.coroutines.cancellation.CancellationException) throw e
@@ -213,10 +223,4 @@ class FormEventHandler(
                 }
         }
     }
-
-    /**
-     * Returns true when [amount] is either blank (user still typing) or a positive decimal number.
-     * Non-numeric text, zero, and negative values are considered invalid.
-     */
-    private fun isAmountInputValid(amount: String): Boolean = validateAmountInput(amount)
 }
