@@ -55,6 +55,7 @@ val expensesDataModule = module {
 
     single<AICoreReceiptParser> {
         AICoreReceiptParser(
+            context = androidContext(),
             generativeModel = get<GenerativeModel>(),
             defaultDispatcher = Dispatchers.Default
         )

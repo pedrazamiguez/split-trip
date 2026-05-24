@@ -312,6 +312,7 @@
     <string name="add_expense_date">Fecha</string>
     <string name="expense_autofill_switch_manual">Introducir manualmente</string>
     <string name="expense_autofill_switch_ai">Escanear recibo</string>
+    <string name="expense_autofill_ai_select_receipt">Adjuntar y escanear recibo</string>
     <string name="expense_autofill_ai_title">Escáner de recibos con IA</string>
     <string name="expense_autofill_ai_subtitle">Tecnología de Gemini Nano</string>
     <string name="expense_autofill_ai_description">Escanea tu recibo para rellenar automáticamente los detalles del gasto utilizando la IA del dispositivo.</string>

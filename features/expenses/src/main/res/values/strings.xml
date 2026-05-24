@@ -311,6 +311,7 @@
     <string name="add_expense_date">Date</string>
     <string name="expense_autofill_switch_manual">Enter manually</string>
     <string name="expense_autofill_switch_ai">Scan receipt</string>
+    <string name="expense_autofill_ai_select_receipt">Attach &amp; Scan Receipt</string>
     <string name="expense_autofill_ai_title">AI Receipt Scan</string>
     <string name="expense_autofill_ai_subtitle">Powered by Gemini Nano</string>
     <string name="expense_autofill_ai_description">Scan your receipt to automatically fill in the expense details using on-device AI.</string>

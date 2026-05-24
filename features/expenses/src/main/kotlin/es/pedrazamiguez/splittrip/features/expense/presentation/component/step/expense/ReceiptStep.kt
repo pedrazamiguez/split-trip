@@ -23,6 +23,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
@@ -46,21 +47,36 @@ fun ReceiptStep(
         ) {
             if (uiState.isAiCapable && uiState.isAiModeActive) {
                 AiAutoFillCard()
-            }
 
-            ReceiptSection(
-                receiptUri = uiState.receiptUri,
-                mimeType = uiState.receiptAttachment?.mimeType,
-                onPickerRequested = { onEvent(AddExpenseUiEvent.RequestPickerSource) },
-                onRemoveImage = { onEvent(AddExpenseUiEvent.RemoveReceiptImage) },
-                onViewImage = { onEvent(AddExpenseUiEvent.ViewReceiptFullScreen) }
-            )
+                if (uiState.receiptUri == null) {
+                    GradientButton(
+                        text = stringResource(R.string.expense_autofill_ai_select_receipt),
+                        onClick = { onEvent(AddExpenseUiEvent.RequestPickerSource) },
+                        leadingIcon = TablerIcons.Outline.PhotoAi,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    ReceiptSection(
+                        receiptUri = uiState.receiptUri,
+                        mimeType = uiState.receiptAttachment?.mimeType,
+                        onPickerRequested = { onEvent(AddExpenseUiEvent.RequestPickerSource) },
+                        onRemoveImage = { onEvent(AddExpenseUiEvent.RemoveReceiptImage) },
+                        onViewImage = { onEvent(AddExpenseUiEvent.ViewReceiptFullScreen) }
+                    )
+                }
 
-            if (uiState.isAiCapable && uiState.isAiModeActive) {
                 SecondaryButton(
                     text = stringResource(R.string.expense_autofill_switch_manual),
                     onClick = { onEvent(AddExpenseUiEvent.SetAiModeActive(false)) },
                     modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                ReceiptSection(
+                    receiptUri = uiState.receiptUri,
+                    mimeType = uiState.receiptAttachment?.mimeType,
+                    onPickerRequested = { onEvent(AddExpenseUiEvent.RequestPickerSource) },
+                    onRemoveImage = { onEvent(AddExpenseUiEvent.RemoveReceiptImage) },
+                    onViewImage = { onEvent(AddExpenseUiEvent.ViewReceiptFullScreen) }
                 )
             }
         }

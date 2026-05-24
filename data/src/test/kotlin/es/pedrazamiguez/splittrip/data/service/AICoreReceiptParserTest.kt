@@ -32,8 +32,13 @@ class AICoreReceiptParserTest {
 
     @BeforeEach
     fun setUp() {
+        val context = mockk<android.content.Context>(relaxed = true)
+        val resources = mockk<android.content.res.Resources>(relaxed = true)
+        every { context.resources } returns resources
+        every { resources.openRawResource(any()) } throws android.content.res.Resources.NotFoundException()
+
         generativeModel = mockk(relaxed = true)
-        parser = AICoreReceiptParser(generativeModel)
+        parser = AICoreReceiptParser(context, generativeModel)
     }
 
     @AfterEach
@@ -322,5 +327,35 @@ class AICoreReceiptParserTest {
         } catch (e: CancellationException) {
             assertEquals("Job cancelled", e.message)
         }
+    }
+
+    @Test
+    fun `parse loads prompt from resources when available`() = runTest {
+        val mockContext = mockk<android.content.Context>(relaxed = true)
+        val mockResources = mockk<android.content.res.Resources>(relaxed = true)
+        every { mockContext.resources } returns mockResources
+        val promptStream = java.io.ByteArrayInputStream("Custom prompt %1\$s".toByteArray())
+        every { mockResources.openRawResource(any()) } returns promptStream
+
+        val localParser = AICoreReceiptParser(mockContext, generativeModel)
+
+        val rawText = RawReceiptText(
+            fullText = "Store 12.34",
+            blocks = persistentListOf(),
+            recognisedAt = Instant.now()
+        )
+
+        val mockResponse = mockk<GenerateContentResponse>()
+        val mockCandidate = mockk<Candidate>()
+        every { mockResponse.text } returns "{}"
+        every { mockResponse.candidates } returns listOf(mockCandidate)
+        every { mockCandidate.finishReason } returns Candidate.FinishReason.STOP
+
+        coEvery { generativeModel.generateContent(any<String>()) } returns mockResponse
+
+        val result = localParser.parse(rawText)
+        assertTrue(result.isSuccess)
+
+        coVerify { generativeModel.generateContent("Custom prompt Store 12.34") }
     }
 }

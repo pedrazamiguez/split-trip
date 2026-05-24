@@ -250,6 +250,7 @@ private fun AiExtractionTabContent(
                             title = uiState.extractedTitle,
                             vendor = uiState.extractedVendor,
                             paymentMethod = uiState.extractedPaymentMethod,
+                            category = uiState.extractedCategory,
                             source = uiState.extractionSource,
                             confidence = uiState.extractionConfidence
                         )

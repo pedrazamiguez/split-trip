@@ -70,6 +70,7 @@ class DeveloperServicesViewModelTest {
         assertNull(state.extractedTime)
         assertNull(state.extractedVendor)
         assertNull(state.extractedPaymentMethod)
+        assertNull(state.extractedCategory)
         assertEquals(DeveloperServicesTab.Ocr, state.selectedTab)
     }
 
@@ -100,6 +101,7 @@ class DeveloperServicesViewModelTest {
             assertNull(state.extractedTime)
             assertNull(state.extractedVendor)
             assertNull(state.extractedPaymentMethod)
+            assertNull(state.extractedCategory)
         }
     }
 
@@ -316,6 +318,7 @@ class DeveloperServicesViewModelTest {
             assertEquals("Snacks", state.extractedTitle)
             assertEquals("7-Eleven Store", state.extractedVendor)
             assertEquals("CASH", state.extractedPaymentMethod)
+            assertEquals("FOOD", state.extractedCategory)
             assertEquals(OcrStatus.Idle, state.ocrStatus)
         }
 

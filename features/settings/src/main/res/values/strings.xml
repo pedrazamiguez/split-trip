@@ -103,6 +103,7 @@
     <string name="developer_services_extraction_title">Title:</string>
     <string name="developer_services_extraction_vendor">Vendor:</string>
     <string name="developer_services_extraction_payment_method">Payment Method:</string>
+    <string name="developer_services_extraction_category">Category:</string>
     <string name="developer_services_extraction_source">Source:</string>
     <string name="developer_services_extraction_confidence">Confidence:</string>
     <string name="developer_services_extraction_error_fallback">Receipt extraction failed</string>

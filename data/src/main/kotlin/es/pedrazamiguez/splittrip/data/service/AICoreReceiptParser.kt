@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.data.service
 
+import android.content.Context
 import com.google.ai.edge.aicore.Candidate
 import com.google.ai.edge.aicore.GenerativeModel
+import es.pedrazamiguez.splittrip.data.R
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
@@ -18,6 +20,7 @@ import org.json.JSONObject
 import timber.log.Timber
 
 internal class AICoreReceiptParser(
+    private val context: Context,
     private val generativeModel: GenerativeModel,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
@@ -180,6 +183,20 @@ internal class AICoreReceiptParser(
         )
     }
 
+    private fun loadPromptTemplate(): String {
+        return try {
+            context.resources.openRawResource(R.raw.ai_prompt).bufferedReader().use { it.readText() }
+        } catch (e: Exception) {
+            Timber.e(e, "AICoreReceiptParser: failed to load prompt template from raw resources")
+            DEFAULT_PROMPT_TEMPLATE
+        }
+    }
+
+    private fun buildPrompt(ocrText: String): String {
+        val template = loadPromptTemplate()
+        return String.format(template, ocrText)
+    }
+
     companion object {
         private const val FIELD_COUNT_ALL = 4
         private const val FIELD_COUNT_THREE = 3
@@ -225,9 +242,7 @@ internal class AICoreReceiptParser(
             confidence = ExtractionConfidence.LOW
         )
 
-        // Few-shot completion: multi-item example teaches the model to pick the GRAND TOTAL,
-        // not an individual item price. The "Output:" suffix triggers JSON completion.
-        private fun buildPrompt(ocrText: String): String =
+        private const val DEFAULT_PROMPT_TEMPLATE =
             "Grand total, ISO-4217 currency, date YYYY-MM-DD, time HH:MM (24-hour format), " +
                 "merchant/store name (vendor), guessed title/description of what was purchased (title), " +
                 "category (one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, " +
@@ -237,7 +252,7 @@ internal class AICoreReceiptParser(
                 "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash\n" +
                 "Output: {\"amount\":\"50.00\",\"currency\":\"USD\",\"date\":\"2025-03-10\",\"time\":\"13:45\"," +
                 "\"vendor\":\"Quick Mart\",\"title\":\"Snacks\",\"category\":\"FOOD\",\"paymentMethod\":\"CASH\"}\n" +
-                "Input: $ocrText\n" +
+                "Input: %1\$s\n" +
                 "Output:"
     }
 }
