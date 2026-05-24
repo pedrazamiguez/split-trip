@@ -10,6 +10,7 @@ import java.time.LocalDate
  * @param currency The ISO 4217 currency code.
  * @param date The transaction date.
  * @param title The best-effort merchant/store name.
+ * @param notes Any relevant notes or identifiers like booking code/locator.
  * @param source The strategy source used for extraction.
  * @param confidence The overall extraction confidence.
  */
@@ -22,6 +23,7 @@ data class ExtractedReceipt(
     val vendor: String? = null,
     val category: String? = null,
     val paymentMethod: String? = null,
+    val notes: String? = null,
     val source: ExtractionSource,
     val confidence: ExtractionConfidence
 )

@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.ai.edge.aicore.Candidate
 import com.google.ai.edge.aicore.GenerativeModel
 import es.pedrazamiguez.splittrip.data.R
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
@@ -141,10 +142,18 @@ internal class AICoreReceiptParser(
         val jsonObject = JSONObject(cleanJson)
 
         val amountStr = jsonObject.optString("amount").takeIf { it.isNotEmpty() && it != "null" }
-        val amount = amountStr?.toBigDecimalOrNull()
+        val amount = amountStr?.let {
+            val cleaned = it.replace(Regex("[^0-9.,]"), "")
+            if (cleaned.isNotEmpty()) {
+                CurrencyConverter.normalizeAmountString(cleaned).toBigDecimalOrNull()
+            } else {
+                null
+            }
+        }
 
-        val currency = jsonObject.optString("currency")
+        val rawCurrency = jsonObject.optString("currency")
             .takeIf { it.isNotEmpty() && it != "null" }?.uppercase(Locale.ROOT)
+        val currency = rawCurrency ?: "EUR"
 
         val date = parseDate(jsonObject)
         val time = parseTime(jsonObject)
@@ -154,8 +163,9 @@ internal class AICoreReceiptParser(
 
         val category = parseCategory(jsonObject)
         val paymentMethod = parsePaymentMethod(jsonObject)
+        val notes = jsonObject.optString("notes").takeIf { it.isNotEmpty() && it != "null" }
 
-        val extractedFieldsCount = listOfNotNull(amount, currency, date, title ?: vendor).size
+        val extractedFieldsCount = listOfNotNull(amount, rawCurrency, date, title ?: vendor).size
         val confidence = when (extractedFieldsCount) {
             FIELD_COUNT_ALL -> ExtractionConfidence.HIGH
             FIELD_COUNT_THREE, FIELD_COUNT_TWO -> ExtractionConfidence.MEDIUM
@@ -178,6 +188,7 @@ internal class AICoreReceiptParser(
             vendor = vendor,
             category = category,
             paymentMethod = paymentMethod,
+            notes = notes,
             source = ExtractionSource.AI_CORE,
             confidence = confidence
         )
@@ -238,20 +249,26 @@ internal class AICoreReceiptParser(
             vendor = null,
             category = null,
             paymentMethod = null,
+            notes = null,
             source = ExtractionSource.AI_CORE,
             confidence = ExtractionConfidence.LOW
         )
 
         private const val DEFAULT_PROMPT_TEMPLATE =
-            "Grand total, ISO-4217 currency, date YYYY-MM-DD, time HH:MM (24-hour format), " +
+            "Grand total, ISO-4217 currency (if currency cannot be determined, output EUR), " +
+                "date YYYY-MM-DD, time HH:MM (24-hour format), " +
                 "merchant/store name (vendor), guessed title/description of what was purchased (title), " +
                 "category (one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, " +
                 "ENTERTAINMENT, SHOPPING, OTHER), " +
-                "and payment method (one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, " +
-                "BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER).\n" +
-                "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash\n" +
+                "payment method (one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, " +
+                "BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER), " +
+                "and relevant notes or identifiers like booking code, locator (localizador) code, " +
+                "reference or ticket ID (notes).\n" +
+                "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD " +
+                "2025-03-10 13:45 Cash BOOKID: ABC123D\n" +
                 "Output: {\"amount\":\"50.00\",\"currency\":\"USD\",\"date\":\"2025-03-10\",\"time\":\"13:45\"," +
-                "\"vendor\":\"Quick Mart\",\"title\":\"Snacks\",\"category\":\"FOOD\",\"paymentMethod\":\"CASH\"}\n" +
+                "\"vendor\":\"Quick Mart\",\"title\":\"Snacks\",\"category\":\"FOOD\"," +
+                "\"paymentMethod\":\"CASH\",\"notes\":\"Book ID: ABC123D\"}\n" +
                 "Input: %1\$s\n" +
                 "Output:"
     }

@@ -44,6 +44,7 @@ fun ExtractionResultsCard(
     vendor: String?,
     paymentMethod: String?,
     category: String?,
+    notes: String?,
     source: ExtractionSource?,
     confidence: ExtractionConfidence?,
     modifier: Modifier = Modifier
@@ -81,6 +82,11 @@ fun ExtractionResultsCard(
                     TablerIcons.Outline.Category,
                     stringResource(R.string.developer_services_extraction_category),
                     category
+                ),
+                Triple(
+                    TablerIcons.Outline.InfoCircle,
+                    stringResource(R.string.developer_services_extraction_notes),
+                    notes
                 )
             )
 

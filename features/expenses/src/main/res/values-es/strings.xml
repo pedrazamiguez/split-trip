@@ -322,4 +322,5 @@
     <string name="expense_field_vendor">Comercio</string>
     <string name="expense_field_payment_method">Método de pago</string>
     <string name="expense_field_time">Hora</string>
+    <string name="expense_field_notes">Notas</string>
 </resources>

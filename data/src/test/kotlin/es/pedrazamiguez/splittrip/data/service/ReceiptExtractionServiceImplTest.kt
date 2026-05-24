@@ -90,6 +90,7 @@ class ReceiptExtractionServiceImplTest {
         assertNull(receipt.title)
         assertNull(receipt.vendor)
         assertNull(receipt.paymentMethod)
+        assertNull(receipt.notes)
     }
 
     @Test
@@ -107,6 +108,7 @@ class ReceiptExtractionServiceImplTest {
             vendor = "Store Name",
             category = "FOOD",
             paymentMethod = "DEBIT_CARD",
+            notes = "Book ID: 123",
             source = ExtractionSource.AI_CORE,
             confidence = ExtractionConfidence.HIGH
         )
@@ -124,6 +126,7 @@ class ReceiptExtractionServiceImplTest {
         assertEquals("Store Name", receipt.vendor)
         assertEquals("FOOD", receipt.category)
         assertEquals("DEBIT_CARD", receipt.paymentMethod)
+        assertEquals("Book ID: 123", receipt.notes)
         assertEquals(ExtractionSource.AI_CORE, receipt.source)
         assertEquals(ExtractionConfidence.HIGH, receipt.confidence)
     }
@@ -148,5 +151,6 @@ class ReceiptExtractionServiceImplTest {
         assertNull(receipt.title)
         assertNull(receipt.vendor)
         assertNull(receipt.paymentMethod)
+        assertNull(receipt.notes)
     }
 }

@@ -176,6 +176,7 @@ class ReceiptAutoFillEventHandlerTest {
                     vendor = "Starbucks Store",
                     category = "FOOD",
                     paymentMethod = "CASH",
+                    notes = "my locator",
                     confidence = ExtractionConfidence.HIGH,
                     source = ExtractionSource.AI_CORE
                 )
@@ -186,6 +187,7 @@ class ReceiptAutoFillEventHandlerTest {
 
             assertEquals("Starbucks", uiState.value.expenseTitle)
             assertEquals("Starbucks Store", uiState.value.vendor)
+            assertEquals("my locator", uiState.value.notes)
             // 2025-01-01T10:30 UTC epoch millis = 1735727400000L
             assertEquals(1735727400000L, uiState.value.expenseDateMillis)
             assertEquals("USD", capturedCurrencySelections.single())
@@ -194,6 +196,14 @@ class ReceiptAutoFillEventHandlerTest {
             assertEquals("CASH", capturedPaymentMethodSelections.single())
             assertNotNull(uiState.value.autoFillBanner)
             assertEquals(ExtractionSource.AI_CORE, uiState.value.autoFillBanner?.source)
+            assertTrue(
+                uiState.value.autoFillBanner?.fields?.contains(
+                    es.pedrazamiguez.splittrip.core.common.presentation.UiText.StringResource(
+                        es.pedrazamiguez.splittrip.features.expense.R.string.expense_field_notes
+                    )
+                ) ==
+                    true
+            )
         }
     }
 }

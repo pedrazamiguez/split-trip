@@ -321,4 +321,5 @@
     <string name="expense_field_vendor">Vendor</string>
     <string name="expense_field_payment_method">Payment method</string>
     <string name="expense_field_time">Time</string>
+    <string name="expense_field_notes">Notes</string>
 </resources>

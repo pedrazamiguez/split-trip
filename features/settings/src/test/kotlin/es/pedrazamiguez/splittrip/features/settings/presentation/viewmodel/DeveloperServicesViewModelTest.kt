@@ -71,6 +71,7 @@ class DeveloperServicesViewModelTest {
         assertNull(state.extractedVendor)
         assertNull(state.extractedPaymentMethod)
         assertNull(state.extractedCategory)
+        assertNull(state.extractedNotes)
         assertEquals(DeveloperServicesTab.Ocr, state.selectedTab)
     }
 
@@ -102,6 +103,7 @@ class DeveloperServicesViewModelTest {
             assertNull(state.extractedVendor)
             assertNull(state.extractedPaymentMethod)
             assertNull(state.extractedCategory)
+            assertNull(state.extractedNotes)
         }
     }
 
@@ -297,6 +299,7 @@ class DeveloperServicesViewModelTest {
                 vendor = "7-Eleven Store",
                 category = "FOOD",
                 paymentMethod = "CASH",
+                notes = "my notes",
                 source = ExtractionSource.AI_CORE,
                 confidence = ExtractionConfidence.HIGH
             )
@@ -319,6 +322,7 @@ class DeveloperServicesViewModelTest {
             assertEquals("7-Eleven Store", state.extractedVendor)
             assertEquals("CASH", state.extractedPaymentMethod)
             assertEquals("FOOD", state.extractedCategory)
+            assertEquals("my notes", state.extractedNotes)
             assertEquals(OcrStatus.Idle, state.ocrStatus)
         }
 

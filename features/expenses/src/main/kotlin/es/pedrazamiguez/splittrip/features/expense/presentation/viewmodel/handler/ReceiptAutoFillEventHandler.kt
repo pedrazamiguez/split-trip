@@ -140,6 +140,7 @@ class ReceiptAutoFillEventHandler(
         tryMergeAmount(extracted, state, bannerFields)
         tryMergeCategory(extracted, state, bannerFields)
         tryMergePaymentMethod(extracted, state, bannerFields)
+        tryMergeNotes(extracted, state, bannerFields)
 
         // 5. Update banner state and notify success
         if (bannerFields.isNotEmpty()) {
@@ -276,6 +277,18 @@ class ReceiptAutoFillEventHandler(
                 onPaymentMethodSelected?.invoke(matchingMethod.id)
                 bannerFields.add(UiText.StringResource(R.string.expense_field_payment_method))
             }
+        }
+    }
+
+    private fun tryMergeNotes(
+        extracted: ExtractedReceipt,
+        state: AddExpenseUiState,
+        bannerFields: MutableList<UiText>
+    ) {
+        val extractedNotes = extracted.notes
+        if (state.notes.isBlank() && !extractedNotes.isNullOrBlank()) {
+            _uiState.update { it.copy(notes = extractedNotes) }
+            bannerFields.add(UiText.StringResource(R.string.expense_field_notes))
         }
     }
 }

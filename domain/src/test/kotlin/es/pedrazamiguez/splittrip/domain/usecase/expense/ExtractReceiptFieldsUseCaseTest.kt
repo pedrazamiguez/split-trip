@@ -47,6 +47,7 @@ class ExtractReceiptFieldsUseCaseTest {
         vendor = "Restaurant",
         category = null,
         paymentMethod = "CASH",
+        notes = null,
         source = ExtractionSource.AI_CORE,
         confidence = ExtractionConfidence.HIGH
     )

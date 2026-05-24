@@ -43,6 +43,7 @@ data class DeveloperServicesUiState(
     val extractedVendor: String? = null,
     val extractedPaymentMethod: String? = null,
     val extractedCategory: String? = null,
+    val extractedNotes: String? = null,
     val extractionSource: ExtractionSource? = null,
     val extractionConfidence: ExtractionConfidence? = null,
     val extractionErrorMessage: UiText? = null
@@ -110,6 +111,7 @@ class DeveloperServicesViewModel(
                 extractedVendor = null,
                 extractedPaymentMethod = null,
                 extractedCategory = null,
+                extractedNotes = null,
                 extractionSource = null,
                 extractionConfidence = null,
                 extractionErrorMessage = null
@@ -206,6 +208,7 @@ class DeveloperServicesViewModel(
                         extractedVendor = receipt.vendor,
                         extractedPaymentMethod = receipt.paymentMethod,
                         extractedCategory = receipt.category,
+                        extractedNotes = receipt.notes,
                         extractionSource = receipt.source,
                         extractionConfidence = receipt.confidence
                     )

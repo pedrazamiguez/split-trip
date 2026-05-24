@@ -194,7 +194,7 @@ class AICoreReceiptParserTest {
         assertTrue(result.isSuccess)
         val receipt = result.getOrThrow()
         assertEquals(BigDecimal("12.34"), receipt.amount)
-        assertNull(receipt.currency)
+        assertEquals("EUR", receipt.currency)
         assertEquals(LocalDate.of(2026, 5, 20), receipt.date)
         assertEquals("Store", receipt.title)
         assertEquals(ExtractionConfidence.MEDIUM, receipt.confidence)
@@ -227,7 +227,7 @@ class AICoreReceiptParserTest {
         assertTrue(result.isSuccess)
         val receipt = result.getOrThrow()
         assertEquals(BigDecimal("12.34"), receipt.amount)
-        assertNull(receipt.currency)
+        assertEquals("EUR", receipt.currency)
         assertNull(receipt.date)
         assertEquals("Store", receipt.title)
         assertEquals(ExtractionConfidence.MEDIUM, receipt.confidence)
@@ -259,7 +259,7 @@ class AICoreReceiptParserTest {
         assertTrue(result.isSuccess)
         val receipt = result.getOrThrow()
         assertNull(receipt.amount)
-        assertNull(receipt.currency)
+        assertEquals("EUR", receipt.currency)
         assertNull(receipt.date)
         assertEquals("Store", receipt.title)
         assertEquals(ExtractionConfidence.LOW, receipt.confidence)
@@ -357,5 +357,63 @@ class AICoreReceiptParserTest {
         assertTrue(result.isSuccess)
 
         coVerify { generativeModel.generateContent("Custom prompt Store 12.34") }
+    }
+
+    @Test
+    fun `parse cleans and normalizes amount with commas and currency symbols`() = runTest {
+        val rawText = RawReceiptText(
+            fullText = "24,20€",
+            blocks = persistentListOf(),
+            recognisedAt = Instant.now()
+        )
+        val jsonResponse = """
+            {
+                "amount": "24,20€",
+                "currency": "EUR"
+            }
+        """.trimIndent()
+
+        val mockResponse = mockk<GenerateContentResponse>()
+        val mockCandidate = mockk<Candidate>()
+        every { mockResponse.text } returns jsonResponse
+        every { mockResponse.candidates } returns listOf(mockCandidate)
+        every { mockCandidate.finishReason } returns Candidate.FinishReason.STOP
+
+        coEvery { generativeModel.generateContent(any<String>()) } returns mockResponse
+
+        val result = parser.parse(rawText)
+
+        assertTrue(result.isSuccess)
+        val receipt = result.getOrThrow()
+        assertEquals(BigDecimal("24.20"), receipt.amount)
+        assertEquals("EUR", receipt.currency)
+    }
+
+    @Test
+    fun `parse extracts notes field from JSON response`() = runTest {
+        val rawText = RawReceiptText(
+            fullText = "Locator: ABC123D",
+            blocks = persistentListOf(),
+            recognisedAt = Instant.now()
+        )
+        val jsonResponse = """
+            {
+                "notes": "Locator: ABC123D"
+            }
+        """.trimIndent()
+
+        val mockResponse = mockk<GenerateContentResponse>()
+        val mockCandidate = mockk<Candidate>()
+        every { mockResponse.text } returns jsonResponse
+        every { mockResponse.candidates } returns listOf(mockCandidate)
+        every { mockCandidate.finishReason } returns Candidate.FinishReason.STOP
+
+        coEvery { generativeModel.generateContent(any<String>()) } returns mockResponse
+
+        val result = parser.parse(rawText)
+
+        assertTrue(result.isSuccess)
+        val receipt = result.getOrThrow()
+        assertEquals("Locator: ABC123D", receipt.notes)
     }
 }
