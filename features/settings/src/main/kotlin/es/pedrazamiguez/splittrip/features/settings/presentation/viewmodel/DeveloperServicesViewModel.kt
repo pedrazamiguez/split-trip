@@ -3,7 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.domain.model.AiEngineType
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
@@ -116,6 +116,12 @@ class DeveloperServicesViewModel(
             is DeveloperServicesUiEvent.RunOcrAndExtract -> runOcrAndExtract()
             is DeveloperServicesUiEvent.Reset -> reset()
             is DeveloperServicesUiEvent.SelectModel -> selectModel(event.model)
+        }
+    }
+
+    private fun selectModel(model: AiEngineType?) {
+        viewModelScope.launch {
+            aiModelResolver.setDeveloperOverrideModel(model)
         }
     }
 
@@ -259,12 +265,6 @@ class DeveloperServicesViewModel(
             activeResolvedModel = _uiState.value.activeResolvedModel,
             developerOverrideModel = _uiState.value.developerOverrideModel
         )
-    }
-
-    private fun selectModel(model: AiEngineType?) {
-        viewModelScope.launch {
-            aiModelResolver.setDeveloperOverrideModel(model)
-        }
     }
 
     private fun Throwable.toUiText(fallbackRes: Int): UiText {

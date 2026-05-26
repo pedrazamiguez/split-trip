@@ -139,7 +139,7 @@ private fun ExtractionSourceRow(
     source: ExtractionSource?,
     modifier: Modifier = Modifier
 ) {
-    val (label, isAiCore) = resolveSourceLabel(source)
+    val (label, isOnDeviceAi) = resolveSourceLabel(source)
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
@@ -160,7 +160,7 @@ private fun ExtractionSourceRow(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = if (isAiCore) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+            color = if (isOnDeviceAi) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
         )
     }
 }
@@ -199,7 +199,7 @@ private fun ExtractionConfidenceRow(
 @Composable
 private fun resolveSourceLabel(source: ExtractionSource?): Pair<String, Boolean> = when (source) {
     ExtractionSource.AI_CORE -> stringResource(R.string.developer_services_extraction_source_ai_core) to true
-    ExtractionSource.LITE_RT_LM -> stringResource(R.string.developer_services_extraction_source_lite_rt_lm) to true
+    ExtractionSource.LITE_RT_LM -> stringResource(R.string.developer_services_extraction_source_lite_rt) to true
     else -> stringResource(R.string.developer_services_extraction_source_no_op) to false
 }
 

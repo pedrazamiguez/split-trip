@@ -9,6 +9,8 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+private const val MAX_RECENT_ITEMS = 3
+
 @Suppress("TooManyFunctions")
 class UserPreferences(
     context: Context,
@@ -16,7 +18,6 @@ class UserPreferences(
 ) : BaseUserPreferences(context, authenticationService) {
 
     private companion object {
-        private const val MAX_RECENT_ITEMS = 3
 
         // Device-scoped keys (NOT user-scoped) — these are device concerns
         private val ONBOARDING_COMPLETE_KEY = booleanPreferencesKey("onboarding_complete")
@@ -27,7 +28,7 @@ class UserPreferences(
         private const val SELECTED_GROUP_NAME = "selected_group_name"
         private const val SELECTED_GROUP_CURRENCY = "selected_group_currency"
         private const val DEFAULT_CURRENCY = "default_currency"
-        private const val ACTIVE_AI_MODEL_KEY = "active_ai_model"
+        private const val ACTIVE_AI_ENGINE = "active_ai_engine"
     }
 
     // ── Onboarding (Device-scoped) ───────────────────────────────────────
@@ -114,6 +115,29 @@ class UserPreferences(
         }
     }
 
+    // ── Active AI Engine (User-scoped, auth-reactive) ─────────────────────
+
+    val activeAiEngine: Flow<es.pedrazamiguez.splittrip.domain.enums.AiEngineType> = userScopedFlow { userId ->
+        context.dataStore.data.map { prefs ->
+            val name = prefs[stringPreferencesKey("${userId}_$ACTIVE_AI_ENGINE")]
+            if (name != null) {
+                try {
+                    es.pedrazamiguez.splittrip.domain.enums.AiEngineType.valueOf(name)
+                } catch (_: Exception) {
+                    es.pedrazamiguez.splittrip.domain.enums.AiEngineType.AI_CORE_GEMMA_4
+                }
+            } else {
+                es.pedrazamiguez.splittrip.domain.enums.AiEngineType.AI_CORE_GEMMA_4
+            }
+        }
+    }
+
+    suspend fun setActiveAiEngine(engineType: es.pedrazamiguez.splittrip.domain.enums.AiEngineType) {
+        context.dataStore.edit { prefs ->
+            prefs[stringPreferencesKey(userKey(ACTIVE_AI_ENGINE))] = engineType.name
+        }
+    }
+
     // ── Per-Group Last-Used Currency (User + Group scoped) ───────────────
 
     fun getGroupLastUsedCurrency(groupId: String): Flow<String?> = userScopedFlow { userId ->
@@ -125,25 +149,6 @@ class UserPreferences(
         val key = stringPreferencesKey(userKey("last_used_currency_$groupId"))
         context.dataStore.edit { prefs ->
             prefs[key] = currencyCode
-        }
-    }
-
-    // ── MRU List Helpers (User + Group scoped) ───────────────────────────
-
-    private fun getRecentIds(keyPrefix: String, groupId: String): Flow<List<String>> = userScopedFlow { userId ->
-        val key = stringPreferencesKey("${userId}_${keyPrefix}_$groupId")
-        context.dataStore.data.map { prefs ->
-            prefs[key]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
-        }
-    }
-
-    private suspend fun addRecentId(keyPrefix: String, groupId: String, id: String) {
-        val key = stringPreferencesKey(userKey("${keyPrefix}_$groupId"))
-        context.dataStore.edit { prefs ->
-            val current = prefs[key]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
-            val updated = (listOf(id) + current.filter { it != id })
-                .take(MAX_RECENT_ITEMS)
-            prefs[key] = updated.joinToString(",")
         }
     }
 
@@ -178,18 +183,44 @@ class UserPreferences(
 
     val activeAiModel: Flow<String?> = userScopedFlow { userId ->
         context.dataStore.data.map { prefs ->
-            prefs[stringPreferencesKey("${userId}_$ACTIVE_AI_MODEL_KEY")]
+            prefs[stringPreferencesKey("${userId}_$ACTIVE_AI_ENGINE")]
         }
     }
 
     suspend fun setActiveAiModel(model: String?) {
         context.dataStore.edit { prefs ->
-            val key = stringPreferencesKey(userKey(ACTIVE_AI_MODEL_KEY))
+            val key = stringPreferencesKey(userKey(ACTIVE_AI_ENGINE))
             if (model != null) {
                 prefs[key] = model
             } else {
                 prefs.remove(key)
             }
         }
+    }
+}
+
+// ── MRU List Helpers (User + Group scoped) ───────────────────────────
+
+private fun UserPreferences.getRecentIds(
+    keyPrefix: String,
+    groupId: String
+): Flow<List<String>> = userScopedFlow { userId ->
+    val key = stringPreferencesKey("${userId}_${keyPrefix}_$groupId")
+    context.dataStore.data.map { prefs ->
+        prefs[key]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+    }
+}
+
+private suspend fun UserPreferences.addRecentId(
+    keyPrefix: String,
+    groupId: String,
+    id: String
+) {
+    val key = stringPreferencesKey(userKey("${keyPrefix}_$groupId"))
+    context.dataStore.edit { prefs ->
+        val current = prefs[key]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+        val updated = (listOf(id) + current.filter { it != id })
+            .take(MAX_RECENT_ITEMS)
+        prefs[key] = updated.joinToString(",")
     }
 }
