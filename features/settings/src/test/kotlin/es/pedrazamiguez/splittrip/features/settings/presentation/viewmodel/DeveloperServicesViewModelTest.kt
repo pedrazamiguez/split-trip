@@ -1,14 +1,18 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.model.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.TextBlock
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
 import java.time.Instant
@@ -16,6 +20,7 @@ import java.time.LocalDate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -37,12 +42,16 @@ class DeveloperServicesViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var receiptOcrService: ReceiptOcrService
     private lateinit var receiptExtractionService: ReceiptExtractionService
+    private lateinit var aiModelResolver: AiModelResolver
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         receiptOcrService = mockk()
         receiptExtractionService = mockk()
+        aiModelResolver = mockk(relaxed = true)
+        every { aiModelResolver.getActiveModel() } returns flowOf(AiEngineType.AI_CORE_GEMMA_4)
+        every { aiModelResolver.getDeveloperOverrideModel() } returns flowOf(null)
     }
 
     @AfterEach
@@ -52,7 +61,8 @@ class DeveloperServicesViewModelTest {
 
     private fun createViewModel() = DeveloperServicesViewModel(
         receiptOcrService = receiptOcrService,
-        receiptExtractionService = receiptExtractionService
+        receiptExtractionService = receiptExtractionService,
+        aiModelResolver = aiModelResolver
     )
 
     @Test
@@ -346,6 +356,22 @@ class DeveloperServicesViewModelTest {
             assertEquals(ExtractionStatus.Error, state.extractionStatus)
             assertEquals(UiText.DynamicString("OCR failed"), state.extractionErrorMessage)
             assertEquals(OcrStatus.Idle, state.ocrStatus)
+        }
+    }
+
+    @Nested
+    @DisplayName("SelectModel Event")
+    inner class SelectModelEvent {
+
+        @Test
+        fun `SelectModel event calls setDeveloperOverrideModel`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            coEvery { aiModelResolver.setDeveloperOverrideModel(any()) } returns Unit
+
+            viewModel.onEvent(DeveloperServicesUiEvent.SelectModel(AiEngineType.LITE_RT_LM))
+            advanceUntilIdle()
+
+            coVerify { aiModelResolver.setDeveloperOverrideModel(AiEngineType.LITE_RT_LM) }
         }
     }
 }

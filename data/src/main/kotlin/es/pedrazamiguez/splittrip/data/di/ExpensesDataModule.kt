@@ -5,12 +5,14 @@ import com.google.ai.edge.aicore.generationConfig
 import es.pedrazamiguez.splittrip.data.repository.impl.ExpenseRepositoryImpl
 import es.pedrazamiguez.splittrip.data.service.AICoreCapabilityProvider
 import es.pedrazamiguez.splittrip.data.service.AICoreReceiptParser
+import es.pedrazamiguez.splittrip.data.service.AiModelResolverImpl
 import es.pedrazamiguez.splittrip.data.service.MLKitOcrService
 import es.pedrazamiguez.splittrip.data.service.ReceiptExtractionServiceImpl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
@@ -61,10 +63,18 @@ val expensesDataModule = module {
         )
     }
 
+    single<AiModelResolver> {
+        AiModelResolverImpl(
+            userPreferences = get(),
+            aiCoreCapabilityProvider = get()
+        )
+    }
+
     single<ReceiptExtractionService> {
         ReceiptExtractionServiceImpl(
             aiCoreCapabilityProvider = get<AICoreCapabilityProvider>(),
             aiCoreReceiptParser = lazy { get<AICoreReceiptParser>() },
+            aiModelResolver = get<AiModelResolver>(),
             defaultDispatcher = Dispatchers.Default
         )
     }
