@@ -1,6 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service
 
-import es.pedrazamiguez.splittrip.domain.model.AiEngineType
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText

@@ -1,7 +1,7 @@
 package es.pedrazamiguez.splittrip.data.service
 
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
-import es.pedrazamiguez.splittrip.domain.model.AiEngineType
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify

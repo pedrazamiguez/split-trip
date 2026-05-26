@@ -1,6 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service
 
-import es.pedrazamiguez.splittrip.domain.model.AiEngineType
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import kotlinx.coroutines.flow.Flow
 
 interface AiModelResolver {
