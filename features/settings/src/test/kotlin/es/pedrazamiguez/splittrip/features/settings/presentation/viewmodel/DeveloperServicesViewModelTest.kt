@@ -213,10 +213,12 @@ class DeveloperServicesViewModelTest {
     inner class ResetEvent {
 
         @Test
-        fun `clears all state but preserves selected tab`() = runTest(testDispatcher) {
+        fun `clears all state but preserves selected tab and AI engine`() = runTest(testDispatcher) {
             val viewModel = createViewModel()
             advanceUntilIdle()
             viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AiExtraction))
+            viewModel.onEvent(DeveloperServicesUiEvent.SelectAiEngine(AiEngineType.LITE_RT_LM))
+            advanceUntilIdle()
             viewModel.onEvent(
                 DeveloperServicesUiEvent.FileSelected(
                     uri = "content://media/external/file/123",
@@ -246,6 +248,7 @@ class DeveloperServicesViewModelTest {
             assertTrue(state.textBlocks.isEmpty())
             assertNull(state.errorMessage)
             assertEquals(DeveloperServicesTab.AiExtraction, state.selectedTab)
+            assertEquals(AiEngineType.LITE_RT_LM, state.selectedAiEngine)
         }
     }
 
