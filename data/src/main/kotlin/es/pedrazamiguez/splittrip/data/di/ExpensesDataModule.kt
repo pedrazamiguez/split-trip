@@ -65,8 +65,7 @@ val expensesDataModule = module {
 
     single<AiModelResolver> {
         AiModelResolverImpl(
-            userPreferences = get(),
-            aiCoreCapabilityProvider = get()
+            userPreferences = get()
         )
     }
 

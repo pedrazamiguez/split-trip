@@ -7,8 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 internal class AiModelResolverImpl(
-    private val userPreferences: UserPreferences,
-    private val aiCoreCapabilityProvider: AICoreCapabilityProvider
+    private val userPreferences: UserPreferences
 ) : AiModelResolver {
 
     override fun getActiveModel(): Flow<AiEngineType> {
@@ -33,10 +32,8 @@ internal class AiModelResolverImpl(
     }
 
     private fun resolveAutomatic(): AiEngineType {
-        return if (aiCoreCapabilityProvider.isSupported()) {
-            AiEngineType.AI_CORE_GEMMA_4
-        } else {
-            AiEngineType.LITE_RT_LM
-        }
+        // Since LiteRT-LM is not fully implemented/available yet,
+        // we default to AI_CORE_GEMMA_4 (which returns a clean NO_OP fallback if unsupported).
+        return AiEngineType.AI_CORE_GEMMA_4
     }
 }

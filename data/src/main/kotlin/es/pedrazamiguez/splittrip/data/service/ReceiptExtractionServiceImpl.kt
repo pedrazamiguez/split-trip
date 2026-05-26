@@ -35,43 +35,56 @@ internal class ReceiptExtractionServiceImpl(
         )
 
         when (resolvedEngine) {
-            AiEngineType.AI_CORE_GEMMA_4 -> {
-                val cap = aiCoreCapabilityProvider.isSupported()
-                Timber.d(
-                    "ReceiptExtractionService (AICore): capability=%s — %s",
-                    if (cap) "ON_DEVICE_AI" else "UNSUPPORTED",
-                    if (cap) "delegating to AICoreReceiptParser" else "returning NO_OP fallback immediately"
-                )
+            AiEngineType.AI_CORE_GEMMA_4 -> extractWithAiCore(rawText)
+            AiEngineType.LITE_RT_LM -> extractWithLiteRtLm(engineType)
+        }
+    }
 
-                if (!cap) {
-                    return@withContext Result.success(getNoOpFallbackReceipt())
-                }
+    private suspend fun extractWithAiCore(rawText: RawReceiptText): Result<ExtractedReceipt> {
+        val cap = aiCoreCapabilityProvider.isSupported()
+        Timber.d(
+            "ReceiptExtractionService (AICore): capability=%s — %s",
+            if (cap) "ON_DEVICE_AI" else "UNSUPPORTED",
+            if (cap) "delegating to AICoreReceiptParser" else "returning NO_OP fallback immediately"
+        )
 
-                val startMs = System.currentTimeMillis()
-                val result = aiCoreReceiptParser.value.parse(rawText).recover { error ->
-                    Timber.w(
-                        error,
-                        "ReceiptExtractionService: AICore parser failed mid-flight — " +
-                            "falling back to NO_OP (elapsed=%dms)",
-                        System.currentTimeMillis() - startMs
-                    )
-                    getNoOpFallbackReceipt()
-                }
-                Timber.d(
-                    "ReceiptExtractionService: extraction finished in %dms — source=%s",
-                    System.currentTimeMillis() - startMs,
-                    result.getOrNull()?.source
-                )
-                result
-            }
-            AiEngineType.LITE_RT_LM -> {
-                Result.success(getLiteRTLmFallbackReceipt())
-            }
+        if (!cap) {
+            return Result.success(getNoOpFallbackReceipt())
+        }
+
+        val startMs = System.currentTimeMillis()
+        val result = aiCoreReceiptParser.value.parse(rawText).recover { error ->
+            Timber.w(
+                error,
+                "ReceiptExtractionService: AICore parser failed mid-flight — " +
+                    "falling back to NO_OP (elapsed=%dms)",
+                System.currentTimeMillis() - startMs
+            )
+            getNoOpFallbackReceipt()
+        }
+        Timber.d(
+            "ReceiptExtractionService: extraction finished in %dms — source=%s",
+            System.currentTimeMillis() - startMs,
+            result.getOrNull()?.source
+        )
+        return result
+    }
+
+    private suspend fun extractWithLiteRtLm(engineType: AiEngineType?): Result<ExtractedReceipt> {
+        val isDeveloperOverride = aiModelResolver.getDeveloperOverrideModel().first() == AiEngineType.LITE_RT_LM
+        return if (isDeveloperOverride || engineType == AiEngineType.LITE_RT_LM) {
+            Result.success(getLiteRTLmFallbackReceipt())
+        } else {
+            Result.success(getNoOpFallbackReceipt())
         }
     }
 
     override fun capability(): ExtractionCapability {
-        return ExtractionCapability.ON_DEVICE_AI
+        return if (aiCoreCapabilityProvider.isSupported()) {
+            ExtractionCapability.ON_DEVICE_AI
+        } else {
+            ExtractionCapability.UNSUPPORTED
+        }
     }
 
     private fun getNoOpFallbackReceipt(): ExtractedReceipt {

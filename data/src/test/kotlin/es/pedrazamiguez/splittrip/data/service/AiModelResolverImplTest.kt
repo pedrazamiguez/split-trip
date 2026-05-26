@@ -22,16 +22,13 @@ import org.junit.jupiter.api.Test
 class AiModelResolverImplTest {
 
     private lateinit var userPreferences: UserPreferences
-    private lateinit var aiCoreCapabilityProvider: AICoreCapabilityProvider
     private lateinit var resolver: AiModelResolverImpl
 
     @BeforeEach
     fun setUp() {
         userPreferences = mockk()
-        aiCoreCapabilityProvider = mockk()
         resolver = AiModelResolverImpl(
-            userPreferences = userPreferences,
-            aiCoreCapabilityProvider = aiCoreCapabilityProvider
+            userPreferences = userPreferences
         )
     }
 
@@ -51,23 +48,12 @@ class AiModelResolverImplTest {
     }
 
     @Test
-    fun `getActiveModel falls back to AI_CORE_GEMMA_4 when override is null and capability is supported`() = runTest {
+    fun `getActiveModel falls back to AI_CORE_GEMMA_4 when override is null`() = runTest {
         every { userPreferences.activeAiModel } returns flowOf(null)
-        every { aiCoreCapabilityProvider.isSupported() } returns true
 
         val activeModel = resolver.getActiveModel().first()
 
         assertEquals(AiEngineType.AI_CORE_GEMMA_4, activeModel)
-    }
-
-    @Test
-    fun `getActiveModel falls back to LITE_RT_LM when override is null and capability is unsupported`() = runTest {
-        every { userPreferences.activeAiModel } returns flowOf(null)
-        every { aiCoreCapabilityProvider.isSupported() } returns false
-
-        val activeModel = resolver.getActiveModel().first()
-
-        assertEquals(AiEngineType.LITE_RT_LM, activeModel)
     }
 
     @Test

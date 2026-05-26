@@ -48,6 +48,7 @@ class ReceiptExtractionServiceImplTest {
         aiCoreReceiptParser = mockk()
         aiModelResolver = mockk()
         every { aiModelResolver.getActiveModel() } returns flowOf(AiEngineType.AI_CORE_GEMMA_4)
+        every { aiModelResolver.getDeveloperOverrideModel() } returns flowOf(null)
         service = ReceiptExtractionServiceImpl(
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
             aiCoreReceiptParser = lazy { aiCoreReceiptParser },
@@ -63,10 +64,17 @@ class ReceiptExtractionServiceImplTest {
     }
 
     @Test
-    fun `capability always returns ON_DEVICE_AI`() {
-        every { aiCoreCapabilityProvider.isSupported() } returns false
+    fun `capability returns ON_DEVICE_AI when aiCore is supported`() {
+        every { aiCoreCapabilityProvider.isSupported() } returns true
         val capability = service.capability()
         assertEquals(ExtractionCapability.ON_DEVICE_AI, capability)
+    }
+
+    @Test
+    fun `capability returns UNSUPPORTED when aiCore is unsupported`() {
+        every { aiCoreCapabilityProvider.isSupported() } returns false
+        val capability = service.capability()
+        assertEquals(ExtractionCapability.UNSUPPORTED, capability)
     }
 
     @Test
@@ -155,6 +163,7 @@ class ReceiptExtractionServiceImplTest {
         testDispatcher
     ) {
         every { aiModelResolver.getActiveModel() } returns flowOf(AiEngineType.LITE_RT_LM)
+        every { aiModelResolver.getDeveloperOverrideModel() } returns flowOf(AiEngineType.LITE_RT_LM)
 
         val result = service.extract(rawReceiptText)
 
