@@ -75,6 +75,7 @@ class ReceiptExtractionServiceImplTest {
 
     @AfterEach
     fun tearDown() {
+        service.close()
         clearAllMocks()
         unmockkAll()
     }

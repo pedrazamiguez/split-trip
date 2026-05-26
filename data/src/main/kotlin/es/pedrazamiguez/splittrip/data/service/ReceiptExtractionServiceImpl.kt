@@ -18,6 +18,7 @@ import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,9 +32,10 @@ internal class ReceiptExtractionServiceImpl(
     private val liteRtInferenceRepository: Lazy<AiInferenceRepository>,
     private val userPreferenceRepository: UserPreferenceRepository,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
-) : ReceiptExtractionService {
+) : ReceiptExtractionService, AutoCloseable {
 
-    private val serviceScope = CoroutineScope(defaultDispatcher)
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(serviceJob + defaultDispatcher)
 
     @Volatile
     private var activeEngine: AiEngineType = AiEngineType.AI_CORE_GEMMA_4
@@ -124,6 +126,10 @@ internal class ReceiptExtractionServiceImpl(
         } else {
             ExtractionCapability.UNSUPPORTED
         }
+    }
+
+    override fun close() {
+        serviceJob.cancel()
     }
 
     private fun loadPromptTemplate(): String {

@@ -248,7 +248,10 @@ class DeveloperServicesViewModel(
 
     private fun reset() {
         lastRawReceiptText = null
-        _uiState.value = DeveloperServicesUiState(selectedTab = _uiState.value.selectedTab)
+        _uiState.value = DeveloperServicesUiState(
+            selectedTab = _uiState.value.selectedTab,
+            selectedAiEngine = _uiState.value.selectedAiEngine
+        )
     }
 
     private fun Throwable.toUiText(fallbackRes: Int): UiText {
