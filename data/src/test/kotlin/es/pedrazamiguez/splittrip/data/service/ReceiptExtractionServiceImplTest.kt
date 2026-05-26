@@ -19,8 +19,9 @@ import java.time.Instant
 import java.time.LocalDate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -39,6 +40,7 @@ class ReceiptExtractionServiceImplTest {
     private lateinit var liteRtInferenceRepository: AiInferenceRepository
     private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var service: ReceiptExtractionServiceImpl
+    private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
 
     private val rawReceiptText = RawReceiptText(
         fullText = "Store Name\nTotal: 12.34 EUR\nDate: 2026-05-20",
@@ -58,6 +60,9 @@ class ReceiptExtractionServiceImplTest {
         liteRtInferenceRepository = mockk()
         userPreferenceRepository = mockk()
 
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { userPreferenceRepository.getActiveAiEngine() } returns activeEngineFlow
+
         service = ReceiptExtractionServiceImpl(
             context = context,
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
@@ -75,8 +80,9 @@ class ReceiptExtractionServiceImplTest {
     }
 
     @Test
-    fun `capability returns UNSUPPORTED when AICore capability is not supported`() {
+    fun `capability returns UNSUPPORTED when AICore capability is not supported`() = runTest(testDispatcher) {
         every { aiCoreCapabilityProvider.isSupported() } returns false
+        advanceUntilIdle()
 
         val capability = service.capability()
 
@@ -84,8 +90,22 @@ class ReceiptExtractionServiceImplTest {
     }
 
     @Test
-    fun `capability returns ON_DEVICE_AI when AICore capability is supported`() {
+    fun `capability returns ON_DEVICE_AI when AICore capability is supported`() = runTest(testDispatcher) {
         every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
+
+        val capability = service.capability()
+
+        assertEquals(ExtractionCapability.ON_DEVICE_AI, capability)
+    }
+
+    @Test
+    fun `capability returns ON_DEVICE_AI when LiteRt is active even if AICore is unsupported`() = runTest(
+        testDispatcher
+    ) {
+        activeEngineFlow.value = AiEngineType.LITE_RT_LM
+        every { aiCoreCapabilityProvider.isSupported() } returns false
+        advanceUntilIdle()
 
         val capability = service.capability()
 
@@ -96,8 +116,9 @@ class ReceiptExtractionServiceImplTest {
     fun `extract returns NO_OP fallback immediately when capability is unsupported for AICore`() = runTest(
         testDispatcher
     ) {
-        every { userPreferenceRepository.getActiveAiEngine() } returns flowOf(AiEngineType.AI_CORE_GEMMA_4)
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
         every { aiCoreCapabilityProvider.isSupported() } returns false
+        advanceUntilIdle()
 
         val result = service.extract(rawReceiptText)
 
@@ -110,8 +131,9 @@ class ReceiptExtractionServiceImplTest {
 
     @Test
     fun `extract delegates to AICore repository and sanitizes response`() = runTest(testDispatcher) {
-        every { userPreferenceRepository.getActiveAiEngine() } returns flowOf(AiEngineType.AI_CORE_GEMMA_4)
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
         every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
 
         val rawJsonResponse = """
             Here is the response:
@@ -142,7 +164,8 @@ class ReceiptExtractionServiceImplTest {
 
     @Test
     fun `extract delegates to LiteRt repository and parses cleanly`() = runTest(testDispatcher) {
-        every { userPreferenceRepository.getActiveAiEngine() } returns flowOf(AiEngineType.LITE_RT_LM)
+        activeEngineFlow.value = AiEngineType.LITE_RT_LM
+        advanceUntilIdle()
 
         val cleanJsonResponse = """
             {
@@ -170,10 +193,11 @@ class ReceiptExtractionServiceImplTest {
 
     @Test
     fun `extract returns NO_OP fallback when inference fails`() = runTest(testDispatcher) {
-        every { userPreferenceRepository.getActiveAiEngine() } returns flowOf(AiEngineType.AI_CORE_GEMMA_4)
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
         every { aiCoreCapabilityProvider.isSupported() } returns true
         coEvery { aiCoreInferenceRepository.generateContent(any()) } returns
             Result.failure(Exception("Inference failed"))
+        advanceUntilIdle()
 
         val result = service.extract(rawReceiptText)
 

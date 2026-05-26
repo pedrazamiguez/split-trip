@@ -2,11 +2,15 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
+import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
+import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.TextBlock
-import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -39,7 +43,8 @@ class DeveloperServicesViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var receiptOcrService: ReceiptOcrService
     private lateinit var receiptExtractionService: ReceiptExtractionService
-    private lateinit var userPreferenceRepository: UserPreferenceRepository
+    private lateinit var getActiveAiEngineUseCase: GetActiveAiEngineUseCase
+    private lateinit var setActiveAiEngineUseCase: SetActiveAiEngineUseCase
     private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
 
     @BeforeEach
@@ -47,9 +52,10 @@ class DeveloperServicesViewModelTest {
         Dispatchers.setMain(testDispatcher)
         receiptOcrService = mockk()
         receiptExtractionService = mockk()
-        userPreferenceRepository = mockk()
-        every { userPreferenceRepository.getActiveAiEngine() } returns activeEngineFlow
-        coEvery { userPreferenceRepository.setActiveAiEngine(any()) } coAnswers {
+        getActiveAiEngineUseCase = mockk()
+        setActiveAiEngineUseCase = mockk()
+        every { getActiveAiEngineUseCase() } returns activeEngineFlow
+        coEvery { setActiveAiEngineUseCase(any()) } coAnswers {
             activeEngineFlow.value = firstArg()
         }
     }
@@ -64,7 +70,8 @@ class DeveloperServicesViewModelTest {
     private fun createViewModel() = DeveloperServicesViewModel(
         receiptOcrService = receiptOcrService,
         receiptExtractionService = receiptExtractionService,
-        userPreferenceRepository = userPreferenceRepository
+        getActiveAiEngineUseCase = getActiveAiEngineUseCase,
+        setActiveAiEngineUseCase = setActiveAiEngineUseCase
     )
 
     @Test
@@ -275,7 +282,138 @@ class DeveloperServicesViewModelTest {
             advanceUntilIdle()
 
             assertEquals(AiEngineType.LITE_RT_LM, viewModel.uiState.value.selectedAiEngine)
-            coVerify(exactly = 1) { userPreferenceRepository.setActiveAiEngine(AiEngineType.LITE_RT_LM) }
+            coVerify(exactly = 1) { setActiveAiEngineUseCase(AiEngineType.LITE_RT_LM) }
+        }
+    }
+
+    @Nested
+    @DisplayName("RunOcrAndExtract Event")
+    inner class RunOcrAndExtractEvent {
+
+        @Test
+        fun `does nothing if no file is selected`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ExtractionStatus.Idle, state.extractionStatus)
+        }
+
+        @Test
+        fun `successful OCR and extraction updates extraction status to success`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/123",
+                    name = "receipt.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+
+            val rawReceiptText = RawReceiptText(
+                fullText = "Total: 50.00 EUR",
+                blocks = persistentListOf(TextBlock(text = "Total: 50.00 EUR", confidence = 1.0f)),
+                recognisedAt = Instant.EPOCH
+            )
+            val extractedReceipt = ExtractedReceipt(
+                amount = java.math.BigDecimal("50.00"),
+                currency = "EUR",
+                date = java.time.LocalDate.of(2025, 3, 10),
+                time = java.time.LocalTime.of(13, 45),
+                title = "Dinner",
+                vendor = "Restaurant",
+                category = "FOOD",
+                paymentMethod = "CASH",
+                notes = "Nice food",
+                source = ExtractionSource.AI_CORE,
+                confidence = ExtractionConfidence.HIGH
+            )
+
+            coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+            coEvery { receiptExtractionService.extract(rawReceiptText) } returns Result.success(extractedReceipt)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+
+            assertEquals(ExtractionStatus.Loading, viewModel.uiState.value.extractionStatus)
+
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ExtractionStatus.Success, state.extractionStatus)
+            assertEquals("50.00", state.extractedAmount)
+            assertEquals("EUR", state.extractedCurrency)
+            assertEquals("2025-03-10", state.extractedDate)
+            assertEquals("13:45", state.extractedTime)
+            assertEquals("Dinner", state.extractedTitle)
+            assertEquals("Restaurant", state.extractedVendor)
+            assertEquals("CASH", state.extractedPaymentMethod)
+            assertEquals("FOOD", state.extractedCategory)
+            assertEquals("Nice food", state.extractedNotes)
+            assertEquals(ExtractionSource.AI_CORE, state.extractionSource)
+            assertEquals(ExtractionConfidence.HIGH, state.extractionConfidence)
+        }
+
+        @Test
+        fun `failed OCR maps to extraction error`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/123",
+                    name = "receipt.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+
+            val exception = RuntimeException("OCR failed")
+            coEvery { receiptOcrService.recogniseText(any()) } returns Result.failure(exception)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+
+            assertEquals(ExtractionStatus.Loading, viewModel.uiState.value.extractionStatus)
+
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ExtractionStatus.Error, state.extractionStatus)
+            assertEquals(UiText.DynamicString("OCR failed"), state.extractionErrorMessage)
+        }
+
+        @Test
+        fun `successful OCR but failed extraction maps to extraction error`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/123",
+                    name = "receipt.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+
+            val rawReceiptText = RawReceiptText(
+                fullText = "Total: 50.00 EUR",
+                blocks = persistentListOf(TextBlock(text = "Total: 50.00 EUR", confidence = 1.0f)),
+                recognisedAt = Instant.EPOCH
+            )
+            val exception = RuntimeException("Extraction failed")
+
+            coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+            coEvery { receiptExtractionService.extract(rawReceiptText) } returns Result.failure(exception)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+
+            assertEquals(ExtractionStatus.Loading, viewModel.uiState.value.extractionStatus)
+
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ExtractionStatus.Error, state.extractionStatus)
+            assertEquals(UiText.DynamicString("Extraction failed"), state.extractionErrorMessage)
         }
     }
 }

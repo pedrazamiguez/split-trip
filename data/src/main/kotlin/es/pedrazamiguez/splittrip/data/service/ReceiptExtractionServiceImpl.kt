@@ -16,8 +16,10 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import timber.log.Timber
@@ -30,6 +32,19 @@ internal class ReceiptExtractionServiceImpl(
     private val userPreferenceRepository: UserPreferenceRepository,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ReceiptExtractionService {
+
+    private val serviceScope = CoroutineScope(defaultDispatcher)
+
+    @Volatile
+    private var activeEngine: AiEngineType = AiEngineType.AI_CORE_GEMMA_4
+
+    init {
+        serviceScope.launch {
+            userPreferenceRepository.getActiveAiEngine().collect { engine ->
+                activeEngine = engine
+            }
+        }
+    }
 
     override suspend fun extract(rawText: RawReceiptText): Result<ExtractedReceipt> = withContext(defaultDispatcher) {
         val activeEngine = userPreferenceRepository.getActiveAiEngine().first()
@@ -98,13 +113,13 @@ internal class ReceiptExtractionServiceImpl(
         }
 
         require(cleanJson.startsWith("{")) {
-            "Output is not valid JSON: $cleanJson"
+            "Output is not valid JSON (length=${cleanJson.length})"
         }
         return parseJsonToReceipt(cleanJson, activeEngine)
     }
 
     override fun capability(): ExtractionCapability {
-        return if (aiCoreCapabilityProvider.isSupported()) {
+        return if (activeEngine == AiEngineType.LITE_RT_LM || aiCoreCapabilityProvider.isSupported()) {
             ExtractionCapability.ON_DEVICE_AI
         } else {
             ExtractionCapability.UNSUPPORTED

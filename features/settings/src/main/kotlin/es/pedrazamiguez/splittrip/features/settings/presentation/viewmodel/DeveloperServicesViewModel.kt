@@ -8,9 +8,10 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
-import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.features.settings.R
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -78,7 +79,8 @@ sealed interface DeveloperServicesUiEvent {
 class DeveloperServicesViewModel(
     private val receiptOcrService: ReceiptOcrService,
     private val receiptExtractionService: ReceiptExtractionService,
-    private val userPreferenceRepository: UserPreferenceRepository
+    private val getActiveAiEngineUseCase: GetActiveAiEngineUseCase,
+    private val setActiveAiEngineUseCase: SetActiveAiEngineUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeveloperServicesUiState())
@@ -88,7 +90,7 @@ class DeveloperServicesViewModel(
 
     init {
         viewModelScope.launch {
-            userPreferenceRepository.getActiveAiEngine().collect { engine ->
+            getActiveAiEngineUseCase().collect { engine ->
                 _uiState.update { it.copy(selectedAiEngine = engine) }
             }
         }
@@ -107,7 +109,7 @@ class DeveloperServicesViewModel(
 
     private fun selectAiEngine(engine: AiEngineType) {
         viewModelScope.launch {
-            userPreferenceRepository.setActiveAiEngine(engine)
+            setActiveAiEngineUseCase(engine)
         }
     }
 

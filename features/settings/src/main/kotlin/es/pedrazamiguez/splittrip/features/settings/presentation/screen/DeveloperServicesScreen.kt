@@ -266,7 +266,7 @@ private fun AiEngineSelector(
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
         PassportChip(
-            label = "AICore (Gemma 4)",
+            label = stringResource(R.string.developer_services_ai_engine_ai_core),
             selected = selectedEngine == AiEngineType.AI_CORE_GEMMA_4,
             onClick = { onEngineSelected(AiEngineType.AI_CORE_GEMMA_4) },
             leadingIcon = if (selectedEngine == AiEngineType.AI_CORE_GEMMA_4) {
@@ -278,7 +278,7 @@ private fun AiEngineSelector(
         )
 
         PassportChip(
-            label = "LiteRT-LM (CD)",
+            label = stringResource(R.string.developer_services_ai_engine_lite_rt),
             selected = selectedEngine == AiEngineType.LITE_RT_LM,
             onClick = { onEngineSelected(AiEngineType.LITE_RT_LM) },
             leadingIcon = if (selectedEngine == AiEngineType.LITE_RT_LM) {

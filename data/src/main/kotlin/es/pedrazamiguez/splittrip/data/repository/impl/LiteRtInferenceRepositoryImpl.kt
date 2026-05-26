@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
+import es.pedrazamiguez.splittrip.data.BuildConfig
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
 import java.util.regex.Pattern
@@ -12,6 +13,11 @@ class LiteRtInferenceRepositoryImpl(
 ) : AiInferenceRepository {
 
     override suspend fun generateContent(prompt: String): Result<String> = withContext(defaultDispatcher) {
+        if (!BuildConfig.DEBUG) {
+            return@withContext Result.failure(
+                UnsupportedOperationException("LiteRT engine is not supported in production builds")
+            )
+        }
         val simulatedJson = simulateExtraction(prompt)
         Result.success(simulatedJson)
     }
@@ -19,6 +25,11 @@ class LiteRtInferenceRepositoryImpl(
     override suspend fun generateStructuredOutput(prompt: String, jsonSchema: String): Result<String> = withContext(
         defaultDispatcher
     ) {
+        if (!BuildConfig.DEBUG) {
+            return@withContext Result.failure(
+                UnsupportedOperationException("LiteRT engine is not supported in production builds")
+            )
+        }
         val simulatedJson = simulateExtraction(prompt)
         Result.success(simulatedJson)
     }

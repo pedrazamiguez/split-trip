@@ -24,6 +24,8 @@ class AICoreInferenceRepositoryImpl(
             val response = generativeModel.generateContent(prompt)
             val text = response.text ?: ""
             Result.success(text)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "AICoreInferenceRepositoryImpl: generateContent failed")
             Result.failure(e)
