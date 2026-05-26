@@ -125,6 +125,11 @@
     <string name="developer_services_ai_no_receipt">Selecciona una foto de recibo o PDF para extraer datos con IA en el dispositivo</string>
     <string name="developer_services_ai_select_receipt">Seleccionar recibo</string>
 
+    <!-- AI Engines -->
+    <string name="developer_services_ai_engine_ai_core">AICore (Gemma 4)</string>
+    <string name="developer_services_ai_engine_lite_rt">LiteRT-LM (CD)</string>
+    <string name="developer_services_extraction_source_lite_rt">LiteRT-LM</string>
+
     <!-- Avatar Generation tab (placeholder) -->
     <string name="developer_services_avatar_title">Generación de Avatares con IA</string>
     <string name="developer_services_avatar_subtitle">Próximamente</string>

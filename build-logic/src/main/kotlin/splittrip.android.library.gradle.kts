@@ -87,6 +87,14 @@ configure<JacocoPluginExtension> {
     toolVersion = catalog.findVersion("jacoco").get().requiredVersion
 }
 
+tasks.withType<Test>().configureEach {
+    configure<org.gradle.testing.jacoco.plugins.JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
+
 @Suppress("UnstableApiUsage")
 android.buildTypes {
     getByName("debug") {

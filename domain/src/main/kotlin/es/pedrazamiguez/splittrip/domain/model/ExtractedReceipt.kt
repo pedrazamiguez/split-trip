@@ -37,6 +37,7 @@ data class ExtractedReceipt(
  */
 enum class ExtractionSource {
     AI_CORE,
+    LITE_RT_LM,
     NO_OP
 }
 
