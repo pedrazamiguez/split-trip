@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.map
 
 private const val MAX_RECENT_ITEMS = 3
 
+@Suppress("TooManyFunctions")
 class UserPreferences(
     context: Context,
     authenticationService: AuthenticationService
@@ -175,6 +176,25 @@ class UserPreferences(
         val key = stringPreferencesKey(userKey("last_seen_balance_$groupId"))
         context.dataStore.edit { prefs ->
             prefs[key] = formattedBalance
+        }
+    }
+
+    // ── Active AI Model (User-scoped, auth-reactive) ─────────────────────
+
+    val activeAiModel: Flow<String?> = userScopedFlow { userId ->
+        context.dataStore.data.map { prefs ->
+            prefs[stringPreferencesKey("${userId}_$ACTIVE_AI_ENGINE")]
+        }
+    }
+
+    suspend fun setActiveAiModel(model: String?) {
+        context.dataStore.edit { prefs ->
+            val key = stringPreferencesKey(userKey(ACTIVE_AI_ENGINE))
+            if (model != null) {
+                prefs[key] = model
+            } else {
+                prefs.remove(key)
+            }
         }
     }
 }

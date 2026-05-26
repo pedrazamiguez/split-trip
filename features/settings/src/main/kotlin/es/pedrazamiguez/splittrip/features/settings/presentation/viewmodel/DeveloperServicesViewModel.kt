@@ -8,10 +8,9 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
-import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.features.settings.R
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -19,6 +18,8 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -50,7 +51,13 @@ data class DeveloperServicesUiState(
     val extractionSource: ExtractionSource? = null,
     val extractionConfidence: ExtractionConfidence? = null,
     val extractionErrorMessage: UiText? = null,
-    val selectedAiEngine: AiEngineType = AiEngineType.AI_CORE_GEMMA_4
+    val activeResolvedModel: AiEngineType? = null,
+    val developerOverrideModel: AiEngineType? = null,
+    val availableModels: ImmutableList<AiEngineType?> = persistentListOf(
+        null,
+        AiEngineType.AI_CORE_GEMMA_4,
+        AiEngineType.LITE_RT_LM
+    )
 )
 
 sealed interface OcrStatus {
@@ -73,14 +80,13 @@ sealed interface DeveloperServicesUiEvent {
     data object RunOcr : DeveloperServicesUiEvent
     data object RunOcrAndExtract : DeveloperServicesUiEvent
     data object Reset : DeveloperServicesUiEvent
-    data class SelectAiEngine(val engine: AiEngineType) : DeveloperServicesUiEvent
+    data class SelectModel(val model: AiEngineType?) : DeveloperServicesUiEvent
 }
 
 class DeveloperServicesViewModel(
     private val receiptOcrService: ReceiptOcrService,
     private val receiptExtractionService: ReceiptExtractionService,
-    private val getActiveAiEngineUseCase: GetActiveAiEngineUseCase,
-    private val setActiveAiEngineUseCase: SetActiveAiEngineUseCase
+    private val aiModelResolver: AiModelResolver
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeveloperServicesUiState())
@@ -89,11 +95,17 @@ class DeveloperServicesViewModel(
     private var lastRawReceiptText: RawReceiptText? = null
 
     init {
-        viewModelScope.launch {
-            getActiveAiEngineUseCase().collect { engine ->
-                _uiState.update { it.copy(selectedAiEngine = engine) }
+        combine(
+            aiModelResolver.getActiveModel(),
+            aiModelResolver.getDeveloperOverrideModel()
+        ) { activeModel, overrideModel ->
+            _uiState.update {
+                it.copy(
+                    activeResolvedModel = activeModel,
+                    developerOverrideModel = overrideModel
+                )
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     fun onEvent(event: DeveloperServicesUiEvent) {
@@ -103,13 +115,13 @@ class DeveloperServicesViewModel(
             is DeveloperServicesUiEvent.RunOcr -> runOcr()
             is DeveloperServicesUiEvent.RunOcrAndExtract -> runOcrAndExtract()
             is DeveloperServicesUiEvent.Reset -> reset()
-            is DeveloperServicesUiEvent.SelectAiEngine -> selectAiEngine(event.engine)
+            is DeveloperServicesUiEvent.SelectModel -> selectModel(event.model)
         }
     }
 
-    private fun selectAiEngine(engine: AiEngineType) {
+    private fun selectModel(model: AiEngineType?) {
         viewModelScope.launch {
-            setActiveAiEngineUseCase(engine)
+            aiModelResolver.setDeveloperOverrideModel(model)
         }
     }
 
@@ -250,7 +262,8 @@ class DeveloperServicesViewModel(
         lastRawReceiptText = null
         _uiState.value = DeveloperServicesUiState(
             selectedTab = _uiState.value.selectedTab,
-            selectedAiEngine = _uiState.value.selectedAiEngine
+            activeResolvedModel = _uiState.value.activeResolvedModel,
+            developerOverrideModel = _uiState.value.developerOverrideModel
         )
     }
 

@@ -7,10 +7,9 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.TextBlock
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
-import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -43,20 +42,20 @@ class DeveloperServicesViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var receiptOcrService: ReceiptOcrService
     private lateinit var receiptExtractionService: ReceiptExtractionService
-    private lateinit var getActiveAiEngineUseCase: GetActiveAiEngineUseCase
-    private lateinit var setActiveAiEngineUseCase: SetActiveAiEngineUseCase
+    private lateinit var aiModelResolver: AiModelResolver
     private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
+    private val overrideEngineFlow = MutableStateFlow<AiEngineType?>(null)
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         receiptOcrService = mockk()
         receiptExtractionService = mockk()
-        getActiveAiEngineUseCase = mockk()
-        setActiveAiEngineUseCase = mockk()
-        every { getActiveAiEngineUseCase() } returns activeEngineFlow
-        coEvery { setActiveAiEngineUseCase(any()) } coAnswers {
-            activeEngineFlow.value = firstArg()
+        aiModelResolver = mockk(relaxed = true)
+        every { aiModelResolver.getActiveModel() } returns activeEngineFlow
+        every { aiModelResolver.getDeveloperOverrideModel() } returns overrideEngineFlow
+        coEvery { aiModelResolver.setDeveloperOverrideModel(any()) } coAnswers {
+            overrideEngineFlow.value = firstArg()
         }
     }
 
@@ -70,8 +69,7 @@ class DeveloperServicesViewModelTest {
     private fun createViewModel() = DeveloperServicesViewModel(
         receiptOcrService = receiptOcrService,
         receiptExtractionService = receiptExtractionService,
-        getActiveAiEngineUseCase = getActiveAiEngineUseCase,
-        setActiveAiEngineUseCase = setActiveAiEngineUseCase
+        aiModelResolver = aiModelResolver
     )
 
     @Test
@@ -93,7 +91,8 @@ class DeveloperServicesViewModelTest {
         assertNull(state.extractedCategory)
         assertNull(state.extractedNotes)
         assertEquals(DeveloperServicesTab.Ocr, state.selectedTab)
-        assertEquals(AiEngineType.AI_CORE_GEMMA_4, state.selectedAiEngine)
+        assertEquals(AiEngineType.AI_CORE_GEMMA_4, state.activeResolvedModel)
+        assertNull(state.developerOverrideModel)
     }
 
     @Nested
@@ -217,7 +216,7 @@ class DeveloperServicesViewModelTest {
             val viewModel = createViewModel()
             advanceUntilIdle()
             viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AiExtraction))
-            viewModel.onEvent(DeveloperServicesUiEvent.SelectAiEngine(AiEngineType.LITE_RT_LM))
+            viewModel.onEvent(DeveloperServicesUiEvent.SelectModel(AiEngineType.LITE_RT_LM))
             advanceUntilIdle()
             viewModel.onEvent(
                 DeveloperServicesUiEvent.FileSelected(
@@ -248,7 +247,7 @@ class DeveloperServicesViewModelTest {
             assertTrue(state.textBlocks.isEmpty())
             assertNull(state.errorMessage)
             assertEquals(DeveloperServicesTab.AiExtraction, state.selectedTab)
-            assertEquals(AiEngineType.LITE_RT_LM, state.selectedAiEngine)
+            assertEquals(AiEngineType.LITE_RT_LM, state.developerOverrideModel)
         }
     }
 
@@ -269,23 +268,6 @@ class DeveloperServicesViewModelTest {
 
             viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.Ocr))
             assertEquals(DeveloperServicesTab.Ocr, viewModel.uiState.value.selectedTab)
-        }
-    }
-
-    @Nested
-    @DisplayName("SelectAiEngine Event")
-    inner class SelectAiEngineEvent {
-
-        @Test
-        fun `updates selected AI engine and triggers repository save`() = runTest(testDispatcher) {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(DeveloperServicesUiEvent.SelectAiEngine(AiEngineType.LITE_RT_LM))
-            advanceUntilIdle()
-
-            assertEquals(AiEngineType.LITE_RT_LM, viewModel.uiState.value.selectedAiEngine)
-            coVerify(exactly = 1) { setActiveAiEngineUseCase(AiEngineType.LITE_RT_LM) }
         }
     }
 
@@ -417,6 +399,22 @@ class DeveloperServicesViewModelTest {
             val state = viewModel.uiState.value
             assertEquals(ExtractionStatus.Error, state.extractionStatus)
             assertEquals(UiText.DynamicString("Extraction failed"), state.extractionErrorMessage)
+        }
+    }
+
+    @Nested
+    @DisplayName("SelectModel Event")
+    inner class SelectModelEvent {
+
+        @Test
+        fun `SelectModel event calls setDeveloperOverrideModel`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            coEvery { aiModelResolver.setDeveloperOverrideModel(any()) } returns Unit
+
+            viewModel.onEvent(DeveloperServicesUiEvent.SelectModel(AiEngineType.LITE_RT_LM))
+            advanceUntilIdle()
+
+            coVerify { aiModelResolver.setDeveloperOverrideModel(AiEngineType.LITE_RT_LM) }
         }
     }
 }

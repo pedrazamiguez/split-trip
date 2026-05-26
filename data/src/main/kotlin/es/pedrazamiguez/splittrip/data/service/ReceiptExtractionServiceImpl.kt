@@ -10,10 +10,11 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
-import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -30,7 +31,7 @@ internal class ReceiptExtractionServiceImpl(
     private val aiCoreCapabilityProvider: AICoreCapabilityProvider,
     private val aiCoreInferenceRepository: Lazy<AiInferenceRepository>,
     private val liteRtInferenceRepository: Lazy<AiInferenceRepository>,
-    private val userPreferenceRepository: UserPreferenceRepository,
+    private val aiModelResolver: AiModelResolver,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ReceiptExtractionService, AutoCloseable {
 
@@ -42,19 +43,22 @@ internal class ReceiptExtractionServiceImpl(
 
     init {
         serviceScope.launch {
-            userPreferenceRepository.getActiveAiEngine().collect { engine ->
+            aiModelResolver.getActiveModel().collect { engine ->
                 activeEngine = engine
             }
         }
     }
 
-    override suspend fun extract(rawText: RawReceiptText): Result<ExtractedReceipt> = withContext(defaultDispatcher) {
-        val activeEngine = userPreferenceRepository.getActiveAiEngine().first()
-        val isSupported = isEngineSupported(activeEngine)
+    override suspend fun extract(
+        rawText: RawReceiptText,
+        engineType: AiEngineType?
+    ): Result<ExtractedReceipt> = withContext(defaultDispatcher) {
+        val resolvedEngine = engineType ?: aiModelResolver.getActiveModel().first()
+        val isSupported = isEngineSupported(resolvedEngine)
 
         Timber.d(
-            "ReceiptExtractionService: activeEngine=%s, capability=%s — %s",
-            activeEngine,
+            "ReceiptExtractionService: resolvedEngine=%s, capability=%s — %s",
+            resolvedEngine,
             if (isSupported) "SUPPORTED" else "UNSUPPORTED",
             if (isSupported) "running inference" else "returning NO_OP fallback immediately"
         )
@@ -67,10 +71,10 @@ internal class ReceiptExtractionServiceImpl(
         val truncatedText = smartTruncate(rawText.fullText)
         val prompt = buildPrompt(truncatedText)
 
-        val inferenceResult = runInference(activeEngine, prompt)
+        val inferenceResult = runInference(resolvedEngine, prompt)
 
         val result = inferenceResult.mapCatching { rawOutput ->
-            parseInferenceResult(rawOutput, activeEngine)
+            parseInferenceResult(rawOutput, resolvedEngine)
         }.recover { error ->
             Timber.w(
                 error,

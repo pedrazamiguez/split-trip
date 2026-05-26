@@ -109,7 +109,13 @@
     <string name="developer_services_extraction_confidence">Confidence:</string>
     <string name="developer_services_extraction_error_fallback">Receipt extraction failed</string>
     <string name="developer_services_extraction_source_ai_core">Gemini Nano</string>
+    <string name="developer_services_extraction_source_lite_rt_lm">LiteRT-LM</string>
     <string name="developer_services_extraction_source_no_op">Not Available</string>
+    <string name="developer_services_ai_model_selection">AI Engine Selection</string>
+    <string name="developer_services_ai_model_automatic">Automatic (Default)</string>
+    <string name="developer_services_ai_model_ai_core">AICore (Gemma 4)</string>
+    <string name="developer_services_ai_model_lite_rt">LiteRT-LM</string>
+    <string name="developer_services_ai_model_resolved_label">Active Resolved Engine: %1$s</string>
     <string name="developer_services_extraction_confidence_high">High</string>
     <string name="developer_services_extraction_confidence_medium">Medium</string>
     <string name="developer_services_extraction_confidence_low">Low</string>

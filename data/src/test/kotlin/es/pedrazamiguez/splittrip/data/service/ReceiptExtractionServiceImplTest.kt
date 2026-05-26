@@ -7,7 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
-import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
@@ -20,6 +20,7 @@ import java.time.LocalDate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -38,7 +39,7 @@ class ReceiptExtractionServiceImplTest {
     private lateinit var aiCoreCapabilityProvider: AICoreCapabilityProvider
     private lateinit var aiCoreInferenceRepository: AiInferenceRepository
     private lateinit var liteRtInferenceRepository: AiInferenceRepository
-    private lateinit var userPreferenceRepository: UserPreferenceRepository
+    private lateinit var aiModelResolver: AiModelResolver
     private lateinit var service: ReceiptExtractionServiceImpl
     private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
 
@@ -58,17 +59,18 @@ class ReceiptExtractionServiceImplTest {
         aiCoreCapabilityProvider = mockk()
         aiCoreInferenceRepository = mockk()
         liteRtInferenceRepository = mockk()
-        userPreferenceRepository = mockk()
+        aiModelResolver = mockk()
 
         activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
-        every { userPreferenceRepository.getActiveAiEngine() } returns activeEngineFlow
+        every { aiModelResolver.getActiveModel() } returns activeEngineFlow
+        every { aiModelResolver.getDeveloperOverrideModel() } returns flowOf(null)
 
         service = ReceiptExtractionServiceImpl(
             context = context,
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
             aiCoreInferenceRepository = lazy { aiCoreInferenceRepository },
             liteRtInferenceRepository = lazy { liteRtInferenceRepository },
-            userPreferenceRepository = userPreferenceRepository,
+            aiModelResolver = aiModelResolver,
             defaultDispatcher = testDispatcher
         )
     }
@@ -86,7 +88,6 @@ class ReceiptExtractionServiceImplTest {
         advanceUntilIdle()
 
         val capability = service.capability()
-
         assertEquals(ExtractionCapability.UNSUPPORTED, capability)
     }
 
@@ -96,7 +97,6 @@ class ReceiptExtractionServiceImplTest {
         advanceUntilIdle()
 
         val capability = service.capability()
-
         assertEquals(ExtractionCapability.ON_DEVICE_AI, capability)
     }
 
@@ -206,5 +206,31 @@ class ReceiptExtractionServiceImplTest {
         val receipt = result.getOrThrow()
         assertEquals(ExtractionSource.NO_OP, receipt.source)
         assertEquals(ExtractionConfidence.LOW, receipt.confidence)
+    }
+
+    @Test
+    fun `extract routes to override engine when explicit engineType is passed`() = runTest(
+        testDispatcher
+    ) {
+        // Active model resolves to AI_CORE but we pass LITE_RT_LM override
+        every { aiModelResolver.getActiveModel() } returns activeEngineFlow
+
+        val cleanJsonResponse = """
+            {
+                "amount": "15.50",
+                "currency": "USD",
+                "date": "2026-05-26",
+                "title": "LiteRT Purchase"
+            }
+        """.trimIndent()
+
+        coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), any()) } returns
+            Result.success(cleanJsonResponse)
+
+        val result = service.extract(rawReceiptText, engineType = AiEngineType.LITE_RT_LM)
+
+        assertTrue(result.isSuccess)
+        val receipt = result.getOrThrow()
+        assertEquals(ExtractionSource.LITE_RT_LM, receipt.source)
     }
 }

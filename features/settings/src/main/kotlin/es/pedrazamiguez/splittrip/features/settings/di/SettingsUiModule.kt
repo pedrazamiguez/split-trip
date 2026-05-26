@@ -2,15 +2,14 @@ package es.pedrazamiguez.splittrip.features.settings.di
 
 import android.app.Application
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DefaultCurrencyScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DeveloperServicesScreenUiProviderImpl
@@ -56,8 +55,7 @@ val settingsUiModule = module {
         DeveloperServicesViewModel(
             receiptOcrService = get<ReceiptOcrService>(),
             receiptExtractionService = get<ReceiptExtractionService>(),
-            getActiveAiEngineUseCase = get<GetActiveAiEngineUseCase>(),
-            setActiveAiEngineUseCase = get<SetActiveAiEngineUseCase>()
+            aiModelResolver = get<AiModelResolver>()
         )
     }
 

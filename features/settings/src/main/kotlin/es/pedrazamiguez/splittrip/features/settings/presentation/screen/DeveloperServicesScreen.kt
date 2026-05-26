@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,7 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.EmailStamp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.TextScan2
@@ -37,6 +38,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
@@ -239,9 +241,11 @@ private fun AiExtractionTabContent(
             .padding(MaterialTheme.spacing.Large),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
     ) {
-        AiEngineSelector(
-            selectedEngine = uiState.selectedAiEngine,
-            onEngineSelected = { onEvent(DeveloperServicesUiEvent.SelectAiEngine(it)) }
+        AiModelSelector(
+            availableModels = uiState.availableModels,
+            selectedModel = uiState.developerOverrideModel,
+            resolvedModel = uiState.activeResolvedModel,
+            onModelSelected = { onEvent(DeveloperServicesUiEvent.SelectModel(it)) }
         )
 
         Box(modifier = Modifier.weight(1f)) {
@@ -251,42 +255,6 @@ private fun AiExtractionTabContent(
         AiSelectReceiptButton(
             visible = uiState.extractionStatus !is ExtractionStatus.Loading,
             onClick = onSelectReceiptForAiClick
-        )
-    }
-}
-
-@Composable
-private fun AiEngineSelector(
-    selectedEngine: AiEngineType,
-    onEngineSelected: (AiEngineType) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-    ) {
-        PassportChip(
-            label = stringResource(R.string.developer_services_ai_engine_ai_core),
-            selected = selectedEngine == AiEngineType.AI_CORE_GEMMA_4,
-            onClick = { onEngineSelected(AiEngineType.AI_CORE_GEMMA_4) },
-            leadingIcon = if (selectedEngine == AiEngineType.AI_CORE_GEMMA_4) {
-                { Icon(TablerIcons.Outline.Check, contentDescription = null) }
-            } else {
-                null
-            },
-            modifier = Modifier.weight(1f)
-        )
-
-        PassportChip(
-            label = stringResource(R.string.developer_services_ai_engine_lite_rt),
-            selected = selectedEngine == AiEngineType.LITE_RT_LM,
-            onClick = { onEngineSelected(AiEngineType.LITE_RT_LM) },
-            leadingIcon = if (selectedEngine == AiEngineType.LITE_RT_LM) {
-                { Icon(TablerIcons.Outline.Check, contentDescription = null) }
-            } else {
-                null
-            },
-            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -363,4 +331,63 @@ private fun AvatarGenTabContent() {
         title = stringResource(R.string.developer_services_avatar_title),
         description = stringResource(R.string.developer_services_avatar_subtitle)
     )
+}
+
+// ─── AI Model Selector ────────────────────────────────────────────────────────
+
+@Composable
+private fun AiModelSelector(
+    availableModels: ImmutableList<AiEngineType?>,
+    selectedModel: AiEngineType?,
+    resolvedModel: AiEngineType?,
+    onModelSelected: (AiEngineType?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FlatCard(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(MaterialTheme.spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        ) {
+            Text(
+                text = stringResource(R.string.developer_services_ai_model_selection),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+            ) {
+                availableModels.forEach { model ->
+                    val label = when (model) {
+                        null -> stringResource(R.string.developer_services_ai_model_automatic)
+                        AiEngineType.AI_CORE_GEMMA_4 -> stringResource(R.string.developer_services_ai_model_ai_core)
+                        AiEngineType.LITE_RT_LM -> stringResource(R.string.developer_services_ai_model_lite_rt)
+                    }
+
+                    PassportChip(
+                        label = label,
+                        selected = selectedModel == model,
+                        onClick = { onModelSelected(model) }
+                    )
+                }
+            }
+
+            resolvedModel?.let { resolved ->
+                val resolvedLabel = when (resolved) {
+                    AiEngineType.AI_CORE_GEMMA_4 -> stringResource(R.string.developer_services_ai_model_ai_core)
+                    AiEngineType.LITE_RT_LM -> stringResource(R.string.developer_services_ai_model_lite_rt)
+                }
+                Text(
+                    text = stringResource(R.string.developer_services_ai_model_resolved_label, resolvedLabel),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+        }
+    }
 }
