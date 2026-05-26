@@ -3,10 +3,12 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.features.settings.R
@@ -46,7 +48,8 @@ data class DeveloperServicesUiState(
     val extractedNotes: String? = null,
     val extractionSource: ExtractionSource? = null,
     val extractionConfidence: ExtractionConfidence? = null,
-    val extractionErrorMessage: UiText? = null
+    val extractionErrorMessage: UiText? = null,
+    val selectedAiEngine: AiEngineType = AiEngineType.AI_CORE_GEMMA_4
 )
 
 sealed interface OcrStatus {
@@ -69,17 +72,27 @@ sealed interface DeveloperServicesUiEvent {
     data object RunOcr : DeveloperServicesUiEvent
     data object RunOcrAndExtract : DeveloperServicesUiEvent
     data object Reset : DeveloperServicesUiEvent
+    data class SelectAiEngine(val engine: AiEngineType) : DeveloperServicesUiEvent
 }
 
 class DeveloperServicesViewModel(
     private val receiptOcrService: ReceiptOcrService,
-    private val receiptExtractionService: ReceiptExtractionService
+    private val receiptExtractionService: ReceiptExtractionService,
+    private val userPreferenceRepository: UserPreferenceRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeveloperServicesUiState())
     val uiState: StateFlow<DeveloperServicesUiState> = _uiState.asStateFlow()
 
     private var lastRawReceiptText: RawReceiptText? = null
+
+    init {
+        viewModelScope.launch {
+            userPreferenceRepository.getActiveAiEngine().collect { engine ->
+                _uiState.update { it.copy(selectedAiEngine = engine) }
+            }
+        }
+    }
 
     fun onEvent(event: DeveloperServicesUiEvent) {
         when (event) {
@@ -88,6 +101,13 @@ class DeveloperServicesViewModel(
             is DeveloperServicesUiEvent.RunOcr -> runOcr()
             is DeveloperServicesUiEvent.RunOcrAndExtract -> runOcrAndExtract()
             is DeveloperServicesUiEvent.Reset -> reset()
+            is DeveloperServicesUiEvent.SelectAiEngine -> selectAiEngine(event.engine)
+        }
+    }
+
+    private fun selectAiEngine(engine: AiEngineType) {
+        viewModelScope.launch {
+            userPreferenceRepository.setActiveAiEngine(engine)
         }
     }
 

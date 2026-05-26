@@ -53,7 +53,8 @@ val settingsUiModule = module {
     viewModel {
         DeveloperServicesViewModel(
             receiptOcrService = get<ReceiptOcrService>(),
-            receiptExtractionService = get<ReceiptExtractionService>()
+            receiptExtractionService = get<ReceiptExtractionService>(),
+            userPreferenceRepository = get<es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository>()
         )
     }
 

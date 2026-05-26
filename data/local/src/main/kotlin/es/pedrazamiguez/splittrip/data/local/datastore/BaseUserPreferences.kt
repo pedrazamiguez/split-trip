@@ -20,7 +20,7 @@ val Context.dataStore by preferencesDataStore(name = "user_prefs")
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 abstract class BaseUserPreferences(
-    protected val context: Context,
+    internal val context: Context,
     protected val authenticationService: AuthenticationService
 ) {
 
@@ -44,7 +44,7 @@ abstract class BaseUserPreferences(
      * Ensures long-lived collectors (e.g., SharedViewModel's `stateIn`) never retain
      * a previous user's values in memory after an auth change.
      */
-    protected fun <T> userScopedFlow(block: (userId: String) -> Flow<T>): Flow<T> =
+    internal fun <T> userScopedFlow(block: (userId: String) -> Flow<T>): Flow<T> =
         currentUserId.flatMapLatest { userId ->
             block(userId ?: ANONYMOUS_USER)
         }
@@ -55,7 +55,7 @@ abstract class BaseUserPreferences(
      * Builds a user-scoped key name by prefixing the authenticated user's ID.
      * Falls back to [ANONYMOUS_USER] if called before authentication (safety net).
      */
-    protected fun userKey(name: String): String {
+    internal fun userKey(name: String): String {
         val userId = authenticationService.currentUserId() ?: ANONYMOUS_USER
         return "${userId}_$name"
     }

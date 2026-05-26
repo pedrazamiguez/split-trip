@@ -199,6 +199,7 @@ private fun ExtractionConfidenceRow(
 @Composable
 private fun resolveSourceLabel(source: ExtractionSource?): Pair<String, Boolean> = when (source) {
     ExtractionSource.AI_CORE -> stringResource(R.string.developer_services_extraction_source_ai_core) to true
+    ExtractionSource.LITE_RT_LM -> "LiteRT-LM" to true
     else -> stringResource(R.string.developer_services_extraction_source_no_op) to false
 }
 

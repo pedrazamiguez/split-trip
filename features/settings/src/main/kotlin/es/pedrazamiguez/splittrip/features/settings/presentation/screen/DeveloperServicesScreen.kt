@@ -10,6 +10,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,15 +28,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.EmailStamp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.TextScan2
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.ExtractedRawTextCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.ExtractedTextBlockCard
@@ -122,7 +126,8 @@ fun DeveloperServicesScreen(
                 )
                 DeveloperServicesTab.AiExtraction -> AiExtractionTabContent(
                     uiState = uiState,
-                    onSelectReceiptForAiClick = onSelectReceiptForAiClick
+                    onSelectReceiptForAiClick = onSelectReceiptForAiClick,
+                    onEvent = onEvent
                 )
                 DeveloperServicesTab.AvatarGen -> AvatarGenTabContent()
             }
@@ -225,7 +230,8 @@ private fun LazyListScope.extractedBlocksSection(textBlocks: ImmutableList<Strin
 @Composable
 private fun AiExtractionTabContent(
     uiState: DeveloperServicesUiState,
-    onSelectReceiptForAiClick: () -> Unit
+    onSelectReceiptForAiClick: () -> Unit,
+    onEvent: (DeveloperServicesUiEvent) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -233,60 +239,117 @@ private fun AiExtractionTabContent(
             .padding(MaterialTheme.spacing.Large),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
     ) {
+        AiEngineSelector(
+            selectedEngine = uiState.selectedAiEngine,
+            onEngineSelected = { onEvent(DeveloperServicesUiEvent.SelectAiEngine(it)) }
+        )
+
         Box(modifier = Modifier.weight(1f)) {
-            when (uiState.extractionStatus) {
-                ExtractionStatus.Loading -> ShimmerLoadingList(itemCount = 1)
+            AiExtractionResults(uiState = uiState)
+        }
 
-                ExtractionStatus.Success -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
-                ) {
-                    item {
-                        ExtractionResultsCard(
-                            amount = uiState.extractedAmount,
-                            currency = uiState.extractedCurrency,
-                            date = uiState.extractedDate,
-                            time = uiState.extractedTime,
-                            title = uiState.extractedTitle,
-                            vendor = uiState.extractedVendor,
-                            paymentMethod = uiState.extractedPaymentMethod,
-                            category = uiState.extractedCategory,
-                            notes = uiState.extractedNotes,
-                            source = uiState.extractionSource,
-                            confidence = uiState.extractionConfidence
-                        )
-                    }
-                }
+        AiSelectReceiptButton(
+            visible = uiState.extractionStatus !is ExtractionStatus.Loading,
+            onClick = onSelectReceiptForAiClick
+        )
+    }
+}
 
-                ExtractionStatus.Error -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
-                ) {
-                    item { FormErrorBanner(error = uiState.extractionErrorMessage) }
-                }
+@Composable
+private fun AiEngineSelector(
+    selectedEngine: AiEngineType,
+    onEngineSelected: (AiEngineType) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+    ) {
+        PassportChip(
+            label = "AICore (Gemma 4)",
+            selected = selectedEngine == AiEngineType.AI_CORE_GEMMA_4,
+            onClick = { onEngineSelected(AiEngineType.AI_CORE_GEMMA_4) },
+            leadingIcon = if (selectedEngine == AiEngineType.AI_CORE_GEMMA_4) {
+                { Icon(TablerIcons.Outline.Check, contentDescription = null) }
+            } else {
+                null
+            },
+            modifier = Modifier.weight(1f)
+        )
 
-                ExtractionStatus.Idle -> EmptyStateView(
-                    icon = TablerIcons.Outline.PhotoAi,
-                    title = stringResource(R.string.developer_services_tab_ai_extraction),
-                    description = stringResource(R.string.developer_services_ai_no_receipt)
+        PassportChip(
+            label = "LiteRT-LM (CD)",
+            selected = selectedEngine == AiEngineType.LITE_RT_LM,
+            onClick = { onEngineSelected(AiEngineType.LITE_RT_LM) },
+            leadingIcon = if (selectedEngine == AiEngineType.LITE_RT_LM) {
+                { Icon(TablerIcons.Outline.Check, contentDescription = null) }
+            } else {
+                null
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun AiExtractionResults(uiState: DeveloperServicesUiState) {
+    when (uiState.extractionStatus) {
+        ExtractionStatus.Loading -> ShimmerLoadingList(itemCount = 1)
+
+        ExtractionStatus.Success -> LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
+        ) {
+            item {
+                ExtractionResultsCard(
+                    amount = uiState.extractedAmount,
+                    currency = uiState.extractedCurrency,
+                    date = uiState.extractedDate,
+                    time = uiState.extractedTime,
+                    title = uiState.extractedTitle,
+                    vendor = uiState.extractedVendor,
+                    paymentMethod = uiState.extractedPaymentMethod,
+                    category = uiState.extractedCategory,
+                    notes = uiState.extractedNotes,
+                    source = uiState.extractionSource,
+                    confidence = uiState.extractionConfidence
                 )
             }
         }
 
-        AnimatedVisibility(
-            visible = uiState.extractionStatus !is ExtractionStatus.Loading,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+        ExtractionStatus.Error -> LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
         ) {
-            Column {
-                GradientButton(
-                    text = stringResource(R.string.developer_services_ai_select_receipt),
-                    onClick = onSelectReceiptForAiClick,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            item { FormErrorBanner(error = uiState.extractionErrorMessage) }
+        }
 
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
-            }
+        ExtractionStatus.Idle -> EmptyStateView(
+            icon = TablerIcons.Outline.PhotoAi,
+            title = stringResource(R.string.developer_services_tab_ai_extraction),
+            description = stringResource(R.string.developer_services_ai_no_receipt)
+        )
+    }
+}
+
+@Composable
+private fun AiSelectReceiptButton(
+    visible: Boolean,
+    onClick: () -> Unit
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically()
+    ) {
+        Column {
+            GradientButton(
+                text = stringResource(R.string.developer_services_ai_select_receipt),
+                onClick = onClick,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
         }
     }
 }

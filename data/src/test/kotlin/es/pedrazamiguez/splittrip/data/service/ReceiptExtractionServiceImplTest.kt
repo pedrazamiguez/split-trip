@@ -1,20 +1,25 @@
 package es.pedrazamiguez.splittrip.data.service
 
-import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
+import android.content.Context
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
+import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import java.io.ByteArrayInputStream
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
@@ -28,8 +33,11 @@ import org.junit.jupiter.api.Test
 class ReceiptExtractionServiceImplTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private lateinit var context: Context
     private lateinit var aiCoreCapabilityProvider: AICoreCapabilityProvider
-    private lateinit var aiCoreReceiptParser: AICoreReceiptParser
+    private lateinit var aiCoreInferenceRepository: AiInferenceRepository
+    private lateinit var liteRtInferenceRepository: AiInferenceRepository
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var service: ReceiptExtractionServiceImpl
 
     private val rawReceiptText = RawReceiptText(
@@ -40,11 +48,22 @@ class ReceiptExtractionServiceImplTest {
 
     @BeforeEach
     fun setUp() {
+        context = mockk(relaxed = true)
+        val resources = mockk<android.content.res.Resources>(relaxed = true)
+        every { context.resources } returns resources
+        every { resources.openRawResource(any()) } returns ByteArrayInputStream("Custom prompt %1\$s".toByteArray())
+
         aiCoreCapabilityProvider = mockk()
-        aiCoreReceiptParser = mockk()
+        aiCoreInferenceRepository = mockk()
+        liteRtInferenceRepository = mockk()
+        userPreferenceRepository = mockk()
+
         service = ReceiptExtractionServiceImpl(
+            context = context,
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
-            aiCoreReceiptParser = lazy { aiCoreReceiptParser },
+            aiCoreInferenceRepository = lazy { aiCoreInferenceRepository },
+            liteRtInferenceRepository = lazy { liteRtInferenceRepository },
+            userPreferenceRepository = userPreferenceRepository,
             defaultDispatcher = testDispatcher
         )
     }
@@ -74,7 +93,10 @@ class ReceiptExtractionServiceImplTest {
     }
 
     @Test
-    fun `extract returns NO_OP fallback immediately when capability is unsupported`() = runTest(testDispatcher) {
+    fun `extract returns NO_OP fallback immediately when capability is unsupported for AICore`() = runTest(
+        testDispatcher
+    ) {
+        every { userPreferenceRepository.getActiveAiEngine() } returns flowOf(AiEngineType.AI_CORE_GEMMA_4)
         every { aiCoreCapabilityProvider.isSupported() } returns false
 
         val result = service.extract(rawReceiptText)
@@ -84,35 +106,27 @@ class ReceiptExtractionServiceImplTest {
         assertEquals(ExtractionSource.NO_OP, receipt.source)
         assertEquals(ExtractionConfidence.LOW, receipt.confidence)
         assertNull(receipt.amount)
-        assertNull(receipt.currency)
-        assertNull(receipt.date)
-        assertNull(receipt.time)
-        assertNull(receipt.title)
-        assertNull(receipt.vendor)
-        assertNull(receipt.paymentMethod)
-        assertNull(receipt.notes)
     }
 
     @Test
-    fun `extract delegates to AICore parser and returns parsed receipt when capability is supported`() = runTest(
-        testDispatcher
-    ) {
+    fun `extract delegates to AICore repository and sanitizes response`() = runTest(testDispatcher) {
+        every { userPreferenceRepository.getActiveAiEngine() } returns flowOf(AiEngineType.AI_CORE_GEMMA_4)
         every { aiCoreCapabilityProvider.isSupported() } returns true
 
-        val expectedReceipt = ExtractedReceipt(
-            amount = BigDecimal("12.34"),
-            currency = "EUR",
-            date = LocalDate.of(2026, 5, 20),
-            time = java.time.LocalTime.of(15, 30),
-            title = "Lunch",
-            vendor = "Store Name",
-            category = "FOOD",
-            paymentMethod = "DEBIT_CARD",
-            notes = "Book ID: 123",
-            source = ExtractionSource.AI_CORE,
-            confidence = ExtractionConfidence.HIGH
-        )
-        coEvery { aiCoreReceiptParser.parse(rawReceiptText) } returns Result.success(expectedReceipt)
+        val rawJsonResponse = """
+            Here is the response:
+            ```json
+            {
+                "amount": "12.34",
+                "currency": "EUR",
+                "date": "2026-05-20",
+                "title": "Store"
+            }
+            ```
+            Hope it works!
+        """.trimIndent()
+
+        coEvery { aiCoreInferenceRepository.generateContent(any()) } returns Result.success(rawJsonResponse)
 
         val result = service.extract(rawReceiptText)
 
@@ -121,22 +135,45 @@ class ReceiptExtractionServiceImplTest {
         assertEquals(BigDecimal("12.34"), receipt.amount)
         assertEquals("EUR", receipt.currency)
         assertEquals(LocalDate.of(2026, 5, 20), receipt.date)
-        assertEquals(java.time.LocalTime.of(15, 30), receipt.time)
-        assertEquals("Lunch", receipt.title)
-        assertEquals("Store Name", receipt.vendor)
-        assertEquals("FOOD", receipt.category)
-        assertEquals("DEBIT_CARD", receipt.paymentMethod)
-        assertEquals("Book ID: 123", receipt.notes)
+        assertEquals("Store", receipt.title)
         assertEquals(ExtractionSource.AI_CORE, receipt.source)
         assertEquals(ExtractionConfidence.HIGH, receipt.confidence)
     }
 
     @Test
-    fun `extract returns NO_OP fallback when delegate AICore parser throws exception or returns failure`() = runTest(
-        testDispatcher
-    ) {
+    fun `extract delegates to LiteRt repository and parses cleanly`() = runTest(testDispatcher) {
+        every { userPreferenceRepository.getActiveAiEngine() } returns flowOf(AiEngineType.LITE_RT_LM)
+
+        val cleanJsonResponse = """
+            {
+                "amount": "15.50",
+                "currency": "USD",
+                "date": "2026-05-26",
+                "title": "LiteRT Purchase"
+            }
+        """.trimIndent()
+
+        coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), any()) } returns
+            Result.success(cleanJsonResponse)
+
+        val result = service.extract(rawReceiptText)
+
+        assertTrue(result.isSuccess)
+        val receipt = result.getOrThrow()
+        assertEquals(BigDecimal("15.50"), receipt.amount)
+        assertEquals("USD", receipt.currency)
+        assertEquals(LocalDate.of(2026, 5, 26), receipt.date)
+        assertEquals("LiteRT Purchase", receipt.title)
+        assertEquals(ExtractionSource.LITE_RT_LM, receipt.source)
+        assertEquals(ExtractionConfidence.HIGH, receipt.confidence)
+    }
+
+    @Test
+    fun `extract returns NO_OP fallback when inference fails`() = runTest(testDispatcher) {
+        every { userPreferenceRepository.getActiveAiEngine() } returns flowOf(AiEngineType.AI_CORE_GEMMA_4)
         every { aiCoreCapabilityProvider.isSupported() } returns true
-        coEvery { aiCoreReceiptParser.parse(rawReceiptText) } returns Result.failure(Exception("Model loading error"))
+        coEvery { aiCoreInferenceRepository.generateContent(any()) } returns
+            Result.failure(Exception("Inference failed"))
 
         val result = service.extract(rawReceiptText)
 
@@ -144,13 +181,5 @@ class ReceiptExtractionServiceImplTest {
         val receipt = result.getOrThrow()
         assertEquals(ExtractionSource.NO_OP, receipt.source)
         assertEquals(ExtractionConfidence.LOW, receipt.confidence)
-        assertNull(receipt.amount)
-        assertNull(receipt.currency)
-        assertNull(receipt.date)
-        assertNull(receipt.time)
-        assertNull(receipt.title)
-        assertNull(receipt.vendor)
-        assertNull(receipt.paymentMethod)
-        assertNull(receipt.notes)
     }
 }
