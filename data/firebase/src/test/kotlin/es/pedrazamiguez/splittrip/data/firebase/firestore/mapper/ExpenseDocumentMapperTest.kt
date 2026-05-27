@@ -1,16 +1,24 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.mapper
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
+import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AddOnDocument
+import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AttachmentDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseSplitDocument
+import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
+import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import io.mockk.mockk
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -410,6 +418,194 @@ class ExpenseDocumentMapperTest {
             assertEquals(0, BigDecimal("50.0").compareTo(expense.splits[0].percentage))
             assertEquals("user-2", expense.splits[1].userId)
             assertTrue(expense.splits[1].isExcluded)
+        }
+
+        @Test
+        fun `maps addOns from document to domain`() {
+            val addOnDoc = AddOnDocument(
+                id = "addon-1",
+                type = "FEE",
+                mode = "ON_TOP",
+                valueType = "EXACT",
+                amountCents = 500L,
+                currency = "EUR",
+                exchangeRate = "1.2",
+                groupAmountCents = 600L,
+                paymentMethod = "CREDIT_CARD",
+                description = "Processing fee"
+            )
+            val documentWithAddOns = fullDocument.copy(addOns = listOf(addOnDoc))
+
+            val expense = documentWithAddOns.toDomain()
+
+            assertEquals(1, expense.addOns.size)
+            val addOn = expense.addOns[0]
+            assertEquals("addon-1", addOn.id)
+            assertEquals(AddOnType.FEE, addOn.type)
+            assertEquals(AddOnMode.ON_TOP, addOn.mode)
+            assertEquals(AddOnValueType.EXACT, addOn.valueType)
+            assertEquals(500L, addOn.amountCents)
+            assertEquals("EUR", addOn.currency)
+            assertEquals(0, BigDecimal("1.2").compareTo(addOn.exchangeRate))
+            assertEquals("Processing fee", addOn.description)
+        }
+
+        @Test
+        fun `uses BigDecimal ONE as addOn exchangeRate fallback when null`() {
+            val addOnDoc = AddOnDocument(
+                id = "addon-null-rate",
+                type = "FEE",
+                mode = "ON_TOP",
+                valueType = "EXACT",
+                amountCents = 100L,
+                currency = "EUR",
+                exchangeRate = null,
+                groupAmountCents = 100L,
+                paymentMethod = "CASH"
+            )
+            val documentWithAddOn = fullDocument.copy(addOns = listOf(addOnDoc))
+
+            val expense = documentWithAddOn.toDomain()
+
+            assertEquals(0, BigDecimal.ONE.compareTo(expense.addOns[0].exchangeRate))
+        }
+
+        @Test
+        fun `maps receiptAttachment when remote URL is present`() {
+            val capturedAtMillis = 1_700_000_000_000L
+            val attachmentDoc = AttachmentDocument(
+                path = "https://storage.example.com/receipts/photo.jpg",
+                mime = "image/jpeg",
+                uploadedAt = Timestamp(java.util.Date(capturedAtMillis))
+            )
+            val documentWithAttachment = fullDocument.copy(attachments = listOf(attachmentDoc))
+
+            val expense = documentWithAttachment.toDomain()
+
+            assertNotNull(expense.receiptAttachment)
+            assertEquals(
+                "https://storage.example.com/receipts/photo.jpg",
+                expense.receiptAttachment!!.remoteUrl
+            )
+            assertEquals("image/jpeg", expense.receiptAttachment!!.mimeType)
+            // localUri is intentionally blank — file does not exist on this device
+            assertEquals("", expense.receiptAttachment!!.localUri)
+        }
+
+        @Test
+        fun `maps null receiptAttachment when attachments list is empty`() {
+            val documentNoAttachments = fullDocument.copy(attachments = emptyList())
+
+            val expense = documentNoAttachments.toDomain()
+
+            assertNull(expense.receiptAttachment)
+        }
+
+        @Test
+        fun `maps null receiptAttachment when attachment has empty path`() {
+            val attachmentDoc = AttachmentDocument(
+                path = "",
+                mime = "image/jpeg",
+                uploadedAt = null
+            )
+            val documentWithBlankPath = fullDocument.copy(attachments = listOf(attachmentDoc))
+
+            val expense = documentWithBlankPath.toDomain()
+
+            assertNull(expense.receiptAttachment)
+        }
+    }
+
+    @Nested
+    inner class ToDocumentAddOns {
+
+        private val sampleAddOn = AddOn(
+            id = "addon-1",
+            type = AddOnType.FEE,
+            mode = AddOnMode.ON_TOP,
+            valueType = AddOnValueType.EXACT,
+            amountCents = 500L,
+            currency = "EUR",
+            exchangeRate = BigDecimal("1.2"),
+            groupAmountCents = 600L,
+            paymentMethod = PaymentMethod.CREDIT_CARD,
+            description = "Processing fee"
+        )
+
+        @Test
+        fun `maps expense addOns to document`() {
+            val expenseWithAddOn = fullExpense.copy(addOns = listOf(sampleAddOn))
+
+            val document = expenseWithAddOn.toDocument(
+                testExpenseId,
+                testGroupId,
+                testGroupDocRef,
+                testUserId
+            )
+
+            assertEquals(1, document.addOns.size)
+            val addOnDoc = document.addOns[0]
+            assertEquals("addon-1", addOnDoc.id)
+            assertEquals("FEE", addOnDoc.type)
+            assertEquals("ON_TOP", addOnDoc.mode)
+            assertEquals("EXACT", addOnDoc.valueType)
+            assertEquals("1.2", addOnDoc.exchangeRate)
+        }
+
+        @Test
+        fun `maps receiptAttachment with remote URL to attachment document`() {
+            val attachment = ReceiptAttachment(
+                localUri = "content://media/photo/1",
+                mimeType = "image/jpeg",
+                capturedAtMillis = 1_700_000_000_000L,
+                remoteUrl = "https://storage.example.com/receipts/photo.jpg"
+            )
+            val expenseWithAttachment = fullExpense.copy(receiptAttachment = attachment)
+
+            val document = expenseWithAttachment.toDocument(
+                testExpenseId,
+                testGroupId,
+                testGroupDocRef,
+                testUserId
+            )
+
+            assertEquals(1, document.attachments.size)
+            assertEquals("https://storage.example.com/receipts/photo.jpg", document.attachments[0].path)
+            assertEquals("image/jpeg", document.attachments[0].mime)
+        }
+
+        @Test
+        fun `does not include attachment when remoteUrl is null`() {
+            val attachment = ReceiptAttachment(
+                localUri = "content://media/photo/1",
+                mimeType = "image/jpeg",
+                capturedAtMillis = 1_700_000_000_000L,
+                remoteUrl = null
+            )
+            val expenseWithLocalAttachment = fullExpense.copy(receiptAttachment = attachment)
+
+            val document = expenseWithLocalAttachment.toDocument(
+                testExpenseId,
+                testGroupId,
+                testGroupDocRef,
+                testUserId
+            )
+
+            assertTrue(document.attachments.isEmpty())
+        }
+
+        @Test
+        fun `does not include attachment when receiptAttachment is null`() {
+            val expenseNoAttachment = fullExpense.copy(receiptAttachment = null)
+
+            val document = expenseNoAttachment.toDocument(
+                testExpenseId,
+                testGroupId,
+                testGroupDocRef,
+                testUserId
+            )
+
+            assertTrue(document.attachments.isEmpty())
         }
     }
 }
