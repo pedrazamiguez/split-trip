@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.domain.usecase.expense
+package es.pedrazamiguez.splittrip.domain.usecase.expense.factory
 
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
@@ -8,6 +8,9 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.expense.strategy.AddExpensePersistStrategy
+import es.pedrazamiguez.splittrip.domain.usecase.expense.strategy.PersistExpenseStrategy
+import es.pedrazamiguez.splittrip.domain.usecase.expense.strategy.UpdateExpensePersistStrategy
 
 class PersistExpenseStrategyFactory(
     private val expenseRepository: ExpenseRepository,

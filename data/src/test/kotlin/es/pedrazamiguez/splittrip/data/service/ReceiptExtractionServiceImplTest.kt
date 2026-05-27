@@ -7,7 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
-import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
@@ -39,7 +39,7 @@ class ReceiptExtractionServiceImplTest {
     private lateinit var aiCoreCapabilityProvider: AICoreCapabilityProvider
     private lateinit var aiCoreInferenceRepository: AiInferenceRepository
     private lateinit var liteRtInferenceRepository: AiInferenceRepository
-    private lateinit var aiModelResolver: AiModelResolver
+    private lateinit var aiModelResolver: AiModelResolverService
     private lateinit var service: ReceiptExtractionServiceImpl
     private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
 

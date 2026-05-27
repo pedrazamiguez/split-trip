@@ -14,7 +14,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
-import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
@@ -70,7 +70,7 @@ val expensesDataModule = module {
         )
     }
 
-    single<AiModelResolver> {
+    single<AiModelResolverService> {
         AiModelResolverImpl(
             userPreferences = get()
         )
@@ -82,7 +82,7 @@ val expensesDataModule = module {
             aiCoreCapabilityProvider = get<AICoreCapabilityProvider>(),
             aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(org.koin.core.qualifier.named("ai_core")) },
             liteRtInferenceRepository = lazy { get<AiInferenceRepository>(org.koin.core.qualifier.named("lite_rt")) },
-            aiModelResolver = get<AiModelResolver>(),
+            aiModelResolver = get<AiModelResolverService>(),
             defaultDispatcher = Dispatchers.Default
         )
     }

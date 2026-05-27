@@ -120,6 +120,14 @@ object JacocoExclusions {
         // ── Compiler-generated lambda inner classes from Repository implementations
         // (e.g., CashWithdrawalRepositoryImpl$updateRemainingAmounts$2)
         "**/*RepositoryImpl\$*.*",
+        // ── MLKitOcrService companion classes — require Android/ML Kit runtime
+        // PdfPageRendererImpl wraps Android PdfRenderer (ContentResolver, PdfRenderer.Page.render)
+        // MLKitOcrEngine wraps ML Kit TextRecognizer (.process(image).await() needs Android Looper)
+        // Both are isolated from MLKitOcrService itself (which IS unit-tested via the OcrEngine abstraction).
+        "**/data/service/PdfPageRendererImpl.*",
+        "**/data/service/PdfPageRendererImpl\$*.*",
+        "**/data/service/MLKitOcrEngine.*",
+        "**/data/service/MLKitOcrEngine\$*.*",
         // ── Database migrations — raw DDL SQL strings; no meaningful unit-test path
         // and triggers Sonar string-duplication false positives (table names repeated).
         // Covers both the aggregated file AND individual Migration*To* files.

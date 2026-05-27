@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.domain.usecase.expense
+package es.pedrazamiguez.splittrip.domain.usecase.expense.strategy
 
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException

@@ -190,17 +190,18 @@ class AddExpenseUiMapper(
         memberProfiles: Map<String, User>,
         subunits: List<Subunit>
     ): AddExpenseUiState {
-        val groupDecimalDigits = expense.groupCurrency.let { code ->
+        val groupDecimalDigits = expense.groupCurrency.let { _ ->
             currentState.groupCurrency?.decimalDigits ?: 2
         }
 
         val sourceDecimalDigits = expense.sourceCurrency.let { code ->
             currentState.availableCurrencies.find { it.code == code }?.decimalDigits ?: 2
         }
-        val sourceAmountString = BigDecimal(expense.sourceAmount).movePointLeft(sourceDecimalDigits).toPlainString()
+        val sourceAmountString = BigDecimal(expense.sourceAmount).movePointLeft(sourceDecimalDigits)
+            .stripTrailingZeros().toPlainString()
         val calculatedGroupAmountString = BigDecimal(
             expense.groupAmount
-        ).movePointLeft(groupDecimalDigits).toPlainString()
+        ).movePointLeft(groupDecimalDigits).stripTrailingZeros().toPlainString()
 
         val selectedCurrency = currentState.availableCurrencies.find { it.code == expense.sourceCurrency }
         val selectedPaymentMethod = currentState.paymentMethods.find { it.id == expense.paymentMethod.name }

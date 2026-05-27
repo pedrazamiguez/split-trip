@@ -10,7 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
-import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -31,7 +31,7 @@ internal class ReceiptExtractionServiceImpl(
     private val aiCoreCapabilityProvider: AICoreCapabilityProvider,
     private val aiCoreInferenceRepository: Lazy<AiInferenceRepository>,
     private val liteRtInferenceRepository: Lazy<AiInferenceRepository>,
-    private val aiModelResolver: AiModelResolver,
+    private val aiModelResolver: AiModelResolverService,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ReceiptExtractionService, AutoCloseable {
 

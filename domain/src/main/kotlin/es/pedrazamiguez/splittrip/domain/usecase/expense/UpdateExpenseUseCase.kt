@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.usecase.expense.factory.PersistExpenseStrategyFactory
 
 class UpdateExpenseUseCase(
     private val strategyFactory: PersistExpenseStrategyFactory

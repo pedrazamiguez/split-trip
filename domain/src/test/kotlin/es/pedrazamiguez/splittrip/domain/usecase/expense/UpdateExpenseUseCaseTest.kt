@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.expense.factory.PersistExpenseStrategyFactory
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -421,7 +422,7 @@ class UpdateExpenseUseCaseTest {
             } returns originalContribution
             coEvery {
                 contributionRepository.addContribution(any(), any())
-            } throws RuntimeException("Contribution failed")
+            } throws IllegalStateException("Contribution failed")
 
             val result = useCase(groupId, oopUpdated)
 
@@ -448,14 +449,14 @@ class UpdateExpenseUseCaseTest {
             } returns originalContribution
             coEvery {
                 contributionRepository.addContribution(any(), any())
-            } throws RuntimeException("Primary failure")
+            } throws IllegalStateException("Primary failure")
 
             // First call to addExpense (new persist) succeeds; second call (restore in rollback) throws.
             var addExpenseCallCount = 0
             coEvery { expenseRepository.addExpense(any(), any()) } answers {
                 addExpenseCallCount++
                 if (addExpenseCallCount > 1) {
-                    throw RuntimeException("Restore expense failed")
+                    error("Restore expense failed")
                 }
             }
 

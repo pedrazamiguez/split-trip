@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -23,6 +24,7 @@ import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -237,25 +239,6 @@ class CashWithdrawalRepositoryImplTest {
     }
 
     @Nested
-    inner class RefundTranche {
-
-        @Test
-        fun `refunds amount back to withdrawal`() = runTest(testDispatcher) {
-            // Given
-            val withdrawal = testWithdrawal.copy(remainingAmount = 500000L)
-            coEvery { localQueryDataSource.getWithdrawalById("w-1") } returns withdrawal
-            coEvery { localWriteDataSource.updateRemainingAmount(any(), any()) } just Runs
-
-            // When
-            repository.refundTranche("w-1", 200000L)
-            advanceUntilIdle()
-
-            // Then - Should update with original remaining + refunded amount
-            coVerify { localWriteDataSource.updateRemainingAmount("w-1", 700000L) }
-        }
-    }
-
-    @Nested
     inner class DeleteWithdrawal {
 
         @Test
@@ -368,6 +351,312 @@ class CashWithdrawalRepositoryImplTest {
 
             // Then — should not attempt any verification
             coVerify(exactly = 0) { cloudDataSource.verifyWithdrawalOnServer(any(), any()) }
+        }
+    }
+
+    @Nested
+    inner class GetAvailableWithdrawals {
+
+        @Test
+        fun `GROUP scope returns group-scoped withdrawals only`() = runTest(testDispatcher) {
+            val expected = listOf(testWithdrawal)
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsGroupScoped(testGroupId, "THB")
+            } returns expected
+
+            val result = repository.getAvailableWithdrawals(testGroupId, "THB", PayerType.GROUP, null)
+
+            assertEquals(expected, result)
+            coVerify(exactly = 1) {
+                localQueryDataSource.getAvailableWithdrawalsGroupScoped(testGroupId, "THB")
+            }
+        }
+
+        @Test
+        fun `USER scope with payerId returns user pool plus group fallback`() = runTest(testDispatcher) {
+            val userPool = listOf(testWithdrawal.copy(id = "u-1"))
+            val groupPool = listOf(testWithdrawal.copy(id = "g-1"))
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsUserScoped(testGroupId, "THB", testUserId)
+            } returns userPool
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsGroupScoped(testGroupId, "THB")
+            } returns groupPool
+
+            val result = repository.getAvailableWithdrawals(
+                testGroupId,
+                "THB",
+                PayerType.USER,
+                testUserId
+            )
+
+            assertEquals(userPool + groupPool, result)
+        }
+
+        @Test
+        fun `USER scope with null payerId returns empty user pool plus group fallback`() = runTest(testDispatcher) {
+            val groupPool = listOf(testWithdrawal)
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsGroupScoped(testGroupId, "THB")
+            } returns groupPool
+
+            val result = repository.getAvailableWithdrawals(testGroupId, "THB", PayerType.USER, null)
+
+            assertEquals(groupPool, result)
+            coVerify(exactly = 0) {
+                localQueryDataSource.getAvailableWithdrawalsUserScoped(any(), any(), any())
+            }
+        }
+
+        @Test
+        fun `SUBUNIT scope with payerId returns subunit pool plus group fallback`() = runTest(testDispatcher) {
+            val subunitPool = listOf(testWithdrawal.copy(id = "s-1"))
+            val groupPool = listOf(testWithdrawal.copy(id = "g-1"))
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsSubunitScoped(testGroupId, "THB", "subunit-1")
+            } returns subunitPool
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsGroupScoped(testGroupId, "THB")
+            } returns groupPool
+
+            val result = repository.getAvailableWithdrawals(
+                testGroupId,
+                "THB",
+                PayerType.SUBUNIT,
+                "subunit-1"
+            )
+
+            assertEquals(subunitPool + groupPool, result)
+        }
+
+        @Test
+        fun `SUBUNIT scope with null payerId returns empty subunit pool plus group fallback`() = runTest(
+            testDispatcher
+        ) {
+            val groupPool = listOf(testWithdrawal)
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsGroupScoped(testGroupId, "THB")
+            } returns groupPool
+
+            val result = repository.getAvailableWithdrawals(testGroupId, "THB", PayerType.SUBUNIT, null)
+
+            assertEquals(groupPool, result)
+            coVerify(exactly = 0) {
+                localQueryDataSource.getAvailableWithdrawalsSubunitScoped(any(), any(), any())
+            }
+        }
+    }
+
+    @Nested
+    inner class GetAvailableWithdrawalsByExactScope {
+
+        @Test
+        fun `GROUP scope returns group-scoped withdrawals`() = runTest(testDispatcher) {
+            val expected = listOf(testWithdrawal)
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsGroupScoped(testGroupId, "THB")
+            } returns expected
+
+            val result = repository.getAvailableWithdrawalsByExactScope(
+                testGroupId,
+                "THB",
+                PayerType.GROUP,
+                null
+            )
+
+            assertEquals(expected, result)
+        }
+
+        @Test
+        fun `USER scope with scopeOwnerId returns user-scoped withdrawals`() = runTest(testDispatcher) {
+            val expected = listOf(testWithdrawal)
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsUserScoped(testGroupId, "THB", testUserId)
+            } returns expected
+
+            val result = repository.getAvailableWithdrawalsByExactScope(
+                testGroupId,
+                "THB",
+                PayerType.USER,
+                testUserId
+            )
+
+            assertEquals(expected, result)
+        }
+
+        @Test
+        fun `USER scope with null scopeOwnerId returns empty list`() = runTest(testDispatcher) {
+            val result = repository.getAvailableWithdrawalsByExactScope(
+                testGroupId,
+                "THB",
+                PayerType.USER,
+                null
+            )
+
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `SUBUNIT scope with scopeOwnerId returns subunit-scoped withdrawals`() = runTest(testDispatcher) {
+            val expected = listOf(testWithdrawal)
+            coEvery {
+                localQueryDataSource.getAvailableWithdrawalsSubunitScoped(testGroupId, "THB", "subunit-1")
+            } returns expected
+
+            val result = repository.getAvailableWithdrawalsByExactScope(
+                testGroupId,
+                "THB",
+                PayerType.SUBUNIT,
+                "subunit-1"
+            )
+
+            assertEquals(expected, result)
+        }
+
+        @Test
+        fun `SUBUNIT scope with null scopeOwnerId returns empty list`() = runTest(testDispatcher) {
+            val result = repository.getAvailableWithdrawalsByExactScope(
+                testGroupId,
+                "THB",
+                PayerType.SUBUNIT,
+                null
+            )
+
+            assertTrue(result.isEmpty())
+        }
+    }
+
+    @Nested
+    inner class UpdateRemainingAmount {
+
+        @Test
+        fun `updates locally and syncs to cloud in background`() = runTest(testDispatcher) {
+            val withdrawal = testWithdrawal.copy(remainingAmount = 800000L)
+            coEvery { localWriteDataSource.updateRemainingAmount("w-1", 800000L) } just Runs
+            coEvery { localQueryDataSource.getWithdrawalById("w-1") } returns withdrawal
+            coEvery { cloudDataSource.updateWithdrawal(testGroupId, withdrawal) } just Runs
+
+            repository.updateRemainingAmount("w-1", 800000L)
+            advanceUntilIdle()
+
+            coVerify { localWriteDataSource.updateRemainingAmount("w-1", 800000L) }
+            coVerify { cloudDataSource.updateWithdrawal(testGroupId, withdrawal) }
+        }
+
+        @Test
+        fun `cloud sync failure does not affect local update`() = runTest(testDispatcher) {
+            val withdrawal = testWithdrawal.copy(remainingAmount = 500000L)
+            coEvery { localWriteDataSource.updateRemainingAmount("w-1", 500000L) } just Runs
+            coEvery { localQueryDataSource.getWithdrawalById("w-1") } returns withdrawal
+            coEvery {
+                cloudDataSource.updateWithdrawal(any(), any())
+            } throws RuntimeException("No network")
+
+            repository.updateRemainingAmount("w-1", 500000L)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { localWriteDataSource.updateRemainingAmount("w-1", 500000L) }
+        }
+
+        @Test
+        fun `skips cloud sync when withdrawal not found locally`() = runTest(testDispatcher) {
+            coEvery { localWriteDataSource.updateRemainingAmount("missing", 100L) } just Runs
+            coEvery { localQueryDataSource.getWithdrawalById("missing") } returns null
+
+            repository.updateRemainingAmount("missing", 100L)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { cloudDataSource.updateWithdrawal(any(), any()) }
+        }
+    }
+
+    @Nested
+    inner class UpdateRemainingAmounts {
+
+        @Test
+        fun `batches local updates and syncs all to cloud`() = runTest(testDispatcher) {
+            val w1 = testWithdrawal.copy(id = "w-1", remainingAmount = 600000L)
+            val w2 = testWithdrawal.copy(id = "w-2", remainingAmount = 400000L)
+            coEvery { localWriteDataSource.updateRemainingAmounts(any()) } just Runs
+            coEvery { cloudDataSource.updateWithdrawal(testGroupId, w1) } just Runs
+            coEvery { cloudDataSource.updateWithdrawal(testGroupId, w2) } just Runs
+
+            repository.updateRemainingAmounts(testGroupId, listOf(w1, w2))
+            advanceUntilIdle()
+
+            coVerify {
+                localWriteDataSource.updateRemainingAmounts(
+                    listOf("w-1" to 600000L, "w-2" to 400000L)
+                )
+            }
+            coVerify { cloudDataSource.updateWithdrawal(testGroupId, w1) }
+            coVerify { cloudDataSource.updateWithdrawal(testGroupId, w2) }
+        }
+
+        @Test
+        fun `cloud failure for one withdrawal does not stop sync for others`() = runTest(testDispatcher) {
+            val w1 = testWithdrawal.copy(id = "w-1", remainingAmount = 600000L)
+            val w2 = testWithdrawal.copy(id = "w-2", remainingAmount = 400000L)
+            coEvery { localWriteDataSource.updateRemainingAmounts(any()) } just Runs
+            coEvery { cloudDataSource.updateWithdrawal(testGroupId, w1) } throws RuntimeException("Timeout")
+            coEvery { cloudDataSource.updateWithdrawal(testGroupId, w2) } just Runs
+
+            repository.updateRemainingAmounts(testGroupId, listOf(w1, w2))
+            advanceUntilIdle()
+
+            coVerify { cloudDataSource.updateWithdrawal(testGroupId, w1) }
+            coVerify { cloudDataSource.updateWithdrawal(testGroupId, w2) }
+        }
+    }
+
+    @Nested
+    inner class RefundTranche {
+
+        @Test
+        fun `refunds amount back to withdrawal`() = runTest(testDispatcher) {
+            // Given
+            val withdrawal = testWithdrawal.copy(remainingAmount = 500000L)
+            coEvery { localQueryDataSource.getWithdrawalById("w-1") } returns withdrawal
+            coEvery { localWriteDataSource.updateRemainingAmount(any(), any()) } just Runs
+
+            // When
+            repository.refundTranche("w-1", 200000L)
+            advanceUntilIdle()
+
+            // Then - Should update with original remaining + refunded amount
+            coVerify { localWriteDataSource.updateRemainingAmount("w-1", 700000L) }
+        }
+
+        @Test
+        fun `skips update when withdrawal not found locally`() = runTest(testDispatcher) {
+            coEvery { localQueryDataSource.getWithdrawalById("missing") } returns null
+
+            repository.refundTranche("missing", 100000L)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { localWriteDataSource.updateRemainingAmount(any(), any()) }
+        }
+    }
+
+    @Nested
+    inner class GetWithdrawalById {
+
+        @Test
+        fun `returns withdrawal from local data source`() = runTest(testDispatcher) {
+            coEvery { localQueryDataSource.getWithdrawalById("w-1") } returns testWithdrawal
+
+            val result = repository.getWithdrawalById("w-1")
+
+            assertEquals(testWithdrawal, result)
+        }
+
+        @Test
+        fun `returns null when not found`() = runTest(testDispatcher) {
+            coEvery { localQueryDataSource.getWithdrawalById("unknown") } returns null
+
+            val result = repository.getWithdrawalById("unknown")
+
+            assertNull(result)
         }
     }
 }

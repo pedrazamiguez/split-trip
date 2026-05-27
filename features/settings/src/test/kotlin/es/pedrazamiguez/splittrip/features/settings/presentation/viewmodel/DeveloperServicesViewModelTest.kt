@@ -7,7 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.TextBlock
-import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import io.mockk.clearAllMocks
@@ -42,7 +42,7 @@ class DeveloperServicesViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var receiptOcrService: ReceiptOcrService
     private lateinit var receiptExtractionService: ReceiptExtractionService
-    private lateinit var aiModelResolver: AiModelResolver
+    private lateinit var aiModelResolver: AiModelResolverService
     private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
     private val overrideEngineFlow = MutableStateFlow<AiEngineType?>(null)
 

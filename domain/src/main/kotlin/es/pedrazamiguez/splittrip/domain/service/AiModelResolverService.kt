@@ -3,7 +3,7 @@ package es.pedrazamiguez.splittrip.domain.service
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import kotlinx.coroutines.flow.Flow
 
-interface AiModelResolver {
+interface AiModelResolverService {
     /**
      * Returns the active model that should be used for receipt extraction.
      * This flow emits the resolved engine type based on capabilities, active

@@ -8,6 +8,9 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.expense.factory.PersistExpenseStrategyFactory
+import es.pedrazamiguez.splittrip.domain.usecase.expense.strategy.AddExpensePersistStrategy
+import es.pedrazamiguez.splittrip.domain.usecase.expense.strategy.UpdateExpensePersistStrategy
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertTrue

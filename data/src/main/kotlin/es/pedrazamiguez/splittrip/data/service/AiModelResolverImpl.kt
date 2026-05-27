@@ -2,13 +2,13 @@ package es.pedrazamiguez.splittrip.data.service
 
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
-import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 internal class AiModelResolverImpl(
     private val userPreferences: UserPreferences
-) : AiModelResolver {
+) : AiModelResolverService {
 
     override fun getActiveModel(): Flow<AiEngineType> {
         return userPreferences.activeAiModel.map { overrideName ->
