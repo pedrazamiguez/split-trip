@@ -647,6 +647,26 @@ class SubmitEventHandlerTest {
         }
 
         @Test
+        fun `submit with null groupId parameter uses loadedGroupId from state`() = runTest(testDispatcher) {
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = AddExpenseUiState(
+                expenseTitle = "Dinner",
+                sourceAmount = "50",
+                loadedGroupId = "group-loaded"
+            )
+            val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
+            every { addExpenseUiMapper.mapToDomain(any(), "group-loaded") } returns Result.success(expense)
+            coEvery { strategy.saveExpense("group-loaded", any(), any()) } returns Result.success(Unit)
+
+            var successCalled = false
+            handler.submitExpense(null) { successCalled = true }
+            advanceUntilIdle()
+
+            assertTrue(successCalled)
+            assertFalse(stateFlow.value.isLoading)
+        }
+
+        @Test
         fun `use case failure clears loading without inline error`() = runTest(testDispatcher) {
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(

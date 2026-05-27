@@ -74,8 +74,9 @@ class SubmitEventHandler(
             _uiState.value.isEditMode,
             _uiState.value.currentStep
         )
-        if (groupId == null) {
-            Timber.w("submitExpense: groupId is null, aborting submission")
+        val effectiveGroupId = groupId ?: _uiState.value.loadedGroupId
+        if (effectiveGroupId == null) {
+            Timber.w("submitExpense: both groupId parameter and loadedGroupId are null, aborting submission")
             return
         }
 
@@ -169,18 +170,18 @@ class SubmitEventHandler(
         Timber.d("submitExpense: validations passed, mapping to domain")
         _uiState.update { it.copy(isLoading = true, error = null) }
 
-        addExpenseUiMapper.mapToDomain(_uiState.value, groupId).onSuccess { expense ->
+        addExpenseUiMapper.mapToDomain(_uiState.value, effectiveGroupId).onSuccess { expense ->
             val withIncludedAdj = adjustForIncludedAddOns(expense, _uiState.value.addOns)
             val adjustedExpense = adjustForOnTopDiscounts(withIncludedAdj)
             Timber.d("submitExpense: domain mapping ok, delegating to strategy.saveExpense")
             scope.launch {
                 strategy.saveExpense(
-                    groupId = groupId,
+                    groupId = effectiveGroupId,
                     expense = adjustedExpense,
                     uiState = currentState
                 ).onSuccess {
                     Timber.d("submitExpense: strategy.saveExpense succeeded")
-                    submitResultDelegate.handleSuccess(_uiState, groupId, onSuccess)
+                    submitResultDelegate.handleSuccess(_uiState, effectiveGroupId, onSuccess)
                 }.onFailure { e ->
                     Timber.e(e, "submitExpense: strategy.saveExpense failed")
                     submitResultDelegate.handleFailure(e, _uiState, _actions, currentState)
