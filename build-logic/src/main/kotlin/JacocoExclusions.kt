@@ -137,6 +137,34 @@ object JacocoExclusions {
         // These are template-repeated SVG path strings — no testable logic.
         // Mirrored from sonar.exclusions so local JaCoCo numbers match SonarQube.
         "**/designsystem/icon/**",
+        // ── AppCheck provider helpers — Firebase AppCheck + Android Context/SharedPreferences
+        // Not unit-testable; requires real Android runtime for getSharedPreferences.
+        "**/appcheck/AppCheckProviderHelper*.*",
+        // ── Pure data-holder UI models with no testable logic ────────────────────
+        // data class with only String fields; behaviour belongs to the mapper.
+        "**/presentation/model/CashBalanceUiModel*.*",
+        // ── Presentation view data class — holds Compose ImageVector + lambda ────
+        // ImageVector requires Compose runtime; lambdas are structural, not logical.
+        "**/presentation/view/SettingItemView*.*",
+        // ── Presentation extension functions that map to Android R.string IDs ────
+        // Return values are Android resource integers (0 in JVM unit tests);
+        // verifying the mapping requires instrumentation tests with the real R class.
+        "**/presentation/extensions/AddOnValueTypeExtensions*.*",
+        // ── Repository & service interfaces with Kotlin default parameter values ─
+        // JaCoCo instruments the `= null` / `= false` default expressions as
+        // executable bytecode even though they carry no business logic.
+        // Implementations ARE unit-tested; the interface contracts are not.
+        "**/repository/CashWithdrawalRepository*.*",
+        "**/domain/service/ReceiptExtractionService*.*",
+        "**/presentation/mapper/SubunitUiMapper*.*",
+        "**/presentation/viewmodel/strategy/ExpenseFlowStrategy*.*",
+        // ── Mapper interfaces with default method bodies (trivial 1-arg delegate wrappers) ─
+        // The default `toGroupUiModel(group)` body just calls `toGroupUiModel(group, emptyMap())`.
+        // The Impl is 100% tested; the interface convenience overloads are structural, not logical.
+        "**/presentation/mapper/GroupUiMapper*.*",
+        // ── Kotlin coroutines internals leaking into the JaCoCo class path ────────
+        // SafeCollector.common is an internal coroutines file; it's not our code.
+        "**/SafeCollector*.*",
     )
 }
 

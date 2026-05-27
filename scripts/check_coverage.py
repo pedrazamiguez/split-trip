@@ -28,8 +28,17 @@ from typing import List, Tuple
 REPORT_PATH = "build/reports/jacoco/merged/jacocoMergedReport.xml"
 THRESHOLD_OVERALL_PCT = 80.0
 THRESHOLD_FILE_PCT = 80.0
-MIN_FILE_LINES = 10
+MIN_FILE_LINES = 3
 MAX_OFFENDERS_PRINTED = 30
+
+# Source file names to skip in the per-file gate regardless of line count.
+# Used for Kotlin internals that the compiler generates into our own package
+# directories (e.g. coroutine SafeCollector bridge classes). These appear in
+# the JaCoCo XML with our package paths but originate from the kotlinx-coroutines
+# runtime, so they cannot be excluded via JacocoExclusions class-path patterns.
+IGNORED_SOURCEFILES = {
+    "SafeCollector.common.kt",
+}
 
 RED = "\033[0;31m"
 GREEN = "\033[0;32m"
@@ -89,6 +98,9 @@ def check_per_file(
     for package in root.findall("package"):
         pkg_name = package.get("name", "")
         for sf in package.findall("sourcefile"):
+            sf_name = sf.get("name", "")
+            if sf_name in IGNORED_SOURCEFILES:
+                continue
             missed, covered = line_counter(sf)
             total = missed + covered
             if total < min_lines:
