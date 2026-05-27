@@ -202,7 +202,9 @@ internal class ReceiptExtractionServiceImpl(
 
         private const val DEFAULT_PROMPT_TEMPLATE =
             "Extract the following fields from the receipt in JSON format:\n" +
-                "- Grand total as a decimal string (amount).\n" +
+                "- Grand total as a decimal string. If no overall total is explicitly printed but " +
+                "multiple items or tickets are clearly purchased together in the document, sum the " +
+                "individual items to calculate the overall cumulative total (amount).\n" +
                 "- ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).\n" +
                 "- Date of the transaction in YYYY-MM-DD format (date).\n" +
                 "- Time of the transaction in HH:MM format (time).\n" +
@@ -226,6 +228,12 @@ internal class ReceiptExtractionServiceImpl(
                 "Output: {\"amount\":\"50.00\",\"currency\":\"USD\",\"date\":\"2025-03-10\",\"time\":\"13:45\"," +
                 "\"vendor\":\"Quick Mart\",\"title\":\"Snacks\",\"category\":\"FOOD\",\"paymentMethod\":\"CASH\"," +
                 "\"notes\":\"Book ID: ABC123D, Seats: 14A, 14B\"}\n" +
+                "Input: TRAINLINE ticket 1: 55.00 EUR ticket 2: 55.00 EUR Date: 2026-05-25 09:00 " +
+                "CreditCard Seats: 2A, 2B Booking: TX12345\n" +
+                "Output: {\"amount\":\"110.00\",\"currency\":\"EUR\",\"date\":\"2026-05-25\"," +
+                "\"time\":\"09:00\",\"vendor\":\"Trainline\",\"title\":\"Train tickets\"," +
+                "\"category\":\"TRANSPORT\",\"paymentMethod\":\"CREDIT_CARD\"," +
+                "\"notes\":\"Booking: TX12345, Seats: 2A, 2B\"}\n" +
                 "Input: %1\$s\n" +
                 "Output:"
     }

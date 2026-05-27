@@ -1,5 +1,5 @@
 Extract the following fields from the receipt in JSON format:
-- Grand total as a decimal string (amount).
+- Grand total as a decimal string. If no overall total is explicitly printed but multiple items or tickets are clearly purchased together in the document, sum the individual items to calculate the overall cumulative total (amount).
 - ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).
 - Date of the transaction in YYYY-MM-DD format (date).
 - Time of the transaction in HH:MM format (time).
@@ -13,5 +13,7 @@ Write the "title" in English. Keep it brief and descriptive, e.g. "Flight to Bar
 
 Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
 Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+Input: TRAINLINE ticket 1: 55.00 EUR ticket 2: 55.00 EUR Date: 2026-05-25 09:00 CreditCard Seats: 2A, 2B Booking: TX12345
+Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train tickets","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Booking: TX12345, Seats: 2A, 2B"}
 Input: %1$s
 Output:

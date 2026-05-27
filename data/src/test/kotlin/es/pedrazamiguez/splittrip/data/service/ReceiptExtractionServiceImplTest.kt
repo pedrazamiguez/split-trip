@@ -233,4 +233,23 @@ class ReceiptExtractionServiceImplTest {
         val receipt = result.getOrThrow()
         assertEquals(ExtractionSource.LITE_RT_LM, receipt.source)
     }
+
+    @Test
+    fun `loadPromptTemplate falls back to DEFAULT_PROMPT_TEMPLATE when resources fail`() = runTest(
+        testDispatcher
+    ) {
+        every { context.resources.openRawResource(any()) } throws Exception("Failed to load")
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+
+        val promptSlot = io.mockk.slot<String>()
+        coEvery { aiCoreInferenceRepository.generateContent(capture(promptSlot)) } returns Result.success("{}")
+        advanceUntilIdle()
+
+        service.extract(rawReceiptText)
+
+        val prompt = promptSlot.captured
+        assertTrue(prompt.contains("sum the individual items to calculate the overall cumulative total"))
+        assertTrue(prompt.contains("Input: TRAINLINE ticket 1: 55.00 EUR ticket 2: 55.00 EUR"))
+        assertTrue(prompt.contains("Output: {\"amount\":\"110.00\",\"currency\":\"EUR\",\"date\":\"2026-05-25\""))
+    }
 }
