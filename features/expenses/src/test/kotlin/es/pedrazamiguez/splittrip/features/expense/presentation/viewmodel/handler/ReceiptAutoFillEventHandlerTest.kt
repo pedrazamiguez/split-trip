@@ -190,6 +190,7 @@ class ReceiptAutoFillEventHandlerTest {
                 )
             )
             every { formattingHelper.formatCentsValue(1250L, 2) } returns "12.50"
+            every { addExpenseUiMapper.formatExpenseDateForDisplay(1735727400000L) } returns "Jan 1, 2025, 10:30 AM"
 
             handler.handleReceiptAttached(attachment)
 
@@ -198,6 +199,7 @@ class ReceiptAutoFillEventHandlerTest {
             assertEquals("my locator", uiState.value.notes)
             // 2025-01-01T10:30 UTC epoch millis = 1735727400000L
             assertEquals(1735727400000L, uiState.value.expenseDateMillis)
+            assertEquals("Jan 1, 2025, 10:30 AM", uiState.value.formattedExpenseDate)
             assertEquals("USD", capturedCurrencySelections.single())
             assertEquals("12.50", capturedAmountChanges.single())
             assertEquals("FOOD", capturedCategorySelections.single())

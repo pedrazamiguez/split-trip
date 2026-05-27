@@ -28,6 +28,11 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.features.expense.R
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneOffset
 import java.util.Calendar as JavaCalendar
 
 /**
@@ -81,11 +86,14 @@ internal fun ExpenseDateSection(
 
     if (showTimePicker) {
         ExpenseTimePickerDialog(
+            selectedDateMillis = tempSelectedDateMillis ?: System.currentTimeMillis(),
             initialTimeMillis = expenseDateMillis,
             onDismiss = { showTimePicker = false },
             onTimeSelected = { hour, minute ->
                 val dateMillis = tempSelectedDateMillis ?: System.currentTimeMillis()
-                val combinedMillis = dateMillis + hour * 3600000L + minute * 60000L
+                val localDate = Instant.ofEpochMilli(dateMillis).atZone(ZoneOffset.UTC).toLocalDate()
+                val localDateTime = localDate.atTime(hour, minute)
+                val combinedMillis = localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
                 onDateSelected(combinedMillis)
                 showTimePicker = false
             }
@@ -108,7 +116,7 @@ private fun ExpenseDatePickerDialog(
             }
 
             override fun isSelectableYear(year: Int): Boolean {
-                return year <= JavaCalendar.getInstance().get(JavaCalendar.YEAR)
+                return year <= LocalDate.now(ZoneOffset.UTC).year
             }
         }
     )
@@ -138,11 +146,12 @@ private fun ExpenseDatePickerDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpenseTimePickerDialog(
+    selectedDateMillis: Long,
     initialTimeMillis: Long?,
     onDismiss: () -> Unit,
     onTimeSelected: (hour: Int, minute: Int) -> Unit
 ) {
-    val calendar = JavaCalendar.getInstance().apply {
+    val calendar = JavaCalendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
         initialTimeMillis?.let { timeInMillis = it }
     }
     val initialHour = calendar.get(JavaCalendar.HOUR_OF_DAY)
@@ -152,13 +161,28 @@ private fun ExpenseTimePickerDialog(
         initialMinute = initialMinute,
         is24Hour = true
     )
+
+    // Validate selectable times for today to prevent future times
+    val selectedLocalDate = Instant.ofEpochMilli(selectedDateMillis).atZone(ZoneOffset.UTC).toLocalDate()
+    val nowUtc = LocalDateTime.now(ZoneOffset.UTC)
+    val isToday = selectedLocalDate == nowUtc.toLocalDate()
+
+    val isValidTime = if (isToday) {
+        val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+        val nowTime = nowUtc.toLocalTime()
+        !selectedTime.isAfter(nowTime)
+    } else {
+        true
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
                     onTimeSelected(timePickerState.hour, timePickerState.minute)
-                }
+                },
+                enabled = isValidTime
             ) {
                 Text(stringResource(R.string.expense_date_time_ok))
             }
