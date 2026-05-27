@@ -86,11 +86,15 @@ class SubmitEventHandler(
         val titleValidation = expenseValidationService.validateTitle(currentState.expenseTitle)
         if (titleValidation is ValidationResult.Invalid) {
             Timber.w("submitExpense: title validation failed — title='%s'", currentState.expenseTitle)
+            val errorText = UiText.StringResource(R.string.expense_error_title_empty)
             _uiState.update {
                 it.copy(
                     isTitleValid = false,
-                    error = UiText.StringResource(R.string.expense_error_title_empty)
+                    error = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
         }
@@ -103,11 +107,15 @@ class SubmitEventHandler(
                 currentState.sourceAmount,
                 amountValidation.message
             )
+            val errorText = UiText.DynamicString(amountValidation.message)
             _uiState.update {
                 it.copy(
                     isAmountValid = false,
-                    error = UiText.DynamicString(amountValidation.message)
+                    error = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
         }
@@ -120,11 +128,15 @@ class SubmitEventHandler(
                 "submitExpense: due-date required but null — paymentStatus=%s",
                 currentState.selectedPaymentStatus?.id
             )
+            val errorText = UiText.StringResource(R.string.expense_error_due_date_required)
             _uiState.update {
                 it.copy(
                     isDueDateValid = false,
-                    error = UiText.StringResource(R.string.expense_error_due_date_required)
+                    error = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
         }
@@ -140,11 +152,15 @@ class SubmitEventHandler(
                     currentState.expenseDateMillis,
                     dateValidation.message
                 )
+                val errorText = UiText.StringResource(R.string.expense_error_date_future)
                 _uiState.update {
                     it.copy(
                         isExpenseDateValid = false,
-                        error = UiText.StringResource(R.string.expense_error_date_future)
+                        error = errorText
                     )
+                }
+                scope.launch {
+                    _actions.emit(AddExpenseUiAction.ShowError(errorText))
                 }
                 return
             }
@@ -157,12 +173,16 @@ class SubmitEventHandler(
                 "submitExpense: add-on validation failed — invalidAddOns=%d",
                 addOnsWithInput.count { it.resolvedAmountCents <= 0 }
             )
+            val errorText = UiText.StringResource(
+                R.string.add_expense_add_on_error_amount
+            )
             _uiState.update {
                 it.copy(
-                    addOnError = UiText.StringResource(
-                        R.string.add_expense_add_on_error_amount
-                    )
+                    addOnError = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
         }
@@ -189,11 +209,15 @@ class SubmitEventHandler(
             }
         }.onFailure { e ->
             Timber.e(e, "submitExpense: failed to map expense to domain")
+            val errorText = UiText.DynamicString(e.message ?: "Unknown error")
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    error = UiText.DynamicString(e.message ?: "Unknown error")
+                    error = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
         }
     }

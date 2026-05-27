@@ -30,7 +30,9 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -531,28 +533,48 @@ class SubmitEventHandlerTest {
 
         @Test
         fun `empty title sets isTitleValid false and error`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(expenseTitle = "", sourceAmount = "50")
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertFalse(stateFlow.value.isTitleValid)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `invalid amount sets isAmountValid false and error`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(expenseTitle = "Dinner", sourceAmount = "")
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertFalse(stateFlow.value.isAmountValid)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `SCHEDULED with no dueDate sets isDueDateValid false`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(
                 expenseTitle = "Dinner",
@@ -565,13 +587,21 @@ class SubmitEventHandlerTest {
             )
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertFalse(stateFlow.value.isDueDateValid)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `future expense date sets isExpenseDateValid false and error`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(
                 expenseTitle = "Dinner",
@@ -580,13 +610,21 @@ class SubmitEventHandlerTest {
             )
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertFalse(stateFlow.value.isExpenseDateValid)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `add-on with zero resolved amount sets addOnError`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(
                 expenseTitle = "Dinner",
@@ -605,12 +643,20 @@ class SubmitEventHandlerTest {
             )
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertNotNull(stateFlow.value.addOnError)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `mapper failure sets error and clears loading`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(
                 expenseTitle = "Dinner",
@@ -625,6 +671,9 @@ class SubmitEventHandlerTest {
 
             assertFalse(stateFlow.value.isLoading)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
