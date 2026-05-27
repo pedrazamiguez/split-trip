@@ -323,4 +323,9 @@
     <string name="expense_field_payment_method">Payment method</string>
     <string name="expense_field_time">Time</string>
     <string name="expense_field_notes">Notes</string>
+    <string name="add_expense_date_time_title">Expense date and time</string>
+    <string name="add_expense_date_time_label">Date and time</string>
+    <string name="expense_date_time_ok">OK</string>
+    <string name="expense_date_time_cancel">Cancel</string>
+    <string name="expense_error_date_future">Expense date and time cannot be in the future</string>
 </resources>

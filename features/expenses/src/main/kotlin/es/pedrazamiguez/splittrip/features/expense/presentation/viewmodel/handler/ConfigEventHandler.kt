@@ -21,6 +21,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
@@ -57,6 +58,7 @@ class ConfigEventHandler(
     private val authenticationService: AuthenticationService,
     private val addExpenseOptionsMapper: AddExpenseOptionsUiMapper,
     private val addExpenseSplitMapper: AddExpenseSplitUiMapper,
+    private val addExpenseUiMapper: AddExpenseUiMapper,
     private val receiptExtractionService: ReceiptExtractionService
 ) : AddExpenseEventHandler {
 
@@ -146,6 +148,8 @@ class ConfigEventHandler(
         val userSubunitOptions = filterSubunitsForCurrentUser(currentUserId, config)
 
         val isAiCapable = receiptExtractionService.capability() == ExtractionCapability.ON_DEVICE_AI
+        val currentMillis = System.currentTimeMillis()
+        val formattedDate = addExpenseUiMapper.formatExpenseDateForDisplay(currentMillis)
 
         _uiState.update {
             it.copy(
@@ -158,6 +162,10 @@ class ConfigEventHandler(
                 currentStep = if (isAiCapable) AddExpenseStep.RECEIPT else AddExpenseStep.TITLE,
                 groupName = config.group.name,
                 currentUserId = currentUserId,
+                expenseDateMillis = currentMillis,
+                formattedExpenseDate = formattedDate,
+                isExpenseDateValid = true,
+                isExpenseDateModifiedByUser = false,
                 groupCurrency = defaults.mappedGroupCurrency,
                 availableCurrencies = defaults.mappedCurrencies,
                 paymentMethods = defaults.reorderedPaymentMethods,

@@ -178,6 +178,9 @@ data class AddExpenseUiState(
     val isTitleValid: Boolean = true,
     val isAmountValid: Boolean = true,
     val isDueDateValid: Boolean = true,
+    val formattedExpenseDate: String = "",
+    val isExpenseDateValid: Boolean = true,
+    val isExpenseDateModifiedByUser: Boolean = false,
 
     // ── AI Auto-fill ────────────────────────────────────────────────────
     val isAiCapable: Boolean = false,

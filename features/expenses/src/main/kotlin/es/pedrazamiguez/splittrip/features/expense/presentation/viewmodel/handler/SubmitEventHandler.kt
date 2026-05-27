@@ -60,7 +60,7 @@ class SubmitEventHandler(
 
     // Sequential validation → map → submit → error-handling pipeline;
     // each branch is a distinct validation/error case
-    @Suppress("CognitiveComplexMethod", "LongMethod")
+    @Suppress("CognitiveComplexMethod", "LongMethod", "ReturnCount")
     fun submitExpense(groupId: String?, onSuccess: () -> Unit) {
         if (groupId == null) return
 
@@ -101,6 +101,22 @@ class SubmitEventHandler(
                 )
             }
             return
+        }
+
+        // Validate expense date/time when not scheduled
+        if (!currentState.showDueDateSection) {
+            val dateValidation = expenseValidationService.validateExpenseDate(
+                currentState.expenseDateMillis ?: System.currentTimeMillis()
+            )
+            if (dateValidation is ValidationResult.Invalid) {
+                _uiState.update {
+                    it.copy(
+                        isExpenseDateValid = false,
+                        error = UiText.StringResource(R.string.expense_error_date_future)
+                    )
+                }
+                return
+            }
         }
 
         // Validate add-ons (only those with non-empty input)

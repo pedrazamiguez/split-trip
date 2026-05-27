@@ -56,6 +56,21 @@ class AddExpenseUiMapper(
         return dateTime.format(formatter)
     }
 
+    /**
+     * Formats an expense date millis value to a locale-aware display string (medium date + short time).
+     */
+    fun formatExpenseDateForDisplay(dateMillis: Long): String {
+        val locale = localeProvider.getCurrentLocale()
+        val dateTime = LocalDateTime.ofInstant(
+            Instant.ofEpochMilli(dateMillis),
+            ZoneOffset.UTC
+        )
+        val formatter = java.time.format.DateTimeFormatter
+            .ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT)
+            .withLocale(locale)
+        return dateTime.format(formatter)
+    }
+
     // ── UI State → Domain Mapping ──────────────────────────────────────────
 
     // Sequential field-by-field parsing of UiState → domain model;

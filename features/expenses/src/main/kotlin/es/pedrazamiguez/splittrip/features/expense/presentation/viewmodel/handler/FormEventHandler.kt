@@ -26,6 +26,7 @@ import timber.log.Timber
  * is routed via [formPostCallback], following the same pattern as
  * [ConfigEventHandler]'s [PostConfigAction] callback.
  */
+@Suppress("TooManyFunctions")
 class FormEventHandler(
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val attachReceiptUseCase: AttachReceiptUseCase
@@ -191,6 +192,20 @@ class FormEventHandler(
                 dueDateMillis = dateMillis,
                 formattedDueDate = formattedDate,
                 isDueDateValid = true
+            )
+        }
+    }
+
+    fun handleExpenseDateSelected(dateMillis: Long) {
+        val isValid = dateMillis <= System.currentTimeMillis()
+        val formattedDate = addExpenseUiMapper.formatExpenseDateForDisplay(dateMillis)
+        _uiState.update {
+            it.copy(
+                expenseDateMillis = dateMillis,
+                formattedExpenseDate = formattedDate,
+                isExpenseDateValid = isValid,
+                isExpenseDateModifiedByUser = true,
+                error = if (!isValid) UiText.StringResource(R.string.expense_error_date_future) else null
             )
         }
     }

@@ -15,6 +15,13 @@ class ExpenseValidationService(private val splitCalculatorFactory: ExpenseSplitC
         else -> ValidationResult.Valid
     }
 
+    fun validateExpenseDate(dateMillis: Long): ValidationResult = when {
+        dateMillis > System.currentTimeMillis() -> ValidationResult.Invalid(
+            "Expense date and time cannot be in the future"
+        )
+        else -> ValidationResult.Valid
+    }
+
     fun validateAmount(amountString: String): ValidationResult {
         val result = CurrencyConverter.parseToCents(amountString)
         return if (result.isSuccess) {
