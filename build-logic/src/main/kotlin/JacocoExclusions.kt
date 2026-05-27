@@ -29,6 +29,10 @@ object JacocoExclusions {
         "**/*PreviewHelper*.*",
         // Sealed/data class companion objects
         "**/*\$Companion.*",
+        // ── Sealed UiEvent hierarchies — pure data classes with no logic ─────────
+        // Each subclass is a `data class` or `data object` representing a UI event;
+        // there's nothing testable beyond what kotlinx-data-class generates.
+        "**/presentation/viewmodel/event/**",
         // ── Compose UI — only reachable via instrumentation tests, not JUnit ──────
         // Feature orchestrators (hold NavController / ViewModel, not unit-testable)
         "**/presentation/feature/**",
