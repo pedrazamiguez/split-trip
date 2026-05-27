@@ -52,23 +52,21 @@ class UpdateExpensePersistStrategy(
             cashWithdrawalRepository.refundTranche(tranche.withdrawalId, tranche.amountConsumed)
         }
 
-        var withdrawalRollbackNeeded = true
         try {
-            val persistenceResult = performPersistence(
+            val savedExpense = performPersistence(
                 groupId = groupId,
                 expense = expense,
                 originalWithdrawals = originalState.withdrawals,
                 preferredWithdrawalScope = preferredWithdrawalScope,
                 preferredWithdrawalOwnerId = preferredWithdrawalOwnerId
             )
-            withdrawalRollbackNeeded = persistenceResult.withdrawalRollbackNeeded
 
             // Update paired contribution
             contributionRepository.deleteByLinkedExpenseId(groupId, expense.id)
-            if (persistenceResult.expenseToSave.payerType == PayerType.USER) {
+            if (savedExpense.payerType == PayerType.USER) {
                 createPairedContribution(
                     groupId,
-                    persistenceResult.expenseToSave,
+                    savedExpense,
                     pairedContributionScope,
                     pairedSubunitId
                 )
@@ -77,7 +75,6 @@ class UpdateExpensePersistStrategy(
             rollback(
                 groupId = groupId,
                 originalState = originalState,
-                withdrawalRollbackNeeded = withdrawalRollbackNeeded,
                 exception = exception
             )
             throw exception
@@ -110,7 +107,7 @@ class UpdateExpensePersistStrategy(
         originalWithdrawals: List<CashWithdrawal>,
         preferredWithdrawalScope: PayerType?,
         preferredWithdrawalOwnerId: String?
-    ): PersistenceResult {
+    ): Expense {
         return if (expense.paymentMethod == PaymentMethod.CASH) {
             val fifoResult = computeCashFifoResult(
                 groupId,
@@ -134,26 +131,19 @@ class UpdateExpensePersistStrategy(
                 }
             }
 
-            PersistenceResult(
-                expenseToSave = fifoResult.expense,
-                withdrawalRollbackNeeded = false
-            )
+            fifoResult.expense
         } else {
             expenseRepository.addExpense(groupId, expense)
-            PersistenceResult(
-                expenseToSave = expense,
-                withdrawalRollbackNeeded = false // Refund is kept since new expense is not cash
-            )
+            expense
         }
     }
 
     private suspend fun rollback(
         groupId: String,
         originalState: OriginalExpenseState,
-        withdrawalRollbackNeeded: Boolean,
         exception: Exception
     ) {
-        if (withdrawalRollbackNeeded && originalState.withdrawals.isNotEmpty()) {
+        if (originalState.withdrawals.isNotEmpty()) {
             runCatching {
                 cashWithdrawalRepository.updateRemainingAmounts(groupId, originalState.withdrawals)
             }.exceptionOrNull()?.let { exception.addSuppressed(it) }
@@ -174,10 +164,5 @@ class UpdateExpensePersistStrategy(
         val expense: Expense,
         val contribution: Contribution?,
         val withdrawals: List<CashWithdrawal>
-    )
-
-    private data class PersistenceResult(
-        val expenseToSave: Expense,
-        val withdrawalRollbackNeeded: Boolean
     )
 }

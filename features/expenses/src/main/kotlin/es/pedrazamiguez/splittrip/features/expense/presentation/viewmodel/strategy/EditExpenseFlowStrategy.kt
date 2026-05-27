@@ -76,7 +76,7 @@ class EditExpenseFlowStrategy(
                 val contribution = getContributionByExpenseIdUseCase(groupId, expenseId)
 
                 // 4. Fetch additional details needed for mapper (member profiles and subunits)
-                val memberProfiles = getMemberProfilesUseCase(expense.splits.map { it.userId })
+                val memberProfiles = getMemberProfilesUseCase(uiState.value.memberIds)
                 val subunits = getGroupSubunitsUseCase(groupId)
 
                 // 5. Map everything back to UI State

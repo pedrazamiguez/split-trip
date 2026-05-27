@@ -85,7 +85,7 @@ class SubmitEventHandler(
         // Validate title using domain service
         val titleValidation = expenseValidationService.validateTitle(currentState.expenseTitle)
         if (titleValidation is ValidationResult.Invalid) {
-            Timber.w("submitExpense: title validation failed — title='%s'", currentState.expenseTitle)
+            Timber.w("submitExpense: title validation failed — length=%d", currentState.expenseTitle.length)
             val errorText = UiText.StringResource(R.string.expense_error_title_empty)
             _uiState.update {
                 it.copy(
@@ -103,8 +103,7 @@ class SubmitEventHandler(
         val amountValidation = expenseValidationService.validateAmount(currentState.sourceAmount)
         if (amountValidation is ValidationResult.Invalid) {
             Timber.w(
-                "submitExpense: amount validation failed — sourceAmount='%s' reason=%s",
-                currentState.sourceAmount,
+                "submitExpense: amount validation failed — reason=%s",
                 amountValidation.message
             )
             val errorText = UiText.DynamicString(amountValidation.message)

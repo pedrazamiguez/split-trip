@@ -21,6 +21,7 @@ Usage:
 """
 
 import argparse
+import math
 import sys
 import xml.etree.ElementTree as ET
 from typing import List, Tuple
@@ -82,7 +83,7 @@ def check_overall(root: ET.Element, threshold: float) -> bool:
             f"({covered}/{total} lines) -- threshold {threshold:.0f}%{NC}"
         )
         return True
-    need = max(0, int(threshold / 100.0 * total) - covered + 1)
+    need = max(0, math.ceil(threshold / 100.0 * total) - covered)
     print(
         f"{RED}x   Overall LINE coverage: {pct:.1f}% "
         f"({covered}/{total} lines) -- below {threshold:.0f}% threshold{NC}"

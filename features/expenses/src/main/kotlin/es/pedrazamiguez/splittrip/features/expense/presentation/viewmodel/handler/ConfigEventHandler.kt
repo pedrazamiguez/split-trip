@@ -169,7 +169,7 @@ class ConfigEventHandler(
 
         _uiState.update {
             it.copy(
-                isLoading = if (it.isEditMode) it.isLoading else false,
+                isLoading = it.isEditMode && it.isLoading,
                 isConfigLoaded = true,
                 configLoadFailed = false,
                 loadedGroupId = groupId,

@@ -267,7 +267,7 @@ class AddExpenseUiMapper(
             dueDateMillis = dueDateMillis,
             formattedDueDate = formattedDueDate,
             showDueDateSection = expense.paymentStatus == PaymentStatus.SCHEDULED,
-            receiptUri = expense.receiptAttachment?.let { it.localUri.ifBlank { it.remoteUrl } },
+            receiptUri = expense.receiptAttachment?.let { it.localUri.takeIf { it.isNotBlank() } ?: it.remoteUrl },
             receiptAttachment = expense.receiptAttachment,
             addOns = addOnsMapped.toImmutableList(),
             isSubunitMode = expense.splits.any { it.subunitId != null },
