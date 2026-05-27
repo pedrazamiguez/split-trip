@@ -37,13 +37,20 @@ class ExpenseDetailScreenUiProviderImpl(
             val uiState by vm.uiState.collectAsStateWithLifecycle()
             var showDeleteDialog by remember { mutableStateOf(false) }
 
+            val expenseId = backStackEntry.arguments?.getString("expenseId")
+
             DynamicTopAppBar(
                 title = uiState.expense?.title ?: "",
                 subtitle = uiState.expense?.categoryText?.takeIf { it.isNotEmpty() },
                 onBack = { navController.popBackStack() },
                 actions = {
-                    // Edit — placeholder until the edit screen is implemented
-                    IconButton(onClick = { /* Navigate to edit screen once implemented */ }) {
+                    IconButton(
+                        onClick = {
+                            if (expenseId != null) {
+                                navController.navigate(Routes.editExpenseRoute(expenseId))
+                            }
+                        }
+                    ) {
                         Icon(
                             imageVector = TablerIcons.Outline.Edit,
                             contentDescription = stringResource(R.string.action_edit_expense)
