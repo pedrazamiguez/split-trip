@@ -211,6 +211,7 @@ val expensesUiModule = module {
             authenticationService = get<AuthenticationService>(),
             addExpenseOptionsMapper = addExpenseOptionsUiMapper,
             addExpenseSplitMapper = addExpenseSplitUiMapper,
+            addExpenseUiMapper = addExpenseUiMapper,
             receiptExtractionService = get<ReceiptExtractionService>()
         )
 
@@ -266,7 +267,8 @@ val expensesUiModule = module {
         val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = get<ExtractReceiptFieldsUseCase>(),
             receiptExtractionService = get<ReceiptExtractionService>(),
-            formattingHelper = formattingHelper
+            formattingHelper = formattingHelper,
+            addExpenseUiMapper = addExpenseUiMapper
         )
 
         AddExpenseViewModel(

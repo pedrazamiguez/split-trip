@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.DueDateSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.ExpenseDateSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.PaymentStatusSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -32,6 +33,15 @@ fun PaymentStatusStep(
                 isDueDateValid = uiState.isDueDateValid,
                 dueDateMillis = uiState.dueDateMillis,
                 onDateSelected = { onEvent(AddExpenseUiEvent.DueDateSelected(it)) }
+            )
+        }
+
+        AnimatedVisibility(visible = !uiState.showDueDateSection) {
+            ExpenseDateSection(
+                formattedExpenseDate = uiState.formattedExpenseDate,
+                isExpenseDateValid = uiState.isExpenseDateValid,
+                expenseDateMillis = uiState.expenseDateMillis,
+                onDateSelected = { onEvent(AddExpenseUiEvent.ExpenseDateSelected(it)) }
             )
         }
     }

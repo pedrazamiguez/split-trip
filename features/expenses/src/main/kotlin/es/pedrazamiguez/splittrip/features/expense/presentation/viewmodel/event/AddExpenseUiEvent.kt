@@ -31,6 +31,7 @@ sealed interface AddExpenseUiEvent {
     data class NotesChanged(val notes: String) : AddExpenseUiEvent
     data class PaymentStatusSelected(val statusId: String) : AddExpenseUiEvent
     data class DueDateSelected(val dateMillis: Long) : AddExpenseUiEvent
+    data class ExpenseDateSelected(val dateMillis: Long) : AddExpenseUiEvent
     data class ReceiptImageSelected(val uri: String) : AddExpenseUiEvent
     data object RemoveReceiptImage : AddExpenseUiEvent
     data class SetAiModeActive(val active: Boolean) : AddExpenseUiEvent

@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
@@ -44,6 +45,7 @@ class ReceiptAutoFillEventHandlerTest {
     private lateinit var extractReceiptFieldsUseCase: ExtractReceiptFieldsUseCase
     private lateinit var receiptExtractionService: ReceiptExtractionService
     private lateinit var formattingHelper: FormattingHelper
+    private lateinit var addExpenseUiMapper: AddExpenseUiMapper
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actions: MutableSharedFlow<AddExpenseUiAction>
 
@@ -70,10 +72,12 @@ class ReceiptAutoFillEventHandlerTest {
         capturedCategorySelections.clear()
         capturedPaymentMethodSelections.clear()
 
+        addExpenseUiMapper = mockk(relaxed = true)
         handler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = extractReceiptFieldsUseCase,
             receiptExtractionService = receiptExtractionService,
-            formattingHelper = formattingHelper
+            formattingHelper = formattingHelper,
+            addExpenseUiMapper = addExpenseUiMapper
         )
         handler.setOnCurrencySelected { capturedCurrencySelections.add(it) }
         handler.setOnAmountChanged { capturedAmountChanges.add(it) }
@@ -279,6 +283,7 @@ class ReceiptAutoFillEventHandlerTest {
                 notes = "Pre-populated Notes",
                 sourceAmount = "10.00",
                 expenseDateMillis = 9999L,
+                isExpenseDateModifiedByUser = true,
                 selectedCurrency = usd,
                 selectedPaymentMethod = cashPaymentMethod
             )
@@ -336,6 +341,7 @@ class ReceiptAutoFillEventHandlerTest {
                     vendor = "In-flight Vendor",
                     notes = "In-flight Notes",
                     expenseDateMillis = 8888L,
+                    isExpenseDateModifiedByUser = true,
                     selectedCurrency = usd,
                     selectedPaymentMethod = cashPaymentMethod
                 )

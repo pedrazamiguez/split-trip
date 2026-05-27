@@ -264,6 +264,7 @@ class AddExpenseViewModelTest {
             authenticationService = authenticationService,
             addExpenseOptionsMapper = addExpenseOptionsMapper,
             addExpenseSplitMapper = addExpenseSplitMapper,
+            addExpenseUiMapper = addExpenseUiMapper,
             receiptExtractionService = mockReceiptExtractionService
         )
 
@@ -329,7 +330,8 @@ class AddExpenseViewModelTest {
         val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = mockk<ExtractReceiptFieldsUseCase>(relaxed = true),
             receiptExtractionService = mockk<ReceiptExtractionService>(relaxed = true),
-            formattingHelper = formattingHelper
+            formattingHelper = formattingHelper,
+            addExpenseUiMapper = addExpenseUiMapper
         )
 
         viewModel = AddExpenseViewModel(

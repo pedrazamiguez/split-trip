@@ -16,8 +16,10 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategor
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import io.mockk.coEvery
@@ -50,6 +52,7 @@ class ConfigEventHandlerTest {
     private lateinit var getGroupLastUsedCategoryUseCase: GetGroupLastUsedCategoryUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var addExpenseUiMapper: AddExpenseUiMapper
     private val capturedActions = mutableListOf<PostConfigAction>()
 
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
@@ -89,6 +92,20 @@ class ConfigEventHandlerTest {
         val splitPreviewService = SplitPreviewService()
         val remainderDistributionService = RemainderDistributionService()
 
+        val addExpenseSplitMapper = AddExpenseSplitUiMapper(
+            localeProvider,
+            FormattingHelper(localeProvider),
+            splitPreviewService,
+            EntitySplitFlattenDelegate(splitPreviewService, remainderDistributionService)
+        )
+        addExpenseUiMapper = AddExpenseUiMapper(
+            localeProvider = localeProvider,
+            resourceProvider = resourceProvider,
+            splitMapper = addExpenseSplitMapper,
+            addOnMapper = AddExpenseAddOnUiMapper(),
+            splitPreviewService = splitPreviewService
+        )
+
         handler = ConfigEventHandler(
             getGroupExpenseConfigUseCase = getGroupExpenseConfigUseCase,
             getGroupLastUsedCurrencyUseCase = getGroupLastUsedCurrencyUseCase,
@@ -97,12 +114,8 @@ class ConfigEventHandlerTest {
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             authenticationService = authenticationService,
             addExpenseOptionsMapper = AddExpenseOptionsUiMapper(resourceProvider, mockk(relaxed = true)),
-            addExpenseSplitMapper = AddExpenseSplitUiMapper(
-                localeProvider,
-                FormattingHelper(localeProvider),
-                splitPreviewService,
-                EntitySplitFlattenDelegate(splitPreviewService, remainderDistributionService)
-            ),
+            addExpenseSplitMapper = addExpenseSplitMapper,
+            addExpenseUiMapper = addExpenseUiMapper,
             receiptExtractionService = mockk(relaxed = true)
         )
         handler.setPostConfigCallback { capturedActions.add(it) }

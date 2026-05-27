@@ -377,4 +377,24 @@ class ExpenseValidationServiceTest {
             assertTrue(result is ValidationResult.Invalid)
         }
     }
+
+    @Nested
+    inner class ValidateExpenseDate {
+
+        @Test
+        fun `current or past date returns Valid`() {
+            val now = System.currentTimeMillis()
+            val past = now - 100000L
+            assertEquals(ValidationResult.Valid, service.validateExpenseDate(now))
+            assertEquals(ValidationResult.Valid, service.validateExpenseDate(past))
+        }
+
+        @Test
+        fun `future date returns Invalid`() {
+            val future = System.currentTimeMillis() + 100000L
+            val result = service.validateExpenseDate(future)
+            assertTrue(result is ValidationResult.Invalid)
+            assertEquals("Expense date and time cannot be in the future", (result as ValidationResult.Invalid).message)
+        }
+    }
 }

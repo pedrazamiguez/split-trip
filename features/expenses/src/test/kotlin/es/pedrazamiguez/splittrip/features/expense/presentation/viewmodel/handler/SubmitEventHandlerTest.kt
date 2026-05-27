@@ -570,6 +570,21 @@ class SubmitEventHandlerTest {
         }
 
         @Test
+        fun `future expense date sets isExpenseDateValid false and error`() = runTest(testDispatcher) {
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = AddExpenseUiState(
+                expenseTitle = "Dinner",
+                sourceAmount = "50",
+                expenseDateMillis = System.currentTimeMillis() + 1000000L
+            )
+
+            handler.submitExpense("group-1") {}
+
+            assertFalse(stateFlow.value.isExpenseDateValid)
+            assertNotNull(stateFlow.value.error)
+        }
+
+        @Test
         fun `add-on with zero resolved amount sets addOnError`() = runTest(testDispatcher) {
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(
