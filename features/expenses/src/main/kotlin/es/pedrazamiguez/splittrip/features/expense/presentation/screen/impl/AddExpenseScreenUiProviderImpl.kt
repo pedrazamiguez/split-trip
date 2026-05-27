@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.Share
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.AddExpenseViewModel
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 class AddExpenseScreenUiProviderImpl(override val route: String = Routes.ADD_EXPENSE) : ScreenUiProvider {
 
@@ -28,7 +29,11 @@ class AddExpenseScreenUiProviderImpl(override val route: String = Routes.ADD_EXP
 
         val backStackEntry = navController.currentBackStackEntry
         val title = if (backStackEntry != null) {
-            val vm: AddExpenseViewModel = koinViewModel(viewModelStoreOwner = backStackEntry)
+            val expenseId = backStackEntry.arguments?.getString("expenseId")
+            val vm: AddExpenseViewModel = koinViewModel(
+                viewModelStoreOwner = backStackEntry,
+                parameters = { parametersOf(expenseId) }
+            )
             val uiState by vm.uiState.collectAsStateWithLifecycle()
             stringResource(uiState.screenTitleRes)
         } else {

@@ -57,7 +57,7 @@ class EditExpenseFlowStrategy(
                 uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
 
                 // 1. Load group config via ConfigEventHandler
-                configEventHandler.loadGroupConfig(groupId, forceRefresh)
+                configEventHandler.suspendLoadGroupConfig(groupId, forceRefresh)
 
                 // 2. Fetch the target expense
                 val expense = getExpenseByIdUseCase(expenseId)

@@ -223,6 +223,18 @@ class ConfigEventHandlerTest {
         }
 
         @Test
+        fun `suspendLoadGroupConfig sets isConfigLoaded true and clears isLoading on success`() = runTest {
+            handler.bind(uiState, actions, this)
+
+            handler.suspendLoadGroupConfig("group-1")
+
+            val state = uiState.value
+            assertTrue(state.isConfigLoaded)
+            assertFalse(state.isLoading)
+            assertFalse(state.configLoadFailed)
+        }
+
+        @Test
         fun `populates loadedGroupId and groupName`() = runTest {
             handler.bind(uiState, actions, this)
 

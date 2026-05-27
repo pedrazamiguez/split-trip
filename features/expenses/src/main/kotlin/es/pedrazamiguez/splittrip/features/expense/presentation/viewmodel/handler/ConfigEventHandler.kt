@@ -90,9 +90,7 @@ class ConfigEventHandler(
         postConfigCallback = callback
     }
 
-    fun loadGroupConfig(groupId: String?, forceRefresh: Boolean = false) {
-        if (groupId == null) return
-
+    suspend fun suspendLoadGroupConfig(groupId: String, forceRefresh: Boolean = false) {
         val currentState = _uiState.value
         val isGroupChanged = currentState.loadedGroupId != groupId
 
@@ -101,29 +99,34 @@ class ConfigEventHandler(
         // Always reload if the groupId has changed
         if (!forceRefresh && !isGroupChanged && currentState.isConfigLoaded) return
 
-        scope.launch {
-            // Reset form state when loading a different group's config
-            if (isGroupChanged) {
-                _uiState.update {
-                    AddExpenseUiState(isLoading = true, configLoadFailed = false)
-                }
-            } else {
-                _uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
+        // Reset form state when loading a different group's config
+        if (isGroupChanged) {
+            _uiState.update {
+                AddExpenseUiState(isLoading = true, configLoadFailed = false)
             }
+        } else {
+            _uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
+        }
 
-            val config = getGroupExpenseConfigUseCase(groupId, forceRefresh).getOrElse { e ->
-                Timber.e(e, "Failed to load group configuration for groupId: $groupId")
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        isConfigLoaded = false,
-                        configLoadFailed = true,
-                        error = UiText.StringResource(R.string.expense_error_load_group_config)
-                    )
-                }
-                return@launch
+        val config = getGroupExpenseConfigUseCase(groupId, forceRefresh).getOrElse { e ->
+            Timber.e(e, "Failed to load group configuration for groupId: $groupId")
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    isConfigLoaded = false,
+                    configLoadFailed = true,
+                    error = UiText.StringResource(R.string.expense_error_load_group_config)
+                )
             }
-            applyConfig(groupId, config)
+            return
+        }
+        applyConfig(groupId, config)
+    }
+
+    fun loadGroupConfig(groupId: String?, forceRefresh: Boolean = false) {
+        if (groupId == null) return
+        scope.launch {
+            suspendLoadGroupConfig(groupId, forceRefresh)
         }
     }
 

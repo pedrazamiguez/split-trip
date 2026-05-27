@@ -36,8 +36,9 @@ class AddExpenseFlowStrategy(
         forceRefresh: Boolean,
         onConfigLoaded: suspend () -> Unit
     ) {
+        if (groupId == null) return
         scope.launch {
-            configEventHandler.loadGroupConfig(groupId, forceRefresh)
+            configEventHandler.suspendLoadGroupConfig(groupId, forceRefresh)
             onConfigLoaded()
         }
     }
