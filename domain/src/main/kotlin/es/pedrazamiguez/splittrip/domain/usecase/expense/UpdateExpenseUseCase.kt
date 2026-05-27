@@ -3,10 +3,9 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Expense
 
-class AddExpenseUseCase(
+class UpdateExpenseUseCase(
     private val strategyFactory: PersistExpenseStrategyFactory
 ) {
-
     suspend operator fun invoke(
         groupId: String?,
         expense: Expense,
@@ -18,7 +17,7 @@ class AddExpenseUseCase(
         if (groupId.isNullOrBlank()) {
             return Result.failure(IllegalArgumentException("Group ID cannot be null or blank"))
         }
-        val strategy = strategyFactory.create(isUpdate = false)
+        val strategy = strategyFactory.create(isUpdate = true)
         return strategy.persist(
             groupId = groupId,
             expense = expense,

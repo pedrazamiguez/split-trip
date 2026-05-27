@@ -15,7 +15,6 @@ import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
-import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
@@ -57,7 +56,8 @@ import org.junit.jupiter.api.Test
 class SubmitEventHandlerTest {
 
     private lateinit var handler: SubmitEventHandler
-    private lateinit var addExpenseUseCase: AddExpenseUseCase
+    private lateinit var strategy:
+        es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategy
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
 
     /** A minimal [Expense] stub — only the fields used by adjustForIncludedAddOns matter. */
@@ -83,7 +83,7 @@ class SubmitEventHandlerTest {
 
     @BeforeEach
     fun setUp() {
-        addExpenseUseCase = mockk(relaxed = true)
+        strategy = mockk(relaxed = true)
         addExpenseUiMapper = mockk(relaxed = true)
         val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService())
         val saveLastUsedPreferences = SaveLastUsedPreferencesBundle(
@@ -94,7 +94,6 @@ class SubmitEventHandlerTest {
         val formattingHelper = mockk<FormattingHelper>(relaxed = true)
 
         handler = SubmitEventHandler(
-            addExpenseUseCase = addExpenseUseCase,
             expenseValidationService = ExpenseValidationService(splitCalculatorFactory),
             addOnCalculationService = AddOnCalculationService(),
             expenseCalculatorService = ExpenseCalculatorService(),
@@ -104,7 +103,9 @@ class SubmitEventHandlerTest {
                 saveLastUsedPreferences = saveLastUsedPreferences,
                 formattingHelper = formattingHelper
             )
-        )
+        ).apply {
+            setStrategy(strategy)
+        }
     }
 
     // ── No INCLUDED add-ons ──────────────────────────────────────────────────
@@ -635,7 +636,7 @@ class SubmitEventHandlerTest {
             )
             val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
             every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
-            coEvery { addExpenseUseCase(any(), any()) } returns Result.success(Unit)
+            coEvery { strategy.saveExpense(any(), any(), any()) } returns Result.success(Unit)
 
             var successCalled = false
             handler.submitExpense("group-1") { successCalled = true }
@@ -654,7 +655,7 @@ class SubmitEventHandlerTest {
             )
             val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
             every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
-            coEvery { addExpenseUseCase(any(), any()) } returns Result.failure(
+            coEvery { strategy.saveExpense(any(), any(), any()) } returns Result.failure(
                 RuntimeException("Network error")
             )
 

@@ -14,12 +14,12 @@ import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
-import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategy
 import java.math.BigDecimal
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CoroutineScope
@@ -35,7 +35,6 @@ import kotlinx.coroutines.launch
  * decomposition via [ExpenseCalculatorService], and delegates to the use case.
  */
 class SubmitEventHandler(
-    private val addExpenseUseCase: AddExpenseUseCase,
     private val expenseValidationService: ExpenseValidationService,
     private val addOnCalculationService: AddOnCalculationService,
     private val expenseCalculatorService: ExpenseCalculatorService,
@@ -43,6 +42,12 @@ class SubmitEventHandler(
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val submitResultDelegate: SubmitResultDelegate
 ) : AddExpenseEventHandler {
+
+    private lateinit var strategy: ExpenseFlowStrategy
+
+    fun setStrategy(strategy: ExpenseFlowStrategy) {
+        this.strategy = strategy
+    }
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var _actions: MutableSharedFlow<AddExpenseUiAction>
@@ -137,18 +142,11 @@ class SubmitEventHandler(
         addExpenseUiMapper.mapToDomain(_uiState.value, groupId).onSuccess { expense ->
             val withIncludedAdj = adjustForIncludedAddOns(expense, _uiState.value.addOns)
             val adjustedExpense = adjustForOnTopDiscounts(withIncludedAdj)
-            val pairedContributionScope = currentState.contributionScope
-            val pairedSubunitId = currentState.selectedContributionSubunitId
-            val preferredWithdrawalScope = currentState.selectedWithdrawalPool?.scope
-            val preferredWithdrawalOwnerId = currentState.selectedWithdrawalPool?.ownerId
             scope.launch {
-                addExpenseUseCase(
-                    groupId,
-                    adjustedExpense,
-                    pairedContributionScope,
-                    pairedSubunitId,
-                    preferredWithdrawalScope = preferredWithdrawalScope,
-                    preferredWithdrawalOwnerId = preferredWithdrawalOwnerId
+                strategy.saveExpense(
+                    groupId = groupId,
+                    expense = adjustedExpense,
+                    uiState = currentState
                 ).onSuccess {
                     submitResultDelegate.handleSuccess(_uiState, groupId, onSuccess)
                 }.onFailure { e ->

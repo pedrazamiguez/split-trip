@@ -117,7 +117,7 @@ private fun ExpenseWizard(
 
     val backLabel = stringResource(R.string.expense_wizard_back)
     val nextLabel = stringResource(R.string.expense_wizard_next)
-    val submitLabel = stringResource(R.string.add_expense_submit_button)
+    val submitLabel = stringResource(uiState.submitLabelRes)
     val skipToReviewLabel = stringResource(R.string.expense_wizard_skip_to_review)
 
     val bottomPadding = LocalBottomPadding.current
@@ -173,6 +173,7 @@ private fun ExpenseWizardBody(
             } else {
                 null
             },
+            allowForwardJumps = uiState.isEditMode,
             onStepClicked = { onEvent(AddExpenseUiEvent.JumpToStep(it)) }
         )
 

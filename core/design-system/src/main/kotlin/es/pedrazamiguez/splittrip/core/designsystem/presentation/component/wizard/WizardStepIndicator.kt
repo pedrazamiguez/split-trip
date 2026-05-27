@@ -109,6 +109,7 @@ fun WizardStepIndicator(
     optionalStepIndices: Set<Int> = emptySet(),
     skipToReviewLabel: String? = null,
     onSkipToReview: (() -> Unit)? = null,
+    allowForwardJumps: Boolean = false,
     onStepClicked: ((stepIndex: Int) -> Unit)? = null
 ) {
     Surface(
@@ -146,17 +147,19 @@ fun WizardStepIndicator(
             ) { labels ->
                 if (labels.size > MAX_VISIBLE_STEPS) {
                     ScrollableStepIndicator(
-                        labels,
-                        currentStepIndex,
-                        optionalStepIndices,
-                        onStepClicked
+                        stepLabels = labels,
+                        currentStepIndex = currentStepIndex,
+                        optionalStepIndices = optionalStepIndices,
+                        allowForwardJumps = allowForwardJumps,
+                        onStepClicked = onStepClicked
                     )
                 } else {
                     StaticStepIndicator(
-                        labels,
-                        currentStepIndex,
-                        optionalStepIndices,
-                        onStepClicked
+                        stepLabels = labels,
+                        currentStepIndex = currentStepIndex,
+                        optionalStepIndices = optionalStepIndices,
+                        allowForwardJumps = allowForwardJumps,
+                        onStepClicked = onStepClicked
                     )
                 }
             }
@@ -195,6 +198,7 @@ private fun StaticStepIndicator(
     stepLabels: List<String>,
     currentStepIndex: Int,
     optionalStepIndices: Set<Int>,
+    allowForwardJumps: Boolean,
     onStepClicked: ((Int) -> Unit)? = null
 ) {
     Row(
@@ -211,7 +215,7 @@ private fun StaticStepIndicator(
                 isCompleted = isCompleted,
                 isCurrent = index == currentStepIndex,
                 isOptional = index in optionalStepIndices,
-                onClick = if (isCompleted && onStepClicked != null) {
+                onClick = if ((isCompleted || allowForwardJumps) && onStepClicked != null) {
                     { onStepClicked(index) }
                 } else {
                     null
@@ -234,6 +238,7 @@ private fun ScrollableStepIndicator(
     stepLabels: List<String>,
     currentStepIndex: Int,
     optionalStepIndices: Set<Int>,
+    allowForwardJumps: Boolean,
     onStepClicked: ((Int) -> Unit)? = null
 ) {
     val density = LocalDensity.current
@@ -277,7 +282,7 @@ private fun ScrollableStepIndicator(
                     isCompleted = isCompleted,
                     isCurrent = index == currentStepIndex,
                     isOptional = index in optionalStepIndices,
-                    onClick = if (isCompleted && onStepClicked != null) {
+                    onClick = if ((isCompleted || allowForwardJumps) && onStepClicked != null) {
                         { onStepClicked(index) }
                     } else {
                         null

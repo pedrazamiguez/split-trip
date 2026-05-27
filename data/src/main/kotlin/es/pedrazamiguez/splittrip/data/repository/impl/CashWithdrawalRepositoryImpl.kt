@@ -253,6 +253,10 @@ class CashWithdrawalRepositoryImpl(
         )
     }
 
+    override suspend fun getWithdrawalById(withdrawalId: String): CashWithdrawal? {
+        return localQueryDataSource.getWithdrawalById(withdrawalId)
+    }
+
     companion object {
         private const val ENTITY_LABEL = "cash withdrawal"
     }

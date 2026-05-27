@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpenseIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupPocketBalanceFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
@@ -52,6 +53,13 @@ val balancesDomainModule = module {
     factory {
         DeleteCashWithdrawalUseCase(
             cashWithdrawalRepository = get<CashWithdrawalRepository>(),
+            groupMembershipService = get<GroupMembershipService>()
+        )
+    }
+
+    factory {
+        GetContributionByExpenseIdUseCase(
+            contributionRepository = get<ContributionRepository>(),
             groupMembershipService = get<GroupMembershipService>()
         )
     }

@@ -329,4 +329,6 @@
     <string name="expense_date_time_ok">OK</string>
     <string name="expense_date_time_cancel">Cancelar</string>
     <string name="expense_error_date_future">La fecha y hora del gasto no pueden ser futuras</string>
+    <string name="edit_expense_title">Editar gasto</string>
+    <string name="edit_expense_submit_button">Guardar cambios</string>
 </resources>

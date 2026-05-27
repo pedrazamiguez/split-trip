@@ -38,7 +38,10 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AddExpenseFeature(
-    addExpenseViewModel: AddExpenseViewModel = koinViewModel<AddExpenseViewModel>(),
+    expenseId: String? = null,
+    addExpenseViewModel: AddExpenseViewModel = koinViewModel<AddExpenseViewModel> {
+        org.koin.core.parameter.parametersOf(expenseId)
+    },
     sharedViewModel: SharedViewModel = koinViewModel(
         viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
     ),

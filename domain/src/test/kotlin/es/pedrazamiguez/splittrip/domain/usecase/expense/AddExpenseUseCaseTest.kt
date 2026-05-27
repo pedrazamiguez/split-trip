@@ -79,15 +79,19 @@ class AddExpenseUseCaseTest {
             firstArg()
         }
 
+        val strategyFactory = PersistExpenseStrategyFactory(
+            expenseRepository = expenseRepository,
+            cashWithdrawalRepository = cashWithdrawalRepository,
+            expenseCalculatorService = expenseCalculatorService,
+            exchangeRateCalculationService = exchangeRateCalculationService,
+            groupMembershipService = groupMembershipService,
+            contributionRepository = contributionRepository,
+            authenticationService = authenticationService,
+            addOnCalculationService = addOnCalculationService
+        )
+
         useCase = AddExpenseUseCase(
-            expenseRepository,
-            cashWithdrawalRepository,
-            expenseCalculatorService,
-            exchangeRateCalculationService,
-            groupMembershipService,
-            contributionRepository,
-            authenticationService,
-            addOnCalculationService
+            strategyFactory = strategyFactory
         )
     }
 

@@ -30,12 +30,14 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.PersistExpenseStrategyFactory
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import org.koin.dsl.module
 
 val expensesDomainModule = module {
-    factory<AddExpenseUseCase> {
-        AddExpenseUseCase(
+    factory {
+        PersistExpenseStrategyFactory(
             expenseRepository = get<ExpenseRepository>(),
             cashWithdrawalRepository = get<CashWithdrawalRepository>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
@@ -45,6 +47,12 @@ val expensesDomainModule = module {
             authenticationService = get<AuthenticationService>(),
             addOnCalculationService = get<AddOnCalculationService>()
         )
+    }
+    factory<AddExpenseUseCase> {
+        AddExpenseUseCase(strategyFactory = get<PersistExpenseStrategyFactory>())
+    }
+    factory<UpdateExpenseUseCase> {
+        UpdateExpenseUseCase(strategyFactory = get<PersistExpenseStrategyFactory>())
     }
     factory<DeleteExpenseUseCase> {
         DeleteExpenseUseCase(

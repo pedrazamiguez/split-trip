@@ -24,18 +24,22 @@ import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpenseIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPaymentMethodUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
@@ -61,6 +65,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitResultDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategyFactory
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -269,7 +274,6 @@ class AddExpenseViewModelTest {
         )
 
         val submitHandler = SubmitEventHandler(
-            addExpenseUseCase = addExpenseUseCase,
             expenseValidationService = expenseValidationService,
             addOnCalculationService = AddOnCalculationService(),
             expenseCalculatorService = ExpenseCalculatorService(),
@@ -334,6 +338,22 @@ class AddExpenseViewModelTest {
             addExpenseUiMapper = addExpenseUiMapper
         )
 
+        val updateExpenseUseCase = mockk<UpdateExpenseUseCase>(relaxed = true)
+        val getExpenseByIdUseCase = mockk<GetExpenseByIdUseCase>(relaxed = true)
+        val getContributionByExpenseIdUseCase = mockk<GetContributionByExpenseIdUseCase>(relaxed = true)
+        val getGroupSubunitsUseCase = mockk<GetGroupSubunitsUseCase>(relaxed = true)
+
+        val strategyFactory = ExpenseFlowStrategyFactory(
+            configEventHandler = configHandler,
+            addExpenseUseCase = addExpenseUseCase,
+            updateExpenseUseCase = updateExpenseUseCase,
+            getExpenseByIdUseCase = getExpenseByIdUseCase,
+            getContributionByExpenseIdUseCase = getContributionByExpenseIdUseCase,
+            addExpenseUiMapper = addExpenseUiMapper,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            getGroupSubunitsUseCase = getGroupSubunitsUseCase
+        )
+
         viewModel = AddExpenseViewModel(
             configEventHandler = configHandler,
             currencyEventHandler = currencyHandler,
@@ -342,7 +362,8 @@ class AddExpenseViewModelTest {
             addOnEventHandler = addOnHandler,
             submitEventHandler = submitHandler,
             formEventHandler = formHandler,
-            receiptAutoFillEventHandler = receiptAutoFillEventHandler
+            receiptAutoFillEventHandler = receiptAutoFillEventHandler,
+            strategyFactory = strategyFactory
         )
     }
 
