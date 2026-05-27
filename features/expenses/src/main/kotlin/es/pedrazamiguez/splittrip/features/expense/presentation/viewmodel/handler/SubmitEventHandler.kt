@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * Handles expense form submission.
@@ -67,7 +68,10 @@ class SubmitEventHandler(
     // each branch is a distinct validation/error case
     @Suppress("CognitiveComplexMethod", "LongMethod", "ReturnCount")
     fun submitExpense(groupId: String?, onSuccess: () -> Unit) {
-        if (groupId == null) return
+        if (groupId == null) {
+            Timber.w("submitExpense: groupId is null, aborting submission")
+            return
+        }
 
         val currentState = _uiState.value
 
@@ -154,6 +158,7 @@ class SubmitEventHandler(
                 }
             }
         }.onFailure { e ->
+            Timber.e(e, "Failed to map expense to domain")
             _uiState.update {
                 it.copy(
                     isLoading = false,

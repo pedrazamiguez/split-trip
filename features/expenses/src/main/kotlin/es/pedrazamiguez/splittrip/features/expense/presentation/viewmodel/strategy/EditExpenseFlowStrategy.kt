@@ -88,11 +88,18 @@ class EditExpenseFlowStrategy(
                         memberProfiles = memberProfiles,
                         subunits = subunits
                     )
-                    // Skip AI scan step completely: force start step to TITLE
+                    // Belt-and-suspenders: reaffirm the edit-mode contract after the mapper.
+                    // The mapper inherits `currentState`; if any intermediate step lost the
+                    // edit-mode flags, this restores them so the top bar title, submit label,
+                    // forward-jump enablement, and AI prompt suppression all behave correctly.
                     mappedState.copy(
                         currentStep = AddExpenseStep.TITLE,
                         isConfigLoaded = true,
-                        isLoading = false
+                        isLoading = false,
+                        isEditMode = true,
+                        screenTitleRes = R.string.edit_expense_title,
+                        submitLabelRes = R.string.edit_expense_submit_button,
+                        isAiModeActive = false
                     )
                 }
 

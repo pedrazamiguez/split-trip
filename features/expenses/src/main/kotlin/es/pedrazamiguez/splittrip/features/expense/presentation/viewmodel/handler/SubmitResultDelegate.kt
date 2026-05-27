@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import timber.log.Timber
 
 /**
  * Stateless delegate that handles the post-submit result processing for expenses.
@@ -70,6 +71,7 @@ class SubmitResultDelegate(
         actionsFlow: MutableSharedFlow<AddExpenseUiAction>,
         currentState: AddExpenseUiState
     ) {
+        Timber.e(error, "Failed to submit expense")
         uiState.update { it.copy(isLoading = false, error = null) }
 
         when (error) {
