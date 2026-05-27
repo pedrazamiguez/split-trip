@@ -89,9 +89,6 @@ class EditExpenseFlowStrategy(
                         subunits = subunits
                     )
                     // Belt-and-suspenders: reaffirm the edit-mode contract after the mapper.
-                    // The mapper inherits `currentState`; if any intermediate step lost the
-                    // edit-mode flags, this restores them so the top bar title, submit label,
-                    // forward-jump enablement, and AI prompt suppression all behave correctly.
                     mappedState.copy(
                         currentStep = AddExpenseStep.TITLE,
                         isConfigLoaded = true,

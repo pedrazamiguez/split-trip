@@ -68,6 +68,12 @@ class SubmitEventHandler(
     // each branch is a distinct validation/error case
     @Suppress("CognitiveComplexMethod", "LongMethod", "ReturnCount")
     fun submitExpense(groupId: String?, onSuccess: () -> Unit) {
+        Timber.d(
+            "submitExpense: entry groupId=%s isEditMode=%s currentStep=%s",
+            groupId,
+            _uiState.value.isEditMode,
+            _uiState.value.currentStep
+        )
         if (groupId == null) {
             Timber.w("submitExpense: groupId is null, aborting submission")
             return
@@ -78,6 +84,7 @@ class SubmitEventHandler(
         // Validate title using domain service
         val titleValidation = expenseValidationService.validateTitle(currentState.expenseTitle)
         if (titleValidation is ValidationResult.Invalid) {
+            Timber.w("submitExpense: title validation failed — title='%s'", currentState.expenseTitle)
             _uiState.update {
                 it.copy(
                     isTitleValid = false,
@@ -90,6 +97,11 @@ class SubmitEventHandler(
         // Validate amount using domain service
         val amountValidation = expenseValidationService.validateAmount(currentState.sourceAmount)
         if (amountValidation is ValidationResult.Invalid) {
+            Timber.w(
+                "submitExpense: amount validation failed — sourceAmount='%s' reason=%s",
+                currentState.sourceAmount,
+                amountValidation.message
+            )
             _uiState.update {
                 it.copy(
                     isAmountValid = false,
@@ -103,6 +115,10 @@ class SubmitEventHandler(
         if (currentState.selectedPaymentStatus?.id == PaymentStatus.SCHEDULED.name &&
             currentState.dueDateMillis == null
         ) {
+            Timber.w(
+                "submitExpense: due-date required but null — paymentStatus=%s",
+                currentState.selectedPaymentStatus?.id
+            )
             _uiState.update {
                 it.copy(
                     isDueDateValid = false,
@@ -118,6 +134,11 @@ class SubmitEventHandler(
                 currentState.expenseDateMillis ?: System.currentTimeMillis()
             )
             if (dateValidation is ValidationResult.Invalid) {
+                Timber.w(
+                    "submitExpense: expense-date validation failed — expenseDateMillis=%d reason=%s",
+                    currentState.expenseDateMillis,
+                    dateValidation.message
+                )
                 _uiState.update {
                     it.copy(
                         isExpenseDateValid = false,
@@ -131,6 +152,10 @@ class SubmitEventHandler(
         // Validate add-ons (only those with non-empty input)
         val addOnsWithInput = currentState.addOns.filter { it.amountInput.isNotBlank() }
         if (addOnsWithInput.any { it.resolvedAmountCents <= 0 }) {
+            Timber.w(
+                "submitExpense: add-on validation failed — invalidAddOns=%d",
+                addOnsWithInput.count { it.resolvedAmountCents <= 0 }
+            )
             _uiState.update {
                 it.copy(
                     addOnError = UiText.StringResource(
@@ -141,24 +166,28 @@ class SubmitEventHandler(
             return
         }
 
+        Timber.d("submitExpense: validations passed, mapping to domain")
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         addExpenseUiMapper.mapToDomain(_uiState.value, groupId).onSuccess { expense ->
             val withIncludedAdj = adjustForIncludedAddOns(expense, _uiState.value.addOns)
             val adjustedExpense = adjustForOnTopDiscounts(withIncludedAdj)
+            Timber.d("submitExpense: domain mapping ok, delegating to strategy.saveExpense")
             scope.launch {
                 strategy.saveExpense(
                     groupId = groupId,
                     expense = adjustedExpense,
                     uiState = currentState
                 ).onSuccess {
+                    Timber.d("submitExpense: strategy.saveExpense succeeded")
                     submitResultDelegate.handleSuccess(_uiState, groupId, onSuccess)
                 }.onFailure { e ->
+                    Timber.e(e, "submitExpense: strategy.saveExpense failed")
                     submitResultDelegate.handleFailure(e, _uiState, _actions, currentState)
                 }
             }
         }.onFailure { e ->
-            Timber.e(e, "Failed to map expense to domain")
+            Timber.e(e, "submitExpense: failed to map expense to domain")
             _uiState.update {
                 it.copy(
                     isLoading = false,

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class AddExpenseViewModel(
     private val expenseId: String? = null,
@@ -256,8 +257,13 @@ class AddExpenseViewModel(
                 subunitSplitEventHandler.handleIntraSubunitShareLockToggled(event.subunitId, event.userId)
 
             // ── Submission ──────────────────────────────────────────────
-            is AddExpenseUiEvent.SubmitAddExpense ->
+            is AddExpenseUiEvent.SubmitAddExpense -> {
+                Timber.d(
+                    "AddExpenseViewModel: SubmitAddExpense received groupId=%s",
+                    event.groupId
+                )
                 submitEventHandler.submitExpense(event.groupId, onAddExpenseSuccess)
+            }
 
             // ── Simple form field updates (delegated to FormEventHandler) ──
             is AddExpenseUiEvent.TitleChanged ->

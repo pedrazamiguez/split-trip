@@ -17,6 +17,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -31,10 +32,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -312,12 +313,16 @@ private fun WizardStepItem(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Column(
         modifier = modifier.then(
             if (onClick != null) {
-                Modifier
-                    .minimumInteractiveComponentSize()
-                    .clickable(role = Role.Button, onClick = onClick)
+                Modifier.clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick
+                )
             } else {
                 Modifier
             }
@@ -397,7 +402,6 @@ private fun StepCircle(
         label = "stepContent"
     )
 
-    // Show dashed border for optional steps that are not yet completed
     val showDashedBorder = isOptional && !isCompleted
     val dashedBorderColor = if (isCurrent) {
         MaterialTheme.colorScheme.primary
@@ -408,27 +412,7 @@ private fun StepCircle(
     Box(
         modifier = Modifier
             .size(STEP_CIRCLE_SIZE.dp)
-            .then(
-                if (showDashedBorder) {
-                    Modifier.drawBehind {
-                        drawRoundRect(
-                            color = dashedBorderColor,
-                            cornerRadius = CornerRadius(size.minDimension / 2),
-                            style = Stroke(
-                                width = 2.dp.toPx(),
-                                pathEffect = PathEffect.dashPathEffect(
-                                    floatArrayOf(
-                                        DASH_ON_INTERVAL.dp.toPx(),
-                                        DASH_OFF_INTERVAL.dp.toPx()
-                                    )
-                                )
-                            )
-                        )
-                    }
-                } else {
-                    Modifier
-                }
-            )
+            .dashedBorderIfNeeded(showDashedBorder, dashedBorderColor)
             .clip(CircleShape)
             .background(backgroundColor),
         contentAlignment = Alignment.Center
@@ -441,3 +425,21 @@ private fun StepCircle(
         )
     }
 }
+
+private fun Modifier.dashedBorderIfNeeded(enabled: Boolean, color: androidx.compose.ui.graphics.Color): Modifier =
+    if (!enabled) {
+        this
+    } else {
+        drawBehind {
+            drawRoundRect(
+                color = color,
+                cornerRadius = CornerRadius(size.minDimension / 2),
+                style = Stroke(
+                    width = 2.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(
+                        floatArrayOf(DASH_ON_INTERVAL.dp.toPx(), DASH_OFF_INTERVAL.dp.toPx())
+                    )
+                )
+            )
+        }
+    }
