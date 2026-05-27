@@ -18,8 +18,11 @@ import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -67,47 +70,136 @@ class CurrencyRepositoryImplTest {
         clearAllMocks()
     }
 
-    @Test
-    fun `return fresh local rates`() = runTest {
-        coEvery { local.getExchangeRates("USD") } returns freshRates
-        coEvery { local.getLastUpdated("USD") } returns freshRates.lastUpdated.epochSecond
+    // ── getCurrencies ──────────────────────────────────────────────────────
 
-        val result = currencyRepositoryImpl.getExchangeRates("USD")
-        assertTrue(result is ExchangeRateResult.Fresh)
-        coVerify(exactly = 0) { remote.fetchExchangeRates(any()) }
+    @Nested
+    inner class GetCurrencies {
+
+        @Test
+        fun `returns local currencies when not empty and forceRefresh is false`() = runTest {
+            coEvery { local.getCurrencies() } returns listOf(usd, eur)
+
+            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = false)
+
+            assertEquals(listOf(usd, eur), result)
+            coVerify(exactly = 0) { remote.fetchCurrencies() }
+        }
+
+        @Test
+        fun `fetches remote currencies when local is empty and forceRefresh is false`() = runTest {
+            coEvery { local.getCurrencies() } returns emptyList()
+            coEvery { remote.fetchCurrencies() } returns listOf(usd, eur)
+            coEvery { local.saveCurrencies(any()) } just Runs
+
+            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = false)
+
+            assertEquals(listOf(usd, eur), result)
+            coVerify { remote.fetchCurrencies() }
+            coVerify { local.saveCurrencies(listOf(usd, eur)) }
+        }
+
+        @Test
+        fun `always fetches remote currencies when forceRefresh is true`() = runTest {
+            coEvery { remote.fetchCurrencies() } returns listOf(usd, eur)
+            coEvery { local.saveCurrencies(any()) } just Runs
+
+            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = true)
+
+            assertEquals(listOf(usd, eur), result)
+            coVerify { remote.fetchCurrencies() }
+            coVerify { local.saveCurrencies(listOf(usd, eur)) }
+            // Should NOT query local when forceRefresh=true
+            coVerify(exactly = 0) { local.getCurrencies() }
+        }
     }
 
-    @Test
-    fun `fallback to stale when remote fails`() = runTest {
-        val staleRates = freshRates.copy(
-            lastUpdated = Instant
-                .now()
-                .minusSeconds(86_400)
-        )
+    // ── getExchangeRates ───────────────────────────────────────────────────
 
-        coEvery { local.getExchangeRates("USD") } returns staleRates
-        coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
-        coEvery { remote.fetchExchangeRates("USD") } throws RuntimeException("network error")
+    @Nested
+    inner class GetExchangeRates {
 
-        val result = currencyRepositoryImpl.getExchangeRates("USD")
-        assertTrue(result is ExchangeRateResult.Stale)
-    }
+        @Test
+        fun `return fresh local rates`() = runTest {
+            coEvery { local.getExchangeRates("USD") } returns freshRates
+            coEvery { local.getLastUpdated("USD") } returns freshRates.lastUpdated.epochSecond
 
-    @Test
-    fun `fetch remote when local empty`() = runTest {
-        val emptyRates = ExchangeRates(
-            usd,
-            emptyList(),
-            Instant.EPOCH
-        )
+            val result = currencyRepositoryImpl.getExchangeRates("USD")
+            assertTrue(result is ExchangeRateResult.Fresh)
+            coVerify(exactly = 0) { remote.fetchExchangeRates(any()) }
+        }
 
-        coEvery { local.getExchangeRates("USD") } returns emptyRates
-        coEvery { local.getLastUpdated("USD") } returns null
-        coEvery { remote.fetchExchangeRates("USD") } returns freshRates
-        coEvery { local.saveExchangeRates(freshRates) } just Runs
+        @Test
+        fun `fallback to stale when remote fails`() = runTest {
+            val staleRates = freshRates.copy(
+                lastUpdated = Instant
+                    .now()
+                    .minusSeconds(86_400)
+            )
 
-        val result = currencyRepositoryImpl.getExchangeRates("USD")
-        assertTrue(result is ExchangeRateResult.Fresh)
-        coVerify { local.saveExchangeRates(freshRates) }
+            coEvery { local.getExchangeRates("USD") } returns staleRates
+            coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
+            coEvery { remote.fetchExchangeRates("USD") } throws RuntimeException("network error")
+
+            val result = currencyRepositoryImpl.getExchangeRates("USD")
+            assertTrue(result is ExchangeRateResult.Stale)
+        }
+
+        @Test
+        fun `fetch remote when local empty`() = runTest {
+            val emptyRates = ExchangeRates(
+                usd,
+                emptyList(),
+                Instant.EPOCH
+            )
+
+            coEvery { local.getExchangeRates("USD") } returns emptyRates
+            coEvery { local.getLastUpdated("USD") } returns null
+            coEvery { remote.fetchExchangeRates("USD") } returns freshRates
+            coEvery { local.saveExchangeRates(freshRates) } just Runs
+
+            val result = currencyRepositoryImpl.getExchangeRates("USD")
+            assertTrue(result is ExchangeRateResult.Fresh)
+            coVerify { local.saveExchangeRates(freshRates) }
+        }
+
+        @Test
+        fun `returns Empty when local rates are empty and remote fetch also fails`() = runTest {
+            val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
+
+            coEvery { local.getExchangeRates("USD") } returns emptyRates
+            coEvery { local.getLastUpdated("USD") } returns null
+            coEvery { remote.fetchExchangeRates("USD") } throws RuntimeException("network error")
+
+            val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+            assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
+        }
+
+        @Test
+        fun `returns Fresh rates when local rates are fresh (not stale)`() = runTest {
+            coEvery { local.getExchangeRates("USD") } returns freshRates
+            coEvery { local.getLastUpdated("USD") } returns freshRates.lastUpdated.epochSecond
+
+            val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+            assertTrue(result is ExchangeRateResult.Fresh)
+            coVerify(exactly = 0) { remote.fetchExchangeRates(any()) }
+        }
+
+        @Test
+        fun `refreshes stale rates from remote successfully`() = runTest {
+            val staleRates = freshRates.copy(lastUpdated = Instant.now().minusSeconds(86_400))
+            val newRemoteRates = freshRates.copy(lastUpdated = Instant.now())
+
+            coEvery { local.getExchangeRates("USD") } returns staleRates
+            coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
+            coEvery { remote.fetchExchangeRates("USD") } returns newRemoteRates
+            coEvery { local.saveExchangeRates(any()) } just Runs
+
+            val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+            assertTrue(result is ExchangeRateResult.Fresh)
+            coVerify { local.saveExchangeRates(newRemoteRates) }
+        }
     }
 }

@@ -26,6 +26,20 @@ fun NavGraphBuilder.expensesGraph() {
     }
 
     sharedComposable(
+        route = Routes.EDIT_EXPENSE,
+        arguments = listOf(navArgument("expenseId") { type = NavType.StringType })
+    ) { backStackEntry ->
+        val expenseId = backStackEntry.arguments?.getString("expenseId") ?: return@sharedComposable
+        val navController = LocalTabNavController.current
+        AddExpenseFeature(
+            expenseId = expenseId,
+            onAddExpenseSuccess = {
+                navController.popBackStack()
+            }
+        )
+    }
+
+    sharedComposable(
         route = Routes.EXPENSE_DETAIL,
         arguments = listOf(navArgument("expenseId") { type = NavType.StringType })
     ) { backStackEntry ->

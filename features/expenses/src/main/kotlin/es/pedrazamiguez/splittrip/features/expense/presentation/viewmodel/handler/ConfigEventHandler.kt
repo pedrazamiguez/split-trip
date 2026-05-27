@@ -90,9 +90,7 @@ class ConfigEventHandler(
         postConfigCallback = callback
     }
 
-    fun loadGroupConfig(groupId: String?, forceRefresh: Boolean = false) {
-        if (groupId == null) return
-
+    suspend fun suspendLoadGroupConfig(groupId: String, forceRefresh: Boolean = false) {
         val currentState = _uiState.value
         val isGroupChanged = currentState.loadedGroupId != groupId
 
@@ -101,29 +99,43 @@ class ConfigEventHandler(
         // Always reload if the groupId has changed
         if (!forceRefresh && !isGroupChanged && currentState.isConfigLoaded) return
 
-        scope.launch {
-            // Reset form state when loading a different group's config
-            if (isGroupChanged) {
-                _uiState.update {
-                    AddExpenseUiState(isLoading = true, configLoadFailed = false)
-                }
-            } else {
-                _uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
+        // Reset form state when loading a different group's config, but preserve the
+        // edit-mode bootstrap fields set by the ViewModel constructor from the strategy.
+        // Wiping these would cause the screen to revert to "add expense" titles/labels,
+        // re-enable the AI receipt-scan step, and disable forward step jumps.
+        if (isGroupChanged) {
+            _uiState.update { current ->
+                AddExpenseUiState(
+                    isLoading = true,
+                    configLoadFailed = false,
+                    isEditMode = current.isEditMode,
+                    screenTitleRes = current.screenTitleRes,
+                    submitLabelRes = current.submitLabelRes
+                )
             }
+        } else {
+            _uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
+        }
 
-            val config = getGroupExpenseConfigUseCase(groupId, forceRefresh).getOrElse { e ->
-                Timber.e(e, "Failed to load group configuration for groupId: $groupId")
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        isConfigLoaded = false,
-                        configLoadFailed = true,
-                        error = UiText.StringResource(R.string.expense_error_load_group_config)
-                    )
-                }
-                return@launch
+        val config = getGroupExpenseConfigUseCase(groupId, forceRefresh).getOrElse { e ->
+            Timber.e(e, "Failed to load group configuration for groupId: $groupId")
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    isConfigLoaded = false,
+                    configLoadFailed = true,
+                    error = UiText.StringResource(R.string.expense_error_load_group_config)
+                )
             }
-            applyConfig(groupId, config)
+            return
+        }
+        applyConfig(groupId, config)
+    }
+
+    fun loadGroupConfig(groupId: String?, forceRefresh: Boolean = false) {
+        if (groupId == null) return
+        scope.launch {
+            suspendLoadGroupConfig(groupId, forceRefresh)
         }
     }
 
@@ -131,6 +143,9 @@ class ConfigEventHandler(
      * Maps the loaded [GroupExpenseConfig] into UI state, resolves user preferences
      * (last-used currency, payment method, category), and emits post-config actions.
      */
+    // Single sequential state-assembly function: each `copy(...)` field is a distinct
+    // mapping from the loaded config; splitting would obscure the data-flow with no benefit.
+    @Suppress("LongMethod")
     internal suspend fun applyConfig(
         groupId: String,
         config: GroupExpenseConfig
@@ -148,18 +163,19 @@ class ConfigEventHandler(
         val userSubunitOptions = filterSubunitsForCurrentUser(currentUserId, config)
 
         val isAiCapable = receiptExtractionService.capability() == ExtractionCapability.ON_DEVICE_AI
+        val effectiveAiMode = resolveEffectiveAiMode(isAiCapable)
         val currentMillis = System.currentTimeMillis()
         val formattedDate = addExpenseUiMapper.formatExpenseDateForDisplay(currentMillis)
 
         _uiState.update {
             it.copy(
-                isLoading = false,
+                isLoading = it.isEditMode && it.isLoading,
                 isConfigLoaded = true,
                 configLoadFailed = false,
                 loadedGroupId = groupId,
                 isAiCapable = isAiCapable,
-                isAiModeActive = isAiCapable,
-                currentStep = if (isAiCapable) AddExpenseStep.RECEIPT else AddExpenseStep.TITLE,
+                isAiModeActive = effectiveAiMode,
+                currentStep = if (effectiveAiMode) AddExpenseStep.RECEIPT else AddExpenseStep.TITLE,
                 groupName = config.group.name,
                 currentUserId = currentUserId,
                 expenseDateMillis = currentMillis,
@@ -197,6 +213,17 @@ class ConfigEventHandler(
             memberProfiles
         )
     }
+
+    /**
+     * Resolves whether AI auto-fill mode should be active.
+     *
+     * AI mode is suppressed in edit mode because the expense already exists, so
+     * re-uploading a receipt to extract fields would be nonsensical and would
+     * cause a FOUC where the wizard briefly opens on the RECEIPT step before
+     * the mapper restores TITLE as the current step.
+     */
+    private fun resolveEffectiveAiMode(isAiCapable: Boolean): Boolean =
+        isAiCapable && !_uiState.value.isEditMode
 
     private suspend fun resolveDefaults(
         groupId: String,

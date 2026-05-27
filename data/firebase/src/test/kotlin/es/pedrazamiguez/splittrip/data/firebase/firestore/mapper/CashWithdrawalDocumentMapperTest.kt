@@ -1,8 +1,14 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.mapper
 
 import com.google.firebase.firestore.DocumentReference
+import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AddOnDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
+import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
+import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import io.mockk.mockk
 import java.math.BigDecimal
@@ -361,6 +367,133 @@ class CashWithdrawalDocumentMapperTest {
             assertNull(withdrawal.title)
             assertNull(withdrawal.notes)
             assertNull(withdrawal.receiptLocalUri)
+        }
+
+        @Test
+        fun `maps addOns from document to domain`() {
+            val addOnDoc = AddOnDocument(
+                id = "addon-1",
+                type = "FEE",
+                mode = "ON_TOP",
+                valueType = "EXACT",
+                amountCents = 250L,
+                currency = "THB",
+                exchangeRate = "37.037",
+                groupAmountCents = 250L,
+                paymentMethod = "CASH",
+                description = "Bank fee"
+            )
+
+            val documentWithAddOns = fullDocument.copy(addOns = listOf(addOnDoc))
+
+            val withdrawal = documentWithAddOns.toDomain()
+
+            assertEquals(1, withdrawal.addOns.size)
+            val addOn = withdrawal.addOns[0]
+            assertEquals("addon-1", addOn.id)
+            assertEquals(AddOnType.FEE, addOn.type)
+            assertEquals(AddOnMode.ON_TOP, addOn.mode)
+            assertEquals(AddOnValueType.EXACT, addOn.valueType)
+            assertEquals(250L, addOn.amountCents)
+            assertEquals("Bank fee", addOn.description)
+        }
+
+        @Test
+        fun `defaults to FEE ON_TOP EXACT for unknown addOn enum strings`() {
+            val addOnDoc = AddOnDocument(
+                id = "addon-unknown",
+                type = "UNKNOWN_TYPE",
+                mode = "UNKNOWN_MODE",
+                valueType = "UNKNOWN_VALUE",
+                amountCents = 100L,
+                currency = "EUR",
+                exchangeRate = "1.0",
+                groupAmountCents = 100L,
+                paymentMethod = "OTHER"
+            )
+
+            val documentWithUnknownAddOn = fullDocument.copy(addOns = listOf(addOnDoc))
+
+            val withdrawal = documentWithUnknownAddOn.toDomain()
+
+            val addOn = withdrawal.addOns[0]
+            assertEquals(AddOnType.FEE, addOn.type)
+            assertEquals(AddOnMode.ON_TOP, addOn.mode)
+            assertEquals(AddOnValueType.EXACT, addOn.valueType)
+        }
+
+        @Test
+        fun `maps empty addOns list`() {
+            val documentNoAddOns = fullDocument.copy(addOns = emptyList())
+
+            val withdrawal = documentNoAddOns.toDomain()
+
+            assertEquals(0, withdrawal.addOns.size)
+        }
+    }
+
+    @Nested
+    inner class ToDocumentWithAddOns {
+
+        private val sampleAddOn = AddOn(
+            id = "addon-1",
+            type = AddOnType.FEE,
+            mode = AddOnMode.ON_TOP,
+            valueType = AddOnValueType.EXACT,
+            amountCents = 250L,
+            currency = "THB",
+            exchangeRate = BigDecimal("37.037"),
+            groupAmountCents = 250L,
+            paymentMethod = PaymentMethod.CASH,
+            description = "Bank fee"
+        )
+
+        @Test
+        fun `maps addOns from domain to document`() {
+            val withdrawalWithAddOns = fullWithdrawal.copy(addOns = listOf(sampleAddOn))
+
+            val document = withdrawalWithAddOns.toDocument(
+                testWithdrawalId,
+                testGroupId,
+                testGroupDocRef,
+                testUserId
+            )
+
+            assertEquals(1, document.addOns.size)
+            val addOnDoc = document.addOns[0]
+            assertEquals("addon-1", addOnDoc.id)
+            assertEquals("FEE", addOnDoc.type)
+            assertEquals("ON_TOP", addOnDoc.mode)
+            assertEquals("EXACT", addOnDoc.valueType)
+            assertEquals("Bank fee", addOnDoc.description)
+        }
+
+        @Test
+        fun `serializes addOn exchangeRate as plain string`() {
+            val withdrawalWithAddOns = fullWithdrawal.copy(addOns = listOf(sampleAddOn))
+
+            val document = withdrawalWithAddOns.toDocument(
+                testWithdrawalId,
+                testGroupId,
+                testGroupDocRef,
+                testUserId
+            )
+
+            assertEquals("37.037", document.addOns[0].exchangeRate)
+        }
+
+        @Test
+        fun `maps empty addOns list`() {
+            val withdrawalNoAddOns = fullWithdrawal.copy(addOns = emptyList())
+
+            val document = withdrawalNoAddOns.toDocument(
+                testWithdrawalId,
+                testGroupId,
+                testGroupDocRef,
+                testUserId
+            )
+
+            assertEquals(0, document.addOns.size)
         }
     }
 }

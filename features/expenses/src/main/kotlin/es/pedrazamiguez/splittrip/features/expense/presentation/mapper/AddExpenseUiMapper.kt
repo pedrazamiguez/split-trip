@@ -2,20 +2,33 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
+import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
+import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.model.AddOn
+import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 
 /**
  * Core Add Expense mapper: handles date formatting, display formatting,
@@ -164,5 +177,207 @@ class AddExpenseUiMapper(
         Result.success(expense)
     } catch (e: Exception) {
         Result.failure(e)
+    }
+
+    /**
+     * Maps an existing domain [Expense] and its paired [Contribution] back into UI state for modification.
+     */
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
+    fun mapExpenseToState(
+        expense: Expense,
+        contribution: Contribution?,
+        currentState: AddExpenseUiState,
+        memberProfiles: Map<String, User>,
+        subunits: List<Subunit>
+    ): AddExpenseUiState {
+        val groupDecimalDigits = expense.groupCurrency.let { _ ->
+            currentState.groupCurrency?.decimalDigits ?: 2
+        }
+
+        val sourceDecimalDigits = expense.sourceCurrency.let { code ->
+            currentState.availableCurrencies.find { it.code == code }?.decimalDigits ?: 2
+        }
+        val sourceAmountString = BigDecimal(expense.sourceAmount).movePointLeft(sourceDecimalDigits)
+            .stripTrailingZeros().toPlainString()
+        val calculatedGroupAmountString = BigDecimal(
+            expense.groupAmount
+        ).movePointLeft(groupDecimalDigits).stripTrailingZeros().toPlainString()
+
+        val selectedCurrency = currentState.availableCurrencies.find { it.code == expense.sourceCurrency }
+        val selectedPaymentMethod = currentState.paymentMethods.find { it.id == expense.paymentMethod.name }
+        val selectedFundingSource = currentState.fundingSources.find { it.id == expense.payerType.name }
+        val selectedCategory = currentState.availableCategories.find { it.id == expense.category.name }
+        val selectedPaymentStatus = currentState.availablePaymentStatuses.find { it.id == expense.paymentStatus.name }
+
+        val isForeign = expense.sourceCurrency != expense.groupCurrency
+        val displayRate = if (expense.exchangeRate.compareTo(BigDecimal.ZERO) != 0) {
+            BigDecimal.ONE.divide(expense.exchangeRate, RATE_PRECISION, RoundingMode.HALF_UP)
+                .stripTrailingZeros().toPlainString()
+        } else {
+            "1.0"
+        }
+
+        val formattedDueDate = expense.dueDate?.let {
+            val millis = it.toInstant(ZoneOffset.UTC).toEpochMilli()
+            formatDueDateForDisplay(millis)
+        } ?: ""
+
+        val dueDateMillis = expense.dueDate?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
+
+        val addOnsMapped = mapAddOnsToState(
+            addOns = expense.addOns,
+            availableCurrencies = currentState.availableCurrencies,
+            paymentMethods = currentState.paymentMethods,
+            groupCurrency = expense.groupCurrency,
+            groupDecimalDigits = groupDecimalDigits,
+            sourceAmount = expense.sourceAmount
+        )
+
+        val (mappedSplits, mappedEntitySplits) = mapSplitsToState(
+            expense = expense,
+            currentState = currentState,
+            memberProfiles = memberProfiles,
+            subunits = subunits
+        )
+
+        val expenseDateMillis =
+            expense.createdAt?.toInstant(ZoneOffset.UTC)?.toEpochMilli() ?: currentState.expenseDateMillis
+        val formattedExpenseDate =
+            expenseDateMillis?.let { formatExpenseDateForDisplay(it) } ?: currentState.formattedExpenseDate
+
+        val selectedSplitType = currentState.availableSplitTypes.find { it.id == expense.splitType.name }
+
+        val contributionScope = contribution?.contributionScope ?: PayerType.USER
+        val selectedContributionSubunitId = contribution?.subunitId
+
+        return currentState.copy(
+            expenseTitle = expense.title,
+            sourceAmount = sourceAmountString,
+            vendor = expense.vendor ?: "",
+            notes = expense.notes ?: "",
+            selectedCurrency = selectedCurrency,
+            selectedPaymentMethod = selectedPaymentMethod,
+            selectedFundingSource = selectedFundingSource,
+            selectedCategory = selectedCategory,
+            selectedPaymentStatus = selectedPaymentStatus,
+            displayExchangeRate = displayRate,
+            calculatedGroupAmount = calculatedGroupAmountString,
+            showExchangeRateSection = isForeign,
+            isExchangeRateLocked = expense.paymentMethod == PaymentMethod.CASH && isForeign,
+            dueDateMillis = dueDateMillis,
+            formattedDueDate = formattedDueDate,
+            showDueDateSection = expense.paymentStatus == PaymentStatus.SCHEDULED,
+            receiptUri = expense.receiptAttachment?.let { it.localUri.takeIf { it.isNotBlank() } ?: it.remoteUrl },
+            receiptAttachment = expense.receiptAttachment,
+            addOns = addOnsMapped.toImmutableList(),
+            isSubunitMode = expense.splits.any { it.subunitId != null },
+            splits = mappedSplits,
+            entitySplits = mappedEntitySplits,
+            contributionScope = contributionScope,
+            selectedContributionSubunitId = selectedContributionSubunitId,
+            expenseDateMillis = expenseDateMillis,
+            formattedExpenseDate = formattedExpenseDate,
+            selectedSplitType = selectedSplitType,
+            isAiModeActive = false
+        )
+    }
+
+    private fun mapAddOnsToState(
+        addOns: List<AddOn>,
+        availableCurrencies: List<CurrencyUiModel>,
+        paymentMethods: List<PaymentMethodUiModel>,
+        groupCurrency: String?,
+        groupDecimalDigits: Int,
+        sourceAmount: Long
+    ): List<AddOnUiModel> {
+        return addOns.map { addOn ->
+            val currencyUiModel = availableCurrencies.find { it.code == addOn.currency }
+            val paymentMethodUiModel = paymentMethods.find { it.id == addOn.paymentMethod.name }
+            val isAddOnForeign = addOn.currency != groupCurrency
+
+            val addOnDisplayRate = getAddOnDisplayRate(addOn.exchangeRate)
+            val addOnDecimalDigits = currencyUiModel?.decimalDigits ?: 2
+            val amountInput = getAddOnAmountInput(addOn, sourceAmount, addOnDecimalDigits)
+
+            AddOnUiModel(
+                id = addOn.id,
+                type = addOn.type,
+                mode = addOn.mode,
+                valueType = addOn.valueType,
+                amountInput = amountInput,
+                resolvedAmountCents = addOn.amountCents,
+                currency = currencyUiModel,
+                displayExchangeRate = addOnDisplayRate,
+                showExchangeRateSection = isAddOnForeign,
+                isExchangeRateLocked = addOn.paymentMethod == PaymentMethod.CASH && isAddOnForeign,
+                calculatedGroupAmount = BigDecimal(
+                    addOn.groupAmountCents
+                ).movePointLeft(groupDecimalDigits).toPlainString(),
+                groupAmountCents = addOn.groupAmountCents,
+                paymentMethod = paymentMethodUiModel,
+                description = addOn.description ?: ""
+            )
+        }
+    }
+
+    private fun getAddOnDisplayRate(exchangeRate: BigDecimal): String {
+        return if (exchangeRate.compareTo(BigDecimal.ZERO) != 0) {
+            BigDecimal.ONE.divide(exchangeRate, RATE_PRECISION, RoundingMode.HALF_UP)
+                .stripTrailingZeros().toPlainString()
+        } else {
+            "1.0"
+        }
+    }
+
+    private fun getAddOnAmountInput(addOn: AddOn, sourceAmount: Long, decimalDigits: Int): String {
+        if (addOn.valueType != AddOnValueType.PERCENTAGE) {
+            return BigDecimal(addOn.amountCents).movePointLeft(decimalDigits).stripTrailingZeros().toPlainString()
+        }
+
+        val baseCents = if (addOn.mode == AddOnMode.INCLUDED && addOn.type == AddOnType.DISCOUNT) {
+            sourceAmount + addOn.amountCents
+        } else {
+            sourceAmount
+        }
+
+        return if (baseCents > 0) {
+            val pct = BigDecimal(addOn.amountCents * 100).divide(BigDecimal(baseCents), 2, RoundingMode.HALF_UP)
+            pct.stripTrailingZeros().toPlainString()
+        } else {
+            ""
+        }
+    }
+
+    private fun mapSplitsToState(
+        expense: Expense,
+        currentState: AddExpenseUiState,
+        memberProfiles: Map<String, User>,
+        subunits: List<Subunit>
+    ): Pair<ImmutableList<SplitUiModel>, ImmutableList<SplitUiModel>> {
+        val hasSubunitSplits = expense.splits.any { it.subunitId != null }
+
+        val mappedSplits = if (hasSubunitSplits) {
+            currentState.splits
+        } else {
+            splitMapper.mapDomainToSplits(
+                memberIds = currentState.memberIds,
+                shares = expense.splits,
+                memberProfiles = memberProfiles
+            )
+        }
+
+        val mappedEntitySplits = if (hasSubunitSplits) {
+            splitMapper.buildEntitySplitsFromDomain(
+                memberIds = currentState.memberIds,
+                subunits = subunits,
+                shares = expense.splits,
+                availableSplitTypes = currentState.availableSplitTypes,
+                memberProfiles = memberProfiles
+            )
+        } else {
+            currentState.entitySplits
+        }
+
+        return mappedSplits to mappedEntitySplits
     }
 }

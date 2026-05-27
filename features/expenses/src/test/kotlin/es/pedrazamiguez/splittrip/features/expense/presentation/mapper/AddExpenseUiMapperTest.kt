@@ -10,6 +10,10 @@ import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.model.AddOn
+import es.pedrazamiguez.splittrip.domain.model.Contribution
+import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
@@ -17,13 +21,17 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUi
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.Locale
+import kotlinx.collections.immutable.persistentListOf
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -1011,6 +1019,291 @@ class AddExpenseUiMapperTest {
             val expense = result.getOrThrow()
             assertEquals(PayerType.GROUP, expense.payerType)
             assertNull(expense.payerId)
+        }
+    }
+
+    // ── Lookup state for mapExpenseToState tests ───────────────────────────
+
+    private val cashStatus = PaymentStatusUiModel(id = "FINISHED", displayText = "Paid")
+    private val scheduledStatus = PaymentStatusUiModel(id = "SCHEDULED", displayText = "Scheduled")
+    private val splitTypeEqual = SplitTypeUiModel(id = "EQUAL", displayText = "Equal")
+    private val groupFundingSource = FundingSourceUiModel(id = "GROUP", displayText = "Group Pocket")
+    private val travelCategory = CategoryUiModel(id = "TRANSPORT", displayText = "Transport")
+    private val foodCategory = CategoryUiModel(id = "FOOD", displayText = "Food")
+
+    /** Builds a state that contains all the look-up lists [mapExpenseToState] needs to resolve. */
+    private fun baseEditState() = AddExpenseUiState(
+        groupCurrency = eurUi,
+        availableCurrencies = persistentListOf(eurUi, usdUi),
+        paymentMethods = persistentListOf(cashPaymentMethod, creditCardPaymentMethod),
+        availablePaymentStatuses = persistentListOf(cashStatus, scheduledStatus),
+        availableSplitTypes = persistentListOf(splitTypeEqual),
+        availableCategories = persistentListOf(travelCategory, foodCategory),
+        fundingSources = persistentListOf(groupFundingSource)
+    )
+
+    @Nested
+    inner class MapExpenseToState {
+
+        @Test
+        fun `maps basic same-currency expense to UI state`() {
+            val expense = Expense(
+                id = "exp-1",
+                groupId = "group-1",
+                title = "Taxi",
+                sourceAmount = 1500L,
+                sourceCurrency = "EUR",
+                groupAmount = 1500L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                category = ExpenseCategory.TRANSPORT,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals("Taxi", result.expenseTitle)
+            assertEquals("15", result.sourceAmount)
+            assertEquals("EUR", result.selectedCurrency?.code)
+            assertEquals(PaymentMethod.CASH.name, result.selectedPaymentMethod?.id)
+            assertEquals(PaymentStatus.FINISHED.name, result.selectedPaymentStatus?.id)
+            assertEquals(ExpenseCategory.TRANSPORT.name, result.selectedCategory?.id)
+            assertFalse(result.showExchangeRateSection)
+            assertNull(result.receiptAttachment)
+            assertFalse(result.isAiModeActive)
+        }
+
+        @Test
+        fun `maps cross-currency expense and sets exchange rate display`() {
+            val expense = Expense(
+                id = "exp-2",
+                groupId = "group-1",
+                title = "Hotel",
+                sourceAmount = 30000L,
+                sourceCurrency = "USD",
+                groupAmount = 27500L,
+                groupCurrency = "EUR",
+                // internalRate USD→EUR = 1/1.09 ≈ 0.9174; displayRate stored as inverse = 1.09
+                exchangeRate = BigDecimal("0.917431"),
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals("Hotel", result.expenseTitle)
+            assertEquals("USD", result.selectedCurrency?.code)
+            assertTrue(result.showExchangeRateSection)
+            assertTrue(result.displayExchangeRate.isNotBlank())
+        }
+
+        @Test
+        fun `maps expense with SCHEDULED status and due date`() {
+            val dueDateTime = LocalDateTime.of(2026, 12, 31, 0, 0)
+            val expense = Expense(
+                id = "exp-3",
+                groupId = "group-1",
+                title = "Subscription",
+                sourceAmount = 999L,
+                sourceCurrency = "EUR",
+                groupAmount = 999L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = dueDateTime,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals(PaymentStatus.SCHEDULED.name, result.selectedPaymentStatus?.id)
+            assertNotNull(result.dueDateMillis)
+            assertTrue(result.formattedDueDate.isNotBlank())
+            assertTrue(result.showDueDateSection)
+        }
+
+        @Test
+        fun `null due date for FINISHED expense leaves dueDate fields empty`() {
+            val expense = Expense(
+                id = "exp-4",
+                groupId = "group-1",
+                title = "Coffee",
+                sourceAmount = 350L,
+                sourceCurrency = "EUR",
+                groupAmount = 350L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertNull(result.dueDateMillis)
+            assertTrue(result.formattedDueDate.isEmpty())
+            assertFalse(result.showDueDateSection)
+        }
+
+        @Test
+        fun `contribution scope and subunitId are applied from contribution`() {
+            val expense = Expense(
+                id = "exp-5",
+                groupId = "group-1",
+                title = "Tour",
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+            val contribution = Contribution(
+                contributionScope = PayerType.SUBUNIT,
+                subunitId = "subunit-42"
+            )
+
+            val result = mapper.mapExpenseToState(
+                expense,
+                contribution,
+                baseEditState(),
+                emptyMap(),
+                emptyList()
+            )
+
+            assertEquals(PayerType.SUBUNIT, result.contributionScope)
+            assertEquals("subunit-42", result.selectedContributionSubunitId)
+        }
+
+        @Test
+        fun `null contribution defaults scope to USER`() {
+            val expense = Expense(
+                id = "exp-6",
+                groupId = "group-1",
+                title = "Lunch",
+                sourceAmount = 1200L,
+                sourceCurrency = "EUR",
+                groupAmount = 1200L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals(PayerType.USER, result.contributionScope)
+            assertNull(result.selectedContributionSubunitId)
+        }
+
+        @Test
+        fun `maps add-ons from expense to state`() {
+            val addOn = AddOn(
+                id = "addon-1",
+                type = AddOnType.TIP,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 500L,
+                currency = "EUR",
+                groupAmountCents = 500L,
+                paymentMethod = PaymentMethod.CASH
+            )
+            val expense = Expense(
+                id = "exp-7",
+                groupId = "group-1",
+                title = "Restaurant",
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5500L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(addOn),
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals(1, result.addOns.size)
+            assertEquals("addon-1", result.addOns[0].id)
+            assertEquals(AddOnType.TIP, result.addOns[0].type)
+        }
+
+        @Test
+        fun `expense with zero exchange rate uses 1 dot 0 as display rate`() {
+            val expense = Expense(
+                id = "exp-8",
+                groupId = "group-1",
+                title = "Airport",
+                sourceAmount = 2000L,
+                sourceCurrency = "USD",
+                groupAmount = 2000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ZERO,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals("1.0", result.displayExchangeRate)
+        }
+
+        @Test
+        fun `maps vendor and notes when present`() {
+            val expense = Expense(
+                id = "exp-9",
+                groupId = "group-1",
+                title = "Supermarket",
+                sourceAmount = 3000L,
+                sourceCurrency = "EUR",
+                groupAmount = 3000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                vendor = "Lidl",
+                notes = "Weekly groceries",
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals("Lidl", result.vendor)
+            assertEquals("Weekly groceries", result.notes)
+        }
+
+        @Test
+        fun `null vendor and notes map to empty strings`() {
+            val expense = Expense(
+                id = "exp-10",
+                groupId = "group-1",
+                title = "Bus",
+                sourceAmount = 200L,
+                sourceCurrency = "EUR",
+                groupAmount = 200L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                vendor = null,
+                notes = null,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals("", result.vendor)
+            assertEquals("", result.notes)
         }
     }
 }

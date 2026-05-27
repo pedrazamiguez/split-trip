@@ -75,6 +75,9 @@ fun ExpensesFeature(
         onAddExpenseClick = {
             navController.navigate(Routes.ADD_EXPENSE)
         },
+        onEditExpenseClick = { expenseId ->
+            navController.navigate(Routes.editExpenseRoute(expenseId))
+        },
         onScrollPositionChanged = { index, offset ->
             expensesViewModel.onEvent(ExpensesUiEvent.ScrollPositionChanged(index, offset))
         },

@@ -104,6 +104,10 @@ JaCoCo is configured for all subprojects via the root `build.gradle.kts`. It sup
 - **Android modules:** Coverage is collected from `testDebugUnitTest` execution data (`build/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec`). Classes are read from `build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes` (AGP 9.x output location).
 - **JVM modules:** Coverage is collected from `test` execution data (`build/jacoco/test.exec`). Classes are read from `build/classes/kotlin/main`.
 - **Merged report:** The `jacocoMergedReport` task aggregates all subproject execution data into a single HTML + XML report at `build/reports/jacoco/merged/`.
+- **Local coverage gate (`scripts/check_coverage.py`):** Run via `make coverage` / `make check`. Enforces **two** thresholds against the merged report:
+  1. **Overall** LINE coverage ≥ 80%.
+  2. **Per-file** LINE coverage ≥ 80% for every source file with ≥ 3 instructionable lines.
+  The per-file gate mirrors SonarQube's "New Code" coverage rule — a brand-new module with 0% coverage no longer slips through when the overall number stays high. Files that are genuinely untestable (Composables, DI modules, Room DAOs, …) must be added to `JacocoExclusions.classExcludes` in `build-logic/` rather than silenced via thresholds. Override locally with `--threshold`, `--file-threshold`, or `--min-lines` flags.
 
 ### Excluded Classes
 

@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.di
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
@@ -16,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFac
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpenseIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
@@ -25,9 +27,11 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetAvailableWithdrawalPoolsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
@@ -71,7 +75,9 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitResultDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.WithdrawalPoolSelectionDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategyFactory
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
@@ -147,7 +153,8 @@ val expensesUiModule = module {
     // are shared between the ViewModel and cross-handler references
     // (e.g., ConfigEventHandler calls CurrencyEventHandler.fetchRate()).
 
-    viewModel {
+    viewModel { params ->
+        val expenseId = params.getOrNull<String>()
         val addExpenseUiMapper = get<AddExpenseUiMapper>()
         val addExpenseOptionsUiMapper = get<AddExpenseOptionsUiMapper>()
         val addExpenseSplitUiMapper = get<AddExpenseSplitUiMapper>()
@@ -225,7 +232,6 @@ val expensesUiModule = module {
         )
 
         val submitHandler = SubmitEventHandler(
-            addExpenseUseCase = get<AddExpenseUseCase>(),
             expenseValidationService = get<ExpenseValidationService>(),
             addOnCalculationService = get<AddOnCalculationService>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
@@ -271,7 +277,19 @@ val expensesUiModule = module {
             addExpenseUiMapper = addExpenseUiMapper
         )
 
+        val strategyFactory = ExpenseFlowStrategyFactory(
+            configEventHandler = configHandler,
+            addExpenseUseCase = get<AddExpenseUseCase>(),
+            updateExpenseUseCase = get<UpdateExpenseUseCase>(),
+            getExpenseByIdUseCase = get<GetExpenseByIdUseCase>(),
+            getContributionByExpenseIdUseCase = get<GetContributionByExpenseIdUseCase>(),
+            addExpenseUiMapper = addExpenseUiMapper,
+            getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
+            getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>()
+        )
+
         AddExpenseViewModel(
+            expenseId = expenseId,
             configEventHandler = configHandler,
             currencyEventHandler = currencyHandler,
             splitEventHandler = splitHandler,
@@ -279,14 +297,18 @@ val expensesUiModule = module {
             addOnEventHandler = addOnHandler,
             submitEventHandler = submitHandler,
             formEventHandler = formHandler,
-            receiptAutoFillEventHandler = receiptAutoFillEventHandler
+            receiptAutoFillEventHandler = receiptAutoFillEventHandler,
+            strategyFactory = strategyFactory
         )
     }
 
     factory { ExpensesNavigationProviderImpl() } bind NavigationProvider::class
 
     single { ExpensesScreenUiProviderImpl() } bind ScreenUiProvider::class
-    single { AddExpenseScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single(named("addExpenseProvider")) { AddExpenseScreenUiProviderImpl(Routes.ADD_EXPENSE) } bind
+        ScreenUiProvider::class
+    single(named("editExpenseProvider")) { AddExpenseScreenUiProviderImpl(Routes.EDIT_EXPENSE) } bind
+        ScreenUiProvider::class
     single { ExpenseDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { ReceiptViewerScreenUiProviderImpl() } bind ScreenUiProvider::class
 

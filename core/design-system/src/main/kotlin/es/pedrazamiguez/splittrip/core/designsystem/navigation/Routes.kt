@@ -20,6 +20,7 @@ object Routes {
     const val SETTINGS_DEVELOPER_SERVICES = "settings_developer_services"
     const val GROUP_DETAIL = "group_detail/{groupId}"
     const val EXPENSE_DETAIL = "expense_detail/{expenseId}"
+    const val EDIT_EXPENSE = "edit_expense/{expenseId}"
     const val MANAGE_SUBUNITS = "manage_subunits/{groupId}"
     const val CREATE_EDIT_SUBUNIT = "create_edit_subunit/{groupId}?subunitId={subunitId}"
     const val RECEIPT_VIEWER = "receipt_viewer/{receiptUri}?mimeType={mimeType}"
@@ -27,6 +28,8 @@ object Routes {
     fun groupDetailRoute(groupId: String) = "group_detail/$groupId"
 
     fun expenseDetailRoute(expenseId: String) = "expense_detail/$expenseId"
+
+    fun editExpenseRoute(expenseId: String) = "edit_expense/$expenseId"
 
     fun manageSubunitsRoute(groupId: String) = "manage_subunits/$groupId"
 

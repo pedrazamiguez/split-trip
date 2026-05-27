@@ -139,10 +139,10 @@ konsist: ## Run Konsist architecture tests (file-size limit, naming, dependency 
 	@printf "$(YELLOW)⏳  Running Konsist architecture tests...$(NC)\n"
 	@$(GRADLEW) :konsist-tests:test
 
-coverage: ## Run all unit tests, generate merged JaCoCo report, and gate on ≥80%% LINE coverage
+coverage: ## Run all unit tests, generate merged JaCoCo report, and gate on overall + per-file LINE coverage (≥80%%)
 	@printf "$(YELLOW)⏳  Running tests + generating merged coverage report...$(NC)\n"
 	@$(GRADLEW) jacocoMergedReport --continue
-	@printf "$(YELLOW)⏳  Checking LINE coverage gate (≥ 80%%)...$(NC)\n"
+	@printf "$(YELLOW)⏳  Checking LINE coverage gates (overall + per-file, ≥ 80%%)...$(NC)\n"
 	@python3 scripts/check_coverage.py
 
 build: ## Compile all modules (debug)

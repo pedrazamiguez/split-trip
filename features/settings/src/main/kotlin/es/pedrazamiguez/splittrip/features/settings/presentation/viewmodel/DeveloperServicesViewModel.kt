@@ -8,7 +8,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
-import es.pedrazamiguez.splittrip.domain.service.AiModelResolver
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.features.settings.R
@@ -86,7 +86,7 @@ sealed interface DeveloperServicesUiEvent {
 class DeveloperServicesViewModel(
     private val receiptOcrService: ReceiptOcrService,
     private val receiptExtractionService: ReceiptExtractionService,
-    private val aiModelResolver: AiModelResolver
+    private val aiModelResolver: AiModelResolverService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeveloperServicesUiState())

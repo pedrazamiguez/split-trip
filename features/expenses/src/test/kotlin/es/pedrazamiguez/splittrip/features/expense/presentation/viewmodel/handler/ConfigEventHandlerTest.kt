@@ -223,6 +223,31 @@ class ConfigEventHandlerTest {
         }
 
         @Test
+        fun `suspendLoadGroupConfig sets isConfigLoaded true and clears isLoading on success`() = runTest {
+            handler.bind(uiState, actions, this)
+
+            handler.suspendLoadGroupConfig("group-1")
+
+            val state = uiState.value
+            assertTrue(state.isConfigLoaded)
+            assertFalse(state.isLoading)
+            assertFalse(state.configLoadFailed)
+        }
+
+        @Test
+        fun `suspendLoadGroupConfig preserves isLoading as true on success when in edit mode`() = runTest {
+            uiState.value = AddExpenseUiState(isEditMode = true, isLoading = true)
+            handler.bind(uiState, actions, this)
+
+            handler.suspendLoadGroupConfig("group-1")
+
+            val state = uiState.value
+            assertTrue(state.isConfigLoaded)
+            assertTrue(state.isLoading)
+            assertFalse(state.configLoadFailed)
+        }
+
+        @Test
         fun `populates loadedGroupId and groupName`() = runTest {
             handler.bind(uiState, actions, this)
 

@@ -41,7 +41,7 @@ fun TitleStep(
         Column(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
         ) {
-            if (uiState.isAiCapable && !uiState.isAiModeActive) {
+            if (uiState.isAiCapable && !uiState.isAiModeActive && !uiState.isEditMode) {
                 FlatCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {

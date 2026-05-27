@@ -14,12 +14,12 @@ import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
-import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategy
 import java.math.BigDecimal
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * Handles expense form submission.
@@ -35,7 +36,6 @@ import kotlinx.coroutines.launch
  * decomposition via [ExpenseCalculatorService], and delegates to the use case.
  */
 class SubmitEventHandler(
-    private val addExpenseUseCase: AddExpenseUseCase,
     private val expenseValidationService: ExpenseValidationService,
     private val addOnCalculationService: AddOnCalculationService,
     private val expenseCalculatorService: ExpenseCalculatorService,
@@ -43,6 +43,12 @@ class SubmitEventHandler(
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val submitResultDelegate: SubmitResultDelegate
 ) : AddExpenseEventHandler {
+
+    private lateinit var strategy: ExpenseFlowStrategy
+
+    fun setStrategy(strategy: ExpenseFlowStrategy) {
+        this.strategy = strategy
+    }
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var _actions: MutableSharedFlow<AddExpenseUiAction>
@@ -62,18 +68,33 @@ class SubmitEventHandler(
     // each branch is a distinct validation/error case
     @Suppress("CognitiveComplexMethod", "LongMethod", "ReturnCount")
     fun submitExpense(groupId: String?, onSuccess: () -> Unit) {
-        if (groupId == null) return
+        Timber.d(
+            "submitExpense: entry groupId=%s isEditMode=%s currentStep=%s",
+            groupId,
+            _uiState.value.isEditMode,
+            _uiState.value.currentStep
+        )
+        val effectiveGroupId = groupId ?: _uiState.value.loadedGroupId
+        if (effectiveGroupId == null) {
+            Timber.w("submitExpense: both groupId parameter and loadedGroupId are null, aborting submission")
+            return
+        }
 
         val currentState = _uiState.value
 
         // Validate title using domain service
         val titleValidation = expenseValidationService.validateTitle(currentState.expenseTitle)
         if (titleValidation is ValidationResult.Invalid) {
+            Timber.w("submitExpense: title validation failed — length=%d", currentState.expenseTitle.length)
+            val errorText = UiText.StringResource(R.string.expense_error_title_empty)
             _uiState.update {
                 it.copy(
                     isTitleValid = false,
-                    error = UiText.StringResource(R.string.expense_error_title_empty)
+                    error = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
         }
@@ -81,11 +102,19 @@ class SubmitEventHandler(
         // Validate amount using domain service
         val amountValidation = expenseValidationService.validateAmount(currentState.sourceAmount)
         if (amountValidation is ValidationResult.Invalid) {
+            Timber.w(
+                "submitExpense: amount validation failed — reason=%s",
+                amountValidation.message
+            )
+            val errorText = UiText.DynamicString(amountValidation.message)
             _uiState.update {
                 it.copy(
                     isAmountValid = false,
-                    error = UiText.DynamicString(amountValidation.message)
+                    error = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
         }
@@ -94,11 +123,19 @@ class SubmitEventHandler(
         if (currentState.selectedPaymentStatus?.id == PaymentStatus.SCHEDULED.name &&
             currentState.dueDateMillis == null
         ) {
+            Timber.w(
+                "submitExpense: due-date required but null — paymentStatus=%s",
+                currentState.selectedPaymentStatus?.id
+            )
+            val errorText = UiText.StringResource(R.string.expense_error_due_date_required)
             _uiState.update {
                 it.copy(
                     isDueDateValid = false,
-                    error = UiText.StringResource(R.string.expense_error_due_date_required)
+                    error = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
         }
@@ -109,11 +146,20 @@ class SubmitEventHandler(
                 currentState.expenseDateMillis ?: System.currentTimeMillis()
             )
             if (dateValidation is ValidationResult.Invalid) {
+                Timber.w(
+                    "submitExpense: expense-date validation failed — expenseDateMillis=%d reason=%s",
+                    currentState.expenseDateMillis,
+                    dateValidation.message
+                )
+                val errorText = UiText.StringResource(R.string.expense_error_date_future)
                 _uiState.update {
                     it.copy(
                         isExpenseDateValid = false,
-                        error = UiText.StringResource(R.string.expense_error_date_future)
+                        error = errorText
                     )
+                }
+                scope.launch {
+                    _actions.emit(AddExpenseUiAction.ShowError(errorText))
                 }
                 return
             }
@@ -122,45 +168,55 @@ class SubmitEventHandler(
         // Validate add-ons (only those with non-empty input)
         val addOnsWithInput = currentState.addOns.filter { it.amountInput.isNotBlank() }
         if (addOnsWithInput.any { it.resolvedAmountCents <= 0 }) {
+            Timber.w(
+                "submitExpense: add-on validation failed — invalidAddOns=%d",
+                addOnsWithInput.count { it.resolvedAmountCents <= 0 }
+            )
+            val errorText = UiText.StringResource(
+                R.string.add_expense_add_on_error_amount
+            )
             _uiState.update {
                 it.copy(
-                    addOnError = UiText.StringResource(
-                        R.string.add_expense_add_on_error_amount
-                    )
+                    addOnError = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
         }
 
+        Timber.d("submitExpense: validations passed, mapping to domain")
         _uiState.update { it.copy(isLoading = true, error = null) }
 
-        addExpenseUiMapper.mapToDomain(_uiState.value, groupId).onSuccess { expense ->
+        addExpenseUiMapper.mapToDomain(_uiState.value, effectiveGroupId).onSuccess { expense ->
             val withIncludedAdj = adjustForIncludedAddOns(expense, _uiState.value.addOns)
             val adjustedExpense = adjustForOnTopDiscounts(withIncludedAdj)
-            val pairedContributionScope = currentState.contributionScope
-            val pairedSubunitId = currentState.selectedContributionSubunitId
-            val preferredWithdrawalScope = currentState.selectedWithdrawalPool?.scope
-            val preferredWithdrawalOwnerId = currentState.selectedWithdrawalPool?.ownerId
+            Timber.d("submitExpense: domain mapping ok, delegating to strategy.saveExpense")
             scope.launch {
-                addExpenseUseCase(
-                    groupId,
-                    adjustedExpense,
-                    pairedContributionScope,
-                    pairedSubunitId,
-                    preferredWithdrawalScope = preferredWithdrawalScope,
-                    preferredWithdrawalOwnerId = preferredWithdrawalOwnerId
+                strategy.saveExpense(
+                    groupId = effectiveGroupId,
+                    expense = adjustedExpense,
+                    uiState = currentState
                 ).onSuccess {
-                    submitResultDelegate.handleSuccess(_uiState, groupId, onSuccess)
+                    Timber.d("submitExpense: strategy.saveExpense succeeded")
+                    submitResultDelegate.handleSuccess(_uiState, effectiveGroupId, onSuccess)
                 }.onFailure { e ->
+                    Timber.e(e, "submitExpense: strategy.saveExpense failed")
                     submitResultDelegate.handleFailure(e, _uiState, _actions, currentState)
                 }
             }
         }.onFailure { e ->
+            Timber.e(e, "submitExpense: failed to map expense to domain")
+            val errorText = UiText.DynamicString(e.message ?: "Unknown error")
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    error = UiText.DynamicString(e.message ?: "Unknown error")
+                    error = errorText
                 )
+            }
+            scope.launch {
+                _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
         }
     }

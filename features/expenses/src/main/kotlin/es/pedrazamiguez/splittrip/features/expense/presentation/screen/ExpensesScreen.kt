@@ -62,6 +62,7 @@ fun ExpensesScreen(
     uiState: ExpensesUiState = ExpensesUiState(),
     onExpenseClicked: (String) -> Unit = { _ -> },
     onAddExpenseClick: () -> Unit = {},
+    onEditExpenseClick: (String) -> Unit = {},
     onScrollPositionChanged: (Int, Int) -> Unit = { _, _ -> },
     onDeleteExpense: (expenseId: String) -> Unit = {}
 ) {
@@ -100,7 +101,8 @@ fun ExpensesScreen(
             expenseToDelete = expense
             selectedExpenseForMenu = null
         },
-        onDeleteDismiss = { expenseToDelete = null }
+        onDeleteDismiss = { expenseToDelete = null },
+        onEditExpenseClick = onEditExpenseClick
     )
 }
 
@@ -182,7 +184,8 @@ private fun ExpensesScreenOverlays(
     onDeleteExpense: (String) -> Unit,
     onMenuDismiss: () -> Unit,
     onDeleteRequested: (ExpenseUiModel) -> Unit,
-    onDeleteDismiss: () -> Unit
+    onDeleteDismiss: () -> Unit,
+    onEditExpenseClick: (String) -> Unit
 ) {
     selectedExpense?.let { expense ->
         ActionBottomSheet(
@@ -192,7 +195,10 @@ private fun ExpensesScreenOverlays(
                 SheetAction(
                     text = stringResource(R.string.action_edit_expense),
                     icon = TablerIcons.Outline.Edit,
-                    onClick = { onMenuDismiss() }
+                    onClick = {
+                        onEditExpenseClick(expense.id)
+                        onMenuDismiss()
+                    }
                 ),
                 SheetAction(
                     text = stringResource(R.string.action_delete_expense),
