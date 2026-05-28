@@ -75,9 +75,8 @@ internal class ReceiptExtractionServiceImpl(
 
         val result = inferenceResult.mapCatching { rawOutput ->
             Timber.d(
-                "ReceiptExtractionService: raw AI output (len=%d): %s",
-                rawOutput.length,
-                rawOutput.take(OCR_DIAGNOSTIC_SAMPLE_CHARS)
+                "ReceiptExtractionService: raw AI output (len=%d)",
+                rawOutput.length
             )
             parseInferenceResult(rawOutput, resolvedEngine)
         }.recover { error ->
@@ -197,7 +196,6 @@ internal class ReceiptExtractionServiceImpl(
         private const val OCR_INPUT_HEAD_CHARS = 2_000
         private const val SEPARATOR = "\n…\n"
         private const val OCR_INPUT_TAIL_CHARS = MAX_OCR_INPUT_CHARS - OCR_INPUT_HEAD_CHARS - SEPARATOR.length
-        private const val OCR_DIAGNOSTIC_SAMPLE_CHARS = 300
 
         // Referenced by name in DEFAULT_PROMPT_TEMPLATE to avoid ${'$'} escaping inside triple-quoted strings.
         private const val OCR_PLACEHOLDER = "%1\$s"
@@ -232,7 +230,7 @@ internal class ReceiptExtractionServiceImpl(
             Input: TRAINLINE London to Paris ticket 1: 55.00 EUR ticket 2: 55.00 EUR Purchase Date: 2026-05-25 09:00 Departure: 2026-06-15 14:00 CreditCard Seats: 2A, 2B Booking: TX12345
             Output: {"amounts":["55.00","55.00"],"currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train London-Paris","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-06-15 14:00, Booking: TX12345, Seats: 2A, 2B"}
             Input: RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € Fecha operacion: 02/10/2026 15:20 RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
-            Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-02","time":"15:20","vendor":"Renfe","title":"Train Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-10-10 09:34, Locator: HXDC8B, Seats: 1A, 1B, Train: AVE 02091"}
+            Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-02","time":"15:20","vendor":"Renfe","title":"Train Seville-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-10-10 09:34, Locator: HXDC8B, Seats: 1A, 1B, Train: AVE 02091"}
             Input: $OCR_PLACEHOLDER
             Output:
         """.trimIndent()

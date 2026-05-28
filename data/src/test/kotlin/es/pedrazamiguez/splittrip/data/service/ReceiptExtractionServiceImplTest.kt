@@ -257,7 +257,34 @@ class ReceiptExtractionServiceImplTest {
         assertTrue(prompt.contains("\"amounts\":[\"55.00\",\"55.00\"]"))
         // Verify the Renfe example shows the array extraction
         assertTrue(prompt.contains("\"amounts\":[\"42.20\",\"42.20\"]"))
-        assertTrue(prompt.contains("\"title\":\"Train Sevilla-Madrid\""))
+        assertTrue(prompt.contains("\"title\":\"Train Seville-Madrid\""))
         assertTrue(prompt.trimEnd().endsWith("Output:"))
+    }
+
+    @Test
+    fun `extract sums multiple amounts correctly`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
+
+        val rawJsonResponse = """
+            {
+                "amounts": ["55.00", "55.00"],
+                "currency": "EUR",
+                "date": "2026-05-20",
+                "title": "Store"
+            }
+        """.trimIndent()
+
+        coEvery { aiCoreInferenceRepository.generateContent(any()) } returns Result.success(rawJsonResponse)
+
+        val result = service.extract(rawReceiptText)
+
+        assertTrue(result.isSuccess)
+        val receipt = result.getOrThrow()
+        assertEquals(BigDecimal("110.00"), receipt.amount)
+        assertEquals("EUR", receipt.currency)
+        assertEquals(LocalDate.of(2026, 5, 20), receipt.date)
+        assertEquals("Store", receipt.title)
     }
 }
