@@ -17,6 +17,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -25,16 +26,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -109,6 +111,7 @@ fun WizardStepIndicator(
     optionalStepIndices: Set<Int> = emptySet(),
     skipToReviewLabel: String? = null,
     onSkipToReview: (() -> Unit)? = null,
+    allowForwardJumps: Boolean = false,
     onStepClicked: ((stepIndex: Int) -> Unit)? = null
 ) {
     Surface(
@@ -146,17 +149,19 @@ fun WizardStepIndicator(
             ) { labels ->
                 if (labels.size > MAX_VISIBLE_STEPS) {
                     ScrollableStepIndicator(
-                        labels,
-                        currentStepIndex,
-                        optionalStepIndices,
-                        onStepClicked
+                        stepLabels = labels,
+                        currentStepIndex = currentStepIndex,
+                        optionalStepIndices = optionalStepIndices,
+                        allowForwardJumps = allowForwardJumps,
+                        onStepClicked = onStepClicked
                     )
                 } else {
                     StaticStepIndicator(
-                        labels,
-                        currentStepIndex,
-                        optionalStepIndices,
-                        onStepClicked
+                        stepLabels = labels,
+                        currentStepIndex = currentStepIndex,
+                        optionalStepIndices = optionalStepIndices,
+                        allowForwardJumps = allowForwardJumps,
+                        onStepClicked = onStepClicked
                     )
                 }
             }
@@ -195,6 +200,7 @@ private fun StaticStepIndicator(
     stepLabels: List<String>,
     currentStepIndex: Int,
     optionalStepIndices: Set<Int>,
+    allowForwardJumps: Boolean,
     onStepClicked: ((Int) -> Unit)? = null
 ) {
     Row(
@@ -211,7 +217,7 @@ private fun StaticStepIndicator(
                 isCompleted = isCompleted,
                 isCurrent = index == currentStepIndex,
                 isOptional = index in optionalStepIndices,
-                onClick = if (isCompleted && onStepClicked != null) {
+                onClick = if ((isCompleted || allowForwardJumps) && onStepClicked != null) {
                     { onStepClicked(index) }
                 } else {
                     null
@@ -234,6 +240,7 @@ private fun ScrollableStepIndicator(
     stepLabels: List<String>,
     currentStepIndex: Int,
     optionalStepIndices: Set<Int>,
+    allowForwardJumps: Boolean,
     onStepClicked: ((Int) -> Unit)? = null
 ) {
     val density = LocalDensity.current
@@ -277,7 +284,7 @@ private fun ScrollableStepIndicator(
                     isCompleted = isCompleted,
                     isCurrent = index == currentStepIndex,
                     isOptional = index in optionalStepIndices,
-                    onClick = if (isCompleted && onStepClicked != null) {
+                    onClick = if ((isCompleted || allowForwardJumps) && onStepClicked != null) {
                         { onStepClicked(index) }
                     } else {
                         null
@@ -307,12 +314,18 @@ private fun WizardStepItem(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Column(
         modifier = modifier.then(
             if (onClick != null) {
                 Modifier
-                    .minimumInteractiveComponentSize()
-                    .clickable(role = Role.Button, onClick = onClick)
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onClick
+                    )
             } else {
                 Modifier
             }
@@ -392,7 +405,6 @@ private fun StepCircle(
         label = "stepContent"
     )
 
-    // Show dashed border for optional steps that are not yet completed
     val showDashedBorder = isOptional && !isCompleted
     val dashedBorderColor = if (isCurrent) {
         MaterialTheme.colorScheme.primary
@@ -403,27 +415,7 @@ private fun StepCircle(
     Box(
         modifier = Modifier
             .size(STEP_CIRCLE_SIZE.dp)
-            .then(
-                if (showDashedBorder) {
-                    Modifier.drawBehind {
-                        drawRoundRect(
-                            color = dashedBorderColor,
-                            cornerRadius = CornerRadius(size.minDimension / 2),
-                            style = Stroke(
-                                width = 2.dp.toPx(),
-                                pathEffect = PathEffect.dashPathEffect(
-                                    floatArrayOf(
-                                        DASH_ON_INTERVAL.dp.toPx(),
-                                        DASH_OFF_INTERVAL.dp.toPx()
-                                    )
-                                )
-                            )
-                        )
-                    }
-                } else {
-                    Modifier
-                }
-            )
+            .dashedBorderIfNeeded(showDashedBorder, dashedBorderColor)
             .clip(CircleShape)
             .background(backgroundColor),
         contentAlignment = Alignment.Center
@@ -436,3 +428,21 @@ private fun StepCircle(
         )
     }
 }
+
+private fun Modifier.dashedBorderIfNeeded(enabled: Boolean, color: androidx.compose.ui.graphics.Color): Modifier =
+    if (!enabled) {
+        this
+    } else {
+        drawBehind {
+            drawRoundRect(
+                color = color,
+                cornerRadius = CornerRadius(size.minDimension / 2),
+                style = Stroke(
+                    width = 2.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(
+                        floatArrayOf(DASH_ON_INTERVAL.dp.toPx(), DASH_OFF_INTERVAL.dp.toPx())
+                    )
+                )
+            )
+        }
+    }

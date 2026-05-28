@@ -226,5 +226,23 @@ class AddContributionUiMapperTest {
         fun `returns empty string for empty members list`() {
             assertEquals("", mapper.resolveDisplayName("user-1", persistentListOf()))
         }
+
+        @Test
+        fun `returns youLabel for the current user when youLabel is provided`() {
+            val result = mapper.resolveDisplayName("user-1", members, youLabel = "You")
+            assertEquals("You", result)
+        }
+
+        @Test
+        fun `returns display name of non-current user even when youLabel is provided`() {
+            val result = mapper.resolveDisplayName("user-2", members, youLabel = "You")
+            assertEquals("Ana", result)
+        }
+
+        @Test
+        fun `returns display name directly when youLabel is blank`() {
+            val result = mapper.resolveDisplayName("user-1", members, youLabel = "")
+            assertEquals("Andrés", result)
+        }
     }
 }

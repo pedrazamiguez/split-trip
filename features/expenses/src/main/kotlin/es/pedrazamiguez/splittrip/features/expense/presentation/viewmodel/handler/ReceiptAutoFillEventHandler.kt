@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
@@ -29,7 +30,8 @@ import timber.log.Timber
 class ReceiptAutoFillEventHandler(
     private val extractReceiptFieldsUseCase: ExtractReceiptFieldsUseCase,
     private val receiptExtractionService: ReceiptExtractionService,
-    private val formattingHelper: FormattingHelper
+    private val formattingHelper: FormattingHelper,
+    private val addExpenseUiMapper: AddExpenseUiMapper
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -202,7 +204,7 @@ class ReceiptAutoFillEventHandler(
     ) {
         val extractedDate = extracted.date
         val currentState = _uiState.value
-        if (currentState.expenseDateMillis == null && extractedDate != null) {
+        if (!currentState.isExpenseDateModifiedByUser && extractedDate != null) {
             val extractedTime = extracted.time
             val localDateTime = if (extractedTime != null) {
                 extractedDate.atTime(extractedTime)
@@ -210,7 +212,14 @@ class ReceiptAutoFillEventHandler(
                 extractedDate.atStartOfDay()
             }
             val dateMillis = localDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
-            _uiState.update { it.copy(expenseDateMillis = dateMillis) }
+            val formattedDate = addExpenseUiMapper.formatExpenseDateForDisplay(dateMillis)
+            _uiState.update {
+                it.copy(
+                    expenseDateMillis = dateMillis,
+                    formattedExpenseDate = formattedDate,
+                    isExpenseDateValid = true
+                )
+            }
             bannerFields.add(UiText.StringResource(R.string.add_expense_date))
             if (extractedTime != null) {
                 bannerFields.add(UiText.StringResource(R.string.expense_field_time))

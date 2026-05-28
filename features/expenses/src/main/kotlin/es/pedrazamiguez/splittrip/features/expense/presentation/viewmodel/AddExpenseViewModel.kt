@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategyFactory
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -25,8 +26,10 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class AddExpenseViewModel(
+    private val expenseId: String? = null,
     private val configEventHandler: ConfigEventHandler,
     private val currencyEventHandler: CurrencyEventHandler,
     private val splitEventHandler: SplitEventHandler,
@@ -34,10 +37,19 @@ class AddExpenseViewModel(
     private val addOnEventHandler: AddOnEventHandler,
     private val submitEventHandler: SubmitEventHandler,
     private val formEventHandler: FormEventHandler,
-    private val receiptAutoFillEventHandler: ReceiptAutoFillEventHandler
+    private val receiptAutoFillEventHandler: ReceiptAutoFillEventHandler,
+    private val strategyFactory: ExpenseFlowStrategyFactory
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AddExpenseUiState())
+    private val strategy = strategyFactory.create(expenseId)
+
+    private val _uiState = MutableStateFlow(
+        AddExpenseUiState(
+            screenTitleRes = strategy.screenTitleRes,
+            submitLabelRes = strategy.submitLabelRes,
+            isEditMode = strategy.isEditMode
+        )
+    )
     val uiState: StateFlow<AddExpenseUiState> = _uiState.asStateFlow()
 
     private val _actions = MutableSharedFlow<AddExpenseUiAction>()
@@ -55,6 +67,8 @@ class AddExpenseViewModel(
         submitEventHandler.bind(_uiState, _actions, viewModelScope)
         formEventHandler.bind(_uiState, _actions, viewModelScope)
         receiptAutoFillEventHandler.bind(_uiState, _actions, viewModelScope)
+
+        submitEventHandler.setStrategy(strategy)
 
         receiptAutoFillEventHandler.setOnCurrencySelected { currencyCode ->
             onEvent(AddExpenseUiEvent.CurrencySelected(currencyCode))
@@ -136,11 +150,23 @@ class AddExpenseViewModel(
         when (event) {
             // ── Config ──────────────────────────────────────────────────
             is AddExpenseUiEvent.LoadGroupConfig ->
-                configEventHandler.loadGroupConfig(event.groupId)
+                strategy.loadInitialData(
+                    groupId = event.groupId,
+                    uiState = _uiState,
+                    actions = _actions,
+                    scope = viewModelScope,
+                    forceRefresh = false
+                ) {}
 
             is AddExpenseUiEvent.RetryLoadConfig -> {
                 _uiState.update { it.copy(configLoadFailed = false, error = null) }
-                configEventHandler.loadGroupConfig(event.groupId, forceRefresh = true)
+                strategy.loadInitialData(
+                    groupId = event.groupId,
+                    uiState = _uiState,
+                    actions = _actions,
+                    scope = viewModelScope,
+                    forceRefresh = true
+                ) {}
             }
 
             // ── Currency & Exchange Rate ────────────────────────────────
@@ -231,8 +257,13 @@ class AddExpenseViewModel(
                 subunitSplitEventHandler.handleIntraSubunitShareLockToggled(event.subunitId, event.userId)
 
             // ── Submission ──────────────────────────────────────────────
-            is AddExpenseUiEvent.SubmitAddExpense ->
+            is AddExpenseUiEvent.SubmitAddExpense -> {
+                Timber.d(
+                    "AddExpenseViewModel: SubmitAddExpense received groupId=%s",
+                    event.groupId
+                )
                 submitEventHandler.submitExpense(event.groupId, onAddExpenseSuccess)
+            }
 
             // ── Simple form field updates (delegated to FormEventHandler) ──
             is AddExpenseUiEvent.TitleChanged ->
@@ -264,6 +295,9 @@ class AddExpenseViewModel(
 
             is AddExpenseUiEvent.DueDateSelected ->
                 formEventHandler.handleDueDateSelected(event.dateMillis)
+
+            is AddExpenseUiEvent.ExpenseDateSelected ->
+                formEventHandler.handleExpenseDateSelected(event.dateMillis)
 
             is AddExpenseUiEvent.ReceiptImageSelected ->
                 formEventHandler.handleReceiptImageChanged(event.uri)
@@ -409,7 +443,11 @@ class AddExpenseViewModel(
      */
     private fun navigateToStep(stepIndex: Int) {
         val state = _uiState.value
-        val target = wizardNavigator.jumpToStep(state.currentStep, stepIndex, state.applicableSteps) ?: return
+        val target = if (state.isEditMode) {
+            state.applicableSteps.getOrNull(stepIndex)
+        } else {
+            wizardNavigator.jumpToStep(state.currentStep, stepIndex, state.applicableSteps)
+        } ?: return
         _uiState.update { it.copy(currentStep = target, jumpedFromStep = null) }
     }
 

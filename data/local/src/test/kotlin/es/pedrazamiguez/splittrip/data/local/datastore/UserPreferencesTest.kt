@@ -371,4 +371,27 @@ class UserPreferencesTest {
         assertEquals("food", result[0]) // most recent
         assertEquals("transport", result[1])
     }
+
+    // ── Active AI Model Settings ─────────────────────────────────────────
+
+    @Test
+    fun `activeAiModel is isolated per user`() = runTest {
+        val prefsA = createUserPreferences(USER_A_ID)
+        prefsA.setActiveAiModel("LITE_RT_LM")
+
+        val prefsB = createUserPreferences(USER_B_ID)
+        val result = prefsB.activeAiModel.first()
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `same user reads back their own activeAiModel`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        prefs.setActiveAiModel("AI_CORE_GEMMA_4")
+
+        val result = prefs.activeAiModel.first()
+
+        assertEquals("AI_CORE_GEMMA_4", result)
+    }
 }

@@ -26,6 +26,9 @@ data class AddExpenseUiState(
     val loadedGroupId: String? = null,
     val groupName: String? = null,
     val currentUserId: String? = null,
+    val screenTitleRes: Int = es.pedrazamiguez.splittrip.features.expense.R.string.add_expense_title,
+    val submitLabelRes: Int = es.pedrazamiguez.splittrip.features.expense.R.string.add_expense_submit_button,
+    val isEditMode: Boolean = false,
 
     // Inputs
     val expenseTitle: String = "",
@@ -178,6 +181,9 @@ data class AddExpenseUiState(
     val isTitleValid: Boolean = true,
     val isAmountValid: Boolean = true,
     val isDueDateValid: Boolean = true,
+    val formattedExpenseDate: String = "",
+    val isExpenseDateValid: Boolean = true,
+    val isExpenseDateModifiedByUser: Boolean = false,
 
     // ── AI Auto-fill ────────────────────────────────────────────────────
     val isAiCapable: Boolean = false,

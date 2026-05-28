@@ -84,4 +84,9 @@ interface CashWithdrawalRepository {
     suspend fun refundTranche(withdrawalId: String, amountToRefund: Long)
 
     suspend fun deleteWithdrawal(groupId: String, withdrawalId: String)
+
+    /**
+     * Fetches a single cash withdrawal by its ID.
+     */
+    suspend fun getWithdrawalById(withdrawalId: String): CashWithdrawal?
 }

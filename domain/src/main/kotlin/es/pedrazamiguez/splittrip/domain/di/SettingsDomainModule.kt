@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
@@ -13,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPaymentMethodUseCase
@@ -68,6 +70,18 @@ val settingsDomainModule = module {
 
     factory<SetUserDefaultCurrencyUseCase> {
         SetUserDefaultCurrencyUseCase(
+            preferenceRepository = get<UserPreferenceRepository>()
+        )
+    }
+
+    factory<GetActiveAiEngineUseCase> {
+        GetActiveAiEngineUseCase(
+            preferenceRepository = get<UserPreferenceRepository>()
+        )
+    }
+
+    factory<SetActiveAiEngineUseCase> {
+        SetActiveAiEngineUseCase(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }

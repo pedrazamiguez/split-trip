@@ -68,6 +68,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.e
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import timber.log.Timber
 
 /**
  * Shared element transition key for the Add Expense FAB -> Screen transition.
@@ -117,10 +118,12 @@ private fun ExpenseWizard(
 
     val backLabel = stringResource(R.string.expense_wizard_back)
     val nextLabel = stringResource(R.string.expense_wizard_next)
-    val submitLabel = stringResource(R.string.add_expense_submit_button)
+    val submitLabel = stringResource(uiState.submitLabelRes)
     val skipToReviewLabel = stringResource(R.string.expense_wizard_skip_to_review)
 
     val bottomPadding = LocalBottomPadding.current
+
+    LogReviewStepState(uiState)
 
     Box(
         modifier = modifier
@@ -146,10 +149,38 @@ private fun ExpenseWizard(
             ),
             onBack = { onEvent(AddExpenseUiEvent.PreviousStep) },
             onNext = { onEvent(AddExpenseUiEvent.NextStep) },
-            onSubmit = { onEvent(AddExpenseUiEvent.SubmitAddExpense(groupId)) },
+            onSubmit = {
+                Timber.d(
+                    "AddExpenseScreen: submit tapped groupId=%s isEditMode=%s isCurrentStepValid=%s isLoading=%s",
+                    groupId,
+                    uiState.isEditMode,
+                    uiState.isCurrentStepValid,
+                    uiState.isLoading
+                )
+                onEvent(AddExpenseUiEvent.SubmitAddExpense(groupId))
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = bottomPadding)
+        )
+    }
+}
+
+@Composable
+private fun LogReviewStepState(uiState: AddExpenseUiState) {
+    LaunchedEffect(uiState.isOnReviewStep, uiState.isFormValid, uiState.isLoading) {
+        if (!uiState.isOnReviewStep) return@LaunchedEffect
+        Timber.d(
+            "AddExpenseScreen REVIEW: formValid=%s titleValid=%s amountValid=%s dueValid=%s " +
+                "addOnsValid=%s title='%s' amount='%s' loading=%s",
+            uiState.isFormValid,
+            uiState.isTitleValid,
+            uiState.isAmountValid,
+            uiState.isDueDateValid,
+            uiState.addOns.all { it.isAmountValid },
+            uiState.expenseTitle,
+            uiState.sourceAmount,
+            uiState.isLoading
         )
     }
 }
@@ -173,6 +204,7 @@ private fun ExpenseWizardBody(
             } else {
                 null
             },
+            allowForwardJumps = uiState.isEditMode,
             onStepClicked = { onEvent(AddExpenseUiEvent.JumpToStep(it)) }
         )
 

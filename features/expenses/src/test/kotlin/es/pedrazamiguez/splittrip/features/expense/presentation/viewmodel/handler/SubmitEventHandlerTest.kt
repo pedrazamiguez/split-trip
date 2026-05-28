@@ -15,7 +15,6 @@ import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
-import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
@@ -31,7 +30,9 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -57,7 +58,8 @@ import org.junit.jupiter.api.Test
 class SubmitEventHandlerTest {
 
     private lateinit var handler: SubmitEventHandler
-    private lateinit var addExpenseUseCase: AddExpenseUseCase
+    private lateinit var strategy:
+        es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategy
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
 
     /** A minimal [Expense] stub — only the fields used by adjustForIncludedAddOns matter. */
@@ -83,7 +85,7 @@ class SubmitEventHandlerTest {
 
     @BeforeEach
     fun setUp() {
-        addExpenseUseCase = mockk(relaxed = true)
+        strategy = mockk(relaxed = true)
         addExpenseUiMapper = mockk(relaxed = true)
         val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService())
         val saveLastUsedPreferences = SaveLastUsedPreferencesBundle(
@@ -94,7 +96,6 @@ class SubmitEventHandlerTest {
         val formattingHelper = mockk<FormattingHelper>(relaxed = true)
 
         handler = SubmitEventHandler(
-            addExpenseUseCase = addExpenseUseCase,
             expenseValidationService = ExpenseValidationService(splitCalculatorFactory),
             addOnCalculationService = AddOnCalculationService(),
             expenseCalculatorService = ExpenseCalculatorService(),
@@ -104,7 +105,9 @@ class SubmitEventHandlerTest {
                 saveLastUsedPreferences = saveLastUsedPreferences,
                 formattingHelper = formattingHelper
             )
-        )
+        ).apply {
+            setStrategy(strategy)
+        }
     }
 
     // ── No INCLUDED add-ons ──────────────────────────────────────────────────
@@ -530,28 +533,48 @@ class SubmitEventHandlerTest {
 
         @Test
         fun `empty title sets isTitleValid false and error`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(expenseTitle = "", sourceAmount = "50")
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertFalse(stateFlow.value.isTitleValid)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `invalid amount sets isAmountValid false and error`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(expenseTitle = "Dinner", sourceAmount = "")
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertFalse(stateFlow.value.isAmountValid)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `SCHEDULED with no dueDate sets isDueDateValid false`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(
                 expenseTitle = "Dinner",
@@ -564,13 +587,44 @@ class SubmitEventHandlerTest {
             )
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertFalse(stateFlow.value.isDueDateValid)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `future expense date sets isExpenseDateValid false and error`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = AddExpenseUiState(
+                expenseTitle = "Dinner",
+                sourceAmount = "50",
+                expenseDateMillis = System.currentTimeMillis() + 1000000L
+            )
+
+            handler.submitExpense("group-1") {}
+            advanceUntilIdle()
+
+            assertFalse(stateFlow.value.isExpenseDateValid)
+            assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `add-on with zero resolved amount sets addOnError`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(
                 expenseTitle = "Dinner",
@@ -589,12 +643,20 @@ class SubmitEventHandlerTest {
             )
 
             handler.submitExpense("group-1") {}
+            advanceUntilIdle()
 
             assertNotNull(stateFlow.value.addOnError)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
         fun `mapper failure sets error and clears loading`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val collectJob = launch(UnconfinedTestDispatcher()) {
+                actionsFlow.collect { actions.add(it) }
+            }
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = AddExpenseUiState(
                 expenseTitle = "Dinner",
@@ -609,6 +671,9 @@ class SubmitEventHandlerTest {
 
             assertFalse(stateFlow.value.isLoading)
             assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            collectJob.cancel()
         }
 
         @Test
@@ -620,10 +685,30 @@ class SubmitEventHandlerTest {
             )
             val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
             every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
-            coEvery { addExpenseUseCase(any(), any()) } returns Result.success(Unit)
+            coEvery { strategy.saveExpense(any(), any(), any()) } returns Result.success(Unit)
 
             var successCalled = false
             handler.submitExpense("group-1") { successCalled = true }
+            advanceUntilIdle()
+
+            assertTrue(successCalled)
+            assertFalse(stateFlow.value.isLoading)
+        }
+
+        @Test
+        fun `submit with null groupId parameter uses loadedGroupId from state`() = runTest(testDispatcher) {
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = AddExpenseUiState(
+                expenseTitle = "Dinner",
+                sourceAmount = "50",
+                loadedGroupId = "group-loaded"
+            )
+            val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
+            every { addExpenseUiMapper.mapToDomain(any(), "group-loaded") } returns Result.success(expense)
+            coEvery { strategy.saveExpense("group-loaded", any(), any()) } returns Result.success(Unit)
+
+            var successCalled = false
+            handler.submitExpense(null) { successCalled = true }
             advanceUntilIdle()
 
             assertTrue(successCalled)
@@ -639,7 +724,7 @@ class SubmitEventHandlerTest {
             )
             val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
             every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
-            coEvery { addExpenseUseCase(any(), any()) } returns Result.failure(
+            coEvery { strategy.saveExpense(any(), any(), any()) } returns Result.failure(
                 RuntimeException("Network error")
             )
 

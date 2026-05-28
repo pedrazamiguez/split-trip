@@ -13,7 +13,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.AddExpenseViewModel
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 class AddExpenseScreenUiProviderImpl(override val route: String = Routes.ADD_EXPENSE) : ScreenUiProvider {
 
@@ -25,8 +27,21 @@ class AddExpenseScreenUiProviderImpl(override val route: String = Routes.ADD_EXP
         )
         val groupName by sharedViewModel.selectedGroupName.collectAsStateWithLifecycle()
 
+        val backStackEntry = navController.currentBackStackEntry
+        val title = if (backStackEntry != null) {
+            val expenseId = backStackEntry.arguments?.getString("expenseId")
+            val vm: AddExpenseViewModel = koinViewModel(
+                viewModelStoreOwner = backStackEntry,
+                parameters = { parametersOf(expenseId) }
+            )
+            val uiState by vm.uiState.collectAsStateWithLifecycle()
+            stringResource(uiState.screenTitleRes)
+        } else {
+            stringResource(R.string.expenses_add)
+        }
+
         DynamicTopAppBar(
-            title = stringResource(R.string.expenses_add),
+            title = title,
             subtitle = groupName,
             onBack = { navController.popBackStack() },
             pinned = true

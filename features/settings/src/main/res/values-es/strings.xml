@@ -108,7 +108,13 @@
     <string name="developer_services_extraction_confidence">Confianza:</string>
     <string name="developer_services_extraction_error_fallback">Error en la extracción del recibo</string>
     <string name="developer_services_extraction_source_ai_core">Gemini Nano</string>
+    <string name="developer_services_extraction_source_lite_rt_lm">LiteRT-LM</string>
     <string name="developer_services_extraction_source_no_op">No Disponible</string>
+    <string name="developer_services_ai_model_selection">Selección de Motor de IA</string>
+    <string name="developer_services_ai_model_automatic">Automático (Por defecto)</string>
+    <string name="developer_services_ai_model_ai_core">AICore (Gemma 4)</string>
+    <string name="developer_services_ai_model_lite_rt">LiteRT-LM</string>
+    <string name="developer_services_ai_model_resolved_label">Motor Activo Resuelto: %1$s</string>
     <string name="developer_services_extraction_confidence_high">Alta</string>
     <string name="developer_services_extraction_confidence_medium">Media</string>
     <string name="developer_services_extraction_confidence_low">Baja</string>
@@ -124,6 +130,11 @@
     <!-- AI Extraction tab -->
     <string name="developer_services_ai_no_receipt">Selecciona una foto de recibo o PDF para extraer datos con IA en el dispositivo</string>
     <string name="developer_services_ai_select_receipt">Seleccionar recibo</string>
+
+    <!-- AI Engines -->
+    <string name="developer_services_ai_engine_ai_core">AICore (Gemma 4)</string>
+    <string name="developer_services_ai_engine_lite_rt">LiteRT-LM (CD)</string>
+    <string name="developer_services_extraction_source_lite_rt">LiteRT-LM</string>
 
     <!-- Avatar Generation tab (placeholder) -->
     <string name="developer_services_avatar_title">Generación de Avatares con IA</string>

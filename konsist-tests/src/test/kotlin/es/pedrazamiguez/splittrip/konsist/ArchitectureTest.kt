@@ -46,7 +46,44 @@ class ArchitectureTest {
                 // distribution helpers that are co-located for cohesion but are NOT use cases
                 // (e.g. WithdrawalResult, ExpenseResult, BalanceAttribution helpers).
                 .filter { !it.resideInPackage("..domain.usecase..support") }
+                // Exclude the .strategy subpackage — it holds Strategy-pattern implementations
+                // (e.g. PersistExpenseStrategy, BasePersistExpenseStrategy) that are internal
+                // collaborators of use cases, not use cases themselves.
+                .filter { !it.resideInPackage("..domain.usecase..strategy") }
+                // Exclude the .factory subpackage — it holds Factory classes that create strategy
+                // instances (e.g. PersistExpenseStrategyFactory). Factories use their own suffix.
+                .filter { !it.resideInPackage("..domain.usecase..factory") }
                 .assertTrue { it.hasNameEndingWith("UseCase") }
+        }
+
+        @Test
+        @DisplayName("Factory packages must exist and classes residing in them must end with 'Factory'")
+        fun `classes residing in factory packages must end with Factory`() {
+            val factoryClasses = (projectProductionScope.classes() + projectProductionScope.interfaces())
+                .filter { it.resideInPackage("..domain.usecase..factory..") }
+                .filter { it.isTopLevel }
+
+            Assertions.assertTrue(
+                factoryClasses.isNotEmpty(),
+                "Factory package does not exist or has no classes"
+            )
+
+            factoryClasses.assertTrue { it.hasNameEndingWith("Factory") }
+        }
+
+        @Test
+        @DisplayName("Strategy packages must exist and classes residing in them must end with 'Strategy'")
+        fun `classes residing in strategy packages must end with Strategy`() {
+            val strategyClasses = (projectProductionScope.classes() + projectProductionScope.interfaces())
+                .filter { it.resideInPackage("..domain.usecase..strategy..") }
+                .filter { it.isTopLevel }
+
+            Assertions.assertTrue(
+                strategyClasses.isNotEmpty(),
+                "Strategy package does not exist or has no classes"
+            )
+
+            strategyClasses.assertTrue { it.hasNameEndingWith("Strategy") }
         }
 
         @Test

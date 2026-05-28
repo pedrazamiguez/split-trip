@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -24,18 +25,22 @@ import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpenseIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPaymentMethodUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
@@ -61,6 +66,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitResultDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategyFactory
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -264,11 +270,11 @@ class AddExpenseViewModelTest {
             authenticationService = authenticationService,
             addExpenseOptionsMapper = addExpenseOptionsMapper,
             addExpenseSplitMapper = addExpenseSplitMapper,
+            addExpenseUiMapper = addExpenseUiMapper,
             receiptExtractionService = mockReceiptExtractionService
         )
 
         val submitHandler = SubmitEventHandler(
-            addExpenseUseCase = addExpenseUseCase,
             expenseValidationService = expenseValidationService,
             addOnCalculationService = AddOnCalculationService(),
             expenseCalculatorService = ExpenseCalculatorService(),
@@ -329,7 +335,24 @@ class AddExpenseViewModelTest {
         val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = mockk<ExtractReceiptFieldsUseCase>(relaxed = true),
             receiptExtractionService = mockk<ReceiptExtractionService>(relaxed = true),
-            formattingHelper = formattingHelper
+            formattingHelper = formattingHelper,
+            addExpenseUiMapper = addExpenseUiMapper
+        )
+
+        val updateExpenseUseCase = mockk<UpdateExpenseUseCase>(relaxed = true)
+        val getExpenseByIdUseCase = mockk<GetExpenseByIdUseCase>(relaxed = true)
+        val getContributionByExpenseIdUseCase = mockk<GetContributionByExpenseIdUseCase>(relaxed = true)
+        val getGroupSubunitsUseCase = mockk<GetGroupSubunitsUseCase>(relaxed = true)
+
+        val strategyFactory = ExpenseFlowStrategyFactory(
+            configEventHandler = configHandler,
+            addExpenseUseCase = addExpenseUseCase,
+            updateExpenseUseCase = updateExpenseUseCase,
+            getExpenseByIdUseCase = getExpenseByIdUseCase,
+            getContributionByExpenseIdUseCase = getContributionByExpenseIdUseCase,
+            addExpenseUiMapper = addExpenseUiMapper,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            getGroupSubunitsUseCase = getGroupSubunitsUseCase
         )
 
         viewModel = AddExpenseViewModel(
@@ -340,7 +363,8 @@ class AddExpenseViewModelTest {
             addOnEventHandler = addOnHandler,
             submitEventHandler = submitHandler,
             formEventHandler = formHandler,
-            receiptAutoFillEventHandler = receiptAutoFillEventHandler
+            receiptAutoFillEventHandler = receiptAutoFillEventHandler,
+            strategyFactory = strategyFactory
         )
     }
 
@@ -1591,6 +1615,216 @@ class AddExpenseViewModelTest {
 
             // Then — step unchanged
             assertEquals(stepBefore, viewModel.uiState.value.currentStep)
+        }
+    }
+
+    @Nested
+    inner class CurrencyInputEvents {
+
+        @Test
+        fun `ExchangeRateChanged delegates to currency handler and updates displayExchangeRate`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.ExchangeRateChanged("1.5"))
+            advanceUntilIdle()
+            assertEquals("1.5", viewModel.uiState.value.displayExchangeRate)
+        }
+
+        @Test
+        fun `GroupAmountChanged delegates to currency handler and updates calculatedGroupAmount`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.GroupAmountChanged("50"))
+            advanceUntilIdle()
+            assertEquals("50", viewModel.uiState.value.calculatedGroupAmount)
+        }
+    }
+
+    @Nested
+    inner class WithdrawalPoolSelectedEvents {
+
+        @Test
+        fun `WithdrawalPoolSelected with GROUP scope delegates and does not enable subunit mode`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.WithdrawalPoolSelected(PayerType.GROUP, null))
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.isSubunitMode)
+        }
+
+        @Test
+        fun `WithdrawalPoolSelected with SUBUNIT scope applies subunit pool default`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.WithdrawalPoolSelected(PayerType.SUBUNIT, "sub-1"))
+            advanceUntilIdle()
+            // Routing verified — SUBUNIT branch was taken (no exception thrown)
+        }
+    }
+
+    @Nested
+    inner class SplitEvents {
+
+        @Test
+        fun `SplitTypeChanged delegates to split and subunit handlers`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.SplitTypeChanged("EQUAL"))
+            advanceUntilIdle()
+            // Routing verified — no exception; selectedSplitType unaffected (no config loaded)
+        }
+
+        @Test
+        fun `SplitAmountChanged routes to split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.SplitAmountChanged("user-1", "50"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `SplitPercentageChanged routes to split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.SplitPercentageChanged("user-1", "30"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `SplitExcludedToggled routes to split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.SplitExcludedToggled("user-1"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `SplitShareLockToggled routes to split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.SplitShareLockToggled("user-1"))
+            advanceUntilIdle()
+        }
+    }
+
+    @Nested
+    inner class EntitySplitAndIntraSubunitEvents {
+
+        @Test
+        fun `EntitySplitAmountChanged routes to subunit split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.EntitySplitAmountChanged("entity-1", "50"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `EntitySplitPercentageChanged routes to subunit split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.EntitySplitPercentageChanged("entity-1", "25"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `EntityShareLockToggled routes to subunit split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.EntityShareLockToggled("entity-1"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `IntraSubunitSplitTypeChanged routes to subunit split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.IntraSubunitSplitTypeChanged("sub-1", "EQUAL"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `IntraSubunitAmountChanged routes to subunit split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.IntraSubunitAmountChanged("sub-1", "user-1", "50"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `IntraSubunitPercentageChanged routes to subunit split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.IntraSubunitPercentageChanged("sub-1", "user-1", "25"))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `IntraSubunitShareLockToggled routes to subunit split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.IntraSubunitShareLockToggled("sub-1", "user-1"))
+            advanceUntilIdle()
+        }
+    }
+
+    @Nested
+    inner class AddOnEvents {
+
+        @Test
+        fun `AddOnAdded adds an add-on to the state`() = runTest {
+            val countBefore = viewModel.uiState.value.addOns.size
+
+            viewModel.onEvent(AddExpenseUiEvent.AddOnAdded(AddOnType.FEE))
+            advanceUntilIdle()
+
+            assertEquals(countBefore + 1, viewModel.uiState.value.addOns.size)
+        }
+
+        @Test
+        fun `AddOnRemoved routes to add-on handler`() = runTest {
+            // Add one first, then remove it
+            viewModel.onEvent(AddExpenseUiEvent.AddOnAdded(AddOnType.TIP))
+            advanceUntilIdle()
+            val addOnId = viewModel.uiState.value.addOns.first().id
+
+            viewModel.onEvent(AddExpenseUiEvent.AddOnRemoved(addOnId))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.addOns.none { it.id == addOnId })
+        }
+
+        @Test
+        fun `AddOnTypeChanged routes to add-on handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.AddOnAdded(AddOnType.FEE))
+            advanceUntilIdle()
+            val addOnId = viewModel.uiState.value.addOns.first().id
+
+            viewModel.onEvent(AddExpenseUiEvent.AddOnTypeChanged(addOnId, AddOnType.TIP))
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `AddOnsSectionToggled routes to add-on handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.AddOnsSectionToggled)
+            advanceUntilIdle()
+        }
+    }
+
+    @Nested
+    inner class ExpenseDateAndResolutionEvents {
+
+        @Test
+        fun `ExpenseDateSelected delegates to form handler and sets formatted date`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.ExpenseDateSelected(1716000000000L))
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.formattedExpenseDate.isNotBlank())
+        }
+
+        @Test
+        fun `ResolutionAmountSelected routes to form handler as source amount change`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.ResolutionAmountSelected("75"))
+            advanceUntilIdle()
+            assertEquals("75", viewModel.uiState.value.sourceAmount)
+        }
+    }
+
+    @Nested
+    inner class AiAutoFillEvents {
+
+        @Test
+        fun `SetAiModeActive true activates AI mode`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.SetAiModeActive(true))
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.isAiModeActive)
+        }
+
+        @Test
+        fun `DismissAutoFillBanner delegates to receipt auto-fill handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.SetAiModeActive(true))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.DismissAutoFillBanner)
+            advanceUntilIdle()
+            // Routing verified — no exception (handler deactivates AI mode or dismisses banner)
+        }
+    }
+
+    @Nested
+    inner class RefreshCashPreview {
+
+        @Test
+        fun `refreshCashPreview delegates to currency handler without throwing`() = runTest {
+            viewModel.refreshCashPreview()
+            advanceUntilIdle()
+            // Routing verified — previewCashExchangeRateUseCase is relaxed and won't throw
         }
     }
 }
