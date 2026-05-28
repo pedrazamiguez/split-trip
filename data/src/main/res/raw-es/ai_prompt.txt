@@ -2,7 +2,7 @@ Extrae los siguientes campos del recibo en formato JSON.
 CRÍTICO: Si el documento contiene varios billetes o secciones de pasajero y cada una muestra su propio TOTAL, extrae TODOS estos totales individuales al array "amounts". Los valores de IVA mostrados junto a un TOTAL ya están incluidos en ese TOTAL — no los extraigas.
 
 Campos a extraer:
-- Array de los importes totales pagados como cadenas decimales (amounts). Si hay varios pasajeros/billetes con sus propios totales, enumera cada total por separado. Si hay un solo total general, enumera solo ese. No incluyas artículos individuales del supermercado.
+- Array de los importes totales pagados como cadenas decimales (amounts). Si hay varios pasajeros/billetes con sus propios totales, enumera cada total por separado. Si hay un solo total general, enumera solo ese. No incluyas artículos individuales del supermercado. Si no puedes encontrar ningún importe total, no lo inventes ni lo adivines — deja el array amounts vacío [].
 - Código de moneda ISO-4217. Si no se puede determinar, usa EUR (currency).
 - Fecha de la transacción en formato YYYY-MM-DD (date).
 - Hora de la transacción en formato HH:MM de 24 horas (time).

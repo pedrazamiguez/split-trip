@@ -2,7 +2,7 @@ Extract the following fields from the receipt in JSON format.
 CRITICAL: If the document contains multiple separate tickets or passenger sections and each shows its own TOTAL, extract ALL of these individual totals into the "amounts" array. IVA/tax values shown next to a TOTAL are already included in that TOTAL — do not extract them.
 
 Fields to extract:
-- Array of the final total amounts paid as decimal strings (amounts). If there are multiple tickets/passengers with their own totals, list each separate total. If there is one grand total, list just that one total. Do not list individual grocery items.
+- Array of the final total amounts paid as decimal strings (amounts). If there are multiple tickets/passengers with their own totals, list each separate total. If there is one grand total, list just that one total. Do not list individual grocery items. If you cannot find any total amount, do not guess or invent a value — leave the amounts array empty [].
 - ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).
 - Date of the transaction in YYYY-MM-DD format (date).
 - Time of the transaction in HH:MM format (time).

@@ -68,9 +68,7 @@ internal class ReceiptExtractionServiceImpl(
         }
 
         val startMs = System.currentTimeMillis()
-        // Enrich before truncation so both per-passenger TOTALs are visible across the full OCR text.
-        val enrichedText = preComputeTotalIfMultiPassenger(rawText.fullText)
-        val truncatedText = smartTruncate(enrichedText)
+        val truncatedText = smartTruncate(rawText.fullText)
         val prompt = buildPrompt(truncatedText)
 
         val inferenceResult = runInference(resolvedEngine, prompt)
@@ -195,16 +193,14 @@ internal class ReceiptExtractionServiceImpl(
     }
 
     companion object {
-        private const val MAX_OCR_INPUT_CHARS = 3_000
-        private const val OCR_INPUT_HEAD_CHARS = 600
+        private const val MAX_OCR_INPUT_CHARS = 8_000
+        private const val OCR_INPUT_HEAD_CHARS = 2_000
         private const val SEPARATOR = "\n…\n"
         private const val OCR_INPUT_TAIL_CHARS = MAX_OCR_INPUT_CHARS - OCR_INPUT_HEAD_CHARS - SEPARATOR.length
         private const val OCR_DIAGNOSTIC_SAMPLE_CHARS = 300
 
         // Referenced by name in DEFAULT_PROMPT_TEMPLATE to avoid ${'$'} escaping inside triple-quoted strings.
         private const val OCR_PLACEHOLDER = "%1\$s"
-
-        internal const val MIN_TOTALS_FOR_PRECOMPUTE = 2
 
         internal fun smartTruncate(text: String): String {
             if (text.length <= MAX_OCR_INPUT_CHARS) return text
@@ -213,43 +209,13 @@ internal class ReceiptExtractionServiceImpl(
             return "$head$SEPARATOR$tail"
         }
 
-        internal fun preComputeTotalIfMultiPassenger(ocrText: String): String {
-            // \p{Z} covers non-breaking and other Unicode spacers that PDFs commonly insert in table cells.
-            val totalPattern = Regex("""(?i)\bTOTAL\b[\s\p{Z}:=]+([\d]+[,.][\d]+)""")
-            val totals = totalPattern.findAll(ocrText)
-                .mapNotNull { match ->
-                    val raw = match.groupValues[1].replace(Regex("[^0-9.,]"), "")
-                    CurrencyConverter.normalizeAmountString(raw).toBigDecimalOrNull()
-                }
-                .toList()
-
-            Timber.d("ReceiptExtractionService: preComputeTotal — found %d TOTAL pattern(s)", totals.size)
-
-            if (totals.isEmpty()) {
-                Timber.d(
-                    "ReceiptExtractionService: preComputeTotal — no match; OCR sample: %s",
-                    ocrText.take(OCR_DIAGNOSTIC_SAMPLE_CHARS).replace('\n', '↵')
-                )
-            }
-
-            if (totals.size < MIN_TOTALS_FOR_PRECOMPUTE) return ocrText
-
-            val grandTotal = totals.fold(BigDecimal.ZERO) { acc, v -> acc + v }
-            Timber.d(
-                "ReceiptExtractionService: preComputeTotal — grand total=%s (%d tickets)",
-                grandTotal.toPlainString(),
-                totals.size
-            )
-            return "Grand total (${totals.size} tickets): ${grandTotal.toPlainString()}\n\n$ocrText"
-        }
-
         @Suppress("MaxLineLength")
         private val DEFAULT_PROMPT_TEMPLATE = """
             Extract the following fields from the receipt in JSON format.
             CRITICAL: If the document contains multiple separate tickets or passenger sections and each shows its own TOTAL, extract ALL of these individual totals into the "amounts" array. IVA/tax values shown next to a TOTAL are already included in that TOTAL — do not extract them.
 
             Fields to extract:
-            - Array of the final total amounts paid as decimal strings (amounts). If there are multiple tickets/passengers with their own totals, list each separate total. If there is one grand total, list just that one total. Do not list individual grocery items.
+            - Array of the final total amounts paid as decimal strings (amounts). If there are multiple tickets/passengers with their own totals, list each separate total. If there is one grand total, list just that one total. Do not list individual grocery items. If you cannot find any total amount, do not guess or invent a value — leave the amounts array empty [].
             - ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).
             - Date of the transaction in YYYY-MM-DD format (date).
             - Time of the transaction in HH:MM format (time).
@@ -288,7 +254,6 @@ private fun getJsonSchema(): String {
                   "type": "array",
                   "items": { "type": "string" }
                 },
-                "amount": { "type": "string" },
                 "currency": { "type": "string" },
                 "date": { "type": "string" },
                 "time": { "type": "string" },
