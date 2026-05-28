@@ -68,12 +68,19 @@ internal class ReceiptExtractionServiceImpl(
         }
 
         val startMs = System.currentTimeMillis()
-        val truncatedText = smartTruncate(rawText.fullText)
+        // Enrich before truncation so both per-passenger TOTALs are visible across the full OCR text.
+        val enrichedText = preComputeTotalIfMultiPassenger(rawText.fullText)
+        val truncatedText = smartTruncate(enrichedText)
         val prompt = buildPrompt(truncatedText)
 
         val inferenceResult = runInference(resolvedEngine, prompt)
 
         val result = inferenceResult.mapCatching { rawOutput ->
+            Timber.d(
+                "ReceiptExtractionService: raw AI output (len=%d): %s",
+                rawOutput.length,
+                rawOutput.take(OCR_DIAGNOSTIC_SAMPLE_CHARS)
+            )
             parseInferenceResult(rawOutput, resolvedEngine)
         }.recover { error ->
             Timber.w(
@@ -147,10 +154,7 @@ internal class ReceiptExtractionServiceImpl(
 
     private fun buildPrompt(ocrText: String): String {
         val template = loadPromptTemplate()
-        // Deterministically pre-compute the total in Kotlin before the AI sees the text,
-        // removing the arithmetic burden from a mobile SLM that cannot reliably sum numbers.
-        val enrichedText = preComputeTotalIfMultiPassenger(ocrText)
-        return template.replace("%1\$s", enrichedText)
+        return template.replace("%1\$s", ocrText)
     }
 
     private fun parseJsonToReceipt(cleanJson: String, activeEngine: AiEngineType): ExtractedReceipt {
@@ -195,10 +199,9 @@ internal class ReceiptExtractionServiceImpl(
         private const val OCR_INPUT_HEAD_CHARS = 600
         private const val SEPARATOR = "\n…\n"
         private const val OCR_INPUT_TAIL_CHARS = MAX_OCR_INPUT_CHARS - OCR_INPUT_HEAD_CHARS - SEPARATOR.length
+        private const val OCR_DIAGNOSTIC_SAMPLE_CHARS = 300
 
-        // Placeholder used in the prompt template — kept as a const so the triple-quoted
-        // DEFAULT_PROMPT_TEMPLATE can reference it via string interpolation without needing
-        // to escape the dollar sign inline with ${'$'}.
+        // Referenced by name in DEFAULT_PROMPT_TEMPLATE to avoid ${'$'} escaping inside triple-quoted strings.
         private const val OCR_PLACEHOLDER = "%1\$s"
 
         internal const val MIN_TOTALS_FOR_PRECOMPUTE = 2
@@ -210,15 +213,9 @@ internal class ReceiptExtractionServiceImpl(
             return "$head$SEPARATOR$tail"
         }
 
-        /**
-         * Scans OCR text for repeated per-passenger TOTAL labels (e.g. "TOTAL 42,20 €" on every
-         * page of a multi-passenger booking). When two or more are found, the arithmetic is done
-         * here in Kotlin — deterministically — and the pre-computed result is prepended as a
-         * "Grand total (N tickets): X.XX" line. This removes the summation burden from the
-         * on-device SLM, which cannot reliably do arithmetic.
-         */
         internal fun preComputeTotalIfMultiPassenger(ocrText: String): String {
-            val totalPattern = Regex("""(?i)\bTOTAL\b\s+([\d]+[,.][\d]+)""")
+            // \p{Z} covers non-breaking and other Unicode spacers that PDFs commonly insert in table cells.
+            val totalPattern = Regex("""(?i)\bTOTAL\b[\s\p{Z}:=]+([\d]+[,.][\d]+)""")
             val totals = totalPattern.findAll(ocrText)
                 .mapNotNull { match ->
                     val raw = match.groupValues[1].replace(Regex("[^0-9.,]"), "")
@@ -226,19 +223,33 @@ internal class ReceiptExtractionServiceImpl(
                 }
                 .toList()
 
+            Timber.d("ReceiptExtractionService: preComputeTotal — found %d TOTAL pattern(s)", totals.size)
+
+            if (totals.isEmpty()) {
+                Timber.d(
+                    "ReceiptExtractionService: preComputeTotal — no match; OCR sample: %s",
+                    ocrText.take(OCR_DIAGNOSTIC_SAMPLE_CHARS).replace('\n', '↵')
+                )
+            }
+
             if (totals.size < MIN_TOTALS_FOR_PRECOMPUTE) return ocrText
 
             val grandTotal = totals.fold(BigDecimal.ZERO) { acc, v -> acc + v }
+            Timber.d(
+                "ReceiptExtractionService: preComputeTotal — grand total=%s (%d tickets)",
+                grandTotal.toPlainString(),
+                totals.size
+            )
             return "Grand total (${totals.size} tickets): ${grandTotal.toPlainString()}\n\n$ocrText"
         }
 
         @Suppress("MaxLineLength")
         private val DEFAULT_PROMPT_TEMPLATE = """
             Extract the following fields from the receipt in JSON format.
-            CRITICAL: If the receipt text begins with a "Grand total (N tickets): X.XX" line, use that value for the amount field — it is a pre-computed accurate total. Otherwise, when each passenger section shows its own TOTAL, sum all per-passenger TOTAL values. IVA/tax values shown next to a TOTAL are already included in that TOTAL — do not add them again.
+            CRITICAL: If the document contains multiple separate tickets or passenger sections and each shows its own TOTAL, extract ALL of these individual totals into the "amounts" array. IVA/tax values shown next to a TOTAL are already included in that TOTAL — do not extract them.
 
             Fields to extract:
-            - Grand total paid as a decimal string (amount). Use the pre-computed grand total line if present.
+            - Array of the final total amounts paid as decimal strings (amounts). If there are multiple tickets/passengers with their own totals, list each separate total. If there is one grand total, list just that one total. Do not list individual grocery items.
             - ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).
             - Date of the transaction in YYYY-MM-DD format (date).
             - Time of the transaction in HH:MM format (time).
@@ -251,12 +262,11 @@ internal class ReceiptExtractionServiceImpl(
             Write the "title" in English. Keep it brief and descriptive. For transport, include origin and destination when available, e.g. "Train Seville-Madrid", "Flight to Barcelona". For other purchases, describe what was bought, e.g. "Dinner at restaurant", "Grocery shopping". Do not write full sentences. Max 3-4 words.
 
             Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
-            Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks and drinks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+            Output: {"amounts":["50.00"],"currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks and drinks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
             Input: TRAINLINE London to Paris ticket 1: 55.00 EUR ticket 2: 55.00 EUR Date: 2026-05-25 09:00 CreditCard Seats: 2A, 2B Booking: TX12345
-            Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train London-Paris","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Booking: TX12345, Seats: 2A, 2B"}
-            Input: Grand total (2 tickets): 84.40
-            RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
-            Output: {"amount":"84.40","currency":"EUR","date":"2026-10-10","time":"09:34","vendor":"Renfe","title":"Train Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Locator: HXDC8B, Seats: 1A, 1B, Train: AVE 02091"}
+            Output: {"amounts":["55.00","55.00"],"currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train London-Paris","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Booking: TX12345, Seats: 2A, 2B"}
+            Input: RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
+            Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-10","time":"09:34","vendor":"Renfe","title":"Train Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Locator: HXDC8B, Seats: 1A, 1B, Train: AVE 02091"}
             Input: $OCR_PLACEHOLDER
             Output:
         """.trimIndent()
@@ -271,25 +281,42 @@ private const val FIELD_COUNT_TWO = 2
 
 private fun getJsonSchema(): String {
     return """
-        {
-          "type": "object",
-          "properties": {
-            "amount": { "type": "string" },
-            "currency": { "type": "string" },
-            "date": { "type": "string" },
-            "time": { "type": "string" },
-            "vendor": { "type": "string" },
-            "title": { "type": "string" },
-            "category": { "type": "string" },
-            "paymentMethod": { "type": "string" },
-            "notes": { "type": "string" }
-          },
-          "required": ["amount", "currency", "date", "vendor", "title"]
-        }
+            {
+              "type": "object",
+              "properties": {
+                "amounts": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "amount": { "type": "string" },
+                "currency": { "type": "string" },
+                "date": { "type": "string" },
+                "time": { "type": "string" },
+                "vendor": { "type": "string" },
+                "title": { "type": "string" },
+                "category": { "type": "string" },
+                "paymentMethod": { "type": "string" },
+                "notes": { "type": "string" }
+              },
+              "required": ["amounts", "currency", "date", "vendor", "title"]
+            }
     """.trimIndent()
 }
 
 private fun parseAmount(jsonObject: JSONObject): BigDecimal? {
+    val amountsArray = jsonObject.optJSONArray("amounts")
+    if (amountsArray != null && amountsArray.length() > 0) {
+        var sum = BigDecimal.ZERO
+        for (i in 0 until amountsArray.length()) {
+            val str = amountsArray.optString(i).replace(Regex("[^0-9.,]"), "")
+            if (str.isNotEmpty()) {
+                sum += CurrencyConverter.normalizeAmountString(str).toBigDecimalOrNull() ?: BigDecimal.ZERO
+            }
+        }
+        if (sum > BigDecimal.ZERO) return sum
+    }
+
+    // Fallback for generic/legacy AI output
     val amountStr = jsonObject.optString("amount").takeIf { it.isNotEmpty() && it != "null" }
     return amountStr?.let {
         val cleaned = it.replace(Regex("[^0-9.,]"), "")

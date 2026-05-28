@@ -1,8 +1,8 @@
 Extrae los siguientes campos del recibo en formato JSON.
-CRÍTICO: Si el texto del recibo comienza con una línea "Grand total (N tickets): X.XX", usa ese valor para el campo amount — es el total exacto pre-calculado. De lo contrario, cuando cada sección de pasajero muestra su propio TOTAL, suma todos los valores TOTAL por pasajero. Los valores de IVA mostrados junto a un TOTAL ya están incluidos en ese TOTAL — no los sumes de nuevo.
+CRÍTICO: Si el documento contiene varios billetes o secciones de pasajero y cada una muestra su propio TOTAL, extrae TODOS estos totales individuales al array "amounts". Los valores de IVA mostrados junto a un TOTAL ya están incluidos en ese TOTAL — no los extraigas.
 
 Campos a extraer:
-- Importe total pagado como cadena decimal (amount). Usa la línea de total pre-calculado si está presente.
+- Array de los importes totales pagados como cadenas decimales (amounts). Si hay varios pasajeros/billetes con sus propios totales, enumera cada total por separado. Si hay un solo total general, enumera solo ese. No incluyas artículos individuales del supermercado.
 - Código de moneda ISO-4217. Si no se puede determinar, usa EUR (currency).
 - Fecha de la transacción en formato YYYY-MM-DD (date).
 - Hora de la transacción en formato HH:MM de 24 horas (time).
@@ -15,11 +15,10 @@ Campos a extraer:
 Escribe el "title" en español. Que sea breve y descriptivo. Para transporte, incluye origen y destino cuando estén disponibles (ej. "Tren Sevilla-Madrid", "Vuelo a Barcelona"). Para otras compras, describe lo adquirido (ej. "Cena en restaurante", "Compra de supermercado"). No escribas frases completas. Máximo 3-4 palabras.
 
 Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
-Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Meriendas y bebidas","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+Output: {"amounts":["50.00"],"currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Meriendas y bebidas","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
 Input: TRAINLINE Londres a París billete 1: 55.00 EUR billete 2: 55.00 EUR Fecha: 2026-05-25 09:00 CreditCard Asientos: 2A, 2B Reserva: TX12345
-Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Tren Londres-París","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Reserva: TX12345, Asientos: 2A, 2B"}
-Input: Grand total (2 tickets): 84.40
-RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
-Output: {"amount":"84.40","currency":"EUR","date":"2026-10-10","time":"09:34","vendor":"Renfe","title":"Tren Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Localizador: HXDC8B, Asientos: 1A, 1B, Tren: AVE 02091"}
+Output: {"amounts":["55.00","55.00"],"currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Tren Londres-París","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Reserva: TX12345, Asientos: 2A, 2B"}
+Input: RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
+Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-10","time":"09:34","vendor":"Renfe","title":"Tren Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Localizador: HXDC8B, Asientos: 1A, 1B, Tren: AVE 02091"}
 Input: %1$s
 Output:
