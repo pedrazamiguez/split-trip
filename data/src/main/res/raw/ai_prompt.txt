@@ -1,5 +1,8 @@
-Extract the following fields from the receipt in JSON format:
-- Grand total as a decimal string. If no overall total is explicitly printed but multiple items or tickets are clearly purchased together in the document, sum the individual items to calculate the overall cumulative total (amount).
+Extract the following fields from the receipt in JSON format.
+CRITICAL: If the document contains multiple separate tickets or pages (e.g. for different passengers) and each ticket or page lists its own individual total/price, you MUST sum all these individual totals to calculate and return the absolute overall cumulative grand total of the transaction as the "amount" field. Do not just extract the price of a single ticket.
+
+Fields to extract:
+- Grand total as a decimal string. Sum all separate ticket/item totals to calculate the absolute overall cumulative grand total of the transaction (amount).
 - ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).
 - Date of the transaction in YYYY-MM-DD format (date).
 - Time of the transaction in HH:MM format (time).
@@ -15,5 +18,7 @@ Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10
 Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
 Input: TRAINLINE ticket 1: 55.00 EUR ticket 2: 55.00 EUR Date: 2026-05-25 09:00 CreditCard Seats: 2A, 2B Booking: TX12345
 Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train tickets","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Booking: TX12345, Seats: 2A, 2B"}
+Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4B TOTAL 39,00 € AVLO Localizador: TB53FB A.NARANJO Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4A TOTAL 39,00 €
+Output: {"amount":"78.00","currency":"EUR","date":"2026-11-01","time":"17:05","vendor":"Avlo","title":"Train tickets","category":"TRANSPORT","paymentMethod":"DEBIT_CARD","notes":"Locator: TB53FB, Seats: 4A, 4B"}
 Input: %1$s
 Output:

@@ -248,8 +248,13 @@ class ReceiptExtractionServiceImplTest {
         service.extract(rawReceiptText)
 
         val prompt = promptSlot.captured
-        assertTrue(prompt.contains("sum the individual items to calculate the overall cumulative total"))
-        assertTrue(prompt.contains("Input: TRAINLINE ticket 1: 55.00 EUR ticket 2: 55.00 EUR"))
-        assertTrue(prompt.contains("Output: {\"amount\":\"110.00\",\"currency\":\"EUR\",\"date\":\"2026-05-25\""))
+        assertTrue(prompt.contains("CRITICAL: If the document contains multiple separate tickets or pages"))
+        assertTrue(
+            prompt.contains(
+                "Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID " +
+                    "01/11/2026 17:05 Coche: 3 Plaza: 4B TOTAL 39,00 €"
+            )
+        )
+        assertTrue(prompt.contains("Output: {\"amount\":\"78.00\",\"currency\":\"EUR\",\"date\":\"2026-11-01\""))
     }
 }

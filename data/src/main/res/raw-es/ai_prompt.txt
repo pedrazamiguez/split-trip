@@ -1,5 +1,8 @@
-Extrae los siguientes campos del recibo en formato JSON:
-- Importe total de la compra como una cadena decimal. Si no se indica explícitamente un total general pero se compran claramente varios artículos o billetes/tickets juntos en el documento, suma los elementos individuales para calcular el total acumulado de la transacción (amount).
+Extrae los siguientes campos del recibo en formato JSON.
+CRITICAL: Si el documento contiene varios billetes, pasajes o páginas individuales (por ejemplo, para diferentes pasajeros) y cada billete o página indica su propio total/precio individual, DEBES sumar todos estos totales individuales para calcular y devolver el total general acumulativo absoluto de la transacción en el campo "amount". No extraigas simplemente el precio de un solo billete.
+
+Campos a extraer:
+- Importe total de la compra como una cadena decimal. Suma todos los totales de billetes/artículos individuales para calcular el total general acumulativo absoluto de la transacción (amount).
 - Código de moneda ISO-4217. Si no se puede determinar, usa EUR (currency).
 - Fecha de la transacción en formato YYYY-MM-DD (date).
 - Hora de la transacción en formato HH:MM de 24 horas (time).
@@ -15,5 +18,7 @@ Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10
 Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Meriendas","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
 Input: TRAINLINE billete 1: 55.00 EUR billete 2: 55.00 EUR Fecha: 2026-05-25 09:00 CreditCard Asientos: 2A, 2B Reserva: TX12345
 Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Billetes de tren","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Reserva: TX12345, Asientos: 2A, 2B"}
+Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4B TOTAL 39,00 € AVLO Localizador: TB53FB A.NARANJO Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4A TOTAL 39,00 €
+Output: {"amount":"78.00","currency":"EUR","date":"2026-11-01","time":"17:05","vendor":"Avlo","title":"Billetes de tren","category":"TRANSPORT","paymentMethod":"DEBIT_CARD","notes":"Localizador: TB53FB, Asientos: 4A, 4B"}
 Input: %1$s
 Output:

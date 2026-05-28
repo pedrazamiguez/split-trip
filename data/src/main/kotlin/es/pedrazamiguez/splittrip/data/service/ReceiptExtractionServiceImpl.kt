@@ -201,10 +201,16 @@ internal class ReceiptExtractionServiceImpl(
         }
 
         private const val DEFAULT_PROMPT_TEMPLATE =
-            "Extract the following fields from the receipt in JSON format:\n" +
-                "- Grand total as a decimal string. If no overall total is explicitly printed but " +
-                "multiple items or tickets are clearly purchased together in the document, sum the " +
-                "individual items to calculate the overall cumulative total (amount).\n" +
+            "Extract the following fields from the receipt in JSON format.\n" +
+                "CRITICAL: If the document contains multiple separate tickets or pages (e.g. for " +
+                "different passengers) and each ticket or page lists its own individual total/price, you " +
+                "MUST sum all these individual totals to calculate and return the absolute overall cumulative " +
+                "grand total of the transaction as the \"amount\" field. Do not just extract the price " +
+                "of a single ticket.\n" +
+                "\n" +
+                "Fields to extract:\n" +
+                "- Grand total as a decimal string. Sum all separate ticket/item totals to calculate " +
+                "the absolute overall cumulative grand total of the transaction (amount).\n" +
                 "- ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).\n" +
                 "- Date of the transaction in YYYY-MM-DD format (date).\n" +
                 "- Time of the transaction in HH:MM format (time).\n" +
@@ -234,6 +240,13 @@ internal class ReceiptExtractionServiceImpl(
                 "\"time\":\"09:00\",\"vendor\":\"Trainline\",\"title\":\"Train tickets\"," +
                 "\"category\":\"TRANSPORT\",\"paymentMethod\":\"CREDIT_CARD\"," +
                 "\"notes\":\"Booking: TX12345, Seats: 2A, 2B\"}\n" +
+                "Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID 01/11/2026 17:05 " +
+                "Coche: 3 Plaza: 4B TOTAL 39,00 € AVLO Localizador: TB53FB A.NARANJO " +
+                "Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4A TOTAL 39,00 €\n" +
+                "Output: {\"amount\":\"78.00\",\"currency\":\"EUR\",\"date\":\"2026-11-01\"," +
+                "\"time\":\"17:05\",\"vendor\":\"Avlo\",\"title\":\"Train tickets\"," +
+                "\"category\":\"TRANSPORT\",\"paymentMethod\":\"DEBIT_CARD\"," +
+                "\"notes\":\"Locator: TB53FB, Seats: 4A, 4B\"}\n" +
                 "Input: %1\$s\n" +
                 "Output:"
     }
