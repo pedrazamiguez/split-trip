@@ -21,4 +21,5 @@ Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","
 Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4B TOTAL 39,00 € AVLO Localizador: TB53FB A.NARANJO Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4A TOTAL 39,00 €
 Output: {"amount":"78.00","currency":"EUR","date":"2026-11-01","time":"17:05","vendor":"Avlo","title":"Train tickets","category":"TRANSPORT","paymentMethod":"DEBIT_CARD","notes":"Locator: TB53FB, Seats: 4A, 4B"}
 Input: %1$s
+CRITICAL REMINDER: If the input contains multiple separate tickets, pages, or passenger totals (e.g. printed multiple times for different tickets), you MUST sum the actual prices from the input text to calculate and output the exact overall cumulative total (e.g., price1 + price2 + ...) in the "amount" field. Do NOT just copy one unit price, and do NOT output a fixed number. You must perform the addition with the actual numbers found in the text.
 Output:

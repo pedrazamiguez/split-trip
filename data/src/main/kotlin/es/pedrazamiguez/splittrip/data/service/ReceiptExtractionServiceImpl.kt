@@ -248,6 +248,12 @@ internal class ReceiptExtractionServiceImpl(
                 "\"category\":\"TRANSPORT\",\"paymentMethod\":\"DEBIT_CARD\"," +
                 "\"notes\":\"Locator: TB53FB, Seats: 4A, 4B\"}\n" +
                 "Input: %1\$s\n" +
+                "CRITICAL REMINDER: If the input contains multiple separate tickets, pages, or " +
+                "passenger totals (e.g. printed multiple times for different tickets), you MUST sum " +
+                "the actual prices from the input text to calculate and output the exact overall " +
+                "cumulative total (e.g., price1 + price2 + ...) in the \"amount\" field. Do NOT just " +
+                "copy one unit price, and do NOT output a fixed number. You must perform the " +
+                "addition with the actual numbers found in the text.\n" +
                 "Output:"
     }
 }

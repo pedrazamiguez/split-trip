@@ -256,5 +256,10 @@ class ReceiptExtractionServiceImplTest {
             )
         )
         assertTrue(prompt.contains("Output: {\"amount\":\"78.00\",\"currency\":\"EUR\",\"date\":\"2026-11-01\""))
+        assertTrue(
+            prompt.contains(
+                "CRITICAL REMINDER: If the input contains multiple separate tickets, pages, or passenger totals"
+            )
+        )
     }
 }

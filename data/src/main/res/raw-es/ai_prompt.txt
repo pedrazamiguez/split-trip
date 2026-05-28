@@ -21,4 +21,5 @@ Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","
 Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4B TOTAL 39,00 € AVLO Localizador: TB53FB A.NARANJO Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4A TOTAL 39,00 €
 Output: {"amount":"78.00","currency":"EUR","date":"2026-11-01","time":"17:05","vendor":"Avlo","title":"Billetes de tren","category":"TRANSPORT","paymentMethod":"DEBIT_CARD","notes":"Localizador: TB53FB, Asientos: 4A, 4B"}
 Input: %1$s
+RECORDATORIO CRÍTICO: Si la entrada contiene varios billetes, páginas o totales de pasajeros separados (por ejemplo, impresos varias veces para diferentes billetes/pasajeros), DEBES sumar los precios reales del texto para calcular y devolver el total general acumulativo real (por ejemplo, precio1 + precio2 + ...) en el campo "amount". ¡NO te limites a copiar el precio de un solo billete, y NO devuelvas un número fijo predeterminado! Realiza la suma con los números reales que aparecen en el texto.
 Output:
