@@ -74,6 +74,10 @@ internal class ReceiptExtractionServiceImpl(
         val inferenceResult = runInference(resolvedEngine, prompt)
 
         val result = inferenceResult.mapCatching { rawOutput ->
+            Timber.d(
+                "ReceiptExtractionService: raw AI output (len=%d)",
+                rawOutput.length
+            )
             parseInferenceResult(rawOutput, resolvedEngine)
         }.recover { error ->
             Timber.w(
@@ -188,10 +192,13 @@ internal class ReceiptExtractionServiceImpl(
     }
 
     companion object {
-        private const val MAX_OCR_INPUT_CHARS = 3_000
-        private const val OCR_INPUT_HEAD_CHARS = 600
+        private const val MAX_OCR_INPUT_CHARS = 8_000
+        private const val OCR_INPUT_HEAD_CHARS = 2_000
         private const val SEPARATOR = "\n…\n"
         private const val OCR_INPUT_TAIL_CHARS = MAX_OCR_INPUT_CHARS - OCR_INPUT_HEAD_CHARS - SEPARATOR.length
+
+        // Referenced by name in DEFAULT_PROMPT_TEMPLATE to avoid ${'$'} escaping inside triple-quoted strings.
+        private const val OCR_PLACEHOLDER = "%1\$s"
 
         internal fun smartTruncate(text: String): String {
             if (text.length <= MAX_OCR_INPUT_CHARS) return text
@@ -200,34 +207,33 @@ internal class ReceiptExtractionServiceImpl(
             return "$head$SEPARATOR$tail"
         }
 
-        private const val DEFAULT_PROMPT_TEMPLATE =
-            "Extract the following fields from the receipt in JSON format:\n" +
-                "- Grand total as a decimal string (amount).\n" +
-                "- ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).\n" +
-                "- Date of the transaction in YYYY-MM-DD format (date).\n" +
-                "- Time of the transaction in HH:MM format (time).\n" +
-                "- Merchant or store name (vendor).\n" +
-                "- Guessed brief description of what was purchased, maximum 3-4 words (title).\n" +
-                "- Category (must be one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, " +
-                "ENTERTAINMENT, SHOPPING, OTHER) (category).\n" +
-                "- Payment method (must be one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, " +
-                "BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).\n" +
-                "- Any relevant notes or identifiers like booking code, reservation ID, " +
-                "locator (\"localizador\") code, ticket ID, seats, flight or train numbers, " +
-                "reference number, etc. (notes).\n" +
-                "\n" +
-                "Write the \"title\" in English. Keep it brief and descriptive, e.g. \"Flight to Barcelona\" " +
-                "instead of just \"flight\", \"Dinner at restaurant\" instead of just \"dinner\", " +
-                "\"Grocery shopping\" instead of just \"grocery store\". Do not write full sentences. " +
-                "Max 3-4 words.\n" +
-                "\n" +
-                "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 " +
-                "Cash BOOKID: ABC123D Seats: 14A, 14B\n" +
-                "Output: {\"amount\":\"50.00\",\"currency\":\"USD\",\"date\":\"2025-03-10\",\"time\":\"13:45\"," +
-                "\"vendor\":\"Quick Mart\",\"title\":\"Snacks\",\"category\":\"FOOD\",\"paymentMethod\":\"CASH\"," +
-                "\"notes\":\"Book ID: ABC123D, Seats: 14A, 14B\"}\n" +
-                "Input: %1\$s\n" +
-                "Output:"
+        @Suppress("MaxLineLength")
+        private val DEFAULT_PROMPT_TEMPLATE = """
+            Extract the following fields from the receipt in JSON format.
+            CRITICAL: If the document contains multiple separate tickets or passenger sections and each shows its own TOTAL, extract ALL of these individual totals into the "amounts" array. IVA/tax values shown next to a TOTAL are already included in that TOTAL — do not extract them.
+
+            Fields to extract:
+            - Array of the final total amounts paid as decimal strings (amounts). If there are multiple tickets/passengers with their own totals, list each separate total. If there is one grand total, list just that one total. Do not list individual grocery items. If you cannot find any total amount, do not guess or invent a value — leave the amounts array empty [].
+            - ISO-4217 currency code. Look for the precise code or symbol (e.g., EUR, $, £) next to the total amount. Correct common OCR typos (like extracting FUR instead of EUR). Do not guess based on vendor or country name. If it cannot be determined, default to EUR (currency).
+            - Date of the transaction/purchase in YYYY-MM-DD format (date). Do not use the travel/event date for this field.
+            - Time of the transaction in HH:MM format (time).
+            - Merchant or store name (vendor).
+            - Brief description of what was purchased, maximum 3-4 words (title).
+            - Category (must be one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
+            - Payment method (must be one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
+            - Any relevant notes or identifiers like travel/event dates, booking code, reservation ID, locator ("localizador") code, ticket ID, seats, flight or train numbers, reference number, etc. (notes).
+
+            Write the "title" in English. Keep it brief and descriptive. For transport, include origin and destination when available, e.g. "Train Seville-Madrid", "Flight to Barcelona". For other purchases, describe what was bought, e.g. "Dinner at restaurant", "Grocery shopping". Do not write full sentences. Max 3-4 words.
+
+            Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
+            Output: {"amounts":["50.00"],"currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks and drinks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+            Input: TRAINLINE London to Paris ticket 1: 55.00 EUR ticket 2: 55.00 EUR Purchase Date: 2026-05-25 09:00 Departure: 2026-06-15 14:00 CreditCard Seats: 2A, 2B Booking: TX12345
+            Output: {"amounts":["55.00","55.00"],"currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train London-Paris","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-06-15 14:00, Booking: TX12345, Seats: 2A, 2B"}
+            Input: RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € Fecha operacion: 02/10/2026 15:20 RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
+            Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-02","time":"15:20","vendor":"Renfe","title":"Train Seville-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-10-10 09:34, Locator: HXDC8B, Seats: 1A, 1B, Train: AVE 02091"}
+            Input: $OCR_PLACEHOLDER
+            Output:
+        """.trimIndent()
     }
 }
 
@@ -239,25 +245,41 @@ private const val FIELD_COUNT_TWO = 2
 
 private fun getJsonSchema(): String {
     return """
-        {
-          "type": "object",
-          "properties": {
-            "amount": { "type": "string" },
-            "currency": { "type": "string" },
-            "date": { "type": "string" },
-            "time": { "type": "string" },
-            "vendor": { "type": "string" },
-            "title": { "type": "string" },
-            "category": { "type": "string" },
-            "paymentMethod": { "type": "string" },
-            "notes": { "type": "string" }
-          },
-          "required": ["amount", "currency", "date", "vendor", "title"]
-        }
+            {
+              "type": "object",
+              "properties": {
+                "amounts": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "currency": { "type": "string" },
+                "date": { "type": "string" },
+                "time": { "type": "string" },
+                "vendor": { "type": "string" },
+                "title": { "type": "string" },
+                "category": { "type": "string" },
+                "paymentMethod": { "type": "string" },
+                "notes": { "type": "string" }
+              },
+              "required": ["amounts", "currency", "date", "vendor", "title"]
+            }
     """.trimIndent()
 }
 
 private fun parseAmount(jsonObject: JSONObject): BigDecimal? {
+    val amountsArray = jsonObject.optJSONArray("amounts")
+    if (amountsArray != null && amountsArray.length() > 0) {
+        var sum = BigDecimal.ZERO
+        for (i in 0 until amountsArray.length()) {
+            val str = amountsArray.optString(i).replace(Regex("[^0-9.,]"), "")
+            if (str.isNotEmpty()) {
+                sum += CurrencyConverter.normalizeAmountString(str).toBigDecimalOrNull() ?: BigDecimal.ZERO
+            }
+        }
+        if (sum > BigDecimal.ZERO) return sum
+    }
+
+    // Fallback for generic/legacy AI output
     val amountStr = jsonObject.optString("amount").takeIf { it.isNotEmpty() && it != "null" }
     return amountStr?.let {
         val cleaned = it.replace(Regex("[^0-9.,]"), "")
@@ -272,7 +294,14 @@ private fun parseAmount(jsonObject: JSONObject): BigDecimal? {
 private fun parseCurrency(jsonObject: JSONObject): Pair<String, String?> {
     val rawCurrency = jsonObject.optString("currency")
         .takeIf { it.isNotEmpty() && it != "null" }?.uppercase(Locale.ROOT)
-    val currency = rawCurrency ?: "EUR"
+
+    // SLM/OCR safety net for common typo "FUR" -> "EUR"
+    val normalizedCurrency = when (rawCurrency) {
+        "FUR", "EU", "EUF" -> "EUR"
+        else -> rawCurrency
+    }
+
+    val currency = normalizedCurrency ?: "EUR"
     return Pair(currency, rawCurrency)
 }
 
