@@ -147,7 +147,10 @@ internal class ReceiptExtractionServiceImpl(
 
     private fun buildPrompt(ocrText: String): String {
         val template = loadPromptTemplate()
-        return template.replace("%1\$s", ocrText)
+        // Deterministically pre-compute the total in Kotlin before the AI sees the text,
+        // removing the arithmetic burden from a mobile SLM that cannot reliably sum numbers.
+        val enrichedText = preComputeTotalIfMultiPassenger(ocrText)
+        return template.replace("%1\$s", enrichedText)
     }
 
     private fun parseJsonToReceipt(cleanJson: String, activeEngine: AiEngineType): ExtractedReceipt {
@@ -193,6 +196,13 @@ internal class ReceiptExtractionServiceImpl(
         private const val SEPARATOR = "\n…\n"
         private const val OCR_INPUT_TAIL_CHARS = MAX_OCR_INPUT_CHARS - OCR_INPUT_HEAD_CHARS - SEPARATOR.length
 
+        // Placeholder used in the prompt template — kept as a const so the triple-quoted
+        // DEFAULT_PROMPT_TEMPLATE can reference it via string interpolation without needing
+        // to escape the dollar sign inline with ${'$'}.
+        private const val OCR_PLACEHOLDER = "%1\$s"
+
+        internal const val MIN_TOTALS_FOR_PRECOMPUTE = 2
+
         internal fun smartTruncate(text: String): String {
             if (text.length <= MAX_OCR_INPUT_CHARS) return text
             val head = text.take(OCR_INPUT_HEAD_CHARS)
@@ -200,61 +210,56 @@ internal class ReceiptExtractionServiceImpl(
             return "$head$SEPARATOR$tail"
         }
 
-        private const val DEFAULT_PROMPT_TEMPLATE =
-            "Extract the following fields from the receipt in JSON format.\n" +
-                "CRITICAL: If the document contains multiple separate tickets or pages (e.g. for " +
-                "different passengers) and each ticket or page lists its own individual total/price, you " +
-                "MUST sum all these individual totals to calculate and return the absolute overall cumulative " +
-                "grand total of the transaction as the \"amount\" field. Do not just extract the price " +
-                "of a single ticket.\n" +
-                "\n" +
-                "Fields to extract:\n" +
-                "- Grand total as a decimal string. Sum all separate ticket/item totals to calculate " +
-                "the absolute overall cumulative grand total of the transaction (amount).\n" +
-                "- ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).\n" +
-                "- Date of the transaction in YYYY-MM-DD format (date).\n" +
-                "- Time of the transaction in HH:MM format (time).\n" +
-                "- Merchant or store name (vendor).\n" +
-                "- Guessed brief description of what was purchased, maximum 3-4 words (title).\n" +
-                "- Category (must be one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, " +
-                "ENTERTAINMENT, SHOPPING, OTHER) (category).\n" +
-                "- Payment method (must be one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, " +
-                "BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).\n" +
-                "- Any relevant notes or identifiers like booking code, reservation ID, " +
-                "locator (\"localizador\") code, ticket ID, seats, flight or train numbers, " +
-                "reference number, etc. (notes).\n" +
-                "\n" +
-                "Write the \"title\" in English. Keep it brief and descriptive, e.g. \"Flight to Barcelona\" " +
-                "instead of just \"flight\", \"Dinner at restaurant\" instead of just \"dinner\", " +
-                "\"Grocery shopping\" instead of just \"grocery store\". Do not write full sentences. " +
-                "Max 3-4 words.\n" +
-                "\n" +
-                "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 " +
-                "Cash BOOKID: ABC123D Seats: 14A, 14B\n" +
-                "Output: {\"amount\":\"50.00\",\"currency\":\"USD\",\"date\":\"2025-03-10\",\"time\":\"13:45\"," +
-                "\"vendor\":\"Quick Mart\",\"title\":\"Snacks\",\"category\":\"FOOD\",\"paymentMethod\":\"CASH\"," +
-                "\"notes\":\"Book ID: ABC123D, Seats: 14A, 14B\"}\n" +
-                "Input: TRAINLINE ticket 1: 55.00 EUR ticket 2: 55.00 EUR Date: 2026-05-25 09:00 " +
-                "CreditCard Seats: 2A, 2B Booking: TX12345\n" +
-                "Output: {\"amount\":\"110.00\",\"currency\":\"EUR\",\"date\":\"2026-05-25\"," +
-                "\"time\":\"09:00\",\"vendor\":\"Trainline\",\"title\":\"Train tickets\"," +
-                "\"category\":\"TRANSPORT\",\"paymentMethod\":\"CREDIT_CARD\"," +
-                "\"notes\":\"Booking: TX12345, Seats: 2A, 2B\"}\n" +
-                "Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID 01/11/2026 17:05 " +
-                "Coche: 3 Plaza: 4B TOTAL 39,00 € AVLO Localizador: TB53FB A.NARANJO " +
-                "Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4A TOTAL 39,00 €\n" +
-                "Output: {\"amount\":\"78.00\",\"currency\":\"EUR\",\"date\":\"2026-11-01\"," +
-                "\"time\":\"17:05\",\"vendor\":\"Avlo\",\"title\":\"Train tickets\"," +
-                "\"category\":\"TRANSPORT\",\"paymentMethod\":\"DEBIT_CARD\"," +
-                "\"notes\":\"Locator: TB53FB, Seats: 4A, 4B\"}\n" +
-                "Input: %1\$s\n" +
-                "CRITICAL REMINDER: If the input contains multiple separate tickets, pages, or " +
-                "passenger totals (e.g. printed multiple times for different tickets), you MUST sum " +
-                "the actual prices from the input text to calculate and output the exact overall " +
-                "cumulative total (e.g., price1 + price2 + ...) in the \"amount\" field. Do NOT just " +
-                "copy one unit price, and do NOT output a fixed number. You must perform the " +
-                "addition with the actual numbers found in the text.\n" +
-                "Output:"
+        /**
+         * Scans OCR text for repeated per-passenger TOTAL labels (e.g. "TOTAL 42,20 €" on every
+         * page of a multi-passenger booking). When two or more are found, the arithmetic is done
+         * here in Kotlin — deterministically — and the pre-computed result is prepended as a
+         * "Grand total (N tickets): X.XX" line. This removes the summation burden from the
+         * on-device SLM, which cannot reliably do arithmetic.
+         */
+        internal fun preComputeTotalIfMultiPassenger(ocrText: String): String {
+            val totalPattern = Regex("""(?i)\bTOTAL\b\s+([\d]+[,.][\d]+)""")
+            val totals = totalPattern.findAll(ocrText)
+                .mapNotNull { match ->
+                    val raw = match.groupValues[1].replace(Regex("[^0-9.,]"), "")
+                    CurrencyConverter.normalizeAmountString(raw).toBigDecimalOrNull()
+                }
+                .toList()
+
+            if (totals.size < MIN_TOTALS_FOR_PRECOMPUTE) return ocrText
+
+            val grandTotal = totals.fold(BigDecimal.ZERO) { acc, v -> acc + v }
+            return "Grand total (${totals.size} tickets): ${grandTotal.toPlainString()}\n\n$ocrText"
+        }
+
+        @Suppress("MaxLineLength")
+        private val DEFAULT_PROMPT_TEMPLATE = """
+            Extract the following fields from the receipt in JSON format.
+            CRITICAL: If the receipt text begins with a "Grand total (N tickets): X.XX" line, use that value for the amount field — it is a pre-computed accurate total. Otherwise, when each passenger section shows its own TOTAL, sum all per-passenger TOTAL values. IVA/tax values shown next to a TOTAL are already included in that TOTAL — do not add them again.
+
+            Fields to extract:
+            - Grand total paid as a decimal string (amount). Use the pre-computed grand total line if present.
+            - ISO-4217 currency code. If currency cannot be determined, default to EUR (currency).
+            - Date of the transaction in YYYY-MM-DD format (date).
+            - Time of the transaction in HH:MM format (time).
+            - Merchant or store name (vendor).
+            - Brief description of what was purchased, maximum 3-4 words (title).
+            - Category (must be one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
+            - Payment method (must be one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
+            - Any relevant notes or identifiers like booking code, reservation ID, locator ("localizador") code, ticket ID, seats, flight or train numbers, reference number, etc. (notes).
+
+            Write the "title" in English. Keep it brief and descriptive. For transport, include origin and destination when available, e.g. "Train Seville-Madrid", "Flight to Barcelona". For other purchases, describe what was bought, e.g. "Dinner at restaurant", "Grocery shopping". Do not write full sentences. Max 3-4 words.
+
+            Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
+            Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks and drinks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+            Input: TRAINLINE London to Paris ticket 1: 55.00 EUR ticket 2: 55.00 EUR Date: 2026-05-25 09:00 CreditCard Seats: 2A, 2B Booking: TX12345
+            Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train London-Paris","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Booking: TX12345, Seats: 2A, 2B"}
+            Input: Grand total (2 tickets): 84.40
+            RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
+            Output: {"amount":"84.40","currency":"EUR","date":"2026-10-10","time":"09:34","vendor":"Renfe","title":"Train Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Locator: HXDC8B, Seats: 1A, 1B, Train: AVE 02091"}
+            Input: $OCR_PLACEHOLDER
+            Output:
+        """.trimIndent()
     }
 }
 

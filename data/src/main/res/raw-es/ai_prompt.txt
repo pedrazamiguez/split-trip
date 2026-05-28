@@ -1,25 +1,25 @@
 Extrae los siguientes campos del recibo en formato JSON.
-CRITICAL: Si el documento contiene varios billetes, pasajes o páginas individuales (por ejemplo, para diferentes pasajeros) y cada billete o página indica su propio total/precio individual, DEBES sumar todos estos totales individuales para calcular y devolver el total general acumulativo absoluto de la transacción en el campo "amount". No extraigas simplemente el precio de un solo billete.
+CRÍTICO: Si el texto del recibo comienza con una línea "Grand total (N tickets): X.XX", usa ese valor para el campo amount — es el total exacto pre-calculado. De lo contrario, cuando cada sección de pasajero muestra su propio TOTAL, suma todos los valores TOTAL por pasajero. Los valores de IVA mostrados junto a un TOTAL ya están incluidos en ese TOTAL — no los sumes de nuevo.
 
 Campos a extraer:
-- Importe total de la compra como una cadena decimal. Suma todos los totales de billetes/artículos individuales para calcular el total general acumulativo absoluto de la transacción (amount).
+- Importe total pagado como cadena decimal (amount). Usa la línea de total pre-calculado si está presente.
 - Código de moneda ISO-4217. Si no se puede determinar, usa EUR (currency).
 - Fecha de la transacción en formato YYYY-MM-DD (date).
 - Hora de la transacción en formato HH:MM de 24 horas (time).
 - Nombre del comercio o proveedor (vendor).
-- Título o descripción breve estimada de lo comprado, máximo 3-4 palabras (title).
+- Descripción breve de lo comprado, máximo 3-4 palabras (title).
 - Categoría (debe ser una de: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
 - Método de pago (debe ser uno de: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
 - Notas o identificadores relevantes como código de reserva, localizador, ID de ticket, asientos, números de vuelo o tren, número de referencia, etc. (notes).
 
-Escribe el "title" en español. Que sea breve y descriptivo, ej. "Vuelo a Barcelona" en lugar de "flight" o "vuelo", "Cena en restaurante" en lugar de "dinner" o "cena", "Compra de supermercado" en lugar de "grocery store" o "supermercado". No escribas frases completas. Máximo 3-4 palabras.
+Escribe el "title" en español. Que sea breve y descriptivo. Para transporte, incluye origen y destino cuando estén disponibles (ej. "Tren Sevilla-Madrid", "Vuelo a Barcelona"). Para otras compras, describe lo adquirido (ej. "Cena en restaurante", "Compra de supermercado"). No escribas frases completas. Máximo 3-4 palabras.
 
 Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
-Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Meriendas","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
-Input: TRAINLINE billete 1: 55.00 EUR billete 2: 55.00 EUR Fecha: 2026-05-25 09:00 CreditCard Asientos: 2A, 2B Reserva: TX12345
-Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Billetes de tren","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Reserva: TX12345, Asientos: 2A, 2B"}
-Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4B TOTAL 39,00 € AVLO Localizador: TB53FB A.NARANJO Origen: MADRID 01/11/2026 17:05 Coche: 3 Plaza: 4A TOTAL 39,00 €
-Output: {"amount":"78.00","currency":"EUR","date":"2026-11-01","time":"17:05","vendor":"Avlo","title":"Billetes de tren","category":"TRANSPORT","paymentMethod":"DEBIT_CARD","notes":"Localizador: TB53FB, Asientos: 4A, 4B"}
+Output: {"amount":"50.00","currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Meriendas y bebidas","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+Input: TRAINLINE Londres a París billete 1: 55.00 EUR billete 2: 55.00 EUR Fecha: 2026-05-25 09:00 CreditCard Asientos: 2A, 2B Reserva: TX12345
+Output: {"amount":"110.00","currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Tren Londres-París","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Reserva: TX12345, Asientos: 2A, 2B"}
+Input: Grand total (2 tickets): 84.40
+RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
+Output: {"amount":"84.40","currency":"EUR","date":"2026-10-10","time":"09:34","vendor":"Renfe","title":"Tren Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Localizador: HXDC8B, Asientos: 1A, 1B, Tren: AVE 02091"}
 Input: %1$s
-RECORDATORIO CRÍTICO: Si la entrada contiene varios billetes, páginas o totales de pasajeros separados (por ejemplo, impresos varias veces para diferentes billetes/pasajeros), DEBES sumar los precios reales del texto para calcular y devolver el total general acumulativo real (por ejemplo, precio1 + precio2 + ...) en el campo "amount". ¡NO te limites a copiar el precio de un solo billete, y NO devuelvas un número fijo predeterminado! Realiza la suma con los números reales que aparecen en el texto.
 Output:

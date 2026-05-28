@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.service
 
 import android.content.Context
+import es.pedrazamiguez.splittrip.data.service.ReceiptExtractionServiceImpl.Companion.preComputeTotalIfMultiPassenger
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -248,18 +249,47 @@ class ReceiptExtractionServiceImplTest {
         service.extract(rawReceiptText)
 
         val prompt = promptSlot.captured
-        assertTrue(prompt.contains("CRITICAL: If the document contains multiple separate tickets or pages"))
-        assertTrue(
-            prompt.contains(
-                "Input: AVLO Localizador: TB53FB A.PEDRAZA Origen: MADRID " +
-                    "01/11/2026 17:05 Coche: 3 Plaza: 4B TOTAL 39,00 €"
-            )
-        )
-        assertTrue(prompt.contains("Output: {\"amount\":\"78.00\",\"currency\":\"EUR\",\"date\":\"2026-11-01\""))
-        assertTrue(
-            prompt.contains(
-                "CRITICAL REMINDER: If the input contains multiple separate tickets, pages, or passenger totals"
-            )
-        )
+        // Verify the updated CRITICAL instruction referencing the pre-computed total line
+        assertTrue(prompt.contains("Grand total (N tickets): X.XX"))
+        assertTrue(prompt.contains("IVA/tax values shown next to a TOTAL are already included in that TOTAL"))
+        // Verify TRAINLINE example uses London-Paris (not Madrid/Barcelona which appear in real Renfe tickets)
+        assertTrue(prompt.contains("TRAINLINE London to Paris"))
+        assertTrue(prompt.contains("\"title\":\"Train London-Paris\""))
+        // Verify the Renfe example shows the pre-computed total as first line of input
+        assertTrue(prompt.contains("Input: Grand total (2 tickets): 84.40"))
+        assertTrue(prompt.contains("\"title\":\"Train Sevilla-Madrid\""))
+        // Verify the prompt ends cleanly with "Output:" so the Input->Output pattern is uninterrupted
+        assertTrue(prompt.trimEnd().endsWith("Output:"))
+    }
+
+    @Test
+    fun `preComputeTotalIfMultiPassenger returns unchanged text when only one TOTAL is found`() {
+        val singleTotalText = "Shop Receipt\nTOTAL 25.00 EUR\nDate: 2026-01-01"
+
+        val result = preComputeTotalIfMultiPassenger(singleTotalText)
+
+        assertEquals(singleTotalText, result)
+    }
+
+    @Test
+    fun `preComputeTotalIfMultiPassenger prepends grand total when two per-passenger TOTALs are found`() {
+        val twoTicketsText =
+            "Ticket A TOTAL 42,20 € IVA 3,84 € Ticket B TOTAL 42,20 € IVA 3,84 €"
+
+        val result = preComputeTotalIfMultiPassenger(twoTicketsText)
+
+        assertTrue(result.startsWith("Grand total (2 tickets): 84.40"))
+        assertTrue(result.contains(twoTicketsText))
+    }
+
+    @Test
+    fun `preComputeTotalIfMultiPassenger handles European decimal format correctly`() {
+        val renfeOcrText =
+            "RENFE A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA TOTAL 42,20 € " +
+                "RENFE A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA TOTAL 42,20 €"
+
+        val result = preComputeTotalIfMultiPassenger(renfeOcrText)
+
+        assertTrue(result.startsWith("Grand total (2 tickets): 84.40"))
     }
 }
