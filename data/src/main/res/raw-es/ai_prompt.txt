@@ -4,21 +4,21 @@ CRÍTICO: Si el documento contiene varios billetes o secciones de pasajero y cad
 Campos a extraer:
 - Array de los importes totales pagados como cadenas decimales (amounts). Si hay varios pasajeros/billetes con sus propios totales, enumera cada total por separado. Si hay un solo total general, enumera solo ese. No incluyas artículos individuales del supermercado. Si no puedes encontrar ningún importe total, no lo inventes ni lo adivines — deja el array amounts vacío [].
 - Código de moneda ISO-4217. Busca el código o símbolo exacto (ej. EUR, $, £) junto al importe total. Corrige errores OCR comunes (como extraer FUR en lugar de EUR). No adivines basándote en el nombre del comercio o país. Si no se puede determinar, usa EUR (currency).
-- Fecha de la transacción en formato YYYY-MM-DD (date).
+- Fecha de la transacción/compra en formato YYYY-MM-DD (date). No utilices la fecha del viaje/evento para este campo.
 - Hora de la transacción en formato HH:MM de 24 horas (time).
 - Nombre del comercio o proveedor (vendor).
 - Descripción breve de lo comprado, máximo 3-4 palabras (title).
 - Categoría (debe ser una de: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
 - Método de pago (debe ser uno de: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
-- Notas o identificadores relevantes como código de reserva, localizador, ID de ticket, asientos, números de vuelo o tren, número de referencia, etc. (notes).
+- Notas o identificadores relevantes como fechas de viaje/evento, código de reserva, localizador, ID de ticket, asientos, números de vuelo o tren, número de referencia, etc. (notes).
 
 Escribe el "title" en español. Que sea breve y descriptivo. Para transporte, incluye origen y destino cuando estén disponibles (ej. "Tren Sevilla-Madrid", "Vuelo a Barcelona"). Para otras compras, describe lo adquirido (ej. "Cena en restaurante", "Compra de supermercado"). No escribas frases completas. Máximo 3-4 palabras.
 
 Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
 Output: {"amounts":["50.00"],"currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Meriendas y bebidas","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
-Input: TRAINLINE Londres a París billete 1: 55.00 EUR billete 2: 55.00 EUR Fecha: 2026-05-25 09:00 CreditCard Asientos: 2A, 2B Reserva: TX12345
-Output: {"amounts":["55.00","55.00"],"currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Tren Londres-París","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Reserva: TX12345, Asientos: 2A, 2B"}
-Input: RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
-Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-10","time":"09:34","vendor":"Renfe","title":"Tren Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Localizador: HXDC8B, Asientos: 1A, 1B, Tren: AVE 02091"}
+Input: TRAINLINE Londres a París billete 1: 55.00 EUR billete 2: 55.00 EUR Fecha compra: 2026-05-25 09:00 Salida: 2026-06-15 14:00 CreditCard Asientos: 2A, 2B Reserva: TX12345
+Output: {"amounts":["55.00","55.00"],"currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Tren Londres-París","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Salida: 2026-06-15 14:00, Reserva: TX12345, Asientos: 2A, 2B"}
+Input: RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € Fecha operacion: 02/10/2026 15:20 RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
+Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-02","time":"15:20","vendor":"Renfe","title":"Tren Sevilla-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Salida: 2026-10-10 09:34, Localizador: HXDC8B, Asientos: 1A, 1B, Tren: AVE 02091"}
 Input: %1$s
 Output:
