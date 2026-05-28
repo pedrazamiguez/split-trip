@@ -3,7 +3,7 @@ CRITICAL: If the document contains multiple separate tickets or passenger sectio
 
 Fields to extract:
 - Array of the final total amounts paid as decimal strings (amounts). If there are multiple tickets/passengers with their own totals, list each separate total. If there is one grand total, list just that one total. Do not list individual grocery items. If you cannot find any total amount, do not guess or invent a value — leave the amounts array empty [].
-- ISO-4217 currency code. Look for the precise code or symbol (e.g., EUR, $, £) next to the total amount. Do not guess based on vendor or country name. If it cannot be determined, default to EUR (currency).
+- ISO-4217 currency code. Look for the precise code or symbol (e.g., EUR, $, £) next to the total amount. Correct common OCR typos (like extracting FUR instead of EUR). Do not guess based on vendor or country name. If it cannot be determined, default to EUR (currency).
 - Date of the transaction in YYYY-MM-DD format (date).
 - Time of the transaction in HH:MM format (time).
 - Merchant or store name (vendor).

@@ -3,7 +3,7 @@ CRÍTICO: Si el documento contiene varios billetes o secciones de pasajero y cad
 
 Campos a extraer:
 - Array de los importes totales pagados como cadenas decimales (amounts). Si hay varios pasajeros/billetes con sus propios totales, enumera cada total por separado. Si hay un solo total general, enumera solo ese. No incluyas artículos individuales del supermercado. Si no puedes encontrar ningún importe total, no lo inventes ni lo adivines — deja el array amounts vacío [].
-- Código de moneda ISO-4217. Busca el código o símbolo exacto (ej. EUR, $, £) junto al importe total. No adivines basándote en el nombre del comercio o país. Si no se puede determinar, usa EUR (currency).
+- Código de moneda ISO-4217. Busca el código o símbolo exacto (ej. EUR, $, £) junto al importe total. Corrige errores OCR comunes (como extraer FUR en lugar de EUR). No adivines basándote en el nombre del comercio o país. Si no se puede determinar, usa EUR (currency).
 - Fecha de la transacción en formato YYYY-MM-DD (date).
 - Hora de la transacción en formato HH:MM de 24 horas (time).
 - Nombre del comercio o proveedor (vendor).

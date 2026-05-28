@@ -216,7 +216,7 @@ internal class ReceiptExtractionServiceImpl(
 
             Fields to extract:
             - Array of the final total amounts paid as decimal strings (amounts). If there are multiple tickets/passengers with their own totals, list each separate total. If there is one grand total, list just that one total. Do not list individual grocery items. If you cannot find any total amount, do not guess or invent a value — leave the amounts array empty [].
-            - ISO-4217 currency code. Look for the precise code or symbol (e.g., EUR, $, £) next to the total amount. Do not guess based on vendor or country name. If it cannot be determined, default to EUR (currency).
+            - ISO-4217 currency code. Look for the precise code or symbol (e.g., EUR, $, £) next to the total amount. Correct common OCR typos (like extracting FUR instead of EUR). Do not guess based on vendor or country name. If it cannot be determined, default to EUR (currency).
             - Date of the transaction in YYYY-MM-DD format (date).
             - Time of the transaction in HH:MM format (time).
             - Merchant or store name (vendor).
@@ -296,7 +296,14 @@ private fun parseAmount(jsonObject: JSONObject): BigDecimal? {
 private fun parseCurrency(jsonObject: JSONObject): Pair<String, String?> {
     val rawCurrency = jsonObject.optString("currency")
         .takeIf { it.isNotEmpty() && it != "null" }?.uppercase(Locale.ROOT)
-    val currency = rawCurrency ?: "EUR"
+
+    // SLM/OCR safety net for common typo "FUR" -> "EUR"
+    val normalizedCurrency = when (rawCurrency) {
+        "FUR", "EU", "EUF" -> "EUR"
+        else -> rawCurrency
+    }
+
+    val currency = normalizedCurrency ?: "EUR"
     return Pair(currency, rawCurrency)
 }
 
