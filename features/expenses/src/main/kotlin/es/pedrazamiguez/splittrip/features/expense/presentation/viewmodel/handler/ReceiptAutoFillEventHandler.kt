@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 import java.math.BigDecimal
 import java.time.ZoneOffset
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,7 +96,15 @@ class ReceiptAutoFillEventHandler(
         scope.launch {
             _uiState.update { it.copy(isAnalyzingReceipt = true) }
 
-            extractReceiptFieldsUseCase(attachment)
+            val result = try {
+                extractReceiptFieldsUseCase(attachment)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+
+            result
                 .onSuccess { extracted ->
                     mergeExtractedFields(extracted, preScanCurrency, preScanPaymentMethod)
                     _uiState.update {

@@ -41,6 +41,8 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReceiptAutoFillEventHandlerTest {
 
+    private class TestException(message: String) : Exception(message)
+
     private lateinit var handler: ReceiptAutoFillEventHandler
     private lateinit var extractReceiptFieldsUseCase: ExtractReceiptFieldsUseCase
     private lateinit var receiptExtractionService: ReceiptExtractionService
@@ -498,6 +500,34 @@ class ReceiptAutoFillEventHandlerTest {
 
             assertEquals(listOf(true), observedDuringExtraction)
             assertFalse(uiState.value.isAnalyzingReceipt)
+        }
+
+        @Test
+        fun `toggles analyzing flag true during extraction then false on unexpected exception`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            val observedDuringExtraction = mutableListOf<Boolean>()
+            coEvery { extractReceiptFieldsUseCase(attachment) } answers {
+                observedDuringExtraction.add(uiState.value.isAnalyzingReceipt)
+                throw TestException("unexpected throw")
+            }
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(listOf(true), observedDuringExtraction)
+            assertFalse(uiState.value.isAnalyzingReceipt)
+        }
+
+        @Test
+        fun `rethrows CancellationException when extraction throws it`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } throws
+                kotlinx.coroutines.CancellationException("cancelled")
+
+            handler.handleReceiptAttached(attachment)
+
+            val actionList = actions.replayCache
+            assertFalse(actionList.any { it is AddExpenseUiAction.ShowPill })
+            assertTrue(uiState.value.isAnalyzingReceipt)
         }
 
         @Test
