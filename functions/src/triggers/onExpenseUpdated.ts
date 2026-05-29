@@ -8,6 +8,7 @@
  * substantive fields changed (only metadata like timestamps updated).
  */
 
+import "../config";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import { ExpenseDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";

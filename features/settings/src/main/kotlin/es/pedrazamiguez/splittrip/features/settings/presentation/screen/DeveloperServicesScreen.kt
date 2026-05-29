@@ -140,7 +140,8 @@ fun DeveloperServicesScreen(
             onTabSelected = { id ->
                 onEvent(DeveloperServicesUiEvent.SwitchTab(id.toDeveloperServicesTab()))
             },
-            items = SERVICE_TABS
+            items = SERVICE_TABS,
+            applyWindowInsets = false
             // No hazeState — this screen has no scrollable hazeSource behind the bar.
         )
     }

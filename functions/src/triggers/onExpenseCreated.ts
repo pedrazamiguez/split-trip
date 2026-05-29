@@ -5,6 +5,7 @@
  * Sends an EXPENSE_ADDED notification to all group members except the creator.
  */
 
+import "../config";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import { ExpenseDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";

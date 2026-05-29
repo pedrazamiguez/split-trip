@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 import java.math.BigDecimal
 import java.time.ZoneOffset
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,18 +94,33 @@ class ReceiptAutoFillEventHandler(
         val preScanPaymentMethod = state.selectedPaymentMethod
 
         scope.launch {
-            _actionsFlow.emit(
-                AddExpenseUiAction.ShowPill(
-                    UiText.StringResource(R.string.expense_autofill_in_progress)
-                )
-            )
+            _uiState.update { it.copy(isAnalyzingReceipt = true) }
 
-            extractReceiptFieldsUseCase(attachment)
+            val result = try {
+                extractReceiptFieldsUseCase(attachment)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+
+            result
                 .onSuccess { extracted ->
                     mergeExtractedFields(extracted, preScanCurrency, preScanPaymentMethod)
+                    _uiState.update {
+                        val nextStep = it.applicableSteps.let { steps ->
+                            val idx = steps.indexOf(AddExpenseStep.RECEIPT)
+                            if (idx >= 0 && idx < steps.lastIndex) steps[idx + 1] else null
+                        }
+                        it.copy(
+                            isAnalyzingReceipt = false,
+                            currentStep = nextStep ?: it.currentStep
+                        )
+                    }
                 }
                 .onFailure { error ->
                     Timber.e(error, "Receipt auto-fill failed")
+                    _uiState.update { it.copy(isAnalyzingReceipt = false) }
                     _actionsFlow.emit(
                         AddExpenseUiAction.ShowPill(
                             UiText.StringResource(R.string.expense_autofill_failed)
@@ -155,7 +171,7 @@ class ReceiptAutoFillEventHandler(
         tryMergePaymentMethod(extracted, preScanPaymentMethod, bannerFields)
         tryMergeNotes(extracted, bannerFields)
 
-        // 5. Update banner state and notify success
+        // 5. Update banner state
         if (bannerFields.isNotEmpty()) {
             _uiState.update {
                 it.copy(
@@ -165,11 +181,6 @@ class ReceiptAutoFillEventHandler(
                     )
                 )
             }
-            _actionsFlow.emit(
-                AddExpenseUiAction.ShowPill(
-                    UiText.StringResource(R.string.expense_autofill_success)
-                )
-            )
         }
     }
 

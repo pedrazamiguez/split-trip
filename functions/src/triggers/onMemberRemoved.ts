@@ -13,6 +13,7 @@
  * so `removedBy` will be undefined and the fallback to `removedUserId` applies.
  */
 
+import "../config";
 import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import { GroupMemberDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";
