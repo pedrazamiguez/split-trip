@@ -48,12 +48,17 @@ fun FloatingNavigationBar(
     selectedId: String = "",
     onTabSelected: (String) -> Unit = {},
     items: List<FloatingNavTab> = emptyList(),
-    hazeState: HazeState? = null
+    hazeState: HazeState? = null,
+    applyWindowInsets: Boolean = true
 ) {
     val selectedIndex = items.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
 
-    // Lift the pill above the system navigation bar regardless of navigation mode.
-    val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    // Lift the pill above the system navigation bar unless the parent already applies insets.
+    val navBarInset = if (applyWindowInsets) {
+        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    } else {
+        0.dp
+    }
 
     Box(
         modifier = modifier.fillMaxWidth(),

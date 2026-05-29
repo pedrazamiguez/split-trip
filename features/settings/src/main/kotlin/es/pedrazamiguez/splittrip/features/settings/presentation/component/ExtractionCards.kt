@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -32,6 +33,8 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.R
 
 private val FIELD_ICON_SIZE = 18.dp
+private const val FIELD_LABEL_WEIGHT = 0.45f
+private const val FIELD_VALUE_WEIGHT = 0.55f
 
 @Suppress("LongParameterList")
 @Composable
@@ -124,12 +127,14 @@ private fun ExtractionFieldRow(
             text = label,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(FIELD_LABEL_WEIGHT)
         )
         Text(
             text = value ?: stringResource(R.string.developer_services_extraction_na),
             style = MaterialTheme.typography.bodyMedium,
-            color = if (value != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+            color = if (value != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(FIELD_VALUE_WEIGHT)
         )
     }
 }
