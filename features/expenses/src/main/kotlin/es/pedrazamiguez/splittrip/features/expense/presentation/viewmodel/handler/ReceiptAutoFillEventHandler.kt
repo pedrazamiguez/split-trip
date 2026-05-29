@@ -93,12 +93,6 @@ class ReceiptAutoFillEventHandler(
         val preScanPaymentMethod = state.selectedPaymentMethod
 
         scope.launch {
-            _actionsFlow.emit(
-                AddExpenseUiAction.ShowPill(
-                    UiText.StringResource(R.string.expense_autofill_in_progress)
-                )
-            )
-
             _uiState.update { it.copy(isAnalyzingReceipt = true) }
 
             extractReceiptFieldsUseCase(attachment)

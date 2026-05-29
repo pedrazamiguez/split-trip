@@ -1,8 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt
 
 import android.graphics.Path as AndroidPath
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -10,8 +8,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +35,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
@@ -47,7 +45,7 @@ import androidx.graphics.shapes.toPath
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.features.expense.R
 
 /** Test tag for the receipt analysis overlay container, used in UI tests. */
@@ -85,7 +83,7 @@ private const val SCAN_GLOW_HEIGHT_FRACTION = 0.20f
 private const val SCAN_CORE_HEIGHT_FRACTION = 0.03f
 private const val SCAN_GLOW_ALPHA = 0.22f
 private const val SCAN_CORE_ALPHA = 0.9f
-private const val SCRIM_ALPHA = 0.86f
+private const val SCRIM_ALPHA = 0.60f
 
 // ── Layout Constants ────────────────────────────────────────────────────
 
@@ -132,39 +130,55 @@ fun ReceiptAnalysisOverlay(
     visible: Boolean,
     modifier: Modifier = Modifier
 ) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier
-    ) {
-        BackHandler(enabled = visible) {}
+    if (visible) {
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
+        ) {
+            ReceiptAnalysisContent(
+                modifier = modifier
+                    .fillMaxSize()
+                    .testTag(RECEIPT_ANALYSIS_OVERLAY_TEST_TAG)
+            )
+        }
+    }
+}
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = SCRIM_ALPHA))
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            awaitPointerEvent()
-                        }
+/**
+ * The actual content of the receipt analysis overlay.
+ * Extracted so Compose previews can render it directly without issues related to separate dialog windows.
+ */
+@Composable
+internal fun ReceiptAnalysisContent(
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = SCRIM_ALPHA))
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent()
                     }
                 }
-                .testTag(RECEIPT_ANALYSIS_OVERLAY_TEST_TAG),
-            contentAlignment = Alignment.Center
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                ScanningMorphShape()
-                BodyText(
-                    text = stringResource(R.string.expense_autofill_in_progress),
-                    color = MaterialTheme.colorScheme.inverseOnSurface,
-                    modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraLarge)
-                )
-            }
+            ScanningMorphShape()
+            SheetTitleText(
+                text = stringResource(R.string.expense_autofill_in_progress),
+                color = Color.White,
+                modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraLarge)
+            )
         }
     }
 }

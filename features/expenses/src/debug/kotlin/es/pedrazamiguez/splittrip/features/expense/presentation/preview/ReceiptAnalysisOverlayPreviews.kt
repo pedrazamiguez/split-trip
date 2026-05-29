@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.ReceiptAnalysisOverlay
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.ReceiptAnalysisContent
 
 @PreviewComplete
 @Composable
@@ -19,7 +19,7 @@ private fun ReceiptAnalysisOverlayVisiblePreview() {
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
         ) {
-            ReceiptAnalysisOverlay(visible = true)
+            ReceiptAnalysisContent(modifier = Modifier.fillMaxSize())
         }
     }
 }
