@@ -8,9 +8,13 @@
  */
 
 import * as admin from "firebase-admin";
+import { setGlobalOptions } from "firebase-functions/v2";
 
 // Initialize Firebase Admin SDK (must happen before any trigger imports)
 admin.initializeApp();
+
+// Configure default region to match the eur3 database triggers
+setGlobalOptions({ region: "europe-west1" });
 
 // Re-export all trigger functions
 export { onExpenseCreated } from "./triggers/onExpenseCreated";
