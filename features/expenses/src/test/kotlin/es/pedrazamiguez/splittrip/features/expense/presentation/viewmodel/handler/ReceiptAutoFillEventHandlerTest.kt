@@ -41,6 +41,8 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReceiptAutoFillEventHandlerTest {
 
+    private class TestException(message: String) : Exception(message)
+
     private lateinit var handler: ReceiptAutoFillEventHandler
     private lateinit var extractReceiptFieldsUseCase: ExtractReceiptFieldsUseCase
     private lateinit var receiptExtractionService: ReceiptExtractionService
@@ -420,6 +422,121 @@ class ReceiptAutoFillEventHandlerTest {
             handler.handleReceiptAttached(attachment)
 
             assertTrue(capturedAmountChanges.isEmpty())
+        }
+
+        @Test
+        fun `navigates to next step on successful extraction`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Starbucks",
+                    amount = BigDecimal("12.50"),
+                    currency = "EUR",
+                    date = LocalDate.of(2025, 1, 1),
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+            every { formattingHelper.formatCentsValue(1250L, 2) } returns "12.50"
+
+            uiState.value = uiState.value.copy(
+                isAiCapable = true,
+                isAiModeActive = true,
+                currentStep = AddExpenseStep.RECEIPT
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(AddExpenseStep.TITLE, uiState.value.currentStep)
+        }
+    }
+
+    @Nested
+    inner class AnalyzingReceiptState {
+
+        private val attachment = ReceiptAttachment(
+            localUri = "uri",
+            mimeType = "image/webp",
+            capturedAtMillis = 1000L
+        )
+
+        private val extracted = ExtractedReceipt(
+            title = "Starbucks",
+            amount = BigDecimal("12.50"),
+            currency = "EUR",
+            date = LocalDate.of(2025, 1, 1),
+            confidence = ExtractionConfidence.HIGH,
+            source = ExtractionSource.AI_CORE
+        )
+
+        @Test
+        fun `toggles analyzing flag true during extraction then false on success`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            val observedDuringExtraction = mutableListOf<Boolean>()
+            coEvery { extractReceiptFieldsUseCase(attachment) } answers {
+                observedDuringExtraction.add(uiState.value.isAnalyzingReceipt)
+                Result.success(extracted)
+            }
+            every { formattingHelper.formatCentsValue(1250L, 2) } returns "12.50"
+
+            assertFalse(uiState.value.isAnalyzingReceipt)
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(listOf(true), observedDuringExtraction)
+            assertFalse(uiState.value.isAnalyzingReceipt)
+        }
+
+        @Test
+        fun `toggles analyzing flag true during extraction then false on failure`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            val observedDuringExtraction = mutableListOf<Boolean>()
+            coEvery { extractReceiptFieldsUseCase(attachment) } answers {
+                observedDuringExtraction.add(uiState.value.isAnalyzingReceipt)
+                Result.failure(RuntimeException("boom"))
+            }
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(listOf(true), observedDuringExtraction)
+            assertFalse(uiState.value.isAnalyzingReceipt)
+        }
+
+        @Test
+        fun `toggles analyzing flag true during extraction then false on unexpected exception`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            val observedDuringExtraction = mutableListOf<Boolean>()
+            coEvery { extractReceiptFieldsUseCase(attachment) } answers {
+                observedDuringExtraction.add(uiState.value.isAnalyzingReceipt)
+                throw TestException("unexpected throw")
+            }
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(listOf(true), observedDuringExtraction)
+            assertFalse(uiState.value.isAnalyzingReceipt)
+        }
+
+        @Test
+        fun `rethrows CancellationException when extraction throws it`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } throws
+                kotlinx.coroutines.CancellationException("cancelled")
+
+            handler.handleReceiptAttached(attachment)
+
+            val actionList = actions.replayCache
+            assertFalse(actionList.any { it is AddExpenseUiAction.ShowPill })
+            assertTrue(uiState.value.isAnalyzingReceipt)
+        }
+
+        @Test
+        fun `does not set analyzing flag when device is not AI capable`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.UNSUPPORTED
+
+            handler.handleReceiptAttached(attachment)
+
+            assertFalse(uiState.value.isAnalyzingReceipt)
         }
     }
 }
