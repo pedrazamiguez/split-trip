@@ -7,6 +7,7 @@
  * Note: Uses the "before" snapshot since the document no longer exists.
  */
 
+import "../config";
 import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import { ExpenseDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";

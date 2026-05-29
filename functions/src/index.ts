@@ -8,6 +8,7 @@
  */
 
 import * as admin from "firebase-admin";
+import "./config";
 
 // Initialize Firebase Admin SDK (must happen before any trigger imports)
 admin.initializeApp();

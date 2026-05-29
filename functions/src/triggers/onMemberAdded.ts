@@ -11,6 +11,7 @@
  *   an accurate message (e.g., "Admin added Member to the group").
  */
 
+import "../config";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import { GroupMemberDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";

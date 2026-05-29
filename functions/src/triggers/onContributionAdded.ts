@@ -9,6 +9,7 @@
  * notification uses an "on behalf of" body variant with both display names.
  */
 
+import "../config";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import { ContributionDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";

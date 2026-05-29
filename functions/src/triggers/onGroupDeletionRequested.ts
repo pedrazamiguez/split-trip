@@ -13,6 +13,7 @@
  * - Left stale data on other devices (members deletion happened last)
  */
 
+import "../config";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
