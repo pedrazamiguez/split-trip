@@ -58,7 +58,11 @@ fun LoginScreen(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
-                modifier = Modifier.fillMaxWidth(FORM_WIDTH_FRACTION).verticalScroll(rememberScrollState()).imePadding()
+                modifier = Modifier
+                    .fillMaxWidth(FORM_WIDTH_FRACTION)
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = MaterialTheme.spacing.Large)
+                    .imePadding()
             ) {
                 LoginFormContent(
                     uiState = uiState,
