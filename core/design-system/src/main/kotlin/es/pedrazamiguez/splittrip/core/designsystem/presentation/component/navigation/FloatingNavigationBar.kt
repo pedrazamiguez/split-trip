@@ -53,7 +53,7 @@ fun FloatingNavigationBar(
 ) {
     val selectedIndex = items.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
 
-    // Lift the pill above the system navigation bar regardless of navigation mode.
+    // Lift the pill above the system navigation bar unless the parent already applies insets.
     val navBarInset = if (applyWindowInsets) {
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     } else {
