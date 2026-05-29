@@ -421,6 +421,32 @@ class ReceiptAutoFillEventHandlerTest {
 
             assertTrue(capturedAmountChanges.isEmpty())
         }
+
+        @Test
+        fun `navigates to next step on successful extraction`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Starbucks",
+                    amount = BigDecimal("12.50"),
+                    currency = "EUR",
+                    date = LocalDate.of(2025, 1, 1),
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+            every { formattingHelper.formatCentsValue(1250L, 2) } returns "12.50"
+
+            uiState.value = uiState.value.copy(
+                isAiCapable = true,
+                isAiModeActive = true,
+                currentStep = AddExpenseStep.RECEIPT
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(AddExpenseStep.TITLE, uiState.value.currentStep)
+        }
     }
 
     @Nested

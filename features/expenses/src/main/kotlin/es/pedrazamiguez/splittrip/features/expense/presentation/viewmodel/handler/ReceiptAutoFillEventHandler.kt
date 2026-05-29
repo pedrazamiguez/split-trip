@@ -98,7 +98,16 @@ class ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase(attachment)
                 .onSuccess { extracted ->
                     mergeExtractedFields(extracted, preScanCurrency, preScanPaymentMethod)
-                    _uiState.update { it.copy(isAnalyzingReceipt = false) }
+                    _uiState.update {
+                        val nextStep = it.applicableSteps.let { steps ->
+                            val idx = steps.indexOf(AddExpenseStep.RECEIPT)
+                            if (idx >= 0 && idx < steps.lastIndex) steps[idx + 1] else null
+                        }
+                        it.copy(
+                            isAnalyzingReceipt = false,
+                            currentStep = nextStep ?: it.currentStep
+                        )
+                    }
                 }
                 .onFailure { error ->
                     Timber.e(error, "Receipt auto-fill failed")
@@ -153,7 +162,7 @@ class ReceiptAutoFillEventHandler(
         tryMergePaymentMethod(extracted, preScanPaymentMethod, bannerFields)
         tryMergeNotes(extracted, bannerFields)
 
-        // 5. Update banner state and notify success
+        // 5. Update banner state
         if (bannerFields.isNotEmpty()) {
             _uiState.update {
                 it.copy(
@@ -163,11 +172,6 @@ class ReceiptAutoFillEventHandler(
                     )
                 )
             }
-            _actionsFlow.emit(
-                AddExpenseUiAction.ShowPill(
-                    UiText.StringResource(R.string.expense_autofill_success)
-                )
-            )
         }
     }
 
