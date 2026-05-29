@@ -99,12 +99,16 @@ class ReceiptAutoFillEventHandler(
                 )
             )
 
+            _uiState.update { it.copy(isAnalyzingReceipt = true) }
+
             extractReceiptFieldsUseCase(attachment)
                 .onSuccess { extracted ->
                     mergeExtractedFields(extracted, preScanCurrency, preScanPaymentMethod)
+                    _uiState.update { it.copy(isAnalyzingReceipt = false) }
                 }
                 .onFailure { error ->
                     Timber.e(error, "Receipt auto-fill failed")
+                    _uiState.update { it.copy(isAnalyzingReceipt = false) }
                     _actionsFlow.emit(
                         AddExpenseUiAction.ShowPill(
                             UiText.StringResource(R.string.expense_autofill_failed)

@@ -188,6 +188,7 @@ data class AddExpenseUiState(
     // ── AI Auto-fill ────────────────────────────────────────────────────
     val isAiCapable: Boolean = false,
     val isAiModeActive: Boolean = false,
+    val isAnalyzingReceipt: Boolean = false,
     val autoFillBanner: AutoFillBanner? = null,
     val expenseDateMillis: Long? = null,
 

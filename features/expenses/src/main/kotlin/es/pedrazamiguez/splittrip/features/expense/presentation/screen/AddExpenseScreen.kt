@@ -52,6 +52,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.ReceiptAnalysisOverlay
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.AddOnsStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.AmountStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.CategoryStep
@@ -163,6 +164,8 @@ private fun ExpenseWizard(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = bottomPadding)
         )
+
+        ReceiptAnalysisOverlay(visible = uiState.isAnalyzingReceipt)
     }
 }
 
