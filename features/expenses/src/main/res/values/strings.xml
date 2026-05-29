@@ -235,7 +235,7 @@
     <string name="expense_contribution_scope_for_me">For me</string>
     <string name="expense_contribution_scope_for_subunit">For %1$s</string>
     <string name="expense_wizard_step_contribution_scope">Credit</string>
-    <string name="expense_review_contribution_scope">Credit scope</string>
+    <string name="expense_review_contribution_scope">Paid for</string>
     <string name="expense_review_scope_personal">Personal</string>
     <string name="expense_review_scope_group">Group</string>
 
