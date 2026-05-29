@@ -52,6 +52,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.ReceiptAnalysisOverlay
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.AddOnsStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.AmountStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.CategoryStep
@@ -163,6 +164,8 @@ private fun ExpenseWizard(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = bottomPadding)
         )
+
+        ReceiptAnalysisOverlay(visible = uiState.isAnalyzingReceipt)
     }
 }
 
@@ -241,7 +244,16 @@ private fun WizardStepContent(
         targetState = uiState.currentStep,
         modifier = modifier,
         transitionSpec = {
-            val direction = if (targetState.ordinal > initialState.ordinal) 1 else -1
+            val direction = if (initialState == AddExpenseStep.RECEIPT && targetState == AddExpenseStep.TITLE) {
+                1
+            } else if (initialState == AddExpenseStep.TITLE && targetState == AddExpenseStep.RECEIPT) {
+                -1
+            } else {
+                val steps = uiState.applicableSteps
+                val initialIndex = steps.indexOf(initialState)
+                val targetIndex = steps.indexOf(targetState)
+                if (targetIndex > initialIndex) 1 else -1
+            }
             (slideInHorizontally { fullWidth -> direction * fullWidth } + fadeIn())
                 .togetherWith(
                     slideOutHorizontally { fullWidth -> -direction * fullWidth } + fadeOut()
