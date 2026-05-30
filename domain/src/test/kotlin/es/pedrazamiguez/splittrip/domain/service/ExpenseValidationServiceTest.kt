@@ -9,6 +9,8 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import java.math.BigDecimal
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -383,18 +385,39 @@ class ExpenseValidationServiceTest {
 
         @Test
         fun `current or past date returns Valid`() {
-            val now = System.currentTimeMillis()
-            val past = now - 100000L
+            val now = LocalDateTime.now()
+                .toInstant(ZoneOffset.UTC)
+                .toEpochMilli()
+            val past = now - PAST_OFFSET_MILLIS
             assertEquals(ValidationResult.Valid, service.validateExpenseDate(now))
             assertEquals(ValidationResult.Valid, service.validateExpenseDate(past))
         }
 
         @Test
-        fun `future date returns Invalid`() {
-            val future = System.currentTimeMillis() + 100000L
-            val result = service.validateExpenseDate(future)
-            assertTrue(result is ValidationResult.Invalid)
-            assertTrue((result as ValidationResult.Invalid).message.isNotBlank())
+        fun `future date within 36 hours returns Valid`() {
+            val now = LocalDateTime.now()
+                .toInstant(ZoneOffset.UTC)
+                .toEpochMilli()
+            val futureWithinGrace = now + THIRTY_FIVE_HOURS_MILLIS
+            assertEquals(ValidationResult.Valid, service.validateExpenseDate(futureWithinGrace))
         }
+
+        @Test
+        fun `future date beyond 36 hours returns Invalid`() {
+            val now = LocalDateTime.now()
+                .toInstant(ZoneOffset.UTC)
+                .toEpochMilli()
+            val futureBeyondGrace = now + THIRTY_SEVEN_HOURS_MILLIS
+            val result = service.validateExpenseDate(futureBeyondGrace)
+            assertTrue(result is ValidationResult.Invalid)
+            assertEquals("Expense date and time cannot be in the future", (result as ValidationResult.Invalid).message)
+        }
+    }
+
+    companion object {
+        private const val MILLIS_IN_HOUR = 60L * 60L * 1000L
+        private const val PAST_OFFSET_MILLIS = 100_000L
+        private const val THIRTY_FIVE_HOURS_MILLIS = 35 * MILLIS_IN_HOUR
+        private const val THIRTY_SEVEN_HOURS_MILLIS = 37 * MILLIS_IN_HOUR
     }
 }
