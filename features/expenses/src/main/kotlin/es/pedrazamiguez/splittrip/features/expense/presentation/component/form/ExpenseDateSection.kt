@@ -32,6 +32,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.Calendar as JavaCalendar
+import java.util.TimeZone
 
 /**
  * Expense date and time picker section.
@@ -152,7 +153,7 @@ private fun ExpenseTimePickerDialog(
     onTimeSelected: (hour: Int, minute: Int) -> Unit
 ) {
     val calendar = if (initialTimeMillis != null) {
-        JavaCalendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+        JavaCalendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
             timeInMillis = initialTimeMillis
         }
     } else {
@@ -166,18 +167,13 @@ private fun ExpenseTimePickerDialog(
         is24Hour = true
     )
 
-    // Always allow future selections in the time picker since future dates/times
-    // are demoted to a soft warning and handled during form submission.
-    val isValidTime = true
-
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
                     onTimeSelected(timePickerState.hour, timePickerState.minute)
-                },
-                enabled = isValidTime
+                }
             ) {
                 Text(stringResource(R.string.expense_date_time_ok))
             }

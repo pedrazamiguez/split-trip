@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -15,16 +16,19 @@ import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
+import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategy
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -58,8 +62,7 @@ import org.junit.jupiter.api.Test
 class SubmitEventHandlerTest {
 
     private lateinit var handler: SubmitEventHandler
-    private lateinit var strategy:
-        es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategy
+    private lateinit var strategy: ExpenseFlowStrategy
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
 
     /** A minimal [Expense] stub — only the fields used by adjustForIncludedAddOns matter. */
@@ -604,13 +607,13 @@ class SubmitEventHandlerTest {
                     actionsFlow.collect { actions.add(it) }
                 }
                 handler.bind(stateFlow, actionsFlow, this)
-                val currentLocalAsUtc = java.time.LocalDateTime.now()
-                    .toInstant(java.time.ZoneOffset.UTC)
+                val currentLocalAsUtc = LocalDateTime.now()
+                    .toInstant(ZoneOffset.UTC)
                     .toEpochMilli()
                 stateFlow.value = AddExpenseUiState(
                     expenseTitle = "Dinner",
                     sourceAmount = "50",
-                    expenseDateMillis = currentLocalAsUtc + 37 * 60 * 60 * 1000L // 37 hours future
+                    expenseDateMillis = currentLocalAsUtc + THIRTY_SEVEN_HOURS_MILLIS
                 )
                 val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
                 every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
@@ -629,6 +632,30 @@ class SubmitEventHandlerTest {
             }
 
         @Test
+        fun `future date beyond 36h clears stale future date error from state`() =
+            runTest(testDispatcher) {
+                handler.bind(stateFlow, actionsFlow, this)
+                val currentLocalAsUtc = LocalDateTime.now()
+                    .toInstant(ZoneOffset.UTC)
+                    .toEpochMilli()
+                stateFlow.value = AddExpenseUiState(
+                    expenseTitle = "Dinner",
+                    sourceAmount = "50",
+                    expenseDateMillis = currentLocalAsUtc + THIRTY_SEVEN_HOURS_MILLIS,
+                    error = UiText.StringResource(R.string.expense_error_date_future)
+                )
+                val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
+                every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
+                coEvery { strategy.saveExpense(any(), any(), any()) } returns Result.success(Unit)
+
+                handler.submitExpense("group-1") {}
+                advanceUntilIdle()
+
+                assertFalse(stateFlow.value.isExpenseDateValid)
+                assertNull(stateFlow.value.error)
+            }
+
+        @Test
         fun `future date within 36h submits successfully`() =
             runTest(testDispatcher) {
                 val actions = mutableListOf<AddExpenseUiAction>()
@@ -636,13 +663,13 @@ class SubmitEventHandlerTest {
                     actionsFlow.collect { actions.add(it) }
                 }
                 handler.bind(stateFlow, actionsFlow, this)
-                val currentLocalAsUtc = java.time.LocalDateTime.now()
-                    .toInstant(java.time.ZoneOffset.UTC)
+                val currentLocalAsUtc = LocalDateTime.now()
+                    .toInstant(ZoneOffset.UTC)
                     .toEpochMilli()
                 stateFlow.value = AddExpenseUiState(
                     expenseTitle = "Dinner",
                     sourceAmount = "50",
-                    expenseDateMillis = currentLocalAsUtc + 24 * 60 * 60 * 1000L // 24 hours future
+                    expenseDateMillis = currentLocalAsUtc + TWENTY_FOUR_HOURS_MILLIS
                 )
                 val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
                 every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
@@ -775,5 +802,11 @@ class SubmitEventHandlerTest {
             // Error is shown via UiAction (Snackbar), not inline
             assertNull(stateFlow.value.error)
         }
+    }
+
+    companion object {
+        private const val MILLIS_IN_HOUR = 60L * 60L * 1000L
+        private const val THIRTY_SEVEN_HOURS_MILLIS = 37 * MILLIS_IN_HOUR
+        private const val TWENTY_FOUR_HOURS_MILLIS = 24 * MILLIS_IN_HOUR
     }
 }
