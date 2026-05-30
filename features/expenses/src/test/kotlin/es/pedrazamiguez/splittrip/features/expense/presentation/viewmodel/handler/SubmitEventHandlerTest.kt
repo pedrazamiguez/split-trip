@@ -597,27 +597,67 @@ class SubmitEventHandlerTest {
         }
 
         @Test
-        fun `future expense date sets isExpenseDateValid false and error`() = runTest(testDispatcher) {
-            val actions = mutableListOf<AddExpenseUiAction>()
-            val collectJob = launch(UnconfinedTestDispatcher()) {
-                actionsFlow.collect { actions.add(it) }
+        fun `future date beyond 36h shows warning pill and submits`() =
+            runTest(testDispatcher) {
+                val actions = mutableListOf<AddExpenseUiAction>()
+                val collectJob = launch(UnconfinedTestDispatcher()) {
+                    actionsFlow.collect { actions.add(it) }
+                }
+                handler.bind(stateFlow, actionsFlow, this)
+                val currentLocalAsUtc = java.time.LocalDateTime.now()
+                    .toInstant(java.time.ZoneOffset.UTC)
+                    .toEpochMilli()
+                stateFlow.value = AddExpenseUiState(
+                    expenseTitle = "Dinner",
+                    sourceAmount = "50",
+                    expenseDateMillis = currentLocalAsUtc + 37 * 60 * 60 * 1000L // 37 hours future
+                )
+                val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
+                every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
+                coEvery { strategy.saveExpense(any(), any(), any()) } returns Result.success(Unit)
+
+                var successCalled = false
+                handler.submitExpense("group-1") { successCalled = true }
+                advanceUntilIdle()
+
+                assertFalse(stateFlow.value.isExpenseDateValid)
+                assertNull(stateFlow.value.error)
+                assertEquals(1, actions.size)
+                assertTrue(actions[0] is AddExpenseUiAction.ShowPill)
+                assertTrue(successCalled)
+                collectJob.cancel()
             }
-            handler.bind(stateFlow, actionsFlow, this)
-            stateFlow.value = AddExpenseUiState(
-                expenseTitle = "Dinner",
-                sourceAmount = "50",
-                expenseDateMillis = System.currentTimeMillis() + 1000000L
-            )
 
-            handler.submitExpense("group-1") {}
-            advanceUntilIdle()
+        @Test
+        fun `future date within 36h submits successfully`() =
+            runTest(testDispatcher) {
+                val actions = mutableListOf<AddExpenseUiAction>()
+                val collectJob = launch(UnconfinedTestDispatcher()) {
+                    actionsFlow.collect { actions.add(it) }
+                }
+                handler.bind(stateFlow, actionsFlow, this)
+                val currentLocalAsUtc = java.time.LocalDateTime.now()
+                    .toInstant(java.time.ZoneOffset.UTC)
+                    .toEpochMilli()
+                stateFlow.value = AddExpenseUiState(
+                    expenseTitle = "Dinner",
+                    sourceAmount = "50",
+                    expenseDateMillis = currentLocalAsUtc + 24 * 60 * 60 * 1000L // 24 hours future
+                )
+                val expense = makeExpense(sourceAmount = 5000L, groupAmount = 5000L)
+                every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
+                coEvery { strategy.saveExpense(any(), any(), any()) } returns Result.success(Unit)
 
-            assertFalse(stateFlow.value.isExpenseDateValid)
-            assertNotNull(stateFlow.value.error)
-            assertEquals(1, actions.size)
-            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
-            collectJob.cancel()
-        }
+                var successCalled = false
+                handler.submitExpense("group-1") { successCalled = true }
+                advanceUntilIdle()
+
+                assertTrue(stateFlow.value.isExpenseDateValid)
+                assertNull(stateFlow.value.error)
+                assertTrue(actions.isEmpty())
+                assertTrue(successCalled)
+                collectJob.cancel()
+            }
 
         @Test
         fun `add-on with zero resolved amount sets addOnError`() = runTest(testDispatcher) {

@@ -7,6 +7,8 @@ import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class ExpenseValidationService(private val splitCalculatorFactory: ExpenseSplitCalculatorFactory) {
 
@@ -15,11 +17,18 @@ class ExpenseValidationService(private val splitCalculatorFactory: ExpenseSplitC
         else -> ValidationResult.Valid
     }
 
-    fun validateExpenseDate(dateMillis: Long): ValidationResult = when {
-        dateMillis > System.currentTimeMillis() -> ValidationResult.Invalid(
-            "Expense date and time cannot be in the future"
-        )
-        else -> ValidationResult.Valid
+    fun validateExpenseDate(dateMillis: Long): ValidationResult {
+        val currentLocalAsUtcMillis = LocalDateTime.now()
+            .toInstant(ZoneOffset.UTC)
+            .toEpochMilli()
+        val gracePeriodMillis = 36 * 60 * 60 * 1000L // 36 hours grace period
+
+        return when {
+            dateMillis > (currentLocalAsUtcMillis + gracePeriodMillis) -> ValidationResult.Invalid(
+                "Expense date and time cannot be in the future"
+            )
+            else -> ValidationResult.Valid
+        }
     }
 
     fun validateAmount(amountString: String): ValidationResult {

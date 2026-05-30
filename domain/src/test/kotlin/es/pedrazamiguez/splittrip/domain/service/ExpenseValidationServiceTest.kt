@@ -383,18 +383,32 @@ class ExpenseValidationServiceTest {
 
         @Test
         fun `current or past date returns Valid`() {
-            val now = System.currentTimeMillis()
+            val now = java.time.LocalDateTime.now()
+                .toInstant(java.time.ZoneOffset.UTC)
+                .toEpochMilli()
             val past = now - 100000L
             assertEquals(ValidationResult.Valid, service.validateExpenseDate(now))
             assertEquals(ValidationResult.Valid, service.validateExpenseDate(past))
         }
 
         @Test
-        fun `future date returns Invalid`() {
-            val future = System.currentTimeMillis() + 100000L
-            val result = service.validateExpenseDate(future)
+        fun `future date within 36 hours returns Valid`() {
+            val now = java.time.LocalDateTime.now()
+                .toInstant(java.time.ZoneOffset.UTC)
+                .toEpochMilli()
+            val futureWithinGrace = now + 35 * 60 * 60 * 1000L // 35 hours future
+            assertEquals(ValidationResult.Valid, service.validateExpenseDate(futureWithinGrace))
+        }
+
+        @Test
+        fun `future date beyond 36 hours returns Invalid`() {
+            val now = java.time.LocalDateTime.now()
+                .toInstant(java.time.ZoneOffset.UTC)
+                .toEpochMilli()
+            val futureBeyondGrace = now + 37 * 60 * 60 * 1000L // 37 hours future
+            val result = service.validateExpenseDate(futureBeyondGrace)
             assertTrue(result is ValidationResult.Invalid)
-            assertTrue((result as ValidationResult.Invalid).message.isNotBlank())
+            assertEquals("Expense date and time cannot be in the future", (result as ValidationResult.Invalid).message)
         }
     }
 }

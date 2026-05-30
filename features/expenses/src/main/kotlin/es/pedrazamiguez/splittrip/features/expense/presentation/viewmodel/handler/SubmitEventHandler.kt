@@ -151,17 +151,23 @@ class SubmitEventHandler(
                     currentState.expenseDateMillis,
                     dateValidation.message
                 )
-                val errorText = UiText.StringResource(R.string.expense_error_date_future)
+                // Future date validation is demoted to a soft warning.
+                // We show a top pill warning and mark the field invalid visually, but do not block submission.
+                val warningText = UiText.StringResource(R.string.expense_error_date_future)
                 _uiState.update {
                     it.copy(
-                        isExpenseDateValid = false,
-                        error = errorText
+                        isExpenseDateValid = false
                     )
                 }
                 scope.launch {
-                    _actions.emit(AddExpenseUiAction.ShowError(errorText))
+                    _actions.emit(AddExpenseUiAction.ShowPill(warningText))
                 }
-                return
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isExpenseDateValid = true
+                    )
+                }
             }
         }
 
