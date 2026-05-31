@@ -28,11 +28,12 @@ Identify, analyze, and resolve SonarQube code quality issues (bugs, code smells,
 
 ## Step 1 — Query SonarQube via MCP
 
-Query the target SonarQube instance to identify current issues or coverage gaps:
+Query the target SonarQube instance to check project health and identify current issues or coverage gaps:
 
 1. **Verify Project Key:** Default to `split-trip` if `$PROJECT_KEY` is not provided.
-2. **Find Code Quality Issues:** Use the `sonarqube` MCP server tool `search_sonar_issues_in_projects` to locate outstanding bugs, vulnerabilities, or code smells. Filter by project key, and optionally `issueStatuses=["OPEN"]` and/or component paths.
-3. **Find Coverage Gaps:** Use the `sonarqube` MCP server tool `search_files_by_coverage` to find files with low test coverage. Sort ascending to find the worst-covered files first.
+2. **Check Quality Gate Status:** Run the `sonarqube` MCP server tool `get_project_quality_gate_status` using `$PROJECT_KEY` to evaluate the overall health and determine which specific quality gate conditions are failing.
+3. **Find Code Quality Issues:** Use the `sonarqube` MCP server tool `search_sonar_issues_in_projects` to locate outstanding bugs, vulnerabilities, or code smells. Filter by project key, and optionally `issueStatuses=["OPEN"]` and/or component paths.
+4. **Find Coverage Gaps:** Use the `sonarqube` MCP server tool `search_files_by_coverage` to find files with low test coverage. Sort ascending to find the worst-covered files first.
 
 ---
 
@@ -48,13 +49,14 @@ Before starting implementation, retrieve precise failure details:
 
 ## Step 3 — File-Size Guard (600-line hard limit)
 
-Before making edits to any code files, run `wc -l` to check their line count:
+Before and after making edits to any code files, run `wc -l` to check their line count:
 
 ```bash
 wc -l <path/to/file.kt>
 ```
 
-If a file is at or near the 600-line hard limit, plan to refactor, extract event handlers, or create delegate classes **before** adding new logic.
+- **Before editing:** If a file is at or near the 600-line hard limit, plan to refactor, extract event handlers, or create delegate classes **before** adding new logic.
+- **After editing:** Re-check the file's line count. If your edits pushed the file over the 600-line hard limit, immediately refactor it (e.g., by extracting event handlers, delegates, or smaller components) to bring it back under the 600-line limit.
 
 ---
 
@@ -62,7 +64,7 @@ If a file is at or near the 600-line hard limit, plan to refactor, extract event
 
 Implement code modifications and unit tests, adhering strictly to all project architecture constraints:
 
-1. **Architecture Constraints (from [AGENTS.md](../../../AGENTS.md)):**
+1. **Architecture Constraints (from [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)):**
    - ViewModels MUST NOT inject Repositories (only inject UseCases, Mappers, and Domain Services).
    - ViewModels MUST NOT inject `Context`, `LocaleProvider`, or other ViewModels.
    - All precision-sensitive decimal calculations MUST use `BigDecimal` with explicit scale and rounding mode (never `Double` or `Float`).
