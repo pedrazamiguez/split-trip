@@ -82,7 +82,6 @@ class SubmitEventHandler(
 
         val currentState = _uiState.value
 
-        // Validate title using domain service
         val titleValidation = expenseValidationService.validateTitle(currentState.expenseTitle)
         if (titleValidation is ValidationResult.Invalid) {
             Timber.w("submitExpense: title validation failed — length=%d", currentState.expenseTitle.length)
@@ -99,7 +98,6 @@ class SubmitEventHandler(
             return
         }
 
-        // Validate amount using domain service
         val amountValidation = expenseValidationService.validateAmount(currentState.sourceAmount)
         if (amountValidation is ValidationResult.Invalid) {
             Timber.w(
@@ -119,7 +117,6 @@ class SubmitEventHandler(
             return
         }
 
-        // Validate due date when payment status is SCHEDULED
         if (currentState.selectedPaymentStatus?.id == PaymentStatus.SCHEDULED.name &&
             currentState.dueDateMillis == null
         ) {
@@ -140,7 +137,6 @@ class SubmitEventHandler(
             return
         }
 
-        // Validate expense date/time when not scheduled
         if (!currentState.showDueDateSection) {
             val dateValidation = expenseValidationService.validateExpenseDate(
                 currentState.expenseDateMillis ?: System.currentTimeMillis()
@@ -151,21 +147,20 @@ class SubmitEventHandler(
                     currentState.expenseDateMillis,
                     dateValidation.message
                 )
-                val errorText = UiText.StringResource(R.string.expense_error_date_future)
-                _uiState.update {
-                    it.copy(
-                        isExpenseDateValid = false,
-                        error = errorText
-                    )
+                val warningText = UiText.StringResource(R.string.expense_error_date_future)
+                _uiState.update { state ->
+                    state.copy(isExpenseDateValid = false).clearFutureDateError()
                 }
                 scope.launch {
-                    _actions.emit(AddExpenseUiAction.ShowError(errorText))
+                    _actions.emit(AddExpenseUiAction.ShowPill(warningText))
                 }
-                return
+            } else {
+                _uiState.update { state ->
+                    state.copy(isExpenseDateValid = true).clearFutureDateError()
+                }
             }
         }
 
-        // Validate add-ons (only those with non-empty input)
         val addOnsWithInput = currentState.addOns.filter { it.amountInput.isNotBlank() }
         if (addOnsWithInput.any { it.resolvedAmountCents <= 0 }) {
             Timber.w(
@@ -433,4 +428,13 @@ class SubmitEventHandler(
             split.copy(amountCents = rescaled[index])
         }
     }
+
+    private fun AddExpenseUiState.clearFutureDateError(): AddExpenseUiState =
+        if (error is UiText.StringResource &&
+            (error as UiText.StringResource).resId == R.string.expense_error_date_future
+        ) {
+            copy(error = null)
+        } else {
+            this
+        }
 }
