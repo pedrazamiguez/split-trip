@@ -157,11 +157,20 @@ object JacocoExclusions {
         "**/repository/CashWithdrawalRepository*.*",
         "**/domain/service/ReceiptExtractionService*.*",
         "**/presentation/mapper/SubunitUiMapper*.*",
-        "**/presentation/viewmodel/strategy/ExpenseFlowStrategy*.*",
+        "**/presentation/viewmodel/strategy/ExpenseFlowStrategy.*",
+        "**/presentation/viewmodel/strategy/ExpenseFlowStrategy\$*.*",
         // ── Mapper interfaces with default method bodies (trivial 1-arg delegate wrappers) ─
         // The default `toGroupUiModel(group)` body just calls `toGroupUiModel(group, emptyMap())`.
         // The Impl is 100% tested; the interface convenience overloads are structural, not logical.
         "**/presentation/mapper/GroupUiMapper*.*",
+        // ── Design-system: constants-only objects — JaCoCo instruments static class initializer ──
+        "**/designsystem/constant/**/*.class",
+        // ── Sealed UiEvent hierarchies — pure data classes with no logic ─────────
+        "**/features/authentication/presentation/model/AuthenticationUiAction*.*",
+        "**/features/authentication/presentation/model/AuthenticationUiEvent*.*",
+        // ── Repository & datasource interfaces ───────────────────────────────────
+        "**/domain/repository/CurrencyRepository*.*",
+        "**/domain/datasource/cloud/CloudUserDataSource*.*",
         // ── Kotlin coroutines internals leaking into the JaCoCo class path ────────
         // SafeCollector.common is an internal coroutines file; it's not our code.
         "**/SafeCollector*.*",
