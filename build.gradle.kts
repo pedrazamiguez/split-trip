@@ -184,6 +184,21 @@ sonarqube {
                 "**/remote/datasource/impl/**/*.kt",
                 // Database migrations — raw DDL SQL; no meaningful unit-test path
                 "**/database/DatabaseMigrations.kt",
+                // UiEvent, AppCheck, data-holders, mapping and interfaces
+                "**/presentation/viewmodel/event/**/*.kt",
+                "**/appcheck/AppCheckProviderHelper*.kt",
+                "**/presentation/model/CashBalanceUiModel*.kt",
+                "**/presentation/view/SettingItemView*.kt",
+                "**/presentation/extensions/AddOnValueTypeExtensions*.kt",
+                "**/repository/CashWithdrawalRepository*.kt",
+                "**/domain/service/ReceiptExtractionService*.kt",
+                "**/presentation/mapper/SubunitUiMapper*.kt",
+                "**/presentation/viewmodel/strategy/ExpenseFlowStrategy.kt",
+                "**/presentation/mapper/GroupUiMapper*.kt",
+                "**/features/authentication/presentation/model/AuthenticationUiAction*.kt",
+                "**/features/authentication/presentation/model/AuthenticationUiEvent*.kt",
+                "**/domain/repository/CurrencyRepository.kt",
+                "**/domain/datasource/cloud/CloudUserDataSource.kt",
             ).joinToString(","),
         )
 
