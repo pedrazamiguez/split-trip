@@ -13,12 +13,14 @@ class UserRepositoryImpl(
     private val authenticationService: AuthenticationService
 ) : UserRepository {
 
-    override suspend fun saveGoogleUser(user: User): Result<Unit> = runCatching {
+    override suspend fun saveUser(user: User): Result<Unit> = runCatching {
         cloudUserDataSource.saveUser(user)
         // Also cache locally so the current user's display name is
         // available offline immediately without a Firestore round-trip.
         localUserDataSource.saveUsers(listOf(user))
     }
+
+    override suspend fun saveGoogleUser(user: User): Result<Unit> = saveUser(user)
 
     override suspend fun getCurrentUserProfile(): User? {
         val userId = authenticationService.currentUserId() ?: return null

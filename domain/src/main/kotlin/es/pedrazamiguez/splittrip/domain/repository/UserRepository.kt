@@ -6,6 +6,11 @@ interface UserRepository {
     suspend fun saveGoogleUser(user: User): Result<Unit>
 
     /**
+     * Saves a user profile to the cloud database and caches it locally.
+     */
+    suspend fun saveUser(user: User): Result<Unit>
+
+    /**
      * Returns the current authenticated user's profile.
      *
      * Checks the local cache (Room) first, then fetches from the cloud

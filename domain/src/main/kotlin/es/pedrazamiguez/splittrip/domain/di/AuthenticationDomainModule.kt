@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.di
 
+import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
@@ -13,6 +14,7 @@ val authenticationDomainModule = module {
     factory {
         SignInWithEmailUseCase(
             authenticationService = get<AuthenticationService>(),
+            userRepository = get<UserRepository>(),
             registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
         )
     }
