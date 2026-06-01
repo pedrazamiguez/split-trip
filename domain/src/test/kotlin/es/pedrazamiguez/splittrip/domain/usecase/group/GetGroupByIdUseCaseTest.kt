@@ -17,7 +17,7 @@ class GetGroupByIdUseCaseTest {
     @Test
     fun `invoke delegates to repository`() = runTest {
         val groupId = "group_123"
-        val expectedGroup: Group = mockk()
+        val expectedGroup = Group(id = groupId, name = "Test Group")
         coEvery { repository.getGroupById(groupId) } returns expectedGroup
 
         val result = useCase(groupId)
