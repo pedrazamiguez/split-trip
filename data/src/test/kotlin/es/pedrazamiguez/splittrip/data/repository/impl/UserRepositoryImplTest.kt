@@ -71,6 +71,7 @@ class UserRepositoryImplTest {
             val result = repository.saveUser(testUser)
 
             assertTrue(result.isFailure)
+            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
         }
     }
 
@@ -96,6 +97,7 @@ class UserRepositoryImplTest {
             val result = repository.saveGoogleUser(testUser)
 
             assertTrue(result.isFailure)
+            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
         }
     }
 

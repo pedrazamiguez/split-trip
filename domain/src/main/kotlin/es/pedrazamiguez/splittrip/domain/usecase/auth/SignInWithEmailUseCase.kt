@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class SignInWithEmailUseCase(
     private val authenticationService: AuthenticationService,
@@ -24,7 +25,7 @@ class SignInWithEmailUseCase(
                 email = email,
                 displayName = email.substringBefore('@'),
                 profileImagePath = null,
-                createdAt = LocalDateTime.now()
+                createdAt = LocalDateTime.now(ZoneOffset.UTC)
             )
             userRepository.saveUser(defaultUser).getOrThrow()
         }
