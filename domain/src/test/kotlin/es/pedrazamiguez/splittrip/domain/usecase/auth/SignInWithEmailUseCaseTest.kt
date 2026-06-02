@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth
 
+import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import io.mockk.coEvery
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test
 class SignInWithEmailUseCaseTest {
 
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var userRepository: UserRepository
     private lateinit var registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
     private lateinit var useCase: SignInWithEmailUseCase
 
@@ -25,11 +28,15 @@ class SignInWithEmailUseCaseTest {
     @BeforeEach
     fun setUp() {
         authenticationService = mockk()
+        userRepository = mockk()
         registerDeviceTokenUseCase = mockk()
         useCase = SignInWithEmailUseCase(
             authenticationService = authenticationService,
+            userRepository = userRepository,
             registerDeviceTokenUseCase = registerDeviceTokenUseCase
         )
+        coEvery { userRepository.getCurrentUserProfile() } returns User(userId, email, "user", null, null)
+        coEvery { userRepository.saveUser(any()) } returns Result.success(Unit)
     }
 
     @Nested
@@ -88,6 +95,46 @@ class SignInWithEmailUseCaseTest {
             assertTrue(result.isSuccess)
             assertEquals(userId, result.getOrNull())
         }
+
+        @Test
+        fun `does not save user if profile already exists`() = runTest {
+            // Given
+            coEvery { authenticationService.signIn(email, password) } returns Result.success(userId)
+            coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
+            coEvery { userRepository.getCurrentUserProfile() } returns User(userId, email, "user", null, null)
+
+            // When
+            useCase(email, password)
+
+            // Then
+            coVerify(exactly = 0) { userRepository.saveUser(any()) }
+        }
+
+        @Test
+        fun `creates and saves default profile if it does not exist`() = runTest {
+            // Given
+            coEvery { authenticationService.signIn(email, password) } returns Result.success(userId)
+            coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
+            coEvery { userRepository.getCurrentUserProfile() } returns null
+            coEvery { userRepository.saveUser(any()) } returns Result.success(Unit)
+
+            // When
+            val result = useCase(email, password)
+
+            // Then
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) {
+                userRepository.saveUser(
+                    withArg {
+                        assertEquals(userId, it.userId)
+                        assertEquals(email, it.email)
+                        assertEquals("user", it.displayName)
+                        org.junit.jupiter.api.Assertions.assertNull(it.profileImagePath)
+                        org.junit.jupiter.api.Assertions.assertNotNull(it.createdAt)
+                    }
+                )
+            }
+        }
     }
 
     @Nested
@@ -106,6 +153,21 @@ class SignInWithEmailUseCaseTest {
             assertTrue(result.isFailure)
             assertEquals("Auth failed", result.exceptionOrNull()?.message)
             coVerify(exactly = 0) { registerDeviceTokenUseCase() }
+        }
+
+        @Test
+        fun `fails when profile creation fails`() = runTest {
+            // Given
+            coEvery { authenticationService.signIn(email, password) } returns Result.success(userId)
+            coEvery { userRepository.getCurrentUserProfile() } returns null
+            coEvery { userRepository.saveUser(any()) } returns Result.failure(RuntimeException("Save failed"))
+
+            // When
+            val result = useCase(email, password)
+
+            // Then
+            assertTrue(result.isFailure)
+            assertEquals("Save failed", result.exceptionOrNull()?.message)
         }
     }
 }
