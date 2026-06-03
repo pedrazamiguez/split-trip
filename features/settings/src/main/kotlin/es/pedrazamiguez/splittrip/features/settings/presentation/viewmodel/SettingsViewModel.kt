@@ -10,7 +10,6 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseC
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
-import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -44,14 +43,14 @@ class SettingsViewModel(
     )
 
     val currentLanguageCode: StateFlow<String> = getAppLanguageUseCase().map { langCode ->
-        AppLanguage.fromCode(langCode ?: Locale.getDefault().language).code
+        AppLanguage.fromCode(langCode).code
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(
             stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
             replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
         ),
-        initialValue = AppLanguage.fromCode(Locale.getDefault().language).code
+        initialValue = AppLanguage.fromCode(null).code
     )
 
     val shouldShowLanguagePill: StateFlow<Boolean> = getShouldShowLanguagePillUseCase().stateIn(

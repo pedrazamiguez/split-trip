@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.feature
 
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
@@ -27,13 +29,13 @@ fun LanguageFeature(viewModel: LanguageViewModel = koinViewModel()) {
             selectedLanguageCode = selectedLanguage,
             onLanguageSelected = { newLanguageCode ->
                 if (newLanguageCode != selectedLanguage) {
-                    viewModel.onLanguageSelected(newLanguageCode)
-                    androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                        androidx.core.os.LocaleListCompat.forLanguageTags(newLanguageCode)
-                    )
                     scope.launch {
+                        viewModel.onLanguageSelected(newLanguageCode).join()
                         delay(UiConstants.NAV_FEEDBACK_DELAY)
                         navController.popBackStack()
+                        AppCompatDelegate.setApplicationLocales(
+                            LocaleListCompat.forLanguageTags(newLanguageCode)
+                        )
                     }
                 } else {
                     scope.launch {
