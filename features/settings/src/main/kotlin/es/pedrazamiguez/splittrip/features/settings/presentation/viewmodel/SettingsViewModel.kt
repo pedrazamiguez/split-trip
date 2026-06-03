@@ -3,8 +3,12 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +21,10 @@ import timber.log.Timber
 
 class SettingsViewModel(
     private val signOutUseCase: SignOutUseCase,
-    private val getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase
+    private val getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase,
+    private val getAppLanguageUseCase: GetAppLanguageUseCase,
+    private val getShouldShowLanguagePillUseCase: GetShouldShowLanguagePillUseCase,
+    private val consumeLanguagePillUseCase: ConsumeLanguagePillUseCase
 ) : ViewModel() {
 
     val currentCurrency: StateFlow<Currency?> = getUserDefaultCurrencyUseCase().map { code ->
@@ -34,6 +41,32 @@ class SettingsViewModel(
         ),
         initialValue = null
     )
+
+    val currentLanguageCode: StateFlow<String> = getAppLanguageUseCase().map { langCode ->
+        AppLanguage.fromCode(langCode).code
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(
+            stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
+            replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
+        ),
+        initialValue = AppLanguage.fromCode(null).code
+    )
+
+    val shouldShowLanguagePill: StateFlow<Boolean> = getShouldShowLanguagePillUseCase().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(
+            stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
+            replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
+        ),
+        initialValue = false
+    )
+
+    fun consumeLanguagePill() {
+        viewModelScope.launch {
+            consumeLanguagePillUseCase()
+        }
+    }
 
     private val _hasNotificationPermission = MutableStateFlow(false)
     val hasNotificationPermission: StateFlow<Boolean> = _hasNotificationPermission.asStateFlow()

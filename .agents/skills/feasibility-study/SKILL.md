@@ -1,5 +1,5 @@
 ---
-name: feasibility-study
+name: sp-feasibility-study
 description: Study the feasibility and viability of a proposed feature or architectural change.
 mode: agent
 tools:

@@ -22,6 +22,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.permission.checkNotification
 import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestNotificationPermission
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.SettingsScreen
@@ -35,9 +37,12 @@ fun SettingsFeature(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val pillController = LocalTopPillController.current
 
     val currentCurrency by settingsViewModel.currentCurrency.collectAsStateWithLifecycle()
     val hasPermission by settingsViewModel.hasNotificationPermission.collectAsStateWithLifecycle()
+    val currentLanguageCode by settingsViewModel.currentLanguageCode.collectAsStateWithLifecycle()
+    val shouldShowLanguagePill by settingsViewModel.shouldShowLanguagePill.collectAsStateWithLifecycle()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -48,11 +53,30 @@ fun SettingsFeature(
         }
     }
 
+    val languageEs = stringResource(R.string.settings_preferences_language_es)
+    val languageEn = stringResource(R.string.settings_preferences_language_en)
+    val languageChangedFormat = stringResource(R.string.settings_preferences_language_changed_format)
+
+    LaunchedEffect(shouldShowLanguagePill) {
+        if (shouldShowLanguagePill) {
+            val languageName = when (AppLanguage.fromCode(currentLanguageCode)) {
+                AppLanguage.ES -> languageEs
+                AppLanguage.EN -> languageEn
+            }
+            pillController.showPill(
+                languageChangedFormat.format(languageName)
+            )
+            settingsViewModel.consumeLanguagePill()
+        }
+    }
+
     SettingsFeatureContent(
         navController = navController,
         settingsViewModel = settingsViewModel,
         hasPermission = hasPermission,
         currentCurrency = currentCurrency,
+        currentLanguageCode = currentLanguageCode,
+        onLanguageClick = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
         onLogoutClick = { showLogoutDialog = true }
     )
 
@@ -77,6 +101,8 @@ private fun SettingsFeatureContent(
     settingsViewModel: SettingsViewModel,
     hasPermission: Boolean,
     currentCurrency: Currency?,
+    currentLanguageCode: String,
+    onLanguageClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -109,6 +135,8 @@ private fun SettingsFeatureContent(
             onDefaultCurrencyClick = {
                 navController.navigate(Routes.SETTINGS_DEFAULT_CURRENCY)
             },
+            currentLanguageCode = currentLanguageCode,
+            onLanguageClick = onLanguageClick,
             onLogoutClick = onLogoutClick,
             onDeveloperServicesTestClick = {
                 navController.navigate(Routes.SETTINGS_DEVELOPER_SERVICES)

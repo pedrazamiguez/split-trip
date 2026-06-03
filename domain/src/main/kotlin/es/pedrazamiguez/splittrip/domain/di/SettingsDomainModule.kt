@@ -4,7 +4,9 @@ import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
@@ -12,9 +14,11 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPaymentMethodUseCase
@@ -131,6 +135,30 @@ val settingsDomainModule = module {
     factory<SetLastSeenBalanceUseCase> {
         SetLastSeenBalanceUseCase(
             balancePreferenceRepository = get<BalancePreferenceRepository>()
+        )
+    }
+
+    factory<GetAppLanguageUseCase> {
+        GetAppLanguageUseCase(
+            preferenceRepository = get<UserPreferenceRepository>()
+        )
+    }
+
+    factory<SetAppLanguageUseCase> {
+        SetAppLanguageUseCase(
+            preferenceRepository = get<UserPreferenceRepository>()
+        )
+    }
+
+    factory<GetShouldShowLanguagePillUseCase> {
+        GetShouldShowLanguagePillUseCase(
+            preferenceRepository = get<UserPreferenceRepository>()
+        )
+    }
+
+    factory<ConsumeLanguagePillUseCase> {
+        ConsumeLanguagePillUseCase(
+            preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 }

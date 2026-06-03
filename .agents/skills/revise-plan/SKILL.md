@@ -1,5 +1,5 @@
 ---
-name: revise-plan
+name: sp-revise-plan
 description: Revisit and revise a proposed implementation plan using a different approach, architecture, or set of libraries.
 mode: agent
 tools:

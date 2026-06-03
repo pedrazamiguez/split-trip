@@ -394,4 +394,42 @@ class UserPreferencesTest {
 
         assertEquals("AI_CORE_GEMMA_4", result)
     }
+
+    // ── App Language & Language Changed Pill (Device-scoped) ─────────────
+
+    @Test
+    fun `appLanguage is shared across users (device-scoped)`() = runTest {
+        val prefsA = createUserPreferences(USER_A_ID)
+        prefsA.setAppLanguage("es")
+
+        val prefsB = createUserPreferences(USER_B_ID)
+        val result = prefsB.appLanguage.first()
+
+        assertEquals("es", result)
+    }
+
+    @Test
+    fun `appLanguage defaults to null`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        val result = prefs.appLanguage.first()
+        assertNull(result)
+    }
+
+    @Test
+    fun `shouldShowLanguagePill is shared across users (device-scoped)`() = runTest {
+        val prefsA = createUserPreferences(USER_A_ID)
+        prefsA.setShouldShowLanguagePill(true)
+
+        val prefsB = createUserPreferences(USER_B_ID)
+        val result = prefsB.shouldShowLanguagePill.first()
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `shouldShowLanguagePill defaults to false`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        val result = prefs.shouldShowLanguagePill.first()
+        assertFalse(result)
+    }
 }

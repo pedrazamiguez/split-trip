@@ -1,5 +1,5 @@
 ---
-name: start-issue
+name: sp-start-issue
 description: Start working on a GitHub issue end-to-end.
 mode: agent
 tools:
@@ -98,3 +98,13 @@ make check   # Konsist architecture rules + all unit tests + debug compilation â
 ```
 
 If any check fails, fix it before finishing. Do not leave the user to discover failures in CI.
+
+---
+
+## Step 6 â€” Post walkthrough as an issue comment
+
+After verifying that all checks pass locally and your work is complete, you MUST automatically post the walkthrough you generate as a comment on the GitHub issue using the github-mcp-server tool `add_issue_comment` before finishing the task. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
+
+The comment must include:
+- A summary of the changes made and what was accomplished
+- A summary of the testing and validation results (e.g. `make check` results, unit tests executed)

@@ -2,9 +2,9 @@ package es.pedrazamiguez.splittrip
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
@@ -13,7 +13,7 @@ import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.navigation.AppNavHost
 import org.koin.android.ext.android.inject
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private var navHostController: NavHostController? = null
     private val deepLinkHolder: DeepLinkHolder by inject()

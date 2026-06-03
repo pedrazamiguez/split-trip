@@ -16,6 +16,7 @@ object Routes {
     const val ADD_CASH_WITHDRAWAL = "add_cash_withdrawal"
     const val SETTINGS = "settings"
     const val SETTINGS_DEFAULT_CURRENCY = "settings_default_currency"
+    const val SETTINGS_LANGUAGE = "settings_language"
     const val SETTINGS_NOTIFICATIONS = "settings_notifications"
     const val SETTINGS_DEVELOPER_SERVICES = "settings_developer_services"
     const val GROUP_DETAIL = "group_detail/{groupId}"

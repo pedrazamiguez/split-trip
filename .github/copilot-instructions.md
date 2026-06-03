@@ -36,6 +36,9 @@ Refuse to generate "standard" boilerplate if it violates the specific patterns d
 * The ViewModel becomes a thin router: it delegates each event to the appropriate handler.
 * Handlers are co-created inside the `viewModel { }` Koin block so cross-handler references work.
 * **Reference implementation:** See `AddExpenseEventHandler` interface and `ConfigEventHandler`, `SplitEventHandler`, `SubmitEventHandler` in `:features:expenses`.
+
+**Unused/Dead ViewModel Code:**
+* Do not retain unused methods, inputs, or dependencies in ViewModels. If a sub-feature or delegated EventHandler takes over a write-flow, delete the duplicate methods and dependencies from the parent ViewModel.
     ```kotlin
     // Handler interface contract
     interface MyFeatureEventHandler {
@@ -224,6 +227,10 @@ This app uses **CompositionLocals** for global orchestration. Do not pass these 
 * Validation logic (e.g., "Title is empty") belongs in a **`Domain Service`** (e.g., `ExpenseValidationService`), NOT the ViewModel, and NOT a UseCase.
 * *Distinction:* UseCases = User Actions (Save). Services = Business Rules (Validate).
 
+**Enum Centralization:**
+* Domain enums (e.g., `AppLanguage`, `Currency`) must be the single source of truth for parsing codes, fallback defaults, and validation.
+* Never duplicate string-matching logic (e.g., `if (code == "es" || code == "en")`) or locale fallback checks in ViewModels or presentation layers; delegate directly to the enum's helper functions.
+
 ---
 
 ## 6. 💾 Data Layer: Offline-First & Single Source of Truth
@@ -371,6 +378,15 @@ override fun getGroupSubunitsFlow(groupId: String): Flow<List<Subunit>> =
 * **Empty States:** Use **`EmptyStateView`** from `:core:design-system`.
 * **Cards:** Use **`FlatCard`** from `:core:design-system` for all card containers. Never use raw `Surface(…)` with manual border/color/shape for cards.
 * **Formatting:** Use `AmountFormatter` and `DateFormatter` from `:core:design-system`.
+* **Compose Resource Access (STRICT):**
+    * ALWAYS use Compose-native APIs (e.g., `stringResource(...)`, `painterResource(...)`) rather than querying resources via `LocalContext.current` (which is not configuration-aware).
+    * For non-Composable contexts (like callbacks, click handlers, or `LaunchedEffect` lambdas), resolve the resource strings in the Composable scope first and pass the resolved strings into the block.
+* **Global UI Orchestrators:**
+    * Global controllers and notifications (e.g., `LocalTopPillController`, `TopPillNotification`) must be declared exactly once at the root nav host level (`AppNavHost`).
+    * Feature screens and tab screens must never define, instantiate, or render nested instances of these controllers or notifications.
+* **Accessibility (a11y) for Decorative Icons:**
+    * Purely decorative images or icons (like checkmarks indicating selection in a row where the row itself already conveys status) must have `contentDescription = null` to avoid screen reader noise.
+    * Interactive icons or status icons that convey non-redundant information must use localized string resources.
 
 **Bottom Padding & `LocalBottomPadding` (CRITICAL — Prevents Content Hidden by Bottom Nav):**
 * The `MainScreen` uses a **floating bottom navigation bar** that overlays content. If screens don't account for this, the last list items, FABs, and buttons will be hidden behind the nav bar.
@@ -545,7 +561,6 @@ These rules govern how AI assistants (Copilot, agents) interact with this codeba
     * Branch naming convention (see `wiki/branching-versioning-release-strategy.md`).
     * PR target branch (e.g., `develop` for features, `main` for releases/hotfixes).
     * PR title and description format.
-* ❌ **NEVER** comment on GitHub issues or PRs without the user explicitly requesting it.
 * ❌ **NEVER** merge PRs or close issues autonomously.
 * ✅ **Good:** Prepare changes locally, present the plan/diff to the user, and wait for their explicit approval before any remote operation.
 
