@@ -28,12 +28,12 @@ fun LanguageFeature(viewModel: LanguageViewModel = koinViewModel()) {
             onLanguageSelected = { newLanguageCode ->
                 if (newLanguageCode != selectedLanguage) {
                     viewModel.onLanguageSelected(newLanguageCode)
+                    androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                        androidx.core.os.LocaleListCompat.forLanguageTags(newLanguageCode)
+                    )
                     scope.launch {
                         delay(UiConstants.NAV_FEEDBACK_DELAY)
                         navController.popBackStack()
-                        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                            androidx.core.os.LocaleListCompat.forLanguageTags(newLanguageCode)
-                        )
                     }
                 } else {
                     scope.launch {

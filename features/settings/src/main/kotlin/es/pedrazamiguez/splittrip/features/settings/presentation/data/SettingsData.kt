@@ -31,6 +31,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Shield
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ShieldLock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UserPin
+import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.AppVersionFeature
@@ -126,9 +127,9 @@ private fun preferencesSection(
 
 @Composable
 private fun LanguageDescription(currentLanguageCode: String) {
-    val languageName = when (currentLanguageCode) {
-        "es" -> stringResource(R.string.settings_preferences_language_es)
-        else -> stringResource(R.string.settings_preferences_language_en)
+    val languageName = when (AppLanguage.fromCode(currentLanguageCode)) {
+        AppLanguage.ES -> stringResource(R.string.settings_preferences_language_es)
+        AppLanguage.EN -> stringResource(R.string.settings_preferences_language_en)
     }
     Text(text = languageName)
 }

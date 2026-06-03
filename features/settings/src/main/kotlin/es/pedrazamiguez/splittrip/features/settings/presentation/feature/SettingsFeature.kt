@@ -23,6 +23,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestNo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.SettingsScreen
@@ -58,9 +59,9 @@ fun SettingsFeature(
 
     LaunchedEffect(shouldShowLanguagePill) {
         if (shouldShowLanguagePill) {
-            val languageName = when (currentLanguageCode) {
-                "es" -> languageEs
-                else -> languageEn
+            val languageName = when (AppLanguage.fromCode(currentLanguageCode)) {
+                AppLanguage.ES -> languageEs
+                AppLanguage.EN -> languageEn
             }
             pillController.showPill(
                 languageChangedFormat.format(languageName)

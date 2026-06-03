@@ -44,13 +44,7 @@ class SettingsViewModel(
     )
 
     val currentLanguageCode: StateFlow<String> = getAppLanguageUseCase().map { langCode ->
-        val isValid =
-            langCode?.let { code -> AppLanguage.entries.any { it.code.equals(code, ignoreCase = true) } } ?: false
-        if (isValid) {
-            AppLanguage.fromCode(langCode!!).code
-        } else {
-            AppLanguage.fromCode(Locale.getDefault().language).code
-        }
+        AppLanguage.fromCode(langCode ?: Locale.getDefault().language).code
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(

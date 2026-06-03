@@ -561,7 +561,6 @@ These rules govern how AI assistants (Copilot, agents) interact with this codeba
     * Branch naming convention (see `wiki/branching-versioning-release-strategy.md`).
     * PR target branch (e.g., `develop` for features, `main` for releases/hotfixes).
     * PR title and description format.
-* ❌ **NEVER** comment on GitHub issues or PRs without the user explicitly requesting it.
 * ❌ **NEVER** merge PRs or close issues autonomously.
 * ✅ **Good:** Prepare changes locally, present the plan/diff to the user, and wait for their explicit approval before any remote operation.
 
