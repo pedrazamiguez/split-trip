@@ -1,5 +1,5 @@
 ---
-name: review-pr
+name: sp-review-pr
 description: Review a GitHub pull request and address comments.
 mode: agent
 tools:

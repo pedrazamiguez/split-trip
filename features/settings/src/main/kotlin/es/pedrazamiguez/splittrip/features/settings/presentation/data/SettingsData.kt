@@ -47,21 +47,11 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.model.SettingsS
  */
 @Composable
 fun buildSettingsSections(
-    onNotificationsClick: () -> Unit,
-    onNotificationSwitchToggle: () -> Unit,
-    hasNotificationPermission: Boolean,
-    currentCurrency: Currency?,
-    onDefaultCurrencyClick: () -> Unit,
+    preferencesParams: SettingsPreferencesParams,
     onServicesTestClick: () -> Unit
 ): List<SettingsSectionModel> = listOf(
     accountSection(),
-    preferencesSection(
-        onNotificationsClick = onNotificationsClick,
-        onNotificationSwitchToggle = onNotificationSwitchToggle,
-        hasNotificationPermission = hasNotificationPermission,
-        currentCurrency = currentCurrency,
-        onDefaultCurrencyClick = onDefaultCurrencyClick
-    ),
+    preferencesSection(preferencesParams),
     developerSection(onServicesTestClick = onServicesTestClick),
     supportSection(),
     aboutSection()
@@ -94,11 +84,7 @@ private fun accountSection() = SettingsSectionModel(
 )
 
 private fun preferencesSection(
-    onNotificationsClick: () -> Unit,
-    onNotificationSwitchToggle: () -> Unit,
-    hasNotificationPermission: Boolean,
-    currentCurrency: Currency?,
-    onDefaultCurrencyClick: () -> Unit
+    params: SettingsPreferencesParams
 ) = SettingsSectionModel(
     titleRes = R.string.settings_section_preferences,
     items = listOf(
@@ -107,33 +93,45 @@ private fun preferencesSection(
             titleRes = R.string.settings_preferences_theme_title,
             descriptionRes = R.string.settings_preferences_theme_description
         ),
-        SettingsItemModel.Standard(
+        SettingsItemModel.WithCustomDescription(
             icon = TablerIcons.Outline.Language,
             titleRes = R.string.settings_preferences_language_title,
-            descriptionRes = R.string.settings_preferences_language_description
+            onClick = params.onLanguageClick,
+            descriptionContent = {
+                LanguageDescription(params.currentLanguageCode)
+            }
         ),
         SettingsItemModel.WithTrailing(
             icon = TablerIcons.Outline.Bell,
             titleRes = R.string.settings_preferences_notifications_title,
             descriptionRes = R.string.settings_preferences_notifications_description,
-            onClick = onNotificationsClick,
+            onClick = params.onNotificationsClick,
             trailingContent = {
                 Switch(
-                    checked = hasNotificationPermission,
-                    onCheckedChange = { onNotificationSwitchToggle() }
+                    checked = params.hasNotificationPermission,
+                    onCheckedChange = { params.onNotificationSwitchToggle() }
                 )
             }
         ),
         SettingsItemModel.WithCustomDescription(
             icon = TablerIcons.Outline.CurrencyEuro,
             titleRes = R.string.settings_preferences_currency_title,
-            onClick = onDefaultCurrencyClick,
+            onClick = params.onDefaultCurrencyClick,
             descriptionContent = {
-                CurrencyDescription(currentCurrency)
+                CurrencyDescription(params.currentCurrency)
             }
         )
     )
 )
+
+@Composable
+private fun LanguageDescription(currentLanguageCode: String) {
+    val languageName = when (currentLanguageCode) {
+        "es" -> stringResource(R.string.settings_preferences_language_es)
+        else -> stringResource(R.string.settings_preferences_language_en)
+    }
+    Text(text = languageName)
+}
 
 @Composable
 private fun CurrencyDescription(currentCurrency: Currency?) {

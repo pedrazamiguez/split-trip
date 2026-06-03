@@ -1,5 +1,5 @@
 ---
-name: address-sonar-issues
+name: sp-address-sonar-issues
 description: Fetch, analyze, and resolve SonarQube quality gate failures, code smells, bugs, and coverage gaps.
 mode: agent
 tools:

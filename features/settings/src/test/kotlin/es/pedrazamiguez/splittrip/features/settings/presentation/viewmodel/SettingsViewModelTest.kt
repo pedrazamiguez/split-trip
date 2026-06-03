@@ -2,10 +2,15 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -33,12 +38,23 @@ class SettingsViewModelTest {
 
     private lateinit var signOutUseCase: SignOutUseCase
     private lateinit var getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase
+    private lateinit var getAppLanguageUseCase: GetAppLanguageUseCase
+    private lateinit var setAppLanguageUseCase: SetAppLanguageUseCase
+    private lateinit var getShouldShowLanguagePillUseCase: GetShouldShowLanguagePillUseCase
+    private lateinit var consumeLanguagePillUseCase: ConsumeLanguagePillUseCase
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         signOutUseCase = mockk()
         getUserDefaultCurrencyUseCase = mockk()
+        getAppLanguageUseCase = mockk()
+        setAppLanguageUseCase = mockk()
+        getShouldShowLanguagePillUseCase = mockk()
+        consumeLanguagePillUseCase = mockk()
+
+        every { getAppLanguageUseCase() } returns flowOf(null)
+        every { getShouldShowLanguagePillUseCase() } returns flowOf(false)
     }
 
     @AfterEach
@@ -48,7 +64,11 @@ class SettingsViewModelTest {
 
     private fun createViewModel(): SettingsViewModel = SettingsViewModel(
         signOutUseCase = signOutUseCase,
-        getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase
+        getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
+        getAppLanguageUseCase = getAppLanguageUseCase,
+        setAppLanguageUseCase = setAppLanguageUseCase,
+        getShouldShowLanguagePillUseCase = getShouldShowLanguagePillUseCase,
+        consumeLanguagePillUseCase = consumeLanguagePillUseCase
     )
 
     // ── currentCurrency StateFlow ───────────────────────────────────────────
@@ -145,6 +165,101 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertFalse(signedOutCalled)
+        }
+    }
+
+    // ── currentLanguageCode StateFlow ───────────────────────────────────────
+
+    @Nested
+    @DisplayName("currentLanguageCode")
+    inner class CurrentLanguageCode {
+
+        @Test
+        fun `emits Language from use case flow`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            every { getAppLanguageUseCase() } returns flowOf("es")
+
+            val viewModel = createViewModel()
+
+            val collectJob = launch { viewModel.currentLanguageCode.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("es", viewModel.currentLanguageCode.value)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `null language falls back to system locale`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            every { getAppLanguageUseCase() } returns flowOf(null)
+
+            val viewModel = createViewModel()
+
+            val collectJob = launch { viewModel.currentLanguageCode.collect {} }
+            advanceUntilIdle()
+
+            val expected = if (Locale.getDefault().language == "es") "es" else "en"
+            assertEquals(expected, viewModel.currentLanguageCode.value)
+            collectJob.cancel()
+        }
+    }
+
+    // ── shouldShowLanguagePill StateFlow ────────────────────────────────────
+
+    @Nested
+    @DisplayName("shouldShowLanguagePill")
+    inner class ShouldShowLanguagePill {
+
+        @Test
+        fun `emits value from use case flow`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            every { getShouldShowLanguagePillUseCase() } returns flowOf(true)
+
+            val viewModel = createViewModel()
+
+            val collectJob = launch { viewModel.shouldShowLanguagePill.collect {} }
+            advanceUntilIdle()
+
+            assertTrue(viewModel.shouldShowLanguagePill.value)
+            collectJob.cancel()
+        }
+    }
+
+    // ── onLanguageSelected ──────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("onLanguageSelected")
+    inner class OnLanguageSelected {
+
+        @Test
+        fun `calls SetAppLanguageUseCase`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            io.mockk.coJustRun { setAppLanguageUseCase("es") }
+
+            val viewModel = createViewModel()
+            viewModel.onLanguageSelected("es")
+            advanceUntilIdle()
+
+            io.mockk.coVerify(exactly = 1) { setAppLanguageUseCase("es") }
+        }
+    }
+
+    // ── consumeLanguagePill ─────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("consumeLanguagePill")
+    inner class ConsumeLanguagePill {
+
+        @Test
+        fun `calls ConsumeLanguagePillUseCase`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            io.mockk.coJustRun { consumeLanguagePillUseCase() }
+
+            val viewModel = createViewModel()
+            viewModel.consumeLanguagePill()
+            advanceUntilIdle()
+
+            io.mockk.coVerify(exactly = 1) { consumeLanguagePillUseCase() }
         }
     }
 }
