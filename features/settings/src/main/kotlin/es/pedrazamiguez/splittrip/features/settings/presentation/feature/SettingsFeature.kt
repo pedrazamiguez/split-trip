@@ -3,21 +3,12 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.feature
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
@@ -25,8 +16,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.permission.checkNotificationPermission
@@ -55,7 +44,6 @@ fun SettingsFeature(
     val shouldShowLanguagePill by settingsViewModel.shouldShowLanguagePill.collectAsStateWithLifecycle()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
-    var showLanguageDialog by remember { mutableStateOf(false) }
 
     // Update permission state when screen is resumed
     LaunchedEffect(lifecycleOwner) {
@@ -66,7 +54,16 @@ fun SettingsFeature(
 
     LaunchedEffect(shouldShowLanguagePill) {
         if (shouldShowLanguagePill) {
-            pillController.showPill(context.getString(R.string.settings_preferences_language_changed_pill))
+            val languageName = when (currentLanguageCode) {
+                "es" -> context.getString(R.string.settings_preferences_language_es)
+                else -> context.getString(R.string.settings_preferences_language_en)
+            }
+            pillController.showPill(
+                context.getString(
+                    R.string.settings_preferences_language_changed_format,
+                    languageName
+                )
+            )
             settingsViewModel.consumeLanguagePill()
         }
     }
@@ -77,7 +74,7 @@ fun SettingsFeature(
         hasPermission = hasPermission,
         currentCurrency = currentCurrency,
         currentLanguageCode = currentLanguageCode,
-        onLanguageClick = { showLanguageDialog = true },
+        onLanguageClick = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
         onLogoutClick = { showLogoutDialog = true }
     )
 
@@ -92,23 +89,6 @@ fun SettingsFeature(
                 }
             },
             onDismiss = { showLogoutDialog = false }
-        )
-    }
-
-    if (showLanguageDialog) {
-        LanguageSelectionDialog(
-            currentLanguageCode = currentLanguageCode,
-            onLanguageSelected = { langCode ->
-                showLanguageDialog = false
-                if (langCode != currentLanguageCode) {
-                    settingsViewModel.onLanguageSelected(langCode)
-                    // Change application locale immediately
-                    androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                        androidx.core.os.LocaleListCompat.forLanguageTags(langCode)
-                    )
-                }
-            },
-            onDismiss = { showLanguageDialog = false }
         )
     }
 }
@@ -174,60 +154,5 @@ private fun LogoutConfirmationDialog(
         confirmLabel = stringResource(R.string.settings_logout_dialog_confirm),
         onConfirm = onConfirm,
         onDismiss = onDismiss
-    )
-}
-
-@Composable
-private fun LanguageSelectionDialog(
-    currentLanguageCode: String,
-    onLanguageSelected: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(R.string.settings_preferences_language_dialog_title),
-                style = MaterialTheme.typography.titleLarge
-            )
-        },
-        text = {
-            Column {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_preferences_language_en)) },
-                    trailingContent = {
-                        if (currentLanguageCode == "en") {
-                            Icon(
-                                imageVector = TablerIcons.Outline.Check,
-                                contentDescription = "Selected"
-                            )
-                        }
-                    },
-                    modifier = Modifier.clickable {
-                        onLanguageSelected("en")
-                    }
-                )
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_preferences_language_es)) },
-                    trailingContent = {
-                        if (currentLanguageCode == "es") {
-                            Icon(
-                                imageVector = TablerIcons.Outline.Check,
-                                contentDescription = "Selected"
-                            )
-                        }
-                    },
-                    modifier = Modifier.clickable {
-                        onLanguageSelected("es")
-                    }
-                )
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(id = es.pedrazamiguez.splittrip.core.designsystem.R.string.action_cancel))
-            }
-        }
     )
 }

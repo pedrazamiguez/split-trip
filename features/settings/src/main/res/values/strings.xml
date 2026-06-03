@@ -146,4 +146,6 @@
     <string name="settings_preferences_language_en">English</string>
     <string name="settings_preferences_language_es">Spanish</string>
     <string name="settings_preferences_language_changed_pill">Language changed successfully</string>
+    <string name="settings_preferences_language_changed_format">Language changed to %1$s</string>
+    <string name="settings_preferences_currency_changed_format">Default currency changed to %1$s</string>
 </resources>

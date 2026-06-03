@@ -17,12 +17,14 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DefaultCurrencyScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DeveloperServicesScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.LanguageScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.NotificationPreferencesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.SettingsScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.AppVersionViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DefaultCurrencyViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.InstallationIdViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.LanguageViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
 import org.koin.core.module.dsl.viewModel
@@ -53,6 +55,13 @@ val settingsUiModule = module {
     }
 
     viewModel {
+        LanguageViewModel(
+            getAppLanguageUseCase = get<GetAppLanguageUseCase>(),
+            setAppLanguageUseCase = get<SetAppLanguageUseCase>()
+        )
+    }
+
+    viewModel {
         NotificationPreferencesViewModel(
             getNotificationPreferencesUseCase = get<GetNotificationPreferencesUseCase>(),
             updateNotificationPreferenceUseCase = get<UpdateNotificationPreferenceUseCase>()
@@ -68,6 +77,7 @@ val settingsUiModule = module {
     }
 
     single { DefaultCurrencyScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { LanguageScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { NotificationPreferencesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { SettingsScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { DeveloperServicesScreenUiProviderImpl() } bind ScreenUiProvider::class
