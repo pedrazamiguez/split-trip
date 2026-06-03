@@ -39,9 +39,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPaddin
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.ProvideTopAppBarState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.rememberTopAppBarState
@@ -153,11 +150,9 @@ fun MainScreen(
     // Wrap Scaffold in CompositionLocalProvider to provide LocalTabNavController for topBar/FAB
     // Also provide TopAppBarState for scroll-aware top bars
     val topAppBarState = rememberTopAppBarState()
-    val pillController = rememberTopPillController()
 
     CompositionLocalProvider(
-        LocalTabNavController provides selectedNavController,
-        LocalTopPillController provides pillController
+        LocalTabNavController provides selectedNavController
     ) {
         ProvideTopAppBarState(state = topAppBarState) {
             Scaffold(
@@ -197,7 +192,6 @@ fun MainScreen(
                             mainViewModel = mainViewModel,
                             selectedRoute = selectedRoute
                         )
-                        TopPillNotification(controller = pillController)
                     }
                 }
             }

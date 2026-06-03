@@ -34,7 +34,7 @@ fun LanguageScreen(
                     if (isSelected) {
                         Icon(
                             imageVector = TablerIcons.Outline.Check,
-                            contentDescription = "Selected"
+                            contentDescription = null
                         )
                     }
                 },

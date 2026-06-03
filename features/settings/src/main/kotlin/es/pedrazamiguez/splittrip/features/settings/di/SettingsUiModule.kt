@@ -38,7 +38,6 @@ val settingsUiModule = module {
             signOutUseCase = get<SignOutUseCase>(),
             getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>(),
             getAppLanguageUseCase = get<GetAppLanguageUseCase>(),
-            setAppLanguageUseCase = get<SetAppLanguageUseCase>(),
             getShouldShowLanguagePillUseCase = get<GetShouldShowLanguagePillUseCase>(),
             consumeLanguagePillUseCase = get<ConsumeLanguagePillUseCase>()
         )

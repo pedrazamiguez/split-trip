@@ -3,7 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.feature
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.getNameRes
@@ -11,7 +11,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
-import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.DefaultCurrencyScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DefaultCurrencyViewModel
@@ -26,7 +25,11 @@ fun DefaultCurrencyFeature(viewModel: DefaultCurrencyViewModel = koinViewModel()
     val navController = LocalRootNavController.current
     val scope = rememberCoroutineScope()
     val pillController = LocalTopPillController.current
-    val context = LocalContext.current
+
+    val currencyNames = viewModel.availableCurrencies.associate { currency ->
+        currency.name to stringResource(currency.getNameRes())
+    }
+    val currencyChangedFormat = stringResource(R.string.settings_preferences_currency_changed_format)
 
     FeatureScaffold(currentRoute = Routes.SETTINGS_DEFAULT_CURRENCY) {
         DefaultCurrencyScreen(
@@ -35,22 +38,10 @@ fun DefaultCurrencyFeature(viewModel: DefaultCurrencyViewModel = koinViewModel()
             onCurrencySelected = { newCurrencyCode ->
                 viewModel.onCurrencySelected(newCurrencyCode)
 
-                val currency = try {
-                    Currency.fromString(newCurrencyCode)
-                } catch (_: Exception) {
-                    null
-                }
-                val currencyName = if (currency != null) {
-                    context.getString(currency.getNameRes())
-                } else {
-                    newCurrencyCode
-                }
+                val currencyName = currencyNames[newCurrencyCode] ?: newCurrencyCode
 
                 pillController.showPill(
-                    context.getString(
-                        R.string.settings_preferences_currency_changed_format,
-                        "$currencyName ($newCurrencyCode)"
-                    )
+                    currencyChangedFormat.format("$currencyName ($newCurrencyCode)")
                 )
 
                 scope.launch {

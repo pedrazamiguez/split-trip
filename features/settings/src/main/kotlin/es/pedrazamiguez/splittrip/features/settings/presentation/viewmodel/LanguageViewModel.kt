@@ -21,12 +21,12 @@ class LanguageViewModel(
     val availableLanguages = AppLanguage.entries
 
     val selectedLanguageCode: StateFlow<String> = getAppLanguageUseCase().map { langCode ->
-        if (langCode == "es" || langCode == "en") {
-            langCode
-        } else if (Locale.getDefault().language == "es") {
-            "es"
+        val isValid =
+            langCode?.let { code -> AppLanguage.entries.any { it.code.equals(code, ignoreCase = true) } } ?: false
+        if (isValid) {
+            AppLanguage.fromCode(langCode!!).code
         } else {
-            "en"
+            AppLanguage.fromCode(Locale.getDefault().language).code
         }
     }.stateIn(
         scope = viewModelScope,
@@ -34,7 +34,7 @@ class LanguageViewModel(
             stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
             replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
         ),
-        initialValue = if (Locale.getDefault().language == "es") "es" else "en"
+        initialValue = AppLanguage.fromCode(Locale.getDefault().language).code
     )
 
     fun onLanguageSelected(languageCode: String) {

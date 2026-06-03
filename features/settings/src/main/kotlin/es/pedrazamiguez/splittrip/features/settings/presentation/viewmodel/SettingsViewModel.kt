@@ -3,13 +3,13 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,7 +24,6 @@ class SettingsViewModel(
     private val signOutUseCase: SignOutUseCase,
     private val getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase,
     private val getAppLanguageUseCase: GetAppLanguageUseCase,
-    private val setAppLanguageUseCase: SetAppLanguageUseCase,
     private val getShouldShowLanguagePillUseCase: GetShouldShowLanguagePillUseCase,
     private val consumeLanguagePillUseCase: ConsumeLanguagePillUseCase
 ) : ViewModel() {
@@ -45,12 +44,12 @@ class SettingsViewModel(
     )
 
     val currentLanguageCode: StateFlow<String> = getAppLanguageUseCase().map { langCode ->
-        if (langCode == "es" || langCode == "en") {
-            langCode
-        } else if (Locale.getDefault().language == "es") {
-            "es"
+        val isValid =
+            langCode?.let { code -> AppLanguage.entries.any { it.code.equals(code, ignoreCase = true) } } ?: false
+        if (isValid) {
+            AppLanguage.fromCode(langCode!!).code
         } else {
-            "en"
+            AppLanguage.fromCode(Locale.getDefault().language).code
         }
     }.stateIn(
         scope = viewModelScope,
@@ -58,7 +57,7 @@ class SettingsViewModel(
             stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
             replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
         ),
-        initialValue = if (Locale.getDefault().language == "es") "es" else "en"
+        initialValue = AppLanguage.fromCode(Locale.getDefault().language).code
     )
 
     val shouldShowLanguagePill: StateFlow<Boolean> = getShouldShowLanguagePillUseCase().stateIn(
@@ -69,12 +68,6 @@ class SettingsViewModel(
         ),
         initialValue = false
     )
-
-    fun onLanguageSelected(languageCode: String) {
-        viewModelScope.launch {
-            setAppLanguageUseCase(languageCode)
-        }
-    }
 
     fun consumeLanguagePill() {
         viewModelScope.launch {

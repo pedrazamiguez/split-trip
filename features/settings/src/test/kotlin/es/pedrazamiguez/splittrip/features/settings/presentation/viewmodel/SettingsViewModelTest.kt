@@ -6,7 +6,6 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseC
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -39,7 +38,6 @@ class SettingsViewModelTest {
     private lateinit var signOutUseCase: SignOutUseCase
     private lateinit var getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase
     private lateinit var getAppLanguageUseCase: GetAppLanguageUseCase
-    private lateinit var setAppLanguageUseCase: SetAppLanguageUseCase
     private lateinit var getShouldShowLanguagePillUseCase: GetShouldShowLanguagePillUseCase
     private lateinit var consumeLanguagePillUseCase: ConsumeLanguagePillUseCase
 
@@ -49,7 +47,6 @@ class SettingsViewModelTest {
         signOutUseCase = mockk()
         getUserDefaultCurrencyUseCase = mockk()
         getAppLanguageUseCase = mockk()
-        setAppLanguageUseCase = mockk()
         getShouldShowLanguagePillUseCase = mockk()
         consumeLanguagePillUseCase = mockk()
 
@@ -66,7 +63,6 @@ class SettingsViewModelTest {
         signOutUseCase = signOutUseCase,
         getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
         getAppLanguageUseCase = getAppLanguageUseCase,
-        setAppLanguageUseCase = setAppLanguageUseCase,
         getShouldShowLanguagePillUseCase = getShouldShowLanguagePillUseCase,
         consumeLanguagePillUseCase = consumeLanguagePillUseCase
     )
@@ -222,25 +218,6 @@ class SettingsViewModelTest {
 
             assertTrue(viewModel.shouldShowLanguagePill.value)
             collectJob.cancel()
-        }
-    }
-
-    // ── onLanguageSelected ──────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("onLanguageSelected")
-    inner class OnLanguageSelected {
-
-        @Test
-        fun `calls SetAppLanguageUseCase`() = runTest(testDispatcher) {
-            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
-            io.mockk.coJustRun { setAppLanguageUseCase("es") }
-
-            val viewModel = createViewModel()
-            viewModel.onLanguageSelected("es")
-            advanceUntilIdle()
-
-            io.mockk.coVerify(exactly = 1) { setAppLanguageUseCase("es") }
         }
     }
 

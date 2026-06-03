@@ -52,17 +52,18 @@ fun SettingsFeature(
         }
     }
 
+    val languageEs = stringResource(R.string.settings_preferences_language_es)
+    val languageEn = stringResource(R.string.settings_preferences_language_en)
+    val languageChangedFormat = stringResource(R.string.settings_preferences_language_changed_format)
+
     LaunchedEffect(shouldShowLanguagePill) {
         if (shouldShowLanguagePill) {
             val languageName = when (currentLanguageCode) {
-                "es" -> context.getString(R.string.settings_preferences_language_es)
-                else -> context.getString(R.string.settings_preferences_language_en)
+                "es" -> languageEs
+                else -> languageEn
             }
             pillController.showPill(
-                context.getString(
-                    R.string.settings_preferences_language_changed_format,
-                    languageName
-                )
+                languageChangedFormat.format(languageName)
             )
             settingsViewModel.consumeLanguagePill()
         }
