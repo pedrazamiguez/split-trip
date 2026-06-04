@@ -169,9 +169,10 @@ private fun LoginHeader() {
             color = MaterialTheme.colorScheme.onBackground
         )
 
-        SecondaryBodyText(
+        Text(
             text = stringResource(id = R.string.login_welcome),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
         )
     }
 }
@@ -209,7 +210,7 @@ private fun LoginFormCard(
                 onForgotPasswordClick = onForgotPasswordClick
             )
 
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
 
             GradientButton(
                 text = stringResource(R.string.login_button),
@@ -253,26 +254,24 @@ private fun LoginFormFields(
         modifier = Modifier.fillMaxWidth()
     ) {
         StyledOutlinedTextField(
+            label = stringResource(R.string.login_email_label),
             value = uiState.email,
             onValueChange = { onEvent(AuthenticationUiEvent.EmailChanged(it)) },
-            placeholder = stringResource(R.string.login_email_label),
             singleLine = true,
             enabled = !anyLoading,
             keyboardType = KeyboardType.Email,
             imeAction = ImeAction.Next,
-            shape = CircleShape,
             modifier = Modifier.fillMaxWidth()
         )
         StyledOutlinedTextField(
+            label = stringResource(R.string.login_password_label),
             value = uiState.password,
             onValueChange = { onEvent(AuthenticationUiEvent.PasswordChanged(it)) },
-            placeholder = stringResource(R.string.login_password_label),
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
             enabled = !anyLoading,
             keyboardType = KeyboardType.Password,
             imeAction = ImeAction.Done,
-            shape = CircleShape,
             modifier = Modifier.fillMaxWidth()
         )
         Box(
@@ -282,7 +281,7 @@ private fun LoginFormFields(
             Text(
                 text = stringResource(R.string.login_forgot_password),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .clip(CircleShape)
                     .clickable(
@@ -330,8 +329,9 @@ private fun LoginFooter(onStartJourneyClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
-        SecondaryBodyText(
+        Text(
             text = stringResource(R.string.login_new_explorer) + " ",
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(

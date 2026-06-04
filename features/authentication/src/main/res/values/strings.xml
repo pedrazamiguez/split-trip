@@ -3,7 +3,7 @@
     <string name="login_email_label">Email</string>
     <string name="login_password_label">Password</string>
     <string name="login_button">Let\'s go!</string>
-    <string name="login_welcome">Welcome back, traveler!</string>
+    <string name="login_welcome">Your curated expedition starts here</string>
     <string name="login_error_invalid">Hmm, that doesn\'t look right. Try again?</string>
     <string name="login_or_divider">or</string>
     <string name="login_google_button">Continue with Google</string>
