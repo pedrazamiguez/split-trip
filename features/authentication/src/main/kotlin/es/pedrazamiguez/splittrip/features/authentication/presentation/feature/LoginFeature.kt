@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -12,6 +13,8 @@ import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.screen.LoginScreen
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.AuthenticationViewModel
@@ -44,6 +47,10 @@ fun LoginFeature(
 
     val isGoogleSignInAvailable = !webClientId.isNullOrEmpty()
 
+    val pillController = LocalTopPillController.current
+    val forgotPasswordMessage = stringResource(id = R.string.login_forgot_password_message)
+    val startJourneyMessage = stringResource(id = R.string.login_start_journey_message)
+
     LoginScreen(
         uiState = uiState,
         isGoogleSignInAvailable = isGoogleSignInAvailable,
@@ -52,6 +59,12 @@ fun LoginFeature(
                 event,
                 onLoginSuccess
             )
+        },
+        onForgotPasswordClick = {
+            pillController.showPill(forgotPasswordMessage)
+        },
+        onStartJourneyClick = {
+            pillController.showPill(startJourneyMessage)
         },
         onGoogleSignInClick = {
             if (!isGoogleSignInAvailable) return@LoginScreen
