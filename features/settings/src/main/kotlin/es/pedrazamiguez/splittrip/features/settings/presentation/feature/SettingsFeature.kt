@@ -55,6 +55,7 @@ fun SettingsFeature(
 
     val languageEs = stringResource(R.string.settings_preferences_language_es)
     val languageEn = stringResource(R.string.settings_preferences_language_en)
+    val languageAndaluz = stringResource(R.string.settings_preferences_language_andaluz)
     val languageChangedFormat = stringResource(R.string.settings_preferences_language_changed_format)
 
     LaunchedEffect(shouldShowLanguagePill) {
@@ -62,6 +63,7 @@ fun SettingsFeature(
             val languageName = when (AppLanguage.fromCode(currentLanguageCode)) {
                 AppLanguage.ES -> languageEs
                 AppLanguage.EN -> languageEn
+                AppLanguage.ANDALUZ -> languageAndaluz
             }
             pillController.showPill(
                 languageChangedFormat.format(languageName)

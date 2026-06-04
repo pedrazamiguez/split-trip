@@ -556,13 +556,10 @@ These rules govern how AI assistants (Copilot, agents) interact with this codeba
 * Before declaring any task, issue, or review comment done, completed, addressed, or accomplished, you MUST run `make check` locally and ensure there are 0 failures. Never leave verification for CI/CD or the user to discover.
 
 **No Autonomous Git/GitHub Operations (STRICT):**
-* ❌ **NEVER** push code to any remote branch without explicit user permission.
-* ❌ **NEVER** create Pull Requests without explicit user permission and confirmation of:
-    * Branch naming convention (see `wiki/branching-versioning-release-strategy.md`).
-    * PR target branch (e.g., `develop` for features, `main` for releases/hotfixes).
-    * PR title and description format.
+* ❌ **ABSOLUTELY PROHIBITED: NEVER git add, git commit, or git push code** under any circumstances. Staging, committing, and pushing are strictly under the user's manual control. Never execute, propose, suggest, or ask for permission to run these commands.
+* ❌ **NEVER** create Pull Requests under any circumstances.
 * ❌ **NEVER** merge PRs or close issues autonomously.
-* ✅ **Good:** Prepare changes locally, present the plan/diff to the user, and wait for their explicit approval before any remote operation.
+* ✅ **Good:** Prepare changes locally in the workspace, verify them using local tests, and let the user decide when and how to stage, commit, and push.
 
 **Architecture Compliance Checklist (Before Generating Code):**
 The AI agent must mentally verify each of these before writing code:

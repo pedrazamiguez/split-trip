@@ -16,6 +16,11 @@ class AppLanguageTest {
         @CsvSource(
             "en, EN",
             "es, ES",
+            "es-x-andaluh, ANDALUZ",
+            "es-X-Andaluh, ANDALUZ",
+            "es-rAN, ANDALUZ",
+            "es-AN, ANDALUZ",
+            "es-an, ANDALUZ",
             "EN, EN",
             "ES, ES",
             "En, EN",
@@ -41,6 +46,12 @@ class AppLanguageTest {
 
                 Locale.setDefault(Locale("en"))
                 assertEquals(AppLanguage.EN, AppLanguage.fromCode(null))
+
+                Locale.setDefault(Locale.forLanguageTag("es-x-andaluh"))
+                assertEquals(AppLanguage.ANDALUZ, AppLanguage.fromCode(null))
+
+                Locale.setDefault(Locale.forLanguageTag("es-AN"))
+                assertEquals(AppLanguage.ANDALUZ, AppLanguage.fromCode(null))
 
                 Locale.setDefault(Locale("fr"))
                 assertEquals(AppLanguage.EN, AppLanguage.fromCode(null))
