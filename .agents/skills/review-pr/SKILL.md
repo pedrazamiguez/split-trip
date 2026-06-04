@@ -59,7 +59,7 @@ For each modified or new file in the diff, perform the following validation chec
 4. **Horizon Narrative Design System**:
    - Ensure UI components conform to the "Horizon Narrative" language:
      - No raw 1px solid borders. Use tonal shifts or container level changes.
-     - Outfit/Inter/Jakarta Sans typography.
+     - Plus Jakarta Sans + Manrope typography.
      - Usage of `LocalBottomPadding.current` applied as bottom content padding for all scrollable lists, FABs, or bottom-anchored buttons on tab screens.
 
 5. **Completeness of Tests**:

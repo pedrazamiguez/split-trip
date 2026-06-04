@@ -24,15 +24,19 @@ Address and resolve existing comments/feedback raised on this PR:
 
 ## Step 1 — Read and triage all comments
 
-For each review comment or thread, **exercise critical technical judgment**. DO NOT blindly apply comments—especially from automated reviewers. Ensure that resolving a comment does not break compilation (e.g. AAPT resource compilation limitations), violate system constraints, or introduce unwanted complexity.
-
-For each review comment or thread:
-
-1. **Understand the context** — read the surrounding code, not just the highlighted line.
-2. **Decide the outcome:**
-   - ✅ **Valid** — address it with a code change.
-   - ℹ️ **Partially valid** — address the spirit of the comment, explain any deviation in a reply.
-   - ❌ **False positive / Declined** — reply with a clear technical reason why no change is needed (e.g., if applying it causes compilation issues or breaks standard architecture).
+Retrieve the review comments and threads for the pull request to identify outstanding feedback:
+1. Call the `pull_request_read` tool with `method = "get_review_comments"`, specifying the repository `owner`, `repo`, and the pull request `pullNumber`.
+2. Inspect the retrieved review threads, taking note of:
+   - The thread `ID` (required to post replies later).
+   - Whether the thread `is_resolved`. Only address unresolved threads.
+   - The comment body, file `path`, and code `line` number.
+3. For each unresolved review comment or thread, **exercise critical technical judgment**. DO NOT blindly apply comments—especially from automated reviewers. Ensure that resolving a comment does not break compilation (e.g. AAPT resource compilation limitations), violate system constraints, or introduce unwanted complexity.
+4. For each unresolved review comment or thread:
+   - **Understand the context** — read the surrounding code, not just the highlighted line.
+   - **Decide the outcome:**
+     - ✅ **Valid** — address it with a code change.
+     - ℹ️ **Partially valid** — address the spirit of the comment, explain any deviation in a reply.
+     - ❌ **False positive / Declined** — reply with a clear technical reason why no change is needed (e.g., if applying it causes compilation issues or breaks standard architecture).
 
 ---
 
@@ -56,7 +60,7 @@ Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.git
 - **No Pragmatic Patches:** Write clean, modular, production-ready code. Do not use temporary workarounds.
 - **BigDecimal Math:** Use `BigDecimal` with an explicit scale and rounding mode for all precision-sensitive calculations (never `Double` or `Float`).
 - **Offline-First Protocol:** Generate UUIDs and timestamps locally, write to Room first, and sync to Firestore in the background using the reusable sync delegates.
-- **Design System:** Comply with the "Horizon Narrative" guidelines (no raw 1px borders, Outfit/Inter/Jakarta Sans typography, tonal layering, and bottom padding via `LocalBottomPadding` on tab screens).
+- **Design System:** Comply with the "Horizon Narrative" guidelines (no raw 1px borders, Plus Jakarta Sans + Manrope typography, tonal layering, and bottom padding via `LocalBottomPadding` on tab screens).
 - **Commenting Policy:** Comment the *why*, never the *what*. Avoid redundant comments. Do not reference GitHub issues or documentation sections in comments to simplify maintenance.
 
 ---
