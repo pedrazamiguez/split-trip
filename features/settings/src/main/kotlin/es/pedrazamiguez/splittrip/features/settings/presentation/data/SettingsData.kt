@@ -130,6 +130,7 @@ private fun LanguageDescription(currentLanguageCode: String) {
     val languageName = when (AppLanguage.fromCode(currentLanguageCode)) {
         AppLanguage.ES -> stringResource(R.string.settings_preferences_language_es)
         AppLanguage.EN -> stringResource(R.string.settings_preferences_language_en)
+        AppLanguage.ANDALUZ -> stringResource(R.string.settings_preferences_language_andaluz)
     }
     Text(text = languageName)
 }

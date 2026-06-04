@@ -49,4 +49,5 @@ fun LanguageScreen(
 private fun AppLanguage.getDisplayNameRes(): Int = when (this) {
     AppLanguage.EN -> R.string.settings_preferences_language_en
     AppLanguage.ES -> R.string.settings_preferences_language_es
+    AppLanguage.ANDALUZ -> R.string.settings_preferences_language_andaluz
 }
