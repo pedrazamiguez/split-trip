@@ -188,7 +188,7 @@ private fun LoginFormCard(
     onGoogleSignInClick: () -> Unit,
     onForgotPasswordClick: () -> Unit
 ) {
-    val cardColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    val cardColor = MaterialTheme.colorScheme.surfaceContainer
 
     FlatCard(
         color = cardColor,
