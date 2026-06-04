@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCurrencyDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.remote.RemoteCurrencyDataSource
+import es.pedrazamiguez.splittrip.domain.exception.ApiKeyNotConfiguredException
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.ExchangeRate
 import es.pedrazamiguez.splittrip.domain.model.ExchangeRates
@@ -111,6 +112,39 @@ class CurrencyRepositoryImplTest {
             // Should NOT query local when forceRefresh=true
             coVerify(exactly = 0) { local.getCurrencies() }
         }
+
+        @Test
+        fun `returns local currencies on ApiKeyNotConfiguredException`() = runTest {
+            coEvery { local.getCurrencies() } returns listOf(usd, eur)
+            coEvery { remote.fetchCurrencies() } throws ApiKeyNotConfiguredException("Missing key")
+
+            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = true)
+
+            assertEquals(listOf(usd, eur), result)
+            coVerify { remote.fetchCurrencies() }
+        }
+
+        @Test
+        fun `returns empty list on ApiKeyNotConfiguredException and empty local`() = runTest {
+            coEvery { local.getCurrencies() } returns emptyList()
+            coEvery { remote.fetchCurrencies() } throws ApiKeyNotConfiguredException("Missing key")
+
+            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = false)
+
+            assertEquals(emptyList<Currency>(), result)
+            coVerify { remote.fetchCurrencies() }
+        }
+
+        @Test
+        fun `returns local currencies on remote fetch general exception`() = runTest {
+            coEvery { local.getCurrencies() } returns listOf(usd, eur)
+            coEvery { remote.fetchCurrencies() } throws RuntimeException("network error")
+
+            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = true)
+
+            assertEquals(listOf(usd, eur), result)
+            coVerify { remote.fetchCurrencies() }
+        }
     }
 
     // ── getExchangeRates ───────────────────────────────────────────────────
@@ -200,6 +234,35 @@ class CurrencyRepositoryImplTest {
 
             assertTrue(result is ExchangeRateResult.Fresh)
             coVerify { local.saveExchangeRates(newRemoteRates) }
+        }
+
+        @Test
+        fun `returns Empty on ApiKeyNotConfiguredException and empty local rates`() = runTest {
+            val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
+
+            coEvery { local.getExchangeRates("USD") } returns emptyRates
+            coEvery { local.getLastUpdated("USD") } returns null
+            coEvery { remote.fetchExchangeRates("USD") } throws ApiKeyNotConfiguredException("Missing key")
+
+            val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+            assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
+        }
+
+        @Test
+        fun `falls back to stale on ApiKeyNotConfiguredException`() = runTest {
+            val staleRates = freshRates.copy(
+                lastUpdated = Instant
+                    .now()
+                    .minusSeconds(86_400)
+            )
+
+            coEvery { local.getExchangeRates("USD") } returns staleRates
+            coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
+            coEvery { remote.fetchExchangeRates("USD") } throws ApiKeyNotConfiguredException("Missing key")
+
+            val result = currencyRepositoryImpl.getExchangeRates("USD")
+            assertTrue(result is ExchangeRateResult.Stale)
         }
     }
 }
