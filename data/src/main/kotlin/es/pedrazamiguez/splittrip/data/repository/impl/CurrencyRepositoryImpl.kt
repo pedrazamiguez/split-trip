@@ -17,22 +17,20 @@ class CurrencyRepositoryImpl(
 ) : CurrencyRepository {
 
     override suspend fun getCurrencies(forceRefresh: Boolean): List<Currency> {
-        if (!forceRefresh) {
-            val local = localDataSource.getCurrencies()
-            if (local.isNotEmpty()) {
-                return local
-            }
+        val local = if (!forceRefresh) localDataSource.getCurrencies() else null
+        if (local != null && local.isNotEmpty()) {
+            return local
         }
         return try {
             val remote = remoteDataSource.fetchCurrencies()
             localDataSource.saveCurrencies(remote)
             remote
         } catch (ignored: ApiKeyNotConfiguredException) {
-            Timber.w("Failed to fetch currencies: API key is not configured (placeholder is being used).")
-            localDataSource.getCurrencies()
+            Timber.w("Failed to fetch currencies: API key is not configured or placeholder is being used.")
+            local ?: localDataSource.getCurrencies()
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch currencies")
-            localDataSource.getCurrencies()
+            local ?: localDataSource.getCurrencies()
         }
     }
 
@@ -56,7 +54,7 @@ class CurrencyRepositoryImpl(
                     localDataSource.saveExchangeRates(remoteRates)
                     ExchangeRateResult.Fresh(remoteRates)
                 } catch (ignored: ApiKeyNotConfiguredException) {
-                    Timber.w("Failed to fetch exchange rates: API key is not configured (placeholder is being used).")
+                    Timber.w("Failed to fetch exchange rates: API key is not configured or placeholder is being used.")
                     ExchangeRateResult.Empty
                 } catch (e: Exception) {
                     Timber.e(
@@ -74,7 +72,7 @@ class CurrencyRepositoryImpl(
                     localDataSource.saveExchangeRates(remoteRates)
                     ExchangeRateResult.Fresh(remoteRates)
                 } catch (ignored: ApiKeyNotConfiguredException) {
-                    Timber.w("Failed to fetch exchange rates: API key is not configured (placeholder is being used).")
+                    Timber.w("Failed to fetch exchange rates: API key is not configured or placeholder is being used.")
                     ExchangeRateResult.Stale(localRates)
                 } catch (e: Exception) {
                     Timber.w(

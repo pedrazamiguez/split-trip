@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import timber.log.Timber
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CurrencyRepositoryImplTest {
@@ -57,6 +58,18 @@ class CurrencyRepositoryImplTest {
         lastUpdated = Instant.now()
     )
 
+    private val loggedErrors = mutableListOf<String>()
+    private val loggedWarnings = mutableListOf<String>()
+    private val testTree = object : Timber.Tree() {
+        override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+            if (priority == 5) { // Log.WARN
+                loggedWarnings.add(message)
+            } else if (priority == 6) { // Log.ERROR
+                loggedErrors.add(message)
+            }
+        }
+    }
+
     @BeforeEach
     fun setUp() {
         currencyRepositoryImpl = CurrencyRepositoryImpl(
@@ -64,10 +77,14 @@ class CurrencyRepositoryImplTest {
             remote,
             Duration.ofHours(12)
         )
+        Timber.plant(testTree)
     }
 
     @AfterEach
     fun tearDown() {
+        Timber.uproot(testTree)
+        loggedWarnings.clear()
+        loggedErrors.clear()
         clearAllMocks()
     }
 
@@ -84,6 +101,7 @@ class CurrencyRepositoryImplTest {
 
             assertEquals(listOf(usd, eur), result)
             coVerify(exactly = 0) { remote.fetchCurrencies() }
+            coVerify(exactly = 1) { local.getCurrencies() }
         }
 
         @Test
@@ -97,6 +115,7 @@ class CurrencyRepositoryImplTest {
             assertEquals(listOf(usd, eur), result)
             coVerify { remote.fetchCurrencies() }
             coVerify { local.saveCurrencies(listOf(usd, eur)) }
+            coVerify(exactly = 1) { local.getCurrencies() }
         }
 
         @Test
@@ -122,6 +141,9 @@ class CurrencyRepositoryImplTest {
 
             assertEquals(listOf(usd, eur), result)
             coVerify { remote.fetchCurrencies() }
+            coVerify(exactly = 1) { local.getCurrencies() }
+            assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
+            assertTrue(loggedErrors.isEmpty())
         }
 
         @Test
@@ -133,6 +155,9 @@ class CurrencyRepositoryImplTest {
 
             assertEquals(emptyList<Currency>(), result)
             coVerify { remote.fetchCurrencies() }
+            coVerify(exactly = 1) { local.getCurrencies() }
+            assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
+            assertTrue(loggedErrors.isEmpty())
         }
 
         @Test
@@ -144,6 +169,8 @@ class CurrencyRepositoryImplTest {
 
             assertEquals(listOf(usd, eur), result)
             coVerify { remote.fetchCurrencies() }
+            coVerify(exactly = 1) { local.getCurrencies() }
+            assertTrue(loggedErrors.isNotEmpty())
         }
     }
 
@@ -247,6 +274,8 @@ class CurrencyRepositoryImplTest {
             val result = currencyRepositoryImpl.getExchangeRates("USD")
 
             assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
+            assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
+            assertTrue(loggedErrors.isEmpty())
         }
 
         @Test
@@ -263,6 +292,8 @@ class CurrencyRepositoryImplTest {
 
             val result = currencyRepositoryImpl.getExchangeRates("USD")
             assertTrue(result is ExchangeRateResult.Stale)
+            assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
+            assertTrue(loggedErrors.isEmpty())
         }
     }
 }
