@@ -20,7 +20,7 @@ import es.pedrazamiguez.splittrip.features.settings.R
 import kotlinx.collections.immutable.ImmutableList
 
 @Composable
-fun AiModelSelector(
+internal fun AiModelSelector(
     availableModels: ImmutableList<AiEngineType?>,
     selectedModel: AiEngineType?,
     resolvedModel: AiEngineType?,

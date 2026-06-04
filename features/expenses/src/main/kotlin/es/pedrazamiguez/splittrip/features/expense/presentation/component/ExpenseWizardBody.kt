@@ -13,7 +13,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 
 @Composable
-fun ExpenseWizardBody(
+internal fun ExpenseWizardBody(
     uiState: AddExpenseUiState,
     orderedLabels: List<String>,
     skipToReviewLabel: String,

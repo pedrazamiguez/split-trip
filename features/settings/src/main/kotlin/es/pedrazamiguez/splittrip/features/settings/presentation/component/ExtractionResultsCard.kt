@@ -25,7 +25,7 @@ import es.pedrazamiguez.splittrip.features.settings.R
 
 @Suppress("LongParameterList")
 @Composable
-fun ExtractionResultsCard(
+internal fun ExtractionResultsCard(
     amount: String?,
     currency: String?,
     date: String?,

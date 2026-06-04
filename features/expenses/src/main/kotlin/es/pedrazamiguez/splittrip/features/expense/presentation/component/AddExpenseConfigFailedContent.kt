@@ -23,7 +23,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.
 import es.pedrazamiguez.splittrip.features.expense.R
 
 @Composable
-fun AddExpenseConfigFailedContent(
+internal fun AddExpenseConfigFailedContent(
     modifier: Modifier = Modifier,
     onRetry: () -> Unit
 ) {

@@ -27,7 +27,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AutoFillBanner as AutoFillBannerState
 
 @Composable
-fun AutoFillBanner(
+internal fun AutoFillBanner(
     banner: AutoFillBannerState,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier

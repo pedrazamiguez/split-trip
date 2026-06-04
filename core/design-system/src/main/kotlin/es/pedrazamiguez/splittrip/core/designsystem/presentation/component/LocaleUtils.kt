@@ -8,7 +8,12 @@ import java.util.Locale
 @Composable
 fun rememberLocale(): Locale {
     val configuration = LocalConfiguration.current
-    return remember(configuration) {
-        configuration.locales[0] ?: Locale.getDefault()
+    val locales = configuration.locales
+    return remember(locales) {
+        if (locales.isEmpty) {
+            Locale.getDefault()
+        } else {
+            locales[0] ?: Locale.getDefault()
+        }
     }
 }

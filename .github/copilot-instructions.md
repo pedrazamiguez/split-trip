@@ -121,12 +121,11 @@ We strictly separate **Orchestration** from **Rendering** to enable isolated `@P
     * Consumes Global Controllers (`LocalNavController`, `LocalTopPillController`).
     * Collects StateFlow/Actions and passes plain data/lambdas to the `Screen`.
 3.  **`Single Composable Per File` (Aesthetic & Complexity Constraint):**
-    * Every Kotlin file in production `presentation` packages that contains a `@Composable` function must contain **exactly one** top-level `@Composable` function.
+    * Every Kotlin file in production feature `presentation` packages (excluding `core/design-system` and the `MainScreen` orchestrator) that contains a `@Composable` function must contain **exactly one** top-level `@Composable` function.
     * The name of this Composable function must match the file name exactly (e.g., `GroupItem.kt` contains `fun GroupItem()`).
     * Any helper components, dialogs, or sub-components must be extracted into separate files.
     * Auxiliary/helper components must reside in the `component` package/folder under presentation (e.g., `es.pedrazamiguez.splittrip.features.<featureName>.presentation.component`) with `internal` visibility.
     * Plain UI helpers (non-layout-building) must be regular Kotlin functions (non-composable) by resolving context/resources at the caller site.
-    * `MainScreen` (root navigation host orchestrator) is the only exempted file.
 
 **Previews & Helpers:**
 * **Wrappers:** Always wrap previews in **`PreviewThemeWrapper`**.

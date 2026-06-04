@@ -419,7 +419,7 @@ class ArchitectureTest {
                 .filter { !it.projectPath.contains("core/design-system") }
                 .filter { !it.hasPackage("..preview..") }
                 .filter { file ->
-                    file.functions().any { func ->
+                    file.functions(includeNested = true).any { func ->
                         func.annotations.any { it.name == "Composable" }
                     }
                 }
