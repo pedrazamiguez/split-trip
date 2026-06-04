@@ -27,9 +27,9 @@ Review the code changes on the following pull request:
 Perform the following operations to fetch the PR changes and inspect the files modified:
 1. Identify the PR branch and target branch (typically `develop` or `main`).
 2. Fetch the latest changes and checkout the PR branch.
-3. Generate the diff between the PR branch and its target branch:
+3. Generate the diff between the PR branch and its target branch (e.g., develop or main):
    ```bash
-   git diff origin/develop...HEAD
+   git diff origin/<target-branch>...HEAD
    ```
 4. List all modified and newly created files to plan your review.
 

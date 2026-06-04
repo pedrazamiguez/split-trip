@@ -8,10 +8,10 @@ tools:
   - terminalLastCommand
 arguments:
   - name: pr_url
-    description: The URL of the GitHub pull request to review.
+    description: The URL of the GitHub pull request to address comments on.
     required: true
   - name: pr_number
-    description: The number of the GitHub pull request to review.
+    description: The number of the GitHub pull request to address comments on.
     required: false
 ---
 # Address Pull Request Comments
