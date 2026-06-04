@@ -248,6 +248,11 @@ All entries are configured in `build.gradle.kts` inside the `sonarqube { propert
 | `e7` | `kotlin:S1479` (when clauses) | `**/presentation/viewmodel/**/*.kt` | MVI `when` routing — sealed interface exhaustiveness by design |
 | `e8` | `kotlin:S1481` (unused var) | `**/*.kt` | Sonar false positives on destructuring, `remember{}`, lambdas (see #786) |
 | `e9` | `kotlin:S1135` (TODO/FIXME) | `**/navigation/**/*.kt` | Tracked TODOs with issue references (e.g., #787) |
+| `e10` | `kotlin:S1479` (when clauses) | `**/designsystem/extension/**/*.kt` | CurrencyExtensions mapping Currency enum to Android string resource IDs |
+| `e11` | `kotlin:S107` (params) | `**/presentation/screen/**/*.kt` | Feature-layer Compose Screens: UI layouts with optional params, callbacks, state |
+| `e12` | `kotlin:S107` (params) | `**/presentation/feature/**/*.kt` | Feature-layer Compose Features: VM controllers + navigation handlers |
+| `e13` | `kotlin:S3776` (complexity) | `**/presentation/screen/**/*.kt` | Screen Compose layouts — nested DSL builder layouts (Rows/Columns/Scaffolds) |
+| `e14` | `kotlin:S3776` (complexity) | `**/presentation/feature/**/*.kt` | Feature orchestrators — Compose branching logic for state (loading, error, content) |
 
 #### Adding New Entries
 

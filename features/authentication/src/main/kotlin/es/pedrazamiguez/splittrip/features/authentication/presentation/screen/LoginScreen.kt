@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -186,12 +188,7 @@ private fun LoginFormCard(
     onGoogleSignInClick: () -> Unit,
     onForgotPasswordClick: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
-    val cardColor = if (isDark) {
-        MaterialTheme.colorScheme.surfaceContainerHighest
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerLowest
-    }
+    val cardColor = MaterialTheme.colorScheme.surfaceContainerHighest
 
     FlatCard(
         color = cardColor,
@@ -286,6 +283,7 @@ private fun LoginFormFields(
                     .clip(CircleShape)
                     .clickable(
                         enabled = !anyLoading,
+                        role = Role.Button,
                         onClick = onForgotPasswordClick
                     )
                     .padding(
@@ -330,17 +328,21 @@ private fun LoginFooter(onStartJourneyClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = stringResource(R.string.login_new_explorer) + " ",
+            text = stringResource(R.string.login_new_explorer),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.width(MaterialTheme.spacing.ExtraSmall))
         Text(
             text = stringResource(R.string.login_start_journey),
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .clip(CircleShape)
-                .clickable(onClick = onStartJourneyClick)
+                .clickable(
+                    role = Role.Button,
+                    onClick = onStartJourneyClick
+                )
                 .padding(
                     horizontal = MaterialTheme.spacing.Small,
                     vertical = MaterialTheme.spacing.ExtraSmall

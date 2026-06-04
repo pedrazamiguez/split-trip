@@ -225,7 +225,7 @@ sonarqube {
         // Sonar's resourceKey accepts a SINGLE Ant-style path pattern per entry.
         // For multiple paths, use separate multicriteria IDs (e1, e2, …).
         // See wiki/code-quality-and-static-analysis.md § "SonarQube Exclusion System".
-        property("sonar.issue.ignore.multicriteria", "e1,e2,e3,e4,e5,e6,e7,e8,e9,e10")
+        property("sonar.issue.ignore.multicriteria", "e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12,e13,e14")
 
         // ── kotlin:S107 — Too many function parameters ─────────────────────
         // Detekt's LongParameterList ignores @Composable + default params; Sonar's
@@ -240,6 +240,12 @@ sonarqube {
         // e3: MVI ViewModels (handler-delegated, DI constructor params)
         property("sonar.issue.ignore.multicriteria.e3.ruleKey", "kotlin:S107")
         property("sonar.issue.ignore.multicriteria.e3.resourceKey", "**/presentation/viewmodel/**/*.kt")
+        // e11: Feature-layer Compose screens (e.g. LoginScreen, SettingsScreen)
+        property("sonar.issue.ignore.multicriteria.e11.ruleKey", "kotlin:S107")
+        property("sonar.issue.ignore.multicriteria.e11.resourceKey", "**/presentation/screen/**/*.kt")
+        // e12: Feature-layer Compose feature orchestrators (e.g. LoginFeature, SettingsFeature)
+        property("sonar.issue.ignore.multicriteria.e12.ruleKey", "kotlin:S107")
+        property("sonar.issue.ignore.multicriteria.e12.resourceKey", "**/presentation/feature/**/*.kt")
 
         // ── kotlin:S3776 — Cognitive complexity ────────────────────────────
         // Compose builder DSL functions exceed the threshold structurally, not
@@ -254,6 +260,12 @@ sonarqube {
         // e6: Navigation host (Compose DSL with auth/onboarding branching)
         property("sonar.issue.ignore.multicriteria.e6.ruleKey", "kotlin:S3776")
         property("sonar.issue.ignore.multicriteria.e6.resourceKey", "**/navigation/**/*.kt")
+        // e13: Feature-layer Compose screens (complex UI tree structure)
+        property("sonar.issue.ignore.multicriteria.e13.ruleKey", "kotlin:S3776")
+        property("sonar.issue.ignore.multicriteria.e13.resourceKey", "**/presentation/screen/**/*.kt")
+        // e14: Feature-layer Compose feature orchestrators (branching/loading UI logic)
+        property("sonar.issue.ignore.multicriteria.e14.ruleKey", "kotlin:S3776")
+        property("sonar.issue.ignore.multicriteria.e14.resourceKey", "**/presentation/feature/**/*.kt")
 
         // ── kotlin:S1479 — Too many "when" clauses ─────────────────────────
         // MVI ViewModels route sealed-interface events via exhaustive `when`.
