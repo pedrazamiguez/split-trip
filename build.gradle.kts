@@ -317,3 +317,12 @@ sonarqube {
         )
     }
 }
+
+tasks.register<Exec>("generateAndaluzStrings") {
+    group = "localization"
+    description = "Automatically generates Andaluz string resources from Spanish strings.xml."
+    val pythonPath = project.file("/opt/homebrew/bin/python3").let {
+        if (it.exists()) it.absolutePath else "python3"
+    }
+    commandLine(pythonPath, "${rootDir}/scripts/generate_andaluz_strings.py")
+}

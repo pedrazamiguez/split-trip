@@ -6,5 +6,16 @@ import java.util.Locale
 
 class LocaleProviderImpl(private val context: Context) : LocaleProvider {
 
-    override fun getCurrentLocale(): Locale = context.resources.configuration.locales[0]
+    override fun getCurrentLocale(): Locale {
+        val locale = context.resources.configuration.locales[0]
+        val tag = locale.toLanguageTag()
+        return if (tag.contains("andaluh", ignoreCase = true) ||
+            tag.contains("es-rAN", ignoreCase = true) ||
+            tag.contains("es-AN", ignoreCase = true)
+        ) {
+            Locale.forLanguageTag("es-ES")
+        } else {
+            locale
+        }
+    }
 }

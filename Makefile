@@ -20,7 +20,7 @@ YELLOW := \033[1;33m
 CYAN   := \033[0;36m
 NC     := \033[0m
 
-.PHONY: help setup hooks local-props doctor check ktlint detekt test konsist coverage build clean
+.PHONY: help setup hooks local-props doctor check ktlint detekt test konsist coverage build clean andaluz andaluz-lenient
 
 # ─── Default: show help ───────────────────────────────────────────────────────
 help: ## Show this help message
@@ -119,7 +119,24 @@ doctor: ## Check that required files and tools are present
 	@echo ""
 
 # ─── Quality gates (mirrors CI) ───────────────────────────────────────────────
-check: ktlint detekt konsist test coverage build ## Run all local quality gates before pushing (mirrors CI)
+check: andaluz-lenient ktlint detekt konsist test coverage build ## Run all local quality gates before pushing (mirrors CI)
+
+andaluz: ## Automatically generate Andaluz string resources from Spanish strings.xml (fails if python andaluh package is missing)
+	@if python3 -c "import andaluh" >/dev/null 2>&1; then \
+		printf "$(YELLOW)⏳  Generating Andaluz strings...$(NC)\n"; \
+		$(GRADLEW) generateAndaluzStrings; \
+	else \
+		printf "$(RED)✗  Python package 'andaluh' not found. Please run: pip install andaluh --break-system-packages$(NC)\n"; \
+		exit 1; \
+	fi
+
+andaluz-lenient:
+	@if python3 -c "import andaluh" >/dev/null 2>&1; then \
+		printf "$(YELLOW)⏳  Generating Andaluz strings...$(NC)\n"; \
+		$(GRADLEW) generateAndaluzStrings; \
+	else \
+		printf "$(YELLOW)⚠️  Skipping Andaluz translation (python 'andaluh' package not found)$(NC)\n"; \
+	fi
 
 test: ## Run all unit tests (no coverage report)
 	@printf "$(YELLOW)⏳  Running unit tests...$(NC)\n"
