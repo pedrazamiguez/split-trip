@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import re
+import sys
 import xml.etree.ElementTree as ET
 
 # Try to import andaluh. If not present, fail gracefully with instructions.
@@ -9,13 +10,13 @@ try:
 except ImportError:
     print("Error: The 'andaluh' python package is required.")
     print("Please install it using: pip install andaluh --break-system-packages")
-    exit(1)
+    sys.exit(1)
 
 # Regex to match Android formatting placeholders: e.g. %s, %1$s, %02d, %%, etc.
 # Non-capturing groups are used for parts of the placeholder, while the entire
 # pattern is enclosed in a single capturing group so that re.split keeps it.
 ANDROID_PLACEHOLDER_REGEX = re.compile(
-    r'(%(?:[0-9]+\$)?[-#+ 0,(\<]?[0-9]*(?:\.[0-9]+)?[a-zA-Z%])'
+    r'(%(?:[0-9]+\$)?[-#+ 0,(\<]?[0-9]*(?:\.[0-9]+)?(?:[tT][a-zA-Z]|[a-zA-Z%]))'
 )
 
 def escape_android_string(text):

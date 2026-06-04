@@ -17,7 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SplitTrip"
         android:localeConfig="@xml/locales_config"
-        tools:targetApi="31">
+        tools:targetApi="33">
         <activity
             android:name=".MainActivity"
             android:allowEmbedded="true"

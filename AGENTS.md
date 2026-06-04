@@ -251,8 +251,8 @@ Before creating any new service, utility, formatter, or UI component, **check th
 - **File-Size Guards:** Always verify a file's line count using `wc -l` before and after editing it. If editing will push the file near or over 600 lines, extract event handlers, delegates, or components first.
 - **Commenting Policy:** Comment the *why*, never the *what*. Completely avoid/delete redundant comments that merely restate what code does.
 - **Local Verification Gate (MANDATORY):** Before declaring any task, issue, or review comment done, completed, addressed, or accomplished, you MUST run `make check` locally and ensure there are 0 failures. Never leave verification for CI/CD or the user to discover.
-- **NEVER push code** to any remote branch without explicit user permission.
-- **NEVER create Pull Requests** without explicit user permission and confirmation of branch naming convention (see `wiki/branching-versioning-release-strategy.md`), target branch, and PR format.
+- **GIT OPERATIONS PROHIBITION (CRITICAL):** ABSOLUTELY NEVER run, suggest, propose, or ask for permission to run `git add`, `git commit`, or `git push` commands. Staging, committing, and pushing are strictly under the user's manual control.
+- **NEVER create Pull Requests** under any circumstances.
 - **NEVER merge PRs or close issues** autonomously.
 - **Compliance checklist before generating code:** (1) ViewModels only inject UseCases/Mappers/Services? (2) Formatting only in Mappers? (3) BigDecimal for all decimal math? (4) Handler delegation for >5 events? (5) `LocalBottomPadding` for tab screens? (6) Feature/Screen split correct? (7) MVI triad complete? (8) Hot flows with `AppConstants.FLOW_RETENTION_TIME` and `AppConstants.FLOW_REPLAY_EXPIRATION`? (9) Offline-first Room-first reads? (10) `ImmutableList` in UiState? (11) Local verification suite (`make check`) executed and passing with 0 failures?
 
