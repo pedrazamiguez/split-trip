@@ -5,6 +5,8 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +29,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.BrandedLoadingScreen
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
@@ -87,90 +92,98 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     // remember(startDestination, builder) from invalidating and recreating the graph.
     val currentOnboardingCompleted = rememberUpdatedState(onboardingCompleted)
 
-    CompositionLocalProvider(LocalRootNavController provides navController) {
-        Crossfade(
-            targetState = stableStartDestination.value != null,
-            animationSpec = tween(
-                durationMillis = UiConstants.SPLASH_CROSSFADE_DURATION_MS
-            ),
-            label = "splash-crossfade"
-        ) { destinationResolved ->
-            if (!destinationResolved) {
-                BrandedLoadingScreen(
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
-                    contentDescription = stringResource(R.string.app_name)
-                )
-            } else {
-                // When the user is already authenticated and onboarding is complete,
-                // startDestination = Routes.MAIN. NavHost natively processes the Activity
-                // intent's deep link on first composition, extracting arguments into the
-                // backStackEntry. The DeepLinkHolder may hold a stale copy saved in
-                // MainActivity.onCreate() — consume it to prevent accidental replay.
-                LaunchedEffect(stableStartDestination.value) {
-                    if (stableStartDestination.value == Routes.MAIN) {
-                        deepLinkHolder.consumePendingDeepLink()
-                        // Cold start with existing auth — warm cache in background.
-                        // No-op if cache is already populated from a previous session.
-                        warmCurrencyCacheUseCase()
+    val pillController = rememberTopPillController()
+
+    CompositionLocalProvider(
+        LocalRootNavController provides navController,
+        LocalTopPillController provides pillController
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Crossfade(
+                targetState = stableStartDestination.value != null,
+                animationSpec = tween(
+                    durationMillis = UiConstants.SPLASH_CROSSFADE_DURATION_MS
+                ),
+                label = "splash-crossfade"
+            ) { destinationResolved ->
+                if (!destinationResolved) {
+                    BrandedLoadingScreen(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = stringResource(R.string.app_name)
+                    )
+                } else {
+                    // When the user is already authenticated and onboarding is complete,
+                    // startDestination = Routes.MAIN. NavHost natively processes the Activity
+                    // intent's deep link on first composition, extracting arguments into the
+                    // backStackEntry. The DeepLinkHolder may hold a stale copy saved in
+                    // MainActivity.onCreate() — consume it to prevent accidental replay.
+                    LaunchedEffect(stableStartDestination.value) {
+                        if (stableStartDestination.value == Routes.MAIN) {
+                            deepLinkHolder.consumePendingDeepLink()
+                            // Cold start with existing auth — warm cache in background.
+                            // No-op if cache is already populated from a previous session.
+                            warmCurrencyCacheUseCase()
+                        }
+                    }
+
+                    NavHost(
+                        navController = navController,
+                        startDestination = stableStartDestination.value!!,
+                        modifier = modifier,
+                        enterTransition = { EnterTransition.None },
+                        exitTransition = { ExitTransition.None },
+                        popEnterTransition = { EnterTransition.None },
+                        popExitTransition = { ExitTransition.None }
+                    ) {
+                        loginGraph(
+                            onLoginSuccess = {
+                                val destination =
+                                    NavigationUtils.resolvePostLoginDestination(
+                                        currentOnboardingCompleted.value
+                                    )
+                                navController.navigate(destination) {
+                                    popUpTo(Routes.LOGIN) { inclusive = true }
+                                }
+                                // Replay pending deep link after auth gate (cold start scenario)
+                                if (destination == Routes.MAIN) {
+                                    replayPendingDeepLink(deepLinkHolder, navController)
+                                }
+                                // Warm currency cache while user navigates through
+                                // onboarding or the main screen — fire-and-forget.
+                                scope.launch { warmCurrencyCacheUseCase() }
+                            }
+                        )
+
+                        onboardingGraph(
+                            onOnboardingComplete = {
+                                scope.launch {
+                                    try {
+                                        setOnboardingCompleteUseCase()
+                                    } catch (t: Throwable) {
+                                        Timber.e(
+                                            t,
+                                            "Error setting onboarding complete"
+                                        )
+                                    }
+                                    navController.navigate(Routes.MAIN) {
+                                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                                    }
+                                    // Replay pending deep link after onboarding gate
+                                    replayPendingDeepLink(deepLinkHolder, navController)
+                                }
+                            }
+                        )
+
+                        mainGraph(
+                            navigationProviders = navigationProviders,
+                            screenUiProviders = routeToUiProvider.values.toList()
+                        )
+
+                        settingsGraph()
                     }
                 }
-
-                NavHost(
-                    navController = navController,
-                    startDestination = stableStartDestination.value!!,
-                    modifier = modifier,
-                    enterTransition = { EnterTransition.None },
-                    exitTransition = { ExitTransition.None },
-                    popEnterTransition = { EnterTransition.None },
-                    popExitTransition = { ExitTransition.None }
-                ) {
-                    loginGraph(
-                        onLoginSuccess = {
-                            val destination =
-                                NavigationUtils.resolvePostLoginDestination(
-                                    currentOnboardingCompleted.value
-                                )
-                            navController.navigate(destination) {
-                                popUpTo(Routes.LOGIN) { inclusive = true }
-                            }
-                            // Replay pending deep link after auth gate (cold start scenario)
-                            if (destination == Routes.MAIN) {
-                                replayPendingDeepLink(deepLinkHolder, navController)
-                            }
-                            // Warm currency cache while user navigates through
-                            // onboarding or the main screen — fire-and-forget.
-                            scope.launch { warmCurrencyCacheUseCase() }
-                        }
-                    )
-
-                    onboardingGraph(
-                        onOnboardingComplete = {
-                            scope.launch {
-                                try {
-                                    setOnboardingCompleteUseCase()
-                                } catch (t: Throwable) {
-                                    Timber.e(
-                                        t,
-                                        "Error setting onboarding complete"
-                                    )
-                                }
-                                navController.navigate(Routes.MAIN) {
-                                    popUpTo(Routes.ONBOARDING) { inclusive = true }
-                                }
-                                // Replay pending deep link after onboarding gate
-                                replayPendingDeepLink(deepLinkHolder, navController)
-                            }
-                        }
-                    )
-
-                    mainGraph(
-                        navigationProviders = navigationProviders,
-                        screenUiProviders = routeToUiProvider.values.toList()
-                    )
-
-                    settingsGraph()
-                }
             }
+            TopPillNotification(controller = pillController)
         }
     }
 }

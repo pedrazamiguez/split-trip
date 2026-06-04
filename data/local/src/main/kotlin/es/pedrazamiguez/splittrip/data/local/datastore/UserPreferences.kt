@@ -22,6 +22,8 @@ class UserPreferences(
         // Device-scoped keys (NOT user-scoped) — these are device concerns
         private val ONBOARDING_COMPLETE_KEY = booleanPreferencesKey("onboarding_complete")
         private val PENDING_FCM_TOKEN_KEY = stringPreferencesKey("pending_fcm_token")
+        private val APP_LANGUAGE_KEY = stringPreferencesKey("app_language")
+        private val SHOULD_SHOW_LANGUAGE_PILL_KEY = booleanPreferencesKey("should_show_language_pill")
 
         // User-scoped key name constants (prefixed at access time via userKey())
         private const val SELECTED_GROUP_ID = "selected_group_id"
@@ -29,6 +31,30 @@ class UserPreferences(
         private const val SELECTED_GROUP_CURRENCY = "selected_group_currency"
         private const val DEFAULT_CURRENCY = "default_currency"
         private const val ACTIVE_AI_ENGINE = "active_ai_engine"
+    }
+
+    // ── App Language (Device-scoped) ─────────────────────────────────────
+
+    val appLanguage: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[APP_LANGUAGE_KEY]
+    }
+
+    suspend fun setAppLanguage(languageCode: String) {
+        context.dataStore.edit { prefs ->
+            prefs[APP_LANGUAGE_KEY] = languageCode
+        }
+    }
+
+    // ── Language Changed Pill (Device-scoped) ────────────────────────────
+
+    val shouldShowLanguagePill: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[SHOULD_SHOW_LANGUAGE_PILL_KEY] ?: false
+    }
+
+    suspend fun setShouldShowLanguagePill(show: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[SHOULD_SHOW_LANGUAGE_PILL_KEY] = show
+        }
     }
 
     // ── Onboarding (Device-scoped) ───────────────────────────────────────

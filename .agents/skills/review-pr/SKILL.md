@@ -1,5 +1,5 @@
 ---
-name: review-pr
+name: sp-review-pr
 description: Review a GitHub pull request and address comments.
 mode: agent
 tools:
@@ -24,13 +24,15 @@ A variety of comments have been raised on this PR — please take a look:
 
 ## Step 1 — Read and triage all comments
 
+For each review comment or thread, **exercise critical technical judgment**. DO NOT blindly apply comments—especially from automated reviewers. Ensure that resolving a comment does not break compilation (e.g. AAPT resource compilation limitations), violate system constraints, or introduce unwanted complexity.
+
 For each review comment or thread:
 
 1. **Understand the context** — read the surrounding code, not just the highlighted line.
 2. **Decide the outcome:**
    - ✅ **Valid** — address it with a code change.
    - ℹ️ **Partially valid** — address the spirit of the comment, explain any deviation in a reply.
-   - ❌ **False positive** — reply with a clear technical reason why no change is needed.
+   - ❌ **False positive / Declined** — reply with a clear technical reason why no change is needed (e.g., if applying it causes compilation issues or breaks standard architecture).
 
 ---
 

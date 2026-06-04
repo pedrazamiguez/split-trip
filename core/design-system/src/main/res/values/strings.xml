@@ -108,4 +108,6 @@
     <string name="receipt_attach_camera">Take photo</string>
     <string name="receipt_attach_gallery">Choose from gallery</string>
     <string name="receipt_attach_document">Attach document</string>
+    <!-- App Name -->
+    <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

@@ -9,16 +9,22 @@ import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DefaultCurrencyScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DeveloperServicesScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.LanguageScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.NotificationPreferencesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.SettingsScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.AppVersionViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DefaultCurrencyViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.InstallationIdViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.LanguageViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
 import org.koin.core.module.dsl.viewModel
@@ -30,7 +36,10 @@ val settingsUiModule = module {
     viewModel {
         SettingsViewModel(
             signOutUseCase = get<SignOutUseCase>(),
-            getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>()
+            getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>(),
+            getAppLanguageUseCase = get<GetAppLanguageUseCase>(),
+            getShouldShowLanguagePillUseCase = get<GetShouldShowLanguagePillUseCase>(),
+            consumeLanguagePillUseCase = get<ConsumeLanguagePillUseCase>()
         )
     }
 
@@ -41,6 +50,13 @@ val settingsUiModule = module {
         DefaultCurrencyViewModel(
             getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>(),
             setUserDefaultCurrencyUseCase = get<SetUserDefaultCurrencyUseCase>()
+        )
+    }
+
+    viewModel {
+        LanguageViewModel(
+            getAppLanguageUseCase = get<GetAppLanguageUseCase>(),
+            setAppLanguageUseCase = get<SetAppLanguageUseCase>()
         )
     }
 
@@ -60,6 +76,7 @@ val settingsUiModule = module {
     }
 
     single { DefaultCurrencyScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { LanguageScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { NotificationPreferencesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { SettingsScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { DeveloperServicesScreenUiProviderImpl() } bind ScreenUiProvider::class

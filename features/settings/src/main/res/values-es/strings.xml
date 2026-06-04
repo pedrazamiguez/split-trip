@@ -139,4 +139,12 @@
     <!-- Avatar Generation tab (placeholder) -->
     <string name="developer_services_avatar_title">Generación de Avatares con IA</string>
     <string name="developer_services_avatar_subtitle">Próximamente</string>
+
+    <!-- Language Selection -->
+    <string name="settings_preferences_language_dialog_title">Seleccionar idioma</string>
+    <string name="settings_preferences_language_en">Inglés</string>
+    <string name="settings_preferences_language_es">Español</string>
+    <string name="settings_preferences_language_andaluz">Andaluz (Andalûh EPA)</string>
+    <string name="settings_preferences_language_changed_format">Idioma cambiado a %1$s</string>
+    <string name="settings_preferences_currency_changed_format">Moneda por defecto cambiada a %1$s</string>
 </resources>

@@ -1,5 +1,5 @@
 ---
-name: refine-issue
+name: sp-refine-issue
 description: Turn an idea, problem description, or bug report into a well-formed GitHub issue.
 mode: agent
 tools:

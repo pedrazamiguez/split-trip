@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "es.pedrazamiguez.splittrip.features.settings"
 }
+
+dependencies {
+    implementation(libs.androidx.appcompat)
+}

@@ -21,6 +21,18 @@ class UserPreferenceRepositoryImpl(
         userPreferences.setActiveAiEngine(engineType)
     }
 
+    override fun getAppLanguage(): Flow<String?> = userPreferences.appLanguage
+
+    override suspend fun setAppLanguage(languageCode: String) {
+        userPreferences.setAppLanguage(languageCode)
+    }
+
+    override fun getShouldShowLanguagePill(): Flow<Boolean> = userPreferences.shouldShowLanguagePill
+
+    override suspend fun setShouldShowLanguagePill(show: Boolean) {
+        userPreferences.setShouldShowLanguagePill(show)
+    }
+
     override suspend fun clearAll() {
         userPreferences.clearAll()
     }

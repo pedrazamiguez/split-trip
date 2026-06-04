@@ -6,9 +6,14 @@ interface UserRepository {
     suspend fun saveGoogleUser(user: User): Result<Unit>
 
     /**
+     * Saves a user profile to the remote data source and caches it locally.
+     */
+    suspend fun saveUser(user: User): Result<Unit>
+
+    /**
      * Returns the current authenticated user's profile.
      *
-     * Checks the local cache (Room) first, then fetches from the cloud
+     * Checks the local cache first, then fetches from the remote data source
      * if not found locally, and caches the result.
      */
     suspend fun getCurrentUserProfile(): User?
@@ -16,14 +21,14 @@ interface UserRepository {
     /**
      * Returns a map of userId → [User] for the given IDs.
      *
-     * Checks the local cache (Room) first, then fetches any missing users
-     * from the cloud and caches them locally for future lookups.
+     * Checks the local cache first, then fetches any missing users
+     * from the remote data source and caches them locally for future lookups.
      */
     suspend fun getUsersByIds(userIds: List<String>): Map<String, User>
 
     /**
      * Searches for users by email address (exact match).
-     * This is a cloud-only lookup — results are not cached locally.
+     * This is a remote-only lookup — results are not cached locally.
      *
      * @param email The email address to search for
      * @return List of matching users, excluding the current user

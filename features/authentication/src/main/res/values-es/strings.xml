@@ -4,10 +4,15 @@
     <string name="login_email_label">Email</string>
     <string name="login_password_label">Contraseña</string>
     <string name="login_button">¡Vamos!</string>
-    <string name="login_welcome">¡Bienvenido de vuelta, viajero!</string>
+    <string name="login_welcome">Tu expedición seleccionada comienza aquí</string>
     <string name="login_error_invalid">Mmm, algo no cuadra. ¿Lo intentas otra vez?</string>
     <string name="login_or_divider">o</string>
     <string name="login_google_button">Continuar con Google</string>
     <string name="login_google_error">Error al iniciar sesión con Google. Inténtalo de nuevo.</string>
+    <string name="login_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="login_new_explorer">¿Nuevo explorador?</string>
+    <string name="login_start_journey">Comienza un viaje</string>
+    <string name="login_forgot_password_message">La recuperación de contraseña no está implementada todavía.</string>
+    <string name="login_start_journey_message">El registro no está implementado todavía.</string>
 </resources>
 

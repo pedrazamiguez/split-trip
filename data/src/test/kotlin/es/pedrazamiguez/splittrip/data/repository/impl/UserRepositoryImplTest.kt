@@ -50,6 +50,32 @@ class UserRepositoryImplTest {
     }
 
     @Nested
+    inner class SaveUser {
+
+        @Test
+        fun `saves user to cloud and caches locally`() = runTest {
+            coEvery { cloudUserDataSource.saveUser(testUser) } just Runs
+            coEvery { localUserDataSource.saveUsers(listOf(testUser)) } just Runs
+
+            val result = repository.saveUser(testUser)
+
+            assertTrue(result.isSuccess)
+            coVerify { cloudUserDataSource.saveUser(testUser) }
+            coVerify { localUserDataSource.saveUsers(listOf(testUser)) }
+        }
+
+        @Test
+        fun `returns failure when cloud save throws`() = runTest {
+            coEvery { cloudUserDataSource.saveUser(testUser) } throws RuntimeException("Cloud error")
+
+            val result = repository.saveUser(testUser)
+
+            assertTrue(result.isFailure)
+            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
+        }
+    }
+
+    @Nested
     inner class SaveGoogleUser {
 
         @Test
@@ -71,6 +97,7 @@ class UserRepositoryImplTest {
             val result = repository.saveGoogleUser(testUser)
 
             assertTrue(result.isFailure)
+            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
         }
     }
 
