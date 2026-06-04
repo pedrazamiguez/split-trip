@@ -16,7 +16,6 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.screen.BalancesS
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.BalancesViewModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.BalancesUiAction
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 
@@ -38,8 +37,20 @@ fun BalancesFeature(
         balancesViewModel.setSelectedGroup(selectedGroupId)
     }
 
-    BalancesActionsEffect(actions = balancesViewModel.actions) { action ->
-        pillController.showPill(message = action.message.asString(context))
+    LaunchedEffect(Unit) {
+        balancesViewModel.actions.collectLatest { action ->
+            when (action) {
+                is BalancesUiAction.ShowLoadError,
+                is BalancesUiAction.ShowContributionSuccess,
+                is BalancesUiAction.ShowContributionError,
+                is BalancesUiAction.ShowDeleteContributionSuccess,
+                is BalancesUiAction.ShowDeleteContributionError,
+                is BalancesUiAction.ShowDeleteWithdrawalSuccess,
+                is BalancesUiAction.ShowDeleteWithdrawalError -> {
+                    pillController.showPill(message = action.message.asString(context))
+                }
+            }
+        }
     }
 
     // Prevent stale data flash during group transition
@@ -63,25 +74,4 @@ fun BalancesFeature(
         onNavigateToContribution = { navController.navigate(Routes.ADD_CONTRIBUTION) },
         onNavigateToWithdrawal = { navController.navigate(Routes.ADD_CASH_WITHDRAWAL) }
     )
-}
-
-/** Collects [BalancesUiAction]s and routes each to [onPillAction] for top-pill display. */
-@Composable
-private fun BalancesActionsEffect(
-    actions: SharedFlow<BalancesUiAction>,
-    onPillAction: (BalancesUiAction) -> Unit
-) {
-    LaunchedEffect(Unit) {
-        actions.collectLatest { action ->
-            when (action) {
-                is BalancesUiAction.ShowLoadError,
-                is BalancesUiAction.ShowContributionSuccess,
-                is BalancesUiAction.ShowContributionError,
-                is BalancesUiAction.ShowDeleteContributionSuccess,
-                is BalancesUiAction.ShowDeleteContributionError,
-                is BalancesUiAction.ShowDeleteWithdrawalSuccess,
-                is BalancesUiAction.ShowDeleteWithdrawalError -> onPillAction(action)
-            }
-        }
-    }
 }

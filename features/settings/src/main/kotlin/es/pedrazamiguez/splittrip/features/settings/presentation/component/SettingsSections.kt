@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
@@ -28,10 +27,11 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.view.SettingIte
  * outer top/bottom corners — giving the visual appearance of a card without
  * collapsing the section into a single non-virtualised lazy item.
  */
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 fun LazyListScope.settingsSections(sections: List<SettingsSectionModel>) {
     sections.forEach { section ->
         item(key = "section_${section.titleRes}") {
-            SettingsSectionHeader(titleRes = section.titleRes)
+            SettingsSection(title = stringResource(section.titleRes))
         }
 
         itemsIndexed(
@@ -63,57 +63,47 @@ fun LazyListScope.settingsSections(sections: List<SettingsSectionModel>) {
                     .clip(rowShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
-                SettingsItemContent(item = item)
+                when (item) {
+                    is SettingsItemModel.Standard -> {
+                        SettingsRow(
+                            item = SettingItemView(
+                                icon = item.icon,
+                                title = stringResource(item.titleRes),
+                                description = item.descriptionRes?.let { stringResource(it) },
+                                onClick = item.onClick
+                            )
+                        )
+                    }
+
+                    is SettingsItemModel.WithTrailing -> {
+                        SettingsRow(
+                            item = SettingItemView(
+                                icon = item.icon,
+                                title = stringResource(item.titleRes),
+                                description = item.descriptionRes?.let { stringResource(it) },
+                                onClick = item.onClick
+                            ),
+                            trailingContent = item.trailingContent
+                        )
+                    }
+
+                    is SettingsItemModel.WithCustomDescription -> {
+                        SettingsRow(
+                            item = SettingItemView(
+                                icon = item.icon,
+                                title = stringResource(item.titleRes),
+                                description = null,
+                                onClick = item.onClick
+                            ),
+                            descriptionContent = item.descriptionContent
+                        )
+                    }
+
+                    is SettingsItemModel.Custom -> {
+                        item.content()
+                    }
+                }
             }
-        }
-    }
-}
-
-@Composable
-private fun SettingsSectionHeader(titleRes: Int) {
-    SettingsSection(title = stringResource(titleRes))
-}
-
-@Composable
-private fun SettingsItemContent(item: SettingsItemModel) {
-    when (item) {
-        is SettingsItemModel.Standard -> {
-            SettingsRow(
-                item = SettingItemView(
-                    icon = item.icon,
-                    title = stringResource(item.titleRes),
-                    description = item.descriptionRes?.let { stringResource(it) },
-                    onClick = item.onClick
-                )
-            )
-        }
-
-        is SettingsItemModel.WithTrailing -> {
-            SettingsRow(
-                item = SettingItemView(
-                    icon = item.icon,
-                    title = stringResource(item.titleRes),
-                    description = item.descriptionRes?.let { stringResource(it) },
-                    onClick = item.onClick
-                ),
-                trailingContent = item.trailingContent
-            )
-        }
-
-        is SettingsItemModel.WithCustomDescription -> {
-            SettingsRow(
-                item = SettingItemView(
-                    icon = item.icon,
-                    title = stringResource(item.titleRes),
-                    description = null,
-                    onClick = item.onClick
-                ),
-                descriptionContent = item.descriptionContent
-            )
-        }
-
-        is SettingsItemModel.Custom -> {
-            item.content()
         }
     }
 }

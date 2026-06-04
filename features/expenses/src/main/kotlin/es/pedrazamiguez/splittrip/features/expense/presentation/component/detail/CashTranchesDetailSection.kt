@@ -42,36 +42,33 @@ internal fun CashTranchesDetailSection(
                     .padding(MaterialTheme.spacing.Default),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
-                tranches.forEach { tranche -> TrancheRow(tranche) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TrancheRow(tranche: CashTrancheDetailUiModel) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            SecondaryBodyText(text = tranche.withdrawalLabel)
-            if (tranche.scopeText != null) {
-                CaptionText(
-                    text = tranche.scopeText,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            // tnum-aligned monetary value (Horizon Narrative §3.4)
-            AmountText(text = tranche.formattedAmountConsumed)
-            if (tranche.formattedRate != null) {
-                CaptionText(
-                    text = tranche.formattedRate,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                tranches.forEach { tranche ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            SecondaryBodyText(text = tranche.withdrawalLabel)
+                            if (tranche.scopeText != null) {
+                                CaptionText(
+                                    text = tranche.scopeText,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            // tnum-aligned monetary value (Horizon Narrative §3.4)
+                            AmountText(text = tranche.formattedAmountConsumed)
+                            if (tranche.formattedRate != null) {
+                                CaptionText(
+                                    text = tranche.formattedRate,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

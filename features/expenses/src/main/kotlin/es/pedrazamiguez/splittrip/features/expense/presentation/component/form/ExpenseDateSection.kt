@@ -3,18 +3,9 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.form
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,10 +20,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.features.expense.R
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneOffset
-import java.util.Calendar as JavaCalendar
-import java.util.TimeZone
 
 /**
  * Expense date and time picker section.
@@ -97,94 +85,4 @@ internal fun ExpenseDateSection(
             }
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ExpenseDatePickerDialog(
-    initialDateMillis: Long?,
-    onDismiss: () -> Unit,
-    onDateSelected: (Long) -> Unit
-) {
-    val currentLocalDateMillis = LocalDate.now()
-        .atStartOfDay()
-        .toInstant(ZoneOffset.UTC)
-        .toEpochMilli()
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDateMillis ?: currentLocalDateMillis,
-        selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis <= currentLocalDateMillis
-            }
-
-            override fun isSelectableYear(year: Int): Boolean {
-                return year <= LocalDate.now().year
-            }
-        }
-    )
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        onDateSelected(it)
-                    }
-                }
-            ) {
-                Text(stringResource(R.string.expense_date_time_ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.expense_date_time_cancel))
-            }
-        }
-    ) {
-        DatePicker(state = datePickerState)
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ExpenseTimePickerDialog(
-    initialTimeMillis: Long?,
-    onDismiss: () -> Unit,
-    onTimeSelected: (hour: Int, minute: Int) -> Unit
-) {
-    val calendar = if (initialTimeMillis != null) {
-        JavaCalendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-            timeInMillis = initialTimeMillis
-        }
-    } else {
-        JavaCalendar.getInstance()
-    }
-    val initialHour = calendar.get(JavaCalendar.HOUR_OF_DAY)
-    val initialMinute = calendar.get(JavaCalendar.MINUTE)
-    val timePickerState = rememberTimePickerState(
-        initialHour = initialHour,
-        initialMinute = initialMinute,
-        is24Hour = true
-    )
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onTimeSelected(timePickerState.hour, timePickerState.minute)
-                }
-            ) {
-                Text(stringResource(R.string.expense_date_time_ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.expense_date_time_cancel))
-            }
-        },
-        text = {
-            TimePicker(state = timePickerState)
-        }
-    )
 }

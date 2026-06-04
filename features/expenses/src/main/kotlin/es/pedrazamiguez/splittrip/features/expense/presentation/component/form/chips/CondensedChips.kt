@@ -44,7 +44,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
  * @param modifier Modifier for the FlowRow container.
  */
 @OptIn(ExperimentalLayoutApi::class)
-@Suppress("LongMethod") // Compose UI builder DSL
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod") // Compose UI builder DSL
 @Composable
 fun <T> CondensedChips(
     items: List<T>,
@@ -115,73 +115,54 @@ fun <T> CondensedChips(
         }
 
         if (overflowItems.isNotEmpty()) {
-            OverflowPassportChip(
-                overflowItems = overflowItems,
-                selectedId = selectedId,
-                onItemSelected = onItemSelected,
-                itemId = itemId,
-                itemLabel = itemLabel,
-                itemIcon = itemIcon
-            )
-        }
-    }
-}
+            Box {
+                var expanded by remember { mutableStateOf(false) }
+                val anyOverflowSelected = selectedId != null &&
+                    overflowItems.any { itemId(it) == selectedId }
 
-@Composable
-private fun <T> OverflowPassportChip(
-    overflowItems: List<T>,
-    selectedId: String?,
-    onItemSelected: (String) -> Unit,
-    itemId: (T) -> String,
-    itemLabel: (T) -> String,
-    itemIcon: ((T) -> ImageVector?)? = null
-) {
-    Box {
-        var expanded by remember { mutableStateOf(false) }
-        val anyOverflowSelected = selectedId != null &&
-            overflowItems.any { itemId(it) == selectedId }
-
-        PassportChip(
-            label = stringResource(R.string.add_expense_chips_more),
-            selected = anyOverflowSelected,
-            onClick = { expanded = true },
-            trailingIcon = {
-                Icon(
-                    imageVector = TablerIcons.Outline.Dots,
-                    contentDescription = stringResource(R.string.add_expense_chips_more)
-                )
-            }
-        )
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            overflowItems.forEach { item ->
-                val id = itemId(item)
-                val isSelected = selectedId == id
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = itemLabel(item),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                PassportChip(
+                    label = stringResource(R.string.add_expense_chips_more),
+                    selected = anyOverflowSelected,
+                    onClick = { expanded = true },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = TablerIcons.Outline.Dots,
+                            contentDescription = stringResource(R.string.add_expense_chips_more)
                         )
-                    },
-                    onClick = {
-                        onItemSelected(id)
-                        expanded = false
-                    },
-                    leadingIcon = when {
-                        isSelected -> {
-                            { Icon(TablerIcons.Outline.Check, contentDescription = null) }
-                        }
-                        itemIcon != null -> itemIcon(item)?.let { icon ->
-                            { Icon(icon, contentDescription = null) }
-                        }
-                        else -> null
                     }
                 )
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    overflowItems.forEach { item ->
+                        val id = itemId(item)
+                        val isSelected = selectedId == id
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = itemLabel(item),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            onClick = {
+                                onItemSelected(id)
+                                expanded = false
+                            },
+                            leadingIcon = when {
+                                isSelected -> {
+                                    { Icon(TablerIcons.Outline.Check, contentDescription = null) }
+                                }
+                                itemIcon != null -> itemIcon(item)?.let { icon ->
+                                    { Icon(icon, contentDescription = null) }
+                                }
+                                else -> null
+                            }
+                        )
+                    }
+                }
             }
         }
     }

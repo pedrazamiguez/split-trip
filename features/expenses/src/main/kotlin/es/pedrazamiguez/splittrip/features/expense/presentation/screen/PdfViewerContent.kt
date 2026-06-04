@@ -40,7 +40,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
@@ -94,6 +93,7 @@ private class PdfResourceHolder(
     }
 }
 
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 internal fun PdfViewerContent(
     pdfUriString: String,
@@ -133,14 +133,146 @@ internal fun PdfViewerContent(
     val currentResourceHolder = resourceHolder
 
     when {
-        isLoading -> PdfLoadingView(hazeState = hazeState, modifier = modifier)
-        hasError || currentResourceHolder == null -> PdfErrorView(hazeState = hazeState, modifier = modifier)
-        else -> PdfPagesListView(
-            resourceHolder = currentResourceHolder,
-            hazeState = hazeState,
-            onClose = onClose,
-            modifier = modifier
-        )
+        isLoading -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .hazeSource(state = hazeState),
+                contentAlignment = Alignment.Center
+            ) {
+                ShimmerLoadingList()
+            }
+        }
+        hasError || currentResourceHolder == null -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .hazeSource(state = hazeState),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateView(
+                    title = stringResource(R.string.receipt_viewer_pdf_error),
+                    icon = TablerIcons.Outline.Receipt
+                )
+            }
+        }
+        else -> {
+            var scale by remember { mutableFloatStateOf(MIN_ZOOM_SCALE) }
+            var offset by remember { mutableStateOf(Offset.Zero) }
+            val bottomPadding = LocalBottomPadding.current
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            val topPadding = FLOATING_TOP_BAR_HEIGHT + statusBarHeight + MaterialTheme.spacing.Default
+            val finalBottomPadding = bottomPadding + MaterialTheme.spacing.Default
+            val mutex = remember { Mutex() }
+
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .hazeSource(state = hazeState)
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            val targetScale = (scale * zoom).coerceIn(MIN_ZOOM_SCALE, MAX_ZOOM_SCALE)
+                            if (targetScale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
+                                scale = MIN_ZOOM_SCALE
+                                offset = Offset.Zero
+                            } else {
+                                scale = targetScale
+                                offset += pan
+                            }
+                        }
+                    }
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offset.x,
+                        translationY = offset.y
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            if (scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
+                                onClose()
+                            }
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        top = topPadding,
+                        bottom = finalBottomPadding,
+                        start = MaterialTheme.spacing.Default,
+                        end = MaterialTheme.spacing.Default
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
+                    userScrollEnabled = scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON
+                ) {
+                    items(currentResourceHolder.renderer.pageCount) { index ->
+                        var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+                        var pageError by remember { mutableStateOf(false) }
+
+                        LaunchedEffect(index) {
+                            withContext(Dispatchers.IO) {
+                                try {
+                                    mutex.withLock {
+                                        bitmap = renderPageToBitmap(currentResourceHolder.renderer, index)
+                                    }
+                                } catch (e: Exception) {
+                                    Timber.e(e, "Failed to render PDF page $index")
+                                    pageError = true
+                                }
+                            }
+                        }
+
+                        FlatCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                            ghostBorder = true
+                        ) {
+                            when {
+                                pageError -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(A4_ASPECT_RATIO),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        EmptyStateView(
+                                            title = stringResource(R.string.receipt_viewer_pdf_error),
+                                            icon = TablerIcons.Outline.Receipt
+                                        )
+                                    }
+                                }
+                                bitmap == null -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(A4_ASPECT_RATIO),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        ShimmerLoadingList()
+                                    }
+                                }
+                                else -> {
+                                    Image(
+                                        bitmap = bitmap!!.asImageBitmap(),
+                                        contentDescription = stringResource(
+                                            R.string.receipt_viewer_pdf_page_cd,
+                                            index + 1
+                                        ),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentScale = ContentScale.FillWidth
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -170,186 +302,6 @@ private fun initializePdfResources(context: Context, pdfUriString: String): PdfR
             }
         }
         throw e
-    }
-}
-
-@Composable
-private fun PdfLoadingView(hazeState: HazeState, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .hazeSource(state = hazeState),
-        contentAlignment = Alignment.Center
-    ) {
-        ShimmerLoadingList()
-    }
-}
-
-@Composable
-private fun PdfErrorView(hazeState: HazeState, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .hazeSource(state = hazeState),
-        contentAlignment = Alignment.Center
-    ) {
-        EmptyStateView(
-            title = stringResource(R.string.receipt_viewer_pdf_error),
-            icon = TablerIcons.Outline.Receipt
-        )
-    }
-}
-
-@Composable
-private fun PdfPagesListView(
-    resourceHolder: PdfResourceHolder,
-    hazeState: HazeState,
-    onClose: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var scale by remember { mutableFloatStateOf(MIN_ZOOM_SCALE) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    val bottomPadding = LocalBottomPadding.current
-    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val topPadding = FLOATING_TOP_BAR_HEIGHT + statusBarHeight + MaterialTheme.spacing.Default
-    val finalBottomPadding = bottomPadding + MaterialTheme.spacing.Default
-    val mutex = remember { Mutex() }
-
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .hazeSource(state = hazeState)
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val targetScale = (scale * zoom).coerceIn(MIN_ZOOM_SCALE, MAX_ZOOM_SCALE)
-                    if (targetScale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
-                        scale = MIN_ZOOM_SCALE
-                        offset = Offset.Zero
-                    } else {
-                        scale = targetScale
-                        offset += pan
-                    }
-                }
-            }
-            .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
-                translationX = offset.x,
-                translationY = offset.y
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    if (scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
-                        onClose()
-                    }
-                }
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        PdfLazyColumn(
-            resourceHolder = resourceHolder,
-            topPadding = topPadding,
-            bottomPadding = finalBottomPadding,
-            scrollEnabled = scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON,
-            mutex = mutex
-        )
-    }
-}
-
-@Composable
-private fun PdfLazyColumn(
-    resourceHolder: PdfResourceHolder,
-    topPadding: Dp,
-    bottomPadding: Dp,
-    scrollEnabled: Boolean,
-    mutex: Mutex,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            top = topPadding,
-            bottom = bottomPadding,
-            start = MaterialTheme.spacing.Default,
-            end = MaterialTheme.spacing.Default
-        ),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
-        userScrollEnabled = scrollEnabled
-    ) {
-        items(resourceHolder.renderer.pageCount) { index ->
-            PdfPageItem(
-                renderer = resourceHolder.renderer,
-                mutex = mutex,
-                pageIndex = index
-            )
-        }
-    }
-}
-
-@Composable
-private fun PdfPageItem(
-    renderer: PdfRenderer,
-    mutex: Mutex,
-    pageIndex: Int,
-    modifier: Modifier = Modifier
-) {
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var hasError by remember { mutableStateOf(false) }
-
-    LaunchedEffect(pageIndex) {
-        withContext(Dispatchers.IO) {
-            try {
-                mutex.withLock {
-                    bitmap = renderPageToBitmap(renderer, pageIndex)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to render PDF page $pageIndex")
-                hasError = true
-            }
-        }
-    }
-
-    FlatCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentHeight(),
-        ghostBorder = true
-    ) {
-        when {
-            hasError -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(A4_ASPECT_RATIO),
-                    contentAlignment = Alignment.Center
-                ) {
-                    EmptyStateView(
-                        title = stringResource(R.string.receipt_viewer_pdf_error),
-                        icon = TablerIcons.Outline.Receipt
-                    )
-                }
-            }
-            bitmap == null -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(A4_ASPECT_RATIO),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ShimmerLoadingList()
-                }
-            }
-            else -> {
-                Image(
-                    bitmap = bitmap!!.asImageBitmap(),
-                    contentDescription = stringResource(R.string.receipt_viewer_pdf_page_cd, pageIndex + 1),
-                    modifier = Modifier.fillMaxWidth(),
-                    contentScale = ContentScale.FillWidth
-                )
-            }
-        }
     }
 }
 

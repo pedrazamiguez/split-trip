@@ -79,27 +79,3 @@ fun SelectedAttachmentCard(
         }
     }
 }
-
-@Composable
-private fun AttachmentMetadataRow(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    isUri: Boolean = false
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = if (isUri) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
-            color = if (isUri) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
-        )
-    }
-}

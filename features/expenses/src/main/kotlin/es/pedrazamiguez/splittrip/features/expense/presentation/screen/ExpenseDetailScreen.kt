@@ -25,7 +25,6 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.NotesSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.ProvenanceSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.SplitBreakdownSection
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpenseDetailUiState
 
 @Composable
@@ -42,60 +41,48 @@ fun ExpenseDetailScreen(
                 icon = TablerIcons.Outline.Receipt
             )
         }
-        else -> ExpenseDetailContent(
-            expense = uiState.expense,
-            modifier = modifier,
-            onReceiptTap = onReceiptTap
-        )
-    }
-}
+        else -> {
+            val expense = uiState.expense
+            val bottomPadding = LocalBottomPadding.current
 
-@Composable
-private fun ExpenseDetailContent(
-    expense: ExpenseDetailUiModel,
-    modifier: Modifier = Modifier,
-    onReceiptTap: (() -> Unit)? = null
-) {
-    // Tab-screens MUST consume LocalBottomPadding so the floating nav bar does not
-    // cover the last card / sticky actions (Manifesto §7 — Bottom Padding rule).
-    val bottomPadding = LocalBottomPadding.current
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = MaterialTheme.spacing.Default),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+            ) {
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = MaterialTheme.spacing.Default),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-    ) {
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+                HeroSection(expense = expense, onReceiptTap = onReceiptTap)
 
-        HeroSection(expense = expense, onReceiptTap = onReceiptTap)
+                if (expense.notesText != null) {
+                    NotesSection(notesText = expense.notesText)
+                }
 
-        if (expense.notesText != null) {
-            NotesSection(notesText = expense.notesText)
+                if (expense.hasAddOns || expense.formattedIncludedBaseCost != null) {
+                    BreakdownCardSection(
+                        addOns = expense.addOns,
+                        formattedEffectiveTotal = expense.formattedEffectiveTotal,
+                        formattedIncludedBaseCost = expense.formattedIncludedBaseCost,
+                        formattedOriginalEnteredTotal = expense.formattedOriginalEnteredTotal
+                    )
+                }
+
+                if (expense.cashTranches.isNotEmpty()) {
+                    CashTranchesDetailSection(tranches = expense.cashTranches)
+                }
+
+                SplitBreakdownSection(
+                    splitTypeText = expense.splitTypeText,
+                    splits = expense.splits,
+                    splitGroups = expense.splitGroups
+                )
+
+                ProvenanceSection(expense = expense)
+
+                Spacer(modifier = Modifier.height(bottomPadding))
+            }
         }
-
-        if (expense.hasAddOns || expense.formattedIncludedBaseCost != null) {
-            BreakdownCardSection(
-                addOns = expense.addOns,
-                formattedEffectiveTotal = expense.formattedEffectiveTotal,
-                formattedIncludedBaseCost = expense.formattedIncludedBaseCost,
-                formattedOriginalEnteredTotal = expense.formattedOriginalEnteredTotal
-            )
-        }
-
-        if (expense.cashTranches.isNotEmpty()) {
-            CashTranchesDetailSection(tranches = expense.cashTranches)
-        }
-
-        SplitBreakdownSection(
-            splitTypeText = expense.splitTypeText,
-            splits = expense.splits,
-            splitGroups = expense.splitGroups
-        )
-
-        ProvenanceSection(expense = expense)
-
-        Spacer(modifier = Modifier.height(bottomPadding))
     }
 }

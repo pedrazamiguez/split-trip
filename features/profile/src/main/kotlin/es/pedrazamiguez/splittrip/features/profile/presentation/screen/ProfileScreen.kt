@@ -37,6 +37,7 @@ import es.pedrazamiguez.splittrip.features.profile.R
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.event.ProfileUiEvent
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.state.ProfileUiState
 
+@Suppress("LongMethod")
 @Composable
 fun ProfileScreen(uiState: ProfileUiState = ProfileUiState(), onEvent: (ProfileUiEvent) -> Unit = {}) {
     DeferredLoadingContainer(
@@ -45,89 +46,71 @@ fun ProfileScreen(uiState: ProfileUiState = ProfileUiState(), onEvent: (ProfileU
     ) {
         when {
             uiState.hasError && uiState.profile == null -> {
-                ProfileErrorContent(
-                    onRetry = { onEvent(ProfileUiEvent.LoadProfile) }
-                )
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    SecondaryButton(
+                        text = stringResource(R.string.profile_retry_button),
+                        onClick = { onEvent(ProfileUiEvent.LoadProfile) },
+                        leadingIcon = TablerIcons.Outline.Refresh
+                    )
+                }
             }
-            uiState.profile != null -> ProfileLoadedContent(profile = uiState.profile)
-        }
-    }
-}
-
-@Composable
-private fun ProfileErrorContent(onRetry: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        SecondaryButton(
-            text = stringResource(R.string.profile_retry_button),
-            onClick = onRetry,
-            leadingIcon = TablerIcons.Outline.Refresh
-        )
-    }
-}
-
-@Composable
-private fun ProfileLoadedContent(
-    profile: es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
-) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(MaterialTheme.spacing.ExtraLarge),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
-        ProfileAvatarSection(profile = profile)
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
-        Text(
-            text = profile.displayName,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
-        LargeBodyText(
-            text = profile.email,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        if (profile.memberSinceText.isNotBlank()) {
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
-            BodyText(
-                text = stringResource(R.string.profile_member_since, profile.memberSinceText),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProfileAvatarSection(
-    profile: es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
-) {
-    if (profile.profileImageUrl != null) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(profile.profileImageUrl)
-                .crossfade(true)
-                .build(),
-            contentDescription = stringResource(R.string.profile_picture_description),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.size(120.dp).clip(CircleShape)
-        )
-    } else {
-        Surface(
-            modifier = Modifier.size(120.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer
-        ) {
-            Icon(
-                imageVector = TablerIcons.Filled.UserFilled,
-                contentDescription = stringResource(R.string.profile_picture_description),
-                modifier = Modifier.padding(MaterialTheme.spacing.ExtraLarge),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            uiState.profile != null -> {
+                val profile = uiState.profile
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(MaterialTheme.spacing.ExtraLarge),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
+                    if (profile.profileImageUrl != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(profile.profileImageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = stringResource(R.string.profile_picture_description),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(120.dp).clip(CircleShape)
+                        )
+                    } else {
+                        Surface(
+                            modifier = Modifier.size(120.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Icon(
+                                imageVector = TablerIcons.Filled.UserFilled,
+                                contentDescription = stringResource(R.string.profile_picture_description),
+                                modifier = Modifier.padding(MaterialTheme.spacing.ExtraLarge),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
+                    Text(
+                        text = profile.displayName,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
+                    LargeBodyText(
+                        text = profile.email,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (profile.memberSinceText.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
+                        BodyText(
+                            text = stringResource(R.string.profile_member_since, profile.memberSinceText),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -402,4 +402,45 @@ class ArchitectureTest {
                 }
         }
     }
+
+    @Nested
+    @DisplayName("Compose Constraints")
+    inner class ComposeConstraints {
+
+        @Test
+        @DisplayName(
+            "Presentation files containing composables must only contain a single composable matching the file name"
+        )
+        fun `presentation files containing composables must only contain a single composable matching the file name`() {
+            projectProductionScope
+                .files
+                .filter { it.hasPackage("..presentation..") }
+                .filter { !it.projectPath.contains("src/debug") }
+                .filter { !it.projectPath.contains("core/design-system") }
+                .filter { !it.hasPackage("..preview..") }
+                .filter { file ->
+                    file.functions(includeNested = true).any { func ->
+                        func.annotations.any { it.name == "Composable" }
+                    }
+                }
+                .filter { file ->
+                    // MainScreen is a root nav host orchestrator and is exempt
+                    file.name != "MainScreen"
+                }
+                .assertTrue { file ->
+                    val composables = file.functions(includeNested = true).filter { func ->
+                        func.annotations.any { it.name == "Composable" }
+                    }
+                    val isCompliant = composables.size == 1 && composables.first().name == file.name
+                    if (!isCompliant) {
+                        println(
+                            "Violation: ${file.name} in ${file.projectPath} " +
+                                "has ${composables.size} composables: " +
+                                "${composables.map { it.name }}"
+                        )
+                    }
+                    isCompliant
+                }
+        }
+    }
 }
