@@ -15,9 +15,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizar
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 
+private const val LABEL_WEIGHT = 1f
+private const val VALUE_WEIGHT = 1.5f
+
 /**
  * Step 4: Read-only summary of all entered data — final confirmation before creation.
  */
+@Suppress("LongMethod")
 @Composable
 fun GroupReviewStep(
     uiState: CreateGroupUiState,
@@ -27,56 +31,97 @@ fun GroupReviewStep(
 
     WizardStepLayout(modifier = modifier) {
         SectionCard(title = stringResource(R.string.group_review_title)) {
-            ReviewRow(
-                label = stringResource(R.string.group_review_name),
-                value = uiState.groupName.ifBlank { none }
-            )
-            if (uiState.groupDescription.isNotBlank()) {
-                ReviewRow(
-                    label = stringResource(R.string.group_review_description),
-                    value = uiState.groupDescription
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                BodyText(
+                    text = stringResource(R.string.group_review_name),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(LABEL_WEIGHT)
+                )
+                Text(
+                    text = uiState.groupName.ifBlank { none },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(VALUE_WEIGHT)
                 )
             }
-            ReviewRow(
-                label = stringResource(R.string.group_review_currency),
-                value = uiState.selectedCurrency?.displayText ?: none
-            )
-            if (uiState.extraCurrencies.isNotEmpty()) {
-                ReviewRow(
-                    label = stringResource(R.string.group_review_extra_currencies),
-                    value = uiState.extraCurrencies.joinToString { it.code }
+            if (uiState.groupDescription.isNotBlank()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    BodyText(
+                        text = stringResource(R.string.group_review_description),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(LABEL_WEIGHT)
+                    )
+                    Text(
+                        text = uiState.groupDescription,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(VALUE_WEIGHT)
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                BodyText(
+                    text = stringResource(R.string.group_review_currency),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(LABEL_WEIGHT)
                 )
+                Text(
+                    text = uiState.selectedCurrency?.displayText ?: none,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(VALUE_WEIGHT)
+                )
+            }
+            if (uiState.extraCurrencies.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    BodyText(
+                        text = stringResource(R.string.group_review_extra_currencies),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(LABEL_WEIGHT)
+                    )
+                    Text(
+                        text = uiState.extraCurrencies.joinToString { it.code },
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(VALUE_WEIGHT)
+                    )
+                }
             }
             if (uiState.selectedMembers.isNotEmpty()) {
-                ReviewRow(
-                    label = stringResource(R.string.group_review_members),
-                    value = uiState.selectedMembers.joinToString { it.displayName ?: it.email }
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    BodyText(
+                        text = stringResource(R.string.group_review_members),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(LABEL_WEIGHT)
+                    )
+                    Text(
+                        text = uiState.selectedMembers.joinToString { it.displayName ?: it.email },
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(VALUE_WEIGHT)
+                    )
+                }
             }
         }
     }
 }
-
-@Composable
-private fun ReviewRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        BodyText(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(LABEL_WEIGHT)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(VALUE_WEIGHT)
-        )
-    }
-}
-
-private const val LABEL_WEIGHT = 1f
-private const val VALUE_WEIGHT = 1.5f

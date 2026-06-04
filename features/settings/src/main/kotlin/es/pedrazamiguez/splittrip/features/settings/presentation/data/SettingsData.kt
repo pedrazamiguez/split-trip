@@ -1,16 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.data
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.extension.getNameRes
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bell
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Book
@@ -31,9 +21,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Shield
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ShieldLock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UserPin
-import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
-import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.R
+import es.pedrazamiguez.splittrip.features.settings.presentation.component.CurrencyDescription
+import es.pedrazamiguez.splittrip.features.settings.presentation.component.LanguageDescription
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.AppVersionFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.InstallationIdFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SettingsItemModel
@@ -46,7 +36,6 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.model.SettingsS
  * - Modify settings behavior
  * - Test settings configuration
  */
-@Composable
 fun buildSettingsSections(
     preferencesParams: SettingsPreferencesParams,
     onServicesTestClick: () -> Unit
@@ -124,35 +113,6 @@ private fun preferencesSection(
         )
     )
 )
-
-@Composable
-private fun LanguageDescription(currentLanguageCode: String) {
-    val languageName = when (AppLanguage.fromCode(currentLanguageCode)) {
-        AppLanguage.ES -> stringResource(R.string.settings_preferences_language_es)
-        AppLanguage.EN -> stringResource(R.string.settings_preferences_language_en)
-        AppLanguage.ANDALUZ -> stringResource(R.string.settings_preferences_language_andaluz)
-    }
-    Text(text = languageName)
-}
-
-@Composable
-private fun CurrencyDescription(currentCurrency: Currency?) {
-    Crossfade(
-        targetState = currentCurrency,
-        label = "CurrencyFade"
-    ) { currency ->
-        if (currency == null) {
-            Box(
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(20.dp)
-            )
-        } else {
-            val currencyName = stringResource(id = currency.getNameRes())
-            Text(text = "$currencyName (${currency.symbol})")
-        }
-    }
-}
 
 private fun developerSection(onServicesTestClick: () -> Unit) = SettingsSectionModel(
     titleRes = R.string.settings_section_developer,

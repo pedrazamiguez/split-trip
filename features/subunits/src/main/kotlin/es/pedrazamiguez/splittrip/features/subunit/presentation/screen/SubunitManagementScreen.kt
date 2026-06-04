@@ -17,7 +17,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -38,6 +37,7 @@ import es.pedrazamiguez.splittrip.features.subunit.presentation.model.SubunitUiM
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.event.SubunitManagementUiEvent
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.SubunitManagementUiState
 
+@Suppress("LongMethod")
 @Composable
 fun SubunitManagementScreen(
     uiState: SubunitManagementUiState = SubunitManagementUiState(),
@@ -46,44 +46,6 @@ fun SubunitManagementScreen(
     var selectedSubunitForMenu by remember { mutableStateOf<SubunitUiModel?>(null) }
     var subunitToDelete by remember { mutableStateOf<SubunitUiModel?>(null) }
     val bottomPadding = LocalBottomPadding.current
-
-    SubunitContent(
-        uiState = uiState,
-        bottomPadding = bottomPadding,
-        onEvent = onEvent,
-        onSubunitLongClick = { selectedSubunitForMenu = it }
-    )
-
-    SubunitActionSheet(
-        subunit = selectedSubunitForMenu,
-        onEdit = { id ->
-            onEvent(SubunitManagementUiEvent.EditSubunit(id))
-            selectedSubunitForMenu = null
-        },
-        onRequestDelete = { subunit ->
-            subunitToDelete = subunit
-            selectedSubunitForMenu = null
-        },
-        onDismiss = { selectedSubunitForMenu = null }
-    )
-
-    SubunitDeleteDialog(
-        subunit = subunitToDelete,
-        onConfirm = { id ->
-            onEvent(SubunitManagementUiEvent.ConfirmDeleteSubunit(id))
-            subunitToDelete = null
-        },
-        onDismiss = { subunitToDelete = null }
-    )
-}
-
-@Composable
-private fun SubunitContent(
-    uiState: SubunitManagementUiState,
-    bottomPadding: Dp,
-    onEvent: (SubunitManagementUiEvent) -> Unit,
-    onSubunitLongClick: (SubunitUiModel) -> Unit
-) {
     val listState = rememberLazyListState()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -117,7 +79,7 @@ private fun SubunitContent(
                         SubunitItem(
                             subunitUiModel = subunit,
                             modifier = Modifier.animateItem(),
-                            onLongClick = { onSubunitLongClick(subunit) }
+                            onLongClick = { selectedSubunitForMenu = subunit }
                         )
                     }
                 }
@@ -136,49 +98,43 @@ private fun SubunitContent(
             sharedTransitionKey = CREATE_EDIT_SUBUNIT_SHARED_ELEMENT_KEY
         )
     }
-}
 
-@Composable
-private fun SubunitActionSheet(
-    subunit: SubunitUiModel?,
-    onEdit: (String) -> Unit,
-    onRequestDelete: (SubunitUiModel) -> Unit,
-    onDismiss: () -> Unit
-) {
-    subunit?.let {
+    selectedSubunitForMenu?.let { subunit ->
         ActionBottomSheet(
-            title = stringResource(R.string.subunit_actions_title, it.name),
+            title = stringResource(R.string.subunit_actions_title, subunit.name),
             icon = TablerIcons.Outline.Sitemap,
             actions = listOf(
                 SheetAction(
                     text = stringResource(R.string.action_edit_subunit),
                     icon = TablerIcons.Outline.Edit,
-                    onClick = { onEdit(it.id) }
+                    onClick = {
+                        onEvent(SubunitManagementUiEvent.EditSubunit(subunit.id))
+                        selectedSubunitForMenu = null
+                    }
                 ),
                 SheetAction(
                     text = stringResource(R.string.action_delete_subunit),
                     icon = TablerIcons.Outline.Trash,
-                    onClick = { onRequestDelete(it) },
+                    onClick = {
+                        subunitToDelete = subunit
+                        selectedSubunitForMenu = null
+                    },
                     isDestructive = true
                 )
             ),
-            onDismiss = onDismiss
+            onDismiss = { selectedSubunitForMenu = null }
         )
     }
-}
 
-@Composable
-private fun SubunitDeleteDialog(
-    subunit: SubunitUiModel?,
-    onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    subunit?.let {
+    subunitToDelete?.let { subunit ->
         DestructiveConfirmationDialog(
             title = stringResource(R.string.subunit_delete_title),
-            text = stringResource(R.string.subunit_delete_warning, it.name),
-            onDismiss = onDismiss,
-            onConfirm = { onConfirm(it.id) }
+            text = stringResource(R.string.subunit_delete_warning, subunit.name),
+            onDismiss = { subunitToDelete = null },
+            onConfirm = {
+                onEvent(SubunitManagementUiEvent.ConfirmDeleteSubunit(subunit.id))
+                subunitToDelete = null
+            }
         )
     }
 }

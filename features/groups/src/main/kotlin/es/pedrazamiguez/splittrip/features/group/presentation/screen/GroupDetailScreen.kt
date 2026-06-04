@@ -40,13 +40,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.component.MemberAvatarStack
 import es.pedrazamiguez.splittrip.features.group.presentation.component.SelectedGroupCoverImage
-import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.GroupDetailUiState
 
 private val CONTENT_HORIZONTAL_PADDING = 16.dp
 private val SECTION_VERTICAL_SPACING = 16.dp
 private val SECTION_LABEL_ICON_SIZE = 16.dp
 
+@Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
 fun GroupDetailScreen(
     uiState: GroupDetailUiState = GroupDetailUiState(),
@@ -54,6 +54,8 @@ fun GroupDetailScreen(
     onSelectGroup: () -> Unit = {},
     onManageSubunits: () -> Unit = {}
 ) {
+    val bottomPadding = LocalBottomPadding.current
+
     when {
         uiState.isLoading -> ShimmerLoadingList()
         uiState.hasError || uiState.group == null -> {
@@ -63,188 +65,143 @@ fun GroupDetailScreen(
             )
         }
         else -> {
-            GroupDetailContent(
-                group = uiState.group,
-                isActiveGroup = isActiveGroup,
-                subunitsCount = uiState.subunitsCount,
-                onSelectGroup = onSelectGroup,
-                onManageSubunits = onManageSubunits
-            )
-        }
-    }
-}
-
-@Composable
-private fun GroupDetailContent(
-    group: GroupUiModel,
-    isActiveGroup: Boolean,
-    subunitsCount: Int,
-    onSelectGroup: () -> Unit,
-    onManageSubunits: () -> Unit
-) {
-    val bottomPadding = LocalBottomPadding.current
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        SelectedGroupCoverImage(
-            imageUrl = group.imageUrl,
-            groupName = group.name,
-            showActiveBadge = isActiveGroup
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = CONTENT_HORIZONTAL_PADDING),
-            verticalArrangement = Arrangement.spacedBy(SECTION_VERTICAL_SPACING)
-        ) {
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
-
-            GroupDetailMembersSection(group = group)
-
-            GroupDetailSubunitsSection(
-                subunitsCount = subunitsCount,
-                onManageSubunits = onManageSubunits
-            )
-
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
-
-            GroupDetailActions(
-                isActiveGroup = isActiveGroup,
-                onSelectGroup = onSelectGroup,
-                onManageSubunits = onManageSubunits
-            )
-
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge + bottomPadding))
-        }
-    }
-}
-
-@Composable
-private fun GroupDetailMembersSection(group: GroupUiModel) {
-    GroupDetailSectionLabel(
-        label = stringResource(R.string.group_detail_section_members),
-        icon = { SectionIcon(imageVector = TablerIcons.Outline.UsersGroup) }
-    )
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-    ) {
-        if (group.memberAvatarUrls.isNotEmpty() || group.memberOverflowCount > 0) {
-            MemberAvatarStack(
-                avatarUrls = group.memberAvatarUrls,
-                overflowCount = group.memberOverflowCount
-            )
-        }
-        if (group.membersCountText.isNotEmpty()) {
-            BodyText(
-                text = group.membersCountText,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun GroupDetailSubunitsSection(
-    subunitsCount: Int,
-    onManageSubunits: () -> Unit
-) {
-    GroupDetailSectionLabel(
-        label = stringResource(R.string.group_detail_section_subunits),
-        icon = { SectionIcon(imageVector = TablerIcons.Outline.Sitemap) }
-    )
-    val subunitsText = if (subunitsCount == 0) {
-        stringResource(R.string.group_detail_no_subunits)
-    } else {
-        pluralStringResource(R.plurals.group_detail_subunit_count, subunitsCount, subunitsCount)
-    }
-    FlatCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .clickable(onClick = onManageSubunits)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = MaterialTheme.spacing.Default, vertical = MaterialTheme.spacing.Medium),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BodyText(
-                text = subunitsText,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (subunitsCount > 0) {
-                Text(
-                    text = stringResource(R.string.group_detail_manage_subunits),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+            val group = uiState.group
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                SelectedGroupCoverImage(
+                    imageUrl = group.imageUrl,
+                    groupName = group.name,
+                    showActiveBadge = isActiveGroup
                 )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = CONTENT_HORIZONTAL_PADDING),
+                    verticalArrangement = Arrangement.spacedBy(SECTION_VERTICAL_SPACING)
+                ) {
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
+
+                    // Members label
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.UsersGroup,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(SECTION_LABEL_ICON_SIZE)
+                        )
+                        LabelText(text = stringResource(R.string.group_detail_section_members))
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+                    ) {
+                        if (group.memberAvatarUrls.isNotEmpty() || group.memberOverflowCount > 0) {
+                            MemberAvatarStack(
+                                avatarUrls = group.memberAvatarUrls,
+                                overflowCount = group.memberOverflowCount
+                            )
+                        }
+                        if (group.membersCountText.isNotEmpty()) {
+                            BodyText(
+                                text = group.membersCountText,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Subunits label
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.Sitemap,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(SECTION_LABEL_ICON_SIZE)
+                        )
+                        LabelText(text = stringResource(R.string.group_detail_section_subunits))
+                    }
+                    val subunitsText = if (uiState.subunitsCount == 0) {
+                        stringResource(R.string.group_detail_no_subunits)
+                    } else {
+                        pluralStringResource(
+                            R.plurals.group_detail_subunit_count,
+                            uiState.subunitsCount,
+                            uiState.subunitsCount
+                        )
+                    }
+                    FlatCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
+                            .clickable(onClick = onManageSubunits)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = MaterialTheme.spacing.Default,
+                                    vertical = MaterialTheme.spacing.Medium
+                                ),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            BodyText(
+                                text = subunitsText,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (uiState.subunitsCount > 0) {
+                                Text(
+                                    text = stringResource(R.string.group_detail_manage_subunits),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+
+                    // Group actions
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isActiveGroup) {
+                            SecondaryButton(
+                                text = stringResource(R.string.action_deselect_group),
+                                onClick = onSelectGroup,
+                                leadingIcon = TablerIcons.Outline.X,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            GradientButton(
+                                text = stringResource(R.string.group_detail_select_as_active),
+                                onClick = onSelectGroup,
+                                leadingIcon = TablerIcons.Outline.CircleCheck,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        SecondaryButton(
+                            text = stringResource(R.string.group_detail_manage_subunits),
+                            onClick = onManageSubunits,
+                            leadingIcon = TablerIcons.Outline.Sitemap,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge + bottomPadding))
+                }
             }
         }
     }
-}
-
-@Composable
-private fun GroupDetailActions(
-    isActiveGroup: Boolean,
-    onSelectGroup: () -> Unit,
-    onManageSubunits: () -> Unit
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        if (isActiveGroup) {
-            SecondaryButton(
-                text = stringResource(R.string.action_deselect_group),
-                onClick = onSelectGroup,
-                leadingIcon = TablerIcons.Outline.X,
-                modifier = Modifier.fillMaxWidth()
-            )
-        } else {
-            GradientButton(
-                text = stringResource(R.string.group_detail_select_as_active),
-                onClick = onSelectGroup,
-                leadingIcon = TablerIcons.Outline.CircleCheck,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        SecondaryButton(
-            text = stringResource(R.string.group_detail_manage_subunits),
-            onClick = onManageSubunits,
-            leadingIcon = TablerIcons.Outline.Sitemap,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
-@Composable
-private fun GroupDetailSectionLabel(
-    label: String,
-    icon: @Composable () -> Unit
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        icon()
-        LabelText(text = label)
-    }
-}
-
-@Composable
-private fun SectionIcon(imageVector: androidx.compose.ui.graphics.vector.ImageVector) {
-    Icon(
-        imageVector = imageVector,
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.size(SECTION_LABEL_ICON_SIZE)
-    )
 }

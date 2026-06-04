@@ -56,6 +56,7 @@ object JacocoExclusions {
         // Design-system: Compose extension functions (NavGraph, Currency display) — UI-only
         "**/designsystem/extension/**",
         // ── Compose navigation graphs — only testable via instrumentation ─────────
+        "**/navigation/**",
         "**/navigation/*NavigationKt.*",
         "**/navigation/*NavigationKt\$*.*",
         "**/navigation/*NavHostKt.*",

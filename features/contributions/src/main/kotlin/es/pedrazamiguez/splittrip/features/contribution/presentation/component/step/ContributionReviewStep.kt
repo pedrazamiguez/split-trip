@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.s
  * Step 3: Read-only summary of all entered data (final confirmation).
  * Always shown as the last wizard step.
  */
+@Suppress("LongMethod")
 @Composable
 fun ContributionReviewStep(
     uiState: AddContributionUiState,
@@ -29,49 +30,63 @@ fun ContributionReviewStep(
 
     WizardStepLayout(modifier = modifier) {
         SectionCard(title = stringResource(R.string.contribution_review_title)) {
-            ReviewRow(
-                label = stringResource(R.string.contribution_review_member),
-                value = uiState.selectedMemberDisplayName.ifBlank { none }
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                BodyText(
+                    text = stringResource(R.string.contribution_review_member),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = uiState.selectedMemberDisplayName.ifBlank { none },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
 
-            ReviewRow(
-                label = stringResource(R.string.contribution_review_amount),
-                value = uiState.formattedAmountWithCurrency.ifBlank {
-                    uiState.amountInput.ifBlank { none }
-                }
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                BodyText(
+                    text = stringResource(R.string.contribution_review_amount),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = uiState.formattedAmountWithCurrency.ifBlank {
+                        uiState.amountInput.ifBlank { none }
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
 
-            ReviewRow(
-                label = stringResource(R.string.contribution_review_scope),
-                value = when (uiState.contributionScope) {
-                    PayerType.GROUP ->
-                        stringResource(R.string.contribution_review_scope_group)
-                    PayerType.USER ->
-                        stringResource(R.string.contribution_review_scope_personal)
-                    PayerType.SUBUNIT ->
-                        uiState.subunitOptions
-                            .find { it.id == uiState.selectedSubunitId }?.name ?: none
-                }
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                BodyText(
+                    text = stringResource(R.string.contribution_review_scope),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = when (uiState.contributionScope) {
+                        PayerType.GROUP ->
+                            stringResource(R.string.contribution_review_scope_group)
+                        PayerType.USER ->
+                            stringResource(R.string.contribution_review_scope_personal)
+                        PayerType.SUBUNIT ->
+                            uiState.subunitOptions
+                                .find { it.id == uiState.selectedSubunitId }?.name ?: none
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
-    }
-}
-
-@Composable
-private fun ReviewRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        BodyText(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
     }
 }

@@ -54,15 +54,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMet
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import kotlinx.collections.immutable.ImmutableList
 
-/**
- * Editor for a single add-on within the expense form.
- *
- * Displays type/mode/value-type chip selectors, an amount input field,
- * optional currency and payment method dropdowns, and a description field.
- *
- * Stateless: takes pure data and emits [AddExpenseUiEvent]s via [onEvent].
- */
-@Suppress("LongMethod") // Compose UI builder DSL
+@Suppress("LongMethod", "LongParameterList")
 @Composable
 fun AddOnItemEditor(
     addOn: AddOnUiModel,
@@ -78,52 +70,161 @@ fun AddOnItemEditor(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
-        AddOnEditorHeader(
-            addOn = addOn,
-            onRemove = onRemove
-        )
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(addOn.type.toStringRes()),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
 
-        AddOnChipSelectors(
-            addOn = addOn,
-            onEvent = onEvent
-        )
-
-        AddOnAmountInput(
-            addOn = addOn,
-            onAmountChanged = { amount ->
-                onEvent(AddExpenseUiEvent.AddOnAmountChanged(addOn.id, amount))
-            }
-        )
-
-        AddOnCurrencySelector(
-            addOn = addOn,
-            availableCurrencies = availableCurrencies,
-            showCurrencySelector = showCurrencySelector,
-            onCurrencySelected = { code ->
-                onEvent(AddExpenseUiEvent.AddOnCurrencySelected(addOn.id, code))
-            }
-        )
-
-        AddOnExchangeRateSection(
-            addOn = addOn,
-            onRateChanged = { rate ->
-                onEvent(AddExpenseUiEvent.AddOnExchangeRateChanged(addOn.id, rate))
-            },
-            onGroupAmountChanged = { amount ->
-                onEvent(AddExpenseUiEvent.AddOnGroupAmountChanged(addOn.id, amount))
-            }
-        )
-
-        AddOnPaymentMethodSelector(
-            addOn = addOn,
-            paymentMethods = paymentMethods,
-            onPaymentMethodSelected = { methodId ->
-                onEvent(
-                    AddExpenseUiEvent.AddOnPaymentMethodSelected(addOn.id, methodId)
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = TablerIcons.Outline.X,
+                    contentDescription = stringResource(R.string.add_expense_add_on_remove),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
                 )
             }
+        }
+
+        // Chip Selectors
+        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
+            AddOnType.entries.forEach { type ->
+                PassportChip(
+                    label = stringResource(type.toStringRes()),
+                    selected = addOn.type == type,
+                    onClick = {
+                        onEvent(AddExpenseUiEvent.AddOnTypeChanged(addOn.id, type))
+                    }
+                )
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
+            AddOnMode.entries.forEach { mode ->
+                PassportChip(
+                    label = stringResource(mode.toStringRes()),
+                    selected = addOn.mode == mode,
+                    onClick = {
+                        onEvent(AddExpenseUiEvent.AddOnModeChanged(addOn.id, mode))
+                    }
+                )
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
+            AddOnValueType.entries.forEach { valueType ->
+                PassportChip(
+                    label = stringResource(valueType.toStringRes()),
+                    selected = addOn.valueType == valueType,
+                    onClick = {
+                        onEvent(AddExpenseUiEvent.AddOnValueTypeChanged(addOn.id, valueType))
+                    }
+                )
+            }
+        }
+
+        // Amount Input
+        val amountSuffix = if (addOn.valueType == AddOnValueType.PERCENTAGE) "%" else null
+        StyledOutlinedTextField(
+            value = addOn.amountInput,
+            onValueChange = { onEvent(AddExpenseUiEvent.AddOnAmountChanged(addOn.id, it)) },
+            label = stringResource(R.string.add_expense_add_on_amount_hint),
+            modifier = Modifier.fillMaxWidth(),
+            keyboardType = KeyboardType.Decimal,
+            imeAction = ImeAction.Next,
+            isError = !addOn.isAmountValid,
+            suffix = amountSuffix?.let { { Text(it) } },
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.clearFocus() }
+            )
         )
 
+        // Currency Selector
+        AnimatedVisibility(
+            visible = showCurrencySelector,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            CurrencyDropdown(
+                selectedCurrency = addOn.currency,
+                availableCurrencies = availableCurrencies,
+                onCurrencySelected = { code ->
+                    onEvent(AddExpenseUiEvent.AddOnCurrencySelected(addOn.id, code))
+                },
+                label = stringResource(R.string.add_expense_currency_label)
+            )
+        }
+
+        // Exchange Rate Section
+        AnimatedVisibility(
+            visible = addOn.showExchangeRateSection,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            CurrencyConversionCard(
+                state = CurrencyConversionCardState(
+                    title = stringResource(R.string.add_expense_exchange_rate_title),
+                    exchangeRateValue = addOn.displayExchangeRate,
+                    exchangeRateLabel = addOn.exchangeRateLabel,
+                    groupAmountValue = addOn.calculatedGroupAmount,
+                    groupAmountLabel = addOn.groupAmountLabel,
+                    isLoadingRate = addOn.isLoadingRate,
+                    isExchangeRateLocked = addOn.isExchangeRateLocked,
+                    exchangeRateLockedHint = addOn.exchangeRateLockedHint,
+                    isInsufficientCash = addOn.isInsufficientCash,
+                    isGroupAmountError = false
+                ),
+                onExchangeRateChanged = { rate ->
+                    onEvent(AddExpenseUiEvent.AddOnExchangeRateChanged(addOn.id, rate))
+                },
+                onGroupAmountChanged = { amount ->
+                    onEvent(AddExpenseUiEvent.AddOnGroupAmountChanged(addOn.id, amount))
+                }
+            )
+        }
+
+        // Payment Method Selector
+        Box {
+            var methodExpanded by remember { mutableStateOf(false) }
+            StyledOutlinedTextField(
+                value = addOn.paymentMethod?.displayText ?: "",
+                onValueChange = {},
+                readOnly = true,
+                label = stringResource(R.string.add_expense_payment_method_title),
+                trailingIcon = { Icon(TablerIcons.Filled.CaretDownFilled, null) },
+                onClick = { methodExpanded = true },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            DropdownMenu(
+                expanded = methodExpanded,
+                onDismissRequest = { methodExpanded = false }
+            ) {
+                paymentMethods.forEach { method ->
+                    DropdownMenuItem(
+                        text = { Text(method.displayText) },
+                        onClick = {
+                            onEvent(AddExpenseUiEvent.AddOnPaymentMethodSelected(addOn.id, method.id))
+                            methodExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // Description
         StyledOutlinedTextField(
             value = addOn.description,
             onValueChange = { desc ->
@@ -141,200 +242,5 @@ fun AddOnItemEditor(
         )
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
-    }
-}
-
-@Composable
-private fun AddOnEditorHeader(
-    addOn: AddOnUiModel,
-    onRemove: () -> Unit
-) {
-    // ── Header: Type label + Remove button ──────────────────
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = stringResource(addOn.type.toStringRes()),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier.size(32.dp)
-        ) {
-            Icon(
-                imageVector = TablerIcons.Outline.X,
-                contentDescription = stringResource(
-                    R.string.add_expense_add_on_remove
-                ),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun AddOnChipSelectors(
-    addOn: AddOnUiModel,
-    onEvent: (AddExpenseUiEvent) -> Unit
-) {
-    // ── Type Chips ──────────────────────────────────────────
-    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-        AddOnType.entries.forEach { type ->
-            PassportChip(
-                label = stringResource(type.toStringRes()),
-                selected = addOn.type == type,
-                onClick = {
-                    onEvent(AddExpenseUiEvent.AddOnTypeChanged(addOn.id, type))
-                }
-            )
-        }
-    }
-
-    // ── Mode Chips (On top / Included) ──────────────────────
-    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-        AddOnMode.entries.forEach { mode ->
-            PassportChip(
-                label = stringResource(mode.toStringRes()),
-                selected = addOn.mode == mode,
-                onClick = {
-                    onEvent(AddExpenseUiEvent.AddOnModeChanged(addOn.id, mode))
-                }
-            )
-        }
-    }
-
-    // ── Value Type Chips (Amount / Percentage) ──────────────
-    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-        AddOnValueType.entries.forEach { valueType ->
-            PassportChip(
-                label = stringResource(valueType.toStringRes()),
-                selected = addOn.valueType == valueType,
-                onClick = {
-                    onEvent(
-                        AddExpenseUiEvent.AddOnValueTypeChanged(addOn.id, valueType)
-                    )
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun AddOnAmountInput(
-    addOn: AddOnUiModel,
-    onAmountChanged: (String) -> Unit
-) {
-    val focusManager = LocalFocusManager.current
-    // ── Amount Input ────────────────────────────────────────
-    val amountSuffix = if (addOn.valueType == AddOnValueType.PERCENTAGE) "%" else null
-
-    StyledOutlinedTextField(
-        value = addOn.amountInput,
-        onValueChange = onAmountChanged,
-        label = stringResource(R.string.add_expense_add_on_amount_hint),
-        modifier = Modifier.fillMaxWidth(),
-        keyboardType = KeyboardType.Decimal,
-        imeAction = ImeAction.Next,
-        isError = !addOn.isAmountValid,
-        suffix = amountSuffix?.let { { Text(it) } },
-        keyboardActions = KeyboardActions(
-            onNext = { focusManager.clearFocus() }
-        )
-    )
-}
-
-@Composable
-private fun AddOnCurrencySelector(
-    addOn: AddOnUiModel,
-    availableCurrencies: ImmutableList<CurrencyUiModel>,
-    showCurrencySelector: Boolean,
-    onCurrencySelected: (String) -> Unit
-) {
-    // ── Currency Selector (only when multi-currency) ────────
-    AnimatedVisibility(
-        visible = showCurrencySelector,
-        enter = expandVertically() + fadeIn(),
-        exit = shrinkVertically() + fadeOut()
-    ) {
-        CurrencyDropdown(
-            selectedCurrency = addOn.currency,
-            availableCurrencies = availableCurrencies,
-            onCurrencySelected = onCurrencySelected,
-            label = stringResource(R.string.add_expense_currency_label)
-        )
-    }
-}
-
-@Composable
-private fun AddOnPaymentMethodSelector(
-    addOn: AddOnUiModel,
-    paymentMethods: ImmutableList<PaymentMethodUiModel>,
-    onPaymentMethodSelected: (String) -> Unit
-) {
-    // ── Payment Method Selector ─────────────────────────────
-    Box {
-        var methodExpanded by remember { mutableStateOf(false) }
-        StyledOutlinedTextField(
-            value = addOn.paymentMethod?.displayText ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = stringResource(R.string.add_expense_payment_method_title),
-            trailingIcon = { Icon(TablerIcons.Filled.CaretDownFilled, null) },
-            onClick = { methodExpanded = true },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        DropdownMenu(
-            expanded = methodExpanded,
-            onDismissRequest = { methodExpanded = false }
-        ) {
-            paymentMethods.forEach { method ->
-                DropdownMenuItem(
-                    text = { Text(method.displayText) },
-                    onClick = {
-                        onPaymentMethodSelected(method.id)
-                        methodExpanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AddOnExchangeRateSection(
-    addOn: AddOnUiModel,
-    onRateChanged: (String) -> Unit,
-    onGroupAmountChanged: (String) -> Unit
-) {
-    AnimatedVisibility(
-        visible = addOn.showExchangeRateSection,
-        enter = expandVertically() + fadeIn(),
-        exit = shrinkVertically() + fadeOut()
-    ) {
-        CurrencyConversionCard(
-            state = CurrencyConversionCardState(
-                title = stringResource(R.string.add_expense_exchange_rate_title),
-                exchangeRateValue = addOn.displayExchangeRate,
-                exchangeRateLabel = addOn.exchangeRateLabel,
-                groupAmountValue = addOn.calculatedGroupAmount,
-                groupAmountLabel = addOn.groupAmountLabel,
-                isLoadingRate = addOn.isLoadingRate,
-                isExchangeRateLocked = addOn.isExchangeRateLocked,
-                exchangeRateLockedHint = addOn.exchangeRateLockedHint,
-                isInsufficientCash = addOn.isInsufficientCash,
-                isGroupAmountError = false
-            ),
-            onExchangeRateChanged = onRateChanged,
-            onGroupAmountChanged = onGroupAmountChanged
-        )
     }
 }

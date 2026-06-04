@@ -56,6 +56,8 @@ private fun isPdf(uriString: String): Boolean {
     return false
 }
 
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReceiptViewerScreen(
     receiptUri: String,
@@ -89,106 +91,80 @@ fun ReceiptViewerScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                ZoomableImageContainer(
-                    receiptUri = receiptUri,
-                    hazeState = hazeState,
-                    onClose = onClose
-                )
+                var scale by remember { mutableFloatStateOf(MIN_ZOOM_SCALE) }
+                var offset by remember { mutableStateOf(Offset.Zero) }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .hazeSource(state = hazeState),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(Uri.parse(receiptUri))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = stringResource(R.string.receipt_viewer_image_cd),
+                        modifier = Modifier
+                            .then(receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY))
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    val targetScale = (scale * zoom).coerceIn(MIN_ZOOM_SCALE, MAX_ZOOM_SCALE)
+                                    if (targetScale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
+                                        scale = MIN_ZOOM_SCALE
+                                        offset = Offset.Zero
+                                    } else {
+                                        scale = targetScale
+                                        offset += pan
+                                    }
+                                }
+                            }
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                translationX = offset.x,
+                                translationY = offset.y
+                            )
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    if (scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
+                                        onClose()
+                                    }
+                                }
+                            ),
+                        contentScale = ContentScale.Fit
+                    )
+                }
             }
 
-            ReceiptViewerTopBar(
-                hazeState = hazeState,
-                onClose = onClose,
-                modifier = Modifier.align(Alignment.TopCenter)
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.add_expense_receipt_title),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                actions = {
+                    IconButton(onClick = onClose) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.X,
+                            contentDescription = stringResource(R.string.receipt_viewer_close_cd)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground
+                ),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .horizonGlassEffect(hazeState = hazeState)
             )
         }
     }
-}
-
-@Composable
-private fun ZoomableImageContainer(
-    receiptUri: String,
-    hazeState: HazeState,
-    onClose: () -> Unit
-) {
-    var scale by remember { mutableFloatStateOf(MIN_ZOOM_SCALE) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .hazeSource(state = hazeState),
-        contentAlignment = Alignment.Center
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(Uri.parse(receiptUri))
-                .crossfade(true)
-                .build(),
-            contentDescription = stringResource(R.string.receipt_viewer_image_cd),
-            modifier = Modifier
-                .then(receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY))
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        val targetScale = (scale * zoom).coerceIn(MIN_ZOOM_SCALE, MAX_ZOOM_SCALE)
-                        if (targetScale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
-                            scale = MIN_ZOOM_SCALE
-                            offset = Offset.Zero
-                        } else {
-                            scale = targetScale
-                            offset += pan
-                        }
-                    }
-                }
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {
-                        if (scale <= MIN_ZOOM_SCALE + ZOOM_EPSILON) {
-                            onClose()
-                        }
-                    }
-                ),
-            contentScale = ContentScale.Fit
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ReceiptViewerTopBar(
-    hazeState: HazeState,
-    onClose: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    CenterAlignedTopAppBar(
-        title = {
-            Text(
-                text = stringResource(R.string.add_expense_receipt_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-        },
-        actions = {
-            IconButton(onClick = onClose) {
-                Icon(
-                    imageVector = TablerIcons.Outline.X,
-                    contentDescription = stringResource(R.string.receipt_viewer_close_cd)
-                )
-            }
-        },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = Color.Transparent,
-            titleContentColor = MaterialTheme.colorScheme.onBackground,
-            actionIconContentColor = MaterialTheme.colorScheme.onBackground
-        ),
-        modifier = modifier
-            .horizonGlassEffect(hazeState = hazeState)
-    )
 }

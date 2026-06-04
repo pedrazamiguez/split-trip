@@ -26,7 +26,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.subunit.R
-import es.pedrazamiguez.splittrip.features.subunit.presentation.model.MemberUiModel
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.event.CreateEditSubunitUiEvent
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.CreateEditSubunitUiState
 
@@ -35,6 +34,7 @@ import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.
  *
  * Each row shows the member name, a percentage text field, and a lock toggle button.
  */
+@Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
 fun SubunitSharesStep(
     uiState: CreateEditSubunitUiState,
@@ -42,124 +42,70 @@ fun SubunitSharesStep(
     onImeNext: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val focusManager = LocalFocusManager.current
+
     WizardStepLayout(modifier = modifier) {
         FormErrorBanner(error = uiState.sharesError)
 
-        ShareAllocationList(
-            members = uiState.availableMembers,
-            selectedMemberIds = uiState.selectedMemberIds,
-            memberShares = uiState.memberShares,
-            lockedMemberIds = uiState.lockedMemberIds,
-            onShareChanged = { userId, share ->
-                onEvent(CreateEditSubunitUiEvent.UpdateMemberShare(userId, share))
-            },
-            onShareLockToggled = { userId ->
-                onEvent(CreateEditSubunitUiEvent.ToggleShareLock(userId))
-            },
-            onImeNext = onImeNext
-        )
-    }
-}
+        val selectedMembers = uiState.availableMembers.filter { it.userId in uiState.selectedMemberIds }
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
+            selectedMembers.forEachIndexed { index, member ->
+                val isLastRow = index == selectedMembers.lastIndex
+                val shareText = uiState.memberShares[member.userId] ?: ""
+                val isLocked = member.userId in uiState.lockedMemberIds
 
-/**
- * Bundled state for a single share allocation row.
- * Keeps the composable parameter count under the detekt threshold.
- */
-internal data class ShareRowState(
-    val memberId: String,
-    val displayName: String,
-    val shareText: String,
-    val isLocked: Boolean
-)
-
-@Composable
-private fun ShareAllocationList(
-    members: kotlinx.collections.immutable.ImmutableList<MemberUiModel>,
-    selectedMemberIds: kotlinx.collections.immutable.ImmutableList<String>,
-    memberShares: Map<String, String>,
-    lockedMemberIds: kotlinx.collections.immutable.ImmutableSet<String>,
-    onShareChanged: (String, String) -> Unit,
-    onShareLockToggled: (String) -> Unit,
-    onImeNext: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val selectedMembers = members.filter { it.userId in selectedMemberIds }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
-        selectedMembers.forEachIndexed { index, member ->
-            val isLastRow = index == selectedMembers.lastIndex
-            val rowState = ShareRowState(
-                memberId = member.userId,
-                displayName = member.displayName,
-                shareText = memberShares[member.userId] ?: "",
-                isLocked = member.userId in lockedMemberIds
-            )
-            ShareInputRow(
-                state = rowState,
-                isLastRow = isLastRow,
-                onShareChanged = { onShareChanged(member.userId, it) },
-                onLockToggled = { onShareLockToggled(member.userId) },
-                onImeNext = onImeNext
-            )
-        }
-    }
-}
-
-@Composable
-private fun ShareInputRow(
-    state: ShareRowState,
-    isLastRow: Boolean,
-    onShareChanged: (String) -> Unit,
-    onLockToggled: () -> Unit,
-    onImeNext: () -> Unit
-) {
-    val focusManager = LocalFocusManager.current
-    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
-        BodyText(
-            text = state.displayName,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-        ) {
-            StyledOutlinedTextField(
-                value = state.shareText,
-                onValueChange = onShareChanged,
-                label = "%",
-                keyboardType = KeyboardType.Decimal,
-                imeAction = if (isLastRow) ImeAction.Done else ImeAction.Next,
-                keyboardActions = if (isLastRow) {
-                    KeyboardActions(
-                        onDone = {
-                            focusManager.clearFocus()
-                            onImeNext()
-                        }
+                Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
+                    BodyText(
+                        text = member.displayName,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                } else {
-                    KeyboardActions.Default
-                },
-                modifier = Modifier.weight(1f)
-            )
-            ShareLockButton(isLocked = state.isLocked, onClick = onLockToggled)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+                    ) {
+                        StyledOutlinedTextField(
+                            value = shareText,
+                            onValueChange = { onEvent(CreateEditSubunitUiEvent.UpdateMemberShare(member.userId, it)) },
+                            label = "%",
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = if (isLastRow) ImeAction.Done else ImeAction.Next,
+                            keyboardActions = if (isLastRow) {
+                                KeyboardActions(
+                                    onDone = {
+                                        focusManager.clearFocus()
+                                        onImeNext()
+                                    }
+                                )
+                            } else {
+                                KeyboardActions.Default
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { onEvent(CreateEditSubunitUiEvent.ToggleShareLock(member.userId)) },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isLocked) {
+                                    TablerIcons.Filled.LockFilled
+                                } else {
+                                    TablerIcons.Outline.LockOpen
+                                },
+                                contentDescription = stringResource(
+                                    if (isLocked) R.string.subunit_share_unlock else R.string.subunit_share_lock
+                                ),
+                                tint = if (isLocked) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                },
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
-    }
-}
-
-@Composable
-private fun ShareLockButton(isLocked: Boolean, onClick: () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.size(36.dp)) {
-        Icon(
-            imageVector = if (isLocked) TablerIcons.Filled.LockFilled else TablerIcons.Outline.LockOpen,
-            contentDescription = stringResource(
-                if (isLocked) R.string.subunit_share_unlock else R.string.subunit_share_lock
-            ),
-            tint = if (isLocked) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            },
-            modifier = Modifier.size(20.dp)
-        )
     }
 }

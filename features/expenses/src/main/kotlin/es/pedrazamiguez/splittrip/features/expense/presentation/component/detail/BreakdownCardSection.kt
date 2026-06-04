@@ -28,6 +28,7 @@ import kotlinx.collections.immutable.ImmutableList
  * when the expense actually has add-ons or carries an INCLUDED-decomposed base
  * cost — vanilla expenses skip this section entirely (issue #1077 Tier 2).
  */
+@Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
 internal fun BreakdownCardSection(
     addOns: ImmutableList<AddOnDetailUiModel>,
@@ -51,96 +52,81 @@ internal fun BreakdownCardSection(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
             ) {
                 if (formattedIncludedBaseCost != null) {
-                    BaseCostRow(formattedIncludedBaseCost)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SecondaryBodyText(
+                            text = stringResource(R.string.expense_detail_breakdown_base_cost),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        AmountText(text = formattedIncludedBaseCost)
+                    }
                 }
-                addOns.forEach { addOn -> AddOnRow(addOn) }
+                addOns.forEach { addOn ->
+                    val valueColor = if (addOn.isDiscount) {
+                        MaterialTheme.colorScheme.tertiary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                    val signedAmount = if (addOn.isDiscount) "− ${addOn.formattedAmount}" else addOn.formattedAmount
+                    val modeLabelRes = if (addOn.isIncluded) {
+                        R.string.expense_detail_addon_mode_included
+                    } else {
+                        R.string.expense_detail_addon_mode_on_top
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            SecondaryBodyText(text = addOn.labelText)
+                            CaptionText(
+                                text = stringResource(modeLabelRes),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            AmountText(text = signedAmount, color = valueColor)
+                            if (addOn.isForeignCurrency && addOn.formattedSourceAmount != null) {
+                                CaptionText(
+                                    text = addOn.formattedSourceAmount,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (addOn.formattedRate != null) {
+                                CaptionText(
+                                    text = addOn.formattedRate,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
                 val summaryLabelRes = when {
                     formattedOriginalEnteredTotal != null -> R.string.expense_detail_breakdown_original_total
                     else -> R.string.expense_review_effective_total
                 }
                 val summaryValue = formattedOriginalEnteredTotal ?: formattedEffectiveTotal
                 if (summaryValue != null) {
-                    SummaryRow(label = stringResource(summaryLabelRes), value = summaryValue)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SecondaryBodyText(
+                            text = stringResource(summaryLabelRes),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        AmountText(
+                            text = summaryValue,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun BaseCostRow(formattedBaseCost: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SecondaryBodyText(
-            text = stringResource(R.string.expense_detail_breakdown_base_cost),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        AmountText(text = formattedBaseCost)
-    }
-}
-
-@Composable
-private fun AddOnRow(addOn: AddOnDetailUiModel) {
-    // Discount tone deliberately uses `tertiary` from the theme palette — Horizon
-    // Narrative §3.2 keeps the success/positive accent under the secondary scale.
-    val valueColor = if (addOn.isDiscount) {
-        MaterialTheme.colorScheme.tertiary
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    val signedAmount = if (addOn.isDiscount) "− ${addOn.formattedAmount}" else addOn.formattedAmount
-    val modeLabelRes = if (addOn.isIncluded) {
-        R.string.expense_detail_addon_mode_included
-    } else {
-        R.string.expense_detail_addon_mode_on_top
-    }
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            SecondaryBodyText(text = addOn.labelText)
-            CaptionText(
-                text = stringResource(modeLabelRes),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            AmountText(text = signedAmount, color = valueColor)
-            if (addOn.isForeignCurrency && addOn.formattedSourceAmount != null) {
-                CaptionText(
-                    text = addOn.formattedSourceAmount,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (addOn.formattedRate != null) {
-                CaptionText(
-                    text = addOn.formattedRate,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SecondaryBodyText(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        AmountText(
-            text = value,
-            color = MaterialTheme.colorScheme.primary
-        )
     }
 }

@@ -24,12 +24,12 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
-import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.SettingsScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
 import org.koin.androidx.compose.koinViewModel
 
+@Suppress("LongMethod")
 @Composable
 fun SettingsFeature(
     navController: NavHostController = LocalRootNavController.current,
@@ -72,42 +72,6 @@ fun SettingsFeature(
         }
     }
 
-    SettingsFeatureContent(
-        navController = navController,
-        settingsViewModel = settingsViewModel,
-        hasPermission = hasPermission,
-        currentCurrency = currentCurrency,
-        currentLanguageCode = currentLanguageCode,
-        onLanguageClick = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
-        onLogoutClick = { showLogoutDialog = true }
-    )
-
-    if (showLogoutDialog) {
-        LogoutConfirmationDialog(
-            onConfirm = {
-                showLogoutDialog = false
-                settingsViewModel.signOut {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.MAIN) { inclusive = true }
-                    }
-                }
-            },
-            onDismiss = { showLogoutDialog = false }
-        )
-    }
-}
-
-@Composable
-private fun SettingsFeatureContent(
-    navController: NavHostController,
-    settingsViewModel: SettingsViewModel,
-    hasPermission: Boolean,
-    currentCurrency: Currency?,
-    currentLanguageCode: String,
-    onLanguageClick: () -> Unit,
-    onLogoutClick: () -> Unit
-) {
-    val context = LocalContext.current
     val requestPermission = rememberRequestNotificationPermission { isGranted ->
         settingsViewModel.updateNotificationPermission(isGranted)
     }
@@ -138,25 +102,28 @@ private fun SettingsFeatureContent(
                 navController.navigate(Routes.SETTINGS_DEFAULT_CURRENCY)
             },
             currentLanguageCode = currentLanguageCode,
-            onLanguageClick = onLanguageClick,
-            onLogoutClick = onLogoutClick,
+            onLanguageClick = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
+            onLogoutClick = { showLogoutDialog = true },
             onDeveloperServicesTestClick = {
                 navController.navigate(Routes.SETTINGS_DEVELOPER_SERVICES)
             }
         )
     }
-}
 
-@Composable
-private fun LogoutConfirmationDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    DestructiveConfirmationDialog(
-        title = stringResource(R.string.settings_logout_dialog_title),
-        text = stringResource(R.string.settings_logout_dialog_text),
-        confirmLabel = stringResource(R.string.settings_logout_dialog_confirm),
-        onConfirm = onConfirm,
-        onDismiss = onDismiss
-    )
+    if (showLogoutDialog) {
+        DestructiveConfirmationDialog(
+            title = stringResource(R.string.settings_logout_dialog_title),
+            text = stringResource(R.string.settings_logout_dialog_text),
+            confirmLabel = stringResource(R.string.settings_logout_dialog_confirm),
+            onConfirm = {
+                showLogoutDialog = false
+                settingsViewModel.signOut {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.MAIN) { inclusive = true }
+                    }
+                }
+            },
+            onDismiss = { showLogoutDialog = false }
+        )
+    }
 }

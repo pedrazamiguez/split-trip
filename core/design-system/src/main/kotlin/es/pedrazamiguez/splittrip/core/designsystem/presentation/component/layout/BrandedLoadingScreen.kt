@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,10 +96,6 @@ private fun createSoftStarShape() = RoundedPolygon.star(
     rounding = CornerRounding(SOFT_STAR_CORNER_RADIUS, SOFT_STAR_CORNER_SMOOTHING)
 )
 
-/**
- * Pre-computed ordered list of shapes for the morph cycle.
- * The animation transitions: Circle → Blob → Flower → Soft Star → Circle …
- */
 private val splashShapes = listOf(
     createCircleShape(),
     createBlobShape(),
@@ -108,11 +103,6 @@ private val splashShapes = listOf(
     createSoftStarShape()
 )
 
-/**
- * Pre-computed [Morph] instances between consecutive shapes in [splashShapes].
- * Each morph transitions from shape[i] to shape[(i+1) % size], forming a
- * seamless loop.
- */
 private val splashMorphs = splashShapes.indices.map { i ->
     Morph(splashShapes[i], splashShapes[(i + 1) % splashShapes.size])
 }
@@ -142,6 +132,7 @@ private val splashMorphs = splashShapes.indices.map { i ->
  *   When non-null, applied to the app icon [Image]. Pass the app name or
  *   a "Loading" label so the screen is not silent for assistive technologies.
  */
+@Suppress("LongMethod")
 @Composable
 fun BrandedLoadingScreen(
     painter: Painter,
@@ -156,112 +147,69 @@ fun BrandedLoadingScreen(
             .testTag(BRANDED_LOADING_SCREEN_TEST_TAG),
         contentAlignment = Alignment.Center
     ) {
-        MorphingShapeContent(
-            painter = painter,
-            containerColor = containerColor,
-            contentDescription = contentDescription
+        val transition = rememberInfiniteTransition(label = "splash-morph")
+
+        val morphProgressState = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = splashMorphs.size.toFloat(),
+            animationSpec = infiniteRepeatable(
+                animation = tween(
+                    durationMillis = splashMorphs.size * MORPH_SEGMENT_DURATION_MS,
+                    easing = LinearEasing
+                ),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "morph-progress"
         )
-    }
-}
 
-/**
- * Animated morphing shape that clips the [painter] icon inside a continuously
- * transforming polygon. Extracted from [BrandedLoadingScreen] to keep each
- * composable within the detekt method-length limit.
- */
-@Composable
-private fun MorphingShapeContent(
-    painter: Painter,
-    containerColor: Color,
-    contentDescription: String?
-) {
-    val transition = rememberInfiniteTransition(label = "splash-morph")
-
-    // State<Float> (not `by`) — read only in graphicsLayer/drawWithContent (draw phase).
-    val morphProgressState = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = splashMorphs.size.toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = splashMorphs.size * MORPH_SEGMENT_DURATION_MS,
-                easing = LinearEasing
+        val scaleState = transition.animateFloat(
+            initialValue = BREATHING_MIN_SCALE,
+            targetValue = BREATHING_MAX_SCALE,
+            animationSpec = infiniteRepeatable(
+                animation = tween(
+                    durationMillis = BREATHING_DURATION_MS,
+                    easing = EaseInOut
+                ),
+                repeatMode = RepeatMode.Reverse
             ),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "morph-progress"
-    )
+            label = "breathing-scale"
+        )
 
-    val scaleState = transition.animateFloat(
-        initialValue = BREATHING_MIN_SCALE,
-        targetValue = BREATHING_MAX_SCALE,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = BREATHING_DURATION_MS,
-                easing = EaseInOut
-            ),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "breathing-scale"
-    )
+        val reusablePath = remember { AndroidPath() }
+        val composePath = remember { reusablePath.asComposePath() }
+        val transformMatrix = remember { Matrix() }
 
-    MorphingClipBox(
-        morphProgressState = morphProgressState,
-        scaleState = scaleState,
-        containerColor = containerColor,
-        painter = painter,
-        contentDescription = contentDescription
-    )
-}
-
-/**
- * Box that clips its content to a morphing polygon path and applies a
- * breathing scale effect. All animation [State] values are read exclusively
- * in the draw phase ([graphicsLayer] / [drawWithContent]) to avoid
- * per-frame recomposition.
- */
-@Composable
-private fun MorphingClipBox(
-    morphProgressState: State<Float>,
-    scaleState: State<Float>,
-    containerColor: Color,
-    painter: Painter,
-    contentDescription: String?
-) {
-    // Pre-allocate mutable objects reused every draw frame to minimise GC pressure.
-    val reusablePath = remember { AndroidPath() }
-    val composePath = remember { reusablePath.asComposePath() }
-    val transformMatrix = remember { Matrix() }
-
-    Box(
-        modifier = Modifier
-            .size(CONTAINER_SIZE)
-            .graphicsLayer {
-                val s = scaleState.value
-                scaleX = s
-                scaleY = s
-            }
-            .drawWithContent {
-                val progress = morphProgressState.value
-                val idx = progress.toInt() % splashMorphs.size
-                val t = (progress - idx.toFloat()).coerceIn(0f, 1f)
-
-                splashMorphs[idx].toPath(progress = t, path = reusablePath)
-                transformMatrix.reset()
-                transformMatrix.scale(size.width / 2f, size.height / 2f)
-                transformMatrix.translate(1f, 1f)
-                composePath.transform(transformMatrix)
-
-                clipPath(composePath) {
-                    drawRect(containerColor)
-                    this@drawWithContent.drawContent()
+        Box(
+            modifier = Modifier
+                .size(CONTAINER_SIZE)
+                .graphicsLayer {
+                    val s = scaleState.value
+                    scaleX = s
+                    scaleY = s
                 }
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painter,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(ICON_SIZE)
-        )
+                .drawWithContent {
+                    val progress = morphProgressState.value
+                    val idx = progress.toInt() % splashMorphs.size
+                    val t = (progress - idx.toFloat()).coerceIn(0f, 1f)
+
+                    splashMorphs[idx].toPath(progress = t, path = reusablePath)
+                    transformMatrix.reset()
+                    transformMatrix.scale(size.width / 2f, size.height / 2f)
+                    transformMatrix.translate(1f, 1f)
+                    composePath.transform(transformMatrix)
+
+                    clipPath(composePath) {
+                        drawRect(containerColor)
+                        this@drawWithContent.drawContent()
+                    }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painter,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        }
     }
 }

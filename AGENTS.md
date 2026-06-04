@@ -50,6 +50,8 @@ Kotlin Android app (Jetpack Compose, Material 3) for shared travel expenses. Mul
 - **Enum centralization:** Domain enums (e.g., `AppLanguage`, `Currency`) must be the single source of truth for parsing codes, fallback defaults, and validation. Never duplicate string-matching logic (e.g., `if (code == "es" || code == "en")`) or locale fallback checks in ViewModels or presentation layers; delegate directly to the enum's helper functions.
 - **Accessibility (a11y) for decorative icons:** Purely decorative images or icons (like checkmarks indicating selection in a row where the row itself already conveys status) must have `contentDescription = null` to avoid screen reader noise. Interactive icons or status icons that convey non-redundant information must use localized string resources.
 - **Unused/dead ViewModel code:** Do not retain unused methods, inputs, or dependencies in ViewModels. If a sub-feature or delegated EventHandler takes over a write-flow, delete the duplicate methods and dependencies from the parent ViewModel.
+- **Single-Composable-Per-File:** Every production Kotlin file under feature `presentation` packages that contains a `@Composable` function must define **exactly one** top-level `@Composable` function. The name of the Composable function must match the file name (e.g., `GroupItem.kt` contains `fun GroupItem()`). Auxiliary or helper components must be extracted into their own separate files inside the `presentation/component` package/folder with `internal` visibility. Plain UI helper functions must be non-composable (regular Kotlin functions). `MainScreen` is exempt as a root nav host orchestrator.
+
 
 ## Navigation
 

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.screen
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
@@ -49,14 +48,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransi
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.DateHeaderItem
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseItem
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesUiState
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 
-@OptIn(FlowPreview::class)
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
+@OptIn(FlowPreview::class, ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ExpensesScreen(
     uiState: ExpensesUiState = ExpensesUiState(),
@@ -68,7 +66,6 @@ fun ExpensesScreen(
 ) {
     val bottomPadding = LocalBottomPadding.current
 
-    // Local UI State for overlays (Action Sheet & Confirmation Dialog)
     var selectedExpenseForMenu by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var expenseToDelete by remember { mutableStateOf<ExpenseUiModel?>(null) }
 
@@ -77,42 +74,6 @@ fun ExpensesScreen(
         initialFirstVisibleItemScrollOffset = uiState.scrollOffset
     )
 
-    ExpensesScrollEffects(
-        uiState = uiState,
-        listState = listState,
-        onScrollPositionChanged = onScrollPositionChanged
-    )
-
-    ExpensesScreenContent(
-        uiState = uiState,
-        listState = listState,
-        bottomPadding = bottomPadding,
-        onExpenseClicked = onExpenseClicked,
-        onAddExpenseClick = onAddExpenseClick,
-        onExpenseLongClicked = { selectedExpenseForMenu = it }
-    )
-
-    ExpensesScreenOverlays(
-        selectedExpense = selectedExpenseForMenu,
-        expenseToDelete = expenseToDelete,
-        onDeleteExpense = onDeleteExpense,
-        onMenuDismiss = { selectedExpenseForMenu = null },
-        onDeleteRequested = { expense ->
-            expenseToDelete = expense
-            selectedExpenseForMenu = null
-        },
-        onDeleteDismiss = { expenseToDelete = null },
-        onEditExpenseClick = onEditExpenseClick
-    )
-}
-
-@OptIn(FlowPreview::class)
-@Composable
-private fun ExpensesScrollEffects(
-    uiState: ExpensesUiState,
-    listState: LazyListState,
-    onScrollPositionChanged: (Int, Int) -> Unit
-) {
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
             .debounce(UiConstants.SCROLL_POSITION_DEBOUNCE_MS)
@@ -121,24 +82,13 @@ private fun ExpensesScrollEffects(
             }
     }
 
-    // Auto-scroll to top when a new expense is added (list size increases)
     val totalExpenseCount = uiState.expenseGroups.sumOf { it.expenses.size }
     LaunchedEffect(totalExpenseCount) {
         if (totalExpenseCount > 0 && !uiState.isLoading && listState.firstVisibleItemIndex > 0) {
             listState.animateScrollToItem(0)
         }
     }
-}
 
-@Composable
-private fun ExpensesScreenContent(
-    uiState: ExpensesUiState,
-    listState: LazyListState,
-    bottomPadding: Dp,
-    onExpenseClicked: (String) -> Unit,
-    onAddExpenseClick: () -> Unit,
-    onExpenseLongClicked: (ExpenseUiModel) -> Unit
-) {
     Box(modifier = Modifier.fillMaxSize()) {
         DeferredLoadingContainer(
             isLoading = uiState.isLoading,
@@ -153,13 +103,58 @@ private fun ExpensesScreenContent(
                 }
 
                 else -> {
-                    ExpensesListContent(
-                        expenseGroups = uiState.expenseGroups,
-                        listState = listState,
-                        bottomPadding = bottomPadding,
-                        onExpenseClicked = onExpenseClicked,
-                        onExpenseLongClicked = onExpenseLongClicked
-                    )
+                    val sharedTransitionScope = LocalSharedTransitionScope.current
+                    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
+                    val fabExtraPadding = 72.dp
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = MaterialTheme.spacing.Default,
+                            top = MaterialTheme.spacing.Default,
+                            end = MaterialTheme.spacing.Default,
+                            bottom = MaterialTheme.spacing.Default + bottomPadding + fabExtraPadding
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+                    ) {
+                        item(key = "header") {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.expenses_title),
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                BodyText(
+                                    text = stringResource(R.string.expenses_subtitle),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        uiState.expenseGroups.forEach { dateGroup ->
+                            stickyHeader(key = "header-${dateGroup.dateText}") {
+                                DateHeaderItem(
+                                    dateText = dateGroup.dateText,
+                                    formattedDayTotal = dateGroup.formattedDayTotal
+                                )
+                            }
+
+                            items(items = dateGroup.expenses, key = { it.id }) { expense ->
+                                ExpenseItem(
+                                    expenseUiModel = expense,
+                                    modifier = Modifier
+                                        .animateItem()
+                                        .sharedElementAnimation(
+                                            key = "expense-${expense.id}",
+                                            sharedTransitionScope = sharedTransitionScope,
+                                            animatedVisibilityScope = animatedVisibilityScope
+                                        ),
+                                    onClick = onExpenseClicked,
+                                    onLongClick = { selectedExpenseForMenu = expense }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -175,19 +170,8 @@ private fun ExpensesScreenContent(
             sharedTransitionKey = ADD_EXPENSE_SHARED_ELEMENT_KEY
         )
     }
-}
 
-@Composable
-private fun ExpensesScreenOverlays(
-    selectedExpense: ExpenseUiModel?,
-    expenseToDelete: ExpenseUiModel?,
-    onDeleteExpense: (String) -> Unit,
-    onMenuDismiss: () -> Unit,
-    onDeleteRequested: (ExpenseUiModel) -> Unit,
-    onDeleteDismiss: () -> Unit,
-    onEditExpenseClick: (String) -> Unit
-) {
-    selectedExpense?.let { expense ->
+    selectedExpenseForMenu?.let { expense ->
         ActionBottomSheet(
             title = stringResource(R.string.expense_actions_title, expense.title),
             icon = TablerIcons.Outline.Receipt,
@@ -197,17 +181,20 @@ private fun ExpensesScreenOverlays(
                     icon = TablerIcons.Outline.Edit,
                     onClick = {
                         onEditExpenseClick(expense.id)
-                        onMenuDismiss()
+                        selectedExpenseForMenu = null
                     }
                 ),
                 SheetAction(
                     text = stringResource(R.string.action_delete_expense),
                     icon = TablerIcons.Outline.Trash,
-                    onClick = { onDeleteRequested(expense) },
+                    onClick = {
+                        expenseToDelete = expense
+                        selectedExpenseForMenu = null
+                    },
                     isDestructive = true
                 )
             ),
-            onDismiss = onMenuDismiss
+            onDismiss = { selectedExpenseForMenu = null }
         )
     }
 
@@ -215,74 +202,11 @@ private fun ExpensesScreenOverlays(
         DestructiveConfirmationDialog(
             title = stringResource(R.string.expense_delete_title),
             text = stringResource(R.string.expense_delete_warning, expense.title),
-            onDismiss = onDeleteDismiss,
+            onDismiss = { expenseToDelete = null },
             onConfirm = {
                 onDeleteExpense(expense.id)
-                onDeleteDismiss()
+                expenseToDelete = null
             }
         )
-    }
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-private fun ExpensesListContent(
-    expenseGroups: ImmutableList<ExpenseDateGroupUiModel>,
-    listState: LazyListState,
-    bottomPadding: Dp,
-    onExpenseClicked: (String) -> Unit,
-    onExpenseLongClicked: (ExpenseUiModel) -> Unit
-) {
-    val sharedTransitionScope = LocalSharedTransitionScope.current
-    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
-    val fabExtraPadding = 72.dp // Space for StickyActionBar
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = MaterialTheme.spacing.Default,
-            top = MaterialTheme.spacing.Default,
-            end = MaterialTheme.spacing.Default,
-            bottom = MaterialTheme.spacing.Default + bottomPadding + fabExtraPadding
-        ),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-    ) {
-        item(key = "header") {
-            Column {
-                Text(
-                    text = stringResource(R.string.expenses_title),
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                BodyText(
-                    text = stringResource(R.string.expenses_subtitle),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        expenseGroups.forEach { dateGroup ->
-            stickyHeader(key = "header-${dateGroup.dateText}") {
-                DateHeaderItem(
-                    dateText = dateGroup.dateText,
-                    formattedDayTotal = dateGroup.formattedDayTotal
-                )
-            }
-
-            items(items = dateGroup.expenses, key = { it.id }) { expense ->
-                ExpenseItem(
-                    expenseUiModel = expense,
-                    modifier = Modifier
-                        .animateItem()
-                        .sharedElementAnimation(
-                            key = "expense-${expense.id}",
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                    onClick = onExpenseClicked,
-                    onLongClick = { onExpenseLongClicked(expense) }
-                )
-            }
-        }
     }
 }

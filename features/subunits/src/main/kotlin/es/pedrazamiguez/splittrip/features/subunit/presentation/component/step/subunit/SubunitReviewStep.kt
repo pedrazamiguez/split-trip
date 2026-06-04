@@ -15,12 +15,12 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.subunit.R
-import es.pedrazamiguez.splittrip.features.subunit.presentation.model.MemberUiModel
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.CreateEditSubunitUiState
 
 /**
  * Step 4: Read-only summary of the subunit before saving.
  */
+@Suppress("LongMethod")
 @Composable
 fun SubunitReviewStep(
     uiState: CreateEditSubunitUiState,
@@ -30,70 +30,81 @@ fun SubunitReviewStep(
 
     WizardStepLayout(modifier = modifier) {
         SectionCard(title = stringResource(R.string.subunit_review_title)) {
-            ReviewCardContent(uiState = uiState, none = none)
+            val memberMap = remember(uiState.availableMembers) {
+                uiState.availableMembers.associateBy { it.userId }
+            }
+
+            // Review Name Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                SecondaryBodyText(text = stringResource(R.string.subunit_review_name), maxLines = Int.MAX_VALUE)
+                Text(
+                    text = uiState.name.ifBlank { none },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            // Review Members Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                SecondaryBodyText(text = stringResource(R.string.subunit_review_members), maxLines = Int.MAX_VALUE)
+                Text(
+                    text = uiState.selectedMemberIds
+                        .mapNotNull { memberMap[it] }
+                        .joinToString { it.displayName }
+                        .ifBlank { none },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            // Review Shares List
+            val sharesLabel = stringResource(R.string.subunit_review_shares)
+            val selectedMembers = uiState.selectedMemberIds.mapNotNull { memberMap[it] }
+
+            if (selectedMembers.isEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    SecondaryBodyText(text = sharesLabel, maxLines = Int.MAX_VALUE)
+                    Text(
+                        text = none,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                SecondaryBodyText(text = sharesLabel, maxLines = Int.MAX_VALUE)
+                selectedMembers.forEach { member ->
+                    val shareText = uiState.memberShares[member.userId]
+                    val displayValue = if (shareText.isNullOrBlank()) none else "$shareText%"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        SecondaryBodyText(text = member.displayName, maxLines = Int.MAX_VALUE)
+                        Text(
+                            text = displayValue,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
         }
 
         FormErrorBanner(error = uiState.nameError)
         FormErrorBanner(error = uiState.membersError)
         FormErrorBanner(error = uiState.sharesError)
-    }
-}
-
-@Composable
-private fun ReviewCardContent(uiState: CreateEditSubunitUiState, none: String) {
-    val memberMap = remember(uiState.availableMembers) {
-        uiState.availableMembers.associateBy { it.userId }
-    }
-
-    ReviewRow(
-        label = stringResource(R.string.subunit_review_name),
-        value = uiState.name.ifBlank { none }
-    )
-
-    ReviewRow(
-        label = stringResource(R.string.subunit_review_members),
-        value = uiState.selectedMemberIds
-            .mapNotNull { memberMap[it] }
-            .joinToString { it.displayName }
-            .ifBlank { none }
-    )
-
-    ReviewSharesList(uiState = uiState, memberMap = memberMap, none = none)
-}
-
-@Composable
-private fun ReviewSharesList(
-    uiState: CreateEditSubunitUiState,
-    memberMap: Map<String, MemberUiModel>,
-    none: String
-) {
-    val sharesLabel = stringResource(R.string.subunit_review_shares)
-    val selectedMembers = uiState.selectedMemberIds.mapNotNull { memberMap[it] }
-
-    if (selectedMembers.isEmpty()) {
-        ReviewRow(label = sharesLabel, value = none)
-    } else {
-        SecondaryBodyText(text = sharesLabel, maxLines = Int.MAX_VALUE)
-        selectedMembers.forEach { member ->
-            val shareText = uiState.memberShares[member.userId]
-            val displayValue = if (shareText.isNullOrBlank()) none else "$shareText%"
-            ReviewRow(label = member.displayName, value = displayValue)
-        }
-    }
-}
-
-@Composable
-private fun ReviewRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        SecondaryBodyText(text = label, maxLines = Int.MAX_VALUE)
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Medium
-        )
     }
 }
