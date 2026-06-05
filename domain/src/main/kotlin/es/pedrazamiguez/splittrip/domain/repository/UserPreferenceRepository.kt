@@ -17,5 +17,8 @@ interface UserPreferenceRepository {
     fun getShouldShowLanguagePill(): Flow<Boolean>
     suspend fun setShouldShowLanguagePill(show: Boolean)
 
+    fun getAppTheme(): Flow<String?>
+    suspend fun setAppTheme(themeCode: String)
+
     suspend fun clearAll()
 }

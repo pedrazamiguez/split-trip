@@ -5,13 +5,20 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.domain.enums.AppTheme
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.navigation.AppNavHost
 import org.koin.android.ext.android.inject
+import org.koin.compose.getKoin
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,7 +41,17 @@ class MainActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
         setContent {
-            SplitTripTheme {
+            val koin = getKoin()
+            val getAppThemeUseCase = remember(koin) { koin.get<GetAppThemeUseCase>() }
+            val themeState by getAppThemeUseCase().collectAsStateWithLifecycle(initialValue = AppTheme.SYSTEM.code)
+
+            val darkTheme = when (AppTheme.fromCode(themeState)) {
+                AppTheme.SYSTEM -> isSystemInDarkTheme()
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+            }
+
+            SplitTripTheme(darkTheme = darkTheme) {
                 val navController = rememberNavController()
                 navHostController = navController
                 AppNavHost(navController = navController)

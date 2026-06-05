@@ -432,4 +432,24 @@ class UserPreferencesTest {
         val result = prefs.shouldShowLanguagePill.first()
         assertFalse(result)
     }
+
+    // ── App Theme (Device-scoped) ────────────────────────────────────────
+
+    @Test
+    fun `appTheme is shared across users (device-scoped)`() = runTest {
+        val prefsA = createUserPreferences(USER_A_ID)
+        prefsA.setAppTheme("dark")
+
+        val prefsB = createUserPreferences(USER_B_ID)
+        val result = prefsB.appTheme.first()
+
+        assertEquals("dark", result)
+    }
+
+    @Test
+    fun `appTheme defaults to null`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        val result = prefs.appTheme.first()
+        assertNull(result)
+    }
 }

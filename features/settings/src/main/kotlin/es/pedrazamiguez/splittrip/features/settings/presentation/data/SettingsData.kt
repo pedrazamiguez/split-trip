@@ -24,6 +24,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UserPin
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.CurrencyDescription
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.LanguageDescription
+import es.pedrazamiguez.splittrip.features.settings.presentation.component.ThemeDescription
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.AppVersionFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.InstallationIdFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SettingsItemModel
@@ -78,10 +79,13 @@ private fun preferencesSection(
 ) = SettingsSectionModel(
     titleRes = R.string.settings_section_preferences,
     items = listOf(
-        SettingsItemModel.Standard(
+        SettingsItemModel.WithCustomDescription(
             icon = TablerIcons.Outline.MoonStars,
             titleRes = R.string.settings_preferences_theme_title,
-            descriptionRes = R.string.settings_preferences_theme_description
+            onClick = params.onThemeClick,
+            descriptionContent = {
+                ThemeDescription(params.currentThemeCode)
+            }
         ),
         SettingsItemModel.WithCustomDescription(
             icon = TablerIcons.Outline.Language,

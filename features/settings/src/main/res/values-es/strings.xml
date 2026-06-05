@@ -147,4 +147,11 @@
     <string name="settings_preferences_language_andaluz">Andaluz (Andalûh EPA)</string>
     <string name="settings_preferences_language_changed_format">Idioma cambiado a %1$s</string>
     <string name="settings_preferences_currency_changed_format">Moneda por defecto cambiada a %1$s</string>
+
+    <!-- Theme Selection -->
+    <string name="settings_preferences_theme_dialog_title">Seleccionar tema</string>
+    <string name="settings_preferences_theme_system">Predeterminado del sistema</string>
+    <string name="settings_preferences_theme_light">Claro</string>
+    <string name="settings_preferences_theme_dark">Oscuro</string>
+    <string name="settings_preferences_theme_changed_format">Tema cambiado a %1$s</string>
 </resources>

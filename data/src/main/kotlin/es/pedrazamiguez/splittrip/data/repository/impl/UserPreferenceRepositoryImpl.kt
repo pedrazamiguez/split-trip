@@ -33,6 +33,12 @@ class UserPreferenceRepositoryImpl(
         userPreferences.setShouldShowLanguagePill(show)
     }
 
+    override fun getAppTheme(): Flow<String?> = userPreferences.appTheme
+
+    override suspend fun setAppTheme(themeCode: String) {
+        userPreferences.setAppTheme(themeCode)
+    }
+
     override suspend fun clearAll() {
         userPreferences.clearAll()
     }

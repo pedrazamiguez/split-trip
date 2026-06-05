@@ -43,6 +43,7 @@ fun SettingsFeature(
     val hasPermission by settingsViewModel.hasNotificationPermission.collectAsStateWithLifecycle()
     val currentLanguageCode by settingsViewModel.currentLanguageCode.collectAsStateWithLifecycle()
     val shouldShowLanguagePill by settingsViewModel.shouldShowLanguagePill.collectAsStateWithLifecycle()
+    val currentThemeCode by settingsViewModel.currentThemeCode.collectAsStateWithLifecycle()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -103,6 +104,8 @@ fun SettingsFeature(
             },
             currentLanguageCode = currentLanguageCode,
             onLanguageClick = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
+            currentThemeCode = currentThemeCode,
+            onThemeClick = { navController.navigate(Routes.SETTINGS_THEME) },
             onLogoutClick = { showLogoutDialog = true },
             onDeveloperServicesTestClick = {
                 navController.navigate(Routes.SETTINGS_DEVELOPER_SERVICES)
