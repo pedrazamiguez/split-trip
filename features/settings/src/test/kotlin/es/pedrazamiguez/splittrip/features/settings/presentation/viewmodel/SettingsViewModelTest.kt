@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import io.mockk.coEvery
@@ -40,6 +41,7 @@ class SettingsViewModelTest {
     private lateinit var getAppLanguageUseCase: GetAppLanguageUseCase
     private lateinit var getShouldShowLanguagePillUseCase: GetShouldShowLanguagePillUseCase
     private lateinit var consumeLanguagePillUseCase: ConsumeLanguagePillUseCase
+    private lateinit var getAppThemeUseCase: GetAppThemeUseCase
 
     @BeforeEach
     fun setUp() {
@@ -49,9 +51,11 @@ class SettingsViewModelTest {
         getAppLanguageUseCase = mockk()
         getShouldShowLanguagePillUseCase = mockk()
         consumeLanguagePillUseCase = mockk()
+        getAppThemeUseCase = mockk()
 
         every { getAppLanguageUseCase() } returns flowOf(null)
         every { getShouldShowLanguagePillUseCase() } returns flowOf(false)
+        every { getAppThemeUseCase() } returns flowOf("system")
     }
 
     @AfterEach
@@ -64,7 +68,8 @@ class SettingsViewModelTest {
         getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
         getAppLanguageUseCase = getAppLanguageUseCase,
         getShouldShowLanguagePillUseCase = getShouldShowLanguagePillUseCase,
-        consumeLanguagePillUseCase = consumeLanguagePillUseCase
+        consumeLanguagePillUseCase = consumeLanguagePillUseCase,
+        getAppThemeUseCase = getAppThemeUseCase
     )
 
     // ── currentCurrency StateFlow ───────────────────────────────────────────
@@ -196,6 +201,27 @@ class SettingsViewModelTest {
 
             val expected = if (Locale.getDefault().language == "es") "es" else "en"
             assertEquals(expected, viewModel.currentLanguageCode.value)
+            collectJob.cancel()
+        }
+    }
+
+    // ── currentThemeCode StateFlow ──────────────────────────────────────────
+
+    @Nested
+    @DisplayName("currentThemeCode")
+    inner class CurrentThemeCode {
+
+        @Test
+        fun `emits Theme from use case flow`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            every { getAppThemeUseCase() } returns flowOf("dark")
+
+            val viewModel = createViewModel()
+
+            val collectJob = launch { viewModel.currentThemeCode.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("dark", viewModel.currentThemeCode.value)
             collectJob.cancel()
         }
     }

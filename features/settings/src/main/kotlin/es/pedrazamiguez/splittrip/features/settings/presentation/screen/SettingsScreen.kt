@@ -22,6 +22,8 @@ fun SettingsScreen(
     onDefaultCurrencyClick: () -> Unit = {},
     currentLanguageCode: String = "en",
     onLanguageClick: () -> Unit = {},
+    currentThemeCode: String? = null,
+    onThemeClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
     onDeveloperServicesTestClick: () -> Unit = {}
 ) {
@@ -32,7 +34,9 @@ fun SettingsScreen(
         currentCurrency = currentCurrency,
         onDefaultCurrencyClick = onDefaultCurrencyClick,
         currentLanguageCode = currentLanguageCode,
-        onLanguageClick = onLanguageClick
+        onLanguageClick = onLanguageClick,
+        currentThemeCode = currentThemeCode,
+        onThemeClick = onThemeClick
     )
 
     val sections = buildSettingsSections(

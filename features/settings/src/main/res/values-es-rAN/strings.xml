@@ -123,4 +123,9 @@
     <string name="settings_preferences_language_andaluz">Andalûh (Andalû EPA)</string>
     <string name="settings_preferences_language_changed_format">Idioma cambiao a %1$s</string>
     <string name="settings_preferences_currency_changed_format">Moneda por defêtto cambiá a %1$s</string>
+    <string name="settings_preferences_theme_dialog_title">Çelêççionâh tema</string>
+    <string name="settings_preferences_theme_system">Predeterminao der çîttema</string>
+    <string name="settings_preferences_theme_light">Claro</string>
+    <string name="settings_preferences_theme_dark">Ôccuro</string>
+    <string name="settings_preferences_theme_changed_format">Tema cambiao a %1$s</string>
 </resources>

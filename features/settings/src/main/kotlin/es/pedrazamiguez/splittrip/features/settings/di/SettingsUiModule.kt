@@ -11,15 +11,18 @@ import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPre
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DefaultCurrencyScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DeveloperServicesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.LanguageScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.NotificationPreferencesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.SettingsScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.ThemeScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.AppVersionViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DefaultCurrencyViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesViewModel
@@ -27,6 +30,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Insta
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.LanguageViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.ThemeViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -39,7 +43,8 @@ val settingsUiModule = module {
             getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>(),
             getAppLanguageUseCase = get<GetAppLanguageUseCase>(),
             getShouldShowLanguagePillUseCase = get<GetShouldShowLanguagePillUseCase>(),
-            consumeLanguagePillUseCase = get<ConsumeLanguagePillUseCase>()
+            consumeLanguagePillUseCase = get<ConsumeLanguagePillUseCase>(),
+            getAppThemeUseCase = get<GetAppThemeUseCase>()
         )
     }
 
@@ -75,9 +80,17 @@ val settingsUiModule = module {
         )
     }
 
+    viewModel {
+        ThemeViewModel(
+            getAppThemeUseCase = get<GetAppThemeUseCase>(),
+            setAppThemeUseCase = get<SetAppThemeUseCase>()
+        )
+    }
+
     single { DefaultCurrencyScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { LanguageScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { NotificationPreferencesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { SettingsScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { DeveloperServicesScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { ThemeScreenUiProviderImpl() } bind ScreenUiProvider::class
 }
