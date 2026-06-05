@@ -2,13 +2,16 @@ package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.ha
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.mapper.AddCashWithdrawalUiMapper
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.action.AddCashWithdrawalUiAction
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.state.AddCashWithdrawalUiState
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import java.math.BigDecimal
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -385,6 +388,147 @@ class WithdrawalFeeHandlerTest {
 
             // formattingHelper.formatRateForDisplay stub returns "37.0"
             assertEquals("37.0", uiState.value.feeExchangeRate)
+        }
+    }
+
+    // ── FeeExchangeRateErrorHandling ─────────────────────────────────────────
+
+    @Nested
+    inner class FeeExchangeRateErrorHandling {
+
+        @Test
+        fun `successful fetch fee rate resets error flag to false`() = runTest {
+            uiState.value = baseState.copy(hasFee = true, feeCurrency = thbModel, isFeeExchangeRateError = true)
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } returns ExchangeRateWithStaleness(rate = BigDecimal("37.0"), isStale = false)
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleFeeCurrencySelected("THB")
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isFeeExchangeRateError)
+        }
+
+        @Test
+        fun `null rateResult from fetch fee rate sets error flag to true`() = runTest {
+            uiState.value =
+                baseState.copy(
+                    hasFee = true,
+                    feeCurrency = thbModel,
+                    isFeeExchangeRateError = false,
+                    feeExchangeRate = ""
+                )
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } returns null
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleFeeCurrencySelected("THB")
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertTrue(state.isFeeExchangeRateError)
+            assertEquals("", state.feeExchangeRate)
+        }
+
+        @Test
+        fun `exception from fetch fee rate sets error flag to true`() = runTest {
+            uiState.value =
+                baseState.copy(
+                    hasFee = true,
+                    feeCurrency = thbModel,
+                    isFeeExchangeRateError = false,
+                    feeExchangeRate = ""
+                )
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } throws RuntimeException("Network error")
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleFeeCurrencySelected("THB")
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertTrue(state.isFeeExchangeRateError)
+            assertEquals("", state.feeExchangeRate)
+        }
+
+        @Test
+        fun `manual fee exchange rate change resets error flag to false`() = runTest {
+            uiState.value = baseState.copy(isFeeExchangeRateError = true)
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleFeeExchangeRateChanged("35.5")
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isFeeExchangeRateError)
+            assertEquals("35.5", state.feeExchangeRate)
+        }
+
+        @Test
+        fun `manual fee converted amount change resets error flag to false`() = runTest {
+            uiState.value = baseState.copy(isFeeExchangeRateError = true, feeExchangeRate = "")
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleFeeConvertedAmountChanged("2.70")
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isFeeExchangeRateError)
+        }
+
+        @Test
+        fun `recalculateFeeConverted leaves fee converted amount empty if rate is blank`() = runTest {
+            uiState.value =
+                baseState.copy(feeExchangeRate = "", feeConvertedAmount = "2.70", showFeeExchangeRateSection = true)
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.recalculateFeeConverted()
+
+            // Then
+            val state = uiState.value
+            assertEquals("", state.feeConvertedAmount)
+        }
+
+        @Test
+        fun `enabling fee resets isFeeExchangeRateError to false`() = runTest {
+            uiState.value = baseState.copy(isFeeExchangeRateError = true)
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleFeeToggled(true)
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isFeeExchangeRateError)
+        }
+
+        @Test
+        fun `disabling fee resets isFeeExchangeRateError to false`() = runTest {
+            uiState.value = baseState.copy(isFeeExchangeRateError = true)
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleFeeToggled(false)
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isFeeExchangeRateError)
         }
     }
 }

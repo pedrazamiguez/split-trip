@@ -34,5 +34,6 @@ data class CurrencyConversionCardState(
     val isInsufficientCash: Boolean = false,
     val isGroupAmountError: Boolean = false,
     val isExchangeRateStale: Boolean = false,
+    val isExchangeRateError: Boolean = false,
     val autoFocus: Boolean = false
 )

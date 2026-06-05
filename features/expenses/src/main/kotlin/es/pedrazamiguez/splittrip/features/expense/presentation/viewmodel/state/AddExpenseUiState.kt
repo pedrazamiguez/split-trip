@@ -122,6 +122,7 @@ data class AddExpenseUiState(
      * exchange rate section.
      */
     val isExchangeRateStale: Boolean = false,
+    val isExchangeRateError: Boolean = false,
     val showDueDateSection: Boolean = false,
 
     // Due date

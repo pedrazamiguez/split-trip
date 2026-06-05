@@ -32,6 +32,7 @@ fun ExchangeRateStep(
                 isLoadingRate = uiState.isLoadingRate,
                 isExchangeRateLocked = false,
                 isExchangeRateStale = uiState.isExchangeRateStale,
+                isExchangeRateError = uiState.isExchangeRateError,
                 autoFocus = true
             ),
             onExchangeRateChanged = { onEvent(AddCashWithdrawalUiEvent.ExchangeRateChanged(it)) },

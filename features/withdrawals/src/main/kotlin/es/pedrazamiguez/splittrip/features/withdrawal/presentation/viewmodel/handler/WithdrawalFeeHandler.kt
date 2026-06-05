@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.ha
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.isValidDecimalInput
+import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.mapper.AddCashWithdrawalUiMapper
@@ -55,7 +56,8 @@ class WithdrawalFeeHandler(
                     feeConvertedAmount = "",
                     feeConvertedLabel = feeConvertedLabel,
                     showFeeExchangeRateSection = false,
-                    isFeeAmountValid = true
+                    isFeeAmountValid = true,
+                    isFeeExchangeRateError = false
                 ).withStepClamped()
             }
         } else {
@@ -69,7 +71,8 @@ class WithdrawalFeeHandler(
                     feeExchangeRateLabel = "",
                     feeConvertedLabel = "",
                     showFeeExchangeRateSection = false,
-                    isFeeAmountValid = true
+                    isFeeAmountValid = true,
+                    isFeeExchangeRateError = false
                 ).withStepClamped()
             }
         }
@@ -101,7 +104,8 @@ class WithdrawalFeeHandler(
                 feeCurrency = feeCurrencyModel,
                 showFeeExchangeRateSection = isForeign,
                 feeExchangeRateLabel = feeExchangeRateLabel,
-                feeExchangeRate = if (isForeign) it.feeExchangeRate else "1.0"
+                feeExchangeRate = if (isForeign) "" else "1.0",
+                isFeeExchangeRateError = false
             ).withStepClamped()
         }
 
@@ -112,19 +116,23 @@ class WithdrawalFeeHandler(
     }
 
     fun handleFeeExchangeRateChanged(rate: String) {
-        _uiState.update { it.copy(feeExchangeRate = rate) }
+        _uiState.update { it.copy(feeExchangeRate = rate, isFeeExchangeRateError = false) }
         recalculateFeeConverted()
     }
 
     fun handleFeeConvertedAmountChanged(amount: String) {
-        _uiState.update { it.copy(feeConvertedAmount = amount) }
+        _uiState.update { it.copy(feeConvertedAmount = amount, isFeeExchangeRateError = false) }
         recalculateFeeRateFromConverted()
     }
 
-    private fun recalculateFeeConverted() {
+    internal fun recalculateFeeConverted() {
         val state = _uiState.value
         if (!state.showFeeExchangeRateSection) {
             _uiState.update { it.copy(feeConvertedAmount = state.feeAmount) }
+            return
+        }
+        if (state.feeExchangeRate.isBlank()) {
+            _uiState.update { it.copy(feeConvertedAmount = "") }
             return
         }
 
@@ -165,20 +173,48 @@ class WithdrawalFeeHandler(
                     baseCurrencyCode = groupCurrencyCode,
                     targetCurrencyCode = feeCurrencyCode
                 )
+                _uiState.update { current ->
+                    current.updateFeeRateResult(
+                        groupCurrencyCode = groupCurrencyCode,
+                        feeCurrencyCode = feeCurrencyCode,
+                        rateResult = rateResult,
+                        isError = rateResult == null
+                    )
+                }
                 if (rateResult != null) {
-                    _uiState.update {
-                        it.copy(
-                            feeExchangeRate = formattingHelper.formatRateForDisplay(
-                                rateResult.rate.toPlainString()
-                            ),
-                            isFeeExchangeRateStale = rateResult.isStale
-                        )
-                    }
                     recalculateFeeConverted()
                 }
             } catch (e: Exception) {
                 Timber.w(e, "Failed to fetch fee exchange rate")
+                _uiState.update { current ->
+                    current.updateFeeRateResult(
+                        groupCurrencyCode = groupCurrencyCode,
+                        feeCurrencyCode = feeCurrencyCode,
+                        rateResult = null,
+                        isError = true
+                    )
+                }
             }
         }
+    }
+
+    private fun AddCashWithdrawalUiState.updateFeeRateResult(
+        groupCurrencyCode: String,
+        feeCurrencyCode: String,
+        rateResult: ExchangeRateWithStaleness?,
+        isError: Boolean
+    ): AddCashWithdrawalUiState {
+        if (groupCurrency?.code != groupCurrencyCode ||
+            feeCurrency?.code != feeCurrencyCode
+        ) {
+            return this
+        }
+        return copy(
+            isFeeExchangeRateError = isError,
+            feeExchangeRate = rateResult?.rate?.let { r ->
+                formattingHelper.formatRateForDisplay(r.toPlainString())
+            } ?: feeExchangeRate,
+            isFeeExchangeRateStale = rateResult?.isStale ?: isFeeExchangeRateStale
+        )
     }
 }

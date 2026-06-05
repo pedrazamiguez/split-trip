@@ -720,4 +720,107 @@ class CurrencyEventHandlerTest {
             coVerify(exactly = 0) { previewCashExchangeRateUseCase(any(), any(), any(), any(), any()) }
         }
     }
+
+    // ── ExchangeRateErrorHandling ────────────────────────────────────────────
+
+    @Nested
+    inner class ExchangeRateErrorHandling {
+
+        @Test
+        fun `successful fetch rate resets error flag to false`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = true)
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } returns ExchangeRateWithStaleness(rate = BigDecimal("36.8"), isStale = false)
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.fetchRate()
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isExchangeRateError)
+            assertEquals("36.8", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `null rateResult from fetch rate sets error flag to true`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = false, displayExchangeRate = "")
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } returns null
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.fetchRate()
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertTrue(state.isExchangeRateError)
+            assertEquals("", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `exception from fetch rate sets error flag to true`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = false, displayExchangeRate = "")
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } throws RuntimeException("Network error")
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.fetchRate()
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertTrue(state.isExchangeRateError)
+            assertEquals("", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `manual exchange rate change resets error flag to false`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = true)
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleExchangeRateChanged("35.5")
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isExchangeRateError)
+            assertEquals("35.5", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `manual group amount change resets error flag to false`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = true, displayExchangeRate = "")
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleGroupAmountChanged("28.17")
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isExchangeRateError)
+        }
+
+        @Test
+        fun `recalculateForward leaves calculated amount empty if rate is blank`() = runTest {
+            uiState.value = nonCashForeignState.copy(displayExchangeRate = "", calculatedGroupAmount = "10.00")
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.recalculateForward()
+
+            // Then
+            val state = uiState.value
+            assertEquals("", state.calculatedGroupAmount)
+        }
+    }
 }

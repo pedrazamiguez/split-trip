@@ -908,10 +908,11 @@ class AddExpenseViewModelTest {
             viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("THB"))
             advanceUntilIdle()
 
-            // Then - Should keep default rate
+            // Then - Should keep default rate (empty string) and flag error
             val state = viewModel.uiState.value
             assertTrue(state.showExchangeRateSection)
-            assertEquals("1.0", state.displayExchangeRate)
+            assertEquals("", state.displayExchangeRate)
+            assertTrue(state.isExchangeRateError)
             assertFalse(state.isLoadingRate)
         }
 
@@ -995,10 +996,11 @@ class AddExpenseViewModelTest {
             viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("THB"))
             advanceUntilIdle()
 
-            // Then - Should set isLoadingRate to false and keep existing rate
+            // Then - Should set isLoadingRate to false, keep existing rate (empty string), and flag error
             val state = viewModel.uiState.value
             assertTrue(state.showExchangeRateSection)
-            assertEquals("1.0", state.displayExchangeRate)
+            assertEquals("", state.displayExchangeRate)
+            assertTrue(state.isExchangeRateError)
             assertFalse(state.isLoadingRate)
             coVerify { getExchangeRateUseCase("EUR", "THB") }
         }

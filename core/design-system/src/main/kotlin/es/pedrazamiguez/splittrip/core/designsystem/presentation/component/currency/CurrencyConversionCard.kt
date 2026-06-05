@@ -80,15 +80,15 @@ fun CurrencyConversionCard(
             exchangeRateLockedHint = state.exchangeRateLockedHint,
             isInsufficientCash = state.isInsufficientCash
         )
-        val staleRateWarning = if (state.isExchangeRateStale) {
-            UiText.StringResource(R.string.stale_rate_warning)
-        } else {
-            null
+        val warning = when {
+            state.isExchangeRateError -> UiText.StringResource(R.string.failed_rate_warning)
+            state.isExchangeRateStale -> UiText.StringResource(R.string.stale_rate_warning)
+            else -> null
         }
         // Top padding on the AnimatedVisibility container animates in/out with the banner,
         // matching the 8 dp gap the former StaleRateBanner Spacer provided.
         InlineWarningBanner(
-            warning = staleRateWarning,
+            warning = warning,
             modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }
