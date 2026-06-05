@@ -69,6 +69,7 @@
 
     <!-- Stale Exchange Rate -->
     <string name="stale_rate_warning">Los tipos de cambio podrían estar desactualizados</string>
+    <string name="failed_rate_warning">No se pudo cargar el tipo de cambio más reciente. Por favor, introdúzcalo manualmente.</string>
 
     <!-- Generic Error -->
     <string name="error_generic">¡Ups! Algo salió mal</string>

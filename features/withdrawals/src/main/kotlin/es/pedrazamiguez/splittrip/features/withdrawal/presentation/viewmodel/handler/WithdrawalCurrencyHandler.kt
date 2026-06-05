@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.ha
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.isValidDecimalInput
+import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.mapper.AddCashWithdrawalUiMapper
@@ -57,11 +58,13 @@ class WithdrawalCurrencyHandler(
             it.copy(
                 selectedCurrency = selectedUiModel,
                 showExchangeRateSection = isForeign,
-                exchangeRateLabel = exchangeRateLabel
+                exchangeRateLabel = exchangeRateLabel,
+                isExchangeRateError = false
             ).withStepClamped()
         }
 
         if (isForeign) {
+            _uiState.update { it.copy(displayExchangeRate = "") }
             fetchRate()
         } else {
             _uiState.update { it.copy(displayExchangeRate = "1.0", deductedAmount = "") }
@@ -78,12 +81,12 @@ class WithdrawalCurrencyHandler(
     }
 
     fun handleExchangeRateChanged(rate: String) {
-        _uiState.update { it.copy(displayExchangeRate = rate) }
+        _uiState.update { it.copy(displayExchangeRate = rate, isExchangeRateError = false) }
         recalculateDeducted()
     }
 
     fun handleDeductedAmountChanged(amount: String) {
-        _uiState.update { it.copy(deductedAmount = amount) }
+        _uiState.update { it.copy(deductedAmount = amount, isExchangeRateError = false) }
         recalculateRateFromDeducted()
     }
 
@@ -93,6 +96,10 @@ class WithdrawalCurrencyHandler(
     fun recalculateDeducted() {
         val state = _uiState.value
         if (!state.showExchangeRateSection) return
+        if (state.displayExchangeRate.isBlank()) {
+            _uiState.update { it.copy(deductedAmount = "") }
+            return
+        }
 
         val sourceDecimalPlaces = state.selectedCurrency?.decimalDigits ?: 2
         val targetDecimalPlaces = state.groupCurrency?.decimalDigits ?: 2
@@ -139,28 +146,57 @@ class WithdrawalCurrencyHandler(
             return
         }
 
+        val requestedBaseCode = groupCurrency.code
+        val requestedTargetCode = selectedCurrency.code
+
         scope.launch {
             _uiState.update { it.copy(isLoadingRate = true) }
             try {
                 val rateResult = getExchangeRateUseCase(
-                    baseCurrencyCode = groupCurrency.code,
-                    targetCurrencyCode = selectedCurrency.code
+                    baseCurrencyCode = requestedBaseCode,
+                    targetCurrencyCode = requestedTargetCode
                 )
-                _uiState.update {
-                    it.copy(
-                        isLoadingRate = false,
-                        displayExchangeRate = rateResult?.rate?.let { r ->
-                            formattingHelper.formatRateForDisplay(r.toPlainString())
-                        } ?: it.displayExchangeRate,
-                        isExchangeRateStale = rateResult?.isStale
-                            ?: it.isExchangeRateStale
+                _uiState.update { current ->
+                    current.updateRateResult(
+                        requestedBaseCode = requestedBaseCode,
+                        requestedTargetCode = requestedTargetCode,
+                        rateResult = rateResult,
+                        isError = rateResult == null
                     )
                 }
                 if (rateResult != null) recalculateDeducted()
             } catch (e: Exception) {
                 Timber.w(e, "Failed to fetch exchange rate")
-                _uiState.update { it.copy(isLoadingRate = false) }
+                _uiState.update { current ->
+                    current.updateRateResult(
+                        requestedBaseCode = requestedBaseCode,
+                        requestedTargetCode = requestedTargetCode,
+                        rateResult = null,
+                        isError = true
+                    )
+                }
             }
         }
+    }
+
+    private fun AddCashWithdrawalUiState.updateRateResult(
+        requestedBaseCode: String,
+        requestedTargetCode: String,
+        rateResult: ExchangeRateWithStaleness?,
+        isError: Boolean
+    ): AddCashWithdrawalUiState {
+        if (groupCurrency?.code != requestedBaseCode ||
+            selectedCurrency?.code != requestedTargetCode
+        ) {
+            return copy(isLoadingRate = false)
+        }
+        return copy(
+            isLoadingRate = false,
+            isExchangeRateError = isError,
+            displayExchangeRate = rateResult?.rate?.let { r ->
+                formattingHelper.formatRateForDisplay(r.toPlainString())
+            } ?: displayExchangeRate,
+            isExchangeRateStale = rateResult?.isStale ?: isExchangeRateStale
+        )
     }
 }

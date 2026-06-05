@@ -69,6 +69,7 @@
 
     <!-- Stale Exchange Rate -->
     <string name="stale_rate_warning">Rates may be outdated</string>
+    <string name="failed_rate_warning">Failed to load the latest exchange rate. Please enter it manually.</string>
 
     <!-- Generic Error -->
     <string name="error_generic">Oops! Something went wrong</string>
