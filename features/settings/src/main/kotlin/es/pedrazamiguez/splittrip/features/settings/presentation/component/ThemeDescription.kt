@@ -7,7 +7,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AppTheme
 import es.pedrazamiguez.splittrip.features.settings.R
 
 @Composable
-internal fun ThemeDescription(currentThemeCode: String?) {
+internal fun ThemeDescription(currentThemeCode: String) {
     val themeName = when (AppTheme.fromCode(currentThemeCode)) {
         AppTheme.SYSTEM -> stringResource(R.string.settings_preferences_theme_system)
         AppTheme.LIGHT -> stringResource(R.string.settings_preferences_theme_light)

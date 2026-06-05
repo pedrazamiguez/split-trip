@@ -56,13 +56,15 @@ class SettingsViewModel(
         initialValue = AppLanguage.fromCode(null).code
     )
 
-    val currentThemeCode: StateFlow<String?> = getAppThemeUseCase().stateIn(
+    val currentThemeCode: StateFlow<String> = getAppThemeUseCase().map { themeCode ->
+        AppTheme.fromCode(themeCode).code
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(
             stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
             replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
         ),
-        initialValue = AppTheme.SYSTEM.code
+        initialValue = AppTheme.fromCode(null).code
     )
 
     val shouldShowLanguagePill: StateFlow<Boolean> = getShouldShowLanguagePillUseCase().stateIn(

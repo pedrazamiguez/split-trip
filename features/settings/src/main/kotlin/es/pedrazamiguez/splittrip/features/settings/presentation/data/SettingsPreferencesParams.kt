@@ -10,6 +10,6 @@ data class SettingsPreferencesParams(
     val onDefaultCurrencyClick: () -> Unit,
     val currentLanguageCode: String,
     val onLanguageClick: () -> Unit,
-    val currentThemeCode: String?,
+    val currentThemeCode: String,
     val onThemeClick: () -> Unit
 )

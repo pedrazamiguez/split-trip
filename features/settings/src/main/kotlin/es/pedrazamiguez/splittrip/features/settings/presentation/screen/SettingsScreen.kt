@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.domain.enums.AppTheme
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.LogoutButton
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.settingsSections
@@ -22,7 +23,7 @@ fun SettingsScreen(
     onDefaultCurrencyClick: () -> Unit = {},
     currentLanguageCode: String = "en",
     onLanguageClick: () -> Unit = {},
-    currentThemeCode: String? = null,
+    currentThemeCode: String = AppTheme.SYSTEM.code,
     onThemeClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
     onDeveloperServicesTestClick: () -> Unit = {}

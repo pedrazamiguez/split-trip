@@ -224,6 +224,29 @@ class SettingsViewModelTest {
             assertEquals("dark", viewModel.currentThemeCode.value)
             collectJob.cancel()
         }
+
+        @Test
+        fun `null theme code maps to system theme code`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            every { getAppThemeUseCase() } returns flowOf(null)
+
+            val viewModel = createViewModel()
+
+            val collectJob = launch { viewModel.currentThemeCode.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("system", viewModel.currentThemeCode.value)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `initial value is system before flow emits`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            every { getAppThemeUseCase() } returns flowOf("dark")
+
+            val viewModel = createViewModel()
+            assertEquals("system", viewModel.currentThemeCode.value)
+        }
     }
 
     // ── shouldShowLanguagePill StateFlow ────────────────────────────────────
