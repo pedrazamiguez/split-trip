@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.domain.di
+package es.pedrazamiguez.splittrip.di.domain
 
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
