@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.domain.di
+package es.pedrazamiguez.splittrip.di.domain
 
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
