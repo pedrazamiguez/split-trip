@@ -5,9 +5,9 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.WithdrawalPoolOptionUiModel
@@ -85,14 +85,14 @@ class SplitEventHandlerTest {
         val localeProvider = mockk<LocaleProvider>()
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
-        val splitPreviewService = SplitPreviewService()
+        val splitPreviewService = SplitPreviewServiceImpl()
         val formattingHelper = FormattingHelper(localeProvider)
         handler = SplitEventHandler(
-            splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService()),
+            splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl()),
             splitPreviewService = splitPreviewService,
             formattingHelper = formattingHelper,
             splitRowMappingDelegate = SplitRowMappingDelegate(
-                splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService()),
+                splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl()),
                 splitPreviewService = splitPreviewService,
                 formattingHelper = formattingHelper
             )

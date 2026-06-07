@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOpt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
+import es.pedrazamiguez.splittrip.domain.service.impl.ContributionValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AddContributionUseCase
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.action.AddContributionUiAction
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.state.AddContributionUiState
@@ -62,7 +63,7 @@ class ContributionSubmitHandlerTest {
     @BeforeEach
     fun setUp() {
         addContributionUseCase = mockk()
-        contributionValidationService = ContributionValidationService()
+        contributionValidationService = ContributionValidationServiceImpl()
 
         uiState = MutableStateFlow(validState)
         actions = MutableSharedFlow(extraBufferCapacity = 16)

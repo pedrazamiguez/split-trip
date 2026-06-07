@@ -14,8 +14,8 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
-import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
@@ -68,8 +68,8 @@ class AddExpenseUiMapperTest {
             es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper(
                 localeProvider
             )
-        val splitPreviewService = SplitPreviewService()
-        val remainderDistributionService = RemainderDistributionService()
+        val splitPreviewService = SplitPreviewServiceImpl()
+        val remainderDistributionService = RemainderDistributionServiceImpl()
         splitMapper = AddExpenseSplitUiMapper(
             localeProvider,
             formattingHelper,

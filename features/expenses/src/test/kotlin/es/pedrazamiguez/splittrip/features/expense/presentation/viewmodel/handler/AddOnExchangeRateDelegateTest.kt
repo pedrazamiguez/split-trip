@@ -6,9 +6,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyU
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
-import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExchangeRateCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
@@ -53,9 +53,9 @@ class AddOnExchangeRateDelegateTest {
         previewCashExchangeRateUseCase = mockk(relaxed = true)
 
         delegate = AddOnExchangeRateDelegate(
-            exchangeRateCalculationService = ExchangeRateCalculationService(),
-            expenseCalculatorService = ExpenseCalculatorService(),
-            splitPreviewService = SplitPreviewService(),
+            exchangeRateCalculationService = ExchangeRateCalculationServiceImpl(),
+            expenseCalculatorService = ExpenseCalculatorServiceImpl(),
+            splitPreviewService = SplitPreviewServiceImpl(),
             formattingHelper = FormattingHelper(localeProvider),
             getExchangeRateUseCase = getExchangeRateUseCase,
             previewCashExchangeRateUseCase = previewCashExchangeRateUseCase

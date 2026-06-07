@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
+import es.pedrazamiguez.splittrip.domain.service.impl.ContributionValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AddContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
@@ -87,7 +88,7 @@ class AddContributionViewModelTest {
         getGroupSubunitsUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         authenticationService = mockk()
-        contributionValidationService = ContributionValidationService()
+        contributionValidationService = ContributionValidationServiceImpl()
         addContributionUiMapper = mockk(relaxed = true)
 
         every { addContributionUiMapper.resolveCurrencySymbol(any()) } returns "€"

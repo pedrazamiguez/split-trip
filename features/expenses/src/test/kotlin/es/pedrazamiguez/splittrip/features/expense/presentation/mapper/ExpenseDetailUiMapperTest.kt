@@ -18,8 +18,8 @@ import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.User
-import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.R
 import io.mockk.every
 import io.mockk.mockk
@@ -77,8 +77,8 @@ class ExpenseDetailUiMapperTest {
         every { resourceProvider.getString(any(), any()) } returns "translated_string_with_arg"
 
         val formattingHelper = FormattingHelper(localeProvider)
-        val expenseCalculatorService = ExpenseCalculatorService()
-        val addOnCalculationService = AddOnCalculationService()
+        val expenseCalculatorService = ExpenseCalculatorServiceImpl()
+        val addOnCalculationService = AddOnCalculationServiceImpl()
         val scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
             formattingHelper = formattingHelper,
             resourceProvider = resourceProvider

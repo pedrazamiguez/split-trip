@@ -11,10 +11,11 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
-import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
-import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
-import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseValidationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
@@ -90,7 +91,7 @@ class SubmitEventHandlerTest {
     fun setUp() {
         strategy = mockk(relaxed = true)
         addExpenseUiMapper = mockk(relaxed = true)
-        val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService())
+        val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
         val saveLastUsedPreferences = SaveLastUsedPreferencesBundle(
             setGroupLastUsedCurrencyUseCase = mockk(relaxed = true),
             setGroupLastUsedPaymentMethodUseCase = mockk(relaxed = true),
@@ -99,10 +100,10 @@ class SubmitEventHandlerTest {
         val formattingHelper = mockk<FormattingHelper>(relaxed = true)
 
         handler = SubmitEventHandler(
-            expenseValidationService = ExpenseValidationService(splitCalculatorFactory),
-            addOnCalculationService = AddOnCalculationService(),
-            expenseCalculatorService = ExpenseCalculatorService(),
-            remainderDistributionService = RemainderDistributionService(),
+            expenseValidationService = ExpenseValidationServiceImpl(splitCalculatorFactory),
+            addOnCalculationService = AddOnCalculationServiceImpl(),
+            expenseCalculatorService = ExpenseCalculatorServiceImpl(),
+            remainderDistributionService = RemainderDistributionServiceImpl(),
             addExpenseUiMapper = addExpenseUiMapper,
             submitResultDelegate = SubmitResultDelegate(
                 saveLastUsedPreferences = saveLastUsedPreferences,
