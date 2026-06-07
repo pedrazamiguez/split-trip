@@ -4,7 +4,8 @@ import es.pedrazamiguez.splittrip.core.logging.maskEmail
 
 sealed interface AuthenticationUiEvent {
     data class EmailChanged(val email: String) : AuthenticationUiEvent {
-        override fun toString(): String = "EmailChanged(email=${email.maskEmail()})"
+        override fun toString(): String =
+            "EmailChanged(email=${if (email.contains('@')) email.maskEmail() else "***"})"
     }
     data class PasswordChanged(val value: String) : AuthenticationUiEvent {
         override fun toString(): String = "PasswordChanged(input=***)"

@@ -9,6 +9,9 @@ import timber.log.Timber
 
 @Suppress("UNCHECKED_CAST", "SpreadOperator")
 inline fun <reified T : Any> createLoggingProxy(target: T, tag: String): T {
+    require(T::class.java.isInterface) {
+        "createLoggingProxy requires an interface type, but got ${T::class.java.name}"
+    }
     return Proxy.newProxyInstance(
         T::class.java.classLoader,
         arrayOf(T::class.java),
@@ -62,7 +65,8 @@ internal fun formatArgsForLogging(args: Array<out Any>?, isSuspending: Boolean):
     return "Args count: $count | Types: [$types]"
 }
 
-class LoggingContinuation<T>(
+@PublishedApi
+internal class LoggingContinuation<T>(
     private val delegate: Continuation<T>,
     private val tag: String,
     private val methodName: String

@@ -14,6 +14,11 @@ import es.pedrazamiguez.splittrip.provider.impl.AppMetadataProviderImpl
 import es.pedrazamiguez.splittrip.provider.impl.IntentProviderImpl
 import es.pedrazamiguez.splittrip.provider.impl.LocaleProviderImpl
 import es.pedrazamiguez.splittrip.provider.impl.ResourceProviderImpl
+import java.util.UUID
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.koin.androidContext
@@ -29,21 +34,20 @@ val appModule = module {
     single<LogContext> {
         val authService = get<AuthenticationService>()
         val userPreferences = get<UserPreferences>()
+        // Preloaded async so the provider lambda never blocks the main thread at Timber init.
+        val deviceIdDeferred: Deferred<String> = MainScope().async(Dispatchers.IO) {
+            val currentId = userPreferences.deviceId.first()
+            if (currentId != null) {
+                currentId
+            } else {
+                val newId = UUID.randomUUID().toString()
+                userPreferences.setDeviceId(newId)
+                newId
+            }
+        }
         LogContextImpl(
             appVersion = BuildConfig.VERSION_NAME,
-            deviceIdProvider = {
-                val flow = userPreferences.deviceId
-                runBlocking {
-                    val currentId = flow.first()
-                    if (currentId != null) {
-                        currentId
-                    } else {
-                        val newId = java.util.UUID.randomUUID().toString()
-                        userPreferences.setDeviceId(newId)
-                        newId
-                    }
-                }
-            },
+            deviceIdProvider = { runBlocking { deviceIdDeferred.await() } },
             userIdProvider = { authService.currentUserId() }
         )
     }
