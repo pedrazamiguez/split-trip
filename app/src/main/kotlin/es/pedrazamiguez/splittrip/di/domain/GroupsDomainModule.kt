@@ -20,7 +20,7 @@ import org.koin.dsl.module
 
 val groupsDomainModule = module {
     factory<GroupMembershipService> {
-        createLoggingProxy(
+        createLoggingProxy<GroupMembershipService>(
             GroupMembershipServiceImpl(
                 groupRepository = get<GroupRepository>(),
                 authenticationService = get<AuthenticationService>()
@@ -29,31 +29,31 @@ val groupsDomainModule = module {
         )
     }
     factory<CreateGroupUseCase> {
-        createLoggingProxy(
+        createLoggingProxy<CreateGroupUseCase>(
             CreateGroupUseCaseImpl(groupRepository = get<GroupRepository>()),
             LogTag.USE_CASE
         )
     }
     factory<EmailValidationService> {
-        createLoggingProxy(
+        createLoggingProxy<EmailValidationService>(
             EmailValidationServiceImpl(),
             LogTag.SERVICE
         )
     }
     factory<DeleteGroupUseCase> {
-        createLoggingProxy(
+        createLoggingProxy<DeleteGroupUseCase>(
             DeleteGroupUseCaseImpl(groupRepository = get<GroupRepository>()),
             LogTag.USE_CASE
         )
     }
     factory<GetGroupByIdUseCase> {
-        createLoggingProxy(
+        createLoggingProxy<GetGroupByIdUseCase>(
             GetGroupByIdUseCaseImpl(groupRepository = get<GroupRepository>()),
             LogTag.USE_CASE
         )
     }
     factory<GetUserGroupsFlowUseCase> {
-        createLoggingProxy(
+        createLoggingProxy<GetUserGroupsFlowUseCase>(
             GetUserGroupsFlowUseCaseImpl(groupRepository = get<GroupRepository>()),
             LogTag.USE_CASE
         )

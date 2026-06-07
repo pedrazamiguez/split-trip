@@ -17,7 +17,7 @@ import org.koin.dsl.module
 
 val authenticationDomainModule = module {
     factory<SignInWithEmailUseCase> {
-        createLoggingProxy(
+        createLoggingProxy<SignInWithEmailUseCase>(
             SignInWithEmailUseCaseImpl(
                 authenticationService = get<AuthenticationService>(),
                 userRepository = get<UserRepository>(),
@@ -27,7 +27,7 @@ val authenticationDomainModule = module {
         )
     }
     factory<SignInWithGoogleUseCase> {
-        createLoggingProxy(
+        createLoggingProxy<SignInWithGoogleUseCase>(
             SignInWithGoogleUseCaseImpl(
                 authenticationService = get<AuthenticationService>(),
                 registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
@@ -36,7 +36,7 @@ val authenticationDomainModule = module {
         )
     }
     factory<SignOutUseCase> {
-        createLoggingProxy(
+        createLoggingProxy<SignOutUseCase>(
             SignOutUseCaseImpl(
                 unregisterDeviceTokenUseCase = get<UnregisterDeviceTokenUseCase>(),
                 localDatabaseCleaner = get<LocalDatabaseCleanerService>(),
