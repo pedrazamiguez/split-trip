@@ -1,10 +1,14 @@
 package es.pedrazamiguez.splittrip.di
 
+import es.pedrazamiguez.splittrip.BuildConfig
 import es.pedrazamiguez.splittrip.MainActivity
 import es.pedrazamiguez.splittrip.core.common.provider.AppMetadataProvider
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.provider.IntentProvider
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.logging.LogContext
+import es.pedrazamiguez.splittrip.logging.LogContextImpl
 import es.pedrazamiguez.splittrip.provider.impl.AppMetadataProviderImpl
 import es.pedrazamiguez.splittrip.provider.impl.IntentProviderImpl
 import es.pedrazamiguez.splittrip.provider.impl.LocaleProviderImpl
@@ -19,4 +23,12 @@ val appModule = module {
     }
     single<LocaleProvider> { LocaleProviderImpl(context = androidContext()) }
     single<ResourceProvider> { ResourceProviderImpl(context = androidContext()) }
+    single<LogContext> {
+        val authService = get<AuthenticationService>()
+        LogContextImpl(
+            context = androidContext(),
+            appVersion = BuildConfig.VERSION_NAME,
+            userIdProvider = { authService.currentUserId() }
+        )
+    }
 }

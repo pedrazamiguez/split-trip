@@ -8,6 +8,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiState
+import es.pedrazamiguez.splittrip.logging.LogTag
+import es.pedrazamiguez.splittrip.logging.maskEmail
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -22,6 +24,14 @@ class AuthenticationViewModel(
     val uiState = _uiState.asStateFlow()
 
     fun onEvent(event: AuthenticationUiEvent, onLoginSuccess: () -> Unit) {
+        val eventLog = when (event) {
+            is AuthenticationUiEvent.EmailChanged -> "EmailChanged(email=${event.email.maskEmail()})"
+            is AuthenticationUiEvent.PasswordChanged -> "PasswordChanged(password=***)"
+            is AuthenticationUiEvent.GoogleSignInResult -> "GoogleSignInResult(idToken=***)"
+            else -> event.toString()
+        }
+        Timber.tag(LogTag.MVI).d("Event: $eventLog")
+
         when (event) {
             is AuthenticationUiEvent.EmailChanged -> {
                 _uiState.value = _uiState.value.copy(email = event.email)

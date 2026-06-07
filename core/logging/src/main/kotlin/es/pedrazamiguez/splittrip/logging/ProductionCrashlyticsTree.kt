@@ -4,25 +4,26 @@ import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import timber.log.Timber
 
-/**
- * A Timber tree that forwards logs to Firebase Crashlytics.
- * Only logs warnings and errors are sent to Crashlytics to avoid noise.
- */
-class CrashlyticsTree : Timber.Tree() {
+class ProductionCrashlyticsTree(
+    private val logContext: LogContext
+) : Timber.Tree() {
 
     private val crashlytics = FirebaseCrashlytics.getInstance()
 
+    init {
+        crashlytics.setCustomKey("deviceId", logContext.deviceId)
+        crashlytics.setCustomKey("sessionId", logContext.sessionId)
+        crashlytics.setCustomKey("appVersion", logContext.appVersion)
+        crashlytics.setUserId(logContext.userId)
+    }
+
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-        // Only log warnings and errors to Crashlytics
+        crashlytics.setUserId(logContext.userId)
+
         if (priority < Log.WARN) return
 
         crashlytics.log("${priorityToString(priority)}/$tag: $message")
-
-        // Record all exceptions (WARN + ERROR + ASSERT) as non-fatal events
-        // so notification failures and other warnings are visible in Crashlytics.
-        t?.let {
-            crashlytics.recordException(it)
-        }
+        t?.let { crashlytics.recordException(it) }
     }
 
     private fun priorityToString(priority: Int): String = when (priority) {

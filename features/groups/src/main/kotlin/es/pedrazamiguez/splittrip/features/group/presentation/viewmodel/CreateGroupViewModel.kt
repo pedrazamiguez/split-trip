@@ -16,6 +16,8 @@ import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapp
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.logging.LogTag
+import es.pedrazamiguez.splittrip.logging.maskEmail
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
@@ -58,7 +60,7 @@ class CreateGroupViewModel(
     }
 
     fun onEvent(event: CreateGroupUiEvent, onCreateGroupSuccess: () -> Unit) {
-        Timber.i("Event: $event")
+        Timber.tag(LogTag.MVI).d("Event: ${formatEventForLogging(event)}")
         when (event) {
             is CreateGroupUiEvent.NameChanged -> handleNameChanged(event.name)
             is CreateGroupUiEvent.DescriptionChanged -> handleDescriptionChanged(event.description)
@@ -265,5 +267,17 @@ class CreateGroupViewModel(
     companion object {
         private const val MEMBER_SEARCH_DEBOUNCE_MS = 300L
         private const val MEMBER_SEARCH_MIN_QUERY_LENGTH = 3
+    }
+}
+
+private fun formatEventForLogging(event: CreateGroupUiEvent): String {
+    return when (event) {
+        is CreateGroupUiEvent.MemberSearchQueryChanged ->
+            "MemberSearchQueryChanged(query=${event.query.maskEmail()})"
+        is CreateGroupUiEvent.MemberSelected ->
+            "MemberSelected(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
+        is CreateGroupUiEvent.MemberRemoved ->
+            "MemberRemoved(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
+        else -> event.toString()
     }
 }

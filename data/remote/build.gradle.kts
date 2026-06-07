@@ -88,6 +88,8 @@ dependencies {
 
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(project(":core:logging"))
 
     // Unit Testing (extras — common test deps provided by convention plugin)
     testImplementation(libs.koin.test)

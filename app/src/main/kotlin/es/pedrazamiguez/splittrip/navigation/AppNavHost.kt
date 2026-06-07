@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,7 @@ import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
 import es.pedrazamiguez.splittrip.features.onboarding.navigation.onboardingGraph
 import es.pedrazamiguez.splittrip.features.settings.navigation.settingsGraph
+import es.pedrazamiguez.splittrip.logging.LogTag
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 import timber.log.Timber
@@ -91,6 +93,20 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     // compiler from recreating the lambda, which in turn prevents NavHost's
     // remember(startDestination, builder) from invalidating and recreating the graph.
     val currentOnboardingCompleted = rememberUpdatedState(onboardingCompleted)
+
+    DisposableEffect(navController) {
+        val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, arguments ->
+            Timber.tag(LogTag.NAVIGATION).i(
+                "Navigated to: %s | Args: %s",
+                destination.route,
+                arguments?.keySet()?.associateWith { arguments.get(it) } ?: emptyMap<String, Any?>()
+            )
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose {
+            navController.removeOnDestinationChangedListener(listener)
+        }
+    }
 
     val pillController = rememberTopPillController()
 

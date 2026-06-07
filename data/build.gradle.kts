@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.timber)
+    implementation(project(":core:logging"))
 
     // Unit Testing (extras — common test deps provided by convention plugin)
     testImplementation(libs.androidx.test.core)

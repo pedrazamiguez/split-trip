@@ -25,7 +25,7 @@ import es.pedrazamiguez.splittrip.di.settingsFeatureModules
 import es.pedrazamiguez.splittrip.di.subunitsFeatureModules
 import es.pedrazamiguez.splittrip.di.withdrawalsFeatureModules
 import es.pedrazamiguez.splittrip.features.main.di.mainUiModule
-import es.pedrazamiguez.splittrip.logging.CrashlyticsTree
+import es.pedrazamiguez.splittrip.logging.LogContext
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import timber.log.Timber
@@ -41,14 +41,6 @@ class App : Application() {
 
         FirebaseAppCheck.getInstance()
             .installAppCheckProviderFactory(createAppCheckProviderFactory())
-
-        setupTimber()
-
-        if (BuildConfig.USE_DEBUG_APP_CHECK) {
-            probeAppCheckToken()
-        }
-
-        NotificationChannelInitializer.createChannels(this)
 
         startKoin {
             androidContext(this@App)
@@ -72,6 +64,14 @@ class App : Application() {
                 withdrawalsFeatureModules
             )
         }
+
+        setupTimber()
+
+        if (BuildConfig.USE_DEBUG_APP_CHECK) {
+            probeAppCheckToken()
+        }
+
+        NotificationChannelInitializer.createChannels(this)
     }
 
     private fun probeAppCheckToken() {
@@ -97,11 +97,11 @@ class App : Application() {
     }
 
     private fun setupTimber() {
-        if (BuildConfig.USE_DEBUG_APP_CHECK) {
-            Timber.plant(Timber.DebugTree())
-        }
-        if (!BuildConfig.DEBUG) {
-            Timber.plant(CrashlyticsTree())
+        val logContext = org.koin.core.context.GlobalContext.get().get<LogContext>()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(es.pedrazamiguez.splittrip.logging.DevelopmentLogcatTree(logContext))
+        } else {
+            Timber.plant(es.pedrazamiguez.splittrip.logging.ProductionCrashlyticsTree(logContext))
         }
     }
 }
