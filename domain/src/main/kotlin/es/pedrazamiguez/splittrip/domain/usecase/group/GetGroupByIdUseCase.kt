@@ -1,8 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.usecase.group
 
 import es.pedrazamiguez.splittrip.domain.model.Group
-import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class GetGroupByIdUseCase(private val groupRepository: GroupRepository) {
-    suspend operator fun invoke(groupId: String): Group? = groupRepository.getGroupById(groupId)
+interface GetGroupByIdUseCase : UseCase {
+    suspend operator fun invoke(groupId: String): Group?
 }

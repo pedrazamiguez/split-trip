@@ -6,6 +6,9 @@ import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExchangeRateCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.PreviewCashExchangeRateUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -54,9 +57,9 @@ class PreviewCashExchangeRateUseCaseTest {
     @BeforeEach
     fun setUp() {
         cashWithdrawalRepository = mockk()
-        expenseCalculatorService = ExpenseCalculatorService() // Use real service for integration-style tests
-        exchangeRateCalculationService = ExchangeRateCalculationService()
-        useCase = PreviewCashExchangeRateUseCase(
+        expenseCalculatorService = ExpenseCalculatorServiceImpl() // Use real service for integration-style tests
+        exchangeRateCalculationService = ExchangeRateCalculationServiceImpl()
+        useCase = PreviewCashExchangeRateUseCaseImpl(
             cashWithdrawalRepository,
             expenseCalculatorService,
             exchangeRateCalculationService

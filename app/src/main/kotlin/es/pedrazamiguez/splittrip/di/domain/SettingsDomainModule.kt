@@ -28,150 +28,174 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLastSeenBalanceUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.ConsumeLanguagePillUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetActiveAiEngineUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetAppLanguageUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetAppThemeUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetGroupLastUsedCategoryUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetGroupLastUsedCurrencyUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetGroupLastUsedPaymentMethodUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetLastSeenBalanceUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupCurrencyUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupIdUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupNameUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetShouldShowLanguagePillUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetUserDefaultCurrencyUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.IsOnboardingCompleteUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetActiveAiEngineUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetAppLanguageUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetAppThemeUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetGroupLastUsedCategoryUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetGroupLastUsedCurrencyUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetGroupLastUsedPaymentMethodUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetLastSeenBalanceUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetOnboardingCompleteUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetSelectedGroupUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetUserDefaultCurrencyUseCaseImpl
 import org.koin.dsl.module
 
 val settingsDomainModule = module {
 
     factory<IsOnboardingCompleteUseCase> {
-        IsOnboardingCompleteUseCase(
+        IsOnboardingCompleteUseCaseImpl(
             preferenceRepository = get<OnboardingPreferenceRepository>()
         )
     }
 
     factory<SetOnboardingCompleteUseCase> {
-        SetOnboardingCompleteUseCase(
+        SetOnboardingCompleteUseCaseImpl(
             preferenceRepository = get<OnboardingPreferenceRepository>()
         )
     }
 
     factory<GetSelectedGroupIdUseCase> {
-        GetSelectedGroupIdUseCase(
+        GetSelectedGroupIdUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<GetSelectedGroupNameUseCase> {
-        GetSelectedGroupNameUseCase(
+        GetSelectedGroupNameUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<GetSelectedGroupCurrencyUseCase> {
-        GetSelectedGroupCurrencyUseCase(
+        GetSelectedGroupCurrencyUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<SetSelectedGroupUseCase> {
-        SetSelectedGroupUseCase(
+        SetSelectedGroupUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<GetUserDefaultCurrencyUseCase> {
-        GetUserDefaultCurrencyUseCase(
+        GetUserDefaultCurrencyUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<SetUserDefaultCurrencyUseCase> {
-        SetUserDefaultCurrencyUseCase(
+        SetUserDefaultCurrencyUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<GetActiveAiEngineUseCase> {
-        GetActiveAiEngineUseCase(
+        GetActiveAiEngineUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<SetActiveAiEngineUseCase> {
-        SetActiveAiEngineUseCase(
+        SetActiveAiEngineUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<GetGroupLastUsedCurrencyUseCase> {
-        GetGroupLastUsedCurrencyUseCase(
+        GetGroupLastUsedCurrencyUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<SetGroupLastUsedCurrencyUseCase> {
-        SetGroupLastUsedCurrencyUseCase(
+        SetGroupLastUsedCurrencyUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<GetGroupLastUsedPaymentMethodUseCase> {
-        GetGroupLastUsedPaymentMethodUseCase(
+        GetGroupLastUsedPaymentMethodUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<SetGroupLastUsedPaymentMethodUseCase> {
-        SetGroupLastUsedPaymentMethodUseCase(
+        SetGroupLastUsedPaymentMethodUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<GetGroupLastUsedCategoryUseCase> {
-        GetGroupLastUsedCategoryUseCase(
+        GetGroupLastUsedCategoryUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<SetGroupLastUsedCategoryUseCase> {
-        SetGroupLastUsedCategoryUseCase(
+        SetGroupLastUsedCategoryUseCaseImpl(
             preferenceRepository = get<GroupPreferenceRepository>()
         )
     }
 
     factory<GetLastSeenBalanceUseCase> {
-        GetLastSeenBalanceUseCase(
+        GetLastSeenBalanceUseCaseImpl(
             balancePreferenceRepository = get<BalancePreferenceRepository>()
         )
     }
 
     factory<SetLastSeenBalanceUseCase> {
-        SetLastSeenBalanceUseCase(
+        SetLastSeenBalanceUseCaseImpl(
             balancePreferenceRepository = get<BalancePreferenceRepository>()
         )
     }
 
     factory<GetAppLanguageUseCase> {
-        GetAppLanguageUseCase(
+        GetAppLanguageUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<SetAppLanguageUseCase> {
-        SetAppLanguageUseCase(
+        SetAppLanguageUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<GetShouldShowLanguagePillUseCase> {
-        GetShouldShowLanguagePillUseCase(
+        GetShouldShowLanguagePillUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<ConsumeLanguagePillUseCase> {
-        ConsumeLanguagePillUseCase(
+        ConsumeLanguagePillUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<GetAppThemeUseCase> {
-        GetAppThemeUseCase(
+        GetAppThemeUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }
 
     factory<SetAppThemeUseCase> {
-        SetAppThemeUseCase(
+        SetAppThemeUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
         )
     }

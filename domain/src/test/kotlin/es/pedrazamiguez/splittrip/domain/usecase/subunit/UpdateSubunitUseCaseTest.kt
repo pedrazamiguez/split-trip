@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.service.SubunitValidationService
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.impl.UpdateSubunitUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -63,7 +64,7 @@ class UpdateSubunitUseCaseTest {
             )
         } returns SubunitValidationService.ValidationResult.Valid(subunit)
 
-        useCase = UpdateSubunitUseCase(
+        useCase = UpdateSubunitUseCaseImpl(
             subunitRepository = subunitRepository,
             groupRepository = groupRepository,
             groupMembershipService = groupMembershipService,

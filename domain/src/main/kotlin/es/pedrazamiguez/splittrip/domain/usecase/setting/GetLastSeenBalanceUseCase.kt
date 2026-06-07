@@ -1,9 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
-import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 import kotlinx.coroutines.flow.Flow
 
-class GetLastSeenBalanceUseCase(private val balancePreferenceRepository: BalancePreferenceRepository) {
-
-    operator fun invoke(groupId: String): Flow<String?> = balancePreferenceRepository.getLastSeenBalance(groupId)
+interface GetLastSeenBalanceUseCase : UseCase {
+    operator fun invoke(groupId: String): Flow<String?>
 }

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.group
 
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.usecase.group.impl.DeleteGroupUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -21,7 +22,7 @@ class DeleteGroupUseCaseTest {
     @BeforeEach
     fun setUp() {
         groupRepository = mockk()
-        useCase = DeleteGroupUseCase(groupRepository)
+        useCase = DeleteGroupUseCaseImpl(groupRepository)
     }
 
     @Nested

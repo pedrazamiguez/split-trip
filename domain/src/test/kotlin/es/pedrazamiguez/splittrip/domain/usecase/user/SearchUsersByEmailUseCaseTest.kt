@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.user
 
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
+import es.pedrazamiguez.splittrip.domain.usecase.user.impl.SearchUsersByEmailUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -20,7 +21,7 @@ class SearchUsersByEmailUseCaseTest {
     @BeforeEach
     fun setUp() {
         userRepository = mockk()
-        useCase = SearchUsersByEmailUseCase(userRepository)
+        useCase = SearchUsersByEmailUseCaseImpl(userRepository)
     }
 
     @Nested

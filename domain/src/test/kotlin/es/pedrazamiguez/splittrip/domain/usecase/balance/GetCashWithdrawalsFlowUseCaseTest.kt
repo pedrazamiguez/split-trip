@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.balance
 
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetCashWithdrawalsFlowUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class GetCashWithdrawalsFlowUseCaseTest {
 
     private val repository: CashWithdrawalRepository = mockk()
-    private val useCase = GetCashWithdrawalsFlowUseCase(repository)
+    private val useCase = GetCashWithdrawalsFlowUseCaseImpl(repository)
 
     @Test
     fun `invoke delegates to repository`() {

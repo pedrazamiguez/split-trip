@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.ExtractReceiptFieldsUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -56,7 +57,7 @@ class ExtractReceiptFieldsUseCaseTest {
     fun setUp() {
         ocrService = mockk()
         extractionService = mockk()
-        useCase = ExtractReceiptFieldsUseCase(ocrService, extractionService)
+        useCase = ExtractReceiptFieldsUseCaseImpl(ocrService, extractionService)
     }
 
     @Test

@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.auth
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInWithEmailUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -30,7 +31,7 @@ class SignInWithEmailUseCaseTest {
         authenticationService = mockk()
         userRepository = mockk()
         registerDeviceTokenUseCase = mockk()
-        useCase = SignInWithEmailUseCase(
+        useCase = SignInWithEmailUseCaseImpl(
             authenticationService = authenticationService,
             userRepository = userRepository,
             registerDeviceTokenUseCase = registerDeviceTokenUseCase

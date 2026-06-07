@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.service
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.impl.ContributionValidationServiceImpl
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 @DisplayName("ContributionValidationService")
 class ContributionValidationServiceTest {
 
-    private val service = ContributionValidationService()
+    private val service = ContributionValidationServiceImpl()
 
     @Nested
     @DisplayName("validateAmount")

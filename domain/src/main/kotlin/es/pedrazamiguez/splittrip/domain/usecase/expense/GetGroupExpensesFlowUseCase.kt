@@ -1,9 +1,9 @@
 package es.pedrazamiguez.splittrip.domain.usecase.expense
 
 import es.pedrazamiguez.splittrip.domain.model.Expense
-import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 import kotlinx.coroutines.flow.Flow
 
-class GetGroupExpensesFlowUseCase(private val expenseRepository: ExpenseRepository) {
-    operator fun invoke(groupId: String): Flow<List<Expense>> = expenseRepository.getGroupExpensesFlow(groupId)
+interface GetGroupExpensesFlowUseCase : UseCase {
+    operator fun invoke(groupId: String): Flow<List<Expense>>
 }

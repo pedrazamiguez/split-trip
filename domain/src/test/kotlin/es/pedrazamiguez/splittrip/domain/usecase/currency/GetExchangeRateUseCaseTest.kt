@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExchangeRate
 import es.pedrazamiguez.splittrip.domain.model.ExchangeRates
 import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateResult
+import es.pedrazamiguez.splittrip.domain.usecase.currency.impl.GetExchangeRateUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -33,7 +34,7 @@ class GetExchangeRateUseCaseTest {
     @BeforeEach
     fun setUp() {
         currencyRepository = mockk()
-        useCase = GetExchangeRateUseCase(currencyRepository)
+        useCase = GetExchangeRateUseCaseImpl(currencyRepository)
     }
 
     @Nested

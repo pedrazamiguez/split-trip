@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
@@ -72,7 +73,7 @@ class CreateGroupViewModelTest {
         getUserDefaultCurrencyUseCase = mockk(relaxed = true)
         searchUsersByEmailUseCase = mockk(relaxed = true)
         groupUiMapper = mockk(relaxed = true)
-        emailValidationService = EmailValidationService()
+        emailValidationService = EmailValidationServiceImpl()
 
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
         coEvery { getSupportedCurrenciesUseCase(any()) } returns Result.success(emptyList())

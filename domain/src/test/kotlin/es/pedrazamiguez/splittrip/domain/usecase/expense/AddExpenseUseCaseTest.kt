@@ -22,6 +22,7 @@ import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.factory.PersistExpenseStrategyFactory
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.AddExpenseUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -91,7 +92,7 @@ class AddExpenseUseCaseTest {
             addOnCalculationService = addOnCalculationService
         )
 
-        useCase = AddExpenseUseCase(
+        useCase = AddExpenseUseCaseImpl(
             strategyFactory = strategyFactory
         )
     }

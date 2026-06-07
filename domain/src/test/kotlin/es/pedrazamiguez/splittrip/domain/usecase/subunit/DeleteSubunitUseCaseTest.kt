@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.subunit
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.impl.DeleteSubunitUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -33,7 +34,7 @@ class DeleteSubunitUseCaseTest {
 
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
 
-        useCase = DeleteSubunitUseCase(
+        useCase = DeleteSubunitUseCaseImpl(
             subunitRepository = subunitRepository,
             groupMembershipService = groupMembershipService
         )

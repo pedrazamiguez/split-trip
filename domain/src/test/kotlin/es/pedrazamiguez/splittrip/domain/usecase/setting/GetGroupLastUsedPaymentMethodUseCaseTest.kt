@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetGroupLastUsedPaymentMethodUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 class GetGroupLastUsedPaymentMethodUseCaseTest {
 
     private val repository: GroupPreferenceRepository = mockk()
-    private val useCase = GetGroupLastUsedPaymentMethodUseCase(repository)
+    private val useCase = GetGroupLastUsedPaymentMethodUseCaseImpl(repository)
 
     @Test
     fun `returns payment method list flow from repository`() = runTest {

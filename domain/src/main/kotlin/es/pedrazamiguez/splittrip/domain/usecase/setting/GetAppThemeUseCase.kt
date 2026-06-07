@@ -1,9 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
-import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 import kotlinx.coroutines.flow.Flow
 
-class GetAppThemeUseCase(private val preferenceRepository: UserPreferenceRepository) {
-
-    operator fun invoke(): Flow<String?> = preferenceRepository.getAppTheme()
+interface GetAppThemeUseCase : UseCase {
+    operator fun invoke(): Flow<String?>
 }

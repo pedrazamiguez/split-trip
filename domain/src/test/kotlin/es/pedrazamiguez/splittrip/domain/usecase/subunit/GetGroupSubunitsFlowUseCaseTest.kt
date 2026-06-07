@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.subunit
 
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.impl.GetGroupSubunitsFlowUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -21,7 +22,7 @@ class GetGroupSubunitsFlowUseCaseTest {
     @BeforeEach
     fun setUp() {
         subunitRepository = mockk()
-        useCase = GetGroupSubunitsFlowUseCase(
+        useCase = GetGroupSubunitsFlowUseCaseImpl(
             subunitRepository = subunitRepository
         )
     }

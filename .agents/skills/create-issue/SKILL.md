@@ -1,6 +1,6 @@
 ---
-name: sp-refine-issue
-description: Turn an idea, problem description, or bug report into a well-formed GitHub issue.
+name: sp-create-issue
+description: Turn an idea, problem description, or bug report into a well-formed GitHub issue and create it on GitHub once approved.
 mode: agent
 tools:
   - codebase
@@ -11,9 +11,9 @@ arguments:
     description: The plain English description of the feature, bug, or improvement.
     required: true
 ---
-# Refine Issue
+# Create Issue
 
-I want to create a GitHub issue for the following idea or problem:
+Create a GitHub issue for the following idea or problem:
 
 > $DESCRIPTION
 
@@ -21,7 +21,7 @@ I want to create a GitHub issue for the following idea or problem:
 
 ## Your job
 
-Turn the description above into a well-formed GitHub issue ready to be picked up by a developer. Do NOT implement anything — output the issue content only.
+Turn the description above into a well-formed GitHub issue ready to be picked up by a developer. Present the draft to the user, and once approved, create the issue on GitHub. Do NOT implement anything — output the issue draft only first.
 
 ---
 
@@ -71,7 +71,7 @@ Link any parent issues, child issues, or prior PRs that provide context.
 
 ---
 
-## Step 3 — Review before posting
+## Step 3 — Review and Create
 
 Before presenting the draft, verify:
 - The proposed solution aligns with the architecture rules in [AGENTS.md](../../../AGENTS.md).
@@ -79,4 +79,6 @@ Before presenting the draft, verify:
 - The scope is narrow enough to be completed in a single PR.
 - No implementation details that belong in a PR description have leaked into the issue.
 
-Present the full draft to the user for review. Do NOT create the GitHub issue until the user explicitly approves it.
+1. Present the full draft to the user for review.
+2. Do NOT create the GitHub issue until the user explicitly approves it.
+3. Once approved, create the GitHub issue and provide the link to the user.

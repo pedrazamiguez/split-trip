@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupCurrencyUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 class GetSelectedGroupCurrencyUseCaseTest {
 
     private val repository: GroupPreferenceRepository = mockk()
-    private val useCase = GetSelectedGroupCurrencyUseCase(repository)
+    private val useCase = GetSelectedGroupCurrencyUseCaseImpl(repository)
 
     @Test
     fun `returns currency flow from repository`() = runTest {

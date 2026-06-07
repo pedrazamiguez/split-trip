@@ -1,10 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
-import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class SetSelectedGroupUseCase(private val preferenceRepository: GroupPreferenceRepository) {
-
-    suspend operator fun invoke(groupId: String?, groupName: String?, currency: String? = null) {
-        preferenceRepository.setSelectedGroup(groupId, groupName, currency)
-    }
+interface SetSelectedGroupUseCase : UseCase {
+    suspend operator fun invoke(groupId: String?, groupName: String?, currency: String? = null)
 }

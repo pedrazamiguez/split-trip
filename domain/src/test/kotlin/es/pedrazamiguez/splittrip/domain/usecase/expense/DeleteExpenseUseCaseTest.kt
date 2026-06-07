@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.DeleteExpenseUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -37,7 +38,7 @@ class DeleteExpenseUseCaseTest {
         groupMembershipService = mockk()
         contributionRepository = mockk(relaxed = true)
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
-        useCase = DeleteExpenseUseCase(
+        useCase = DeleteExpenseUseCaseImpl(
             expenseRepository,
             cashWithdrawalRepository,
             groupMembershipService,

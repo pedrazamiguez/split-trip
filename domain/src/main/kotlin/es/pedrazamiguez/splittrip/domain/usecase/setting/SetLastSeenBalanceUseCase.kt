@@ -1,10 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
-import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class SetLastSeenBalanceUseCase(private val balancePreferenceRepository: BalancePreferenceRepository) {
-
-    suspend operator fun invoke(groupId: String, formattedBalance: String) {
-        balancePreferenceRepository.setLastSeenBalance(groupId, formattedBalance)
-    }
+interface SetLastSeenBalanceUseCase : UseCase {
+    suspend operator fun invoke(groupId: String, formattedBalance: String)
 }

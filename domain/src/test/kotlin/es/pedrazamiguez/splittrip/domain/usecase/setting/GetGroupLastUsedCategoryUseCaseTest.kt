@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetGroupLastUsedCategoryUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 class GetGroupLastUsedCategoryUseCaseTest {
 
     private val repository: GroupPreferenceRepository = mockk()
-    private val useCase = GetGroupLastUsedCategoryUseCase(repository)
+    private val useCase = GetGroupLastUsedCategoryUseCaseImpl(repository)
 
     @Test
     fun `returns category list flow from repository`() = runTest {

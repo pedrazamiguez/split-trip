@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.user
 
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
+import es.pedrazamiguez.splittrip.domain.usecase.user.impl.GetMemberProfilesUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class GetMemberProfilesUseCaseTest {
 
     private val repository: UserRepository = mockk()
-    private val useCase = GetMemberProfilesUseCase(repository)
+    private val useCase = GetMemberProfilesUseCaseImpl(repository)
 
     @Test
     fun `invoke delegates to repository`() = runTest {

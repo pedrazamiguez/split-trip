@@ -12,18 +12,25 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpens
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupPocketBalanceFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteCashWithdrawalUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteContributionUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetCashWithdrawalsFlowUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetContributionByExpenseIdUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupContributionsFlowUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupPocketBalanceFlowUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetMemberBalancesFlowUseCaseImpl
 import org.koin.dsl.module
 
 val balancesDomainModule = module {
 
-    factory {
-        GetGroupContributionsFlowUseCase(
+    factory<GetGroupContributionsFlowUseCase> {
+        GetGroupContributionsFlowUseCaseImpl(
             contributionRepository = get<ContributionRepository>()
         )
     }
 
-    factory {
-        GetGroupPocketBalanceFlowUseCase(
+    factory<GetGroupPocketBalanceFlowUseCase> {
+        GetGroupPocketBalanceFlowUseCaseImpl(
             contributionRepository = get<ContributionRepository>(),
             expenseRepository = get<ExpenseRepository>(),
             cashWithdrawalRepository = get<CashWithdrawalRepository>(),
@@ -31,34 +38,34 @@ val balancesDomainModule = module {
         )
     }
 
-    factory {
-        GetCashWithdrawalsFlowUseCase(
+    factory<GetCashWithdrawalsFlowUseCase> {
+        GetCashWithdrawalsFlowUseCaseImpl(
             cashWithdrawalRepository = get<CashWithdrawalRepository>()
         )
     }
 
-    factory {
-        GetMemberBalancesFlowUseCase(
+    factory<GetMemberBalancesFlowUseCase> {
+        GetMemberBalancesFlowUseCaseImpl(
             addOnCalculationService = get<AddOnCalculationService>()
         )
     }
 
-    factory {
-        DeleteContributionUseCase(
+    factory<DeleteContributionUseCase> {
+        DeleteContributionUseCaseImpl(
             contributionRepository = get<ContributionRepository>(),
             groupMembershipService = get<GroupMembershipService>()
         )
     }
 
-    factory {
-        DeleteCashWithdrawalUseCase(
+    factory<DeleteCashWithdrawalUseCase> {
+        DeleteCashWithdrawalUseCaseImpl(
             cashWithdrawalRepository = get<CashWithdrawalRepository>(),
             groupMembershipService = get<GroupMembershipService>()
         )
     }
 
-    factory {
-        GetContributionByExpenseIdUseCase(
+    factory<GetContributionByExpenseIdUseCase> {
+        GetContributionByExpenseIdUseCaseImpl(
             contributionRepository = get<ContributionRepository>(),
             groupMembershipService = get<GroupMembershipService>()
         )

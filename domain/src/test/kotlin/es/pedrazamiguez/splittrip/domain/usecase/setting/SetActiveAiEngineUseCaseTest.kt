@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetActiveAiEngineUseCaseImpl
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.Test
 class SetActiveAiEngineUseCaseTest {
 
     private val repository: UserPreferenceRepository = mockk(relaxed = true)
-    private val useCase = SetActiveAiEngineUseCase(repository)
+    private val useCase = SetActiveAiEngineUseCaseImpl(repository)
 
     @Test
     fun `delegates to repository with AI_CORE_GEMMA_4`() = runTest {
