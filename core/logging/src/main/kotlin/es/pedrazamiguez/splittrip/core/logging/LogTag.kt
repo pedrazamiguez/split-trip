@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.logging
+package es.pedrazamiguez.splittrip.core.logging
 
 object LogTag {
     const val USE_CASE = "SplitTrip:UseCase"

@@ -34,6 +34,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.Lo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
@@ -43,7 +44,6 @@ import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
 import es.pedrazamiguez.splittrip.features.onboarding.navigation.onboardingGraph
 import es.pedrazamiguez.splittrip.features.settings.navigation.settingsGraph
-import es.pedrazamiguez.splittrip.logging.LogTag
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 import timber.log.Timber
@@ -97,9 +97,9 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     DisposableEffect(navController) {
         val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, arguments ->
             Timber.tag(LogTag.NAVIGATION).i(
-                "Navigated to: %s | Args: %s",
+                "Navigated to: %s | Arg keys: %s",
                 destination.route,
-                arguments?.keySet()?.associateWith { arguments.get(it) } ?: emptyMap<String, Any?>()
+                arguments?.keySet() ?: emptySet<String>()
             )
         }
         navController.addOnDestinationChangedListener(listener)
@@ -216,7 +216,7 @@ private fun replayPendingDeepLink(
     navController: NavHostController
 ) {
     deepLinkHolder.consumePendingDeepLink()?.let { uri ->
-        Timber.d("Replaying pending deep link: %s", uri)
+        Timber.d("Replaying pending deep link (scheme: %s)", uri.scheme)
         val deepLinkIntent = Intent(Intent.ACTION_VIEW, uri)
         navController.handleDeepLink(deepLinkIntent)
     }

@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.logging
+package es.pedrazamiguez.splittrip.core.logging
 
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics

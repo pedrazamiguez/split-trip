@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
+import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.maskEmail
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
@@ -16,8 +18,6 @@ import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapp
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
-import es.pedrazamiguez.splittrip.logging.LogTag
-import es.pedrazamiguez.splittrip.logging.maskEmail
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
@@ -273,11 +273,11 @@ class CreateGroupViewModel(
 private fun formatEventForLogging(event: CreateGroupUiEvent): String {
     return when (event) {
         is CreateGroupUiEvent.MemberSearchQueryChanged ->
-            "MemberSearchQueryChanged(query=${event.query.maskEmail()})"
+            "MemberSearchQueryChanged(queryLength=${event.query.length})"
         is CreateGroupUiEvent.MemberSelected ->
             "MemberSelected(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
         is CreateGroupUiEvent.MemberRemoved ->
             "MemberRemoved(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
-        else -> event.toString()
+        else -> event::class.java.simpleName
     }
 }

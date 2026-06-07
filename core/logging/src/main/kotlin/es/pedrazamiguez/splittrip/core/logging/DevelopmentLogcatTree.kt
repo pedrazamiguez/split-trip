@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.logging
+package es.pedrazamiguez.splittrip.core.logging
 
 import timber.log.Timber
 

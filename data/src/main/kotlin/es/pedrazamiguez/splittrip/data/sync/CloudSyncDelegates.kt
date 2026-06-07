@@ -1,7 +1,7 @@
 package es.pedrazamiguez.splittrip.data.sync
 
+import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
-import es.pedrazamiguez.splittrip.logging.LogTag
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow

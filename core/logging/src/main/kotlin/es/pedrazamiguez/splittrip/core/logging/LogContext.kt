@@ -1,6 +1,5 @@
-package es.pedrazamiguez.splittrip.logging
+package es.pedrazamiguez.splittrip.core.logging
 
-import android.content.Context
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -12,20 +11,14 @@ interface LogContext {
 }
 
 class LogContextImpl(
-    private val context: Context,
     override val appVersion: String,
+    private val deviceIdProvider: () -> String,
     private val userIdProvider: () -> String?
 ) : LogContext {
     override val sessionId: String = UUID.randomUUID().toString()
 
     override val deviceId: String by lazy {
-        val prefs = context.getSharedPreferences("logging_prefs", Context.MODE_PRIVATE)
-        var id = prefs.getString("device_id", null)
-        if (id == null) {
-            id = UUID.randomUUID().toString()
-            prefs.edit().putString("device_id", id).apply()
-        }
-        id
+        deviceIdProvider()
     }
 
     override val userId: String

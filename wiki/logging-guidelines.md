@@ -24,5 +24,5 @@ Always use structured tags from `LogTag`:
 
 Never log plaintext PII (e.g. emails, names, billing totals). Use `maskEmail()` helper to sanitize email addresses before logging:
 ```kotlin
-logger.d("User email logged in: ${email.maskEmail()}")
+Timber.tag(LogTag.MVI).d("User email logged in: %s", email.maskEmail())
 ```

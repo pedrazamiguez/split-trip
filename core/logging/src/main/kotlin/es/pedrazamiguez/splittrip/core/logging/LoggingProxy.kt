@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.logging
+package es.pedrazamiguez.splittrip.core.logging
 
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -20,8 +20,8 @@ inline fun <reified T : Any> createLoggingProxy(target: T, tag: String): T {
                 if (continuation != null) {
                     val newArgs = Array<Any?>(args.size) { args[it] }
                     newArgs[newArgs.lastIndex] = LoggingContinuation(continuation, tag, methodName)
-                    val argsWithoutContinuation = args.take(args.size - 1).joinToString()
-                    Timber.tag(tag).i("Executing $methodName | Args: [$argsWithoutContinuation]")
+                    val argsInfo = formatArgsForLogging(args, isSuspending = true)
+                    Timber.tag(tag).i("Executing $methodName | $argsInfo")
 
                     try {
                         val result = method.invoke(target, *newArgs)
@@ -35,8 +35,8 @@ inline fun <reified T : Any> createLoggingProxy(target: T, tag: String): T {
                         throw cause
                     }
                 } else {
-                    val argsString = args?.joinToString() ?: "none"
-                    Timber.tag(tag).i("Executing $methodName | Args: [$argsString]")
+                    val argsInfo = formatArgsForLogging(args, isSuspending = false)
+                    Timber.tag(tag).i("Executing $methodName | $argsInfo")
 
                     try {
                         val result = method.invoke(target, *(args ?: emptyArray()))
@@ -51,6 +51,15 @@ inline fun <reified T : Any> createLoggingProxy(target: T, tag: String): T {
             }
         }
     ) as T
+}
+
+@PublishedApi
+internal fun formatArgsForLogging(args: Array<out Any>?, isSuspending: Boolean): String {
+    if (args == null) return "Args count: 0"
+    val actualArgs = if (isSuspending) args.take(args.size - 1) else args.toList()
+    val count = actualArgs.size
+    val types = actualArgs.map { it?.javaClass?.simpleName ?: "null" }.joinToString()
+    return "Args count: $count | Types: [$types]"
 }
 
 class LoggingContinuation<T>(

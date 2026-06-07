@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.di.domain
 
+import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.createLoggingProxy
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
@@ -14,8 +16,6 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.impl.CreateGroupUseCaseIm
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.DeleteGroupUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetGroupByIdUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetUserGroupsFlowUseCaseImpl
-import es.pedrazamiguez.splittrip.logging.LogTag
-import es.pedrazamiguez.splittrip.logging.createLoggingProxy
 import org.koin.dsl.module
 
 val groupsDomainModule = module {

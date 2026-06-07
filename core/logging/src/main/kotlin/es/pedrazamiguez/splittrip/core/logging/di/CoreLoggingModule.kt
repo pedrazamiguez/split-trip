@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.logging.di
+package es.pedrazamiguez.splittrip.core.logging.di
 
 import org.koin.dsl.module
 

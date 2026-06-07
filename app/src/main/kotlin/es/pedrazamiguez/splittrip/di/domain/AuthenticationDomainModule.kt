@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.di.domain
 
+import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.createLoggingProxy
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
@@ -11,8 +13,6 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInWithGoogleUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignOutUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UnregisterDeviceTokenUseCase
-import es.pedrazamiguez.splittrip.logging.LogTag
-import es.pedrazamiguez.splittrip.logging.createLoggingProxy
 import org.koin.dsl.module
 
 val authenticationDomainModule = module {
