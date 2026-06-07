@@ -1,10 +1,18 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.model
 
+import es.pedrazamiguez.splittrip.core.logging.maskEmail
+
 sealed interface AuthenticationUiEvent {
-    data class EmailChanged(val email: String) : AuthenticationUiEvent
-    data class PasswordChanged(val password: String) : AuthenticationUiEvent
+    data class EmailChanged(val email: String) : AuthenticationUiEvent {
+        override fun toString(): String = "EmailChanged(email=${email.maskEmail()})"
+    }
+    data class PasswordChanged(val value: String) : AuthenticationUiEvent {
+        override fun toString(): String = "PasswordChanged(input=***)"
+    }
     data object SubmitLogin : AuthenticationUiEvent
-    data class GoogleSignInResult(val idToken: String) : AuthenticationUiEvent
+    data class GoogleSignInResult(val idToken: String) : AuthenticationUiEvent {
+        override fun toString(): String = "GoogleSignInResult(idToken=***)"
+    }
 
     data object GoogleSignInFailed : AuthenticationUiEvent
 }

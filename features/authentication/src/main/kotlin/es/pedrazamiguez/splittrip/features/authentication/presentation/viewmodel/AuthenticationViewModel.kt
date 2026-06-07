@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.LogTag
-import es.pedrazamiguez.splittrip.core.logging.maskEmail
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
@@ -24,13 +23,7 @@ class AuthenticationViewModel(
     val uiState = _uiState.asStateFlow()
 
     fun onEvent(event: AuthenticationUiEvent, onLoginSuccess: () -> Unit) {
-        val eventLog = when (event) {
-            is AuthenticationUiEvent.EmailChanged -> "EmailChanged(email=${event.email.maskEmail()})"
-            is AuthenticationUiEvent.PasswordChanged -> "PasswordChanged(password=***)"
-            is AuthenticationUiEvent.GoogleSignInResult -> "GoogleSignInResult(idToken=***)"
-            else -> event.toString()
-        }
-        Timber.tag(LogTag.MVI).d("Event: $eventLog")
+        Timber.tag(LogTag.MVI).d("Event: $event")
 
         when (event) {
             is AuthenticationUiEvent.EmailChanged -> {
@@ -38,7 +31,7 @@ class AuthenticationViewModel(
             }
 
             is AuthenticationUiEvent.PasswordChanged -> {
-                _uiState.value = _uiState.value.copy(password = event.password)
+                _uiState.value = _uiState.value.copy(password = event.value)
             }
 
             AuthenticationUiEvent.SubmitLogin -> {
