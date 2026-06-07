@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +34,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.Lo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
@@ -91,6 +93,20 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     // compiler from recreating the lambda, which in turn prevents NavHost's
     // remember(startDestination, builder) from invalidating and recreating the graph.
     val currentOnboardingCompleted = rememberUpdatedState(onboardingCompleted)
+
+    DisposableEffect(navController) {
+        val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, arguments ->
+            Timber.tag(LogTag.NAVIGATION).i(
+                "Navigated to: %s | Arg keys: %s",
+                destination.route,
+                arguments?.keySet() ?: emptySet<String>()
+            )
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose {
+            navController.removeOnDestinationChangedListener(listener)
+        }
+    }
 
     val pillController = rememberTopPillController()
 
@@ -200,7 +216,7 @@ private fun replayPendingDeepLink(
     navController: NavHostController
 ) {
     deepLinkHolder.consumePendingDeepLink()?.let { uri ->
-        Timber.d("Replaying pending deep link: %s", uri)
+        Timber.d("Replaying pending deep link (scheme: %s)", uri.scheme)
         val deepLinkIntent = Intent(Intent.ACTION_VIEW, uri)
         navController.handleDeepLink(deepLinkIntent)
     }

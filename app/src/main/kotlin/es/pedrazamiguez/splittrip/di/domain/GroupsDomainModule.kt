@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.di.domain
 
+import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.createLoggingProxy
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
@@ -18,14 +20,42 @@ import org.koin.dsl.module
 
 val groupsDomainModule = module {
     factory<GroupMembershipService> {
-        GroupMembershipServiceImpl(
-            groupRepository = get<GroupRepository>(),
-            authenticationService = get<AuthenticationService>()
+        createLoggingProxy<GroupMembershipService>(
+            GroupMembershipServiceImpl(
+                groupRepository = get<GroupRepository>(),
+                authenticationService = get<AuthenticationService>()
+            ),
+            LogTag.SERVICE
         )
     }
-    factory<CreateGroupUseCase> { CreateGroupUseCaseImpl(groupRepository = get<GroupRepository>()) }
-    factory<EmailValidationService> { EmailValidationServiceImpl() }
-    factory<DeleteGroupUseCase> { DeleteGroupUseCaseImpl(groupRepository = get<GroupRepository>()) }
-    factory<GetGroupByIdUseCase> { GetGroupByIdUseCaseImpl(groupRepository = get<GroupRepository>()) }
-    factory<GetUserGroupsFlowUseCase> { GetUserGroupsFlowUseCaseImpl(groupRepository = get<GroupRepository>()) }
+    factory<CreateGroupUseCase> {
+        createLoggingProxy<CreateGroupUseCase>(
+            CreateGroupUseCaseImpl(groupRepository = get<GroupRepository>()),
+            LogTag.USE_CASE
+        )
+    }
+    factory<EmailValidationService> {
+        createLoggingProxy<EmailValidationService>(
+            EmailValidationServiceImpl(),
+            LogTag.SERVICE
+        )
+    }
+    factory<DeleteGroupUseCase> {
+        createLoggingProxy<DeleteGroupUseCase>(
+            DeleteGroupUseCaseImpl(groupRepository = get<GroupRepository>()),
+            LogTag.USE_CASE
+        )
+    }
+    factory<GetGroupByIdUseCase> {
+        createLoggingProxy<GetGroupByIdUseCase>(
+            GetGroupByIdUseCaseImpl(groupRepository = get<GroupRepository>()),
+            LogTag.USE_CASE
+        )
+    }
+    factory<GetUserGroupsFlowUseCase> {
+        createLoggingProxy<GetUserGroupsFlowUseCase>(
+            GetUserGroupsFlowUseCaseImpl(groupRepository = get<GroupRepository>()),
+            LogTag.USE_CASE
+        )
+    }
 }

@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.di.domain
 
+import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.createLoggingProxy
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
@@ -15,23 +17,32 @@ import org.koin.dsl.module
 
 val authenticationDomainModule = module {
     factory<SignInWithEmailUseCase> {
-        SignInWithEmailUseCaseImpl(
-            authenticationService = get<AuthenticationService>(),
-            userRepository = get<UserRepository>(),
-            registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
+        createLoggingProxy<SignInWithEmailUseCase>(
+            SignInWithEmailUseCaseImpl(
+                authenticationService = get<AuthenticationService>(),
+                userRepository = get<UserRepository>(),
+                registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
+            ),
+            LogTag.USE_CASE
         )
     }
     factory<SignInWithGoogleUseCase> {
-        SignInWithGoogleUseCaseImpl(
-            authenticationService = get<AuthenticationService>(),
-            registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
+        createLoggingProxy<SignInWithGoogleUseCase>(
+            SignInWithGoogleUseCaseImpl(
+                authenticationService = get<AuthenticationService>(),
+                registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
+            ),
+            LogTag.USE_CASE
         )
     }
     factory<SignOutUseCase> {
-        SignOutUseCaseImpl(
-            unregisterDeviceTokenUseCase = get<UnregisterDeviceTokenUseCase>(),
-            localDatabaseCleaner = get<LocalDatabaseCleanerService>(),
-            authenticationService = get<AuthenticationService>()
+        createLoggingProxy<SignOutUseCase>(
+            SignOutUseCaseImpl(
+                unregisterDeviceTokenUseCase = get<UnregisterDeviceTokenUseCase>(),
+                localDatabaseCleaner = get<LocalDatabaseCleanerService>(),
+                authenticationService = get<AuthenticationService>()
+            ),
+            LogTag.USE_CASE
         )
     }
 }
