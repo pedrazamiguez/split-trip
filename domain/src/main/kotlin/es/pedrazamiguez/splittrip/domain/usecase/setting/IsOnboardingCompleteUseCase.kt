@@ -1,9 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
-import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 import kotlinx.coroutines.flow.Flow
 
-class IsOnboardingCompleteUseCase(private val preferenceRepository: OnboardingPreferenceRepository) {
-
-    operator fun invoke(): Flow<Boolean> = preferenceRepository.isOnboardingComplete()
+interface IsOnboardingCompleteUseCase : UseCase {
+    operator fun invoke(): Flow<Boolean>
 }

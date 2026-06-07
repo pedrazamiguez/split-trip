@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.GetGroupExpenseConfigUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -20,7 +21,7 @@ class GetGroupExpenseConfigUseCaseTest {
     private val subunitRepository = mockk<SubunitRepository> {
         coEvery { getGroupSubunits(any()) } returns emptyList()
     }
-    private val useCase = GetGroupExpenseConfigUseCase(groupRepository, currencyRepository, subunitRepository)
+    private val useCase = GetGroupExpenseConfigUseCaseImpl(groupRepository, currencyRepository, subunitRepository)
 
     private val testCurrencies = listOf(
         Currency("EUR", "€", "Euro", 2),

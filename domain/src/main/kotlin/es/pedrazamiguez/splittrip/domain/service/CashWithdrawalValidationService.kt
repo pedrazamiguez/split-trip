@@ -4,101 +4,31 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import java.math.BigDecimal
 
-/**
- * Domain service responsible for validating cash withdrawal data.
- * Validation logic belongs in services, NOT in UseCases or ViewModels.
- */
-class CashWithdrawalValidationService {
+interface CashWithdrawalValidationService {
 
     companion object {
         const val MAX_TITLE_LENGTH = 100
         const val MAX_NOTES_LENGTH = 500
     }
 
-    fun validateAmountWithdrawn(amount: Long): ValidationResult = when {
-        amount <= 0 -> ValidationResult.Invalid(ValidationError.AMOUNT_MUST_BE_POSITIVE)
-        else -> ValidationResult.Valid
-    }
+    fun validateAmountWithdrawn(amount: Long): ValidationResult
 
-    /**
-     * Validates the optional title field.
-     * Title is optional — blank values are valid. Only max-length is enforced.
-     */
-    fun validateTitle(title: String?): ValidationResult = when {
-        title != null && title.length > MAX_TITLE_LENGTH ->
-            ValidationResult.Invalid(ValidationError.TITLE_TOO_LONG)
-        else -> ValidationResult.Valid
-    }
+    fun validateTitle(title: String?): ValidationResult
 
-    /**
-     * Validates the optional notes field.
-     * Notes are optional — blank values are valid. Only max-length is enforced.
-     */
-    fun validateNotes(notes: String?): ValidationResult = when {
-        notes != null && notes.length > MAX_NOTES_LENGTH ->
-            ValidationResult.Invalid(ValidationError.NOTES_TOO_LONG)
-        else -> ValidationResult.Valid
-    }
+    fun validateNotes(notes: String?): ValidationResult
 
-    fun validateDeductedBaseAmount(amount: Long): ValidationResult = when {
-        amount <= 0 -> ValidationResult.Invalid(ValidationError.DEDUCTED_AMOUNT_MUST_BE_POSITIVE)
-        else -> ValidationResult.Valid
-    }
+    fun validateDeductedBaseAmount(amount: Long): ValidationResult
 
-    fun validateCurrency(currency: String): ValidationResult = when {
-        currency.isBlank() -> ValidationResult.Invalid(ValidationError.CURRENCY_REQUIRED)
-        else -> ValidationResult.Valid
-    }
+    fun validateCurrency(currency: String): ValidationResult
 
-    fun validateExchangeRate(rate: BigDecimal): ValidationResult = when {
-        rate.compareTo(
-            BigDecimal.ZERO
-        ) <= 0 -> ValidationResult.Invalid(ValidationError.EXCHANGE_RATE_MUST_BE_POSITIVE)
-        else -> ValidationResult.Valid
-    }
+    fun validateExchangeRate(rate: BigDecimal): ValidationResult
 
-    /**
-     * Validates the withdrawal scope and subunit assignment.
-     *
-     * - When [withdrawalScope] is [PayerType.SUBUNIT], a valid [subunitId] must be provided,
-     *   the subunit must exist in the group, and [userId] must be a member of it.
-     * - When [withdrawalScope] is [PayerType.GROUP] or [PayerType.USER], [subunitId] must be null.
-     *
-     * @param withdrawalScope The intended scope of the withdrawal.
-     * @param subunitId The subunit ID (only for SUBUNIT scope).
-     * @param userId The user performing the withdrawal.
-     * @param groupSubunits All subunits in the group.
-     */
     fun validateWithdrawalScope(
         withdrawalScope: PayerType,
         subunitId: String?,
         userId: String,
         groupSubunits: List<Subunit>
-    ): ValidationResult = when (withdrawalScope) {
-        PayerType.SUBUNIT -> validateSubunitScope(subunitId, userId, groupSubunits)
-        else -> if (subunitId != null) {
-            ValidationResult.Invalid(ValidationError.INVALID_SUBUNIT_FOR_SCOPE)
-        } else {
-            ValidationResult.Valid
-        }
-    }
-
-    private fun validateSubunitScope(
-        subunitId: String?,
-        userId: String,
-        groupSubunits: List<Subunit>
-    ): ValidationResult {
-        if (subunitId.isNullOrBlank()) {
-            return ValidationResult.Invalid(ValidationError.SUBUNIT_REQUIRED)
-        }
-        val subunit = groupSubunits.find { it.id == subunitId }
-            ?: return ValidationResult.Invalid(ValidationError.SUBUNIT_NOT_FOUND)
-        return if (userId !in subunit.memberIds) {
-            ValidationResult.Invalid(ValidationError.USER_NOT_IN_SUBUNIT)
-        } else {
-            ValidationResult.Valid
-        }
-    }
+    ): ValidationResult
 
     sealed interface ValidationResult {
         data object Valid : ValidationResult

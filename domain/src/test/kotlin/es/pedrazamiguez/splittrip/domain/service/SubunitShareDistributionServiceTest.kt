@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service
 
+import es.pedrazamiguez.splittrip.domain.service.impl.SubunitShareDistributionServiceImpl
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -15,7 +16,7 @@ class SubunitShareDistributionServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = SubunitShareDistributionService()
+        service = SubunitShareDistributionServiceImpl()
     }
 
     @Nested

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.IsOnboardingCompleteUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 class IsOnboardingCompleteUseCaseTest {
 
     private val repository: OnboardingPreferenceRepository = mockk()
-    private val useCase = IsOnboardingCompleteUseCase(repository)
+    private val useCase = IsOnboardingCompleteUseCaseImpl(repository)
 
     @Test
     fun `returns true when onboarding is complete`() = runTest {

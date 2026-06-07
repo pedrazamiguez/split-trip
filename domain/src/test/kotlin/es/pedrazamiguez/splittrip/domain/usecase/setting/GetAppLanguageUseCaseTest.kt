@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetAppLanguageUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class GetAppLanguageUseCaseTest {
 
     private val repository: UserPreferenceRepository = mockk()
-    private val useCase = GetAppLanguageUseCase(repository)
+    private val useCase = GetAppLanguageUseCaseImpl(repository)
 
     @Test
     fun `returns app language flow from repository`() = runTest {

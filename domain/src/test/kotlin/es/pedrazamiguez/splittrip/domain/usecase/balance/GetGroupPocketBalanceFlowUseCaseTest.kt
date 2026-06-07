@@ -11,6 +11,8 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupPocketBalanceFlowUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import java.time.LocalDateTime
@@ -37,10 +39,11 @@ class GetGroupPocketBalanceFlowUseCaseTest {
         contributionRepository = mockk()
         expenseRepository = mockk()
         cashWithdrawalRepository = mockk()
-        useCase = GetGroupPocketBalanceFlowUseCase(
+        useCase = GetGroupPocketBalanceFlowUseCaseImpl(
             contributionRepository,
             expenseRepository,
-            cashWithdrawalRepository
+            cashWithdrawalRepository,
+            AddOnCalculationServiceImpl()
         )
     }
 

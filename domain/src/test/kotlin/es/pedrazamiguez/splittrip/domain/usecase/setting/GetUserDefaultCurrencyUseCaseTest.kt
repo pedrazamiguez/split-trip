@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetUserDefaultCurrencyUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class GetUserDefaultCurrencyUseCaseTest {
 
     private val repository: UserPreferenceRepository = mockk()
-    private val useCase = GetUserDefaultCurrencyUseCase(repository)
+    private val useCase = GetUserDefaultCurrencyUseCaseImpl(repository)
 
     @Test
     fun `returns default currency flow from repository`() = runTest {

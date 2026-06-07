@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.service
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.service.impl.GroupMembershipServiceImpl
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -28,7 +29,7 @@ class GroupMembershipServiceTest {
         groupRepository = mockk()
         authenticationService = mockk()
         every { authenticationService.requireUserId() } returns testUserId
-        service = GroupMembershipService(groupRepository, authenticationService)
+        service = GroupMembershipServiceImpl(groupRepository, authenticationService)
     }
 
     @Nested

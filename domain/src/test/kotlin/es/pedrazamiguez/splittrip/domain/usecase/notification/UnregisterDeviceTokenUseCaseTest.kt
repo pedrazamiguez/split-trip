@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.notification
 
 import es.pedrazamiguez.splittrip.domain.repository.NotificationRepository
+import es.pedrazamiguez.splittrip.domain.usecase.notification.impl.UnregisterDeviceTokenUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -19,7 +20,7 @@ class UnregisterDeviceTokenUseCaseTest {
     @BeforeEach
     fun setUp() {
         notificationRepository = mockk()
-        useCase = UnregisterDeviceTokenUseCase(
+        useCase = UnregisterDeviceTokenUseCaseImpl(
             notificationRepository = notificationRepository
         )
     }

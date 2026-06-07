@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.subunit
 
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.impl.GetGroupSubunitsUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class GetGroupSubunitsUseCaseTest {
 
     private val repository: SubunitRepository = mockk()
-    private val useCase = GetGroupSubunitsUseCase(repository)
+    private val useCase = GetGroupSubunitsUseCaseImpl(repository)
 
     @Test
     fun `invoke delegates to repository`() = runTest {

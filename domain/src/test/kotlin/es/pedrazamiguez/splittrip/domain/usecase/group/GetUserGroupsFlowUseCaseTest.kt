@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.group
 
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetUserGroupsFlowUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class GetUserGroupsFlowUseCaseTest {
 
     private val repository: GroupRepository = mockk()
-    private val useCase = GetUserGroupsFlowUseCase(repository)
+    private val useCase = GetUserGroupsFlowUseCaseImpl(repository)
 
     @Test
     fun `invoke delegates to repository`() {

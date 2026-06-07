@@ -7,6 +7,8 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -23,9 +25,9 @@ class ExpenseValidationServiceTest {
 
     @BeforeEach
     fun setUp() {
-        val calculatorService = ExpenseCalculatorService()
+        val calculatorService = ExpenseCalculatorServiceImpl()
         val splitCalculatorFactory = ExpenseSplitCalculatorFactory(calculatorService)
-        service = ExpenseValidationService(splitCalculatorFactory)
+        service = ExpenseValidationServiceImpl(splitCalculatorFactory)
     }
 
     @Nested

@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CashWithdrawalValidationService
 import es.pedrazamiguez.splittrip.domain.service.CashWithdrawalValidationService.ValidationResult
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.AddCashWithdrawalUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -56,7 +57,7 @@ class AddCashWithdrawalUseCaseTest {
         every { validationService.validateDeductedBaseAmount(any()) } returns ValidationResult.Valid
         every { validationService.validateCurrency(any()) } returns ValidationResult.Valid
         every { validationService.validateExchangeRate(any()) } returns ValidationResult.Valid
-        useCase = AddCashWithdrawalUseCase(
+        useCase = AddCashWithdrawalUseCaseImpl(
             cashWithdrawalRepository,
             validationService,
             groupMembershipService,

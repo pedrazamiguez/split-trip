@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.DownloadReceiptUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -22,7 +23,7 @@ class DownloadReceiptUseCaseTest {
     fun setUp() {
         receiptStorageService = mockk()
         expenseRepository = mockk(relaxed = true)
-        useCase = DownloadReceiptUseCase(receiptStorageService, expenseRepository)
+        useCase = DownloadReceiptUseCaseImpl(receiptStorageService, expenseRepository)
     }
 
     @Test

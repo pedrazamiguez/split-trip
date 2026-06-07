@@ -36,8 +36,39 @@ class ArchitectureTest {
         }
 
         @Test
-        @DisplayName("Top-level use case classes must end with 'UseCase'")
-        fun `use cases must end with UseCase`() {
+        @DisplayName("Top-level domain service implementation classes must end with 'ServiceImpl'")
+        fun `domain service implementations must end with ServiceImpl`() {
+            domainProductionScope
+                .classes()
+                .filter { it.resideInPackage("..domain.service..impl..") }
+                .filter { it.isTopLevel }
+                .assertTrue { it.hasNameEndingWith("ServiceImpl") }
+        }
+
+        @Test
+        @DisplayName("Top-level use case interfaces must end with 'UseCase'")
+        fun `use case interfaces must end with UseCase`() {
+            domainProductionScope
+                .interfaces()
+                .filter { it.resideInPackage("..domain.usecase..") }
+                .filter { it.isTopLevel }
+                // Exclude the .support subpackage — it holds result/attribution types and
+                // distribution helpers that are co-located for cohesion but are NOT use cases
+                // (e.g. WithdrawalResult, ExpenseResult, BalanceAttribution helpers).
+                .filter { !it.resideInPackage("..domain.usecase..support") }
+                // Exclude the .strategy subpackage — it holds Strategy-pattern implementations
+                // (e.g. PersistExpenseStrategy, BasePersistExpenseStrategy) that are internal
+                // collaborators of use cases, not use cases themselves.
+                .filter { !it.resideInPackage("..domain.usecase..strategy") }
+                // Exclude the .factory subpackage — it holds Factory classes that create strategy
+                // instances (e.g. PersistExpenseStrategyFactory). Factories use their own suffix.
+                .filter { !it.resideInPackage("..domain.usecase..factory") }
+                .assertTrue { it.hasNameEndingWith("UseCase") }
+        }
+
+        @Test
+        @DisplayName("Top-level use case implementation classes must end with 'UseCaseImpl'")
+        fun `use case implementations must end with UseCaseImpl`() {
             domainProductionScope
                 .classes()
                 .filter { it.resideInPackage("..domain.usecase..") }
@@ -53,7 +84,7 @@ class ArchitectureTest {
                 // Exclude the .factory subpackage — it holds Factory classes that create strategy
                 // instances (e.g. PersistExpenseStrategyFactory). Factories use their own suffix.
                 .filter { !it.resideInPackage("..domain.usecase..factory") }
-                .assertTrue { it.hasNameEndingWith("UseCase") }
+                .assertTrue { it.hasNameEndingWith("UseCaseImpl") }
         }
 
         @Test

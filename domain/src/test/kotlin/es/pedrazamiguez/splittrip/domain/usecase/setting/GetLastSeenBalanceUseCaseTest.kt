@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetLastSeenBalanceUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 class GetLastSeenBalanceUseCaseTest {
 
     private val repository: BalancePreferenceRepository = mockk()
-    private val useCase = GetLastSeenBalanceUseCase(repository)
+    private val useCase = GetLastSeenBalanceUseCaseImpl(repository)
 
     @Test
     fun `returns balance flow from repository`() = runTest {

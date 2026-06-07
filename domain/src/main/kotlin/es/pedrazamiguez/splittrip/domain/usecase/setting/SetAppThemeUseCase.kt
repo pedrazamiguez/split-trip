@@ -1,10 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
-import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class SetAppThemeUseCase(private val preferenceRepository: UserPreferenceRepository) {
-
-    suspend operator fun invoke(themeCode: String) {
-        preferenceRepository.setAppTheme(themeCode)
-    }
+interface SetAppThemeUseCase : UseCase {
+    suspend operator fun invoke(themeCode: String)
 }

@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.auth
 
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignOutUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UnregisterDeviceTokenUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -25,7 +26,7 @@ class SignOutUseCaseTest {
         unregisterDeviceTokenUseCase = mockk()
         localDatabaseCleaner = mockk()
         authenticationService = mockk()
-        useCase = SignOutUseCase(
+        useCase = SignOutUseCaseImpl(
             unregisterDeviceTokenUseCase = unregisterDeviceTokenUseCase,
             localDatabaseCleaner = localDatabaseCleaner,
             authenticationService = authenticationService

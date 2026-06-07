@@ -10,7 +10,9 @@ import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExchangeRateCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -86,15 +88,15 @@ class CurrencyEventHandlerTest {
     fun setUp() {
         previewCashExchangeRateUseCase = mockk()
         getExchangeRateUseCase = mockk(relaxed = true)
-        expenseCalculatorService = ExpenseCalculatorService()
-        exchangeRateCalculationService = ExchangeRateCalculationService()
+        expenseCalculatorService = ExpenseCalculatorServiceImpl()
+        exchangeRateCalculationService = ExchangeRateCalculationServiceImpl()
 
         val localeProvider = mockk<LocaleProvider>()
         val resourceProvider = mockk<ResourceProvider>(relaxed = true)
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
         val formattingHelper = FormattingHelper(localeProvider)
-        val splitPreviewService = SplitPreviewService()
+        val splitPreviewService = SplitPreviewServiceImpl()
 
         withdrawalPoolSelectionDelegate = mockk(relaxed = true)
 

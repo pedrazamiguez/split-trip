@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service
 
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.stream.Stream
@@ -16,7 +17,7 @@ import org.junit.jupiter.params.provider.MethodSource
 
 class ExpenseCalculatorServiceTest {
 
-    private val service = ExpenseCalculatorService()
+    private val service = ExpenseCalculatorServiceImpl()
 
     // ── centsToBigDecimal ────────────────────────────────────────────────
 

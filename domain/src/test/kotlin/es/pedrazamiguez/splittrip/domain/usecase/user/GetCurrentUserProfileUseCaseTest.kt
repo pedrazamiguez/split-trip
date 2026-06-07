@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.user
 
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
+import es.pedrazamiguez.splittrip.domain.usecase.user.impl.GetCurrentUserProfileUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -29,7 +30,7 @@ class GetCurrentUserProfileUseCaseTest {
     @BeforeEach
     fun setUp() {
         userRepository = mockk()
-        useCase = GetCurrentUserProfileUseCase(userRepository = userRepository)
+        useCase = GetCurrentUserProfileUseCaseImpl(userRepository = userRepository)
     }
 
     @Nested

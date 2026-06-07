@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.balance
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteCashWithdrawalUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -27,7 +28,7 @@ class DeleteCashWithdrawalUseCaseTest {
         cashWithdrawalRepository = mockk()
         groupMembershipService = mockk()
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
-        useCase = DeleteCashWithdrawalUseCase(
+        useCase = DeleteCashWithdrawalUseCaseImpl(
             cashWithdrawalRepository = cashWithdrawalRepository,
             groupMembershipService = groupMembershipService
         )

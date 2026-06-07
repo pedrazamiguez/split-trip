@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.currency
 
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
+import es.pedrazamiguez.splittrip.domain.usecase.currency.impl.GetSupportedCurrenciesUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class GetSupportedCurrenciesUseCaseTest {
 
     private val currencyRepository = mockk<CurrencyRepository>()
-    private val getSupportedCurrenciesUseCase = GetSupportedCurrenciesUseCase(currencyRepository)
+    private val getSupportedCurrenciesUseCase = GetSupportedCurrenciesUseCaseImpl(currencyRepository)
 
     @Test
     fun `returns currencies sorted with common currencies first`() = runTest {

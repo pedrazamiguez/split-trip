@@ -6,26 +6,29 @@ import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInWithEmailUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInWithGoogleUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignOutUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UnregisterDeviceTokenUseCase
 import org.koin.dsl.module
 
 val authenticationDomainModule = module {
-    factory {
-        SignInWithEmailUseCase(
+    factory<SignInWithEmailUseCase> {
+        SignInWithEmailUseCaseImpl(
             authenticationService = get<AuthenticationService>(),
             userRepository = get<UserRepository>(),
             registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
         )
     }
-    factory {
-        SignInWithGoogleUseCase(
+    factory<SignInWithGoogleUseCase> {
+        SignInWithGoogleUseCaseImpl(
             authenticationService = get<AuthenticationService>(),
             registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
         )
     }
-    factory {
-        SignOutUseCase(
+    factory<SignOutUseCase> {
+        SignOutUseCaseImpl(
             unregisterDeviceTokenUseCase = get<UnregisterDeviceTokenUseCase>(),
             localDatabaseCleaner = get<LocalDatabaseCleanerService>(),
             authenticationService = get<AuthenticationService>()

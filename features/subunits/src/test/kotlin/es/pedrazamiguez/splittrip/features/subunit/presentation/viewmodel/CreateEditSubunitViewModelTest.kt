@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.SubunitShareDistributionService
+import es.pedrazamiguez.splittrip.domain.service.impl.SubunitShareDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.CreateSubunitUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -93,7 +94,7 @@ class CreateEditSubunitViewModelTest {
         getGroupSubunitsFlowUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         subunitUiMapper = mockk()
-        shareDistributionService = SubunitShareDistributionService()
+        shareDistributionService = SubunitShareDistributionServiceImpl()
     }
 
     @AfterEach

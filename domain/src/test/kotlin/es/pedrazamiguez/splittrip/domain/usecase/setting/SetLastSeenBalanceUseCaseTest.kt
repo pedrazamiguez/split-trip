@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetLastSeenBalanceUseCaseImpl
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.Test
 class SetLastSeenBalanceUseCaseTest {
 
     private val repository: BalancePreferenceRepository = mockk(relaxed = true)
-    private val useCase = SetLastSeenBalanceUseCase(repository)
+    private val useCase = SetLastSeenBalanceUseCaseImpl(repository)
 
     @Test
     fun `delegates to repository with correct parameters`() = runTest {

@@ -7,30 +7,34 @@ import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPre
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UnregisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.notification.impl.GetNotificationPreferencesUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.notification.impl.RegisterDeviceTokenUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.notification.impl.UnregisterDeviceTokenUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.notification.impl.UpdateNotificationPreferenceUseCaseImpl
 import org.koin.dsl.module
 
 val notificationsDomainModule = module {
     factory<RegisterDeviceTokenUseCase> {
-        RegisterDeviceTokenUseCase(
+        RegisterDeviceTokenUseCaseImpl(
             deviceRepository = get<DeviceRepository>(),
             notificationRepository = get<NotificationRepository>()
         )
     }
 
     factory<UnregisterDeviceTokenUseCase> {
-        UnregisterDeviceTokenUseCase(
+        UnregisterDeviceTokenUseCaseImpl(
             notificationRepository = get<NotificationRepository>()
         )
     }
 
     factory<GetNotificationPreferencesUseCase> {
-        GetNotificationPreferencesUseCase(
+        GetNotificationPreferencesUseCaseImpl(
             repository = get<NotificationPreferencesRepository>()
         )
     }
 
     factory<UpdateNotificationPreferenceUseCase> {
-        UpdateNotificationPreferenceUseCase(
+        UpdateNotificationPreferenceUseCaseImpl(
             repository = get<NotificationPreferencesRepository>()
         )
     }

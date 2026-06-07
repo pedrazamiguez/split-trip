@@ -1,10 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.usecase.notification
 
 import es.pedrazamiguez.splittrip.domain.enums.NotificationCategory
-import es.pedrazamiguez.splittrip.domain.repository.NotificationPreferencesRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class UpdateNotificationPreferenceUseCase(private val repository: NotificationPreferencesRepository) {
-    suspend operator fun invoke(category: NotificationCategory, enabled: Boolean) {
-        repository.updatePreference(category, enabled)
-    }
+interface UpdateNotificationPreferenceUseCase : UseCase {
+    suspend operator fun invoke(category: NotificationCategory, enabled: Boolean)
 }

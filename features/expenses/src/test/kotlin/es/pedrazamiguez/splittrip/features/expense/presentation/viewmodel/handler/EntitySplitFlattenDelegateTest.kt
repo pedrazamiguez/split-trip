@@ -2,7 +2,9 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import java.math.BigDecimal
 import kotlinx.collections.immutable.persistentListOf
@@ -44,8 +46,8 @@ class EntitySplitFlattenDelegateTest {
     @BeforeEach
     fun setUp() {
         delegate = EntitySplitFlattenDelegate(
-            splitPreviewService = SplitPreviewService(),
-            remainderDistributionService = RemainderDistributionService()
+            splitPreviewService = SplitPreviewServiceImpl(),
+            remainderDistributionService = RemainderDistributionServiceImpl()
         )
     }
 

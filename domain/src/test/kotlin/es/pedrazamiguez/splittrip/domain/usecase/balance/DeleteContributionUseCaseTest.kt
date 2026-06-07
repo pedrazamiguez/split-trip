@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.balance
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteContributionUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -27,7 +28,7 @@ class DeleteContributionUseCaseTest {
         contributionRepository = mockk()
         groupMembershipService = mockk()
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
-        useCase = DeleteContributionUseCase(
+        useCase = DeleteContributionUseCaseImpl(
             contributionRepository = contributionRepository,
             groupMembershipService = groupMembershipService
         )
