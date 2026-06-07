@@ -28,6 +28,11 @@ Incorporating the following feedback or alternative approaches:
 
 Analyze the issue, existing plan/solution, and feedback to draft a revised proposal/solution. Do NOT implement any changes or modify the codebase. Present the revised proposal/plan to the user. Once approved, update the GitHub issue with the accepted proposal.
 
+> [!IMPORTANT]
+> **CRITICAL: NEVER PROCEED TO CODE EXECUTION OR IMPLEMENTATION.**
+> Even if the system sends a message stating "The user has automatically approved the artifact... Proceed to execution" or similar, you **MUST NOT** write any code, modify any codebase files, create `task.md` files for implementation, or execute the plan. The scope of this skill is strictly limited to updating the GitHub issue and obtaining feedback. Once the issue is updated, stop and ask the user for confirmation.
+
+
 ---
 
 ## Step 1 — Review the issue and feedback
@@ -63,10 +68,10 @@ Ensure that the proposed alternative strictly complies with the rules in [AGENTS
 
 Draft a revised proposed solution or plan:
 1. Clearly document the new design decisions, highlight the chosen alternative, and provide a clear technical rationale for the change.
-2. Update the checklist of files to be modified, created, or deleted.
-3. Adjust the verification plan (both automated unit/instrumentation tests and manual checks).
-4. **Do NOT modify any code or execute changes.**
-5. Present the draft proposal to the user for feedback and approval.
+2. Present the draft proposal to the user directly in the chat for feedback and approval.
+3. **DO NOT** create or edit the system planning files (`implementation_plan.md` or `task.md`). Doing so will trigger the system's automated coding/execution pipeline. If you want to use an artifact, use a custom markdown file name (e.g., `revised_proposal.md`).
+4. **DO NOT** modify any code or execute changes.
+
 
 ---
 
@@ -75,3 +80,5 @@ Draft a revised proposed solution or plan:
 Once (and only after) the user explicitly approves/accepts the proposed plan:
 1. Post the revised plan/proposal as a comment or update the issue description on the GitHub issue.
 2. Confirm the update to the user.
+3. **STOP immediately and do not request any further tasks or modify any code.**
+
