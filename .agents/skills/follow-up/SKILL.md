@@ -42,15 +42,15 @@ Because this follow-up may be initiated in a new conversation without prior cont
 
 ---
 
-## Step 1 — Read Everything First (mandatory, no shortcuts)
+## Step 1 — Load issue context
 
-Read and analyze all of the following before doing any implementation planning or writing code:
-1. **GitHub Issue & Comments**: Fetch, read, and analyze the referenced GitHub issue `$ISSUE_NUMBER` and all its comment threads using the `issue_read` tool (owner: `pedrazamiguez`, repo: `split-trip`, methods: `get` and `get_comments`) to understand the complete historical context and initial implementation.
-2. **Project Guidelines**:
-   - [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)
-   - [AGENTS.md](../../../AGENTS.md)
-   - [DESIGN.md](../../../DESIGN.md)
-3. **Documentation**: All relevant `wiki/*.md` articles (especially [wiki/core-services-catalog.md](../../../wiki/core-services-catalog.md) and [wiki/offline-first-architecture.md](../../../wiki/offline-first-architecture.md)).
+1. Fetch issue `$ISSUE_NUMBER` (`get` + `get_comments`) and all its comment threads to understand the complete historical context and initial implementation.
+2. Read targeted wiki articles ONLY if the follow-up domain requires it:
+   > - Decimal/currency math → `wiki/multi-currency-logic-and-snapshot-model.md`
+   > - Sync / offline patterns → `wiki/offline-first-architecture.md`
+   > - UI components / design tokens → `wiki/horizon-narrative-design-language.md`
+   > - Reusable services or components → `wiki/core-services-catalog.md` (relevant section only)
+   > - Data mapping → `wiki/data-mapping-strategy-and-architecture.md`
 
 ---
 
@@ -68,7 +68,7 @@ If the triage in Step 2 reveals that code changes are required, you MUST automat
 
 The comment must include:
 - Summary of proposed changes per file
-- Architecture compliance checklist (from [AGENTS.md](../../../AGENTS.md)) confirmed for each new/modified component
+   - Architecture compliance checklist confirmed for each new/modified component
 
 Stick to the plan. If the plan needs to change, update the comment on the issue (also automatically using the github-mcp-server).
 
@@ -92,14 +92,15 @@ If the result exceeds 600 lines, refactor immediately — do not move on.
 
 ## Step 5 — Implement
 
-Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md) strictly.
-
-**Core Reminders:**
-- **No Pragmatic Patches:** Write clean, modular, production-ready code. Do not use temporary workarounds.
-- **BigDecimal Math:** Use `BigDecimal` with an explicit scale and rounding mode for all precision-sensitive calculations (never `Double` or `Float`).
-- **Offline-First Protocol:** Generate UUIDs and timestamps locally, write to Room first, and sync to Firestore in the background using the reusable sync delegates.
-- **Design System:** Comply with the "Horizon Narrative" guidelines (no raw 1px borders, Outfit/Inter/Jakarta Sans typography, tonal layering, and bottom padding via `LocalBottomPadding` on tab screens).
-- **Commenting Policy:** Comment the *why*, never the *what*. Avoid redundant comments.
+REQUIREMENT: No pragmatic patches. Clean architecture only.
+REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
+FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
+REQUIREMENT: Offline-first — Room write first, cloud sync via reusable delegates.
+REQUIREMENT: Production source files ≤ 600 lines.
+REQUIREMENT: Formatting in UiMappers only. Never in ViewModels or Domain Services.
+REQUIREMENT: Comment the *why*, not the *what*. No redundant comments.
 
 ---
 

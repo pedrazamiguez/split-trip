@@ -32,15 +32,14 @@ Before writing any code or performing checks, verify your local Git state:
 
 ---
 
-## Step 1 — Read everything first (mandatory, no shortcuts)
+## Step 1 — Load issue context
 
-Read each of the following before writing a single line of code:
-
-- [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)
-- [AGENTS.md](../../../AGENTS.md)
-- [DESIGN.md](../../../DESIGN.md)
-- All relevant `wiki/*.md` articles (especially [wiki/core-services-catalog.md](../../../wiki/core-services-catalog.md))
-- The issue itself, including ALL parent/linked issues, every comment thread, and specifically the posted implementation plan.
+1. Fetch issue `$ISSUE_NUMBER` (`get` + `get_comments`), all linked issues, and every comment thread.
+2. Read targeted wiki articles ONLY if the implementation plan or issue domain requires it:
+   > - Decimal/currency math → `wiki/multi-currency-logic-and-snapshot-model.md`
+   > - Sync / offline patterns → `wiki/offline-first-architecture.md`
+   > - UI components → `wiki/core-services-catalog.md` §A, `wiki/horizon-narrative-design-language.md`
+   > - Domain services → `wiki/core-services-catalog.md` §B–§G (relevant entry only)
 
 ---
 
@@ -78,12 +77,15 @@ If the result exceeds 600 lines, refactor immediately — do not move on.
 
 Implement the technical solution by sticking strictly to the posted implementation plan. Do not perform any deep design analysis or suggest new technical directions.
 
-Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md) strictly. Ensure you adhere to the project quality and style standards:
-- **No Pragmatic Patches**: Write clean, modular, production-ready code. Do not use temporary workarounds.
-- **BigDecimal Math**: Use `BigDecimal` with an explicit scale and rounding mode for all precision-sensitive calculations (never `Double` or `Float`).
-- **Offline-First Protocol**: Generate UUIDs and timestamps locally, write to Room first, and sync to Firestore in the background using the reusable sync delegates.
-- **Design System**: Comply with the "Horizon Narrative" guidelines (no raw 1px borders, Outfit/Inter/Jakarta Sans typography, tonal layering, and bottom padding via `LocalBottomPadding` on tab screens).
-- **Commenting Policy**: Comment the *why*, never the *what*. Avoid redundant comments. Do not reference GitHub issues or documentation sections in comments to simplify maintenance.
+REQUIREMENT: No pragmatic patches. Clean architecture only.
+REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
+FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
+REQUIREMENT: Offline-first — Room write first, cloud sync via reusable delegates.
+REQUIREMENT: Production source files ≤ 600 lines.
+REQUIREMENT: Formatting in UiMappers only. Never in ViewModels or Domain Services.
+REQUIREMENT: Comment the *why*, not the *what*. No redundant comments.
 
 ---
 

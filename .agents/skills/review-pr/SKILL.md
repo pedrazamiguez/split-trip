@@ -37,7 +37,7 @@ Perform the following operations to fetch the PR changes and inspect the files m
 
 ## Step 2 — Architecture Check (Strict Gating)
 
-For each modified or new file in the diff, perform the following validation checks to enforce the constraints in [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md):
+For each modified or new file in the diff, perform the following validation checks:
 
 1. **Precision-Sensitive Math (`BigDecimal` only)**:
    - Search the diff/files for any usage of `Double` or `Float` representing currency amounts, shares, exchange rates, or percent splits.

@@ -22,40 +22,36 @@ Plan a technical solution for this issue:
 
 ---
 
-## Your Job
-
-Investigate the issue, linked issues, comments, codebase context, and architectural constraints to formulate a detailed technical solution (step-by-step implementation plan). Present this plan to the user. Once the user approves, post the implementation plan as a comment on the GitHub issue using the `add_issue_comment` tool from the `github-mcp-server`.
-
 > [!IMPORTANT]
 > **CRITICAL: DO NOT WRITE ANY CODE OR MAKE CODEBASE CHANGES.**
 > This skill's scope ends with posting the approved plan to the GitHub issue. Under no circumstances should you edit or create production source code files, run modifying commands, or begin implementing the plan.
 
 ---
 
-## Step 1 — Read everything first (mandatory, no shortcuts)
+## Step 1 — Load issue context
 
-Read each of the following before formulating your plan:
-
-- [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)
-- [AGENTS.md](../../../AGENTS.md)
-- [DESIGN.md](../../../DESIGN.md)
-- All relevant `wiki/*.md` articles (especially [wiki/core-services-catalog.md](../../../wiki/core-services-catalog.md))
-- The GitHub issue itself, including ALL comments and any linked/parent issues
+1. Fetch issue `$ISSUE_NUMBER` (`get` + `get_comments`), all parent/linked issues, and every comment thread.
+2. Read targeted wiki articles ONLY if the task domain requires it:
+   > - Decimal/currency math → `wiki/multi-currency-logic-and-snapshot-model.md`
+   > - Sync / offline patterns → `wiki/offline-first-architecture.md`
+   > - UI components / design tokens → `wiki/horizon-narrative-design-language.md`
+   > - Reusable services or components → `wiki/core-services-catalog.md` (relevant section only)
+   > - Data mapping → `wiki/data-mapping-strategy-and-architecture.md`
 
 ---
 
 ## Step 2 — Formulate the Technical Solution
 
-Act as a professional Android Tech Lead. Design a clean, robust, and detailed implementation plan.
-
-Your plan must adhere strictly to the guidelines in [AGENTS.md](../../../AGENTS.md):
-1. **Clean Architecture & Modules**: Ensure feature isolation. ViewModels must never depend on Repositories or context. Features only see `:domain` and `:core`.
-2. **MVI Triad**: Define `UiState` (immutable list/data class), `UiEvent` (sealed interface), and `UiAction` (side effects via Flow).
-3. **Hot Flows**: Use stateIn with `AppConstants.FLOW_RETENTION_TIME` and `AppConstants.FLOW_REPLAY_EXPIRATION`.
-4. **BigDecimal & Decimal Precision**: Use `BigDecimal` with explicit `RoundingMode` and `scale` for all domain math. Do not use Float or Double.
-5. **Offline-First Data Flow**: Reconcile local database changes using Room first, then sync to Cloud. Utilize the reusable sync delegates (e.g. `subscribeAndReconcile`, `syncCreateToCloud`, `KeyedSubscriptionTracker`) in `:data`.
-6. **File-Size Guards**: Ensure no production source file will exceed the 600-line limit. Plan class extractions (Event Handlers, Delegates) in advance.
-7. **Design System (Horizon)**: Utilize the Horizon theme wrappers, design system components, and proper bottom padding/decorative icon accessibility standards.
+REQUIREMENT: No pragmatic patches. Clean architecture only.
+REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+REQUIREMENT: All decimal math → BigDecimal with explicit RoundingMode and scale.
+FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
+REQUIREMENT: Offline-first — Room write first; cloud sync in background via reusable delegates.
+REQUIREMENT: IDs and timestamps generated locally (UUID + System.currentTimeMillis()).
+REQUIREMENT: Production source files ≤ 600 lines. Extract handlers/delegates before going over.
+REQUIREMENT: Formatting in UiMappers only (via LocaleProvider). Never in ViewModels or Domain Services.
+REQUIREMENT: Tab screens use LocalBottomPadding.current for all scrollable lists, FABs, bottom buttons.
 
 Draft a detailed, step-by-step implementation plan including:
 - A clear summary of the problem and approach.

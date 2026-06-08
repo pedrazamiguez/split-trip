@@ -56,11 +56,13 @@ Perform a comparative analysis of the original approach against the proposed alt
 
 ## Step 3 — Align with Clean Architecture and project guidelines
 
-Ensure that the proposed alternative strictly complies with the rules in [AGENTS.md](../../../AGENTS.md):
-1. **Module Visibility**: Confirm that the new approach does not violate feature isolation (features must not see other features or `:data`).
-2. **Triad Pattern**: Verify that ViewModels do not inject Repositories and only interact via Use Cases, Mappers, or Domain Services.
-3. **Event Handlers & Delegates**: If the complexity of any handler class exceeds 200 lines, extract event handling into dedicated Event Handler classes.
-4. **File-Size Guards**: Ensure that none of the modified files will exceed the 600-line hard limit.
+Ensure the proposed alternative complies with all architecture constraints:
+
+REQUIREMENT: Features cannot see other features or `:data`. Only `:domain` and `:core` are visible.
+REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+CHECK: If any handler class exceeds ~200 lines, extract event handling into dedicated Event Handler classes.
+CHECK: None of the modified files will exceed the 600-line hard limit.
 
 ---
 

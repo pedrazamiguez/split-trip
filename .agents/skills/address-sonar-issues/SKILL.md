@@ -64,12 +64,13 @@ wc -l <path/to/file.kt>
 
 Implement code modifications and unit tests, adhering strictly to all project architecture constraints:
 
-1. **Architecture Constraints (from [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md)):**
-   - ViewModels MUST NOT inject Repositories (only inject UseCases, Mappers, and Domain Services).
-   - ViewModels MUST NOT inject `Context`, `LocaleProvider`, or other ViewModels.
-   - All precision-sensitive decimal calculations MUST use `BigDecimal` with explicit scale and rounding mode (never `Double` or `Float`).
-   - Mappers handle all formatting and locale-aware translations. Formatters and formatting logic belong in presentation mappers, never in ViewModels or Domain Services.
-   - Tab screens must apply `LocalBottomPadding` to avoid layout obstruction by the bottom nav bar.
+1. **Architecture Constraints:**
+   REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+   FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+   REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
+   FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
+   REQUIREMENT: Formatting in UiMappers only (via LocaleProvider). Never in ViewModels or Domain Services.
+   REQUIREMENT: Tab screens apply LocalBottomPadding to avoid layout obstruction by the bottom nav bar.
 2. **True Offline-First Protocol:**
    - Write to Room local database first (immediate UI update).
    - Generate UUIDs and timestamps (`createdAt = System.currentTimeMillis()`) locally in the Repository or UseCase.
