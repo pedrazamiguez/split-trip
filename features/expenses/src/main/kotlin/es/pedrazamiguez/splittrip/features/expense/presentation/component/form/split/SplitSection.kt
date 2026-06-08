@@ -22,6 +22,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
  * Complete split configuration section for the Add Expense form.
  * Combines the split type selector, per-user editor, and validation error display.
  */
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Unit, modifier: Modifier = Modifier) {
     val selectedSplitType = uiState.selectedSplitType
@@ -52,115 +53,78 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
 
         if (uiState.isSubunitMode && uiState.entitySplits.isNotEmpty()) {
             // ── Subunit mode: Entity-level splits ───────────────
-            SubunitModeSplitCard(
-                uiState = uiState,
+            EntitySplitEditor(
+                entitySplits = uiState.entitySplits,
                 isEqualMode = isEqualMode,
                 isPercentMode = isPercentMode,
-                onEvent = onEvent
+                availableSplitTypes = uiState.availableSplitTypes,
+                events = EntitySplitEditorEvents(
+                    onAmountChanged = { entityId, amount ->
+                        onEvent(AddExpenseUiEvent.EntitySplitAmountChanged(entityId, amount))
+                    },
+                    onPercentageChanged = { entityId, percentage ->
+                        onEvent(AddExpenseUiEvent.EntitySplitPercentageChanged(entityId, percentage))
+                    },
+                    onExcludedToggled = { entityId ->
+                        onEvent(AddExpenseUiEvent.EntitySplitExcludedToggled(entityId))
+                    },
+                    onShareLockToggled = { entityId ->
+                        onEvent(AddExpenseUiEvent.EntityShareLockToggled(entityId))
+                    },
+                    onAccordionToggled = { entityId ->
+                        onEvent(AddExpenseUiEvent.EntityAccordionToggled(entityId))
+                    },
+                    onIntraSubunitSplitTypeChanged = { subunitId, splitTypeId ->
+                        onEvent(AddExpenseUiEvent.IntraSubunitSplitTypeChanged(subunitId, splitTypeId))
+                    },
+                    onIntraSubunitAmountChanged = { subunitId, userId, amount ->
+                        onEvent(AddExpenseUiEvent.IntraSubunitAmountChanged(subunitId, userId, amount))
+                    },
+                    onIntraSubunitPercentageChanged = { subunitId, userId, percentage ->
+                        onEvent(AddExpenseUiEvent.IntraSubunitPercentageChanged(subunitId, userId, percentage))
+                    },
+                    onIntraSubunitShareLockToggled = { subunitId, userId ->
+                        onEvent(AddExpenseUiEvent.IntraSubunitShareLockToggled(subunitId, userId))
+                    }
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
         } else if (uiState.splits.isNotEmpty()) {
             // ── Flat mode: Per-member splits ─────────────────────
-            FlatModeSplitCard(
-                uiState = uiState,
+            SplitEditor(
+                splits = uiState.splits,
                 isEqualMode = isEqualMode,
                 isPercentMode = isPercentMode,
-                onEvent = onEvent
+                onAmountChanged = { userId, amount ->
+                    onEvent(AddExpenseUiEvent.SplitAmountChanged(userId, amount))
+                },
+                onPercentageChanged = { userId, percentage ->
+                    onEvent(AddExpenseUiEvent.SplitPercentageChanged(userId, percentage))
+                },
+                onExcludedToggled = { userId ->
+                    onEvent(AddExpenseUiEvent.SplitExcludedToggled(userId))
+                },
+                onShareLockToggled = { userId ->
+                    onEvent(AddExpenseUiEvent.SplitShareLockToggled(userId))
+                },
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
         // Split validation error
         uiState.splitError?.let { errorUiText ->
-            SplitValidationError(
-                errorText = errorUiText.asString()
-            )
-        }
-    }
-}
-
-@Composable
-private fun SubunitModeSplitCard(
-    uiState: AddExpenseUiState,
-    isEqualMode: Boolean,
-    isPercentMode: Boolean,
-    onEvent: (AddExpenseUiEvent) -> Unit
-) {
-    EntitySplitEditor(
-        entitySplits = uiState.entitySplits,
-        isEqualMode = isEqualMode,
-        isPercentMode = isPercentMode,
-        availableSplitTypes = uiState.availableSplitTypes,
-        events = EntitySplitEditorEvents(
-            onAmountChanged = { entityId, amount ->
-                onEvent(AddExpenseUiEvent.EntitySplitAmountChanged(entityId, amount))
-            },
-            onPercentageChanged = { entityId, percentage ->
-                onEvent(AddExpenseUiEvent.EntitySplitPercentageChanged(entityId, percentage))
-            },
-            onExcludedToggled = { entityId ->
-                onEvent(AddExpenseUiEvent.EntitySplitExcludedToggled(entityId))
-            },
-            onShareLockToggled = { entityId ->
-                onEvent(AddExpenseUiEvent.EntityShareLockToggled(entityId))
-            },
-            onAccordionToggled = { entityId ->
-                onEvent(AddExpenseUiEvent.EntityAccordionToggled(entityId))
-            },
-            onIntraSubunitSplitTypeChanged = { subunitId, splitTypeId ->
-                onEvent(AddExpenseUiEvent.IntraSubunitSplitTypeChanged(subunitId, splitTypeId))
-            },
-            onIntraSubunitAmountChanged = { subunitId, userId, amount ->
-                onEvent(AddExpenseUiEvent.IntraSubunitAmountChanged(subunitId, userId, amount))
-            },
-            onIntraSubunitPercentageChanged = { subunitId, userId, percentage ->
-                onEvent(AddExpenseUiEvent.IntraSubunitPercentageChanged(subunitId, userId, percentage))
-            },
-            onIntraSubunitShareLockToggled = { subunitId, userId ->
-                onEvent(AddExpenseUiEvent.IntraSubunitShareLockToggled(subunitId, userId))
+            FlatCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.errorContainer
+            ) {
+                Text(
+                    text = errorUiText.asString(),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(MaterialTheme.spacing.Medium)
+                )
             }
-        ),
-        modifier = Modifier.fillMaxWidth()
-    )
-}
-
-@Composable
-private fun FlatModeSplitCard(
-    uiState: AddExpenseUiState,
-    isEqualMode: Boolean,
-    isPercentMode: Boolean,
-    onEvent: (AddExpenseUiEvent) -> Unit
-) {
-    SplitEditor(
-        splits = uiState.splits,
-        isEqualMode = isEqualMode,
-        isPercentMode = isPercentMode,
-        onAmountChanged = { userId, amount ->
-            onEvent(AddExpenseUiEvent.SplitAmountChanged(userId, amount))
-        },
-        onPercentageChanged = { userId, percentage ->
-            onEvent(AddExpenseUiEvent.SplitPercentageChanged(userId, percentage))
-        },
-        onExcludedToggled = { userId ->
-            onEvent(AddExpenseUiEvent.SplitExcludedToggled(userId))
-        },
-        onShareLockToggled = { userId ->
-            onEvent(AddExpenseUiEvent.SplitShareLockToggled(userId))
-        },
-        modifier = Modifier.fillMaxWidth()
-    )
-}
-
-@Composable
-private fun SplitValidationError(errorText: String) {
-    FlatCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.errorContainer
-    ) {
-        Text(
-            text = errorText,
-            color = MaterialTheme.colorScheme.onErrorContainer,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(MaterialTheme.spacing.Medium)
-        )
+        }
     }
 }

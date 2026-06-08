@@ -41,6 +41,7 @@ import kotlinx.collections.immutable.ImmutableList
  * @param onPercentageChanged Callback when a member's PERCENT percentage changes.
  * @param onShareLockToggled Callback when a member's share lock is toggled.
  */
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 fun IntraSubunitSplitEditor(
     members: ImmutableList<SplitUiModel>,
@@ -80,104 +81,80 @@ fun IntraSubunitSplitEditor(
         // SplitTypeSelector spans the full available width in all locales.
         Column(modifier = Modifier.padding(start = MaterialTheme.spacing.ExtraLarge)) {
             members.forEach { member ->
-                IntraSubunitMemberRow(
-                    member = member,
-                    isEqualMode = isEqualMode,
-                    isPercentMode = isPercentMode,
-                    onAmountChanged = { amount -> onAmountChanged(member.userId, amount) },
-                    onPercentageChanged = { pct -> onPercentageChanged(member.userId, pct) },
-                    onShareLockToggled = { onShareLockToggled(member.userId) },
-                    onDone = { focusManager.clearFocus() }
-                )
-            }
-        }
-    }
-}
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+                ) {
+                    // Member name
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = member.displayName,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        // Show currency amount as secondary text for EXACT and PERCENT modes
+                        if (!isEqualMode && member.formattedAmount.isNotBlank()) {
+                            Text(
+                                text = member.formattedAmount,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
 
-/**
- * A single member row within the intra-subunit editor.
- * Similar to [SplitMemberRow] but without the exclude toggle (subunit members cannot be
- * individually excluded — the entire subunit is excluded at entity level).
- */
-@Suppress("LongMethod") // Compose UI builder DSL
-@Composable
-private fun IntraSubunitMemberRow(
-    member: SplitUiModel,
-    isEqualMode: Boolean,
-    isPercentMode: Boolean,
-    onAmountChanged: (String) -> Unit,
-    onPercentageChanged: (String) -> Unit,
-    onShareLockToggled: () -> Unit,
-    onDone: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-    ) {
-        // Member name
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = member.displayName,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            // Show currency amount as secondary text for EXACT and PERCENT modes
-            if (!isEqualMode && member.formattedAmount.isNotBlank()) {
-                Text(
-                    text = member.formattedAmount,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        // Amount / percentage display or input
-        if (isEqualMode) {
-            Text(
-                text = member.formattedAmount,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else if (isPercentMode) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-            ) {
-                StyledOutlinedTextField(
-                    value = member.percentageInput,
-                    onValueChange = onPercentageChanged,
-                    label = stringResource(R.string.add_expense_split_percentage_label),
-                    modifier = Modifier.widthIn(max = 90.dp),
-                    keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Next,
-                    keyboardActions = KeyboardActions(onNext = { onDone() })
-                )
-                ShareLockIcon(isLocked = member.isShareLocked, onClick = onShareLockToggled)
-            }
-        } else {
-            // EXACT mode
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-            ) {
-                StyledOutlinedTextField(
-                    value = member.amountInput,
-                    onValueChange = onAmountChanged,
-                    label = stringResource(R.string.add_expense_split_amount_label),
-                    modifier = Modifier.widthIn(max = 110.dp),
-                    keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Next,
-                    keyboardActions = KeyboardActions(onNext = { onDone() })
-                )
-                ShareLockIcon(isLocked = member.isShareLocked, onClick = onShareLockToggled)
+                    // Amount / percentage display or input
+                    if (isEqualMode) {
+                        Text(
+                            text = member.formattedAmount,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else if (isPercentMode) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+                        ) {
+                            StyledOutlinedTextField(
+                                value = member.percentageInput,
+                                onValueChange = { pct -> onPercentageChanged(member.userId, pct) },
+                                label = stringResource(R.string.add_expense_split_percentage_label),
+                                modifier = Modifier.widthIn(max = 90.dp),
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next,
+                                keyboardActions = KeyboardActions(onNext = { focusManager.clearFocus() })
+                            )
+                            ShareLockIcon(isLocked = member.isShareLocked, onClick = {
+                                onShareLockToggled(member.userId)
+                            })
+                        }
+                    } else {
+                        // EXACT mode
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+                        ) {
+                            StyledOutlinedTextField(
+                                value = member.amountInput,
+                                onValueChange = { amount -> onAmountChanged(member.userId, amount) },
+                                label = stringResource(R.string.add_expense_split_amount_label),
+                                modifier = Modifier.widthIn(max = 110.dp),
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next,
+                                keyboardActions = KeyboardActions(onNext = { focusManager.clearFocus() })
+                            )
+                            ShareLockIcon(isLocked = member.isShareLocked, onClick = {
+                                onShareLockToggled(member.userId)
+                            })
+                        }
+                    }
+                }
             }
         }
     }

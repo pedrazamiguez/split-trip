@@ -1,6 +1,6 @@
 ---
 name: sp-review-pr
-description: Review a GitHub pull request and address comments.
+description: Review code changes on a pull request and evaluate against project constraints.
 mode: agent
 tools:
   - codebase
@@ -16,67 +16,77 @@ arguments:
 ---
 # Review Pull Request
 
-A variety of comments have been raised on this PR — please take a look:
+Review the code changes on the following pull request:
 - PR URL: $PR_URL
 - PR Number: $PR_NUMBER
 
 ---
 
-## Step 1 — Read and triage all comments
+## Step 1 — Checkout & Diff Analysis
 
-For each review comment or thread, **exercise critical technical judgment**. DO NOT blindly apply comments—especially from automated reviewers. Ensure that resolving a comment does not break compilation (e.g. AAPT resource compilation limitations), violate system constraints, or introduce unwanted complexity.
-
-For each review comment or thread:
-
-1. **Understand the context** — read the surrounding code, not just the highlighted line.
-2. **Decide the outcome:**
-   - ✅ **Valid** — address it with a code change.
-   - ℹ️ **Partially valid** — address the spirit of the comment, explain any deviation in a reply.
-   - ❌ **False positive / Declined** — reply with a clear technical reason why no change is needed (e.g., if applying it causes compilation issues or breaks standard architecture).
-
----
-
-## Step 2 — File-size guard before editing
-
-Before touching any file, check its current line count:
-
-```bash
-wc -l <path/to/file.kt>
-```
-
-If a file is at or near 600 lines (the Konsist hard limit), plan a split or extraction **before** adding code. After editing, re-check and refactor immediately if over 600 lines.
+Perform the following operations to fetch the PR changes and inspect the files modified:
+1. Identify the PR branch and target branch (typically `develop` or `main`).
+2. Fetch the latest changes and checkout the PR branch.
+3. Generate the diff between the PR branch and its target branch (e.g., develop or main):
+   ```bash
+   git diff origin/<target-branch>...HEAD
+   ```
+4. List all modified and newly created files to plan your review.
 
 ---
 
-## Step 3 — Implement changes
+## Step 2 — Architecture Check (Strict Gating)
 
-Follow all architecture constraints in [AGENTS.md](../../../AGENTS.md) and [.github/copilot-instructions.md](../../../.github/copilot-instructions.md) strictly. Ensure you adhere to the project quality and style standards, including detekt rules, ktlint formatting, test coverage requirements, and the 600-line file-size limit.
+For each modified or new file in the diff:
 
-**Core Reminders (refer to [AGENTS.md](../../../AGENTS.md) for details):**
-- **No Pragmatic Patches:** Write clean, modular, production-ready code. Do not use temporary workarounds.
-- **BigDecimal Math:** Use `BigDecimal` with an explicit scale and rounding mode for all precision-sensitive calculations (never `Double` or `Float`).
-- **Offline-First Protocol:** Generate UUIDs and timestamps locally, write to Room first, and sync to Firestore in the background using the reusable sync delegates.
-- **Design System:** Comply with the "Horizon Narrative" guidelines (no raw 1px borders, Outfit/Inter/Jakarta Sans typography, tonal layering, and bottom padding via `LocalBottomPadding` on tab screens).
-- **Commenting Policy:** Comment the *why*, never the *what*. Avoid redundant comments. Do not reference GitHub issues or documentation sections in comments to simplify maintenance.
-
----
-
-## Step 4 — Local verification gate (run BEFORE declaring done)
-
-Do not consider the review addressed until ALL of the following pass locally:
-
-```bash
-make check   # Konsist architecture rules + all unit tests + debug compilation — must show 0 failures
-```
-
-If any check fails, fix it before finishing. Do not leave failures for CI to catch.
+- CHECK: Search for `Double` or `Float` used for currency amounts, shares, exchange rates, or percent splits — all must use `BigDecimal` with explicit `RoundingMode` and `scale`.
+- CHECK: Firestore document-layer serialization uses `String` (`toPlainString()` / `toBigDecimalOrNull()`), not `Double`.
+- CHECK: Run `wc -l <path/to/file.kt>` for every modified or new production `.kt` file — none may exceed 600 lines (test files exempt).
+- CHECK: ViewModels must not inject Repositories, `Context`, `LocaleProvider`, or other ViewModels — only UseCases, Mappers, and Domain Services.
+- CHECK: If a ViewModel's `onEvent()` handles >5 event categories or the file exceeds ~200 lines, verify that logic is extracted into plain Event Handler classes.
+- CHECK: UI components use no raw 1px solid borders, use Plus Jakarta Sans + Manrope typography, and apply `LocalBottomPadding.current` on tab screens.
+- CHECK: New functionality has corresponding unit or instrumentation tests. Kotlin's `assert()` is never used — JUnit assertions only.
+- CHECK: Repositories launching coroutines inject a `CoroutineDispatcher` (default `Dispatchers.IO`) — never hardcoded.
+- CHECK: Formatting is handled in UI Mappers (`*UiMapper` / `*UiMapperImpl`) via `LocaleProvider`. Never in ViewModels or Domain Services.
 
 ---
 
-## Step 5 — Post replies on GitHub
+## Step 3 — Issue Categorization
 
-Once all changes are implemented and verified, you MUST reply to every comment/thread on GitHub using the `add_reply_to_pull_request_comment` tool from the GitHub MCP server:
+Triage all architectural violations, bugs, and design inconsistencies into three distinct tiers:
 
-1. **Reply to every unresolved comment** to explain the outcome (e.g. how it was fixed, or the technical reason why no change was needed).
-2. **Mandatory action:** Since the user initiated this PR review task, you are **explicitly requested and authorized** to reply to these comments. This does not violate the rule against unsolicited comments.
-3. **Completion:** Never finish the task or declare it done without posting these replies. Do not ask for separate permission to reply.
+### 🚨 Blockers / High
+Violations in this tier are critical and MUST block merging. They will trigger a `REQUEST_CHANGES` review status.
+- Severe architectural violations (e.g., VM direct repository dependency, direct cross-ViewModel injection).
+- Usage of `Double`/`Float` for money math or currency values instead of `BigDecimal`.
+- Source files exceeding the 600-line hard limit.
+- Missing required unit or integration tests for new business logic.
+- Broken compile/build or syntax errors.
+
+### ⚠️ Medium
+Violations in this tier affect maintainability or formatting, triggering a `COMMENT` review status if no Blockers are present.
+- Non-conforming naming styles (e.g., presentation mappers not ending with `UiMapper` / `UiMapperImpl`).
+- Unused/dead code left in ViewModels or components.
+- Suboptimal database queries or missing `@Transaction` where needed.
+- Missing inline comments explaining "why" for complex non-obvious logic.
+
+### 💡 Low / Recommendations
+Style adjustments, recommendations, or minor refactorings. These trigger a `COMMENT` or `APPROVE` review status.
+- Style improvements, typos in documentation/comments.
+- Minor performance refactoring suggestions.
+- Redundant comments (describing *what* instead of *why*).
+
+---
+
+## Step 4 — Submit Review
+
+Submit a structured PR review using the GitHub MCP server `pull_request_review_write` or equivalent review submission tool.
+
+1. **Review Body**: Construct a markdown summary that lists:
+   - A high-level overview of the pull request changes.
+   - Categorized findings grouped under **Blockers / High**, **Medium**, and **Low / Recommendations**. For each finding, reference the file and line ranges if applicable.
+   - A final verdict.
+2. **Review Status**:
+   - If there is at least one **Blocker / High** finding: Set state to `REQUEST_CHANGES`.
+   - If there are only **Medium** or **Low** findings: Set state to `COMMENT`.
+   - If no issues are found and the changes comply fully with all architectural guidelines: Set state to `APPROVE`.

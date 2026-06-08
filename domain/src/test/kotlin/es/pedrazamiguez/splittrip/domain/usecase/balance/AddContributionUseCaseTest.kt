@@ -7,8 +7,9 @@ import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
-import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.service.impl.ContributionValidationServiceImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.AddContributionUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -29,7 +30,7 @@ class AddContributionUseCaseTest {
     private lateinit var groupMembershipService: GroupMembershipService
     private lateinit var subunitRepository: SubunitRepository
     private lateinit var authenticationService: AuthenticationService
-    private val contributionValidationService = ContributionValidationService()
+    private val contributionValidationService = ContributionValidationServiceImpl()
     private lateinit var useCase: AddContributionUseCase
 
     private val groupId = "group-123"
@@ -50,7 +51,7 @@ class AddContributionUseCaseTest {
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
         every { authenticationService.requireUserId() } returns currentUserId
         coEvery { subunitRepository.getGroupSubunits(any()) } returns emptyList()
-        useCase = AddContributionUseCase(
+        useCase = AddContributionUseCaseImpl(
             contributionRepository,
             groupMembershipService,
             contributionValidationService,

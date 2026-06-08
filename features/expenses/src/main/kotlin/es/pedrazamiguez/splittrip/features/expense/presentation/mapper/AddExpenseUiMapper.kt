@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -47,10 +48,6 @@ class AddExpenseUiMapper(
     private val addOnMapper: AddExpenseAddOnUiMapper,
     private val splitPreviewService: SplitPreviewService
 ) {
-
-    companion object {
-        private const val RATE_PRECISION = 6
-    }
 
     // ── Date Formatting ────────────────────────────────────────────────────
 
@@ -101,7 +98,7 @@ class AddExpenseUiMapper(
             CurrencyConverter.normalizeAmountString(state.displayExchangeRate.trim())
         val displayRate = normalizedDisplayRate.toBigDecimalOrNull() ?: BigDecimal.ONE
         val internalRate = if (displayRate.compareTo(BigDecimal.ZERO) != 0) {
-            BigDecimal.ONE.divide(displayRate, RATE_PRECISION, RoundingMode.HALF_UP)
+            BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
         } else {
             BigDecimal.ZERO
         }
@@ -211,7 +208,7 @@ class AddExpenseUiMapper(
 
         val isForeign = expense.sourceCurrency != expense.groupCurrency
         val displayRate = if (expense.exchangeRate.compareTo(BigDecimal.ZERO) != 0) {
-            BigDecimal.ONE.divide(expense.exchangeRate, RATE_PRECISION, RoundingMode.HALF_UP)
+            BigDecimal.ONE.divide(expense.exchangeRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
                 .stripTrailingZeros().toPlainString()
         } else {
             "1.0"
@@ -322,7 +319,7 @@ class AddExpenseUiMapper(
 
     private fun getAddOnDisplayRate(exchangeRate: BigDecimal): String {
         return if (exchangeRate.compareTo(BigDecimal.ZERO) != 0) {
-            BigDecimal.ONE.divide(exchangeRate, RATE_PRECISION, RoundingMode.HALF_UP)
+            BigDecimal.ONE.divide(exchangeRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
                 .stripTrailingZeros().toPlainString()
         } else {
             "1.0"

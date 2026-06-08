@@ -24,6 +24,8 @@ class UserPreferences(
         private val PENDING_FCM_TOKEN_KEY = stringPreferencesKey("pending_fcm_token")
         private val APP_LANGUAGE_KEY = stringPreferencesKey("app_language")
         private val SHOULD_SHOW_LANGUAGE_PILL_KEY = booleanPreferencesKey("should_show_language_pill")
+        private val APP_THEME_KEY = stringPreferencesKey("app_theme")
+        private val DEVICE_ID_KEY = stringPreferencesKey("device_id")
 
         // User-scoped key name constants (prefixed at access time via userKey())
         private const val SELECTED_GROUP_ID = "selected_group_id"
@@ -31,6 +33,18 @@ class UserPreferences(
         private const val SELECTED_GROUP_CURRENCY = "selected_group_currency"
         private const val DEFAULT_CURRENCY = "default_currency"
         private const val ACTIVE_AI_ENGINE = "active_ai_engine"
+    }
+
+    // ── Device ID (Device-scoped) ────────────────────────────────────────
+
+    val deviceId: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[DEVICE_ID_KEY]
+    }
+
+    suspend fun setDeviceId(id: String) {
+        context.dataStore.edit { prefs ->
+            prefs[DEVICE_ID_KEY] = id
+        }
     }
 
     // ── App Language (Device-scoped) ─────────────────────────────────────
@@ -42,6 +56,18 @@ class UserPreferences(
     suspend fun setAppLanguage(languageCode: String) {
         context.dataStore.edit { prefs ->
             prefs[APP_LANGUAGE_KEY] = languageCode
+        }
+    }
+
+    // ── App Theme (Device-scoped) ────────────────────────────────────────
+
+    val appTheme: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[APP_THEME_KEY]
+    }
+
+    suspend fun setAppTheme(themeCode: String) {
+        context.dataStore.edit { prefs ->
+            prefs[APP_THEME_KEY] = themeCode
         }
     }
 

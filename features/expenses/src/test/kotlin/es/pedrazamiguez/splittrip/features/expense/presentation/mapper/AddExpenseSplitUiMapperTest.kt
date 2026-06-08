@@ -6,8 +6,9 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
-import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
@@ -42,8 +43,8 @@ class AddExpenseSplitUiMapperTest {
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
         formattingHelper = FormattingHelper(localeProvider)
-        splitPreviewService = SplitPreviewService()
-        val remainderDistributionService = RemainderDistributionService()
+        splitPreviewService = SplitPreviewServiceImpl()
+        val remainderDistributionService = RemainderDistributionServiceImpl()
         entitySplitFlattenDelegate = EntitySplitFlattenDelegate(splitPreviewService, remainderDistributionService)
 
         mapper = AddExpenseSplitUiMapper(

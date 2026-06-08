@@ -5,7 +5,8 @@ import es.pedrazamiguez.splittrip.domain.model.EntitySplit
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.SubunitSplitOverride
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SubunitAwareSplitServiceImpl
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -22,8 +23,8 @@ class SubunitAwareSplitServiceTest {
 
     @BeforeEach
     fun setUp() {
-        val calculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService())
-        service = SubunitAwareSplitService(calculatorFactory)
+        val calculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
+        service = SubunitAwareSplitServiceImpl(calculatorFactory)
     }
 
     // ── No subunits (backward compatibility) ───────────────────────────

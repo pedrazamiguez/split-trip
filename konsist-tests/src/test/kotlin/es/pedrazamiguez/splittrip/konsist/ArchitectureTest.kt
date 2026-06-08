@@ -36,8 +36,39 @@ class ArchitectureTest {
         }
 
         @Test
-        @DisplayName("Top-level use case classes must end with 'UseCase'")
-        fun `use cases must end with UseCase`() {
+        @DisplayName("Top-level domain service implementation classes must end with 'ServiceImpl'")
+        fun `domain service implementations must end with ServiceImpl`() {
+            domainProductionScope
+                .classes()
+                .filter { it.resideInPackage("..domain.service..impl..") }
+                .filter { it.isTopLevel }
+                .assertTrue { it.hasNameEndingWith("ServiceImpl") }
+        }
+
+        @Test
+        @DisplayName("Top-level use case interfaces must end with 'UseCase'")
+        fun `use case interfaces must end with UseCase`() {
+            domainProductionScope
+                .interfaces()
+                .filter { it.resideInPackage("..domain.usecase..") }
+                .filter { it.isTopLevel }
+                // Exclude the .support subpackage — it holds result/attribution types and
+                // distribution helpers that are co-located for cohesion but are NOT use cases
+                // (e.g. WithdrawalResult, ExpenseResult, BalanceAttribution helpers).
+                .filter { !it.resideInPackage("..domain.usecase..support") }
+                // Exclude the .strategy subpackage — it holds Strategy-pattern implementations
+                // (e.g. PersistExpenseStrategy, BasePersistExpenseStrategy) that are internal
+                // collaborators of use cases, not use cases themselves.
+                .filter { !it.resideInPackage("..domain.usecase..strategy") }
+                // Exclude the .factory subpackage — it holds Factory classes that create strategy
+                // instances (e.g. PersistExpenseStrategyFactory). Factories use their own suffix.
+                .filter { !it.resideInPackage("..domain.usecase..factory") }
+                .assertTrue { it.hasNameEndingWith("UseCase") }
+        }
+
+        @Test
+        @DisplayName("Top-level use case implementation classes must end with 'UseCaseImpl'")
+        fun `use case implementations must end with UseCaseImpl`() {
             domainProductionScope
                 .classes()
                 .filter { it.resideInPackage("..domain.usecase..") }
@@ -53,7 +84,7 @@ class ArchitectureTest {
                 // Exclude the .factory subpackage — it holds Factory classes that create strategy
                 // instances (e.g. PersistExpenseStrategyFactory). Factories use their own suffix.
                 .filter { !it.resideInPackage("..domain.usecase..factory") }
-                .assertTrue { it.hasNameEndingWith("UseCase") }
+                .assertTrue { it.hasNameEndingWith("UseCaseImpl") }
         }
 
         @Test
@@ -399,6 +430,47 @@ class ArchitectureTest {
                 .files
                 .assertTrue { file ->
                     !file.text.contains("..<")
+                }
+        }
+    }
+
+    @Nested
+    @DisplayName("Compose Constraints")
+    inner class ComposeConstraints {
+
+        @Test
+        @DisplayName(
+            "Presentation files containing composables must only contain a single composable matching the file name"
+        )
+        fun `presentation files containing composables must only contain a single composable matching the file name`() {
+            projectProductionScope
+                .files
+                .filter { it.hasPackage("..presentation..") }
+                .filter { !it.projectPath.contains("src/debug") }
+                .filter { !it.projectPath.contains("core/design-system") }
+                .filter { !it.hasPackage("..preview..") }
+                .filter { file ->
+                    file.functions(includeNested = true).any { func ->
+                        func.annotations.any { it.name == "Composable" }
+                    }
+                }
+                .filter { file ->
+                    // MainScreen is a root nav host orchestrator and is exempt
+                    file.name != "MainScreen"
+                }
+                .assertTrue { file ->
+                    val composables = file.functions(includeNested = true).filter { func ->
+                        func.annotations.any { it.name == "Composable" }
+                    }
+                    val isCompliant = composables.size == 1 && composables.first().name == file.name
+                    if (!isCompliant) {
+                        println(
+                            "Violation: ${file.name} in ${file.projectPath} " +
+                                "has ${composables.size} composables: " +
+                                "${composables.map { it.name }}"
+                        )
+                    }
+                    isCompliant
                 }
         }
     }

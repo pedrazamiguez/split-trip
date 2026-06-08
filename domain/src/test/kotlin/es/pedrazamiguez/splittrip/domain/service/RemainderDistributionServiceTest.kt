@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service
 
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -8,7 +9,7 @@ import org.junit.jupiter.api.Test
 
 class RemainderDistributionServiceTest {
 
-    private val service = RemainderDistributionService()
+    private val service = RemainderDistributionServiceImpl()
 
     // ── distributeByWeights ─────────────────────────────────────────────
 

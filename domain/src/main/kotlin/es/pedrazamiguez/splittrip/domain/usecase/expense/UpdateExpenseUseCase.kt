@@ -2,11 +2,9 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Expense
-import es.pedrazamiguez.splittrip.domain.usecase.expense.factory.PersistExpenseStrategyFactory
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class UpdateExpenseUseCase(
-    private val strategyFactory: PersistExpenseStrategyFactory
-) {
+interface UpdateExpenseUseCase : UseCase {
     suspend operator fun invoke(
         groupId: String?,
         expense: Expense,
@@ -14,18 +12,5 @@ class UpdateExpenseUseCase(
         pairedSubunitId: String? = null,
         preferredWithdrawalScope: PayerType? = null,
         preferredWithdrawalOwnerId: String? = null
-    ): Result<Unit> {
-        if (groupId.isNullOrBlank()) {
-            return Result.failure(IllegalArgumentException("Group ID cannot be null or blank"))
-        }
-        val strategy = strategyFactory.create(isUpdate = true)
-        return strategy.persist(
-            groupId = groupId,
-            expense = expense,
-            pairedContributionScope = pairedContributionScope,
-            pairedSubunitId = pairedSubunitId,
-            preferredWithdrawalScope = preferredWithdrawalScope,
-            preferredWithdrawalOwnerId = preferredWithdrawalOwnerId
-        )
-    }
+    ): Result<Unit>
 }

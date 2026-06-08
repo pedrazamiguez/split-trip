@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service.split
 
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -12,7 +13,7 @@ class SplitPreviewServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = SplitPreviewService()
+        service = SplitPreviewServiceImpl()
     }
 
     // ── distributePercentagesEvenly ──────────────────────────────────────

@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.notification
 
 import es.pedrazamiguez.splittrip.domain.repository.DeviceRepository
 import es.pedrazamiguez.splittrip.domain.repository.NotificationRepository
+import es.pedrazamiguez.splittrip.domain.usecase.notification.impl.RegisterDeviceTokenUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -30,7 +31,7 @@ class RegisterDeviceTokenUseCaseTest {
     fun setUp() {
         deviceRepository = mockk()
         notificationRepository = mockk()
-        useCase = RegisterDeviceTokenUseCase(
+        useCase = RegisterDeviceTokenUseCaseImpl(
             deviceRepository = deviceRepository,
             notificationRepository = notificationRepository
         )

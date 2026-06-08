@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.feature.Develop
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.LanguageFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.NotificationPreferencesFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.SettingsFeature
+import es.pedrazamiguez.splittrip.features.settings.presentation.feature.ThemeFeature
 
 fun NavGraphBuilder.settingsGraph() {
     composable(Routes.SETTINGS) {
@@ -18,6 +19,9 @@ fun NavGraphBuilder.settingsGraph() {
     }
     composable(Routes.SETTINGS_LANGUAGE) {
         LanguageFeature()
+    }
+    composable(Routes.SETTINGS_THEME) {
+        ThemeFeature()
     }
     composable(Routes.SETTINGS_NOTIFICATIONS) {
         NotificationPreferencesFeature()

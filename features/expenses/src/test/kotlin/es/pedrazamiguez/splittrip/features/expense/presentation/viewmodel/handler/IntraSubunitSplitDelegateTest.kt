@@ -4,10 +4,10 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.Subunit
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
-import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SubunitAwareSplitServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import io.mockk.every
@@ -95,9 +95,9 @@ class IntraSubunitSplitDelegateTest {
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
         formattingHelper = FormattingHelper(localeProvider)
-        val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService())
-        val splitPreviewService = SplitPreviewService()
-        val subunitAwareSplitService = SubunitAwareSplitService(splitCalculatorFactory)
+        val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
+        val splitPreviewService = SplitPreviewServiceImpl()
+        val subunitAwareSplitService = SubunitAwareSplitServiceImpl(splitCalculatorFactory)
 
         delegate = IntraSubunitSplitDelegate(
             splitCalculatorFactory = splitCalculatorFactory,
@@ -770,8 +770,8 @@ class IntraSubunitSplitDelegateTest {
             }
             mockedDelegate = IntraSubunitSplitDelegate(
                 splitCalculatorFactory = throwingFactory,
-                splitPreviewService = SplitPreviewService(),
-                subunitAwareSplitService = SubunitAwareSplitService(throwingFactory),
+                splitPreviewService = SplitPreviewServiceImpl(),
+                subunitAwareSplitService = SubunitAwareSplitServiceImpl(throwingFactory),
                 formattingHelper = formattingHelper
             )
         }

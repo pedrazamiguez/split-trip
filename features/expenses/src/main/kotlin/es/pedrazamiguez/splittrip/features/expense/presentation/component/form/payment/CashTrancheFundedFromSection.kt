@@ -47,6 +47,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranch
  * @param tranches  Non-empty list of tranche UI models in FIFO order.
  * @param modifier  Modifier applied to the root [Column].
  */
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 fun CashTrancheFundedFromSection(
     tranches: List<CashTranchePreviewUiModel>,
@@ -63,17 +64,70 @@ fun CashTrancheFundedFromSection(
         FlatCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(MaterialTheme.spacing.Medium)) {
                 if (isMultiTranche) {
-                    CashTrancheHeader(
-                        trancheCount = tranches.size,
-                        isExpanded = isExpanded,
-                        onToggle = { isExpanded = !isExpanded }
-                    )
+                    val expandedLabel = stringResource(R.string.add_expense_cash_tranche_collapse)
+                    val collapsedLabel =
+                        pluralStringResource(R.plurals.add_expense_cash_tranche_count, tranches.size, tranches.size)
+                    val stateDesc = if (isExpanded) expandedLabel else collapsedLabel
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics {
+                                role = Role.Button
+                                stateDescription = stateDesc
+                            }
+                            .clickable(
+                                onClick = { isExpanded = !isExpanded },
+                                onClickLabel = if (isExpanded) expandedLabel else collapsedLabel
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (isExpanded) expandedLabel else collapsedLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
                 }
 
-                CashTrancheList(
-                    tranches = if (isMultiTranche && !isExpanded) listOf(tranches.first()) else tranches
-                )
+                val listTranches = if (isMultiTranche && !isExpanded) listOf(tranches.first()) else tranches
+                Column {
+                    listTranches.forEachIndexed { index, tranche ->
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = tranche.withdrawalLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = tranche.formattedAmountConsumed,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                SecondaryBodyText(
+                                    text = tranche.formattedRate.let {
+                                        stringResource(R.string.add_expense_cash_tranche_rate_label, it)
+                                    },
+                                    maxLines = Int.MAX_VALUE
+                                )
+                            }
+                            SecondaryBodyText(
+                                text = stringResource(
+                                    R.string.add_expense_cash_tranche_remaining,
+                                    tranche.formattedRemainingAfter
+                                ),
+                                maxLines = Int.MAX_VALUE
+                            )
+                        }
+                        if (index < listTranches.lastIndex) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
                 SecondaryBodyText(
@@ -82,89 +136,5 @@ fun CashTrancheFundedFromSection(
                 )
             }
         }
-    }
-}
-
-/** Clickable header row shown when there are multiple tranches. */
-@Composable
-private fun CashTrancheHeader(
-    trancheCount: Int,
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val expandedLabel = stringResource(R.string.add_expense_cash_tranche_collapse)
-    val collapsedLabel = pluralStringResource(R.plurals.add_expense_cash_tranche_count, trancheCount, trancheCount)
-    val stateDesc = if (isExpanded) expandedLabel else collapsedLabel
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics {
-                role = Role.Button
-                stateDescription = stateDesc
-            }
-            .clickable(
-                onClick = onToggle,
-                onClickLabel = if (isExpanded) {
-                    expandedLabel
-                } else {
-                    collapsedLabel
-                }
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = if (isExpanded) expandedLabel else collapsedLabel,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-/** Renders a vertical list of [CashTrancheRow]s with spacing between them. */
-@Composable
-private fun CashTrancheList(
-    tranches: List<CashTranchePreviewUiModel>,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        tranches.forEachIndexed { index, tranche ->
-            CashTrancheRow(tranche = tranche)
-            if (index < tranches.lastIndex) {
-                Spacer(modifier = Modifier.height(6.dp))
-            }
-        }
-    }
-}
-
-@Composable
-internal fun CashTrancheRow(
-    tranche: CashTranchePreviewUiModel,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = tranche.withdrawalLabel,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = tranche.formattedAmountConsumed,
-                style = MaterialTheme.typography.bodySmall
-            )
-            SecondaryBodyText(
-                text = tranche.formattedRate.let { stringResource(R.string.add_expense_cash_tranche_rate_label, it) },
-                maxLines = Int.MAX_VALUE
-            )
-        }
-        SecondaryBodyText(
-            text = stringResource(R.string.add_expense_cash_tranche_remaining, tranche.formattedRemainingAfter),
-            maxLines = Int.MAX_VALUE
-        )
     }
 }

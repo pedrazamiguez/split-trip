@@ -35,6 +35,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.
 import es.pedrazamiguez.splittrip.core.designsystem.transition.receiptSharedElementModifier
 import es.pedrazamiguez.splittrip.features.expense.R
 
+private const val MIME_PDF = "application/pdf"
+
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 fun ReceiptImagePicker(
     receiptUri: String?,
@@ -50,130 +53,104 @@ fun ReceiptImagePicker(
     ) {
         if (receiptUri != null) {
             if (mimeType == MIME_PDF) {
-                ReceiptPdfPreview(onRemoveImage = onRemoveImage)
+                // PDF Preview inlined
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                ) {
+                    Column(
+                        modifier = Modifier.matchParentSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.Receipt,
+                            contentDescription = null,
+                            modifier = Modifier.size(36.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        BodyText(
+                            text = stringResource(R.string.add_expense_receipt_pdf_attached),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraSmall)
+                        )
+                    }
+                    IconButton(
+                        onClick = onRemoveImage,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(MaterialTheme.spacing.ExtraSmall)
+                    ) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.X,
+                            contentDescription = stringResource(R.string.add_expense_receipt_remove),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             } else {
-                ReceiptImagePreview(
-                    receiptUri = receiptUri,
-                    onRemoveImage = onRemoveImage,
-                    onViewImage = onViewImage
-                )
+                // Image Preview inlined
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(Uri.parse(receiptUri))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = stringResource(R.string.add_expense_receipt_image_description),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .matchParentSize()
+                            .then(receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY))
+                            .clip(MaterialTheme.shapes.large)
+                            .clickable(enabled = onViewImage != null) { onViewImage?.invoke() }
+                    )
+                    IconButton(
+                        onClick = onRemoveImage,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(MaterialTheme.spacing.ExtraSmall)
+                    ) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.X,
+                            contentDescription = stringResource(R.string.add_expense_receipt_remove),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
         } else {
-            ReceiptPickerPlaceholder(onClick = onPickerRequested)
+            // Picker Placeholder inlined
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .clickable(onClick = onPickerRequested)
+                    .padding(vertical = MaterialTheme.spacing.ExtraLarge),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = TablerIcons.Outline.Camera,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                BodyText(
+                    text = stringResource(R.string.add_expense_receipt_attach),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = MaterialTheme.spacing.Small)
+                )
+            }
         }
     }
 }
-
-@Composable
-private fun ReceiptImagePreview(
-    receiptUri: String,
-    onRemoveImage: () -> Unit,
-    onViewImage: (() -> Unit)? = null
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(Uri.parse(receiptUri))
-                .crossfade(true)
-                .build(),
-            contentDescription = stringResource(R.string.add_expense_receipt_image_description),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .matchParentSize()
-                .then(receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY))
-                .clip(MaterialTheme.shapes.large)
-                .clickable(enabled = onViewImage != null) { onViewImage?.invoke() }
-        )
-        IconButton(
-            onClick = onRemoveImage,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(MaterialTheme.spacing.ExtraSmall)
-        ) {
-            Icon(
-                imageVector = TablerIcons.Outline.X,
-                contentDescription = stringResource(R.string.add_expense_receipt_remove),
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-/**
- * Placeholder shown when the user attaches a PDF file.
- * PDFs cannot be previewed inline; the icon confirms the file was received.
- */
-@Composable
-private fun ReceiptPdfPreview(onRemoveImage: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-    ) {
-        Column(
-            modifier = Modifier.matchParentSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = TablerIcons.Outline.Receipt,
-                contentDescription = null,
-                modifier = Modifier.size(36.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            BodyText(
-                text = stringResource(R.string.add_expense_receipt_pdf_attached),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraSmall)
-            )
-        }
-        IconButton(
-            onClick = onRemoveImage,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(MaterialTheme.spacing.ExtraSmall)
-        ) {
-            Icon(
-                imageVector = TablerIcons.Outline.X,
-                contentDescription = stringResource(R.string.add_expense_receipt_remove),
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-@Composable
-private fun ReceiptPickerPlaceholder(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .clickable(onClick = onClick)
-            .padding(vertical = MaterialTheme.spacing.ExtraLarge),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = TablerIcons.Outline.Camera,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        BodyText(
-            text = stringResource(R.string.add_expense_receipt_attach),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = MaterialTheme.spacing.Small)
-        )
-    }
-}
-
-private const val MIME_PDF = "application/pdf"

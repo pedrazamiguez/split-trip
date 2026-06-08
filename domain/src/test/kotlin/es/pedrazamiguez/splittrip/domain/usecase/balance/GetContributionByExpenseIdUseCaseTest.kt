@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetContributionByExpenseIdUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -31,7 +32,7 @@ class GetContributionByExpenseIdUseCaseTest {
         contributionRepository = mockk()
         groupMembershipService = mockk()
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
-        useCase = GetContributionByExpenseIdUseCase(contributionRepository, groupMembershipService)
+        useCase = GetContributionByExpenseIdUseCaseImpl(contributionRepository, groupMembershipService)
     }
 
     @Nested

@@ -2,9 +2,9 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import io.mockk.every
 import io.mockk.mockk
@@ -48,8 +48,8 @@ class SplitRowMappingDelegateTest {
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
         delegate = SplitRowMappingDelegate(
-            splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService()),
-            splitPreviewService = SplitPreviewService(),
+            splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl()),
+            splitPreviewService = SplitPreviewServiceImpl(),
             formattingHelper = FormattingHelper(localeProvider)
         )
     }

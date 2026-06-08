@@ -298,4 +298,44 @@ class AmountFormatterTest {
             assertTrue("100".isValidDecimalInput())
         }
     }
+
+    // ---------- Currency.formatDisplay ----------
+
+    @Nested
+    @DisplayName("Currency.formatDisplay()")
+    inner class FormatDisplay {
+
+        @Test
+        fun `formats EUR with native symbol`() {
+            val currency = es.pedrazamiguez.splittrip.domain.model.Currency(
+                code = "EUR",
+                symbol = "€",
+                defaultName = "Euro",
+                decimalDigits = 2
+            )
+            assertEquals("EUR (€)", currency.formatDisplay())
+        }
+
+        @Test
+        fun `formats USD with disambiliated native symbol`() {
+            val currency = es.pedrazamiguez.splittrip.domain.model.Currency(
+                code = "USD",
+                symbol = "$",
+                defaultName = "US Dollar",
+                decimalDigits = 2
+            )
+            assertEquals("USD (US$)", currency.formatDisplay())
+        }
+
+        @Test
+        fun `formats THB falling back to model symbol`() {
+            val currency = es.pedrazamiguez.splittrip.domain.model.Currency(
+                code = "THB",
+                symbol = "฿",
+                defaultName = "Thai Baht",
+                decimalDigits = 2
+            )
+            assertEquals("THB (฿)", currency.formatDisplay())
+        }
+    }
 }

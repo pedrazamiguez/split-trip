@@ -45,16 +45,9 @@ private val CURRENCY_VERTICAL_PADDING = 5.dp
 /**
  * Compact horizontal card for an **unselected** group in the groups list.
  *
- * Layout:
- * ```
- * ┌──────────────────────────────────────────────┐
- * │  [56dp thumbnail]  Group Name       [EUR]  › │
- * │                    📅 1 jan  ·  2 travelers   │
- * └──────────────────────────────────────────────┘
- * ```
- *
  * Selected groups are rendered by [SelectedGroupCard] instead.
  */
+@Suppress("LongMethod", "CognitiveComplexMethod")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GroupItem(
@@ -84,7 +77,35 @@ fun GroupItem(
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GroupThumbnail(imageUrl = groupUiModel.imageUrl)
+                // GroupThumbnail
+                val shape = MaterialTheme.shapes.medium
+                if (groupUiModel.imageUrl != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(
+                            LocalContext.current
+                        ).data(groupUiModel.imageUrl).crossfade(true).build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(THUMBNAIL_SIZE)
+                            .clip(shape)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(THUMBNAIL_SIZE)
+                            .clip(shape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.Photo,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
 
                 Column(
                     modifier = Modifier.weight(1f),
@@ -98,96 +119,59 @@ fun GroupItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    GroupItemMetaLine(groupUiModel = groupUiModel)
+
+                    // GroupItemMetaLine
+                    val metaParts = buildList {
+                        if (groupUiModel.dateText.isNotEmpty()) add(groupUiModel.dateText)
+                        if (groupUiModel.membersCountText.isNotEmpty()) add(groupUiModel.membersCountText)
+                    }
+                    if (metaParts.isNotEmpty()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            metaParts.forEachIndexed { index, part ->
+                                if (index > 0) {
+                                    SecondaryBodyText(
+                                        text = stringResource(DesignR.string.metadata_separator),
+                                        maxLines = Int.MAX_VALUE
+                                    )
+                                }
+                                SecondaryBodyText(text = part)
+                            }
+                        }
+                    }
                 }
 
-                GroupItemTrailing(currency = groupUiModel.currency)
+                // GroupItemTrailing
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.large)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Text(
+                            text = groupUiModel.currency,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(
+                                horizontal = CURRENCY_HORIZONTAL_PADDING,
+                                vertical = CURRENCY_VERTICAL_PADDING
+                            )
+                        )
+                    }
+                    Icon(
+                        imageVector = TablerIcons.Outline.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
             }
         }
         SyncStatusBadge(syncStatus = groupUiModel.syncStatus)
-    }
-}
-
-@Composable
-private fun GroupThumbnail(imageUrl: String?, modifier: Modifier = Modifier) {
-    val shape = MaterialTheme.shapes.medium
-    if (imageUrl != null) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true).build(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = modifier
-                .size(THUMBNAIL_SIZE)
-                .clip(shape)
-        )
-    } else {
-        Box(
-            modifier = modifier
-                .size(THUMBNAIL_SIZE)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = TablerIcons.Outline.Photo,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun GroupItemMetaLine(groupUiModel: GroupUiModel) {
-    val metaParts = buildList {
-        if (groupUiModel.dateText.isNotEmpty()) add(groupUiModel.dateText)
-        if (groupUiModel.membersCountText.isNotEmpty()) add(groupUiModel.membersCountText)
-    }
-    if (metaParts.isEmpty()) return
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        metaParts.forEachIndexed { index, part ->
-            if (index > 0) {
-                SecondaryBodyText(
-                    text = stringResource(DesignR.string.metadata_separator),
-                    maxLines = Int.MAX_VALUE
-                )
-            }
-            SecondaryBodyText(text = part)
-        }
-    }
-}
-
-@Composable
-private fun GroupItemTrailing(currency: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-    ) {
-        Box(
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.large)
-                .background(MaterialTheme.colorScheme.primaryContainer)
-        ) {
-            Text(
-                text = currency,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(
-                    horizontal = CURRENCY_HORIZONTAL_PADDING,
-                    vertical = CURRENCY_VERTICAL_PADDING
-                )
-            )
-        }
-        Icon(
-            imageVector = TablerIcons.Outline.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        )
     }
 }

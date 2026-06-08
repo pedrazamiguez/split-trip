@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service
 
+import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.Test
 @DisplayName("EmailValidationService")
 class EmailValidationServiceTest {
 
-    private val service = EmailValidationService()
+    private val service = EmailValidationServiceImpl()
 
     @Nested
     @DisplayName("Valid emails")

@@ -5,11 +5,11 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.Subunit
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
-import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
-import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SubunitAwareSplitServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
@@ -121,15 +121,15 @@ class SubunitSplitEventHandlerTest {
         val localeProvider = mockk<LocaleProvider>()
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
-        val splitPreviewService = SplitPreviewService()
-        val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService())
+        val splitPreviewService = SplitPreviewServiceImpl()
+        val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
         val formattingHelper = FormattingHelper(localeProvider)
-        val remainderDistributionService = RemainderDistributionService()
+        val remainderDistributionService = RemainderDistributionServiceImpl()
 
         val intraSubunitSplitDelegate = IntraSubunitSplitDelegate(
             splitCalculatorFactory = splitCalculatorFactory,
             splitPreviewService = splitPreviewService,
-            subunitAwareSplitService = SubunitAwareSplitService(splitCalculatorFactory),
+            subunitAwareSplitService = SubunitAwareSplitServiceImpl(splitCalculatorFactory),
             formattingHelper = formattingHelper
         )
 

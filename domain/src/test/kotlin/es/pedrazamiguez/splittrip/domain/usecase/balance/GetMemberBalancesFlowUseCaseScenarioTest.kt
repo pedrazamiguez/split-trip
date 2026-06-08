@@ -7,6 +7,8 @@ import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetMemberBalancesFlowUseCaseImpl
 import java.math.BigDecimal
 import java.math.RoundingMode
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,7 +27,7 @@ class GetMemberBalancesFlowUseCaseScenarioTest {
 
     @BeforeEach
     fun setUp() {
-        useCase = GetMemberBalancesFlowUseCase()
+        useCase = GetMemberBalancesFlowUseCaseImpl(AddOnCalculationServiceImpl())
     }
 
     private fun compute(

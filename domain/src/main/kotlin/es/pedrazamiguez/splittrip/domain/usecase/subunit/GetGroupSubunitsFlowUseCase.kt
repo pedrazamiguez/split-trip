@@ -1,14 +1,9 @@
 package es.pedrazamiguez.splittrip.domain.usecase.subunit
 
 import es.pedrazamiguez.splittrip.domain.model.Subunit
-import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Use case for observing the list of subunits in a group as a reactive stream.
- *
- * Simple delegation to the repository — no membership check needed for reads.
- */
-class GetGroupSubunitsFlowUseCase(private val subunitRepository: SubunitRepository) {
-    operator fun invoke(groupId: String): Flow<List<Subunit>> = subunitRepository.getGroupSubunitsFlow(groupId)
+interface GetGroupSubunitsFlowUseCase : UseCase {
+    operator fun invoke(groupId: String): Flow<List<Subunit>>
 }

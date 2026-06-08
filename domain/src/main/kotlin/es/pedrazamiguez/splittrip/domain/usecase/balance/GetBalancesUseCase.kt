@@ -1,12 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.usecase.balance
 
 import es.pedrazamiguez.splittrip.domain.model.Balance
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class GetBalancesUseCase {
-    suspend operator fun invoke(): Result<List<Balance>> = try {
-        // Placeholder for actual implementation
-        Result.success(emptyList())
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+interface GetBalancesUseCase : UseCase {
+    suspend operator fun invoke(): Result<List<Balance>>
 }

@@ -46,6 +46,7 @@ fun ExchangeRateStep(
                 isInsufficientCash = uiState.isInsufficientCash,
                 isGroupAmountError = !uiState.isAmountValid,
                 isExchangeRateStale = uiState.isExchangeRateStale,
+                isExchangeRateError = uiState.isExchangeRateError,
                 autoFocus = true
             ),
             onExchangeRateChanged = { onEvent(AddExpenseUiEvent.ExchangeRateChanged(it)) },

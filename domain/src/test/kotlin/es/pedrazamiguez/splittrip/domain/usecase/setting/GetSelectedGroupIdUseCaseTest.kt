@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupIdUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 class GetSelectedGroupIdUseCaseTest {
 
     private val repository: GroupPreferenceRepository = mockk()
-    private val useCase = GetSelectedGroupIdUseCase(repository)
+    private val useCase = GetSelectedGroupIdUseCaseImpl(repository)
 
     @Test
     fun `returns group id flow from repository`() = runTest {

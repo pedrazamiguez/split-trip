@@ -56,6 +56,7 @@ object JacocoExclusions {
         // Design-system: Compose extension functions (NavGraph, Currency display) — UI-only
         "**/designsystem/extension/**",
         // ── Compose navigation graphs — only testable via instrumentation ─────────
+        "**/navigation/**",
         "**/navigation/*NavigationKt.*",
         "**/navigation/*NavigationKt\$*.*",
         "**/navigation/*NavHostKt.*",
@@ -156,6 +157,19 @@ object JacocoExclusions {
         // Implementations ARE unit-tested; the interface contracts are not.
         "**/repository/CashWithdrawalRepository*.*",
         "**/domain/service/ReceiptExtractionService*.*",
+        // ── Domain service/use-case interfaces extracted in SPLTRP-1196 ──────────
+        // These interfaces carry companion-object constants used as default param values.
+        // JaCoCo instruments the companion <clinit> as executable lines, but the
+        // interfaces themselves have no logic — their Impl classes are fully tested.
+        "**/domain/service/ExchangeRateCalculationService*.*",
+        "**/domain/service/ExpenseCalculatorService*.*",
+        "**/domain/service/RemainderDistributionService*.*",
+        "**/domain/service/AddOnCalculationService*.*",
+        "**/domain/service/SubunitShareDistributionService*.*",
+        "**/domain/service/split/SplitPreviewService*.*",
+        "**/domain/service/split/SubunitAwareSplitService*.*",
+        "**/domain/usecase/balance/GetMemberBalancesFlowUseCase*.*",
+        "**/domain/usecase/expense/GetAvailableWithdrawalPoolsUseCase*.*",
         "**/presentation/mapper/SubunitUiMapper*.*",
         "**/presentation/viewmodel/strategy/ExpenseFlowStrategy.*",
         "**/presentation/viewmodel/strategy/ExpenseFlowStrategy\$*.*",

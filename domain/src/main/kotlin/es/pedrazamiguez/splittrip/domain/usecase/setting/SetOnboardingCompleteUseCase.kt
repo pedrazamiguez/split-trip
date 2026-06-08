@@ -1,10 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
-import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class SetOnboardingCompleteUseCase(private val preferenceRepository: OnboardingPreferenceRepository) {
-
-    suspend operator fun invoke() {
-        preferenceRepository.setOnboardingComplete()
-    }
+interface SetOnboardingCompleteUseCase : UseCase {
+    suspend operator fun invoke()
 }

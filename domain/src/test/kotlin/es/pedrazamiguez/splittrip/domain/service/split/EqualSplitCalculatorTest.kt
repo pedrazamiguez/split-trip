@@ -2,7 +2,7 @@ package es.pedrazamiguez.splittrip.domain.service.split
 
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.exception.InvalidSplitException
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
@@ -15,7 +15,7 @@ class EqualSplitCalculatorTest {
 
     @BeforeEach
     fun setUp() {
-        calculator = EqualSplitCalculator(ExpenseCalculatorService())
+        calculator = EqualSplitCalculator(ExpenseCalculatorServiceImpl())
     }
 
     @Nested

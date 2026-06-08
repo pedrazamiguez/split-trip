@@ -10,7 +10,9 @@ import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExchangeRateCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -86,15 +88,15 @@ class CurrencyEventHandlerTest {
     fun setUp() {
         previewCashExchangeRateUseCase = mockk()
         getExchangeRateUseCase = mockk(relaxed = true)
-        expenseCalculatorService = ExpenseCalculatorService()
-        exchangeRateCalculationService = ExchangeRateCalculationService()
+        expenseCalculatorService = ExpenseCalculatorServiceImpl()
+        exchangeRateCalculationService = ExchangeRateCalculationServiceImpl()
 
         val localeProvider = mockk<LocaleProvider>()
         val resourceProvider = mockk<ResourceProvider>(relaxed = true)
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
         val formattingHelper = FormattingHelper(localeProvider)
-        val splitPreviewService = SplitPreviewService()
+        val splitPreviewService = SplitPreviewServiceImpl()
 
         withdrawalPoolSelectionDelegate = mockk(relaxed = true)
 
@@ -718,6 +720,109 @@ class CurrencyEventHandlerTest {
             val state = uiState.value
             assertFalse(state.isExchangeRateLocked)
             coVerify(exactly = 0) { previewCashExchangeRateUseCase(any(), any(), any(), any(), any()) }
+        }
+    }
+
+    // ── ExchangeRateErrorHandling ────────────────────────────────────────────
+
+    @Nested
+    inner class ExchangeRateErrorHandling {
+
+        @Test
+        fun `successful fetch rate resets error flag to false`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = true)
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } returns ExchangeRateWithStaleness(rate = BigDecimal("36.8"), isStale = false)
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.fetchRate()
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isExchangeRateError)
+            assertEquals("36.8", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `null rateResult from fetch rate sets error flag to true`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = false, displayExchangeRate = "")
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } returns null
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.fetchRate()
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertTrue(state.isExchangeRateError)
+            assertEquals("", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `exception from fetch rate sets error flag to true`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = false, displayExchangeRate = "")
+            coEvery {
+                getExchangeRateUseCase(any(), any())
+            } throws RuntimeException("Network error")
+
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.fetchRate()
+            advanceUntilIdle()
+
+            // Then
+            val state = uiState.value
+            assertTrue(state.isExchangeRateError)
+            assertEquals("", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `manual exchange rate change resets error flag to false`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = true)
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleExchangeRateChanged("35.5")
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isExchangeRateError)
+            assertEquals("35.5", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `manual group amount change resets error flag to false`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateError = true, displayExchangeRate = "")
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.handleGroupAmountChanged("28.17")
+
+            // Then
+            val state = uiState.value
+            assertFalse(state.isExchangeRateError)
+        }
+
+        @Test
+        fun `recalculateForward leaves calculated amount empty if rate is blank`() = runTest {
+            uiState.value = nonCashForeignState.copy(displayExchangeRate = "", calculatedGroupAmount = "10.00")
+            handler.bind(uiState, actions, this)
+
+            // When
+            handler.recalculateForward()
+
+            // Then
+            val state = uiState.value
+            assertEquals("", state.calculatedGroupAmount)
         }
     }
 }

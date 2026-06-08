@@ -137,7 +137,11 @@ fun es.pedrazamiguez.splittrip.domain.model.Currency.formatDisplay(): String {
                 AppConstants.DEFAULT_CURRENCY_CODE
             )
         }
-    val nativeSymbol = resolveNativeSymbol(currencyInstance)
+    var nativeSymbol = resolveNativeSymbol(currencyInstance)
+
+    if (nativeSymbol == null || nativeSymbol == code) {
+        nativeSymbol = symbol.takeIf { it.isNotBlank() && it != code }
+    }
 
     return if (nativeSymbol?.isNotBlank() == true && nativeSymbol != code) {
         "$code ($nativeSymbol)"

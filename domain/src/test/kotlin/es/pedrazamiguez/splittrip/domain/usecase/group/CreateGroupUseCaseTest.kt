@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.group
 
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.usecase.group.impl.CreateGroupUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -22,7 +23,7 @@ class CreateGroupUseCaseTest {
     @BeforeEach
     fun setUp() {
         groupRepository = mockk()
-        useCase = CreateGroupUseCase(groupRepository)
+        useCase = CreateGroupUseCaseImpl(groupRepository)
     }
 
     @Nested

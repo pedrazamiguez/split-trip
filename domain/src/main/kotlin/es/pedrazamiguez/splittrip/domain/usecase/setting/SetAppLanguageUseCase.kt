@@ -1,11 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.setting
 
-import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.usecase.UseCase
 
-class SetAppLanguageUseCase(private val preferenceRepository: UserPreferenceRepository) {
-
-    suspend operator fun invoke(languageCode: String) {
-        preferenceRepository.setAppLanguage(languageCode)
-        preferenceRepository.setShouldShowLanguagePill(true)
-    }
+interface SetAppLanguageUseCase : UseCase {
+    suspend operator fun invoke(languageCode: String)
 }

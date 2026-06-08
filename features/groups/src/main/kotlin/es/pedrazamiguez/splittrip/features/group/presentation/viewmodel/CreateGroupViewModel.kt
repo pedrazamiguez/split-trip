@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
+import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.maskEmail
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
@@ -58,7 +60,7 @@ class CreateGroupViewModel(
     }
 
     fun onEvent(event: CreateGroupUiEvent, onCreateGroupSuccess: () -> Unit) {
-        Timber.i("Event: $event")
+        Timber.tag(LogTag.MVI).d("Event: ${formatEventForLogging(event)}")
         when (event) {
             is CreateGroupUiEvent.NameChanged -> handleNameChanged(event.name)
             is CreateGroupUiEvent.DescriptionChanged -> handleDescriptionChanged(event.description)
@@ -265,5 +267,17 @@ class CreateGroupViewModel(
     companion object {
         private const val MEMBER_SEARCH_DEBOUNCE_MS = 300L
         private const val MEMBER_SEARCH_MIN_QUERY_LENGTH = 3
+    }
+}
+
+private fun formatEventForLogging(event: CreateGroupUiEvent): String {
+    return when (event) {
+        is CreateGroupUiEvent.MemberSearchQueryChanged ->
+            "MemberSearchQueryChanged(queryLength=${event.query.length})"
+        is CreateGroupUiEvent.MemberSelected ->
+            "MemberSelected(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
+        is CreateGroupUiEvent.MemberRemoved ->
+            "MemberRemoved(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
+        else -> event::class.java.simpleName
     }
 }

@@ -56,6 +56,7 @@
     <string name="sync_status_pending">Aún no çincroniçao con er çerbidôh</string>
     <string name="sync_status_failed">Errôh de çincroniçaçión</string>
     <string name="stale_rate_warning">Lô tipô de cambio podrían êttâh deçâttualiçáô</string>
+    <string name="failed_rate_warning">No çe pudo cargâh er tipo de cambio mâh reçiente. Por fabôh, introdúccalo manuarmente.</string>
     <string name="error_generic">¡Ups! Argo çalió mâh</string>
     <string name="error_no_connection">¿Çin intênnêh? Rebiça tu conêççión</string>
     <string name="preview_label_group_name">Nombre der grupo</string>

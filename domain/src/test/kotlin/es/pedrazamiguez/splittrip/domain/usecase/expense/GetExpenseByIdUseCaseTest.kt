@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.GetExpenseByIdUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -32,7 +33,7 @@ class GetExpenseByIdUseCaseTest {
     @BeforeEach
     fun setUp() {
         expenseRepository = mockk()
-        useCase = GetExpenseByIdUseCase(expenseRepository)
+        useCase = GetExpenseByIdUseCaseImpl(expenseRepository)
     }
 
     @Nested

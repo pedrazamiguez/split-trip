@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -86,6 +87,12 @@ class CurrencyEventHandler(
         // If switching to foreign, fetch the appropriate rate; otherwise default to 1.0
         val isCash = isCashPaymentMethod()
         if (isForeign) {
+            _uiState.update {
+                it.copy(
+                    displayExchangeRate = "",
+                    isExchangeRateError = false
+                )
+            }
             if (isCash) {
                 // Lock immediately so the fields are non-editable from the start,
                 // before the async pool probe + rate fetch completes.
@@ -110,7 +117,8 @@ class CurrencyEventHandler(
                     displayExchangeRate = "1.0",
                     isExchangeRateLocked = false,
                     isInsufficientCash = false,
-                    exchangeRateLockedHint = null
+                    exchangeRateLockedHint = null,
+                    isExchangeRateError = false
                 )
             }
             // Same currency + CASH: probe pools and fetch tranche preview via callback.
@@ -121,12 +129,12 @@ class CurrencyEventHandler(
     }
 
     fun handleExchangeRateChanged(rate: String) {
-        _uiState.update { it.copy(displayExchangeRate = rate) }
+        _uiState.update { it.copy(displayExchangeRate = rate, isExchangeRateError = false) }
         recalculateForward()
     }
 
     fun handleGroupAmountChanged(amount: String) {
-        _uiState.update { it.copy(calculatedGroupAmount = amount) }
+        _uiState.update { it.copy(calculatedGroupAmount = amount, isExchangeRateError = false) }
         recalculateReverse()
     }
 
@@ -137,6 +145,10 @@ class CurrencyEventHandler(
      */
     fun recalculateForward() {
         val state = _uiState.value
+        if (state.displayExchangeRate.isBlank()) {
+            _uiState.update { it.copy(calculatedGroupAmount = "") }
+            return
+        }
         val sourceDecimalPlaces = state.selectedCurrency?.decimalDigits ?: 2
         val targetDecimalPlaces = state.groupCurrency?.decimalDigits ?: 2
         val calculatedAmount = exchangeRateCalculationService.calculateGroupAmountFromDisplayRate(
@@ -196,23 +208,12 @@ class CurrencyEventHandler(
                 )
 
                 _uiState.update { current ->
-                    // If the user changed currencies while the request was in-flight,
-                    // don't overwrite state for the new selection with a stale result.
-                    if (current.groupCurrency?.code != requestedBaseCode ||
-                        current.selectedCurrency?.code != requestedTargetCode
-                    ) {
-                        current.copy(isLoadingRate = false)
-                    } else {
-                        current.copy(
-                            isLoadingRate = false,
-                            // If rate found, update display; otherwise keep existing/default
-                            displayExchangeRate = rateResult?.rate?.let { exchangeRate ->
-                                formattingHelper.formatRateForDisplay(exchangeRate.toPlainString())
-                            } ?: current.displayExchangeRate,
-                            isExchangeRateStale = rateResult?.isStale
-                                ?: current.isExchangeRateStale
-                        )
-                    }
+                    current.updateRateResult(
+                        requestedBaseCode = requestedBaseCode,
+                        requestedTargetCode = requestedTargetCode,
+                        rateResult = rateResult,
+                        isError = rateResult == null
+                    )
                 }
 
                 if (rateResult != null) {
@@ -223,7 +224,14 @@ class CurrencyEventHandler(
                     e,
                     "Failed to fetch exchange rate for $requestedBaseCode -> $requestedTargetCode"
                 )
-                _uiState.update { it.copy(isLoadingRate = false) }
+                _uiState.update { current ->
+                    current.updateRateResult(
+                        requestedBaseCode = requestedBaseCode,
+                        requestedTargetCode = requestedTargetCode,
+                        rateResult = null,
+                        isError = true
+                    )
+                }
             }
         }
     }
@@ -441,5 +449,26 @@ class CurrencyEventHandler(
     internal fun currentPayerId(): String? = when (currentPayerType()) {
         PayerType.USER, PayerType.GROUP -> _uiState.value.currentUserId
         PayerType.SUBUNIT -> _uiState.value.selectedContributionSubunitId
+    }
+
+    private fun AddExpenseUiState.updateRateResult(
+        requestedBaseCode: String,
+        requestedTargetCode: String,
+        rateResult: ExchangeRateWithStaleness?,
+        isError: Boolean
+    ): AddExpenseUiState {
+        if (groupCurrency?.code != requestedBaseCode ||
+            selectedCurrency?.code != requestedTargetCode
+        ) {
+            return copy(isLoadingRate = false)
+        }
+        return copy(
+            isLoadingRate = false,
+            isExchangeRateError = isError,
+            displayExchangeRate = rateResult?.rate?.let { exchangeRate ->
+                formattingHelper.formatRateForDisplay(exchangeRate.toPlainString())
+            } ?: displayExchangeRate,
+            isExchangeRateStale = rateResult?.isStale ?: isExchangeRateStale
+        )
     }
 }

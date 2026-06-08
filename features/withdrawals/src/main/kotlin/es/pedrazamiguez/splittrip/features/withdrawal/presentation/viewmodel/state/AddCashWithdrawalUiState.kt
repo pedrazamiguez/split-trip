@@ -38,10 +38,12 @@ data class AddCashWithdrawalUiState(
      * exchange rate section.
      */
     val isExchangeRateStale: Boolean = false,
+    val isExchangeRateError: Boolean = false,
     /**
      * True when the fee exchange rate was served from an expired local cache.
      */
     val isFeeExchangeRateStale: Boolean = false,
+    val isFeeExchangeRateError: Boolean = false,
 
     // ATM Fee (optional)
     val hasFee: Boolean = false,

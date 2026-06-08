@@ -1,7 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service.split
 
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -12,7 +12,7 @@ class ExpenseSplitCalculatorFactoryTest {
 
     @BeforeEach
     fun setUp() {
-        factory = ExpenseSplitCalculatorFactory(ExpenseCalculatorService())
+        factory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
     }
 
     @Test

@@ -39,75 +39,59 @@ fun DetailsStep(
     onImeNext: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    WizardStepLayout(modifier = modifier) {
-        AtmFeeToggleCard(uiState = uiState, onEvent = onEvent)
-        TitleNotesCard(uiState = uiState, onEvent = onEvent, onImeNext = onImeNext)
-    }
-}
-
-@Composable
-private fun TitleNotesCard(
-    uiState: AddCashWithdrawalUiState,
-    onEvent: (AddCashWithdrawalUiEvent) -> Unit,
-    onImeNext: () -> Unit
-) {
     val focusManager = LocalFocusManager.current
 
-    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)) {
-        SectionHeadingText(text = stringResource(R.string.withdrawal_details_title))
-        StyledOutlinedTextField(
-            value = uiState.title,
-            onValueChange = { onEvent(AddCashWithdrawalUiEvent.TitleChanged(it)) },
-            label = stringResource(R.string.withdrawal_details_title_hint),
-            modifier = Modifier.fillMaxWidth(),
-            capitalization = KeyboardCapitalization.Sentences,
-            singleLine = true,
-            imeAction = ImeAction.Next
-        )
-        StyledOutlinedTextField(
-            value = uiState.notes,
-            onValueChange = { onEvent(AddCashWithdrawalUiEvent.NotesChanged(it)) },
-            label = stringResource(R.string.withdrawal_details_notes_hint),
-            modifier = Modifier.fillMaxWidth(),
-            capitalization = KeyboardCapitalization.Sentences,
-            singleLine = false,
-            maxLines = 3,
-            imeAction = ImeAction.Done,
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    focusManager.clearFocus()
-                    onImeNext()
+    WizardStepLayout(modifier = modifier) {
+        SectionCard {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.withdrawal_fee_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    SecondaryBodyText(
+                        text = stringResource(R.string.withdrawal_fee_toggle_description),
+                        maxLines = Int.MAX_VALUE
+                    )
                 }
-            )
-        )
-    }
-}
-
-@Composable
-private fun AtmFeeToggleCard(
-    uiState: AddCashWithdrawalUiState,
-    onEvent: (AddCashWithdrawalUiEvent) -> Unit
-) {
-    SectionCard {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.withdrawal_fee_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                SecondaryBodyText(
-                    text = stringResource(R.string.withdrawal_fee_toggle_description),
-                    maxLines = Int.MAX_VALUE
+                Switch(
+                    checked = uiState.hasFee,
+                    onCheckedChange = { onEvent(AddCashWithdrawalUiEvent.FeeToggled(it)) }
                 )
             }
-            Switch(
-                checked = uiState.hasFee,
-                onCheckedChange = { onEvent(AddCashWithdrawalUiEvent.FeeToggled(it)) }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)) {
+            SectionHeadingText(text = stringResource(R.string.withdrawal_details_title))
+            StyledOutlinedTextField(
+                value = uiState.title,
+                onValueChange = { onEvent(AddCashWithdrawalUiEvent.TitleChanged(it)) },
+                label = stringResource(R.string.withdrawal_details_title_hint),
+                modifier = Modifier.fillMaxWidth(),
+                capitalization = KeyboardCapitalization.Sentences,
+                singleLine = true,
+                imeAction = ImeAction.Next
+            )
+            StyledOutlinedTextField(
+                value = uiState.notes,
+                onValueChange = { onEvent(AddCashWithdrawalUiEvent.NotesChanged(it)) },
+                label = stringResource(R.string.withdrawal_details_notes_hint),
+                modifier = Modifier.fillMaxWidth(),
+                capitalization = KeyboardCapitalization.Sentences,
+                singleLine = false,
+                maxLines = 3,
+                imeAction = ImeAction.Done,
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        onImeNext()
+                    }
+                )
             )
         }
     }

@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 
 class AddOnCalculationServiceTest {
 
-    private val addOnService = AddOnCalculationService()
+    private val addOnService = AddOnCalculationServiceImpl()
 
     // ── calculateTotalOnTopAddOns ─────────────────────────────────────────
 

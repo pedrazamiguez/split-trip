@@ -9,8 +9,8 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.GroupExpenseConfig
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
-import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
@@ -89,8 +89,8 @@ class ConfigEventHandlerTest {
         val resourceProvider = mockk<ResourceProvider>(relaxed = true)
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
-        val splitPreviewService = SplitPreviewService()
-        val remainderDistributionService = RemainderDistributionService()
+        val splitPreviewService = SplitPreviewServiceImpl()
+        val remainderDistributionService = RemainderDistributionServiceImpl()
 
         val addExpenseSplitMapper = AddExpenseSplitUiMapper(
             localeProvider,

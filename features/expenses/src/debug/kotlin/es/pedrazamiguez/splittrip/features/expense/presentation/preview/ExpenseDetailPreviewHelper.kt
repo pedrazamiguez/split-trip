@@ -17,8 +17,8 @@ import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.User
-import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
-import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ScheduledBadgeUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
@@ -256,8 +256,8 @@ fun ExpenseDetailPreviewHelper(
             ExpenseDetailUiMapper(
                 formattingHelper = formattingHelper,
                 resourceProvider = resourceProvider,
-                expenseCalculatorService = ExpenseCalculatorService(),
-                addOnCalculationService = AddOnCalculationService(),
+                expenseCalculatorService = ExpenseCalculatorServiceImpl(),
+                addOnCalculationService = AddOnCalculationServiceImpl(),
                 scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
                     formattingHelper = formattingHelper,
                     resourceProvider = resourceProvider

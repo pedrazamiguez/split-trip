@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.service
 
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.impl.CashWithdrawalValidationServiceImpl
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.Test
 
 class CashWithdrawalValidationServiceTest {
 
-    private val service = CashWithdrawalValidationService()
+    private val service = CashWithdrawalValidationServiceImpl()
 
     @Test
     fun `validateAmountWithdrawn returns Valid for positive amount`() {

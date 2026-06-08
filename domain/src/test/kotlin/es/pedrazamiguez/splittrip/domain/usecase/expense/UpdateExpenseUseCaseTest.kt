@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.factory.PersistExpenseStrategyFactory
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.UpdateExpenseUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -95,7 +96,7 @@ class UpdateExpenseUseCaseTest {
             addOnCalculationService = addOnCalculationService
         )
 
-        useCase = UpdateExpenseUseCase(strategyFactory = strategyFactory)
+        useCase = UpdateExpenseUseCaseImpl(strategyFactory = strategyFactory)
     }
 
     // ── Validation ────────────────────────────────────────────────────────────

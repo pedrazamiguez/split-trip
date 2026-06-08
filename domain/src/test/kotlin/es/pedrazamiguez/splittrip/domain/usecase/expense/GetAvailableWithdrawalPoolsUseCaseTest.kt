@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.WithdrawalPoolOption
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.GetAvailableWithdrawalPoolsUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -42,7 +43,7 @@ class GetAvailableWithdrawalPoolsUseCaseTest {
         coEvery {
             cashWithdrawalRepository.getAvailableWithdrawalsByExactScope(any(), any(), any(), any())
         } returns emptyList()
-        useCase = GetAvailableWithdrawalPoolsUseCase(cashWithdrawalRepository)
+        useCase = GetAvailableWithdrawalPoolsUseCaseImpl(cashWithdrawalRepository)
     }
 
     // ── GROUP scope ───────────────────────────────────────────────────────────

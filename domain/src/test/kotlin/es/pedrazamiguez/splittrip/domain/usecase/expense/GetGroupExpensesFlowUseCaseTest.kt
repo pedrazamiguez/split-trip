@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.GetGroupExpensesFlowUseCaseImpl
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class GetGroupExpensesFlowUseCaseTest {
 
     private val repository: ExpenseRepository = mockk()
-    private val useCase = GetGroupExpensesFlowUseCase(repository)
+    private val useCase = GetGroupExpensesFlowUseCaseImpl(repository)
 
     @Test
     fun `invoke delegates to repository`() {

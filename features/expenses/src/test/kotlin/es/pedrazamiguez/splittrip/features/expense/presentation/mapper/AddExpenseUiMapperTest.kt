@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
@@ -14,8 +15,8 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
-import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
-import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
@@ -68,8 +69,8 @@ class AddExpenseUiMapperTest {
             es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper(
                 localeProvider
             )
-        val splitPreviewService = SplitPreviewService()
-        val remainderDistributionService = RemainderDistributionService()
+        val splitPreviewService = SplitPreviewServiceImpl()
+        val remainderDistributionService = RemainderDistributionServiceImpl()
         splitMapper = AddExpenseSplitUiMapper(
             localeProvider,
             formattingHelper,
@@ -818,7 +819,7 @@ class AddExpenseUiMapperTest {
             assertEquals(
                 0,
                 BigDecimal("0.909091").compareTo(
-                    rate.setScale(6, java.math.RoundingMode.HALF_UP)
+                    rate.setScale(DomainConstants.RATE_PRECISION, java.math.RoundingMode.HALF_UP)
                 )
             )
         }

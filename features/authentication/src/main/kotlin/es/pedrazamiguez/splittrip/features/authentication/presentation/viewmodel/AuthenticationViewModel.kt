@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.authentication.presentation.viewmode
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
@@ -22,13 +23,15 @@ class AuthenticationViewModel(
     val uiState = _uiState.asStateFlow()
 
     fun onEvent(event: AuthenticationUiEvent, onLoginSuccess: () -> Unit) {
+        Timber.tag(LogTag.MVI).d("Event: $event")
+
         when (event) {
             is AuthenticationUiEvent.EmailChanged -> {
                 _uiState.value = _uiState.value.copy(email = event.email)
             }
 
             is AuthenticationUiEvent.PasswordChanged -> {
-                _uiState.value = _uiState.value.copy(password = event.password)
+                _uiState.value = _uiState.value.copy(password = event.value)
             }
 
             AuthenticationUiEvent.SubmitLogin -> {

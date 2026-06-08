@@ -35,6 +35,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 /**
  * Step 11 (or Step 1 in AI mode): Receipt image attachment.
  */
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 fun ReceiptStep(
     uiState: AddExpenseUiState,
@@ -46,7 +47,88 @@ fun ReceiptStep(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
         ) {
             if (uiState.isAiCapable && uiState.isAiModeActive) {
-                AiAutoFillCard()
+                FlatCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(MaterialTheme.spacing.Default),
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = listOf(
+                                                MaterialTheme.colorScheme.primary,
+                                                MaterialTheme.colorScheme.secondary
+                                            )
+                                        ),
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = TablerIcons.Outline.PhotoAi,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.expense_autofill_ai_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.expense_autofill_ai_subtitle),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = stringResource(R.string.expense_autofill_ai_description),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .padding(MaterialTheme.spacing.Small),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+                        ) {
+                            Icon(
+                                imageVector = TablerIcons.Outline.InfoCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.expense_autofill_ai_disclaimer),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
 
                 if (uiState.receiptUri == null) {
                     GradientButton(
@@ -80,103 +162,5 @@ fun ReceiptStep(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun AiAutoFillCard(
-    modifier: Modifier = Modifier
-) {
-    FlatCard(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(MaterialTheme.spacing.Default),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-        ) {
-            AiAutoFillHeader()
-
-            Text(
-                text = stringResource(R.string.expense_autofill_ai_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            AiDisclaimerBox()
-        }
-    }
-}
-
-@Composable
-private fun AiAutoFillHeader() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.secondary
-                        )
-                    ),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = TablerIcons.Outline.PhotoAi,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Column {
-            Text(
-                text = stringResource(R.string.expense_autofill_ai_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = stringResource(R.string.expense_autofill_ai_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@Composable
-private fun AiDisclaimerBox() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                shape = MaterialTheme.shapes.small
-            )
-            .padding(MaterialTheme.spacing.Small),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-    ) {
-        Icon(
-            imageVector = TablerIcons.Outline.InfoCircle,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(16.dp)
-        )
-        Text(
-            text = stringResource(R.string.expense_autofill_ai_disclaimer),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f)
-        )
     }
 }
