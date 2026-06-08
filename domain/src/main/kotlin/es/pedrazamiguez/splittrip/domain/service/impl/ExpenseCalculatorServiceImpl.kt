@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
+import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
@@ -8,10 +9,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 class ExpenseCalculatorServiceImpl : ExpenseCalculatorService {
-
-    companion object {
-        private const val RATE_PRECISION = 6
-    }
 
     // ── Cents Conversion ─────────────────────────────────────────────────
 
@@ -178,7 +175,11 @@ class ExpenseCalculatorServiceImpl : ExpenseCalculatorService {
             // rate = deductedBaseAmount / amountWithdrawn (base per cash unit)
             val rate = if (withdrawal.amountWithdrawn > 0) {
                 BigDecimal(withdrawal.deductedBaseAmount)
-                    .divide(BigDecimal(withdrawal.amountWithdrawn), RATE_PRECISION, RoundingMode.HALF_UP)
+                    .divide(
+                        BigDecimal(withdrawal.amountWithdrawn),
+                        DomainConstants.RATE_PRECISION,
+                        RoundingMode.HALF_UP
+                    )
             } else {
                 BigDecimal.ZERO
             }

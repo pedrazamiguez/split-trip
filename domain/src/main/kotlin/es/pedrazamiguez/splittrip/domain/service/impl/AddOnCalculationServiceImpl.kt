@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
+import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -13,10 +14,6 @@ import java.math.RoundingMode
 class AddOnCalculationServiceImpl(
     private val addOnResolverFactory: AddOnResolverFactory = AddOnResolverFactory()
 ) : AddOnCalculationService {
-
-    private companion object {
-        const val RATE_PRECISION = 6
-    }
 
     // ── Add-On Amount Resolution ────────────────────────────────────────
 
@@ -205,12 +202,12 @@ class AddOnCalculationServiceImpl(
 
         val nonDiscountFraction = totalIncludedPercentage.divide(
             BigDecimal("100"),
-            RATE_PRECISION,
+            DomainConstants.RATE_PRECISION,
             RoundingMode.HALF_UP
         )
         val discountFraction = totalIncludedDiscountPercentage.divide(
             BigDecimal("100"),
-            RATE_PRECISION,
+            DomainConstants.RATE_PRECISION,
             RoundingMode.HALF_UP
         )
         // Non-discount add-ons increase the base, discounts decrease it
