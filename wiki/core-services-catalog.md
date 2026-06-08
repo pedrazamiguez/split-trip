@@ -206,9 +206,13 @@ All components are `@Composable` functions following Material 3 design. They acc
 | `UiConstants` | `constant/UiConstants.kt` | UI-layer constants (animation durations, sizes, etc.). |
 | `NavigationUtils` | `navigation/NavigationUtils.kt` | Helper functions for common navigation patterns (popBackStack, navigate with arguments). |
 | `DoubleTapBackToExitHandler` | `navigation/DoubleTapBackToExitHandler.kt` | Composable that implements "press back twice to exit" behavior. |
+| `DomainConstants.DEFAULT_DECIMAL_PLACES` | `domain/.../constant/DomainConstants.kt` | `2` — canonical default decimal places for domain money math and parsing defaults. |
+| `DomainConstants.RATE_PRECISION` | `domain/.../constant/DomainConstants.kt` | `6` — canonical intermediate precision for exchange-rate division operations. |
 | `AppConstants.FLOW_RETENTION_TIME` | `core/common/.../AppConstants.kt` | `5000L` ms — `WhileSubscribed` stop timeout for hot flows. |
 | `AppConstants.FLOW_REPLAY_EXPIRATION` | `core/common/.../AppConstants.kt` | `0L` ms — replay cache reset delay (prevents stale-state flash on tab re-entry). |
 | `AppConstants.BALANCE_COMPUTATION_DEBOUNCE_MS` | `core/common/.../AppConstants.kt` | `300L` ms — debounce applied to the balance computation flow to absorb rapid Firestore reconciliation bursts. |
+
+`AppConstants` remains the source of app-lifecycle/UI-layer timing constants; domain precision constants live in `DomainConstants` to keep module boundaries clean.
 
 ---
 

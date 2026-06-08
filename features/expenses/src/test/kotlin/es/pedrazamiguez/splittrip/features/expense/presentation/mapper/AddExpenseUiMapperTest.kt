@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
@@ -818,7 +819,7 @@ class AddExpenseUiMapperTest {
             assertEquals(
                 0,
                 BigDecimal("0.909091").compareTo(
-                    rate.setScale(6, java.math.RoundingMode.HALF_UP)
+                    rate.setScale(DomainConstants.RATE_PRECISION, java.math.RoundingMode.HALF_UP)
                 )
             )
         }

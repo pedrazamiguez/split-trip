@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.usecase.expense.impl
 
+import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
@@ -17,10 +18,6 @@ class PreviewCashExchangeRateUseCaseImpl(
     private val expenseCalculatorService: ExpenseCalculatorService,
     private val exchangeRateCalculationService: ExchangeRateCalculationService
 ) : PreviewCashExchangeRateUseCase {
-
-    companion object {
-        private const val RATE_PRECISION = 6
-    }
 
     override suspend operator fun invoke(
         groupId: String,
@@ -75,7 +72,7 @@ class PreviewCashExchangeRateUseCaseImpl(
         }
 
         val weightedDisplayRate = BigDecimal(totalWithdrawn)
-            .divide(BigDecimal(totalDeducted), RATE_PRECISION, RoundingMode.HALF_UP)
+            .divide(BigDecimal(totalDeducted), DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
         return CashRatePreviewResult.Available(
             CashRatePreview(displayRate = weightedDisplayRate)
         )

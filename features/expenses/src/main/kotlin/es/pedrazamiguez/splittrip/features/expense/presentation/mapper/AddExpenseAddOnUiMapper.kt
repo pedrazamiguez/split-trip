@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
+import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.AddOn
@@ -14,10 +15,6 @@ import java.math.RoundingMode
  * function-count threshold.
  */
 class AddExpenseAddOnUiMapper {
-
-    private companion object {
-        private const val RATE_PRECISION = 6
-    }
 
     /**
      * Maps add-on UI models to domain [AddOn] objects.
@@ -52,7 +49,7 @@ class AddExpenseAddOnUiMapper {
         val normalizedRate = CurrencyConverter.normalizeAmountString(displayExchangeRate.trim())
         val displayRate = normalizedRate.toBigDecimalOrNull() ?: BigDecimal.ONE
         return if (displayRate.compareTo(BigDecimal.ZERO) != 0) {
-            BigDecimal.ONE.divide(displayRate, RATE_PRECISION, RoundingMode.HALF_UP)
+            BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
         } else {
             BigDecimal.ONE
         }

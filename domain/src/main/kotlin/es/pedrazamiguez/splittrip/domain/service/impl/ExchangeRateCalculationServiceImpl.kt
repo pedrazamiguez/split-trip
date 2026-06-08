@@ -1,16 +1,12 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
+import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
-
-    private companion object {
-        const val RATE_PRECISION = 6
-        const val DEFAULT_DECIMAL_PLACES = 2
-    }
 
     // ── Core BigDecimal-based Calculations ───────────────────────────────
 
@@ -42,7 +38,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
     override fun calculateImpliedRate(sourceAmount: BigDecimal, groupAmount: BigDecimal): BigDecimal {
         if (sourceAmount.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO
         // Target / Source = Rate (e.g. 27.35 EUR / 1000 THB = 0.02735)
-        return groupAmount.divide(sourceAmount, RATE_PRECISION, RoundingMode.HALF_UP)
+        return groupAmount.divide(sourceAmount, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
     }
 
     // ── String-based Convenience Methods ─────────────────────────────────
@@ -95,7 +91,11 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
 
         // Convert display rate (group to source) to calculation rate (source to group)
         // If 1 EUR = 37 THB, then 1 THB = 1/37 EUR
-        val calculationRate = BigDecimal.ONE.divide(displayRate, RATE_PRECISION, RoundingMode.HALF_UP)
+        val calculationRate = BigDecimal.ONE.divide(
+            displayRate,
+            DomainConstants.RATE_PRECISION,
+            RoundingMode.HALF_UP
+        )
 
         val result = calculateGroupAmount(sourceAmount, calculationRate, targetDecimalPlaces)
         return result.toPlainString()
@@ -123,7 +123,11 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         if (targetAmount.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO.toPlainString()
 
         // Display rate = source / target (e.g., 1000 THB / 27 EUR = 37 THB per EUR)
-        val displayRate = sourceAmount.divide(targetAmount, RATE_PRECISION, RoundingMode.HALF_UP)
+        val displayRate = sourceAmount.divide(
+            targetAmount,
+            DomainConstants.RATE_PRECISION,
+            RoundingMode.HALF_UP
+        )
         return displayRate.stripTrailingZeros().toPlainString()
     }
 
@@ -136,7 +140,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
     override fun displayRateToCalculationRate(displayRateString: String): BigDecimal {
         val displayRate = parseRate(displayRateString)
         if (displayRate.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO
-        return BigDecimal.ONE.divide(displayRate, RATE_PRECISION, RoundingMode.HALF_UP)
+        return BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
     }
 
     /**
@@ -176,7 +180,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
     override fun calculateExchangeRate(amountWithdrawn: Long, deductedBaseAmount: Long): BigDecimal {
         if (deductedBaseAmount <= 0) return BigDecimal.ONE
         return BigDecimal(amountWithdrawn)
-            .divide(BigDecimal(deductedBaseAmount), RATE_PRECISION, RoundingMode.HALF_UP)
+            .divide(BigDecimal(deductedBaseAmount), DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
     }
 
     /**
@@ -195,7 +199,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
     override fun calculateBlendedRate(sourceAmountCents: Long, groupAmountCents: Long): BigDecimal {
         if (sourceAmountCents <= 0 || groupAmountCents <= 0) return BigDecimal.ONE
         return BigDecimal(groupAmountCents)
-            .divide(BigDecimal(sourceAmountCents), RATE_PRECISION, RoundingMode.HALF_UP)
+            .divide(BigDecimal(sourceAmountCents), DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
     }
 
     /**
@@ -214,7 +218,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
     override fun calculateBlendedDisplayRate(sourceAmountCents: Long, groupAmountCents: Long): BigDecimal {
         if (sourceAmountCents <= 0 || groupAmountCents <= 0) return BigDecimal.ONE
         return BigDecimal(sourceAmountCents)
-            .divide(BigDecimal(groupAmountCents), RATE_PRECISION, RoundingMode.HALF_UP)
+            .divide(BigDecimal(groupAmountCents), DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
     }
 
     /**
@@ -238,7 +242,11 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         val displayRate = normalized.toBigDecimalOrNull() ?: return 0L
         if (displayRate.compareTo(BigDecimal.ZERO) == 0) return 0L
 
-        val calculationRate = BigDecimal.ONE.divide(displayRate, RATE_PRECISION, RoundingMode.HALF_UP)
+        val calculationRate = BigDecimal.ONE.divide(
+            displayRate,
+            DomainConstants.RATE_PRECISION,
+            RoundingMode.HALF_UP
+        )
 
         return BigDecimal(amountCents)
             .multiply(calculationRate)
