@@ -39,15 +39,15 @@ Perform the following operations to fetch the PR changes and inspect the files m
 
 For each modified or new file in the diff:
 
-CHECK: Search for `Double` or `Float` used for currency amounts, shares, exchange rates, or percent splits — all must use `BigDecimal` with explicit `RoundingMode` and `scale`.
-CHECK: Firestore document-layer serialization uses `String` (`toPlainString()` / `toBigDecimalOrNull()`), not `Double`.
-CHECK: Run `wc -l <path/to/file.kt>` for every modified or new production `.kt` file — none may exceed 600 lines (test files exempt).
-CHECK: ViewModels must not inject Repositories, `Context`, `LocaleProvider`, or other ViewModels — only UseCases, Mappers, and Domain Services.
-CHECK: If a ViewModel's `onEvent()` handles >5 event categories or the file exceeds ~200 lines, verify that logic is extracted into plain Event Handler classes.
-CHECK: UI components use no raw 1px solid borders, use Plus Jakarta Sans + Manrope typography, and apply `LocalBottomPadding.current` on tab screens.
-CHECK: New functionality has corresponding unit or instrumentation tests. Kotlin's `assert()` is never used — JUnit assertions only.
-CHECK: Repositories launching coroutines inject a `CoroutineDispatcher` (default `Dispatchers.IO`) — never hardcoded.
-CHECK: Formatting is handled in UI Mappers (`*UiMapper` / `*UiMapperImpl`) via `LocaleProvider`. Never in ViewModels or Domain Services.
+- CHECK: Search for `Double` or `Float` used for currency amounts, shares, exchange rates, or percent splits — all must use `BigDecimal` with explicit `RoundingMode` and `scale`.
+- CHECK: Firestore document-layer serialization uses `String` (`toPlainString()` / `toBigDecimalOrNull()`), not `Double`.
+- CHECK: Run `wc -l <path/to/file.kt>` for every modified or new production `.kt` file — none may exceed 600 lines (test files exempt).
+- CHECK: ViewModels must not inject Repositories, `Context`, `LocaleProvider`, or other ViewModels — only UseCases, Mappers, and Domain Services.
+- CHECK: If a ViewModel's `onEvent()` handles >5 event categories or the file exceeds ~200 lines, verify that logic is extracted into plain Event Handler classes.
+- CHECK: UI components use no raw 1px solid borders, use Plus Jakarta Sans + Manrope typography, and apply `LocalBottomPadding.current` on tab screens.
+- CHECK: New functionality has corresponding unit or instrumentation tests. Kotlin's `assert()` is never used — JUnit assertions only.
+- CHECK: Repositories launching coroutines inject a `CoroutineDispatcher` (default `Dispatchers.IO`) — never hardcoded.
+- CHECK: Formatting is handled in UI Mappers (`*UiMapper` / `*UiMapperImpl`) via `LocaleProvider`. Never in ViewModels or Domain Services.
 
 ---
 

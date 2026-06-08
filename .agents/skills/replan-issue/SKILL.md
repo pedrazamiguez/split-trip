@@ -58,11 +58,11 @@ Perform a comparative analysis of the original approach against the proposed alt
 
 Ensure the proposed alternative complies with all architecture constraints:
 
-REQUIREMENT: Features cannot see other features or `:data`. Only `:domain` and `:core` are visible.
-REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
-FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
-CHECK: If any handler class exceeds ~200 lines, extract event handling into dedicated Event Handler classes.
-CHECK: None of the modified files will exceed the 600-line hard limit.
+- REQUIREMENT: Features cannot see other features or `:data`. Only `:domain` and `:core` are visible.
+- REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+- FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+- CHECK: If any handler class exceeds ~200 lines, extract event handling into dedicated Event Handler classes.
+- CHECK: None of the modified files will exceed the 600-line hard limit.
 
 ---
 

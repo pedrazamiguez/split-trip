@@ -42,16 +42,16 @@ Plan a technical solution for this issue:
 
 ## Step 2 — Formulate the Technical Solution
 
-REQUIREMENT: No pragmatic patches. Clean architecture only.
-REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
-FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
-REQUIREMENT: All decimal math → BigDecimal with explicit RoundingMode and scale.
-FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
-REQUIREMENT: Offline-first — Room write first; cloud sync in background via reusable delegates.
-REQUIREMENT: IDs and timestamps generated locally (UUID + System.currentTimeMillis()).
-REQUIREMENT: Production source files ≤ 600 lines. Extract handlers/delegates before going over.
-REQUIREMENT: Formatting in UiMappers only (via LocaleProvider). Never in ViewModels or Domain Services.
-REQUIREMENT: Tab screens use LocalBottomPadding.current for all scrollable lists, FABs, bottom buttons.
+- REQUIREMENT: No pragmatic patches. Clean architecture only.
+- REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+- FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+- REQUIREMENT: All decimal math → BigDecimal with explicit RoundingMode and scale.
+- FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
+- REQUIREMENT: Offline-first — Room write first; cloud sync in background via reusable delegates.
+- REQUIREMENT: IDs and timestamps generated locally (UUID + System.currentTimeMillis()).
+- REQUIREMENT: Production source files ≤ 600 lines. Extract handlers/delegates before going over.
+- REQUIREMENT: Formatting in UiMappers only (via LocaleProvider). Never in ViewModels or Domain Services.
+- REQUIREMENT: Tab screens use LocalBottomPadding.current for all scrollable lists, FABs, bottom buttons.
 
 Draft a detailed, step-by-step implementation plan including:
 - A clear summary of the problem and approach.

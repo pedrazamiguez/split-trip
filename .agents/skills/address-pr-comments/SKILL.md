@@ -56,15 +56,15 @@ If a file is at or near 600 lines (the Konsist hard limit), plan a split or extr
 
 Ensure you adhere to the project quality and style standards, including detekt rules, ktlint formatting, test coverage requirements, and the 600-line file-size limit.
 
-REQUIREMENT: No pragmatic patches. Clean architecture only.
-REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
-FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
-REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
-FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
-REQUIREMENT: Offline-first — Room write first, cloud sync via reusable delegates.
-REQUIREMENT: Production source files ≤ 600 lines.
-REQUIREMENT: Formatting in UiMappers only. Never in ViewModels or Domain Services.
-REQUIREMENT: Comment the *why*, not the *what*. No redundant comments.
+- REQUIREMENT: No pragmatic patches. Clean architecture only.
+- REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+- FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+- REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
+- FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
+- REQUIREMENT: Offline-first — Room write first, cloud sync via reusable delegates.
+- REQUIREMENT: Production source files ≤ 600 lines.
+- REQUIREMENT: Formatting in UiMappers only. Never in ViewModels or Domain Services.
+- REQUIREMENT: Comment the *why*, not the *what*. No redundant comments.
 
 ---
 

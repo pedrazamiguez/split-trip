@@ -65,12 +65,12 @@ wc -l <path/to/file.kt>
 Implement code modifications and unit tests, adhering strictly to all project architecture constraints:
 
 1. **Architecture Constraints:**
-   REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
-   FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
-   REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
-   FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
-   REQUIREMENT: Formatting in UiMappers only (via LocaleProvider). Never in ViewModels or Domain Services.
-   REQUIREMENT: Tab screens apply LocalBottomPadding to avoid layout obstruction by the bottom nav bar.
+   - REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+   - FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+   - REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
+   - FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
+   - REQUIREMENT: Formatting in UiMappers only (via LocaleProvider). Never in ViewModels or Domain Services.
+   - REQUIREMENT: Tab screens apply LocalBottomPadding to avoid layout obstruction by the bottom nav bar.
 2. **True Offline-First Protocol:**
    - Write to Room local database first (immediate UI update).
    - Generate UUIDs and timestamps (`createdAt = System.currentTimeMillis()`) locally in the Repository or UseCase.

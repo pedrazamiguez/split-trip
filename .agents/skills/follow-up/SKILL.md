@@ -68,7 +68,7 @@ If the triage in Step 2 reveals that code changes are required, you MUST automat
 
 The comment must include:
 - Summary of proposed changes per file
-   - Architecture compliance checklist confirmed for each new/modified component
+- Architecture compliance checklist confirmed for each new/modified component
 
 Stick to the plan. If the plan needs to change, update the comment on the issue (also automatically using the github-mcp-server).
 
@@ -92,15 +92,15 @@ If the result exceeds 600 lines, refactor immediately — do not move on.
 
 ## Step 5 — Implement
 
-REQUIREMENT: No pragmatic patches. Clean architecture only.
-REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
-FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
-REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
-FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
-REQUIREMENT: Offline-first — Room write first, cloud sync via reusable delegates.
-REQUIREMENT: Production source files ≤ 600 lines.
-REQUIREMENT: Formatting in UiMappers only. Never in ViewModels or Domain Services.
-REQUIREMENT: Comment the *why*, not the *what*. No redundant comments.
+- REQUIREMENT: No pragmatic patches. Clean architecture only.
+- REQUIREMENT: ViewModels inject only UseCases, Mappers, Domain Services.
+- FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
+- REQUIREMENT: BigDecimal with explicit RoundingMode and scale for all decimal math.
+- FORBIDDEN: Double or Float for money, percentage, or exchange-rate values.
+- REQUIREMENT: Offline-first — Room write first, cloud sync via reusable delegates.
+- REQUIREMENT: Production source files ≤ 600 lines.
+- REQUIREMENT: Formatting in UiMappers only. Never in ViewModels or Domain Services.
+- REQUIREMENT: Comment the *why*, not the *what*. No redundant comments.
 
 ---
 
