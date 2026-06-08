@@ -37,39 +37,17 @@ Perform the following operations to fetch the PR changes and inspect the files m
 
 ## Step 2 — Architecture Check (Strict Gating)
 
-For each modified or new file in the diff, perform the following validation checks:
+For each modified or new file in the diff:
 
-1. **Precision-Sensitive Math (`BigDecimal` only)**:
-   - Search the diff/files for any usage of `Double` or `Float` representing currency amounts, shares, exchange rates, or percent splits.
-   - All such values must strictly use `BigDecimal` with an explicit `RoundingMode` and `scale`.
-   - Ensure Firestore serialization at the document layer uses `String` (`toPlainString()` / `toBigDecimalOrNull()`) to avoid precision loss.
-
-2. **File-Size Hard Limit (600 lines)**:
-   - For every modified or new production source file (e.g. `.kt` files in `main/`), check its line count:
-     ```bash
-     wc -l <path/to/file.kt>
-     ```
-   - No production file must exceed **600 lines** (enforced by Konsist). Note that test files are exempt.
-
-3. **ViewModel Restrictions**:
-   - Check if any ViewModels depend directly on repositories. ViewModels must only depend on UseCases, Mappers, and Domain Services.
-   - ViewModels must not inject Android `Context`, `LocaleProvider`, or other ViewModels.
-   - If a ViewModel's `onEvent()` handles >5 event categories or the ViewModel exceeds ~200 lines, verify if logic is extracted into plain Event Handler classes.
-
-4. **Horizon Narrative Design System**:
-   - Ensure UI components conform to the "Horizon Narrative" language:
-     - No raw 1px solid borders. Use tonal shifts or container level changes.
-     - Plus Jakarta Sans + Manrope typography.
-     - Usage of `LocalBottomPadding.current` applied as bottom content padding for all scrollable lists, FABs, or bottom-anchored buttons on tab screens.
-
-5. **Completeness of Tests**:
-   - Verify if new functionality/components have corresponding unit or instrumentation tests.
-   - Ensure Kotlin's `assert()` is NEVER used (use JUnit assertions instead).
-   - Ensure repositories that launch coroutines inject a `CoroutineDispatcher` (default `Dispatchers.IO`) for testability and do not hardcode it.
-
-6. **Mappers & Services**:
-   - Check that formatting is handled in UI Mappers (`*UiMapper` or `*UiMapperImpl`) using `LocaleProvider` and NOT inside ViewModels or Domain Services.
-   - Check that domain services do not contain presentation or formatting logic.
+CHECK: Search for `Double` or `Float` used for currency amounts, shares, exchange rates, or percent splits — all must use `BigDecimal` with explicit `RoundingMode` and `scale`.
+CHECK: Firestore document-layer serialization uses `String` (`toPlainString()` / `toBigDecimalOrNull()`), not `Double`.
+CHECK: Run `wc -l <path/to/file.kt>` for every modified or new production `.kt` file — none may exceed 600 lines (test files exempt).
+CHECK: ViewModels must not inject Repositories, `Context`, `LocaleProvider`, or other ViewModels — only UseCases, Mappers, and Domain Services.
+CHECK: If a ViewModel's `onEvent()` handles >5 event categories or the file exceeds ~200 lines, verify that logic is extracted into plain Event Handler classes.
+CHECK: UI components use no raw 1px solid borders, use Plus Jakarta Sans + Manrope typography, and apply `LocalBottomPadding.current` on tab screens.
+CHECK: New functionality has corresponding unit or instrumentation tests. Kotlin's `assert()` is never used — JUnit assertions only.
+CHECK: Repositories launching coroutines inject a `CoroutineDispatcher` (default `Dispatchers.IO`) — never hardcoded.
+CHECK: Formatting is handled in UI Mappers (`*UiMapper` / `*UiMapperImpl`) via `LocaleProvider`. Never in ViewModels or Domain Services.
 
 ---
 
