@@ -64,5 +64,6 @@ Assess potential issues:
 Create a detailed feasibility report containing:
 - **Executive Summary**: A clear recommendation on whether the project should proceed with this feature.
 - **Proposed Architecture**: Recommended module assignments, Clean Architecture layer mapping, and data schemas.
+- **Spec-Driven Development (SDD) Alignment**: High-level specification of key interface contracts, function signatures, database schema changes, and MVI state changes to serve as an unambiguous foundation for the subsequent implementation plan.
 - **Implementation Trade-offs**: Alternative libraries or design patterns that were considered, with pros and cons for each.
 - **Estimated Effort / Risk**: Areas of highest complexity or technical uncertainty.
