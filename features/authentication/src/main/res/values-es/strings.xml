@@ -28,5 +28,13 @@
     <string name="register_error_password_too_short">La contraseña debe tener al menos 6 caracteres.</string>
     <string name="register_error_passwords_do_not_match">Las contraseñas no coinciden.</string>
     <string name="register_error_failed">Error al crear la cuenta. Por favor, inténtelo de nuevo.</string>
+
+    <!-- Forgot Password Screen -->
+    <string name="forgot_password_title">Restablecer contraseña</string>
+    <string name="forgot_password_subtitle">Introduce tu correo electrónico para recibir un enlace de restablecimiento.</string>
+    <string name="forgot_password_button">Enviar enlace</string>
+    <string name="forgot_password_email_label">Email</string>
+    <string name="forgot_password_success_message">Si este correo está registrado, recibirás un enlace de restablecimiento pronto.</string>
+    <string name="forgot_password_back_a11y">Atrás</string>
 </resources>
 

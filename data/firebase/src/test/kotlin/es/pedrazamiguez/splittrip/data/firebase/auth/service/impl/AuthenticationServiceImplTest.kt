@@ -268,4 +268,38 @@ class AuthenticationServiceImplTest {
             assertEquals("Firestore write failed", result.exceptionOrNull()?.message)
         }
     }
+
+    @Nested
+    inner class SendPasswordResetEmail {
+
+        @Test
+        fun `sendPasswordResetEmail success calls firebaseAuth and returns success`() = runTest {
+            // Given
+            val email = "user@example.com"
+            every { firebaseAuth.sendPasswordResetEmail(email) } returns Tasks.forResult(null)
+
+            // When
+            val result = service.sendPasswordResetEmail(email)
+
+            // Then
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(email) }
+        }
+
+        @Test
+        fun `sendPasswordResetEmail failure propagates exception from firebaseAuth`() = runTest {
+            // Given
+            val email = "user@example.com"
+            val exception = RuntimeException("Firebase error")
+            every { firebaseAuth.sendPasswordResetEmail(email) } returns Tasks.forException(exception)
+
+            // When
+            val result = service.sendPasswordResetEmail(email)
+
+            // Then
+            assertTrue(result.isFailure)
+            assertEquals("Firebase error", result.exceptionOrNull()?.message)
+            coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(email) }
+        }
+    }
 }
