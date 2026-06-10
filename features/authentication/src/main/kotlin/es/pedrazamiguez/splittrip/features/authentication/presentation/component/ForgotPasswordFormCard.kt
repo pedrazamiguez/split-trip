@@ -15,7 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormSubmitButton
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.features.authentication.R
@@ -52,10 +52,10 @@ internal fun ForgotPasswordFormCard(
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.Large))
 
-            FormSubmitButton(
-                label = stringResource(R.string.forgot_password_button),
-                onSubmit = { onEvent(ForgotPasswordUiEvent.Submit) },
-                isEnabled = !uiState.isLoading,
+            GradientButton(
+                text = stringResource(R.string.forgot_password_button),
+                onClick = { onEvent(ForgotPasswordUiEvent.Submit) },
+                enabled = !uiState.isLoading,
                 isLoading = uiState.isLoading,
                 modifier = Modifier.fillMaxWidth()
             )
