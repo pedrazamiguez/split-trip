@@ -70,9 +70,10 @@ Ensure the proposed alternative complies with all architecture constraints:
 
 Draft a revised proposed solution or plan:
 1. Clearly document the new design decisions, highlight the chosen alternative, and provide a clear technical rationale for the change.
-2. Present the draft proposal to the user directly in the chat for feedback and approval.
-3. **DO NOT** create or edit the system planning files (`implementation_plan.md` or `task.md`). Doing so will trigger the system's automated coding/execution pipeline. If you want to use an artifact, use a custom markdown file name (e.g., `revised_proposal.md`).
-4. **DO NOT** modify any code or execute changes.
+2. Ensure any replanned changes maintain the same high level of detail as the initial plan, explicitly rewriting the technical specification for all affected parts of the system (including exact file paths, signatures, database schemas, validation rules, and test cases) following the Spec-Driven Development standard.
+3. Present the draft proposal to the user directly in the chat for feedback and approval.
+4. **DO NOT** create or edit the system planning files (`implementation_plan.md` or `task.md`). Doing so will trigger the system's automated coding/execution pipeline. If you want to use an artifact, use a custom markdown file name (e.g., `revised_proposal.md`).
+5. **DO NOT** modify any code or execute changes.
 
 
 ---
