@@ -48,8 +48,8 @@ fun LoginFeature(
     val isGoogleSignInAvailable = !webClientId.isNullOrEmpty()
 
     val pillController = LocalTopPillController.current
+    val navController = es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController.current
     val forgotPasswordMessage = stringResource(id = R.string.login_forgot_password_message)
-    val startJourneyMessage = stringResource(id = R.string.login_start_journey_message)
 
     LoginScreen(
         uiState = uiState,
@@ -64,7 +64,7 @@ fun LoginFeature(
             pillController.showPill(forgotPasswordMessage)
         },
         onStartJourneyClick = {
-            pillController.showPill(startJourneyMessage)
+            navController.navigate(es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes.REGISTER)
         },
         onGoogleSignInClick = {
             if (!isGoogleSignInAvailable) return@LoginScreen

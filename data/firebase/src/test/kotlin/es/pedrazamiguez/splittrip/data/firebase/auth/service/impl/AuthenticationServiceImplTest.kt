@@ -166,4 +166,106 @@ class AuthenticationServiceImplTest {
             coVerify(exactly = 0) { cloudUserDataSource.saveUser(any()) }
         }
     }
+
+    @Nested
+    inner class SignUp {
+
+        @BeforeEach
+        fun setUpSignUp() {
+            mockkStatic(android.text.TextUtils::class)
+            every { android.text.TextUtils.isEmpty(any()) } answers {
+                val arg = firstArg<CharSequence?>()
+                arg == null || arg.isEmpty()
+            }
+        }
+
+        @AfterEach
+        fun tearDownSignUp() {
+            unmockkStatic(android.text.TextUtils::class)
+        }
+
+        private fun mockSuccessfulSignUp(
+            email: String = "newuser@example.com",
+            displayName: String = "New User",
+            password: String = "password123",
+            userId: String = "firebase-uid-999"
+        ): FirebaseUser {
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            every { firebaseUser.uid } returns userId
+            every { firebaseUser.email } returns email
+            every { firebaseUser.displayName } returns displayName
+            every { firebaseUser.updateProfile(any()) } returns Tasks.forResult(null)
+
+            val authResult = mockk<AuthResult>()
+            every { authResult.user } returns firebaseUser
+            every { firebaseAuth.createUserWithEmailAndPassword(email, password) } returns Tasks.forResult(authResult)
+
+            return firebaseUser
+        }
+
+        @Test
+        fun `returns userId on successful sign-up`() = runTest {
+            // Given
+            mockSuccessfulSignUp()
+            coEvery { cloudUserDataSource.saveUser(any()) } returns Unit
+
+            // When
+            val result = service.signUp("newuser@example.com", "New User", "password123")
+
+            // Then
+            assertTrue(result.isSuccess)
+            assertEquals("firebase-uid-999", result.getOrNull())
+        }
+
+        @Test
+        fun `updates profile display name and saves user document to Firestore`() = runTest {
+            // Given
+            mockSuccessfulSignUp()
+            coEvery { cloudUserDataSource.saveUser(any()) } returns Unit
+
+            // When
+            service.signUp("newuser@example.com", "New User", "password123")
+
+            // Then
+            coVerify(exactly = 1) {
+                cloudUserDataSource.saveUser(
+                    match { user ->
+                        user.userId == "firebase-uid-999" &&
+                            user.email == "newuser@example.com" &&
+                            user.displayName == "New User" &&
+                            user.profileImagePath == null
+                    }
+                )
+            }
+        }
+
+        @Test
+        fun `fails when Firebase user is null`() = runTest {
+            // Given
+            val authResult = mockk<AuthResult>()
+            every { authResult.user } returns null
+            every { firebaseAuth.createUserWithEmailAndPassword(any(), any()) } returns Tasks.forResult(authResult)
+
+            // When
+            val result = service.signUp("newuser@example.com", "New User", "password123")
+
+            // Then
+            assertTrue(result.isFailure)
+            coVerify(exactly = 0) { cloudUserDataSource.saveUser(any()) }
+        }
+
+        @Test
+        fun `fails when Firestore save fails`() = runTest {
+            // Given
+            mockSuccessfulSignUp()
+            coEvery { cloudUserDataSource.saveUser(any()) } throws RuntimeException("Firestore write failed")
+
+            // When
+            val result = service.signUp("newuser@example.com", "New User", "password123")
+
+            // Then
+            assertTrue(result.isFailure)
+            assertEquals("Firestore write failed", result.exceptionOrNull()?.message)
+        }
+    }
 }
