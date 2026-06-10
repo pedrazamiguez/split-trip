@@ -4,6 +4,7 @@ import android.net.Uri
 
 object Routes {
     const val LOGIN = "login"
+    const val REGISTER = "register"
     const val ONBOARDING = "onboarding"
     const val MAIN = "main"
     const val PROFILE = "profile"

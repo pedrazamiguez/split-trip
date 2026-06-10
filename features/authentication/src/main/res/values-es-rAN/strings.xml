@@ -14,4 +14,15 @@
     <string name="login_start_journey">Comiença un biahe</string>
     <string name="login_forgot_password_message">La recuperaçión de contraçeña no êttá implementá todabía.</string>
     <string name="login_start_journey_message">El rehîttro no êttá implementao todabía.</string>
+    <string name="register_title">Únete a la êppediçión</string>
+    <string name="register_subtitle">Crea tu cuenta pa empeçâh a compartîh gâttô</string>
+    <string name="register_display_name_label">Nombre de uçuario</string>
+    <string name="register_confirm_password_label">Confirmâh contraçeña</string>
+    <string name="register_submit_button">Creâh cuenta</string>
+    <string name="register_already_member">¿Ya erê êpploradôh?</string>
+    <string name="register_sign_in_link">Iniçiâh çeçión</string>
+    <string name="register_error_invalid_email">Por fabôh, introduçe un correo elêttrónico bálido.</string>
+    <string name="register_error_empty_display_name">Er nombre no puede êttâh baçío.</string>
+    <string name="register_error_password_too_short">La contraçeña debe tenêh ar menô 6 carâtterê.</string>
+    <string name="register_error_passwords_do_not_match">Lâ contraçeñâ no coinçiden.</string>
 </resources>

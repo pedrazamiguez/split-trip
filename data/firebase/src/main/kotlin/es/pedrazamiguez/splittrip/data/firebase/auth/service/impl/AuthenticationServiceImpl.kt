@@ -38,13 +38,31 @@ class AuthenticationServiceImpl(
             .await().user?.uid ?: ""
     }
 
-    override suspend fun signUp(email: String, password: String): Result<String> = runCatching {
-        firebaseAuth
-            .createUserWithEmailAndPassword(
-                email,
-                password
-            )
-            .await().user?.uid ?: ""
+    override suspend fun signUp(email: String, displayName: String, password: String): Result<String> = runCatching {
+        val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+        val firebaseUser = authResult.user ?: error("Sign-up succeeded but Firebase user is null")
+
+        // Update Firebase Auth profile with display name
+        val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+            .setDisplayName(displayName)
+            .build()
+        firebaseUser.updateProfile(profileUpdates).await()
+
+        // Populate domain User object
+        val user = User(
+            userId = firebaseUser.uid,
+            email = email.trim().lowercase(),
+            displayName = displayName,
+            profileImagePath = null,
+            createdAt = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC)
+        )
+
+        // Persist user document to Firestore atomically in NonCancellable block
+        withContext(NonCancellable) {
+            cloudUserDataSource.saveUser(user)
+        }
+
+        firebaseUser.uid
     }
 
     override suspend fun signOut(): Result<Unit> = runCatching {

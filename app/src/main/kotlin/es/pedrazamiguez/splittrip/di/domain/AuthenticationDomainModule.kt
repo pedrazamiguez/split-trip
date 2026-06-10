@@ -8,14 +8,25 @@ import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInWithEmailUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInWithGoogleUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignOutUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignUpWithEmailUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UnregisterDeviceTokenUseCase
 import org.koin.dsl.module
 
 val authenticationDomainModule = module {
+    factory<SignUpWithEmailUseCase> {
+        createLoggingProxy<SignUpWithEmailUseCase>(
+            SignUpWithEmailUseCaseImpl(
+                authenticationService = get<AuthenticationService>(),
+                registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>()
+            ),
+            LogTag.USE_CASE
+        )
+    }
     factory<SignInWithEmailUseCase> {
         createLoggingProxy<SignInWithEmailUseCase>(
             SignInWithEmailUseCaseImpl(
