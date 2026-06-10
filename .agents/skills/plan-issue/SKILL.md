@@ -53,10 +53,12 @@ Plan a technical solution for this issue:
 - REQUIREMENT: Formatting in UiMappers only (via LocaleProvider). Never in ViewModels or Domain Services.
 - REQUIREMENT: Tab screens use LocalBottomPadding.current for all scrollable lists, FABs, bottom buttons.
 
-Draft a detailed, step-by-step implementation plan including:
-- A clear summary of the problem and approach.
-- File-by-file changes categorized by component (showing file paths, new/modified/deleted files, classes, mappers, DI wiring, and unit tests).
-- Concrete code snippets / signatures for key logic.
+Draft a plan that functions as a **complete, unambiguous, and actionable technical specification**. The plan must explicitly define:
+- Exact target file paths (categorized by component, using `[NEW]`, `[MODIFY]`, or `[DELETE]` tags for each file).
+- Precise class names, interface/function signatures, constructor parameter names, parameter types, and return types.
+- Database schema updates (Room entity fields, Firestore document mappings) with exact types.
+- Control flow logic, business validation rules, and error handling expectations.
+- Specific test specifications (test class name, list of test case names with their input/output expectations and what should be mocked).
 
 ---
 
