@@ -29,7 +29,7 @@ class RegisterViewModel(
     private val _actions = Channel<RegisterUiAction>(Channel.BUFFERED)
     val actions = _actions.receiveAsFlow()
 
-    fun onEvent(event: RegisterUiEvent, onRegisterSuccess: () -> Unit) {
+    fun onEvent(event: RegisterUiEvent) {
         Timber.tag(LogTag.MVI).d("Event: $event")
 
         when (event) {
@@ -50,12 +50,12 @@ class RegisterViewModel(
             }
 
             RegisterUiEvent.SubmitSignUp -> {
-                submitSignUp(onRegisterSuccess)
+                submitSignUp()
             }
         }
     }
 
-    private fun submitSignUp(onRegisterSuccess: () -> Unit) {
+    private fun submitSignUp() {
         val email = _uiState.value.email.trim()
         val displayName = _uiState.value.displayName.trim()
         val password = _uiState.value.password
@@ -91,13 +91,13 @@ class RegisterViewModel(
             )
                 .onSuccess {
                     _uiState.update { it.copy(isLoading = false) }
-                    onRegisterSuccess()
+                    _actions.send(RegisterUiAction.RegisterSuccess)
                 }
                 .onFailure { e ->
                     Timber.e(e, "Sign-up failed")
                     _uiState.update {
                         it.copy(
-                            error = UiText.DynamicString(e.message ?: "Sign-up failed"),
+                            error = UiText.StringResource(R.string.register_error_failed),
                             isLoading = false
                         )
                     }

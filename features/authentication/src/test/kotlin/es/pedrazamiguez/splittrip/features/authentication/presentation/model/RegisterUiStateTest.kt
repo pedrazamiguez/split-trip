@@ -21,7 +21,7 @@ class RegisterUiStateTest {
         val toStringResult = state.toString()
 
         assertTrue(toStringResult.contains("email=${state.email.maskEmail()}"))
-        assertTrue(toStringResult.contains("displayName=Explorer"))
+        assertTrue(toStringResult.contains("displayName=***"))
         assertTrue(toStringResult.contains("password=***"))
         assertTrue(toStringResult.contains("confirmPassword=***"))
         assertTrue(toStringResult.contains("isLoading=true"))
@@ -32,6 +32,22 @@ class RegisterUiStateTest {
     fun `toString handles email without @ character`() {
         val state = RegisterUiState(
             email = "invalidemail",
+            displayName = "Explorer",
+            password = "secretPassword",
+            confirmPassword = "secretPassword",
+            isLoading = false,
+            error = null
+        )
+
+        val toStringResult = state.toString()
+
+        assertTrue(toStringResult.contains("email=***"))
+    }
+
+    @Test
+    fun `toString handles email with multiple @ characters`() {
+        val state = RegisterUiState(
+            email = "invalid@email@here.com",
             displayName = "Explorer",
             password = "secretPassword",
             confirmPassword = "secretPassword",

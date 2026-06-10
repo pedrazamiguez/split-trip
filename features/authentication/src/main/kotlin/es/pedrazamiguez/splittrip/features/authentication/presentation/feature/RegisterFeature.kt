@@ -24,6 +24,9 @@ fun RegisterFeature(
                 RegisterUiAction.NavigateBack -> {
                     navController.popBackStack()
                 }
+                RegisterUiAction.RegisterSuccess -> {
+                    onRegisterSuccess()
+                }
             }
         }
     }
@@ -31,7 +34,7 @@ fun RegisterFeature(
     RegisterScreen(
         uiState = uiState,
         onEvent = { event ->
-            viewModel.onEvent(event, onRegisterSuccess)
+            viewModel.onEvent(event)
         },
         onLoginClick = {
             navController.popBackStack()

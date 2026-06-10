@@ -57,7 +57,7 @@ class AuthenticationServiceImpl(
             createdAt = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC)
         )
 
-        // Persist user document to Firestore atomically in NonCancellable block
+        // Persist user document to Firestore in a NonCancellable block to ensure it completes even if the coroutine is cancelled
         withContext(NonCancellable) {
             cloudUserDataSource.saveUser(user)
         }
@@ -80,7 +80,7 @@ class AuthenticationServiceImpl(
             profileImagePath = firebaseUser.photoUrl?.toString()
         )
 
-        // Persist user document atomically before returning.
+        // Persist user document before returning.
         // This MUST happen here (not in the UseCase) because Firebase Auth's
         // AuthStateListener fires immediately after signInWithCredential completes,
         // which triggers navigation away from Login and cancels the ViewModel's

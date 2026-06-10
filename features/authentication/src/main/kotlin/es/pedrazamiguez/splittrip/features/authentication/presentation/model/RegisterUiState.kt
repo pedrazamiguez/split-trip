@@ -11,13 +11,10 @@ data class RegisterUiState(
     val isLoading: Boolean = false,
     val error: UiText? = null
 ) {
-    override fun toString(): String =
-        "RegisterUiState(email=${if (email.contains(
-                '@'
-            )
-        ) {
-            email.maskEmail()
-        } else {
-            "***"
-        }}, displayName=$displayName, password=***, confirmPassword=***, isLoading=$isLoading, error=$error)"
+    override fun toString(): String {
+        val maskedEmail = email.maskEmail()
+        val emailString = if (maskedEmail == email) "***" else maskedEmail
+        return "RegisterUiState(email=$emailString, displayName=***, password=***, " +
+            "confirmPassword=***, isLoading=$isLoading, error=$error)"
+    }
 }

@@ -163,6 +163,7 @@ jobs:
           sarif_file: build/reports/detekt/merged.sarif
           category: "/tool:detekt"
           wait-for-processing: true
+          token: ${{ github.token }}
 
       - name: Upload Detekt reports (HTML + SARIF)
         if: always()
@@ -288,6 +289,7 @@ jobs:
           sarif_file: build/reports/cpd/cpd.sarif
           category: "/tool:cpd"
           wait-for-processing: true
+          token: ${{ github.token }}
 
       - name: Upload CPD reports
         if: always()
@@ -428,6 +430,7 @@ jobs:
           sarif_file: build/reports/lint/merged.sarif
           category: "/tool:android-lint"
           wait-for-processing: true
+          token: ${{ github.token }}
 
       - name: Upload Android Lint reports
         if: always()
