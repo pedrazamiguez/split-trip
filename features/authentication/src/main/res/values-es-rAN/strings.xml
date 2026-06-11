@@ -26,4 +26,9 @@
     <string name="register_error_password_too_short">La contraçeña debe tenêh ar menô 6 carâtterê.</string>
     <string name="register_error_passwords_do_not_match">Lâ contraçeñâ no coinçiden.</string>
     <string name="register_error_failed">Errôh ar creâh la cuenta. Por fabôh, inténtelo de nuebo.</string>
+    <string name="forgot_password_title">Rêttableçêh contraçeña</string>
+    <string name="forgot_password_subtitle">Introduçe tu correo elêttrónico pa reçibîh un enlaçe de rêttableçimiento.</string>
+    <string name="forgot_password_button">Embiâh enlaçe</string>
+    <string name="forgot_password_email_label">Emaîh</string>
+    <string name="forgot_password_success_message">Çi êtte correo êttá rehîttrao, reçibirâh un enlaçe de rêttableçimiento pronto.</string>
 </resources>

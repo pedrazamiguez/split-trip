@@ -92,4 +92,8 @@ class AuthenticationServiceImpl(
 
         user
     }
+
+    override suspend fun sendPasswordResetEmail(email: String): Result<Unit> = runCatching {
+        firebaseAuth.sendPasswordResetEmail(email).await()
+    }
 }

@@ -27,4 +27,11 @@
     <string name="register_error_password_too_short">Password must be at least 6 characters.</string>
     <string name="register_error_passwords_do_not_match">Passwords do not match.</string>
     <string name="register_error_failed">Sign-up failed. Please try again.</string>
+
+    <!-- Forgot Password Screen -->
+    <string name="forgot_password_title">Reset Password</string>
+    <string name="forgot_password_subtitle">Enter your email address to receive a password reset link.</string>
+    <string name="forgot_password_button">Send Reset Link</string>
+    <string name="forgot_password_email_label">Email</string>
+    <string name="forgot_password_success_message">If this email is registered, you will receive a reset link shortly.</string>
 </resources>

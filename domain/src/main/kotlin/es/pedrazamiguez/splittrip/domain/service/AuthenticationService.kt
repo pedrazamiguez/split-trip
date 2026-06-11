@@ -18,4 +18,6 @@ interface AuthenticationService {
     suspend fun signOut(): Result<Unit>
 
     suspend fun signInWithGoogle(idToken: String): Result<User>
+
+    suspend fun sendPasswordResetEmail(email: String): Result<Unit>
 }
