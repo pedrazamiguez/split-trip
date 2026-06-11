@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionHandlerImpl
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -45,10 +46,14 @@ class AuthenticationViewModelTest {
         signInWithGoogleUseCase = mockk()
         linkGoogleAccountUseCase = mockk()
 
+        val collisionHandler = AuthenticationCollisionHandlerImpl(
+            signInWithEmailUseCase = signInWithEmailUseCase,
+            linkGoogleAccountUseCase = linkGoogleAccountUseCase
+        )
         viewModel = AuthenticationViewModel(
             signInWithEmailUseCase = signInWithEmailUseCase,
             signInWithGoogleUseCase = signInWithGoogleUseCase,
-            linkGoogleAccountUseCase = linkGoogleAccountUseCase
+            authenticationCollisionHandler = collisionHandler
         )
     }
 
@@ -157,8 +162,10 @@ class AuthenticationViewModelTest {
             advanceUntilIdle()
 
             assertFalse(viewModel.uiState.value.isGoogleLoading)
-            assertNotNull(viewModel.uiState.value.error)
-            assertTrue(viewModel.uiState.value.error is UiText.DynamicString)
+            val error = viewModel.uiState.value.error
+            assertNotNull(error)
+            assertTrue(error is UiText.StringResource)
+            assertEquals(R.string.login_google_error, (error as UiText.StringResource).resId)
         }
     }
 

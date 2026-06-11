@@ -27,4 +27,6 @@
     <string name="profile_link_email_dialog_confirm_password">Confirmâh contraçeña</string>
     <string name="profile_link_email_dialog_submit">Binculâh</string>
     <string name="profile_link_email_dialog_cancel">Cançelâh</string>
+    <string name="profile_link_error_failed">No çe pudo binculâh la cuenta. Inténtalo de nuebo.</string>
+    <string name="profile_unlink_error_failed">No çe pudo dêbbinculâh la cuenta. Inténtalo de nuebo.</string>
 </resources>

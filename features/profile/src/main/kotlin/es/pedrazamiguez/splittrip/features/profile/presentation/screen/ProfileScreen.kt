@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -29,6 +31,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.UserFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
@@ -69,8 +72,18 @@ fun ProfileScreen(
             }
             uiState.profile != null -> {
                 val profile = uiState.profile
+                val bottomPadding = LocalBottomPadding.current
+                val scrollState = rememberScrollState()
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(MaterialTheme.spacing.ExtraLarge),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
+                        .padding(
+                            top = MaterialTheme.spacing.ExtraLarge,
+                            bottom =
+                            MaterialTheme.spacing.ExtraLarge + bottomPadding
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top
                 ) {

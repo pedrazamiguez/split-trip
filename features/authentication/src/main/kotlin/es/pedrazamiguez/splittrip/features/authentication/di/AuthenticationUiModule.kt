@@ -9,26 +9,50 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.AuthenticationViewModel
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.ForgotPasswordViewModel
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.RegisterViewModel
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionHandler
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionHandlerImpl
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.RegisterSubmitHandler
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.RegisterSubmitHandlerImpl
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val authenticationUiModule = module {
-    viewModel {
+    factory<AuthenticationCollisionHandler> {
         val signInWithEmailUseCase = get<SignInWithEmailUseCase>()
-        val signInWithGoogleUseCase = get<SignInWithGoogleUseCase>()
         val linkGoogleAccountUseCase = get<LinkGoogleAccountUseCase>()
-        AuthenticationViewModel(
+        AuthenticationCollisionHandlerImpl(
             signInWithEmailUseCase = signInWithEmailUseCase,
-            signInWithGoogleUseCase = signInWithGoogleUseCase,
             linkGoogleAccountUseCase = linkGoogleAccountUseCase
         )
     }
-    viewModel {
-        RegisterViewModel(
-            signUpWithEmailUseCase = get<SignUpWithEmailUseCase>(),
-            emailValidationService = get<EmailValidationService>()
+
+    factory<RegisterSubmitHandler> {
+        val signUpWithEmailUseCase = get<SignUpWithEmailUseCase>()
+        val emailValidationService = get<EmailValidationService>()
+        RegisterSubmitHandlerImpl(
+            signUpWithEmailUseCase = signUpWithEmailUseCase,
+            emailValidationService = emailValidationService
         )
     }
+
+    viewModel {
+        val signInWithEmailUseCase = get<SignInWithEmailUseCase>()
+        val signInWithGoogleUseCase = get<SignInWithGoogleUseCase>()
+        val authenticationCollisionHandler = get<AuthenticationCollisionHandler>()
+        AuthenticationViewModel(
+            signInWithEmailUseCase = signInWithEmailUseCase,
+            signInWithGoogleUseCase = signInWithGoogleUseCase,
+            authenticationCollisionHandler = authenticationCollisionHandler
+        )
+    }
+
+    viewModel {
+        val registerSubmitHandler = get<RegisterSubmitHandler>()
+        RegisterViewModel(
+            registerSubmitHandler = registerSubmitHandler
+        )
+    }
+
     viewModel {
         ForgotPasswordViewModel(
             sendPasswordResetEmailUseCase = get<SendPasswordResetEmailUseCase>()

@@ -28,4 +28,6 @@
     <string name="profile_link_email_dialog_confirm_password">Confirmar contraseña</string>
     <string name="profile_link_email_dialog_submit">Vincular</string>
     <string name="profile_link_email_dialog_cancel">Cancelar</string>
+    <string name="profile_link_error_failed">No se pudo vincular la cuenta. Inténtalo de nuevo.</string>
+    <string name="profile_unlink_error_failed">No se pudo desvincular la cuenta. Inténtalo de nuevo.</string>
 </resources>

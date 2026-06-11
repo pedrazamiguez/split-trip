@@ -13,6 +13,8 @@ import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUi
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.impl.ProfileUiMapperImpl
 import es.pedrazamiguez.splittrip.features.profile.presentation.screen.impl.ProfileScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.ProfileViewModel
+import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.handler.ProfileAccountLinkHandler
+import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.handler.ProfileAccountLinkHandlerImpl
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -25,20 +27,27 @@ val profileUiModule = module {
         )
     }
 
-    viewModel {
-        val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
-        val profileUiMapper = get<ProfileUiMapper>()
+    factory<ProfileAccountLinkHandler> {
         val linkGoogleAccountUseCase = get<LinkGoogleAccountUseCase>()
         val linkEmailPasswordUseCase = get<LinkEmailPasswordUseCase>()
         val unlinkProviderUseCase = get<UnlinkProviderUseCase>()
+        ProfileAccountLinkHandlerImpl(
+            linkGoogleAccountUseCase = linkGoogleAccountUseCase,
+            linkEmailPasswordUseCase = linkEmailPasswordUseCase,
+            unlinkProviderUseCase = unlinkProviderUseCase
+        )
+    }
+
+    viewModel {
+        val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
+        val profileUiMapper = get<ProfileUiMapper>()
         val getLinkedProvidersUseCase = get<GetLinkedProvidersUseCase>()
+        val profileAccountLinkHandler = get<ProfileAccountLinkHandler>()
         ProfileViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
             profileUiMapper = profileUiMapper,
-            linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-            linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-            unlinkProviderUseCase = unlinkProviderUseCase,
-            getLinkedProvidersUseCase = getLinkedProvidersUseCase
+            getLinkedProvidersUseCase = getLinkedProvidersUseCase,
+            profileAccountLinkHandler = profileAccountLinkHandler
         )
     }
 

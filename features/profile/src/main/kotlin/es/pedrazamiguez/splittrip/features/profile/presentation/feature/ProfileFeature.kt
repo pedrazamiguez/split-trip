@@ -16,6 +16,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.features.profile.R
 import es.pedrazamiguez.splittrip.features.profile.presentation.screen.ProfileScreen
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.ProfileViewModel
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.action.ProfileUiAction
@@ -35,6 +36,7 @@ fun ProfileFeature(profileViewModel: ProfileViewModel = koinViewModel<ProfileVie
 
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
     val webClientId = remember(activity) { getWebClientId(activity) }
+    val googleLinkingFailedMsg = androidx.compose.ui.res.stringResource(id = R.string.profile_link_error_failed)
 
     // Collect and handle UiActions
     LaunchedEffect(Unit) {
@@ -54,7 +56,14 @@ fun ProfileFeature(profileViewModel: ProfileViewModel = koinViewModel<ProfileVie
         uiState = uiState,
         onLinkGoogleClick = {
             if (!webClientId.isNullOrEmpty() && activity != null) {
-                linkGoogleAccount(coroutineScope, activity, webClientId, profileViewModel, pillController)
+                linkGoogleAccount(
+                    coroutineScope = coroutineScope,
+                    activity = activity,
+                    webClientId = webClientId,
+                    profileViewModel = profileViewModel,
+                    pillController = pillController,
+                    googleLinkingFailedMsg = googleLinkingFailedMsg
+                )
             }
         },
         onEvent = profileViewModel::onEvent
@@ -76,7 +85,8 @@ private fun linkGoogleAccount(
     activity: Activity,
     webClientId: String,
     profileViewModel: ProfileViewModel,
-    pillController: TopPillController
+    pillController: TopPillController,
+    googleLinkingFailedMsg: String
 ) {
     coroutineScope.launch {
         try {
@@ -86,7 +96,7 @@ private fun linkGoogleAccount(
             // User cancelled - do nothing
         } catch (e: Exception) {
             Timber.e(e, "Google account linking failed")
-            pillController.showPill(message = "Google linking failed. Please try again.")
+            pillController.showPill(message = googleLinkingFailedMsg)
         }
     }
 }

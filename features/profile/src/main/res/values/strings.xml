@@ -27,4 +27,6 @@
     <string name="profile_link_email_dialog_confirm_password">Confirm Password</string>
     <string name="profile_link_email_dialog_submit">Link</string>
     <string name="profile_link_email_dialog_cancel">Cancel</string>
+    <string name="profile_link_error_failed">Failed to link account. Please try again.</string>
+    <string name="profile_unlink_error_failed">Failed to unlink account. Please try again.</string>
 </resources>

@@ -22,6 +22,10 @@ class AuthenticationServiceImpl(
     private val cloudUserDataSource: CloudUserDataSource
 ) : AuthenticationService {
 
+    companion object {
+        private val EMAIL_REGEX = Regex("\"email\"\\s*:\\s*\"([^\"]+)\"")
+    }
+
     override fun currentUserId(): String? = firebaseAuth.currentUser?.uid
 
     override fun requireUserId(): String = currentUserId() ?: error("User not logged in")
@@ -102,7 +106,10 @@ class AuthenticationServiceImpl(
 
             user
         } catch (e: FirebaseAuthUserCollisionException) {
-            val email = e.email ?: extractEmailFromIdToken(idToken) ?: ""
+            val email = e.email ?: extractEmailFromIdToken(idToken)
+            if (email.isNullOrEmpty()) {
+                throw e
+            }
             throw GoogleCollisionWithEmailPasswordException(email, idToken, e)
         }
     }
@@ -154,10 +161,12 @@ class AuthenticationServiceImpl(
         return runCatching {
             val parts = idToken.split(".")
             if (parts.size > 1) {
-                val decodedBytes = java.util.Base64.getUrlDecoder().decode(parts[1])
+                val decodedBytes = android.util.Base64.decode(
+                    parts[1],
+                    android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP
+                )
                 val payload = String(decodedBytes, Charsets.UTF_8)
-                val emailRegex = Regex("\"email\"\\s*:\\s*\"([^\"]+)\"")
-                emailRegex.find(payload)?.groupValues?.get(1)
+                EMAIL_REGEX.find(payload)?.groupValues?.get(1)
             } else {
                 null
             }

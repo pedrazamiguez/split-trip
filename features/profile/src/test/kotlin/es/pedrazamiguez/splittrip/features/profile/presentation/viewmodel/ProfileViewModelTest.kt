@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUi
 import es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.action.ProfileUiAction
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.event.ProfileUiEvent
+import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.handler.ProfileAccountLinkHandlerImpl
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -82,6 +83,19 @@ class ProfileViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun createViewModel() {
+        viewModel = ProfileViewModel(
+            getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
+            profileUiMapper = profileUiMapper,
+            getLinkedProvidersUseCase = getLinkedProvidersUseCase,
+            profileAccountLinkHandler = ProfileAccountLinkHandlerImpl(
+                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
+                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
+                unlinkProviderUseCase = unlinkProviderUseCase
+            )
+        )
+    }
+
     @Nested
     inner class InitialLoad {
 
@@ -91,14 +105,7 @@ class ProfileViewModelTest {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
 
             // When
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             // Then
@@ -118,14 +125,7 @@ class ProfileViewModelTest {
             coEvery { getCurrentUserProfileUseCase() } returns null
 
             // When
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             // Then
@@ -139,14 +139,7 @@ class ProfileViewModelTest {
         fun `emits ShowError action when user is null`() = runTest(testDispatcher) {
             // Given — init loads null, so set up accordingly
             coEvery { getCurrentUserProfileUseCase() } returns null
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
 
             // Start collecting actions
             val emittedActions = mutableListOf<ProfileUiAction>()
@@ -173,14 +166,7 @@ class ProfileViewModelTest {
             coEvery { getCurrentUserProfileUseCase() } throws RuntimeException("Network error")
 
             // When
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             // Then
@@ -194,14 +180,7 @@ class ProfileViewModelTest {
         fun `emits ShowError action when use case throws exception`() = runTest(testDispatcher) {
             // Given — init throws, set up accordingly
             coEvery { getCurrentUserProfileUseCase() } throws RuntimeException("Network error")
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
 
             // Start collecting actions
             val emittedActions = mutableListOf<ProfileUiAction>()
@@ -230,14 +209,7 @@ class ProfileViewModelTest {
         fun `reloads profile on LoadProfile event`() = runTest(testDispatcher) {
             // Given - first load returns null
             coEvery { getCurrentUserProfileUseCase() } returns null
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             // Verify initial error state
@@ -272,14 +244,7 @@ class ProfileViewModelTest {
             coEvery { getLinkedProvidersUseCase() } returns
                 Result.success(listOf(AuthProviderType.EMAIL_PASSWORD, AuthProviderType.GOOGLE))
 
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             val emittedActions = mutableListOf<ProfileUiAction>()
@@ -305,14 +270,7 @@ class ProfileViewModelTest {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
             coEvery { linkGoogleAccountUseCase("google-token") } returns Result.failure(RuntimeException("Link failed"))
 
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             val emittedActions = mutableListOf<ProfileUiAction>()
@@ -339,14 +297,7 @@ class ProfileViewModelTest {
             coEvery { getLinkedProvidersUseCase() } returns
                 Result.success(listOf(AuthProviderType.EMAIL_PASSWORD, AuthProviderType.GOOGLE))
 
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             val emittedActions = mutableListOf<ProfileUiAction>()
@@ -371,14 +322,7 @@ class ProfileViewModelTest {
         @Test
         fun `SubmitLinkEmailPassword short password sets error`() = runTest(testDispatcher) {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(ProfileUiEvent.LinkPasswordChanged("123"))
@@ -397,14 +341,7 @@ class ProfileViewModelTest {
         @Test
         fun `SubmitLinkEmailPassword passwords mismatch sets error`() = runTest(testDispatcher) {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(ProfileUiEvent.LinkPasswordChanged("password123"))
@@ -431,14 +368,7 @@ class ProfileViewModelTest {
                 Result.success(listOf(AuthProviderType.EMAIL_PASSWORD)) // after unlink reload
             )
 
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             val emittedActions = mutableListOf<ProfileUiAction>()
@@ -465,14 +395,7 @@ class ProfileViewModelTest {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
             coEvery { getLinkedProvidersUseCase() } returns Result.success(listOf(AuthProviderType.EMAIL_PASSWORD))
 
-            viewModel = ProfileViewModel(
-                getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-                profileUiMapper = profileUiMapper,
-                linkGoogleAccountUseCase = linkGoogleAccountUseCase,
-                linkEmailPasswordUseCase = linkEmailPasswordUseCase,
-                unlinkProviderUseCase = unlinkProviderUseCase,
-                getLinkedProvidersUseCase = getLinkedProvidersUseCase
-            )
+            createViewModel()
             advanceUntilIdle()
 
             val emittedActions = mutableListOf<ProfileUiAction>()
