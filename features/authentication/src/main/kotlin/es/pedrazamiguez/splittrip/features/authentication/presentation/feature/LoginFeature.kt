@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.features.authentication.presentation.component.CollisionMergeDialog
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.screen.LoginScreen
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.AuthenticationViewModel
@@ -108,4 +109,16 @@ fun LoginFeature(
             }
         }
     )
+
+    if (uiState.showCollisionDialog) {
+        CollisionMergeDialog(
+            uiState = uiState,
+            onEvent = { event ->
+                viewModel.onEvent(
+                    event,
+                    onLoginSuccess
+                )
+            }
+        )
+    }
 }

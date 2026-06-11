@@ -19,4 +19,5 @@ sealed interface RegisterUiEvent {
         override fun toString(): String = "ConfirmPasswordChanged(input=***)"
     }
     data object SubmitSignUp : RegisterUiEvent
+    data object DismissCollisionDialog : RegisterUiEvent
 }

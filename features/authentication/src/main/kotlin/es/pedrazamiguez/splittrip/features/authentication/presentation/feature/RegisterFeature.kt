@@ -5,7 +5,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
+import es.pedrazamiguez.splittrip.features.authentication.presentation.component.RegisterCollisionDialog
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiAction
+import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.screen.RegisterScreen
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.RegisterViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -43,4 +45,16 @@ fun RegisterFeature(
             navController.popBackStack()
         }
     )
+
+    if (uiState.showCollisionDialog) {
+        RegisterCollisionDialog(
+            onEvent = { event ->
+                viewModel.onEvent(event)
+            },
+            onConfirmGoToLogin = {
+                viewModel.onEvent(RegisterUiEvent.DismissCollisionDialog)
+                navController.popBackStack()
+            }
+        )
+    }
 }

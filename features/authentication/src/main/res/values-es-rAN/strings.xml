@@ -31,4 +31,17 @@
     <string name="forgot_password_button">Embiâh enlaçe</string>
     <string name="forgot_password_email_label">Emaîh</string>
     <string name="forgot_password_success_message">Çi êtte correo êttá rehîttrao, reçibirâh un enlaçe de rêttableçimiento pronto.</string>
+    <string name="login_error_empty_password">Por fabôh, introduçe tu contraçeña.</string>
+    <string name="login_error_invalid_credentials">Contraçeña incorrêtta. Por fabôh, inténtelo de nuebo.</string>
+    <string name="login_error_merge_link_failed">Errôh ar binculâh la cuenta de Google. Por fabôh, inténtelo de nuebo.</string>
+    <string name="login_collision_dialog_title">La cuenta ya êççîtte</string>
+    <string name="login_collision_dialog_message">Ya êççîtte una cuenta con êtte correo elêttrónico a trabêh de emaîh/contraçeña. Por fabôh, introduçe tu contraçeña pa binculâh el iniçio de çeçión con Google a êtta cuenta.</string>
+    <string name="login_collision_dialog_password_label">Contraçeña</string>
+    <string name="login_collision_dialog_submit">Binculâh cuentâ</string>
+    <string name="login_collision_dialog_cancel">Cançelâh</string>
+    <string name="register_error_collision">Êtte correo ya êttá rehîttrao a trabêh de Google. Por fabôh, iniçia çeçión con Google.</string>
+    <string name="register_collision_dialog_title">Cuenta rehîttrá</string>
+    <string name="register_collision_dialog_message">Ya êççîtte una cuenta con êtte correo elêttrónico a trabêh de Google. ¿Te gûttaría îh a la pantaya de iniçio de çeçión pa entrâh con Google?</string>
+    <string name="register_collision_dialog_confirm">Îh al iniçio de çeçión</string>
+    <string name="register_collision_dialog_cancel">Cançelâh</string>
 </resources>

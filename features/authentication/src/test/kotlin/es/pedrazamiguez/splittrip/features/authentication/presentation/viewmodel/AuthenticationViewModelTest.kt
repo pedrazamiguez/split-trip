@@ -1,10 +1,13 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
+import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionHandlerImpl
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +36,7 @@ class AuthenticationViewModelTest {
 
     private lateinit var signInWithEmailUseCase: SignInWithEmailUseCase
     private lateinit var signInWithGoogleUseCase: SignInWithGoogleUseCase
+    private lateinit var linkGoogleAccountUseCase: LinkGoogleAccountUseCase
     private lateinit var viewModel: AuthenticationViewModel
 
     @BeforeEach
@@ -40,10 +44,16 @@ class AuthenticationViewModelTest {
         Dispatchers.setMain(testDispatcher)
         signInWithEmailUseCase = mockk()
         signInWithGoogleUseCase = mockk()
+        linkGoogleAccountUseCase = mockk()
 
+        val collisionHandler = AuthenticationCollisionHandlerImpl(
+            signInWithEmailUseCase = signInWithEmailUseCase,
+            linkGoogleAccountUseCase = linkGoogleAccountUseCase
+        )
         viewModel = AuthenticationViewModel(
             signInWithEmailUseCase = signInWithEmailUseCase,
-            signInWithGoogleUseCase = signInWithGoogleUseCase
+            signInWithGoogleUseCase = signInWithGoogleUseCase,
+            authenticationCollisionHandler = collisionHandler
         )
     }
 
@@ -152,8 +162,10 @@ class AuthenticationViewModelTest {
             advanceUntilIdle()
 
             assertFalse(viewModel.uiState.value.isGoogleLoading)
-            assertNotNull(viewModel.uiState.value.error)
-            assertTrue(viewModel.uiState.value.error is UiText.DynamicString)
+            val error = viewModel.uiState.value.error
+            assertNotNull(error)
+            assertTrue(error is UiText.StringResource)
+            assertEquals(R.string.login_google_error, (error as UiText.StringResource).resId)
         }
     }
 
@@ -175,6 +187,147 @@ class AuthenticationViewModelTest {
                 (error as UiText.StringResource).resId
             )
             assertFalse(viewModel.uiState.value.isGoogleLoading)
+        }
+    }
+
+    // ── Collision and Merge Flow ──────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Collision and Merge Flow")
+    inner class CollisionAndMergeFlow {
+
+        @Test
+        fun `GoogleSignInResult failure with GoogleCollisionWithEmailPasswordException shows collision dialog`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    signInWithGoogleUseCase(any())
+                } returns Result.failure(
+                    GoogleCollisionWithEmailPasswordException(
+                        email = "user@test.com",
+                        idToken = "google-id-token"
+                    )
+                )
+
+                viewModel.onEvent(AuthenticationUiEvent.GoogleSignInResult("google-id-token")) {}
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.showCollisionDialog)
+                assertEquals("user@test.com", viewModel.uiState.value.collisionEmail)
+                assertEquals("google-id-token", viewModel.uiState.value.pendingGoogleIdToken)
+                assertFalse(viewModel.uiState.value.isGoogleLoading)
+                assertEquals("", viewModel.uiState.value.collisionPassword)
+                assertNull(viewModel.uiState.value.mergeError)
+            }
+
+        @Test
+        fun `SubmitCollisionMerge success links Google account and calls success callback`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    signInWithGoogleUseCase(any())
+                } returns Result.failure(
+                    GoogleCollisionWithEmailPasswordException(
+                        email = "user@test.com",
+                        idToken = "google-id-token"
+                    )
+                )
+                coEvery {
+                    signInWithEmailUseCase("user@test.com", "password123")
+                } returns Result.success("user-id-123")
+                coEvery {
+                    linkGoogleAccountUseCase("google-id-token")
+                } returns Result.success(Unit)
+
+                viewModel.onEvent(AuthenticationUiEvent.GoogleSignInResult("google-id-token")) {}
+                advanceUntilIdle()
+
+                viewModel.onEvent(AuthenticationUiEvent.CollisionPasswordChanged("password123")) {}
+                var successCalled = false
+                viewModel.onEvent(AuthenticationUiEvent.SubmitCollisionMerge) {
+                    successCalled = true
+                }
+                advanceUntilIdle()
+
+                assertTrue(successCalled)
+                assertFalse(viewModel.uiState.value.isMerging)
+                assertFalse(viewModel.uiState.value.showCollisionDialog)
+                assertNull(viewModel.uiState.value.pendingGoogleIdToken)
+            }
+
+        @Test
+        fun `SubmitCollisionMerge empty password sets error`() = runTest(testDispatcher) {
+            coEvery {
+                signInWithGoogleUseCase(any())
+            } returns Result.failure(
+                GoogleCollisionWithEmailPasswordException(
+                    email = "user@test.com",
+                    idToken = "google-id-token"
+                )
+            )
+
+            viewModel.onEvent(AuthenticationUiEvent.GoogleSignInResult("google-id-token")) {}
+            advanceUntilIdle()
+
+            viewModel.onEvent(AuthenticationUiEvent.CollisionPasswordChanged("")) {}
+            viewModel.onEvent(AuthenticationUiEvent.SubmitCollisionMerge) {}
+            advanceUntilIdle()
+
+            assertNotNull(viewModel.uiState.value.mergeError)
+            assertTrue(viewModel.uiState.value.mergeError is UiText.StringResource)
+            assertEquals(
+                R.string.login_error_empty_password,
+                (viewModel.uiState.value.mergeError as UiText.StringResource).resId
+            )
+        }
+
+        @Test
+        fun `SubmitCollisionMerge incorrect password sets error`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    signInWithGoogleUseCase(any())
+                } returns Result.failure(
+                    GoogleCollisionWithEmailPasswordException(
+                        email = "user@test.com",
+                        idToken = "google-id-token"
+                    )
+                )
+                coEvery {
+                    signInWithEmailUseCase("user@test.com", "wrong-password")
+                } returns Result.failure(RuntimeException("Auth failed"))
+
+                viewModel.onEvent(AuthenticationUiEvent.GoogleSignInResult("google-id-token")) {}
+                advanceUntilIdle()
+
+                viewModel.onEvent(AuthenticationUiEvent.CollisionPasswordChanged("wrong-password")) {}
+                viewModel.onEvent(AuthenticationUiEvent.SubmitCollisionMerge) {}
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.isMerging)
+                assertNotNull(viewModel.uiState.value.mergeError)
+                assertEquals(
+                    R.string.login_error_invalid_credentials,
+                    (viewModel.uiState.value.mergeError as UiText.StringResource).resId
+                )
+            }
+
+        @Test
+        fun `DismissCollisionDialog clears pending tokens and hides dialog`() = runTest(testDispatcher) {
+            coEvery {
+                signInWithGoogleUseCase(any())
+            } returns Result.failure(
+                GoogleCollisionWithEmailPasswordException(
+                    email = "user@test.com",
+                    idToken = "google-id-token"
+                )
+            )
+
+            viewModel.onEvent(AuthenticationUiEvent.GoogleSignInResult("google-id-token")) {}
+            advanceUntilIdle()
+
+            viewModel.onEvent(AuthenticationUiEvent.DismissCollisionDialog) {}
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.showCollisionDialog)
+            assertNull(viewModel.uiState.value.pendingGoogleIdToken)
         }
     }
 }
