@@ -154,4 +154,32 @@
     <string name="settings_preferences_theme_light">Claro</string>
     <string name="settings_preferences_theme_dark">Oscuro</string>
     <string name="settings_preferences_theme_changed_format">Tema cambiado a %1$s</string>
+
+    <!-- Account Status Screen -->
+    <string name="account_status_title">Estado de la cuenta</string>
+    <string name="account_status_email_label">Email</string>
+    <string name="account_status_member_since">Miembro desde %1$s</string>
+    <string name="account_status_linked_providers">Proveedores vinculados</string>
+    <string name="account_status_provider_email_password">Email / Contraseña</string>
+    <string name="account_status_provider_google">Google</string>
+    <string name="account_status_link_button">Vincular</string>
+    <string name="account_status_unlink_button">Desvincular</string>
+    <string name="account_status_delete_account_button">Solicitar eliminación de cuenta</string>
+    <string name="account_status_delete_account_dialog_title">Eliminar cuenta</string>
+    <string name="account_status_delete_account_dialog_text">¿Estás seguro de que quieres solicitar la eliminación de tu cuenta? Esta acción es permanente y no se puede deshacer.</string>
+    <string name="account_status_delete_account_dialog_confirm">Eliminar</string>
+    <string name="account_status_delete_account_dialog_cancel">Cancelar</string>
+    <string name="account_status_link_email_dialog_title">Vincular Email y Contraseña</string>
+    <string name="account_status_link_email_dialog_password">Contraseña</string>
+    <string name="account_status_link_email_dialog_confirm_password">Confirmar Contraseña</string>
+    <string name="account_status_link_email_dialog_confirm">Vincular</string>
+    <string name="account_status_link_email_dialog_cancel">Cancelar</string>
+    <string name="account_status_link_email_dialog_error_mismatch">Las contraseñas no coinciden</string>
+    <string name="account_status_link_email_dialog_error_empty">Los campos de contraseña no pueden estar vacíos</string>
+    <string name="account_status_link_success">Cuenta vinculada con éxito</string>
+    <string name="account_status_unlink_success">Cuenta desvinculada con éxito</string>
+    <string name="account_status_unlink_error_last_provider">No se puede desvincular el último proveedor de inicio de sesión</string>
+    <string name="account_status_error_prefix">Error: %1$s</string>
+    <string name="account_status_linked">Vinculado</string>
+    <string name="account_status_not_linked">No vinculado</string>
 </resources>

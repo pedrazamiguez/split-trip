@@ -41,20 +41,21 @@ fun buildSettingsSections(
     preferencesParams: SettingsPreferencesParams,
     onServicesTestClick: () -> Unit
 ): List<SettingsSectionModel> = listOf(
-    accountSection(),
+    accountSection(preferencesParams),
     preferencesSection(preferencesParams),
     developerSection(onServicesTestClick = onServicesTestClick),
     supportSection(),
     aboutSection()
 )
 
-private fun accountSection() = SettingsSectionModel(
+private fun accountSection(params: SettingsPreferencesParams) = SettingsSectionModel(
     titleRes = R.string.settings_section_account,
     items = listOf(
         SettingsItemModel.Standard(
             icon = TablerIcons.Outline.InfoCircle,
             titleRes = R.string.settings_account_status_title,
-            descriptionRes = R.string.settings_account_status_description
+            descriptionRes = R.string.settings_account_status_description,
+            onClick = params.onAccountStatusClick
         ),
         SettingsItemModel.Standard(
             icon = TablerIcons.Outline.CreditCard,

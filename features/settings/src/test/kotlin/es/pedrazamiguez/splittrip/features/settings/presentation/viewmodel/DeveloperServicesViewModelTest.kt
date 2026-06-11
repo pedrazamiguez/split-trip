@@ -16,7 +16,10 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -305,10 +308,10 @@ class DeveloperServicesViewModelTest {
                 recognisedAt = Instant.EPOCH
             )
             val extractedReceipt = ExtractedReceipt(
-                amount = java.math.BigDecimal("50.00"),
+                amount = BigDecimal("50.00"),
                 currency = "EUR",
-                date = java.time.LocalDate.of(2025, 3, 10),
-                time = java.time.LocalTime.of(13, 45),
+                date = LocalDate.of(2025, 3, 10),
+                time = LocalTime.of(13, 45),
                 title = "Dinner",
                 vendor = "Restaurant",
                 category = "FOOD",

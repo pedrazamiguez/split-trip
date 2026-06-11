@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.navigation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.features.settings.presentation.feature.AccountStatusFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.DefaultCurrencyFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.DeveloperServicesFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.LanguageFeature
@@ -13,6 +14,9 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.feature.ThemeFe
 fun NavGraphBuilder.settingsGraph() {
     composable(Routes.SETTINGS) {
         SettingsFeature()
+    }
+    composable(Routes.SETTINGS_ACCOUNT_STATUS) {
+        AccountStatusFeature()
     }
     composable(Routes.SETTINGS_DEFAULT_CURRENCY) {
         DefaultCurrencyFeature()

@@ -5,12 +5,16 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.UserProfileChangeRequest
+import es.pedrazamiguez.splittrip.core.common.extensions.toLocalDateTimeUtc
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.exception.EmailCollisionException
 import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +32,9 @@ class AuthenticationServiceImpl(
     }
 
     override fun currentUserId(): String? = firebaseAuth.currentUser?.uid
+
+    override fun getCurrentUserCreationTimestamp(): Long? =
+        firebaseAuth.currentUser?.metadata?.creationTimestamp
 
     override fun requireUserId(): String = currentUserId() ?: error("User not logged in")
 
@@ -54,7 +61,7 @@ class AuthenticationServiceImpl(
             val firebaseUser = authResult.user ?: error("Sign-up succeeded but Firebase user is null")
 
             // Update Firebase Auth profile with display name
-            val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+            val profileUpdates = UserProfileChangeRequest.Builder()
                 .setDisplayName(displayName)
                 .build()
             firebaseUser.updateProfile(profileUpdates).await()
@@ -65,7 +72,8 @@ class AuthenticationServiceImpl(
                 email = email.trim().lowercase(),
                 displayName = displayName,
                 profileImagePath = null,
-                createdAt = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC)
+                createdAt = firebaseUser.metadata?.creationTimestamp?.toLocalDateTimeUtc()
+                    ?: LocalDateTime.now(ZoneOffset.UTC)
             )
 
             // Persist user document to Firestore in a NonCancellable block to ensure it completes even if the coroutine is cancelled
@@ -92,7 +100,8 @@ class AuthenticationServiceImpl(
                 userId = firebaseUser.uid,
                 email = firebaseUser.email ?: "",
                 displayName = firebaseUser.displayName,
-                profileImagePath = firebaseUser.photoUrl?.toString()
+                profileImagePath = firebaseUser.photoUrl?.toString(),
+                createdAt = firebaseUser.metadata?.creationTimestamp?.toLocalDateTimeUtc()
             )
 
             // Persist user document before returning.

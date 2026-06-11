@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.profile.presentation.component
+package es.pedrazamiguez.splittrip.features.settings.presentation.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,44 +15,46 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
-import es.pedrazamiguez.splittrip.features.profile.R
-import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.event.ProfileUiEvent
-import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.state.ProfileUiState
+import es.pedrazamiguez.splittrip.features.settings.R
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.event.AccountStatusUiEvent
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.state.AccountStatusUiState
 
 @Composable
-internal fun LinkEmailPasswordDialog(
+internal fun LinkEmailDialog(
     modifier: Modifier = Modifier,
-    uiState: ProfileUiState,
-    onEvent: (ProfileUiEvent) -> Unit
+    uiState: AccountStatusUiState,
+    onEvent: (AccountStatusUiEvent) -> Unit
 ) {
     AlertDialog(
-        onDismissRequest = { onEvent(ProfileUiEvent.DismissLinkEmailDialog) },
+        onDismissRequest = { onEvent(AccountStatusUiEvent.DismissLinkEmailDialog) },
         title = {
-            Text(stringResource(R.string.profile_link_email_dialog_title), style = MaterialTheme.typography.titleLarge)
+            Text(
+                stringResource(R.string.account_status_link_email_dialog_title),
+                style = MaterialTheme.typography.titleLarge
+            )
         },
         text = {
             Column {
-                Text(
-                    text = stringResource(R.string.profile_link_email_dialog_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
                 StyledOutlinedTextField(
-                    label = stringResource(R.string.profile_link_email_dialog_password),
+                    label = stringResource(R.string.account_status_link_email_dialog_password),
                     value = uiState.linkPasswordInput,
-                    onValueChange = { onEvent(ProfileUiEvent.LinkPasswordChanged(it)) },
+                    onValueChange = { onEvent(AccountStatusUiEvent.LinkPasswordChanged(it)) },
                     visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true, enabled = !uiState.isLinking,
-                    keyboardType = KeyboardType.Password, imeAction = ImeAction.Next,
+                    singleLine = true,
+                    enabled = !uiState.isLinking,
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next,
                     modifier = Modifier.fillMaxWidth()
                 )
                 StyledOutlinedTextField(
-                    label = stringResource(R.string.profile_link_email_dialog_confirm_password),
+                    label = stringResource(R.string.account_status_link_email_dialog_confirm_password),
                     value = uiState.linkConfirmPasswordInput,
-                    onValueChange = { onEvent(ProfileUiEvent.LinkConfirmPasswordChanged(it)) },
+                    onValueChange = { onEvent(AccountStatusUiEvent.LinkConfirmPasswordChanged(it)) },
                     visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true, enabled = !uiState.isLinking,
-                    keyboardType = KeyboardType.Password, imeAction = ImeAction.Done,
+                    singleLine = true,
+                    enabled = !uiState.isLinking,
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (uiState.linkPasswordError != null) {
@@ -62,16 +64,16 @@ internal fun LinkEmailPasswordDialog(
         },
         confirmButton = {
             GradientButton(
-                text = stringResource(R.string.profile_link_email_dialog_submit),
-                onClick = { onEvent(ProfileUiEvent.SubmitLinkEmailPassword) },
+                text = stringResource(R.string.account_status_link_email_dialog_confirm),
+                onClick = { onEvent(AccountStatusUiEvent.SubmitLinkEmailPassword) },
                 enabled = !uiState.isLinking,
                 isLoading = uiState.isLinking
             )
         },
         dismissButton = {
             SecondaryButton(
-                text = stringResource(R.string.profile_link_email_dialog_cancel),
-                onClick = { onEvent(ProfileUiEvent.DismissLinkEmailDialog) },
+                text = stringResource(R.string.account_status_link_email_dialog_cancel),
+                onClick = { onEvent(AccountStatusUiEvent.DismissLinkEmailDialog) },
                 enabled = !uiState.isLinking
             )
         },

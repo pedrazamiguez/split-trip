@@ -22,6 +22,7 @@ object Routes {
     const val SETTINGS_NOTIFICATIONS = "settings_notifications"
     const val SETTINGS_DEVELOPER_SERVICES = "settings_developer_services"
     const val SETTINGS_THEME = "settings_theme"
+    const val SETTINGS_ACCOUNT_STATUS = "settings_account_status"
     const val GROUP_DETAIL = "group_detail/{groupId}"
     const val EXPENSE_DETAIL = "expense_detail/{expenseId}"
     const val EDIT_EXPENSE = "edit_expense/{expenseId}"

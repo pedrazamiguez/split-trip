@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.data.buildSetti
 
 @Composable
 fun SettingsScreen(
+    onAccountStatusClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onNotificationSwitchToggle: () -> Unit = {},
     hasNotificationPermission: Boolean = false,
@@ -37,7 +38,8 @@ fun SettingsScreen(
         currentLanguageCode = currentLanguageCode,
         onLanguageClick = onLanguageClick,
         currentThemeCode = currentThemeCode,
-        onThemeClick = onThemeClick
+        onThemeClick = onThemeClick,
+        onAccountStatusClick = onAccountStatusClick
     )
 
     val sections = buildSettingsSections(

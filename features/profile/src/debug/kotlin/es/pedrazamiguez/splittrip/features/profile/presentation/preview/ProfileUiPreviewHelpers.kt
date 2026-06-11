@@ -14,7 +14,7 @@ fun ProfileUiPreviewHelper(
     MappedPreview(
         domain = domainUser,
         mapper = { localeProvider, _ ->
-            ProfileUiMapperImpl(localeProvider)
+            ProfileUiMapperImpl()
         },
         transform = { mapper, domain ->
             mapper.toProfileUiModel(domain)

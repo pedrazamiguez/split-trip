@@ -8,6 +8,8 @@ import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import java.time.LocalDateTime
+import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -102,8 +104,8 @@ class GroupRepositoryImpl(
      * - Error: write rejected by Firestore (permissions, etc.) → SYNC_FAILED
      */
     override suspend fun createGroup(group: Group): String {
-        val groupId = java.util.UUID.randomUUID().toString()
-        val currentTimestamp = java.time.LocalDateTime.now()
+        val groupId = UUID.randomUUID().toString()
+        val currentTimestamp = LocalDateTime.now()
         val currentUserId = authenticationService.requireUserId()
 
         // Ensure the creator is always in the members list.

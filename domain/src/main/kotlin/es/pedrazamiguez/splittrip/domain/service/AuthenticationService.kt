@@ -29,4 +29,6 @@ interface AuthenticationService {
     suspend fun unlinkProvider(providerType: AuthProviderType): Result<Unit>
 
     suspend fun getLinkedProviders(): Result<List<AuthProviderType>>
+
+    fun getCurrentUserCreationTimestamp(): Long?
 }

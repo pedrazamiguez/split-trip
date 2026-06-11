@@ -30,4 +30,6 @@
     <string name="profile_link_email_dialog_cancel">Cancelar</string>
     <string name="profile_link_error_failed">No se pudo vincular la cuenta. Inténtalo de nuevo.</string>
     <string name="profile_unlink_error_failed">No se pudo desvincular la cuenta. Inténtalo de nuevo.</string>
+    <string name="profile_bio_title">Biografía</string>
+    <string name="profile_bio_empty">Aún no se ha añadido ninguna biografía.</string>
 </resources>

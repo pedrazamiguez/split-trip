@@ -68,6 +68,7 @@ class AuthenticationServiceImplTest {
             // android.net.Uri is a final Android framework class that cannot be mocked
             // in JVM unit tests. Using null to test the nullable photoUrl path.
             every { firebaseUser.photoUrl } returns null
+            every { firebaseUser.metadata } returns null
 
             val authResult = mockk<AuthResult>()
             every { authResult.user } returns firebaseUser
