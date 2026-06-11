@@ -29,4 +29,6 @@
     <string name="profile_link_email_dialog_cancel">Cançelâh</string>
     <string name="profile_link_error_failed">No çe pudo binculâh la cuenta. Inténtalo de nuebo.</string>
     <string name="profile_unlink_error_failed">No çe pudo dêbbinculâh la cuenta. Inténtalo de nuebo.</string>
+    <string name="profile_bio_title">Biografía</string>
+    <string name="profile_bio_empty">Aún no çe a añadío ninguna biografía.</string>
 </resources>

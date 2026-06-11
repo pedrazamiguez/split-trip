@@ -5,6 +5,9 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import timber.log.Timber
 
 class UserRepositoryImpl(
@@ -13,11 +16,16 @@ class UserRepositoryImpl(
     private val authenticationService: AuthenticationService
 ) : UserRepository {
 
-    override suspend fun saveUser(user: User): Result<Unit> = runCatching {
-        cloudUserDataSource.saveUser(user)
-        // Also cache locally so the current user's display name is
-        // available offline immediately without a Firestore round-trip.
-        localUserDataSource.saveUsers(listOf(user))
+    override suspend fun saveUser(user: User): Result<Unit> {
+        val localResult = runCatching { localUserDataSource.saveUsers(listOf(user)) }
+        if (localResult.isFailure) {
+            return localResult
+        }
+        return runCatching {
+            cloudUserDataSource.saveUser(user)
+        }.onFailure { e ->
+            Timber.w(e, "Failed to save user profile to cloud, local cache was updated")
+        }
     }
 
     override suspend fun saveGoogleUser(user: User): Result<Unit> = saveUser(user)
@@ -36,7 +44,7 @@ class UserRepositoryImpl(
         // Otherwise the local row is missing required fields (e.g. createdAt was
         // not available when saveGoogleUser cached the profile).
         // Force a cloud refresh and upsert into Room before returning.
-        return try {
+        var profile = try {
             val refreshedUsers = cloudUserDataSource.getUsersByIds(listOf(userId))
             if (refreshedUsers.isNotEmpty()) {
                 localUserDataSource.saveUsers(refreshedUsers)
@@ -48,6 +56,18 @@ class UserRepositoryImpl(
             Timber.e(e, "Failed to refresh current user profile from cloud")
             localUser
         }
+
+        if (profile != null && profile.createdAt == null) {
+            val creationTimestamp = authenticationService.getCurrentUserCreationTimestamp()
+            if (creationTimestamp != null) {
+                val resolvedCreatedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(creationTimestamp), ZoneOffset.UTC)
+                val updatedProfile = profile.copy(createdAt = resolvedCreatedAt)
+                saveUser(updatedProfile)
+                profile = updatedProfile
+            }
+        }
+
+        return profile
     }
 
     override suspend fun getUsersByIds(userIds: List<String>): Map<String, User> {

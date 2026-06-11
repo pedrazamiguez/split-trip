@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.profile.presentation.component
+package es.pedrazamiguez.splittrip.features.settings.presentation.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,10 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
-import es.pedrazamiguez.splittrip.features.profile.R
+import es.pedrazamiguez.splittrip.features.settings.R
 
 @Composable
-internal fun ProviderRow(
+internal fun AccountProviderRow(
     modifier: Modifier = Modifier,
     name: String,
     isLinked: Boolean,
@@ -37,9 +37,9 @@ internal fun ProviderRow(
             Text(
                 text = stringResource(
                     if (isLinked) {
-                        R.string.profile_status_linked
+                        R.string.account_status_linked
                     } else {
-                        R.string.profile_status_not_linked
+                        R.string.account_status_not_linked
                     }
                 ),
                 style = MaterialTheme.typography.bodySmall,
@@ -55,13 +55,13 @@ internal fun ProviderRow(
 
         if (isLinked) {
             SecondaryButton(
-                text = stringResource(R.string.profile_action_unlink),
+                text = stringResource(R.string.account_status_unlink_button),
                 onClick = onUnlinkClick,
                 enabled = !isActionLoading && canUnlink
             )
         } else {
             SecondaryButton(
-                text = stringResource(R.string.profile_action_link),
+                text = stringResource(R.string.account_status_link_button),
                 onClick = onLinkClick,
                 enabled = !isActionLoading
             )

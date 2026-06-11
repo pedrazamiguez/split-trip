@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -50,7 +51,7 @@ class CashWithdrawalRepositoryImplTest {
         remainingAmount = 1000000L,
         currency = "THB",
         deductedBaseAmount = 27000L,
-        exchangeRate = java.math.BigDecimal("37.037"),
+        exchangeRate = BigDecimal("37.037"),
         createdAt = LocalDateTime.of(2026, 1, 15, 12, 0)
     )
 

@@ -79,6 +79,7 @@ fun SettingsFeature(
 
     FeatureScaffold(currentRoute = Routes.SETTINGS) {
         SettingsScreen(
+            onAccountStatusClick = { navController.navigate(Routes.SETTINGS_ACCOUNT_STATUS) },
             onNotificationsClick = {
                 if (hasPermission) {
                     navController.navigate(Routes.SETTINGS_NOTIFICATIONS)

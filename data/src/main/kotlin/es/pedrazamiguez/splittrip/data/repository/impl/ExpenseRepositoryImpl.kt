@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
+import java.time.LocalDateTime
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
@@ -334,7 +335,7 @@ class ExpenseRepositoryImpl(
     private fun buildExpenseWithMetadata(groupId: String, expense: Expense): Expense {
         val expenseId = expense.id.ifBlank { UUID.randomUUID().toString() }
         val currentUserId = authenticationService.currentUserId() ?: ""
-        val currentTimestamp = java.time.LocalDateTime.now()
+        val currentTimestamp = LocalDateTime.now()
         return expense.copy(
             id = expenseId,
             groupId = groupId,

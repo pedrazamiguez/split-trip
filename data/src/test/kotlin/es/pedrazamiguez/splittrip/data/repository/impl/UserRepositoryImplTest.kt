@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import java.time.LocalDateTime
@@ -41,6 +42,7 @@ class UserRepositoryImplTest {
         cloudUserDataSource = mockk(relaxed = true)
         localUserDataSource = mockk(relaxed = true)
         authenticationService = mockk()
+        every { authenticationService.getCurrentUserCreationTimestamp() } returns null
 
         repository = UserRepositoryImpl(
             cloudUserDataSource = cloudUserDataSource,
@@ -71,7 +73,8 @@ class UserRepositoryImplTest {
             val result = repository.saveUser(testUser)
 
             assertTrue(result.isFailure)
-            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
+            coVerify { localUserDataSource.saveUsers(listOf(testUser)) }
+            coVerify { cloudUserDataSource.saveUser(testUser) }
         }
     }
 
@@ -97,7 +100,8 @@ class UserRepositoryImplTest {
             val result = repository.saveGoogleUser(testUser)
 
             assertTrue(result.isFailure)
-            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
+            coVerify { localUserDataSource.saveUsers(listOf(testUser)) }
+            coVerify { cloudUserDataSource.saveUser(testUser) }
         }
     }
 
@@ -152,6 +156,26 @@ class UserRepositoryImplTest {
 
             assertEquals(incompleteUser, result)
         }
+
+        @Test
+        fun `resolves and saves createdAt using authentication timestamp when local user has null createdAt`() =
+            runTest {
+                val incompleteUser = testUser.copy(createdAt = null)
+                coEvery { authenticationService.currentUserId() } returns "user-1"
+                coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(incompleteUser)
+                coEvery { cloudUserDataSource.getUsersByIds(listOf("user-1")) } returns emptyList()
+                every {
+                    authenticationService.getCurrentUserCreationTimestamp()
+                } returns 1718115600000L // 2024-06-11T14:20Z
+                coEvery { cloudUserDataSource.saveUser(any()) } just Runs
+
+                val result = repository.getCurrentUserProfile()
+
+                assertNotNull(result)
+                val expectedDateTime = LocalDateTime.of(2024, 6, 11, 14, 20)
+                assertEquals(expectedDateTime, result?.createdAt)
+                coVerify { cloudUserDataSource.saveUser(match { it.createdAt == expectedDateTime }) }
+            }
 
         @Test
         fun `falls back to local user when cloud throws exception`() = runTest {
