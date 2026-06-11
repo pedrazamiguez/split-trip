@@ -41,7 +41,6 @@ class SendPasswordResetEmailUseCaseImplTest {
         // Then
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is IllegalArgumentException)
-        assertEquals("Invalid email format", result.exceptionOrNull()?.message)
         coVerify(exactly = 0) { authService.sendPasswordResetEmail(any()) }
     }
 

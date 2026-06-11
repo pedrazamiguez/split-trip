@@ -34,5 +34,4 @@
     <string name="forgot_password_button">Send Reset Link</string>
     <string name="forgot_password_email_label">Email</string>
     <string name="forgot_password_success_message">If this email is registered, you will receive a reset link shortly.</string>
-    <string name="forgot_password_back_a11y">Go back</string>
 </resources>

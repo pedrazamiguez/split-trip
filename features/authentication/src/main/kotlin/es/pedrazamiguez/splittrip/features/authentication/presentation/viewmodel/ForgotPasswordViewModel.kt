@@ -73,7 +73,16 @@ class ForgotPasswordViewModel(
                 .onFailure { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        generalError = UiText.DynamicString(e.message ?: "")
+                        emailError = if (e is IllegalArgumentException) {
+                            UiText.StringResource(R.string.register_error_invalid_email)
+                        } else {
+                            null
+                        },
+                        generalError = if (e is IllegalArgumentException) {
+                            null
+                        } else {
+                            UiText.DynamicString(e.message ?: "")
+                        }
                     )
                 }
         }

@@ -35,6 +35,5 @@
     <string name="forgot_password_button">Enviar enlace</string>
     <string name="forgot_password_email_label">Email</string>
     <string name="forgot_password_success_message">Si este correo está registrado, recibirás un enlace de restablecimiento pronto.</string>
-    <string name="forgot_password_back_a11y">Atrás</string>
 </resources>
 

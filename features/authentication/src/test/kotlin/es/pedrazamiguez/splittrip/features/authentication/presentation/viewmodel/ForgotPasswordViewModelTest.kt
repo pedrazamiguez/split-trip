@@ -100,6 +100,27 @@ class ForgotPasswordViewModelTest {
     }
 
     @Test
+    fun `Submit with UseCase IllegalArgumentException failure sets emailError`() = runTest(testDispatcher) {
+        val errorMsg = "Invalid email format"
+        coEvery { sendPasswordResetEmailUseCase("invalid-email") } returns
+            Result.failure(IllegalArgumentException(errorMsg))
+
+        viewModel.onEvent(ForgotPasswordUiEvent.EmailChanged("invalid-email"))
+        viewModel.onEvent(ForgotPasswordUiEvent.Submit)
+
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isLoading)
+        assertFalse(viewModel.uiState.value.isSuccess)
+        assertNull(viewModel.uiState.value.generalError)
+
+        val error = viewModel.uiState.value.emailError
+        assertNotNull(error)
+        assertTrue(error is UiText.StringResource)
+        assertEquals(R.string.register_error_invalid_email, (error as UiText.StringResource).resId)
+    }
+
+    @Test
     fun `BackClicked emits NavigateBack action`() = runTest(testDispatcher) {
         val actions = mutableListOf<ForgotPasswordUiAction>()
         val job = launch {
