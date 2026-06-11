@@ -15,7 +15,9 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
 import es.pedrazamiguez.splittrip.features.settings.R
@@ -62,22 +64,24 @@ fun AccountStatusFeature(
         }
     }
 
-    AccountStatusScreen(
-        uiState = uiState,
-        onLinkGoogleClick = {
-            if (!webClientId.isNullOrEmpty() && activity != null) {
-                linkGoogleAccount(
-                    coroutineScope = coroutineScope,
-                    activity = activity,
-                    webClientId = webClientId,
-                    viewModel = viewModel,
-                    pillController = pillController,
-                    googleLinkingFailedMsg = googleLinkingFailedMsg
-                )
-            }
-        },
-        onEvent = viewModel::onEvent
-    )
+    FeatureScaffold(currentRoute = Routes.SETTINGS_ACCOUNT_STATUS) {
+        AccountStatusScreen(
+            uiState = uiState,
+            onLinkGoogleClick = {
+                if (!webClientId.isNullOrEmpty() && activity != null) {
+                    linkGoogleAccount(
+                        coroutineScope = coroutineScope,
+                        activity = activity,
+                        webClientId = webClientId,
+                        viewModel = viewModel,
+                        pillController = pillController,
+                        googleLinkingFailedMsg = googleLinkingFailedMsg
+                    )
+                }
+            },
+            onEvent = viewModel::onEvent
+        )
+    }
 
     if (uiState.showDeleteAccountDialog) {
         DestructiveConfirmationDialog(

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 private val GRADIENT_BUTTON_HEIGHT = 56.dp
 private val GRADIENT_BUTTON_ELEVATION = 8.dp
@@ -173,6 +175,7 @@ fun GradientButton(
                 role = Role.Button,
                 onClick = onClick
             )
+            .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
     ) {
         if (isLoading) {
             CircularProgressIndicator(
