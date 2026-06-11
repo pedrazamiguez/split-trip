@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.firebase.auth.service.impl
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
@@ -119,19 +120,19 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun linkGoogleAccount(idToken: String): Result<Unit> = runCatching {
-        val user = firebaseAuth.currentUser ?: error("No active user")
+        val user = requireCurrentUser()
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         user.linkWithCredential(credential).await()
     }
 
     override suspend fun linkEmailPassword(email: String, password: String): Result<Unit> = runCatching {
-        val user = firebaseAuth.currentUser ?: error("No active user")
+        val user = requireCurrentUser()
         val credential = EmailAuthProvider.getCredential(email, password)
         user.linkWithCredential(credential).await()
     }
 
     override suspend fun unlinkProvider(providerType: AuthProviderType): Result<Unit> = runCatching {
-        val user = firebaseAuth.currentUser ?: error("No active user")
+        val user = requireCurrentUser()
         val providerId = when (providerType) {
             AuthProviderType.EMAIL_PASSWORD -> EmailAuthProvider.PROVIDER_ID
             AuthProviderType.GOOGLE -> GoogleAuthProvider.PROVIDER_ID
@@ -145,6 +146,9 @@ class AuthenticationServiceImpl(
         }
         user.unlink(providerId).await()
     }
+
+    private fun requireCurrentUser(): FirebaseUser =
+        firebaseAuth.currentUser ?: error("No active user")
 
     override suspend fun getLinkedProviders(): Result<List<AuthProviderType>> = runCatching {
         val user = firebaseAuth.currentUser ?: return@runCatching emptyList()
