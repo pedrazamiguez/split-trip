@@ -9,7 +9,9 @@ data class RegisterUiState(
     val password: String = "",
     val confirmPassword: String = "",
     val isLoading: Boolean = false,
-    val error: UiText? = null
+    val error: UiText? = null,
+    val showCollisionDialog: Boolean = false,
+    val collisionEmail: String = ""
 ) {
     override fun toString(): String {
         val maskedEmail = email.maskEmail()

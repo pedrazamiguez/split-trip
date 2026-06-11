@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
+import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
@@ -16,7 +18,8 @@ import timber.log.Timber
 
 class AuthenticationViewModel(
     private val signInWithEmailUseCase: SignInWithEmailUseCase,
-    private val signInWithGoogleUseCase: SignInWithGoogleUseCase
+    private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
+    private val linkGoogleAccountUseCase: LinkGoogleAccountUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthenticationUiState())
@@ -50,6 +53,18 @@ class AuthenticationViewModel(
                     error = UiText.StringResource(R.string.login_google_error),
                     isGoogleLoading = false
                 )
+            }
+
+            is AuthenticationUiEvent.CollisionPasswordChanged -> {
+                _uiState.value = _uiState.value.copy(collisionPassword = event.value)
+            }
+
+            AuthenticationUiEvent.SubmitCollisionMerge -> {
+                submitCollisionMerge(onLoginSuccess)
+            }
+
+            AuthenticationUiEvent.DismissCollisionDialog -> {
+                _uiState.value = _uiState.value.copy(showCollisionDialog = false, pendingGoogleIdToken = null)
             }
         }
     }
@@ -91,10 +106,68 @@ class AuthenticationViewModel(
                     onLoginSuccess()
                 }
                 .onFailure { e ->
-                    Timber.e(e, "Google sign-in failed")
+                    if (e is GoogleCollisionWithEmailPasswordException) {
+                        _uiState.value = _uiState.value.copy(
+                            showCollisionDialog = true,
+                            collisionEmail = e.email,
+                            pendingGoogleIdToken = e.idToken,
+                            isGoogleLoading = false,
+                            collisionPassword = "",
+                            mergeError = null
+                        )
+                    } else {
+                        Timber.e(e, "Google sign-in failed")
+                        _uiState.value = _uiState.value.copy(
+                            error = UiText.DynamicString(e.message ?: ""),
+                            isGoogleLoading = false
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun submitCollisionMerge(onLoginSuccess: () -> Unit) {
+        val email = _uiState.value.collisionEmail
+        val password = _uiState.value.collisionPassword
+        val idToken = _uiState.value.pendingGoogleIdToken ?: return
+
+        if (password.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                mergeError = UiText.StringResource(R.string.login_error_empty_password)
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isMerging = true,
+                mergeError = null
+            )
+
+            signInWithEmailUseCase(email, password)
+                .onSuccess {
+                    linkGoogleAccountUseCase(idToken)
+                        .onSuccess {
+                            _uiState.value = _uiState.value.copy(
+                                isMerging = false,
+                                showCollisionDialog = false,
+                                pendingGoogleIdToken = null
+                            )
+                            onLoginSuccess()
+                        }
+                        .onFailure { linkError ->
+                            Timber.e(linkError, "Failed to link Google account after merge sign-in")
+                            _uiState.value = _uiState.value.copy(
+                                isMerging = false,
+                                mergeError = UiText.StringResource(R.string.login_error_merge_link_failed)
+                            )
+                        }
+                }
+                .onFailure { authError ->
+                    Timber.e(authError, "Merge sign-in failed")
                     _uiState.value = _uiState.value.copy(
-                        error = UiText.DynamicString(e.message ?: ""),
-                        isGoogleLoading = false
+                        isMerging = false,
+                        mergeError = UiText.StringResource(R.string.login_error_invalid_credentials)
                     )
                 }
         }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.domain.exception.EmailCollisionException
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
@@ -52,6 +53,10 @@ class RegisterViewModel(
             RegisterUiEvent.SubmitSignUp -> {
                 submitSignUp()
             }
+
+            RegisterUiEvent.DismissCollisionDialog -> {
+                _uiState.update { it.copy(showCollisionDialog = false) }
+            }
         }
     }
 
@@ -95,11 +100,22 @@ class RegisterViewModel(
                 }
                 .onFailure { e ->
                     Timber.e(e, "Sign-up failed")
-                    _uiState.update {
-                        it.copy(
-                            error = UiText.StringResource(R.string.register_error_failed),
-                            isLoading = false
-                        )
+                    if (e is EmailCollisionException) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                showCollisionDialog = true,
+                                collisionEmail = email,
+                                error = UiText.StringResource(R.string.register_error_collision)
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                error = UiText.StringResource(R.string.register_error_failed),
+                                isLoading = false
+                            )
+                        }
                     }
                 }
         }

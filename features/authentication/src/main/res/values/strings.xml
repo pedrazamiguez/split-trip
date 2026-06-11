@@ -34,4 +34,20 @@
     <string name="forgot_password_button">Send Reset Link</string>
     <string name="forgot_password_email_label">Email</string>
     <string name="forgot_password_success_message">If this email is registered, you will receive a reset link shortly.</string>
+
+    <!-- Collision / Merging Flow -->
+    <string name="login_error_empty_password">Please enter your password.</string>
+    <string name="login_error_invalid_credentials">Invalid password. Please try again.</string>
+    <string name="login_error_merge_link_failed">Failed to link Google account. Please try again.</string>
+    <string name="login_collision_dialog_title">Account already exists</string>
+    <string name="login_collision_dialog_message">An account with this email already exists via email/password. Please enter your password to link Google Sign-In with this account.</string>
+    <string name="login_collision_dialog_password_label">Password</string>
+    <string name="login_collision_dialog_submit">Link Accounts</string>
+    <string name="login_collision_dialog_cancel">Cancel</string>
+
+    <string name="register_error_collision">This email is already registered via Google. Please sign in with Google.</string>
+    <string name="register_collision_dialog_title">Account Registered</string>
+    <string name="register_collision_dialog_message">An account with this email is already registered via Google. Would you like to go to the Login screen to sign in with Google?</string>
+    <string name="register_collision_dialog_confirm">Go to Login</string>
+    <string name="register_collision_dialog_cancel">Cancel</string>
 </resources>

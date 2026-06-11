@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,16 +31,24 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.UserFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LargeBodyText
+import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.features.profile.R
+import es.pedrazamiguez.splittrip.features.profile.presentation.component.LinkEmailPasswordDialog
+import es.pedrazamiguez.splittrip.features.profile.presentation.component.ProviderRow
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.event.ProfileUiEvent
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.state.ProfileUiState
 
 @Suppress("LongMethod")
 @Composable
-fun ProfileScreen(uiState: ProfileUiState = ProfileUiState(), onEvent: (ProfileUiEvent) -> Unit = {}) {
+fun ProfileScreen(
+    uiState: ProfileUiState = ProfileUiState(),
+    onLinkGoogleClick: () -> Unit = {},
+    onEvent: (ProfileUiEvent) -> Unit = {}
+) {
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
         loadingContent = { ShimmerLoadingList() }
@@ -109,8 +118,57 @@ fun ProfileScreen(uiState: ProfileUiState = ProfileUiState(), onEvent: (ProfileU
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
+
+                    Text(
+                        text = stringResource(R.string.profile_linked_accounts_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+
+                    FlatCard(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(MaterialTheme.spacing.Medium),
+                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+                        ) {
+                            val isEmailLinked = uiState.linkedProviders.contains(AuthProviderType.EMAIL_PASSWORD)
+                            ProviderRow(
+                                name = stringResource(R.string.profile_provider_email_password),
+                                isLinked = isEmailLinked,
+                                onLinkClick = { onEvent(ProfileUiEvent.ShowLinkEmailDialog) },
+                                onUnlinkClick = {
+                                    onEvent(ProfileUiEvent.UnlinkProvider(AuthProviderType.EMAIL_PASSWORD))
+                                },
+                                canUnlink = uiState.linkedProviders.size > 1,
+                                isActionLoading = uiState.isLinking
+                            )
+
+                            val isGoogleLinked = uiState.linkedProviders.contains(AuthProviderType.GOOGLE)
+                            ProviderRow(
+                                name = stringResource(R.string.profile_provider_google),
+                                isLinked = isGoogleLinked,
+                                onLinkClick = onLinkGoogleClick,
+                                onUnlinkClick = { onEvent(ProfileUiEvent.UnlinkProvider(AuthProviderType.GOOGLE)) },
+                                canUnlink = uiState.linkedProviders.size > 1,
+                                isActionLoading = uiState.isLinking
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+
+    if (uiState.showLinkEmailDialog) {
+        LinkEmailPasswordDialog(
+            uiState = uiState,
+            onEvent = onEvent
+        )
     }
 }

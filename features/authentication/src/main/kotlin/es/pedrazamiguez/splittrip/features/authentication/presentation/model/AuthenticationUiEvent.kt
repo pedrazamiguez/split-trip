@@ -16,4 +16,10 @@ sealed interface AuthenticationUiEvent {
     }
 
     data object GoogleSignInFailed : AuthenticationUiEvent
+
+    data class CollisionPasswordChanged(val value: String) : AuthenticationUiEvent {
+        override fun toString(): String = "CollisionPasswordChanged(input=***)"
+    }
+    data object SubmitCollisionMerge : AuthenticationUiEvent
+    data object DismissCollisionDialog : AuthenticationUiEvent
 }

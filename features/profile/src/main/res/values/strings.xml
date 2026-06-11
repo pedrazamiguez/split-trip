@@ -7,4 +7,24 @@
     <string name="profile_member_since">Member since %1$s</string>
     <string name="profile_error_loading">Could not load your profile. Please try again later.</string>
     <string name="profile_retry_button">Retry</string>
+
+    <!-- Account Linking / Unlinking -->
+    <string name="profile_linked_accounts_title">Linked Accounts</string>
+    <string name="profile_provider_email_password">Email &amp; Password</string>
+    <string name="profile_provider_google">Google</string>
+    <string name="profile_status_linked">Linked</string>
+    <string name="profile_status_not_linked">Not Linked</string>
+    <string name="profile_action_link">Link</string>
+    <string name="profile_action_unlink">Unlink</string>
+    <string name="profile_link_success">Account linked successfully.</string>
+    <string name="profile_unlink_success">Account unlinked successfully.</string>
+    <string name="profile_link_error_passwords_match">Passwords do not match.</string>
+    <string name="profile_link_error_password_length">Password must be at least 6 characters.</string>
+    <string name="profile_unlink_error_last_provider">You cannot unlink your last remaining sign-in provider.</string>
+    <string name="profile_link_email_dialog_title">Set Password</string>
+    <string name="profile_link_email_dialog_message">Set a password to link Email/Password sign-in to your account.</string>
+    <string name="profile_link_email_dialog_password">Password</string>
+    <string name="profile_link_email_dialog_confirm_password">Confirm Password</string>
+    <string name="profile_link_email_dialog_submit">Link</string>
+    <string name="profile_link_email_dialog_cancel">Cancel</string>
 </resources>

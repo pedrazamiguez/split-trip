@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.firebase.auth.service.impl
 
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.AuthResult
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -39,6 +40,7 @@ class AuthenticationServiceImplTest {
         cloudUserDataSource = mockk(relaxed = true)
 
         mockkStatic(GoogleAuthProvider::class)
+        mockkStatic(EmailAuthProvider::class)
 
         service = AuthenticationServiceImpl(
             firebaseAuth = firebaseAuth,
@@ -49,6 +51,7 @@ class AuthenticationServiceImplTest {
     @AfterEach
     fun tearDown() {
         unmockkStatic(GoogleAuthProvider::class)
+        unmockkStatic(EmailAuthProvider::class)
     }
 
     @Nested
@@ -300,6 +303,117 @@ class AuthenticationServiceImplTest {
             assertTrue(result.isFailure)
             assertEquals("Firebase error", result.exceptionOrNull()?.message)
             coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(email) }
+        }
+    }
+
+    @Nested
+    inner class LinkGoogleAccount {
+
+        @Test
+        fun `linkGoogleAccount calls linkWithCredential on firebaseAuth currentUser`() = runTest {
+            // Given
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            every { firebaseAuth.currentUser } returns firebaseUser
+            every { firebaseUser.linkWithCredential(any()) } returns Tasks.forResult(mockk())
+
+            // When
+            val result = service.linkGoogleAccount("google-token")
+
+            // Then
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { firebaseUser.linkWithCredential(any()) }
+        }
+    }
+
+    @Nested
+    inner class LinkEmailPassword {
+
+        @Test
+        fun `linkEmailPassword calls linkWithCredential on firebaseAuth currentUser`() = runTest {
+            // Given
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            val credential = mockk<com.google.firebase.auth.AuthCredential>()
+            every { EmailAuthProvider.getCredential("email@test.com", "password123") } returns credential
+            every { firebaseAuth.currentUser } returns firebaseUser
+            every { firebaseUser.linkWithCredential(credential) } returns Tasks.forResult(mockk())
+
+            // When
+            val result = service.linkEmailPassword("email@test.com", "password123")
+
+            // Then
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { firebaseUser.linkWithCredential(credential) }
+        }
+    }
+
+    @Nested
+    inner class UnlinkProvider {
+
+        @Test
+        fun `unlinkProvider unlinks when multiple providers exist`() = runTest {
+            // Given
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            val providerInfo1 = mockk<com.google.firebase.auth.UserInfo>()
+            val providerInfo2 = mockk<com.google.firebase.auth.UserInfo>()
+            every { providerInfo1.providerId } returns "password"
+            every { providerInfo2.providerId } returns "google.com"
+
+            every { firebaseAuth.currentUser } returns firebaseUser
+            every { firebaseUser.providerData } returns listOf(providerInfo1, providerInfo2)
+            every { firebaseUser.unlink("google.com") } returns Tasks.forResult(mockk())
+
+            // When
+            val result = service.unlinkProvider(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.GOOGLE)
+
+            // Then
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { firebaseUser.unlink("google.com") }
+        }
+
+        @Test
+        fun `unlinkProvider fails when it is the last remaining provider`() = runTest {
+            // Given
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            val providerInfo = mockk<com.google.firebase.auth.UserInfo>()
+            every { providerInfo.providerId } returns "password"
+
+            every { firebaseAuth.currentUser } returns firebaseUser
+            every { firebaseUser.providerData } returns listOf(providerInfo)
+
+            // When
+            val result = service.unlinkProvider(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.EMAIL_PASSWORD)
+
+            // Then
+            assertTrue(result.isFailure)
+            assertEquals("Cannot unlink the last remaining sign-in provider", result.exceptionOrNull()?.message)
+            coVerify(exactly = 0) { firebaseUser.unlink(any()) }
+        }
+    }
+
+    @Nested
+    inner class GetLinkedProviders {
+
+        @Test
+        fun `getLinkedProviders returns mapped AuthProviderType list`() = runTest {
+            // Given
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            val providerInfo1 = mockk<com.google.firebase.auth.UserInfo>()
+            val providerInfo2 = mockk<com.google.firebase.auth.UserInfo>()
+            every { providerInfo1.providerId } returns "password"
+            every { providerInfo2.providerId } returns "google.com"
+
+            every { firebaseAuth.currentUser } returns firebaseUser
+            every { firebaseUser.providerData } returns listOf(providerInfo1, providerInfo2)
+
+            // When
+            val result = service.getLinkedProviders()
+
+            // Then
+            assertTrue(result.isSuccess)
+            val providers = result.getOrNull()!!
+            assertEquals(2, providers.size)
+            assertTrue(providers.contains(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.EMAIL_PASSWORD))
+            assertTrue(providers.contains(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.GOOGLE))
         }
     }
 }

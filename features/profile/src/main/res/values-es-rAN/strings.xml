@@ -9,4 +9,22 @@
     <string name="profile_member_since">Miembro dêdde %1$s</string>
     <string name="profile_error_loading">No çe pudo cargâh tu perfîh. Inténtalo de nuebo mâh tarde.</string>
     <string name="profile_retry_button">Reintentâh</string>
+    <string name="profile_linked_accounts_title">Cuentâ binculâh</string>
+    <string name="profile_provider_email_password">Correo y contraçeña</string>
+    <string name="profile_provider_google">Google</string>
+    <string name="profile_status_linked">Binculá</string>
+    <string name="profile_status_not_linked">No binculá</string>
+    <string name="profile_action_link">Binculâh</string>
+    <string name="profile_action_unlink">Dêbbinculâh</string>
+    <string name="profile_link_success">Cuenta binculá corrêttamente.</string>
+    <string name="profile_unlink_success">Cuenta dêbbinculá corrêttamente.</string>
+    <string name="profile_link_error_passwords_match">Lâ contraçeñâ no coinçiden.</string>
+    <string name="profile_link_error_password_length">La contraçeña debe tenêh ar menô 6 carâtterê.</string>
+    <string name="profile_unlink_error_last_provider">No puedê dêbbinculâh tu único probeedôh de iniçio de çeçión.</string>
+    <string name="profile_link_email_dialog_title">Êttableçêh contraçeña</string>
+    <string name="profile_link_email_dialog_message">Êttableçe una contraçeña pa binculâh el âççeço por correo/contraçeña a tu cuenta.</string>
+    <string name="profile_link_email_dialog_password">Contraçeña</string>
+    <string name="profile_link_email_dialog_confirm_password">Confirmâh contraçeña</string>
+    <string name="profile_link_email_dialog_submit">Binculâh</string>
+    <string name="profile_link_email_dialog_cancel">Cançelâh</string>
 </resources>

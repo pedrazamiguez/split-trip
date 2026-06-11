@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.authentication.di
 
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SendPasswordResetEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
@@ -13,9 +14,13 @@ import org.koin.dsl.module
 
 val authenticationUiModule = module {
     viewModel {
+        val signInWithEmailUseCase = get<SignInWithEmailUseCase>()
+        val signInWithGoogleUseCase = get<SignInWithGoogleUseCase>()
+        val linkGoogleAccountUseCase = get<LinkGoogleAccountUseCase>()
         AuthenticationViewModel(
-            signInWithEmailUseCase = get<SignInWithEmailUseCase>(),
-            signInWithGoogleUseCase = get<SignInWithGoogleUseCase>()
+            signInWithEmailUseCase = signInWithEmailUseCase,
+            signInWithGoogleUseCase = signInWithGoogleUseCase,
+            linkGoogleAccountUseCase = linkGoogleAccountUseCase
         )
     }
     viewModel {
