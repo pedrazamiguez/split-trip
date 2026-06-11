@@ -97,16 +97,20 @@ fun DestructiveButton(
                 role = Role.Button,
                 onClick = onClick
             )
-            .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
     ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(LOADING_INDICATOR_SIZE),
-                color = contentColor,
-                strokeWidth = LOADING_INDICATOR_STROKE_WIDTH
-            )
-        } else {
-            ButtonContentRow(text, contentColor, leadingIcon)
+        Box(
+            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.ExtraLarge),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(LOADING_INDICATOR_SIZE),
+                    color = contentColor,
+                    strokeWidth = LOADING_INDICATOR_STROKE_WIDTH
+                )
+            } else {
+                ButtonContentRow(text, contentColor, leadingIcon)
+            }
         }
     }
 }

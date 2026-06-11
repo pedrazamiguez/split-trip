@@ -137,9 +137,9 @@
     <string name="account_status_link_button">Binculâh</string>
     <string name="account_status_unlink_button">Dêbbinculâh</string>
     <string name="account_status_delete_account_button">Çoliçitâh eliminaçión de cuenta</string>
-    <string name="account_status_delete_account_dialog_title">Eliminâh cuenta</string>
-    <string name="account_status_delete_account_dialog_text">¿Êttâh çeguro de que quierê çoliçitâh la eliminaçión de tu cuenta? Êtta âççión êh permanente y no çe puede deçaçêh.</string>
-    <string name="account_status_delete_account_dialog_confirm">Eliminâh</string>
+    <string name="account_status_delete_account_dialog_title">Çoliçitâh eliminaçión de cuenta</string>
+    <string name="account_status_delete_account_dialog_text">¿Êttâh çeguro de que quierê çoliçitâh la eliminaçión de tu cuenta? La çoliçitûh çe embiará pa çu proçeçamiento (çegimiento en #1132).</string>
+    <string name="account_status_delete_account_dialog_confirm">Çoliçitâh</string>
     <string name="account_status_delete_account_dialog_cancel">Cançelâh</string>
     <string name="account_status_link_email_dialog_title">Binculâh Emaîh y Contraçeña</string>
     <string name="account_status_link_email_dialog_password">Contraçeña</string>
@@ -152,6 +152,8 @@
     <string name="account_status_unlink_success">Cuenta dêbbinculá con éççito</string>
     <string name="account_status_unlink_error_last_provider">No çe puede dêbbinculâh el úrtimo probeedôh de iniçio de çeçión</string>
     <string name="account_status_error_prefix">Errôh: %1$s</string>
+    <string name="account_status_error_user_not_found">Uçuario no encontrao</string>
+    <string name="account_status_delete_request_submitted">La çoliçitûh de eliminaçión de cuenta a çido embiá</string>
     <string name="account_status_linked">Binculao</string>
     <string name="account_status_not_linked">No binculao</string>
 </resources>

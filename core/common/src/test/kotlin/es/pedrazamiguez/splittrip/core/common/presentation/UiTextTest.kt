@@ -77,6 +77,20 @@ class UiTextTest {
             assertEquals("Hello, name!", uiText.asString(context))
         }
 
+        @Test
+        fun `asString resolves nested UiText arguments recursively`() {
+            val context = mockk<Context>()
+            val innerResId = 100
+            val nestedUiText = UiText.StringResource(innerResId)
+
+            every { context.getString(innerResId) } returns "world"
+            every { context.getString(resId, "hello", "world") } returns "Message: hello world"
+
+            val uiText = UiText.StringResource(resId, "hello", nestedUiText)
+
+            assertEquals("Message: hello world", uiText.asString(context))
+        }
+
         // equals
 
         @Test

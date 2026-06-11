@@ -167,8 +167,8 @@
     <string name="account_status_unlink_button">Unlink</string>
     <string name="account_status_delete_account_button">Request Account Deletion</string>
     <string name="account_status_delete_account_dialog_title">Request Account Deletion</string>
-    <string name="account_status_delete_account_dialog_text">Are you sure you want to request account deletion? This action is permanent and cannot be undone.</string>
-    <string name="account_status_delete_account_dialog_confirm">Delete</string>
+    <string name="account_status_delete_account_dialog_text">Are you sure you want to request account deletion? The request will be submitted for processing (tracked in #1132).</string>
+    <string name="account_status_delete_account_dialog_confirm">Request</string>
     <string name="account_status_delete_account_dialog_cancel">Cancel</string>
     <string name="account_status_link_email_dialog_title">Link Email &amp; Password</string>
     <string name="account_status_link_email_dialog_password">Password</string>
@@ -181,6 +181,8 @@
     <string name="account_status_unlink_success">Account unlinked successfully</string>
     <string name="account_status_unlink_error_last_provider">Cannot unlink the last remaining sign-in provider</string>
     <string name="account_status_error_prefix">Error: %1$s</string>
+    <string name="account_status_error_user_not_found">User not found</string>
+    <string name="account_status_delete_request_submitted">Account deletion request has been submitted</string>
     <string name="account_status_linked">Linked</string>
     <string name="account_status_not_linked">Not linked</string>
 </resources>

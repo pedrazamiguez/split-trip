@@ -165,9 +165,9 @@
     <string name="account_status_link_button">Vincular</string>
     <string name="account_status_unlink_button">Desvincular</string>
     <string name="account_status_delete_account_button">Solicitar eliminación de cuenta</string>
-    <string name="account_status_delete_account_dialog_title">Eliminar cuenta</string>
-    <string name="account_status_delete_account_dialog_text">¿Estás seguro de que quieres solicitar la eliminación de tu cuenta? Esta acción es permanente y no se puede deshacer.</string>
-    <string name="account_status_delete_account_dialog_confirm">Eliminar</string>
+    <string name="account_status_delete_account_dialog_title">Solicitar eliminación de cuenta</string>
+    <string name="account_status_delete_account_dialog_text">¿Estás seguro de que quieres solicitar la eliminación de tu cuenta? La solicitud se enviará para su procesamiento (seguimiento en #1132).</string>
+    <string name="account_status_delete_account_dialog_confirm">Solicitar</string>
     <string name="account_status_delete_account_dialog_cancel">Cancelar</string>
     <string name="account_status_link_email_dialog_title">Vincular Email y Contraseña</string>
     <string name="account_status_link_email_dialog_password">Contraseña</string>
@@ -180,6 +180,8 @@
     <string name="account_status_unlink_success">Cuenta desvinculada con éxito</string>
     <string name="account_status_unlink_error_last_provider">No se puede desvincular el último proveedor de inicio de sesión</string>
     <string name="account_status_error_prefix">Error: %1$s</string>
+    <string name="account_status_error_user_not_found">Usuario no encontrado</string>
+    <string name="account_status_delete_request_submitted">La solicitud de eliminación de cuenta ha sido enviada</string>
     <string name="account_status_linked">Vinculado</string>
     <string name="account_status_not_linked">No vinculado</string>
 </resources>

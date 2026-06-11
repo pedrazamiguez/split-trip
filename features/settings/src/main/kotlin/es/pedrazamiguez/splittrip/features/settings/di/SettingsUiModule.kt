@@ -40,6 +40,8 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Langu
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.ThemeViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.handler.AccountStatusEventHandler
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.handler.AccountStatusEventHandlerImpl
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -98,14 +100,20 @@ val settingsUiModule = module {
 
     factory<AccountStatusUiMapper> { AccountStatusUiMapperImpl(localeProvider = get()) }
 
-    viewModel {
-        AccountStatusViewModel(
+    factory<AccountStatusEventHandler> {
+        AccountStatusEventHandlerImpl(
             getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>(),
             getLinkedProvidersUseCase = get<GetLinkedProvidersUseCase>(),
             linkGoogleAccountUseCase = get<LinkGoogleAccountUseCase>(),
             linkEmailPasswordUseCase = get<LinkEmailPasswordUseCase>(),
             unlinkProviderUseCase = get<UnlinkProviderUseCase>(),
             accountStatusUiMapper = get<AccountStatusUiMapper>()
+        )
+    }
+
+    viewModel {
+        AccountStatusViewModel(
+            accountStatusEventHandler = get<AccountStatusEventHandler>()
         )
     }
 

@@ -16,11 +16,16 @@ class UserRepositoryImpl(
     private val authenticationService: AuthenticationService
 ) : UserRepository {
 
-    override suspend fun saveUser(user: User): Result<Unit> = runCatching {
-        cloudUserDataSource.saveUser(user)
-        // Also cache locally so the current user's display name is
-        // available offline immediately without a Firestore round-trip.
-        localUserDataSource.saveUsers(listOf(user))
+    override suspend fun saveUser(user: User): Result<Unit> {
+        val localResult = runCatching { localUserDataSource.saveUsers(listOf(user)) }
+        if (localResult.isFailure) {
+            return localResult
+        }
+        return runCatching {
+            cloudUserDataSource.saveUser(user)
+        }.onFailure { e ->
+            Timber.w(e, "Failed to save user profile to cloud, local cache was updated")
+        }
     }
 
     override suspend fun saveGoogleUser(user: User): Result<Unit> = saveUser(user)

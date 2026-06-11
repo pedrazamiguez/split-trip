@@ -73,5 +73,14 @@ sealed interface UiText {
 @Suppress("SpreadOperator") // Spread is unavoidable for vararg-to-vararg delegation to Context.getString()
 fun UiText.asString(context: Context): String = when (this) {
     is UiText.DynamicString -> value
-    is UiText.StringResource -> context.getString(resId, *args)
+    is UiText.StringResource -> {
+        if (args.isEmpty()) {
+            context.getString(resId)
+        } else {
+            val resolvedArgs = args.map { arg ->
+                if (arg is UiText) arg.asString(context) else arg
+            }.toTypedArray()
+            context.getString(resId, *resolvedArgs)
+        }
+    }
 }
