@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.profile.presentation.component
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -33,7 +34,8 @@ internal fun AvatarEditor(
     avatarUrl: String?,
     localAvatarPath: String?,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    avatarUpdatedTime: Long = 0L
 ) {
     val context = LocalContext.current
     val imageSource = localAvatarPath ?: avatarUrl
@@ -51,10 +53,7 @@ internal fun AvatarEditor(
         ) {
             if (imageSource != null) {
                 AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(imageSource)
-                        .crossfade(true)
-                        .build(),
+                    model = buildImageRequest(context, imageSource, avatarUpdatedTime),
                     contentDescription = stringResource(R.string.profile_picture_description),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -95,4 +94,17 @@ internal fun AvatarEditor(
             )
         }
     }
+}
+
+private fun buildImageRequest(
+    context: Context,
+    imageSource: String,
+    avatarUpdatedTime: Long
+): ImageRequest {
+    return ImageRequest.Builder(context)
+        .data(imageSource)
+        .crossfade(true)
+        .memoryCacheKey("$imageSource-$avatarUpdatedTime")
+        .diskCacheKey("$imageSource-$avatarUpdatedTime")
+        .build()
 }

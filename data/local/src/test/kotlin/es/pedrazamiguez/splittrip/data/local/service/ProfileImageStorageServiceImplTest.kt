@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import androidx.exifinterface.media.ExifInterface
 import androidx.test.core.app.ApplicationProvider
 import es.pedrazamiguez.splittrip.domain.model.CropRect
 import io.mockk.clearAllMocks
@@ -367,6 +368,7 @@ class ProfileImageStorageServiceImplTest {
         every { Uri.parse(sourceUriStr) } returns mockUri
 
         every { mockResolver.openInputStream(mockUri) } returns ByteArrayInputStream("Dummy Data".toByteArray()) andThen
+            ByteArrayInputStream("Dummy Data".toByteArray()) andThen
             null
 
         mockkStatic(BitmapFactory::class)
@@ -421,5 +423,87 @@ class ProfileImageStorageServiceImplTest {
             assertTrue(e.message?.contains("Could not decode image from") == true)
         }
         assertTrue(exceptionThrown)
+    }
+
+    @Test
+    fun saveAndCompressAvatar_withExifRotation_rotatesBitmapBeforeCropping() = runTest {
+        // Given
+        val userId = "user-rotated"
+        val sourceUriStr = "content://media/picker/image-rotated"
+        val mockUri = mockk<Uri>(relaxed = true)
+
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+
+        val dummyBytes = "Dummy Image Content".toByteArray()
+        every { mockResolver.openInputStream(mockUri) } returns ByteArrayInputStream(dummyBytes)
+
+        // Mock ExifInterface constructor
+        io.mockk.mockkConstructor(ExifInterface::class)
+        every {
+            anyConstructed<ExifInterface>().getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+        } returns ExifInterface.ORIENTATION_ROTATE_90
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } answers {
+            val opts = arg<BitmapFactory.Options>(2)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 1000
+                opts.outHeight = 800
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
+            }
+        }
+
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        every { mockOriginalBitmap.width } returns 1000
+        every { mockOriginalBitmap.height } returns 800
+        every { mockOriginalBitmap.isRecycled } returns false
+
+        every { BitmapFactory.decodeStream(any(), null, match { !it.inJustDecodeBounds }) } returns mockOriginalBitmap
+
+        val mockRotatedBitmap = mockk<Bitmap>(relaxed = true)
+        every { mockRotatedBitmap.width } returns 800
+        every { mockRotatedBitmap.height } returns 1000
+        every { mockRotatedBitmap.isRecycled } returns false
+
+        val mockCroppedBitmap = mockk<Bitmap>(relaxed = true)
+        val mockScaledBitmap = mockk<Bitmap>(relaxed = true)
+
+        mockkStatic(Bitmap::class)
+        // With 90 deg rotation, decoded width/height 1000x800 becomes 800x1000
+        // We mock Bitmap.createBitmap with Matrix to return mockRotatedBitmap
+        every { Bitmap.createBitmap(mockOriginalBitmap, 0, 0, 1000, 800, any(), true) } returns mockRotatedBitmap
+        // Crop: left=0.1, top=0.1, right=0.6, bottom=0.6 of 800x1000 is left=80, top=100, width=400, height=500
+        every { Bitmap.createBitmap(mockRotatedBitmap, 80, 100, 400, 500) } returns mockCroppedBitmap
+        every { Bitmap.createScaledBitmap(mockCroppedBitmap, 512, 512, true) } returns mockScaledBitmap
+
+        every { mockScaledBitmap.compress(any(), 80, any()) } answers {
+            val outStream = arg<java.io.OutputStream>(2)
+            outStream.write("Rotated and Cropped Bytes".toByteArray())
+            true
+        }
+
+        val cropRect = CropRect(left = 0.1f, top = 0.1f, right = 0.6f, bottom = 0.6f)
+
+        // When
+        val resultUri = service.saveAndCompressAvatar(userId, sourceUriStr, cropRect)
+
+        // Then
+        assertNotNull(resultUri)
+        val savedFile = File(context.filesDir, "avatars/$userId.webp")
+        assertTrue(savedFile.exists())
+        assertEquals("Rotated and Cropped Bytes", savedFile.readText())
+
+        verify(exactly = 1) { mockOriginalBitmap.recycle() }
+        verify(exactly = 1) { mockRotatedBitmap.recycle() }
+        verify(exactly = 1) { mockCroppedBitmap.recycle() }
+        verify(exactly = 1) { mockScaledBitmap.recycle() }
+
+        io.mockk.unmockkConstructor(ExifInterface::class)
     }
 }

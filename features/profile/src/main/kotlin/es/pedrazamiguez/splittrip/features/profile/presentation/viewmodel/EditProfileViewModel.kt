@@ -138,7 +138,8 @@ class EditProfileViewModel(
                         isSaving = false,
                         showCropOverlay = false,
                         cropSourceUri = null,
-                        localAvatarPath = compressedPath
+                        localAvatarPath = compressedPath,
+                        avatarUpdatedTime = System.currentTimeMillis()
                     )
                 }
             } catch (e: Exception) {

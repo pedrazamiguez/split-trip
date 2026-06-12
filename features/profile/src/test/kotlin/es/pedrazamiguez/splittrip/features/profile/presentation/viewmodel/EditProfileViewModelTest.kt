@@ -228,6 +228,7 @@ class EditProfileViewModelTest {
             assertFalse(state.showCropOverlay)
             assertNull(state.cropSourceUri)
             assertEquals("file://local/path.webp", state.localAvatarPath)
+            assertTrue(state.avatarUpdatedTime > 0L)
         }
 
         @Test

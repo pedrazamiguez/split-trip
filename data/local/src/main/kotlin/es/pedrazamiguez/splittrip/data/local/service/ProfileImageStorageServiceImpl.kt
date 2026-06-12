@@ -3,9 +3,11 @@ package es.pedrazamiguez.splittrip.data.local.service
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import androidx.core.net.toUri
+import androidx.exifinterface.media.ExifInterface
 import es.pedrazamiguez.splittrip.domain.model.CropRect
 import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
 import java.io.File
@@ -28,23 +30,11 @@ class ProfileImageStorageServiceImpl(
         val destFile = File(avatarsDir, "$userId.webp")
 
         try {
-            // 1. Decode bounds first to prevent OOM
-            val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
-            val boundsStream = openInputStream(uri)
-                ?: throw IllegalArgumentException("Could not open input stream for bounds decoding: $sourceUri")
-            boundsStream.use { input ->
-                BitmapFactory.decodeStream(input, null, boundsOpts)
-            }
-
+            val rotationDegrees = getRotationDegrees(uri, sourceUri)
+            val boundsOpts = decodeBounds(uri, sourceUri)
             val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight, MAX_IMAGE_DIMENSION)
-
-            // 2. Decode bitmap safely
-            val decodeOpts = BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
-            val imageStream = openInputStream(uri)
-                ?: throw IllegalArgumentException("Could not open input stream for image decoding: $sourceUri")
-            val originalBitmap = imageStream.use { input ->
-                BitmapFactory.decodeStream(input, null, decodeOpts)
-            } ?: error("Could not decode image from $sourceUri")
+            val decodedBitmap = decodeOriginalBitmap(uri, sourceUri, inSampleSize)
+            val originalBitmap = rotateBitmap(decodedBitmap, rotationDegrees)
 
             try {
                 // 3. Crop
@@ -75,6 +65,70 @@ class ProfileImageStorageServiceImpl(
             }
         } finally {
             cleanUpSourceCameraFile(uri, sourceUri)
+        }
+    }
+
+    private fun getRotationDegrees(uri: Uri, sourceUri: String): Int {
+        val exifStream = openInputStream(uri)
+        return exifStream?.use { input ->
+            try {
+                val exifInterface = ExifInterface(input)
+                val orientation = exifInterface.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+                when (orientation) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> ROTATION_90
+                    ExifInterface.ORIENTATION_ROTATE_180 -> ROTATION_180
+                    ExifInterface.ORIENTATION_ROTATE_270 -> ROTATION_270
+                    else -> 0
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Could not read EXIF orientation from $sourceUri")
+                0
+            }
+        } ?: 0
+    }
+
+    private fun decodeBounds(uri: Uri, sourceUri: String): BitmapFactory.Options {
+        val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
+        val boundsStream = openInputStream(uri)
+            ?: throw IllegalArgumentException("Could not open input stream for bounds decoding: $sourceUri")
+        boundsStream.use { input ->
+            BitmapFactory.decodeStream(input, null, boundsOpts)
+        }
+        return boundsOpts
+    }
+
+    private fun decodeOriginalBitmap(uri: Uri, sourceUri: String, inSampleSize: Int): Bitmap {
+        val decodeOpts = BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
+        val imageStream = openInputStream(uri)
+            ?: throw IllegalArgumentException("Could not open input stream for image decoding: $sourceUri")
+        return imageStream.use { input ->
+            BitmapFactory.decodeStream(input, null, decodeOpts)
+        } ?: error("Could not decode image from $sourceUri")
+    }
+
+    private fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
+        if (rotationDegrees == 0) return bitmap
+        return try {
+            val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+            val rotated = Bitmap.createBitmap(
+                bitmap,
+                0,
+                0,
+                bitmap.width,
+                bitmap.height,
+                matrix,
+                true
+            )
+            if (rotated != bitmap) {
+                bitmap.recycle()
+            }
+            rotated
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to rotate decoded bitmap")
+            bitmap
         }
     }
 
@@ -253,5 +307,8 @@ class ProfileImageStorageServiceImpl(
         const val WEBP_QUALITY = 80
         const val MAX_IMAGE_DIMENSION = 2048
         const val CLEANUP_THRESHOLD_MS = 10 * 60 * 1000L // 10 minutes
+        const val ROTATION_90 = 90
+        const val ROTATION_180 = 180
+        const val ROTATION_270 = 270
     }
 }

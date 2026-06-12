@@ -13,5 +13,6 @@ data class EditProfileUiState(
     val showCropOverlay: Boolean = false,
     val cropSourceUri: String? = null,
     val displayNameError: UiText? = null,
-    val bioError: UiText? = null
+    val bioError: UiText? = null,
+    val avatarUpdatedTime: Long = 0L
 )

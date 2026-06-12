@@ -55,6 +55,7 @@ fun EditProfileScreen(
             AvatarEditor(
                 avatarUrl = uiState.avatarUrl,
                 localAvatarPath = uiState.localAvatarPath,
+                avatarUpdatedTime = uiState.avatarUpdatedTime,
                 onClick = onAvatarClick
             )
 
