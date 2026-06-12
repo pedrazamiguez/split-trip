@@ -155,7 +155,17 @@ class EditProfileViewModel(
     }
 
     private fun saveProfile() {
-        val currentUserId = userId ?: return
+        val currentUserId = userId
+        if (currentUserId == null) {
+            viewModelScope.launch {
+                _actions.send(
+                    EditProfileUiAction.ShowNotification(
+                        UiText.StringResource(R.string.profile_error_loading)
+                    )
+                )
+            }
+            return
+        }
         val displayName = _uiState.value.displayName
         val bio = _uiState.value.bio.takeIf { it.isNotBlank() }
 

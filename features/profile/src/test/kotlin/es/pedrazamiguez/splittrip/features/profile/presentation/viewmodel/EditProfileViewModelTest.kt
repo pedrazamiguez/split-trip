@@ -450,5 +450,34 @@ class EditProfileViewModelTest {
 
             collectJob.cancel()
         }
+
+        @Test
+        fun `OnSaveClicked emits error notification when userId is null`() = runTest(testDispatcher) {
+            // Given getCurrentUserProfileUseCase returns null, so userId remains null
+            coEvery { getCurrentUserProfileUseCase() } returns null
+            createViewModel()
+            advanceUntilIdle()
+
+            val emittedActions = mutableListOf<EditProfileUiAction>()
+            val collectJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { emittedActions.add(it) }
+            }
+
+            // When
+            viewModel.onEvent(EditProfileUiEvent.OnSaveClicked)
+            advanceUntilIdle()
+
+            // Then
+            assertTrue(emittedActions.isNotEmpty())
+            val action = emittedActions.first() as EditProfileUiAction.ShowNotification
+            assertTrue(action.message is UiText.StringResource)
+            assertEquals(
+                R.string.profile_error_loading,
+                (action.message as UiText.StringResource).resId
+            )
+            coVerify(exactly = 0) { updateUserProfileUseCase(any(), any(), any(), any()) }
+
+            collectJob.cancel()
+        }
     }
 }

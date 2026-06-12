@@ -380,5 +380,16 @@ class UserRepositoryImplTest {
             coVerify { cloudStorageDataSource.deleteAvatar("user-1") }
             coVerify { cloudUserDataSource.updateUserProfile("user-1", "Alice", null, null) }
         }
+
+        @Test
+        fun `returns failure when local user is not found`() = runTest(testDispatcher) {
+            coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns emptyList()
+
+            val result = repository.updateUserProfile("user-1", "New Alice", "New Bio", "file://local/avatar.webp")
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is IllegalStateException)
+            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
+        }
     }
 }

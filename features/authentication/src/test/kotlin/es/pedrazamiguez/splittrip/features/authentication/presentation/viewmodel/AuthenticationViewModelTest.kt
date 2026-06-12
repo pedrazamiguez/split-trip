@@ -7,7 +7,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
-import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionHandlerImpl
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionEventHandlerImpl
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -46,14 +46,14 @@ class AuthenticationViewModelTest {
         signInWithGoogleUseCase = mockk()
         linkGoogleAccountUseCase = mockk()
 
-        val collisionHandler = AuthenticationCollisionHandlerImpl(
+        val collisionHandler = AuthenticationCollisionEventHandlerImpl(
             signInWithEmailUseCase = signInWithEmailUseCase,
             linkGoogleAccountUseCase = linkGoogleAccountUseCase
         )
         viewModel = AuthenticationViewModel(
             signInWithEmailUseCase = signInWithEmailUseCase,
             signInWithGoogleUseCase = signInWithGoogleUseCase,
-            authenticationCollisionHandler = collisionHandler
+            authenticationCollisionEventHandler = collisionHandler
         )
     }
 

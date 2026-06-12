@@ -6,7 +6,7 @@ import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiAction
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiState
-import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.RegisterSubmitHandler
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.RegisterSubmitEventHandler
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.update
 import timber.log.Timber
 
 class RegisterViewModel(
-    private val registerSubmitHandler: RegisterSubmitHandler
+    private val registerSubmitEventHandler: RegisterSubmitEventHandler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
@@ -25,7 +25,7 @@ class RegisterViewModel(
     val actions = _actions.receiveAsFlow()
 
     init {
-        registerSubmitHandler.bind(_uiState, _actions, viewModelScope)
+        registerSubmitEventHandler.bind(_uiState, _actions, viewModelScope)
     }
 
     fun onEvent(event: RegisterUiEvent) {
@@ -49,11 +49,11 @@ class RegisterViewModel(
             }
 
             RegisterUiEvent.SubmitSignUp -> {
-                registerSubmitHandler.handleSubmitSignUp()
+                registerSubmitEventHandler.handleSubmitSignUp()
             }
 
             RegisterUiEvent.DismissCollisionDialog -> {
-                registerSubmitHandler.handleDismissCollisionDialog()
+                registerSubmitEventHandler.handleDismissCollisionDialog()
             }
         }
     }

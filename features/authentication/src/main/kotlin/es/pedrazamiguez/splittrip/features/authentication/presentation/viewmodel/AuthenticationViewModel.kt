@@ -10,7 +10,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiState
-import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionHandler
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionEventHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,14 +20,14 @@ import timber.log.Timber
 class AuthenticationViewModel(
     private val signInWithEmailUseCase: SignInWithEmailUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
-    private val authenticationCollisionHandler: AuthenticationCollisionHandler
+    private val authenticationCollisionEventHandler: AuthenticationCollisionEventHandler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthenticationUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
-        authenticationCollisionHandler.bind(_uiState, viewModelScope)
+        authenticationCollisionEventHandler.bind(_uiState, viewModelScope)
     }
 
     fun onEvent(event: AuthenticationUiEvent, onLoginSuccess: () -> Unit) {
@@ -63,15 +63,15 @@ class AuthenticationViewModel(
             }
 
             is AuthenticationUiEvent.CollisionPasswordChanged -> {
-                authenticationCollisionHandler.handleCollisionPasswordChanged(event.value)
+                authenticationCollisionEventHandler.handleCollisionPasswordChanged(event.value)
             }
 
             AuthenticationUiEvent.SubmitCollisionMerge -> {
-                authenticationCollisionHandler.handleSubmitCollisionMerge(onLoginSuccess)
+                authenticationCollisionEventHandler.handleSubmitCollisionMerge(onLoginSuccess)
             }
 
             AuthenticationUiEvent.DismissCollisionDialog -> {
-                authenticationCollisionHandler.handleDismissCollisionDialog()
+                authenticationCollisionEventHandler.handleDismissCollisionDialog()
             }
         }
     }

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 /**
  * Interface for the handler managing registration submission and collision dialog dismissals.
  */
-interface RegisterSubmitHandler {
+interface RegisterSubmitEventHandler {
 
     /**
      * Binds the handler to the ViewModel's state flow, actions channel, and CoroutineScope.

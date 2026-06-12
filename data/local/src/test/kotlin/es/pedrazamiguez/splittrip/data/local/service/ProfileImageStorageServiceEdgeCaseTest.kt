@@ -597,7 +597,9 @@ class ProfileImageStorageServiceEdgeCaseTest {
         every { context.packageName } returns "es.pedrazamiguez.splittrip"
 
         val tempAvatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
-        File(tempAvatarsDir, "avatar_camera_test.jpg").writeText("Suffix Local File Output")
+        val sourceFile = File(tempAvatarsDir, "avatar_camera_test.jpg").also {
+            it.writeText("Suffix Local File Output")
+        }
 
         val mockUri = mockk<Uri>(relaxed = true)
         mockkStatic(Uri::class)
@@ -605,6 +607,7 @@ class ProfileImageStorageServiceEdgeCaseTest {
         every { mockUri.scheme } returns "content"
         every { mockUri.authority } returns "es.pedrazamiguez.splittrip.debug.fileprovider"
         every { mockUri.pathSegments } returns listOf("avatars_temp", "avatar_camera_test.jpg")
+        every { mockUri.lastPathSegment } returns "avatar_camera_test.jpg"
 
         every { mockResolver.openInputStream(mockUri) } returns null
 
@@ -644,6 +647,8 @@ class ProfileImageStorageServiceEdgeCaseTest {
         assertNotNull(resultUri)
         val savedFile = File(context.filesDir, "avatars/$userId.webp")
         assertTrue(savedFile.exists())
+        // Verify source camera temp file was cleaned up/deleted
+        assertTrue(!sourceFile.exists())
 
         tempAvatarsDir.deleteRecursively()
     }

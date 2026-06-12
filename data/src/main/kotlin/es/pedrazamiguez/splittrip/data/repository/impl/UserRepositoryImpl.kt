@@ -128,14 +128,12 @@ class UserRepositoryImpl(
         return runCatching {
             // 1. Save locally first.
             val existingUser = localUserDataSource.getUsersByIds(listOf(userId)).firstOrNull()
-            val updatedUser = User(
-                userId = userId,
-                email = existingUser?.email ?: "",
+                ?: error("Local user profile not found for ID: $userId")
+            val updatedUser = existingUser.copy(
                 displayName = displayName,
                 profileImagePath = localAvatarUri,
                 bio = bio,
-                syncStatus = SyncStatus.PENDING_SYNC,
-                createdAt = existingUser?.createdAt
+                syncStatus = SyncStatus.PENDING_SYNC
             )
             localUserDataSource.saveUsers(listOf(updatedUser))
 

@@ -204,6 +204,32 @@ class ProfileViewModelTest {
             assertEquals("Test User", state.profile?.displayName)
             assertFalse(state.hasError)
         }
+
+        @Test
+        fun `clears profile and sets error when observe flow emits null`() = runTest(testDispatcher) {
+            // Given
+            val userFlow = kotlinx.coroutines.flow.MutableSharedFlow<User?>()
+            every { observeCurrentUserProfileUseCase() } returns userFlow
+            coEvery { getCurrentUserProfileUseCase() } returns testUser
+
+            createViewModel()
+            advanceUntilIdle()
+
+            // When - flow emits a user, then emits null
+            userFlow.emit(testUser)
+            advanceUntilIdle()
+            assertNotNull(viewModel.uiState.value.profile)
+            assertFalse(viewModel.uiState.value.hasError)
+
+            userFlow.emit(null)
+            advanceUntilIdle()
+
+            // Then - UI clears profile and sets error
+            val state = viewModel.uiState.value
+            assertFalse(state.isLoading)
+            assertNull(state.profile)
+            assertTrue(state.hasError)
+        }
     }
 
     @Nested

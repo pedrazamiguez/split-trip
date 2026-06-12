@@ -15,8 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.common.presentation.asString
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
+import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormSubmitButton
@@ -34,7 +34,6 @@ fun EditProfileScreen(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    val context = androidx.compose.ui.platform.LocalContext.current
     val bottomPadding = LocalBottomPadding.current
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -45,7 +44,7 @@ fun EditProfileScreen(
                 .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
                 .padding(
                     top = MaterialTheme.spacing.ExtraLarge,
-                    bottom = 100.dp + bottomPadding
+                    bottom = UiConstants.FORM_SUBMIT_BUTTON_HEIGHT + bottomPadding
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
@@ -67,7 +66,7 @@ fun EditProfileScreen(
                 label = stringResource(R.string.edit_profile_display_name),
                 placeholder = stringResource(R.string.edit_profile_display_name_placeholder),
                 isError = uiState.displayNameError != null,
-                supportingText = uiState.displayNameError?.asString(context),
+                supportingText = uiState.displayNameError?.asString(),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -82,7 +81,7 @@ fun EditProfileScreen(
                 maxLines = 4,
                 minLines = 3,
                 isError = uiState.bioError != null,
-                supportingText = uiState.bioError?.asString(context),
+                supportingText = uiState.bioError?.asString(),
                 modifier = Modifier.fillMaxWidth()
             )
         }

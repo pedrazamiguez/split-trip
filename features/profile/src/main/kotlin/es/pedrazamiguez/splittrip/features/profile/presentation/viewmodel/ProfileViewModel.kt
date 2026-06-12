@@ -51,14 +51,12 @@ class ProfileViewModel(
         viewModelScope.launch {
             observeCurrentUserProfileUseCase()
                 .collect { user ->
-                    if (user != null) {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                hasError = false,
-                                profile = profileUiMapper.toProfileUiModel(user)
-                            )
-                        }
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            hasError = user == null,
+                            profile = user?.let { profileUiMapper.toProfileUiModel(it) }
+                        )
                     }
                 }
         }

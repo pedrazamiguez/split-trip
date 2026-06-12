@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 /**
  * Interface for the handler managing account collision merge events during login.
  */
-interface AuthenticationCollisionHandler {
+interface AuthenticationCollisionEventHandler {
 
     /**
      * Binds the handler to the ViewModel's state flow and CoroutineScope.

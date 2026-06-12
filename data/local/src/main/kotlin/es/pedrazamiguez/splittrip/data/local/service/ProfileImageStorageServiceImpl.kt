@@ -269,8 +269,9 @@ class ProfileImageStorageServiceImpl(
     }
 
     private fun cleanUpSourceCameraFile(uri: Uri, sourceUri: String) {
+        val authority = uri.authority ?: return
         val expectedAuthority = "${context.packageName}.fileprovider"
-        if (uri.authority != expectedAuthority) return
+        if (authority != expectedAuthority && !authority.endsWith(".fileprovider")) return
         val fileName = uri.lastPathSegment ?: return
         if (!fileName.startsWith("avatar_camera_")) return
 
