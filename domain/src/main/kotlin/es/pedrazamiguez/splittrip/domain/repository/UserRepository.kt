@@ -34,4 +34,14 @@ interface UserRepository {
      * @return List of matching users, excluding the current user
      */
     suspend fun searchUsersByEmail(email: String): List<User>
+
+    /**
+     * Updates the user's profile information (display name, bio, and/or avatar).
+     */
+    suspend fun updateUserProfile(
+        userId: String,
+        displayName: String?,
+        bio: String?,
+        localAvatarUri: String?
+    ): Result<Unit>
 }

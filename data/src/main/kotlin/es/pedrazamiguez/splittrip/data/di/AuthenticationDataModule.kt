@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.di
 
 import es.pedrazamiguez.splittrip.data.repository.impl.UserRepositoryImpl
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
@@ -12,6 +13,7 @@ val authenticationDataModule = module {
         UserRepositoryImpl(
             cloudUserDataSource = get<CloudUserDataSource>(),
             localUserDataSource = get<LocalUserDataSource>(),
+            cloudStorageDataSource = get<CloudStorageDataSource>(),
             authenticationService = get<AuthenticationService>()
         )
     }

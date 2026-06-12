@@ -35,6 +35,7 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                 // New user — populate user-editable fields from the auth provider
                 user.displayName?.let { data["displayName"] = it }
                 user.profileImagePath?.let { data["profileImagePath"] = it }
+                user.bio?.let { data["bio"] = it }
                 data["createdBy"] = user.userId
                 data["createdAt"] = userCreatedAtTimestamp ?: now
             } else {
@@ -76,6 +77,7 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                             email = userDoc.email,
                             displayName = userDoc.displayName,
                             profileImagePath = userDoc.profileImagePath,
+                            bio = userDoc.bio,
                             createdAt = userDoc.createdAt.toLocalDateTimeUtc()
                         )
                     }
@@ -109,6 +111,7 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                             email = userDoc.email,
                             displayName = userDoc.displayName,
                             profileImagePath = userDoc.profileImagePath,
+                            bio = userDoc.bio,
                             createdAt = userDoc.createdAt.toLocalDateTimeUtc()
                         )
                     }
@@ -118,5 +121,17 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
             Timber.e(e, "Error searching users by email")
             emptyList()
         }
+    }
+
+    override suspend fun updateUserProfile(userId: String, displayName: String?, bio: String?, avatarUrl: String?) {
+        val docRef = firestore.collection(UserDocument.COLLECTION_PATH).document(userId)
+        val updates = mutableMapOf<String, Any?>(
+            "displayName" to displayName,
+            "bio" to bio,
+            "profileImagePath" to avatarUrl,
+            "lastUpdatedBy" to userId,
+            "lastUpdatedAt" to Timestamp(Date())
+        )
+        docRef.update(updates).await()
     }
 }

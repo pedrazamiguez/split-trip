@@ -1,0 +1,166 @@
+package es.pedrazamiguez.splittrip.data.local.service
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Build
+import androidx.core.net.toUri
+import es.pedrazamiguez.splittrip.domain.model.CropRect
+import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
+import java.io.File
+import java.io.FileOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import timber.log.Timber
+
+class ProfileImageStorageServiceImpl(
+    private val context: Context
+) : ProfileImageStorageService {
+
+    override suspend fun saveAndCompressAvatar(
+        userId: String,
+        sourceUri: String,
+        cropRect: CropRect?
+    ): String = withContext(Dispatchers.IO) {
+        val uri = Uri.parse(sourceUri)
+        val avatarsDir = File(context.filesDir, AVATARS_DIR).also { it.mkdirs() }
+        val destFile = File(avatarsDir, "$userId.webp")
+
+        // 1. Decode bounds first to prevent OOM
+        val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
+        openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, boundsOpts)
+        } ?: throw IllegalArgumentException("Could not open input stream for $sourceUri")
+
+        val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight, MAX_IMAGE_DIMENSION)
+
+        // 2. Decode bitmap safely
+        val decodeOpts = BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
+        val originalBitmap = openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, decodeOpts)
+        } ?: error("Could not decode image from $sourceUri")
+
+        try {
+            // 3. Crop
+            val croppedBitmap = cropBitmap(originalBitmap, cropRect)
+            if (croppedBitmap != originalBitmap) {
+                originalBitmap.recycle()
+            }
+
+            // 4. Downscale to exactly 512x512
+            val scaledBitmap = Bitmap.createScaledBitmap(croppedBitmap, AVATAR_SIZE, AVATAR_SIZE, true)
+            if (scaledBitmap != croppedBitmap) {
+                croppedBitmap.recycle()
+            }
+
+            // 5. Save as WebP
+            FileOutputStream(destFile).use { output ->
+                saveWebp(scaledBitmap, output)
+            }
+            scaledBitmap.recycle()
+
+            Timber.d("Saved compressed avatar for user $userId to ${destFile.absolutePath}")
+            destFile.toUri().toString()
+        } catch (e: Exception) {
+            if (!originalBitmap.isRecycled) {
+                originalBitmap.recycle()
+            }
+            throw e
+        }
+    }
+
+    private fun openInputStream(uri: Uri): java.io.InputStream? {
+        val resolvedFile = resolveLocalFileFromUri(context, uri)
+        return if (resolvedFile != null && resolvedFile.exists()) {
+            java.io.FileInputStream(resolvedFile)
+        } else {
+            context.contentResolver.openInputStream(uri)
+        }
+    }
+
+    private fun resolveLocalFileFromUri(context: Context, uri: Uri): File? {
+        if (uri.scheme != "content") return null
+        val authority = "${context.packageName}.fileprovider"
+        if (uri.authority != authority) return null
+
+        val pathSegments = uri.pathSegments
+        if (pathSegments.isEmpty()) return null
+
+        val name = pathSegments[0]
+        val remainingPath = pathSegments.drop(1).joinToString("/")
+
+        return when (name) {
+            "receipts" -> File(context.filesDir, "receipts/$remainingPath")
+            "avatars_temp" -> File(context.cacheDir, "avatars_temp/$remainingPath")
+            else -> null
+        }
+    }
+
+    private fun cropBitmap(originalBitmap: Bitmap, cropRect: CropRect?): Bitmap {
+        val originalWidth = originalBitmap.width
+        val originalHeight = originalBitmap.height
+
+        return if (cropRect != null) {
+            val left = (cropRect.left * originalWidth).toInt().coerceIn(0, originalWidth - 1)
+            val top = (cropRect.top * originalHeight).toInt().coerceIn(0, originalHeight - 1)
+            val right = (cropRect.right * originalWidth).toInt().coerceIn(left + 1, originalWidth)
+            val bottom = (cropRect.bottom * originalHeight).toInt().coerceIn(top + 1, originalHeight)
+            val cropW = right - left
+            val cropH = bottom - top
+            Bitmap.createBitmap(originalBitmap, left, top, cropW, cropH)
+        } else {
+            val size = minOf(originalWidth, originalHeight)
+            val left = (originalWidth - size) / 2
+            val top = (originalHeight - size) / 2
+            Bitmap.createBitmap(originalBitmap, left, top, size, size)
+        }
+    }
+
+    private fun saveWebp(bitmap: Bitmap, outputStream: FileOutputStream) {
+        @Suppress("DEPRECATION")
+        val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                Bitmap.CompressFormat.valueOf("WEBP_LOSSY")
+            } catch (_: Throwable) {
+                Bitmap.CompressFormat.WEBP
+            }
+        } else {
+            Bitmap.CompressFormat.WEBP
+        }
+        bitmap.compress(format, WEBP_QUALITY, outputStream)
+    }
+
+    override suspend fun deleteLocalAvatar(userId: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val avatarsDir = File(context.filesDir, AVATARS_DIR)
+                val file = File(avatarsDir, "$userId.webp")
+                if (file.exists()) {
+                    if (file.delete()) {
+                        Timber.d("Deleted local avatar for user $userId")
+                    } else {
+                        Timber.w("Failed to delete local avatar file for user $userId")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error deleting local avatar for user $userId")
+            }
+        }
+    }
+
+    private fun calculateInSampleSize(width: Int, height: Int, maxDimension: Int): Int {
+        var inSampleSize = 1
+        while ((height / inSampleSize) > maxDimension || (width / inSampleSize) > maxDimension) {
+            inSampleSize *= 2
+        }
+        return inSampleSize
+    }
+
+    private companion object {
+        const val AVATARS_DIR = "avatars"
+        const val AVATAR_SIZE = 512
+        const val WEBP_QUALITY = 80
+        const val MAX_IMAGE_DIMENSION = 2048
+    }
+}

@@ -24,7 +24,9 @@ class UserEntityMapperTest {
         displayName = "Alice",
         profileImagePath = "images/alice.jpg",
         createdAtMillis = testTimestampMillis,
-        lastUpdatedAtMillis = testTimestampMillis
+        lastUpdatedAtMillis = testTimestampMillis,
+        bio = "Hello",
+        syncStatus = "PENDING_SYNC"
     )
 
     @Nested
@@ -39,6 +41,8 @@ class UserEntityMapperTest {
             assertEquals("Alice", user.displayName)
             assertEquals("images/alice.jpg", user.profileImagePath)
             assertEquals(testTimestamp, user.createdAt)
+            assertEquals("Hello", user.bio)
+            assertEquals(es.pedrazamiguez.splittrip.domain.enums.SyncStatus.PENDING_SYNC, user.syncStatus)
         }
 
         @Test
@@ -64,7 +68,9 @@ class UserEntityMapperTest {
             email = "alice@example.com",
             displayName = "Alice",
             profileImagePath = "images/alice.jpg",
-            createdAt = testTimestamp
+            createdAt = testTimestamp,
+            bio = "Hello",
+            syncStatus = es.pedrazamiguez.splittrip.domain.enums.SyncStatus.PENDING_SYNC
         )
 
         @Test
@@ -76,6 +82,8 @@ class UserEntityMapperTest {
             assertEquals("Alice", entity.displayName)
             assertEquals("images/alice.jpg", entity.profileImagePath)
             assertEquals(testTimestampMillis, entity.createdAtMillis)
+            assertEquals("Hello", entity.bio)
+            assertEquals("PENDING_SYNC", entity.syncStatus)
         }
 
         @Test

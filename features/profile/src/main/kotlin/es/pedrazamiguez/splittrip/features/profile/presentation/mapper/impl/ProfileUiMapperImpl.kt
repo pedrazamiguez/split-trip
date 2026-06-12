@@ -11,7 +11,7 @@ class ProfileUiMapperImpl : ProfileUiMapper {
             displayName = displayName ?: email,
             email = email,
             profileImageUrl = profileImagePath,
-            bio = ""
+            bio = bio ?: ""
         )
     }
 }

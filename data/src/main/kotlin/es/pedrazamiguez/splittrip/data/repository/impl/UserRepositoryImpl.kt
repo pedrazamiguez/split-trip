@@ -1,20 +1,30 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
+import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
+import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
 
 class UserRepositoryImpl(
     private val cloudUserDataSource: CloudUserDataSource,
     private val localUserDataSource: LocalUserDataSource,
-    private val authenticationService: AuthenticationService
+    private val cloudStorageDataSource: CloudStorageDataSource,
+    private val authenticationService: AuthenticationService,
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : UserRepository {
+
+    private val syncScope = CoroutineScope(ioDispatcher)
 
     override suspend fun saveUser(user: User): Result<Unit> {
         val localResult = runCatching { localUserDataSource.saveUsers(listOf(user)) }
@@ -35,6 +45,11 @@ class UserRepositoryImpl(
 
         // First try the generic local-first path
         val localUser = getUsersByIds(listOf(userId))[userId]
+
+        // If we have a local user and its syncStatus is not SYNCED, trigger a background retry
+        if (localUser != null && localUser.syncStatus != SyncStatus.SYNCED) {
+            triggerBackgroundSync(userId, localUser.displayName, localUser.bio, localUser.profileImagePath)
+        }
 
         // If we have a fully-populated profile (including createdAt), return it
         if (localUser != null && localUser.createdAt != null) {
@@ -99,5 +114,72 @@ class UserRepositoryImpl(
     override suspend fun searchUsersByEmail(email: String): List<User> {
         val currentUserId = authenticationService.currentUserId()
         return cloudUserDataSource.searchUsersByEmail(email, excludeUserId = currentUserId)
+    }
+
+    override suspend fun updateUserProfile(
+        userId: String,
+        displayName: String?,
+        bio: String?,
+        localAvatarUri: String?
+    ): Result<Unit> {
+        return runCatching {
+            // 1. Save locally first.
+            val existingUser = localUserDataSource.getUsersByIds(listOf(userId)).firstOrNull()
+            val updatedUser = User(
+                userId = userId,
+                email = existingUser?.email ?: "",
+                displayName = displayName,
+                profileImagePath = localAvatarUri,
+                bio = bio,
+                syncStatus = SyncStatus.PENDING_SYNC,
+                createdAt = existingUser?.createdAt
+            )
+            localUserDataSource.saveUsers(listOf(updatedUser))
+
+            // 2. Trigger background sync.
+            triggerBackgroundSync(userId, displayName, bio, localAvatarUri)
+        }
+    }
+
+    private fun triggerBackgroundSync(
+        userId: String,
+        displayName: String?,
+        bio: String?,
+        localAvatarUri: String?
+    ) {
+        syncCreateToCloud(
+            scope = syncScope,
+            entityId = userId,
+            cloudWrite = {
+                val avatarUrl = if (localAvatarUri != null) {
+                    if (!localAvatarUri.startsWith("http")) {
+                        cloudStorageDataSource.uploadAvatar(userId, localAvatarUri, "image/webp")
+                    } else {
+                        localAvatarUri
+                    }
+                } else {
+                    cloudStorageDataSource.deleteAvatar(userId)
+                    null
+                }
+                cloudUserDataSource.updateUserProfile(userId, displayName, bio, avatarUrl)
+
+                // Update local DB with new remote avatar URL and SYNCED status
+                val currentUser = localUserDataSource.getUsersByIds(listOf(userId)).firstOrNull()
+                if (currentUser != null) {
+                    val finalUser = currentUser.copy(
+                        displayName = displayName,
+                        bio = bio,
+                        profileImagePath = avatarUrl,
+                        syncStatus = SyncStatus.SYNCED
+                    )
+                    localUserDataSource.saveUsers(listOf(finalUser))
+                }
+            },
+            updateSyncStatus = localUserDataSource::updateSyncStatus,
+            getCurrentSyncStatus = { id ->
+                localUserDataSource.getUsersByIds(listOf(id)).firstOrNull()?.syncStatus ?: SyncStatus.PENDING_SYNC
+            },
+            entityLabel = "user profile"
+        )
     }
 }
