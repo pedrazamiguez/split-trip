@@ -4,6 +4,8 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -27,19 +29,25 @@ internal fun AvatarCropImage(
     onIntrinsicSize: (Size) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val currentScale by rememberUpdatedState(scale)
+    val currentOffset by rememberUpdatedState(offset)
+    val currentLayoutWidth by rememberUpdatedState(layoutWidth)
+    val currentLayoutHeight by rememberUpdatedState(layoutHeight)
+    val currentOnTransform by rememberUpdatedState(onTransform)
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoomChange, _ ->
-                    val newScale = (scale * zoomChange).coerceIn(MIN_SCALE, MAX_SCALE)
-                    val maxPanX = layoutWidth * newScale / 2f
-                    val maxPanY = layoutHeight * newScale / 2f
+                    val newScale = (currentScale * zoomChange).coerceIn(MIN_SCALE, MAX_SCALE)
+                    val maxPanX = currentLayoutWidth * newScale / 2f
+                    val maxPanY = currentLayoutHeight * newScale / 2f
                     val newOffset = Offset(
-                        x = (offset.x + pan.x).coerceIn(-maxPanX, maxPanX),
-                        y = (offset.y + pan.y).coerceIn(-maxPanY, maxPanY)
+                        x = (currentOffset.x + pan.x).coerceIn(-maxPanX, maxPanX),
+                        y = (currentOffset.y + pan.y).coerceIn(-maxPanY, maxPanY)
                     )
-                    onTransform(newScale, newOffset)
+                    currentOnTransform(newScale, newOffset)
                 }
             }
     ) {

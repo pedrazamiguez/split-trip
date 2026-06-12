@@ -5,10 +5,12 @@ import es.pedrazamiguez.splittrip.domain.service.UserValidationService
 import es.pedrazamiguez.splittrip.domain.service.impl.UserValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.GetCurrentUserProfileUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.GetMemberProfilesUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.user.impl.ObserveCurrentUserProfileUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.SearchUsersByEmailUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.UpdateUserProfileUseCaseImpl
 import org.koin.dsl.module
@@ -30,6 +32,11 @@ val profileDomainModule = module {
     }
     factory<GetCurrentUserProfileUseCase> {
         GetCurrentUserProfileUseCaseImpl(
+            userRepository = get<UserRepository>()
+        )
+    }
+    factory<ObserveCurrentUserProfileUseCase> {
+        ObserveCurrentUserProfileUseCaseImpl(
             userRepository = get<UserRepository>()
         )
     }

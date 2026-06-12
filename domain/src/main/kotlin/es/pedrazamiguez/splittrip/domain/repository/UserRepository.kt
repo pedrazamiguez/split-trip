@@ -44,4 +44,9 @@ interface UserRepository {
         bio: String?,
         localAvatarUri: String?
     ): Result<Unit>
+
+    /**
+     * Observes the current authenticated user's profile.
+     */
+    fun observeCurrentUserProfile(): kotlinx.coroutines.flow.Flow<User?>
 }

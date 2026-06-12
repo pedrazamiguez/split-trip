@@ -73,7 +73,7 @@ internal fun AvatarAttachmentHandler(
 }
 
 private fun createAvatarCameraUri(context: Context): Pair<File, Uri> {
-    val avatarsDir = File(context.cacheDir, "avatars_temp").also { it.mkdirs() }
+    val avatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
     val tempFile = File.createTempFile("avatar_camera_", ".jpg", avatarsDir)
     val uri = FileProvider.getUriForFile(
         context,

@@ -39,6 +39,17 @@ class EditProfileViewModel(
 
     init {
         loadProfile()
+        cleanTempCameraFiles()
+    }
+
+    private fun cleanTempCameraFiles() {
+        viewModelScope.launch {
+            try {
+                profileImageStorageService.cleanTempCameraFiles()
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to clean temporary camera files")
+            }
+        }
     }
 
     fun onEvent(event: EditProfileUiEvent) {

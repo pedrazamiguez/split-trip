@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.UserValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.profile.navigation.impl.ProfileNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUiMapper
@@ -25,9 +26,11 @@ val profileUiModule = module {
 
     viewModel {
         val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
+        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
         val profileUiMapper = get<ProfileUiMapper>()
         ProfileViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
+            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
             profileUiMapper = profileUiMapper
         )
     }

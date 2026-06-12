@@ -27,62 +27,102 @@ class ProfileImageStorageServiceImpl(
         val avatarsDir = File(context.filesDir, AVATARS_DIR).also { it.mkdirs() }
         val destFile = File(avatarsDir, "$userId.webp")
 
-        // 1. Decode bounds first to prevent OOM
-        val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
-        openInputStream(uri)?.use { input ->
-            BitmapFactory.decodeStream(input, null, boundsOpts)
-        } ?: throw IllegalArgumentException("Could not open input stream for $sourceUri")
-
-        val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight, MAX_IMAGE_DIMENSION)
-
-        // 2. Decode bitmap safely
-        val decodeOpts = BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
-        val originalBitmap = openInputStream(uri)?.use { input ->
-            BitmapFactory.decodeStream(input, null, decodeOpts)
-        } ?: error("Could not decode image from $sourceUri")
-
         try {
-            // 3. Crop
-            val croppedBitmap = cropBitmap(originalBitmap, cropRect)
-            if (croppedBitmap != originalBitmap) {
-                originalBitmap.recycle()
-            }
+            // 1. Decode bounds first to prevent OOM
+            val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
+            openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, boundsOpts)
+            } ?: throw IllegalArgumentException("Could not open input stream for $sourceUri")
 
-            // 4. Downscale to exactly 512x512
-            val scaledBitmap = Bitmap.createScaledBitmap(croppedBitmap, AVATAR_SIZE, AVATAR_SIZE, true)
-            if (scaledBitmap != croppedBitmap) {
-                croppedBitmap.recycle()
-            }
+            val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight, MAX_IMAGE_DIMENSION)
 
-            // 5. Save as WebP
-            FileOutputStream(destFile).use { output ->
-                saveWebp(scaledBitmap, output)
-            }
-            scaledBitmap.recycle()
+            // 2. Decode bitmap safely
+            val decodeOpts = BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
+            val originalBitmap = openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, decodeOpts)
+            } ?: error("Could not decode image from $sourceUri")
 
-            Timber.d("Saved compressed avatar for user $userId to ${destFile.absolutePath}")
-            destFile.toUri().toString()
-        } catch (e: Exception) {
-            if (!originalBitmap.isRecycled) {
-                originalBitmap.recycle()
+            try {
+                // 3. Crop
+                val croppedBitmap = cropBitmap(originalBitmap, cropRect)
+                if (croppedBitmap != originalBitmap) {
+                    originalBitmap.recycle()
+                }
+
+                // 4. Downscale to exactly 512x512
+                val scaledBitmap = Bitmap.createScaledBitmap(croppedBitmap, AVATAR_SIZE, AVATAR_SIZE, true)
+                if (scaledBitmap != croppedBitmap) {
+                    croppedBitmap.recycle()
+                }
+
+                // 5. Save as WebP
+                FileOutputStream(destFile).use { output ->
+                    saveWebp(scaledBitmap, output)
+                }
+                scaledBitmap.recycle()
+
+                Timber.d("Saved compressed avatar for user $userId to ${destFile.absolutePath}")
+                destFile.toUri().toString()
+            } catch (e: Exception) {
+                if (!originalBitmap.isRecycled) {
+                    originalBitmap.recycle()
+                }
+                throw e
             }
-            throw e
+        } finally {
+            cleanUpSourceCameraFile(uri, sourceUri)
         }
     }
 
     private fun openInputStream(uri: Uri): java.io.InputStream? {
         val resolvedFile = resolveLocalFileFromUri(context, uri)
-        return if (resolvedFile != null && resolvedFile.exists()) {
-            java.io.FileInputStream(resolvedFile)
+        if (resolvedFile != null) {
+            val fileToOpen = when {
+                resolvedFile.exists() -> resolvedFile
+                resolvedFile.canonicalFile.exists() -> resolvedFile.canonicalFile
+                resolvedFile.absoluteFile.exists() -> resolvedFile.absoluteFile
+                else -> null
+            }
+            if (fileToOpen != null) {
+                return java.io.FileInputStream(fileToOpen)
+            } else {
+                val filesDir = context.filesDir
+                val avatarsTempDir = File(filesDir, "avatars_temp")
+                val filesInTemp = avatarsTempDir.listFiles()?.map { it.name } ?: emptyList()
+                val filesInFiles = filesDir.listFiles()?.map { it.name } ?: emptyList()
+                Timber.e(
+                    "openInputStream: Resolved file does not exist! " +
+                        "uri=$uri, " +
+                        "resolvedPath=${resolvedFile.absolutePath}, " +
+                        "canonicalPath=${resolvedFile.canonicalPath}, " +
+                        "filesDir=${filesDir.absolutePath}, " +
+                        "avatarsTempDirExists=${avatarsTempDir.exists()}, " +
+                        "filesInTempDir=$filesInTemp, " +
+                        "filesInFilesDir=$filesInFiles"
+                )
+            }
         } else {
+            Timber.e(
+                "openInputStream: resolveLocalFileFromUri returned null! " +
+                    "uri=$uri, " +
+                    "packageName=${context.packageName}, " +
+                    "authority=${uri.authority}"
+            )
+        }
+
+        return try {
             context.contentResolver.openInputStream(uri)
+        } catch (e: Exception) {
+            Timber.e(e, "openInputStream: ContentResolver failed to open input stream for uri=$uri")
+            null
         }
     }
 
     private fun resolveLocalFileFromUri(context: Context, uri: Uri): File? {
         if (uri.scheme != "content") return null
-        val authority = "${context.packageName}.fileprovider"
-        if (uri.authority != authority) return null
+        val authority = uri.authority ?: return null
+        val expectedAuthority = "${context.packageName}.fileprovider"
+        if (uri.authority != expectedAuthority && !authority.endsWith(".fileprovider")) return null
 
         val pathSegments = uri.pathSegments
         if (pathSegments.isEmpty()) return null
@@ -90,9 +130,11 @@ class ProfileImageStorageServiceImpl(
         val name = pathSegments[0]
         val remainingPath = pathSegments.drop(1).joinToString("/")
 
+        val filesDir = context.filesDir.canonicalFile
+
         return when (name) {
-            "receipts" -> File(context.filesDir, "receipts/$remainingPath")
-            "avatars_temp" -> File(context.cacheDir, "avatars_temp/$remainingPath")
+            "receipts" -> File(filesDir, "receipts/$remainingPath")
+            "avatars_temp" -> File(filesDir, "avatars_temp/$remainingPath")
             else -> null
         }
     }
@@ -146,6 +188,47 @@ class ProfileImageStorageServiceImpl(
             } catch (e: Exception) {
                 Timber.e(e, "Error deleting local avatar for user $userId")
             }
+        }
+    }
+
+    override suspend fun cleanTempCameraFiles(): Unit = withContext(Dispatchers.IO) {
+        try {
+            val tempDir = File(context.filesDir, "avatars_temp")
+            if (!tempDir.exists()) return@withContext
+
+            val files = tempDir.listFiles() ?: return@withContext
+            for (file in files) {
+                if (file.name.startsWith("avatar_camera_")) {
+                    deleteFileQuietly(file)
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error cleaning leftover camera files")
+        }
+    }
+
+    private fun cleanUpSourceCameraFile(uri: Uri, sourceUri: String) {
+        val expectedAuthority = "${context.packageName}.fileprovider"
+        if (uri.authority != expectedAuthority) return
+        val fileName = uri.lastPathSegment ?: return
+        if (!fileName.startsWith("avatar_camera_")) return
+
+        try {
+            val tempDir = File(context.filesDir, "avatars_temp")
+            val sourceFile = File(tempDir, fileName)
+            if (sourceFile.exists()) {
+                deleteFileQuietly(sourceFile)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to clean up source camera temp file: $sourceUri")
+        }
+    }
+
+    private fun deleteFileQuietly(file: File) {
+        if (file.delete()) {
+            Timber.d("Deleted temp file: ${file.absolutePath}")
+        } else {
+            Timber.w("Failed to delete temp file: ${file.absolutePath}")
         }
     }
 

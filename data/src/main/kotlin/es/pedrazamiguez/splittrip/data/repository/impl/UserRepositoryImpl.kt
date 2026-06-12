@@ -14,6 +14,9 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 
 class UserRepositoryImpl(
@@ -181,5 +184,14 @@ class UserRepositoryImpl(
             },
             entityLabel = "user profile"
         )
+    }
+
+    override fun observeCurrentUserProfile(): Flow<User?> = flow {
+        val userId = authenticationService.currentUserId()
+        if (userId != null) {
+            emitAll(localUserDataSource.observeUser(userId))
+        } else {
+            emit(null)
+        }
     }
 }
