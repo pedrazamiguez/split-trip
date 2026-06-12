@@ -120,10 +120,13 @@ class EditProfileViewModel(
     }
 
     private fun performCropAndCompress(cropRect: CropRect) {
+        if (_uiState.value.isSaving) return
         val currentUserId = userId ?: return
         val sourceUri = _uiState.value.cropSourceUri ?: return
+
+        _uiState.update { it.copy(isSaving = true) }
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
             try {
                 val compressedPath = profileImageStorageService.saveAndCompressAvatar(
                     userId = currentUserId,
@@ -143,7 +146,7 @@ class EditProfileViewModel(
                 _uiState.update { it.copy(isSaving = false, showCropOverlay = false, cropSourceUri = null) }
                 _actions.send(
                     EditProfileUiAction.ShowNotification(
-                        UiText.DynamicString("Failed to process image: ${e.localizedMessage}")
+                        UiText.StringResource(R.string.edit_profile_error_image_process)
                     )
                 )
             }

@@ -83,9 +83,10 @@ class ProfileImageStorageServiceImplTest {
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = 1000
                 opts.outHeight = 800
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
             }
-            // First pass returns dummy bitmap; decodeStream returns null if inJustDecodeBounds = true.
-            mockk<Bitmap>(relaxed = true)
         }
 
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
@@ -146,8 +147,10 @@ class ProfileImageStorageServiceImplTest {
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = 1000
                 opts.outHeight = 800
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
             }
-            mockk<Bitmap>(relaxed = true)
         }
 
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
@@ -191,12 +194,8 @@ class ProfileImageStorageServiceImplTest {
 
         every { context.packageName } returns "es.pedrazamiguez.splittrip"
 
-        val tempCacheDir = File(ApplicationProvider.getApplicationContext<Context>().cacheDir, "temp_cache_dir").also {
-            it.mkdirs()
-        }
-        val tempAvatarsDir = File(tempCacheDir, "avatars_temp").also { it.mkdirs() }
+        val tempAvatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
         File(tempAvatarsDir, "avatar_camera_test.jpg").writeText("Dummy Image Data")
-        every { context.cacheDir } returns tempCacheDir
 
         val mockUri = mockk<Uri>(relaxed = true)
         mockkStatic(Uri::class)
@@ -204,6 +203,9 @@ class ProfileImageStorageServiceImplTest {
         every { mockUri.scheme } returns "content"
         every { mockUri.authority } returns "es.pedrazamiguez.splittrip.fileprovider"
         every { mockUri.pathSegments } returns listOf("avatars_temp", "avatar_camera_test.jpg")
+        every { mockUri.lastPathSegment } returns "avatar_camera_test.jpg"
+
+        every { mockResolver.openInputStream(mockUri) } returns null
 
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeStream(any(), null, any()) } answers {
@@ -211,8 +213,10 @@ class ProfileImageStorageServiceImplTest {
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = 500
                 opts.outHeight = 500
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
             }
-            mockk<Bitmap>(relaxed = true)
         }
 
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
@@ -245,7 +249,7 @@ class ProfileImageStorageServiceImplTest {
         assertEquals("Local File WebP Output", savedFile.readText())
 
         // Clean up
-        tempCacheDir.deleteRecursively()
+        tempAvatarsDir.deleteRecursively()
     }
 
     @Test
@@ -270,14 +274,18 @@ class ProfileImageStorageServiceImplTest {
         every { mockUri.authority } returns "es.pedrazamiguez.splittrip.fileprovider"
         every { mockUri.pathSegments } returns listOf("receipts", "receipt_test.jpg")
 
+        every { mockResolver.openInputStream(mockUri) } returns null
+
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeStream(any(), null, any()) } answers {
             val opts = arg<BitmapFactory.Options>(2)
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = 500
                 opts.outHeight = 500
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
             }
-            mockk<Bitmap>(relaxed = true)
         }
 
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
@@ -325,5 +333,93 @@ class ProfileImageStorageServiceImplTest {
 
         // Then
         assertTrue("Avatar file should be deleted", !testFile.exists())
+    }
+
+    @Test
+    fun saveAndCompressAvatar_whenContentResolverThrowsAndLocalResolutionFails_throwsIllegalArgumentException() =
+        runTest {
+            val userId = "user-resolver-fail"
+            val sourceUriStr = "content://media/picker/image_fail"
+            val mockUri = mockk<Uri>(relaxed = true)
+            mockkStatic(Uri::class)
+            every { Uri.parse(sourceUriStr) } returns mockUri
+
+            every { mockResolver.openInputStream(mockUri) } throws RuntimeException("ContentResolver error")
+            every { mockUri.scheme } returns "content"
+            every { mockUri.authority } returns "unsupported.authority"
+
+            var exceptionThrown = false
+            try {
+                service.saveAndCompressAvatar(userId, sourceUriStr, null)
+            } catch (e: IllegalArgumentException) {
+                exceptionThrown = true
+                assertTrue(e.message?.contains("Could not open input stream for bounds decoding") == true)
+            }
+            assertTrue(exceptionThrown)
+        }
+
+    @Test
+    fun saveAndCompressAvatar_whenImageStreamIsNull_throwsIllegalArgumentException() = runTest {
+        val userId = "user-image-stream-null"
+        val sourceUriStr = "content://media/picker/image_null"
+        val mockUri = mockk<Uri>(relaxed = true)
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+
+        every { mockResolver.openInputStream(mockUri) } returns ByteArrayInputStream("Dummy Data".toByteArray()) andThen
+            null
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } answers {
+            val opts = arg<BitmapFactory.Options>(2)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 100
+                opts.outHeight = 100
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
+            }
+        }
+
+        var exceptionThrown = false
+        try {
+            service.saveAndCompressAvatar(userId, sourceUriStr, null)
+        } catch (e: IllegalArgumentException) {
+            exceptionThrown = true
+            assertTrue(e.message?.contains("Could not open input stream for image decoding") == true)
+        }
+        assertTrue(exceptionThrown)
+    }
+
+    @Test
+    fun saveAndCompressAvatar_whenDecodeStreamReturnsNull_throwsIllegalStateException() = runTest {
+        val userId = "user-decode-null"
+        val sourceUriStr = "content://media/picker/image_decode_null"
+        val mockUri = mockk<Uri>(relaxed = true)
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+
+        every { mockResolver.openInputStream(mockUri) } returns ByteArrayInputStream("Dummy Data".toByteArray())
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } answers {
+            val opts = arg<BitmapFactory.Options>(2)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 100
+                opts.outHeight = 100
+                null
+            } else {
+                null
+            }
+        }
+
+        var exceptionThrown = false
+        try {
+            service.saveAndCompressAvatar(userId, sourceUriStr, null)
+        } catch (e: IllegalStateException) {
+            exceptionThrown = true
+            assertTrue(e.message?.contains("Could not decode image from") == true)
+        }
+        assertTrue(exceptionThrown)
     }
 }

@@ -258,10 +258,37 @@ class EditProfileViewModelTest {
             assertFalse(state.showCropOverlay)
             assertTrue(emittedActions.isNotEmpty())
             val action = emittedActions.first() as EditProfileUiAction.ShowNotification
-            assertTrue(action.message is UiText.DynamicString)
-            assertTrue((action.message as UiText.DynamicString).value.contains("Failed to process image"))
+            assertTrue(action.message is UiText.StringResource)
+            assertEquals(R.string.edit_profile_error_image_process, (action.message as UiText.StringResource).resId)
 
             collectJob.cancel()
+        }
+
+        @Test
+        fun `OnCropConfirmed ignores consecutive calls when isSaving is true`() = runTest(testDispatcher) {
+            coEvery { getCurrentUserProfileUseCase() } returns testUser
+            createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(EditProfileUiEvent.OnAvatarPicked("content://uri", "image/png"))
+
+            val cropRect = CropRect(0f, 0f, 1f, 1f)
+            coEvery {
+                profileImageStorageService.saveAndCompressAvatar("user-123", "content://uri", cropRect)
+            } coAnswers {
+                kotlinx.coroutines.delay(100)
+                "file://local/path.webp"
+            }
+
+            // When
+            viewModel.onEvent(EditProfileUiEvent.OnCropConfirmed(cropRect))
+            viewModel.onEvent(EditProfileUiEvent.OnCropConfirmed(cropRect))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                profileImageStorageService.saveAndCompressAvatar("user-123", "content://uri", cropRect)
+            }
         }
 
         @Test

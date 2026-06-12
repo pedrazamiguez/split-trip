@@ -30,15 +30,19 @@ class ProfileImageStorageServiceImpl(
         try {
             // 1. Decode bounds first to prevent OOM
             val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
-            openInputStream(uri)?.use { input ->
+            val boundsStream = openInputStream(uri)
+                ?: throw IllegalArgumentException("Could not open input stream for bounds decoding: $sourceUri")
+            boundsStream.use { input ->
                 BitmapFactory.decodeStream(input, null, boundsOpts)
-            } ?: throw IllegalArgumentException("Could not open input stream for $sourceUri")
+            }
 
             val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight, MAX_IMAGE_DIMENSION)
 
             // 2. Decode bitmap safely
             val decodeOpts = BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
-            val originalBitmap = openInputStream(uri)?.use { input ->
+            val imageStream = openInputStream(uri)
+                ?: throw IllegalArgumentException("Could not open input stream for image decoding: $sourceUri")
+            val originalBitmap = imageStream.use { input ->
                 BitmapFactory.decodeStream(input, null, decodeOpts)
             } ?: error("Could not decode image from $sourceUri")
 
@@ -75,6 +79,13 @@ class ProfileImageStorageServiceImpl(
     }
 
     private fun openInputStream(uri: Uri): java.io.InputStream? {
+        try {
+            val stream = context.contentResolver.openInputStream(uri)
+            if (stream != null) return stream
+        } catch (e: Exception) {
+            Timber.e(e, "openInputStream: ContentResolver failed for uri=$uri. Trying local resolution.")
+        }
+
         val resolvedFile = resolveLocalFileFromUri(context, uri)
         if (resolvedFile != null) {
             val fileToOpen = when {
@@ -84,7 +95,15 @@ class ProfileImageStorageServiceImpl(
                 else -> null
             }
             if (fileToOpen != null) {
-                return java.io.FileInputStream(fileToOpen)
+                return try {
+                    java.io.FileInputStream(fileToOpen)
+                } catch (e: Exception) {
+                    Timber.e(
+                        e,
+                        "openInputStream: Local FileInputStream failed for resolvedFile=${fileToOpen.absolutePath}"
+                    )
+                    null
+                }
             } else {
                 val filesDir = context.filesDir
                 val avatarsTempDir = File(filesDir, "avatars_temp")
@@ -101,21 +120,8 @@ class ProfileImageStorageServiceImpl(
                         "filesInFilesDir=$filesInFiles"
                 )
             }
-        } else {
-            Timber.e(
-                "openInputStream: resolveLocalFileFromUri returned null! " +
-                    "uri=$uri, " +
-                    "packageName=${context.packageName}, " +
-                    "authority=${uri.authority}"
-            )
         }
-
-        return try {
-            context.contentResolver.openInputStream(uri)
-        } catch (e: Exception) {
-            Timber.e(e, "openInputStream: ContentResolver failed to open input stream for uri=$uri")
-            null
-        }
+        return null
     }
 
     private fun resolveLocalFileFromUri(context: Context, uri: Uri): File? {
@@ -130,7 +136,7 @@ class ProfileImageStorageServiceImpl(
         val name = pathSegments[0]
         val remainingPath = pathSegments.drop(1).joinToString("/")
 
-        val filesDir = context.filesDir.canonicalFile
+        val filesDir = context.filesDir
 
         return when (name) {
             "receipts" -> File(filesDir, "receipts/$remainingPath")
@@ -197,8 +203,9 @@ class ProfileImageStorageServiceImpl(
             if (!tempDir.exists()) return@withContext
 
             val files = tempDir.listFiles() ?: return@withContext
+            val threshold = System.currentTimeMillis() - CLEANUP_THRESHOLD_MS
             for (file in files) {
-                if (file.name.startsWith("avatar_camera_")) {
+                if (file.name.startsWith("avatar_camera_") && file.lastModified() < threshold) {
                     deleteFileQuietly(file)
                 }
             }
@@ -245,5 +252,6 @@ class ProfileImageStorageServiceImpl(
         const val AVATAR_SIZE = 512
         const val WEBP_QUALITY = 80
         const val MAX_IMAGE_DIMENSION = 2048
+        const val CLEANUP_THRESHOLD_MS = 10 * 60 * 1000L // 10 minutes
     }
 }

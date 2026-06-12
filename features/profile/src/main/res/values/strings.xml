@@ -52,5 +52,6 @@
     <string name="edit_profile_error_name_length">Display name cannot exceed 50 characters</string>
     <string name="edit_profile_error_bio_length">Bio cannot exceed 150 characters</string>
     <string name="edit_profile_success_saved">Profile updated successfully.</string>
+    <string name="edit_profile_error_image_process">Failed to process profile image. Please try again.</string>
 </resources>
 

@@ -53,5 +53,6 @@
     <string name="edit_profile_error_name_length">El nombre de usuario no puede superar los 50 caracteres</string>
     <string name="edit_profile_error_bio_length">La biografía no puede superar los 150 caracteres</string>
     <string name="edit_profile_success_saved">Perfil actualizado correctamente.</string>
+    <string name="edit_profile_error_image_process">No se pudo procesar la imagen de perfil. Inténtalo de nuevo.</string>
 </resources>
 

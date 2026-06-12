@@ -50,4 +50,5 @@
     <string name="edit_profile_error_name_length">Er nombre de uçuario no puede çuperâh lô 50 carâtterê</string>
     <string name="edit_profile_error_bio_length">La biografía no puede çuperâh lô 150 carâtterê</string>
     <string name="edit_profile_success_saved">Perfîh âttualiçao corrêttamente.</string>
+    <string name="edit_profile_error_image_process">No çe pudo proçeçâh la imahen de perfîh. Inténtalo de nuebo.</string>
 </resources>

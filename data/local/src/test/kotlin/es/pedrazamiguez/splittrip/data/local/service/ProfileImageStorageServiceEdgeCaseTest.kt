@@ -87,8 +87,10 @@ class ProfileImageStorageServiceEdgeCaseTest {
                 // Dimensions larger than MAX_IMAGE_DIMENSION (2048) to trigger the loop
                 opts.outWidth = 5000
                 opts.outHeight = 5000
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
             }
-            mockk<Bitmap>(relaxed = true)
         }
 
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
@@ -135,8 +137,10 @@ class ProfileImageStorageServiceEdgeCaseTest {
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = 200
                 opts.outHeight = 200
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
             }
-            mockk<Bitmap>(relaxed = true)
         }
 
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
@@ -186,8 +190,10 @@ class ProfileImageStorageServiceEdgeCaseTest {
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = 300
                 opts.outHeight = 300
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
             }
-            mockk<Bitmap>(relaxed = true)
         }
 
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
@@ -245,8 +251,10 @@ class ProfileImageStorageServiceEdgeCaseTest {
                 if (opts.inJustDecodeBounds) {
                     opts.outWidth = 100
                     opts.outHeight = 100
+                    null
+                } else {
+                    mockk<Bitmap>(relaxed = true)
                 }
-                mockk<Bitmap>(relaxed = true)
             }
             val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
             every { mockOriginalBitmap.width } returns 100
@@ -347,8 +355,10 @@ class ProfileImageStorageServiceEdgeCaseTest {
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = 100
                 opts.outHeight = 100
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
             }
-            mockk<Bitmap>(relaxed = true)
         }
 
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
@@ -376,5 +386,265 @@ class ProfileImageStorageServiceEdgeCaseTest {
         assertNotNull(compressFormatUsed)
         val formatName = compressFormatUsed?.name
         assertTrue(formatName == "WEBP_LOSSY" || formatName == "WEBP")
+    }
+
+    @Test
+    fun cleanTempCameraFiles_deletesOnlyOldAvatarCameraFiles() = runTest {
+        // Given
+        val tempAvatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
+        val cameraFile1 = File(tempAvatarsDir, "avatar_camera_1.jpg").also { it.writeText("data") }
+        val cameraFile2 = File(tempAvatarsDir, "avatar_camera_2.jpg").also { it.writeText("data") }
+        val otherFile = File(tempAvatarsDir, "other_file.jpg").also { it.writeText("data") }
+
+        val oldTime = System.currentTimeMillis() - 15 * 60 * 1000L
+        cameraFile1.setLastModified(oldTime)
+        cameraFile2.setLastModified(oldTime)
+        otherFile.setLastModified(oldTime)
+
+        // When
+        service.cleanTempCameraFiles()
+
+        // Then
+        assertTrue(!cameraFile1.exists())
+        assertTrue(!cameraFile2.exists())
+        assertTrue(otherFile.exists())
+
+        // Clean up
+        tempAvatarsDir.deleteRecursively()
+    }
+
+    @Test
+    fun cleanTempCameraFiles_doesNotDeleteRecentCameraFiles() = runTest {
+        // Given
+        val tempAvatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
+        val cameraFile1 = File(tempAvatarsDir, "avatar_camera_1.jpg").also { it.writeText("data") }
+        val cameraFile2 = File(tempAvatarsDir, "avatar_camera_2.jpg").also { it.writeText("data") }
+
+        cameraFile1.setLastModified(System.currentTimeMillis())
+        cameraFile2.setLastModified(System.currentTimeMillis())
+
+        // When
+        service.cleanTempCameraFiles()
+
+        // Then: recent files are NOT deleted
+        assertTrue(cameraFile1.exists())
+        assertTrue(cameraFile2.exists())
+
+        // Clean up
+        tempAvatarsDir.deleteRecursively()
+    }
+
+    @Test
+    fun saveAndCompressAvatar_cleansUpSourceCameraFileOnSuccess() = runTest {
+        // Given
+        val userId = "user-cleanup-success"
+        val sourceUriStr = "content://es.pedrazamiguez.splittrip.fileprovider/avatars_temp/avatar_camera_cleanup.jpg"
+
+        every { context.packageName } returns "es.pedrazamiguez.splittrip"
+
+        val tempAvatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
+        val sourceFile = File(tempAvatarsDir, "avatar_camera_cleanup.jpg").also { it.writeText("Dummy Image Data") }
+
+        val mockUri = mockk<Uri>(relaxed = true)
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+        every { mockUri.scheme } returns "content"
+        every { mockUri.authority } returns "es.pedrazamiguez.splittrip.fileprovider"
+        every { mockUri.pathSegments } returns listOf("avatars_temp", "avatar_camera_cleanup.jpg")
+        every { mockUri.lastPathSegment } returns "avatar_camera_cleanup.jpg"
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } answers {
+            val opts = arg<BitmapFactory.Options>(2)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 500
+                opts.outHeight = 500
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
+            }
+        }
+
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        every { mockOriginalBitmap.width } returns 500
+        every { mockOriginalBitmap.height } returns 500
+        every { mockOriginalBitmap.isRecycled } returns false
+        every { BitmapFactory.decodeStream(any(), null, match { !it.inJustDecodeBounds }) } returns mockOriginalBitmap
+
+        val mockCroppedBitmap = mockk<Bitmap>(relaxed = true)
+        val mockScaledBitmap = mockk<Bitmap>(relaxed = true)
+        mockkStatic(Bitmap::class)
+        every { Bitmap.createBitmap(mockOriginalBitmap, 0, 0, 500, 500) } returns mockCroppedBitmap
+        every { Bitmap.createScaledBitmap(mockCroppedBitmap, 512, 512, true) } returns mockScaledBitmap
+        every { mockScaledBitmap.compress(any(), 80, any()) } answers {
+            val outStream = arg<java.io.OutputStream>(2)
+            outStream.write("Output".toByteArray())
+            true
+        }
+
+        // When
+        val resultUri = service.saveAndCompressAvatar(userId, sourceUriStr, null)
+
+        // Then
+        assertNotNull(resultUri)
+        // Verify source file was cleaned up/deleted
+        assertTrue(!sourceFile.exists())
+
+        tempAvatarsDir.deleteRecursively()
+    }
+
+    @Test
+    fun saveAndCompressAvatar_cleansUpSourceCameraFileOnFailure() = runTest {
+        // Given
+        val userId = "user-cleanup-failure"
+        val sourceUriStr = "content://es.pedrazamiguez.splittrip.fileprovider/avatars_temp/avatar_camera_fail.jpg"
+
+        every { context.packageName } returns "es.pedrazamiguez.splittrip"
+
+        val tempAvatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
+        val sourceFile = File(tempAvatarsDir, "avatar_camera_fail.jpg").also { it.writeText("Dummy Image Data") }
+
+        val mockUri = mockk<Uri>(relaxed = true)
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+        every { mockUri.scheme } returns "content"
+        every { mockUri.authority } returns "es.pedrazamiguez.splittrip.fileprovider"
+        every { mockUri.pathSegments } returns listOf("avatars_temp", "avatar_camera_fail.jpg")
+        every { mockUri.lastPathSegment } returns "avatar_camera_fail.jpg"
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } throws RuntimeException("Decoding failed")
+
+        // When
+        var exceptionThrown = false
+        try {
+            service.saveAndCompressAvatar(userId, sourceUriStr, null)
+        } catch (expectedException: Exception) {
+            exceptionThrown = true
+        }
+
+        // Then
+        assertTrue(exceptionThrown)
+        assertTrue(!sourceFile.exists())
+
+        tempAvatarsDir.deleteRecursively()
+    }
+
+    @Test
+    fun saveAndCompressAvatar_withNonCameraUri_doesNotDeleteSourceFile() = runTest {
+        // Given
+        val userId = "user-no-delete"
+        val sourceUriStr = "content://es.pedrazamiguez.splittrip.fileprovider/avatars_temp/picker_file.jpg"
+
+        every { context.packageName } returns "es.pedrazamiguez.splittrip"
+
+        val tempAvatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
+        val sourceFile = File(tempAvatarsDir, "picker_file.jpg").also { it.writeText("Dummy Image Data") }
+
+        val mockUri = mockk<Uri>(relaxed = true)
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+        every { mockUri.scheme } returns "content"
+        every { mockUri.authority } returns "es.pedrazamiguez.splittrip.fileprovider"
+        every { mockUri.pathSegments } returns listOf("avatars_temp", "picker_file.jpg")
+        every { mockUri.lastPathSegment } returns "picker_file.jpg"
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } answers {
+            val opts = arg<BitmapFactory.Options>(2)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 500
+                opts.outHeight = 500
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
+            }
+        }
+
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        every { mockOriginalBitmap.width } returns 500
+        every { mockOriginalBitmap.height } returns 500
+        every { mockOriginalBitmap.isRecycled } returns false
+        every { BitmapFactory.decodeStream(any(), null, match { !it.inJustDecodeBounds }) } returns mockOriginalBitmap
+
+        val mockCroppedBitmap = mockk<Bitmap>(relaxed = true)
+        val mockScaledBitmap = mockk<Bitmap>(relaxed = true)
+        mockkStatic(Bitmap::class)
+        every { Bitmap.createBitmap(mockOriginalBitmap, 0, 0, 500, 500) } returns mockCroppedBitmap
+        every { Bitmap.createScaledBitmap(mockCroppedBitmap, 512, 512, true) } returns mockScaledBitmap
+        every { mockScaledBitmap.compress(any(), 80, any()) } answers {
+            val outStream = arg<java.io.OutputStream>(2)
+            outStream.write("Output".toByteArray())
+            true
+        }
+
+        // When
+        val resultUri = service.saveAndCompressAvatar(userId, sourceUriStr, null)
+
+        // Then
+        assertNotNull(resultUri)
+        assertTrue(sourceFile.exists())
+
+        tempAvatarsDir.deleteRecursively()
+    }
+
+    @Test
+    fun saveAndCompressAvatar_withLocalFileProviderUriAndDifferentPackageSuffix_resolvesAndReadsDirectly() = runTest {
+        // Given
+        val userId = "user-local-suffix"
+        val sourceUriStr = "content://es.pedrazamiguez.splittrip.debug.fileprovider/avatars_temp/avatar_camera_test.jpg"
+
+        every { context.packageName } returns "es.pedrazamiguez.splittrip"
+
+        val tempAvatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
+        File(tempAvatarsDir, "avatar_camera_test.jpg").writeText("Suffix Local File Output")
+
+        val mockUri = mockk<Uri>(relaxed = true)
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+        every { mockUri.scheme } returns "content"
+        every { mockUri.authority } returns "es.pedrazamiguez.splittrip.debug.fileprovider"
+        every { mockUri.pathSegments } returns listOf("avatars_temp", "avatar_camera_test.jpg")
+
+        every { mockResolver.openInputStream(mockUri) } returns null
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } answers {
+            val opts = arg<BitmapFactory.Options>(2)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 500
+                opts.outHeight = 500
+                null
+            } else {
+                mockk<Bitmap>(relaxed = true)
+            }
+        }
+
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        every { mockOriginalBitmap.width } returns 500
+        every { mockOriginalBitmap.height } returns 500
+        every { mockOriginalBitmap.isRecycled } returns false
+        every { BitmapFactory.decodeStream(any(), null, match { !it.inJustDecodeBounds }) } returns mockOriginalBitmap
+
+        val mockCroppedBitmap = mockk<Bitmap>(relaxed = true)
+        val mockScaledBitmap = mockk<Bitmap>(relaxed = true)
+        mockkStatic(Bitmap::class)
+        every { Bitmap.createBitmap(mockOriginalBitmap, 0, 0, 500, 500) } returns mockCroppedBitmap
+        every { Bitmap.createScaledBitmap(mockCroppedBitmap, 512, 512, true) } returns mockScaledBitmap
+        every { mockScaledBitmap.compress(any(), 80, any()) } answers {
+            val outStream = arg<java.io.OutputStream>(2)
+            outStream.write("Suffix Local WebP Output".toByteArray())
+            true
+        }
+
+        // When
+        val resultUri = service.saveAndCompressAvatar(userId, sourceUriStr, null)
+
+        // Then
+        assertNotNull(resultUri)
+        val savedFile = File(context.filesDir, "avatars/$userId.webp")
+        assertTrue(savedFile.exists())
+
+        tempAvatarsDir.deleteRecursively()
     }
 }
