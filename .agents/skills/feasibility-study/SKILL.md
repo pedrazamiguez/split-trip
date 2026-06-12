@@ -10,10 +10,18 @@ arguments:
   - name: feature_description
     description: The plain English description of the feature or architectural change to study.
     required: true
+  - name: issue_url
+    description: The URL of the GitHub issue to link the feasibility study to (optional).
+    required: false
+  - name: issue_number
+    description: The number of the GitHub issue to link the feasibility study to (optional).
+    required: false
 ---
 # Feasibility Study
 
 Study the feasibility and viability of the following proposed feature or architectural change:
+- Issue URL: $ISSUE_URL (optional)
+- Issue Number: $ISSUE_NUMBER (optional)
 
 > $FEATURE_DESCRIPTION
 
@@ -59,10 +67,15 @@ Assess potential issues:
 
 ---
 
-## Step 5 — Document findings and recommendations
+## Step 5 — Document findings, present to user, and optionally post to GitHub
 
-Create a detailed feasibility report containing:
-- **Executive Summary**: A clear recommendation on whether the project should proceed with this feature.
-- **Proposed Architecture**: Recommended module assignments, Clean Architecture layer mapping, and data schemas.
-- **Implementation Trade-offs**: Alternative libraries or design patterns that were considered, with pros and cons for each.
-- **Estimated Effort / Risk**: Areas of highest complexity or technical uncertainty.
+1. Create a detailed feasibility report containing:
+   - **Executive Summary**: A clear recommendation on whether the project should proceed with this feature.
+   - **Proposed Architecture**: Recommended module assignments, Clean Architecture layer mapping, and data schemas.
+   - **Spec-Driven Development (SDD) Alignment**: High-level specification of key interface contracts, function signatures, database schema changes, and MVI state changes to serve as an unambiguous foundation for the subsequent implementation plan.
+   - **Implementation Trade-offs**: Alternative libraries or design patterns that were considered, with pros and cons for each.
+   - **Estimated Effort / Risk**: Areas of highest complexity or technical uncertainty.
+2. Present the feasibility report directly to the user in the chat and ask for their feedback.
+3. Prompt the user to ask if they would like the report to be posted as a comment on the associated GitHub issue.
+4. If the user agrees and the issue number/URL is known (or provided by the user in their response), post the report as a comment on the GitHub issue using `add_issue_comment`.
+5. Notify the user once the comment has been successfully posted.

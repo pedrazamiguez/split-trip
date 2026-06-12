@@ -1,15 +1,22 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
+import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import java.time.LocalDateTime
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -20,11 +27,16 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @DisplayName("UserRepositoryImpl")
 class UserRepositoryImplTest {
 
+    private val testDispatcher = StandardTestDispatcher()
+
     private lateinit var cloudUserDataSource: CloudUserDataSource
     private lateinit var localUserDataSource: LocalUserDataSource
+    private lateinit var cloudStorageDataSource: CloudStorageDataSource
+    private lateinit var profileImageStorageService: ProfileImageStorageService
     private lateinit var authenticationService: AuthenticationService
     private lateinit var repository: UserRepositoryImpl
 
@@ -33,6 +45,8 @@ class UserRepositoryImplTest {
         email = "alice@example.com",
         displayName = "Alice",
         profileImagePath = null,
+        bio = null,
+        syncStatus = SyncStatus.SYNCED,
         createdAt = LocalDateTime.of(2026, 3, 15, 10, 30)
     )
 
@@ -40,12 +54,17 @@ class UserRepositoryImplTest {
     fun setUp() {
         cloudUserDataSource = mockk(relaxed = true)
         localUserDataSource = mockk(relaxed = true)
+        cloudStorageDataSource = mockk(relaxed = true)
+        profileImageStorageService = mockk(relaxed = true)
         authenticationService = mockk()
+        every { authenticationService.getCurrentUserCreationTimestamp() } returns null
 
         repository = UserRepositoryImpl(
             cloudUserDataSource = cloudUserDataSource,
             localUserDataSource = localUserDataSource,
-            authenticationService = authenticationService
+            cloudStorageDataSource = cloudStorageDataSource,
+            authenticationService = authenticationService,
+            ioDispatcher = testDispatcher
         )
     }
 
@@ -53,7 +72,7 @@ class UserRepositoryImplTest {
     inner class SaveUser {
 
         @Test
-        fun `saves user to cloud and caches locally`() = runTest {
+        fun `saves user to cloud and caches locally`() = runTest(testDispatcher) {
             coEvery { cloudUserDataSource.saveUser(testUser) } just Runs
             coEvery { localUserDataSource.saveUsers(listOf(testUser)) } just Runs
 
@@ -65,13 +84,14 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `returns failure when cloud save throws`() = runTest {
+        fun `returns failure when cloud save throws`() = runTest(testDispatcher) {
             coEvery { cloudUserDataSource.saveUser(testUser) } throws RuntimeException("Cloud error")
 
             val result = repository.saveUser(testUser)
 
             assertTrue(result.isFailure)
-            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
+            coVerify { localUserDataSource.saveUsers(listOf(testUser)) }
+            coVerify { cloudUserDataSource.saveUser(testUser) }
         }
     }
 
@@ -79,7 +99,7 @@ class UserRepositoryImplTest {
     inner class SaveGoogleUser {
 
         @Test
-        fun `saves user to cloud and caches locally`() = runTest {
+        fun `saves user to cloud and caches locally`() = runTest(testDispatcher) {
             coEvery { cloudUserDataSource.saveUser(testUser) } just Runs
             coEvery { localUserDataSource.saveUsers(listOf(testUser)) } just Runs
 
@@ -91,13 +111,14 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `returns failure when cloud save throws`() = runTest {
+        fun `returns failure when cloud save throws`() = runTest(testDispatcher) {
             coEvery { cloudUserDataSource.saveUser(testUser) } throws RuntimeException("Cloud error")
 
             val result = repository.saveGoogleUser(testUser)
 
             assertTrue(result.isFailure)
-            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
+            coVerify { localUserDataSource.saveUsers(listOf(testUser)) }
+            coVerify { cloudUserDataSource.saveUser(testUser) }
         }
     }
 
@@ -105,7 +126,7 @@ class UserRepositoryImplTest {
     inner class GetCurrentUserProfile {
 
         @Test
-        fun `returns null when no user is authenticated`() = runTest {
+        fun `returns null when no user is authenticated`() = runTest(testDispatcher) {
             coEvery { authenticationService.currentUserId() } returns null
 
             val result = repository.getCurrentUserProfile()
@@ -114,7 +135,7 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `returns local user when fully populated`() = runTest {
+        fun `returns local user when fully populated`() = runTest(testDispatcher) {
             coEvery { authenticationService.currentUserId() } returns "user-1"
             coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(testUser)
 
@@ -126,7 +147,7 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `refreshes from cloud when local user has null createdAt`() = runTest {
+        fun `refreshes from cloud when local user has null createdAt`() = runTest(testDispatcher) {
             val incompleteUser = testUser.copy(createdAt = null)
             coEvery { authenticationService.currentUserId() } returns "user-1"
             coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(incompleteUser)
@@ -142,7 +163,7 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `returns local user when cloud refresh returns empty`() = runTest {
+        fun `returns local user when cloud refresh returns empty`() = runTest(testDispatcher) {
             val incompleteUser = testUser.copy(createdAt = null)
             coEvery { authenticationService.currentUserId() } returns "user-1"
             coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(incompleteUser)
@@ -154,7 +175,27 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `falls back to local user when cloud throws exception`() = runTest {
+        fun `resolves and saves createdAt using authentication timestamp when local user has null createdAt`() =
+            runTest(testDispatcher) {
+                val incompleteUser = testUser.copy(createdAt = null)
+                coEvery { authenticationService.currentUserId() } returns "user-1"
+                coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(incompleteUser)
+                coEvery { cloudUserDataSource.getUsersByIds(listOf("user-1")) } returns emptyList()
+                every {
+                    authenticationService.getCurrentUserCreationTimestamp()
+                } returns 1718115600000L // 2024-06-11T14:20Z
+                coEvery { cloudUserDataSource.saveUser(any()) } just Runs
+
+                val result = repository.getCurrentUserProfile()
+
+                assertNotNull(result)
+                val expectedDateTime = LocalDateTime.of(2024, 6, 11, 14, 20)
+                assertEquals(expectedDateTime, result?.createdAt)
+                coVerify { cloudUserDataSource.saveUser(match { it.createdAt == expectedDateTime }) }
+            }
+
+        @Test
+        fun `falls back to local user when cloud throws exception`() = runTest(testDispatcher) {
             val incompleteUser = testUser.copy(createdAt = null)
             coEvery { authenticationService.currentUserId() } returns "user-1"
             coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(incompleteUser)
@@ -166,7 +207,7 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `refreshes from cloud when user not found locally`() = runTest {
+        fun `refreshes from cloud when user not found locally`() = runTest(testDispatcher) {
             coEvery { authenticationService.currentUserId() } returns "user-1"
             coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns emptyList()
             coEvery { cloudUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(testUser)
@@ -177,19 +218,39 @@ class UserRepositoryImplTest {
             assertNotNull(result)
             assertEquals("user-1", result?.userId)
         }
+
+        @Test
+        fun `triggers background retry when local user has PENDING_SYNC status`() = runTest(testDispatcher) {
+            val pendingUser = testUser.copy(syncStatus = SyncStatus.PENDING_SYNC)
+            coEvery { authenticationService.currentUserId() } returns "user-1"
+            coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(pendingUser)
+            coEvery { cloudUserDataSource.updateUserProfile(any(), any(), any(), any()) } just Runs
+
+            repository.getCurrentUserProfile()
+            advanceUntilIdle()
+
+            coVerify {
+                cloudUserDataSource.updateUserProfile(
+                    "user-1",
+                    pendingUser.displayName,
+                    pendingUser.bio,
+                    pendingUser.profileImagePath
+                )
+            }
+        }
     }
 
     @Nested
     inner class GetUsersByIds {
 
         @Test
-        fun `returns empty map for empty input`() = runTest {
+        fun `returns empty map for empty input`() = runTest(testDispatcher) {
             val result = repository.getUsersByIds(emptyList())
             assertTrue(result.isEmpty())
         }
 
         @Test
-        fun `returns local users when all are found locally`() = runTest {
+        fun `returns local users when all are found locally`() = runTest(testDispatcher) {
             val user2 = testUser.copy(userId = "user-2", email = "bob@example.com")
             coEvery { localUserDataSource.getUsersByIds(listOf("user-1", "user-2")) } returns listOf(testUser, user2)
 
@@ -201,7 +262,7 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `fetches missing users from cloud and caches locally`() = runTest {
+        fun `fetches missing users from cloud and caches locally`() = runTest(testDispatcher) {
             val user2 = testUser.copy(userId = "user-2", email = "bob@example.com")
             coEvery { localUserDataSource.getUsersByIds(listOf("user-1", "user-2")) } returns listOf(testUser)
             coEvery { cloudUserDataSource.getUsersByIds(listOf("user-2")) } returns listOf(user2)
@@ -215,7 +276,7 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `returns only local users when cloud fetch fails`() = runTest {
+        fun `returns only local users when cloud fetch fails`() = runTest(testDispatcher) {
             coEvery { localUserDataSource.getUsersByIds(listOf("user-1", "user-2")) } returns listOf(testUser)
             coEvery { cloudUserDataSource.getUsersByIds(any()) } throws RuntimeException("Network error")
 
@@ -230,7 +291,7 @@ class UserRepositoryImplTest {
     inner class SearchUsersByEmail {
 
         @Test
-        fun `delegates to cloud with current user excluded`() = runTest {
+        fun `delegates to cloud with current user excluded`() = runTest(testDispatcher) {
             val foundUser = testUser.copy(userId = "user-2", email = "bob@example.com")
             coEvery { authenticationService.currentUserId() } returns "user-1"
             coEvery {
@@ -244,7 +305,7 @@ class UserRepositoryImplTest {
         }
 
         @Test
-        fun `excludes null when not authenticated`() = runTest {
+        fun `excludes null when not authenticated`() = runTest(testDispatcher) {
             coEvery { authenticationService.currentUserId() } returns null
             coEvery {
                 cloudUserDataSource.searchUsersByEmail("bob@example.com", excludeUserId = null)
@@ -253,6 +314,82 @@ class UserRepositoryImplTest {
             val result = repository.searchUsersByEmail("bob@example.com")
 
             assertTrue(result.isEmpty())
+        }
+    }
+
+    @Nested
+    inner class UpdateUserProfile {
+
+        @Test
+        fun `saves user locally first and triggers background sync with local image upload`() = runTest(
+            testDispatcher
+        ) {
+            coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(testUser)
+            coEvery { localUserDataSource.saveUsers(any()) } just Runs
+            coEvery { cloudStorageDataSource.uploadAvatar("user-1", "file://local/avatar.webp", "image/webp") } returns
+                "https://remote/avatar.webp"
+            coEvery {
+                cloudUserDataSource.updateUserProfile("user-1", "New Alice", "New Bio", "https://remote/avatar.webp")
+            } just Runs
+
+            val result = repository.updateUserProfile("user-1", "New Alice", "New Bio", "file://local/avatar.webp")
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) {
+                localUserDataSource.saveUsers(
+                    match { list ->
+                        val user = list.first()
+                        user.userId == "user-1" &&
+                            user.displayName == "New Alice" &&
+                            user.bio == "New Bio" &&
+                            user.profileImagePath == "file://local/avatar.webp" &&
+                            user.syncStatus == SyncStatus.PENDING_SYNC
+                    }
+                )
+            }
+
+            advanceUntilIdle()
+
+            coVerify { cloudStorageDataSource.uploadAvatar("user-1", "file://local/avatar.webp", "image/webp") }
+            coVerify {
+                cloudUserDataSource.updateUserProfile("user-1", "New Alice", "New Bio", "https://remote/avatar.webp")
+            }
+            coVerify {
+                localUserDataSource.saveUsers(
+                    match { list ->
+                        val user = list.first()
+                        user.profileImagePath == "https://remote/avatar.webp" &&
+                            user.syncStatus == SyncStatus.SYNCED
+                    }
+                )
+            }
+        }
+
+        @Test
+        fun `handles avatar deletion`() = runTest(testDispatcher) {
+            coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(testUser)
+            coEvery { localUserDataSource.saveUsers(any()) } just Runs
+            coEvery { cloudStorageDataSource.deleteAvatar("user-1") } just Runs
+            coEvery { cloudUserDataSource.updateUserProfile("user-1", "Alice", null, null) } just Runs
+
+            val result = repository.updateUserProfile("user-1", "Alice", null, null)
+
+            assertTrue(result.isSuccess)
+            advanceUntilIdle()
+
+            coVerify { cloudStorageDataSource.deleteAvatar("user-1") }
+            coVerify { cloudUserDataSource.updateUserProfile("user-1", "Alice", null, null) }
+        }
+
+        @Test
+        fun `returns failure when local user is not found`() = runTest(testDispatcher) {
+            coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns emptyList()
+
+            val result = repository.updateUserProfile("user-1", "New Alice", "New Bio", "file://local/avatar.webp")
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is IllegalStateException)
+            coVerify(exactly = 0) { localUserDataSource.saveUsers(any()) }
         }
     }
 }

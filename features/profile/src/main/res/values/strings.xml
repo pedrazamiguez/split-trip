@@ -7,4 +7,51 @@
     <string name="profile_member_since">Member since %1$s</string>
     <string name="profile_error_loading">Could not load your profile. Please try again later.</string>
     <string name="profile_retry_button">Retry</string>
+
+    <!-- Account Linking / Unlinking -->
+    <string name="profile_linked_accounts_title">Linked Accounts</string>
+    <string name="profile_provider_email_password">Email &amp; Password</string>
+    <string name="profile_provider_google">Google</string>
+    <string name="profile_status_linked">Linked</string>
+    <string name="profile_status_not_linked">Not Linked</string>
+    <string name="profile_action_link">Link</string>
+    <string name="profile_action_unlink">Unlink</string>
+    <string name="profile_link_success">Account linked successfully.</string>
+    <string name="profile_unlink_success">Account unlinked successfully.</string>
+    <string name="profile_link_error_passwords_match">Passwords do not match.</string>
+    <string name="profile_link_error_password_length">Password must be at least 6 characters.</string>
+    <string name="profile_unlink_error_last_provider">You cannot unlink your last remaining sign-in provider.</string>
+    <string name="profile_link_email_dialog_title">Set Password</string>
+    <string name="profile_link_email_dialog_message">Set a password to link Email/Password sign-in to your account.</string>
+    <string name="profile_link_email_dialog_password">Password</string>
+    <string name="profile_link_email_dialog_confirm_password">Confirm Password</string>
+    <string name="profile_link_email_dialog_submit">Link</string>
+    <string name="profile_link_email_dialog_cancel">Cancel</string>
+    <string name="profile_link_error_failed">Failed to link account. Please try again.</string>
+    <string name="profile_unlink_error_failed">Failed to unlink account. Please try again.</string>
+    <string name="profile_bio_title">Bio</string>
+    <string name="profile_bio_empty">No bio added yet.</string>
+
+    <!-- Edit Profile -->
+    <string name="profile_edit">Edit Profile</string>
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="edit_profile_back">Back</string>
+    <string name="edit_profile_display_name">Display Name</string>
+    <string name="edit_profile_display_name_placeholder">Enter display name</string>
+    <string name="edit_profile_bio">Bio</string>
+    <string name="edit_profile_bio_placeholder">Tell us about yourself</string>
+    <string name="edit_profile_save">Save Changes</string>
+    <string name="crop_title">Crop Profile Picture</string>
+    <string name="crop_confirm">Confirm</string>
+    <string name="crop_cancel">Cancel</string>
+    <string name="avatar_sheet_title">Change Profile Picture</string>
+    <string name="avatar_sheet_camera">Take Photo</string>
+    <string name="avatar_sheet_gallery">Choose from Gallery</string>
+    <string name="avatar_sheet_remove">Remove Photo</string>
+    <string name="edit_profile_error_name_empty">Display name cannot be empty</string>
+    <string name="edit_profile_error_name_length">Display name cannot exceed 50 characters</string>
+    <string name="edit_profile_error_bio_length">Bio cannot exceed 150 characters</string>
+    <string name="edit_profile_success_saved">Profile updated successfully.</string>
+    <string name="edit_profile_error_image_process">Failed to process profile image. Please try again.</string>
 </resources>
+

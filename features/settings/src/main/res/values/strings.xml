@@ -155,4 +155,34 @@
     <string name="settings_preferences_theme_light">Light</string>
     <string name="settings_preferences_theme_dark">Dark</string>
     <string name="settings_preferences_theme_changed_format">Theme changed to %1$s</string>
+
+    <!-- Account Status Screen -->
+    <string name="account_status_title">Account Status</string>
+    <string name="account_status_email_label">Email</string>
+    <string name="account_status_member_since">Member since %1$s</string>
+    <string name="account_status_linked_providers">Linked Providers</string>
+    <string name="account_status_provider_email_password">Email / Password</string>
+    <string name="account_status_provider_google">Google</string>
+    <string name="account_status_link_button">Link</string>
+    <string name="account_status_unlink_button">Unlink</string>
+    <string name="account_status_delete_account_button">Request Account Deletion</string>
+    <string name="account_status_delete_account_dialog_title">Request Account Deletion</string>
+    <string name="account_status_delete_account_dialog_text">Are you sure you want to request account deletion? The request will be submitted for processing (tracked in #1132).</string>
+    <string name="account_status_delete_account_dialog_confirm">Request</string>
+    <string name="account_status_delete_account_dialog_cancel">Cancel</string>
+    <string name="account_status_link_email_dialog_title">Link Email &amp; Password</string>
+    <string name="account_status_link_email_dialog_password">Password</string>
+    <string name="account_status_link_email_dialog_confirm_password">Confirm Password</string>
+    <string name="account_status_link_email_dialog_confirm">Link</string>
+    <string name="account_status_link_email_dialog_cancel">Cancel</string>
+    <string name="account_status_link_email_dialog_error_mismatch">Passwords do not match</string>
+    <string name="account_status_link_email_dialog_error_empty">Password fields cannot be empty</string>
+    <string name="account_status_link_success">Account linked successfully</string>
+    <string name="account_status_unlink_success">Account unlinked successfully</string>
+    <string name="account_status_unlink_error_last_provider">Cannot unlink the last remaining sign-in provider</string>
+    <string name="account_status_error_prefix">Error: %1$s</string>
+    <string name="account_status_error_user_not_found">User not found</string>
+    <string name="account_status_delete_request_submitted">Account deletion request has been submitted</string>
+    <string name="account_status_linked">Linked</string>
+    <string name="account_status_not_linked">Not linked</string>
 </resources>

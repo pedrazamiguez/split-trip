@@ -14,5 +14,42 @@
     <string name="login_start_journey">Comienza un viaje</string>
     <string name="login_forgot_password_message">La recuperación de contraseña no está implementada todavía.</string>
     <string name="login_start_journey_message">El registro no está implementado todavía.</string>
+
+    <!-- Register Screen -->
+    <string name="register_title">Únete a la expedición</string>
+    <string name="register_subtitle">Crea tu cuenta para empezar a compartir gastos</string>
+    <string name="register_display_name_label">Nombre de usuario</string>
+    <string name="register_confirm_password_label">Confirmar contraseña</string>
+    <string name="register_submit_button">Crear cuenta</string>
+    <string name="register_already_member">¿Ya eres explorador?</string>
+    <string name="register_sign_in_link">Iniciar sesión</string>
+    <string name="register_error_invalid_email">Por favor, introduce un correo electrónico válido.</string>
+    <string name="register_error_empty_display_name">El nombre no puede estar vacío.</string>
+    <string name="register_error_password_too_short">La contraseña debe tener al menos 6 caracteres.</string>
+    <string name="register_error_passwords_do_not_match">Las contraseñas no coinciden.</string>
+    <string name="register_error_failed">Error al crear la cuenta. Por favor, inténtelo de nuevo.</string>
+
+    <!-- Forgot Password Screen -->
+    <string name="forgot_password_title">Restablecer contraseña</string>
+    <string name="forgot_password_subtitle">Introduce tu correo electrónico para recibir un enlace de restablecimiento.</string>
+    <string name="forgot_password_button">Enviar enlace</string>
+    <string name="forgot_password_email_label">Email</string>
+    <string name="forgot_password_success_message">Si este correo está registrado, recibirás un enlace de restablecimiento pronto.</string>
+
+    <!-- Collision / Merging Flow -->
+    <string name="login_error_empty_password">Por favor, introduce tu contraseña.</string>
+    <string name="login_error_invalid_credentials">Contraseña incorrecta. Por favor, inténtelo de nuevo.</string>
+    <string name="login_error_merge_link_failed">Error al vincular la cuenta de Google. Por favor, inténtelo de nuevo.</string>
+    <string name="login_collision_dialog_title">La cuenta ya existe</string>
+    <string name="login_collision_dialog_message">Ya existe una cuenta con este correo electrónico a través de email/contraseña. Por favor, introduce tu contraseña para vincular el inicio de sesión con Google a esta cuenta.</string>
+    <string name="login_collision_dialog_password_label">Contraseña</string>
+    <string name="login_collision_dialog_submit">Vincular cuentas</string>
+    <string name="login_collision_dialog_cancel">Cancelar</string>
+
+    <string name="register_error_collision">Este correo ya está registrado a través de Google. Por favor, inicia sesión con Google.</string>
+    <string name="register_collision_dialog_title">Cuenta registrada</string>
+    <string name="register_collision_dialog_message">Ya existe una cuenta con este correo electrónico a través de Google. ¿Te gustaría ir a la pantalla de inicio de sesión para entrar con Google?</string>
+    <string name="register_collision_dialog_confirm">Ir al inicio de sesión</string>
+    <string name="register_collision_dialog_cancel">Cancelar</string>
 </resources>
 

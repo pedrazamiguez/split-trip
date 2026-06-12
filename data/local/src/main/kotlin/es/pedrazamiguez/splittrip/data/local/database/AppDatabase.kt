@@ -39,7 +39,7 @@ import es.pedrazamiguez.splittrip.data.local.entity.UserEntity
         UserEntity::class,
         SubunitEntity::class
     ],
-    version = 28,
+    version = 29,
     exportSchema = true
 )
 @TypeConverters(

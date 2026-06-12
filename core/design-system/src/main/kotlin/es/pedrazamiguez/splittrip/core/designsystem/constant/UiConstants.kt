@@ -17,6 +17,13 @@ object UiConstants {
     val WIZARD_NAV_BAR_HEIGHT: Dp = 80.dp
 
     /**
+     * Height reserved for the [FormSubmitButton] overlay.
+     *
+     * Calculated from GradientButton height (56 dp) + vertical padding (16 dp top + 12 dp bottom).
+     */
+    val FORM_SUBMIT_BUTTON_HEIGHT: Dp = 84.dp
+
+    /**
      * Delay (ms) before auto-advancing to the next wizard step after a
      * selection-only interaction (chip tap, radio button).
      * Allows the selection animation to settle before the step transition fires.

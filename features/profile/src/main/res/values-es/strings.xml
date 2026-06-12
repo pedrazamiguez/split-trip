@@ -8,4 +8,51 @@
     <string name="profile_member_since">Miembro desde %1$s</string>
     <string name="profile_error_loading">No se pudo cargar tu perfil. Inténtalo de nuevo más tarde.</string>
     <string name="profile_retry_button">Reintentar</string>
+
+    <!-- Account Linking / Unlinking -->
+    <string name="profile_linked_accounts_title">Cuentas vinculadas</string>
+    <string name="profile_provider_email_password">Correo y contraseña</string>
+    <string name="profile_provider_google">Google</string>
+    <string name="profile_status_linked">Vinculada</string>
+    <string name="profile_status_not_linked">No vinculada</string>
+    <string name="profile_action_link">Vincular</string>
+    <string name="profile_action_unlink">Desvincular</string>
+    <string name="profile_link_success">Cuenta vinculada correctamente.</string>
+    <string name="profile_unlink_success">Cuenta desvinculada correctamente.</string>
+    <string name="profile_link_error_passwords_match">Las contraseñas no coinciden.</string>
+    <string name="profile_link_error_password_length">La contraseña debe tener al menos 6 caracteres.</string>
+    <string name="profile_unlink_error_last_provider">No puedes desvincular tu único proveedor de inicio de sesión.</string>
+    <string name="profile_link_email_dialog_title">Establecer contraseña</string>
+    <string name="profile_link_email_dialog_message">Establece una contraseña para vincular el acceso por correo/contraseña a tu cuenta.</string>
+    <string name="profile_link_email_dialog_password">Contraseña</string>
+    <string name="profile_link_email_dialog_confirm_password">Confirmar contraseña</string>
+    <string name="profile_link_email_dialog_submit">Vincular</string>
+    <string name="profile_link_email_dialog_cancel">Cancelar</string>
+    <string name="profile_link_error_failed">No se pudo vincular la cuenta. Inténtalo de nuevo.</string>
+    <string name="profile_unlink_error_failed">No se pudo desvincular la cuenta. Inténtalo de nuevo.</string>
+    <string name="profile_bio_title">Biografía</string>
+    <string name="profile_bio_empty">Aún no se ha añadido ninguna biografía.</string>
+
+    <!-- Edit Profile -->
+    <string name="profile_edit">Editar perfil</string>
+    <string name="edit_profile_title">Editar perfil</string>
+    <string name="edit_profile_back">Volver</string>
+    <string name="edit_profile_display_name">Nombre de usuario</string>
+    <string name="edit_profile_display_name_placeholder">Introduce tu nombre de usuario</string>
+    <string name="edit_profile_bio">Biografía</string>
+    <string name="edit_profile_bio_placeholder">Cuéntanos sobre ti</string>
+    <string name="edit_profile_save">Guardar cambios</string>
+    <string name="crop_title">Recortar foto de perfil</string>
+    <string name="crop_confirm">Confirmar</string>
+    <string name="crop_cancel">Cancelar</string>
+    <string name="avatar_sheet_title">Cambiar foto de perfil</string>
+    <string name="avatar_sheet_camera">Hacer foto</string>
+    <string name="avatar_sheet_gallery">Elegir de la galería</string>
+    <string name="avatar_sheet_remove">Eliminar foto</string>
+    <string name="edit_profile_error_name_empty">El nombre de usuario no puede estar vacío</string>
+    <string name="edit_profile_error_name_length">El nombre de usuario no puede superar los 50 caracteres</string>
+    <string name="edit_profile_error_bio_length">La biografía no puede superar los 150 caracteres</string>
+    <string name="edit_profile_success_saved">Perfil actualizado correctamente.</string>
+    <string name="edit_profile_error_image_process">No se pudo procesar la imagen de perfil. Inténtalo de nuevo.</string>
 </resources>
+

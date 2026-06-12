@@ -13,4 +13,41 @@
     <string name="login_start_journey">Start a journey</string>
     <string name="login_forgot_password_message">Password recovery is not implemented yet.</string>
     <string name="login_start_journey_message">Registration is not implemented yet.</string>
+
+    <!-- Register Screen -->
+    <string name="register_title">Join the Expedition</string>
+    <string name="register_subtitle">Create your account to start sharing expenses</string>
+    <string name="register_display_name_label">Display Name</string>
+    <string name="register_confirm_password_label">Confirm Password</string>
+    <string name="register_submit_button">Create Account</string>
+    <string name="register_already_member">Already an explorer?</string>
+    <string name="register_sign_in_link">Sign In</string>
+    <string name="register_error_invalid_email">Please enter a valid email address.</string>
+    <string name="register_error_empty_display_name">Display name cannot be empty.</string>
+    <string name="register_error_password_too_short">Password must be at least 6 characters.</string>
+    <string name="register_error_passwords_do_not_match">Passwords do not match.</string>
+    <string name="register_error_failed">Sign-up failed. Please try again.</string>
+
+    <!-- Forgot Password Screen -->
+    <string name="forgot_password_title">Reset Password</string>
+    <string name="forgot_password_subtitle">Enter your email address to receive a password reset link.</string>
+    <string name="forgot_password_button">Send Reset Link</string>
+    <string name="forgot_password_email_label">Email</string>
+    <string name="forgot_password_success_message">If this email is registered, you will receive a reset link shortly.</string>
+
+    <!-- Collision / Merging Flow -->
+    <string name="login_error_empty_password">Please enter your password.</string>
+    <string name="login_error_invalid_credentials">Invalid password. Please try again.</string>
+    <string name="login_error_merge_link_failed">Failed to link Google account. Please try again.</string>
+    <string name="login_collision_dialog_title">Account already exists</string>
+    <string name="login_collision_dialog_message">An account with this email already exists via email/password. Please enter your password to link Google Sign-In with this account.</string>
+    <string name="login_collision_dialog_password_label">Password</string>
+    <string name="login_collision_dialog_submit">Link Accounts</string>
+    <string name="login_collision_dialog_cancel">Cancel</string>
+
+    <string name="register_error_collision">This email is already registered via Google. Please sign in with Google.</string>
+    <string name="register_collision_dialog_title">Account Registered</string>
+    <string name="register_collision_dialog_message">An account with this email is already registered via Google. Would you like to go to the Login screen to sign in with Google?</string>
+    <string name="register_collision_dialog_confirm">Go to Login</string>
+    <string name="register_collision_dialog_cancel">Cancel</string>
 </resources>

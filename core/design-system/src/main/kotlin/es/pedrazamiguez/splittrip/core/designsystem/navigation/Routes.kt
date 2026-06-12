@@ -4,9 +4,12 @@ import android.net.Uri
 
 object Routes {
     const val LOGIN = "login"
+    const val REGISTER = "register"
+    const val FORGOT_PASSWORD = "forgot_password"
     const val ONBOARDING = "onboarding"
     const val MAIN = "main"
     const val PROFILE = "profile"
+    const val EDIT_PROFILE = "edit_profile"
     const val GROUPS = "groups"
     const val CREATE_GROUP = "create_group"
     const val EXPENSES = "expenses"
@@ -20,6 +23,7 @@ object Routes {
     const val SETTINGS_NOTIFICATIONS = "settings_notifications"
     const val SETTINGS_DEVELOPER_SERVICES = "settings_developer_services"
     const val SETTINGS_THEME = "settings_theme"
+    const val SETTINGS_ACCOUNT_STATUS = "settings_account_status"
     const val GROUP_DETAIL = "group_detail/{groupId}"
     const val EXPENSE_DETAIL = "expense_detail/{expenseId}"
     const val EDIT_EXPENSE = "edit_expense/{expenseId}"

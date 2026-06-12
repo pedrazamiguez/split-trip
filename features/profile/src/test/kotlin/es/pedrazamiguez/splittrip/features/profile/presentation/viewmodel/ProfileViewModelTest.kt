@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUiMapper
 import es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.action.ProfileUiAction
@@ -34,6 +35,7 @@ class ProfileViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase
+    private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
     private lateinit var profileUiMapper: ProfileUiMapper
     private lateinit var viewModel: ProfileViewModel
 
@@ -49,15 +51,17 @@ class ProfileViewModelTest {
         displayName = "Test User",
         email = "test@example.com",
         profileImageUrl = "https://example.com/photo.jpg",
-        memberSinceText = "June 2024"
+        bio = ""
     )
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         getCurrentUserProfileUseCase = mockk()
+        observeCurrentUserProfileUseCase = mockk()
         profileUiMapper = mockk()
 
+        every { observeCurrentUserProfileUseCase() } returns kotlinx.coroutines.flow.flowOf(null)
         every { profileUiMapper.toProfileUiModel(testUser) } returns testProfileUiModel
     }
 
@@ -66,16 +70,25 @@ class ProfileViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun createViewModel() {
+        viewModel = ProfileViewModel(
+            getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
+            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            profileUiMapper = profileUiMapper
+        )
+    }
+
     @Nested
     inner class InitialLoad {
 
         @Test
         fun `loads profile successfully on init`() = runTest(testDispatcher) {
             // Given
+            every { observeCurrentUserProfileUseCase() } returns kotlinx.coroutines.flow.flowOf(testUser)
             coEvery { getCurrentUserProfileUseCase() } returns testUser
 
             // When
-            viewModel = ProfileViewModel(getCurrentUserProfileUseCase, profileUiMapper)
+            createViewModel()
             advanceUntilIdle()
 
             // Then
@@ -85,7 +98,7 @@ class ProfileViewModelTest {
             assertEquals("Test User", state.profile?.displayName)
             assertEquals("test@example.com", state.profile?.email)
             assertEquals("https://example.com/photo.jpg", state.profile?.profileImageUrl)
-            assertEquals("June 2024", state.profile?.memberSinceText)
+            assertEquals("", state.profile?.bio)
             assertFalse(state.hasError)
         }
 
@@ -95,7 +108,7 @@ class ProfileViewModelTest {
             coEvery { getCurrentUserProfileUseCase() } returns null
 
             // When
-            viewModel = ProfileViewModel(getCurrentUserProfileUseCase, profileUiMapper)
+            createViewModel()
             advanceUntilIdle()
 
             // Then
@@ -109,7 +122,7 @@ class ProfileViewModelTest {
         fun `emits ShowError action when user is null`() = runTest(testDispatcher) {
             // Given — init loads null, so set up accordingly
             coEvery { getCurrentUserProfileUseCase() } returns null
-            viewModel = ProfileViewModel(getCurrentUserProfileUseCase, profileUiMapper)
+            createViewModel()
 
             // Start collecting actions
             val emittedActions = mutableListOf<ProfileUiAction>()
@@ -118,9 +131,7 @@ class ProfileViewModelTest {
             }
 
             // When — reload triggers another null → ShowError
-            viewModel.onEvent(
-                ProfileUiEvent.LoadProfile
-            )
+            viewModel.onEvent(ProfileUiEvent.LoadProfile)
             advanceUntilIdle()
 
             // Then — actions from init + reload (both emit ShowError)
@@ -136,7 +147,7 @@ class ProfileViewModelTest {
             coEvery { getCurrentUserProfileUseCase() } throws RuntimeException("Network error")
 
             // When
-            viewModel = ProfileViewModel(getCurrentUserProfileUseCase, profileUiMapper)
+            createViewModel()
             advanceUntilIdle()
 
             // Then
@@ -150,7 +161,7 @@ class ProfileViewModelTest {
         fun `emits ShowError action when use case throws exception`() = runTest(testDispatcher) {
             // Given — init throws, set up accordingly
             coEvery { getCurrentUserProfileUseCase() } throws RuntimeException("Network error")
-            viewModel = ProfileViewModel(getCurrentUserProfileUseCase, profileUiMapper)
+            createViewModel()
 
             // Start collecting actions
             val emittedActions = mutableListOf<ProfileUiAction>()
@@ -159,9 +170,7 @@ class ProfileViewModelTest {
             }
 
             // When — reload triggers another exception → ShowError
-            viewModel.onEvent(
-                ProfileUiEvent.LoadProfile
-            )
+            viewModel.onEvent(ProfileUiEvent.LoadProfile)
             advanceUntilIdle()
 
             // Then — actions from init + reload (both emit ShowError)
@@ -169,6 +178,57 @@ class ProfileViewModelTest {
             assertTrue(emittedActions.all { it is ProfileUiAction.ShowError })
 
             collectJob.cancel()
+        }
+
+        @Test
+        fun `updates profile state when observe flow emits`() = runTest(testDispatcher) {
+            // Given
+            val userFlow = kotlinx.coroutines.flow.MutableSharedFlow<User?>()
+            every { observeCurrentUserProfileUseCase() } returns userFlow
+            coEvery { getCurrentUserProfileUseCase() } returns null
+
+            createViewModel()
+            advanceUntilIdle()
+
+            // Initially null
+            assertNull(viewModel.uiState.value.profile)
+
+            // When - flow emits a user
+            userFlow.emit(testUser)
+            advanceUntilIdle()
+
+            // Then - UI updates
+            val state = viewModel.uiState.value
+            assertFalse(state.isLoading)
+            assertNotNull(state.profile)
+            assertEquals("Test User", state.profile?.displayName)
+            assertFalse(state.hasError)
+        }
+
+        @Test
+        fun `clears profile and sets error when observe flow emits null`() = runTest(testDispatcher) {
+            // Given
+            val userFlow = kotlinx.coroutines.flow.MutableSharedFlow<User?>()
+            every { observeCurrentUserProfileUseCase() } returns userFlow
+            coEvery { getCurrentUserProfileUseCase() } returns testUser
+
+            createViewModel()
+            advanceUntilIdle()
+
+            // When - flow emits a user, then emits null
+            userFlow.emit(testUser)
+            advanceUntilIdle()
+            assertNotNull(viewModel.uiState.value.profile)
+            assertFalse(viewModel.uiState.value.hasError)
+
+            userFlow.emit(null)
+            advanceUntilIdle()
+
+            // Then - UI clears profile and sets error
+            val state = viewModel.uiState.value
+            assertFalse(state.isLoading)
+            assertNull(state.profile)
+            assertTrue(state.hasError)
         }
     }
 
@@ -178,8 +238,10 @@ class ProfileViewModelTest {
         @Test
         fun `reloads profile on LoadProfile event`() = runTest(testDispatcher) {
             // Given - first load returns null
+            val userFlow = kotlinx.coroutines.flow.MutableSharedFlow<User?>()
+            every { observeCurrentUserProfileUseCase() } returns userFlow
             coEvery { getCurrentUserProfileUseCase() } returns null
-            viewModel = ProfileViewModel(getCurrentUserProfileUseCase, profileUiMapper)
+            createViewModel()
             advanceUntilIdle()
 
             // Verify initial error state
@@ -188,10 +250,9 @@ class ProfileViewModelTest {
             // Given - second load returns user
             coEvery { getCurrentUserProfileUseCase() } returns testUser
 
-            // When
-            viewModel.onEvent(
-                ProfileUiEvent.LoadProfile
-            )
+            // When - reload triggers and flow emits user
+            viewModel.onEvent(ProfileUiEvent.LoadProfile)
+            userFlow.emit(testUser)
             advanceUntilIdle()
 
             // Then

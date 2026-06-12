@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -13,8 +12,8 @@ import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
-import es.pedrazamiguez.splittrip.features.authentication.R
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.features.authentication.presentation.component.CollisionMergeDialog
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.screen.LoginScreen
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.AuthenticationViewModel
@@ -47,9 +46,7 @@ fun LoginFeature(
 
     val isGoogleSignInAvailable = !webClientId.isNullOrEmpty()
 
-    val pillController = LocalTopPillController.current
-    val forgotPasswordMessage = stringResource(id = R.string.login_forgot_password_message)
-    val startJourneyMessage = stringResource(id = R.string.login_start_journey_message)
+    val navController = es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController.current
 
     LoginScreen(
         uiState = uiState,
@@ -61,10 +58,10 @@ fun LoginFeature(
             )
         },
         onForgotPasswordClick = {
-            pillController.showPill(forgotPasswordMessage)
+            navController.navigate(Routes.FORGOT_PASSWORD)
         },
         onStartJourneyClick = {
-            pillController.showPill(startJourneyMessage)
+            navController.navigate(es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes.REGISTER)
         },
         onGoogleSignInClick = {
             if (!isGoogleSignInAvailable) return@LoginScreen
@@ -112,4 +109,16 @@ fun LoginFeature(
             }
         }
     )
+
+    if (uiState.showCollisionDialog) {
+        CollisionMergeDialog(
+            uiState = uiState,
+            onEvent = { event ->
+                viewModel.onEvent(
+                    event,
+                    onLoginSuccess
+                )
+            }
+        )
+    }
 }

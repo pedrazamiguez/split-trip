@@ -27,6 +27,9 @@ fun ProfileFeature(profileViewModel: ProfileViewModel = koinViewModel<ProfileVie
                 is ProfileUiAction.ShowError -> {
                     pillController.showPill(message = action.message.asString(context))
                 }
+                is ProfileUiAction.ShowSuccess -> {
+                    pillController.showPill(message = action.message.asString(context))
+                }
             }
         }
     }

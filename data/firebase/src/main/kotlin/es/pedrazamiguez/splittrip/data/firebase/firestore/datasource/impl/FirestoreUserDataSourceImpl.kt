@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.UserDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toLocalDateTimeUtc
+import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toTimestampUtc
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.model.User
 import java.util.Date
@@ -28,12 +29,21 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                 "lastUpdatedAt" to now
             )
 
+            val userCreatedAtTimestamp = user.createdAt.toTimestampUtc()
+
             if (!existingDoc.exists()) {
                 // New user — populate user-editable fields from the auth provider
                 user.displayName?.let { data["displayName"] = it }
                 user.profileImagePath?.let { data["profileImagePath"] = it }
+                user.bio?.let { data["bio"] = it }
                 data["createdBy"] = user.userId
-                data["createdAt"] = now
+                data["createdAt"] = userCreatedAtTimestamp ?: now
+            } else {
+                // Existing user — if createdAt is missing in Firestore, populate it from local
+                val existingCreatedAt = existingDoc.get("createdAt")
+                if (existingCreatedAt == null && userCreatedAtTimestamp != null) {
+                    data["createdAt"] = userCreatedAtTimestamp
+                }
             }
             // Existing user — skip displayName and profileImagePath to preserve
             // any user-customised values. Only email and timestamps are synced.
@@ -67,6 +77,7 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                             email = userDoc.email,
                             displayName = userDoc.displayName,
                             profileImagePath = userDoc.profileImagePath,
+                            bio = userDoc.bio,
                             createdAt = userDoc.createdAt.toLocalDateTimeUtc()
                         )
                     }
@@ -100,6 +111,7 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                             email = userDoc.email,
                             displayName = userDoc.displayName,
                             profileImagePath = userDoc.profileImagePath,
+                            bio = userDoc.bio,
                             createdAt = userDoc.createdAt.toLocalDateTimeUtc()
                         )
                     }
@@ -109,5 +121,17 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
             Timber.e(e, "Error searching users by email")
             emptyList()
         }
+    }
+
+    override suspend fun updateUserProfile(userId: String, displayName: String?, bio: String?, avatarUrl: String?) {
+        val docRef = firestore.collection(UserDocument.COLLECTION_PATH).document(userId)
+        val updates = mutableMapOf<String, Any?>(
+            "displayName" to displayName,
+            "bio" to bio,
+            "profileImagePath" to avatarUrl,
+            "lastUpdatedBy" to userId,
+            "lastUpdatedAt" to Timestamp(Date())
+        )
+        docRef.update(updates).await()
     }
 }

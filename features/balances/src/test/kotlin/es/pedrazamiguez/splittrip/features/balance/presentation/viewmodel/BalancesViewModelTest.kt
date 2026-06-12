@@ -35,6 +35,7 @@ import io.mockk.just
 import io.mockk.mockk
 import java.io.IOException
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
@@ -189,7 +190,7 @@ class BalancesViewModelTest {
                             dateText = contribution.createdAt?.toString() ?: ""
                         ),
                         sortTimestamp = contribution.createdAt
-                            ?.atZone(java.time.ZoneOffset.UTC)
+                            ?.atZone(ZoneOffset.UTC)
                             ?.toInstant()?.toEpochMilli() ?: 0L
                     )
                 )
@@ -204,7 +205,7 @@ class BalancesViewModelTest {
                             dateText = withdrawal.createdAt?.toString() ?: ""
                         ),
                         sortTimestamp = withdrawal.createdAt
-                            ?.atZone(java.time.ZoneOffset.UTC)
+                            ?.atZone(ZoneOffset.UTC)
                             ?.toInstant()?.toEpochMilli() ?: 0L
                     )
                 )

@@ -8,7 +8,9 @@ data class UserDocument(
     val email: String = "",
     val displayName: String? = null,
     val profileImagePath: String? = null,
+    val bio: String? = null,
     val createdBy: String = "",
+
     val createdAt: Timestamp? = null,
     val lastUpdatedBy: String? = null,
     val lastUpdatedAt: Timestamp? = null

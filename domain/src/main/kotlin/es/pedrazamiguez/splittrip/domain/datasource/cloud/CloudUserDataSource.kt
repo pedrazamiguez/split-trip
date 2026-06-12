@@ -14,4 +14,5 @@ interface CloudUserDataSource {
      * @return List of matching users
      */
     suspend fun searchUsersByEmail(email: String, excludeUserId: String? = null): List<User>
+    suspend fun updateUserProfile(userId: String, displayName: String?, bio: String?, avatarUrl: String?)
 }

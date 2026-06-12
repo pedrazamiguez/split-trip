@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.profile.R
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUiMapper
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.action.ProfileUiAction
@@ -26,6 +27,7 @@ import timber.log.Timber
  */
 class ProfileViewModel(
     private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
+    private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
     private val profileUiMapper: ProfileUiMapper
 ) : ViewModel() {
 
@@ -36,7 +38,7 @@ class ProfileViewModel(
     val actions = _actions.receiveAsFlow()
 
     init {
-        loadProfile()
+        observeProfile()
     }
 
     fun onEvent(event: ProfileUiEvent) {
@@ -45,19 +47,30 @@ class ProfileViewModel(
         }
     }
 
-    private fun loadProfile() {
+    private fun observeProfile() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, hasError = false) }
-            try {
-                val user = getCurrentUserProfileUseCase()
-                if (user != null) {
+            observeCurrentUserProfileUseCase()
+                .collect { user ->
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            profile = profileUiMapper.toProfileUiModel(user)
+                            hasError = user == null,
+                            profile = user?.let { profileUiMapper.toProfileUiModel(it) }
                         )
                     }
-                } else {
+                }
+        }
+        loadProfile()
+    }
+
+    private fun loadProfile() {
+        viewModelScope.launch {
+            if (_uiState.value.profile == null) {
+                _uiState.update { it.copy(isLoading = true, hasError = false) }
+            }
+            try {
+                val user = getCurrentUserProfileUseCase()
+                if (user == null && _uiState.value.profile == null) {
                     val errorText = UiText.StringResource(R.string.profile_error_loading)
                     _uiState.update {
                         it.copy(isLoading = false, hasError = true)
@@ -66,11 +79,13 @@ class ProfileViewModel(
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load profile")
-                val errorText = UiText.StringResource(R.string.profile_error_loading)
-                _uiState.update {
-                    it.copy(isLoading = false, hasError = true)
+                if (_uiState.value.profile == null) {
+                    val errorText = UiText.StringResource(R.string.profile_error_loading)
+                    _uiState.update {
+                        it.copy(isLoading = false, hasError = true)
+                    }
+                    _actions.send(ProfileUiAction.ShowError(errorText))
                 }
-                _actions.send(ProfileUiAction.ShowError(errorText))
             }
         }
     }

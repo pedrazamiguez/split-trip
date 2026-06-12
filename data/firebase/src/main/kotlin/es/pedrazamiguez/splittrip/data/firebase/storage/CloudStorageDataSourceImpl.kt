@@ -61,7 +61,48 @@ internal class CloudStorageDataSourceImpl(
         }
     }
 
+    override suspend fun uploadAvatar(
+        userId: String,
+        localPath: String,
+        mimeType: String
+    ): String {
+        val resolvedPath = if (localPath.startsWith("file://")) {
+            android.net.Uri.parse(localPath).path
+                ?: error("Could not resolve filesystem path from URI: $localPath")
+        } else {
+            localPath
+        }
+        val file = File(resolvedPath)
+        val ref = storage.reference.child("$AVATARS_PREFIX/$userId/avatar.webp")
+
+        val metadata = com.google.firebase.storage.StorageMetadata.Builder()
+            .setContentType(mimeType)
+            .build()
+
+        ref.putFile(android.net.Uri.fromFile(file), metadata).await()
+        val downloadUrl = ref.downloadUrl.await().toString()
+        Timber.d("Avatar uploaded for user $userId → $downloadUrl")
+        return downloadUrl
+    }
+
+    override suspend fun deleteAvatar(userId: String) {
+        val folderRef = storage.reference.child("$AVATARS_PREFIX/$userId")
+        try {
+            val listResult = folderRef.listAll().await()
+            listResult.items.forEach { item ->
+                item.delete().await()
+                Timber.d("Deleted remote avatar file: ${item.path}")
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to delete remote avatar files for user $userId")
+            throw e
+        }
+    }
+
     private companion object {
         const val RECEIPTS_PREFIX = "receipts"
+        const val AVATARS_PREFIX = "avatars"
     }
 }

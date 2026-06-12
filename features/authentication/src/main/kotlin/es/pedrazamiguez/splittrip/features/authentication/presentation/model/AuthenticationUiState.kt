@@ -7,5 +7,11 @@ data class AuthenticationUiState(
     val password: String = "",
     val isLoading: Boolean = false,
     val isGoogleLoading: Boolean = false,
-    val error: UiText? = null
+    val error: UiText? = null,
+    val showCollisionDialog: Boolean = false,
+    val collisionEmail: String = "",
+    val collisionPassword: String = "",
+    val pendingGoogleIdToken: String? = null,
+    val isMerging: Boolean = false,
+    val mergeError: UiText? = null
 )

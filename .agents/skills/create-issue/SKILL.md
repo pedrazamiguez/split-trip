@@ -42,6 +42,15 @@ Produce the issue in the following structure:
 ### Title
 A short, imperative sentence (e.g. "Extract `CashRateResultDelegate` from `CurrencyEventHandler`").
 
+### Labels
+Exactly one label from the closed list corresponding to the branch-creation workflow (do NOT use other arbitrary tags like `ui`, `ux`, `groups`, etc.):
+- `bug` (for bugfixes, maps to `bugfix/` branch)
+- `enhancement` (for refactoring/improvements, maps to `refactor/` branch)
+- `feature` (for new features, maps to `feature/` branch)
+- `config` (for internal tasks/configs, maps to `internal/` branch)
+- `release` (for releases, maps to `release/` branch)
+- `hotfix` (for urgent main branch fixes, maps to `hotfix/` branch)
+
 ### Problem / Motivation
 - What is wrong or missing today?
 - What user-facing or developer-facing impact does it have?
@@ -72,11 +81,13 @@ Link any parent issues, child issues, or prior PRs that provide context.
 ## Step 3 — Review and Create
 
 Before presenting the draft, verify:
+- The drafted label belongs strictly to the closed list: `bug`, `enhancement`, `feature`, `config`, `release`, or `hotfix`.
+- NO extra, custom, or arbitrary labels (e.g. `ui`, `ux`, `groups`) are listed or will be applied.
 - The proposed solution aligns with the project's architecture rules.
 - The acceptance criteria are concrete and testable, not vague.
 - The scope is narrow enough to be completed in a single PR.
 - No implementation details that belong in a PR description have leaked into the issue.
 
-1. Present the full draft to the user for review.
+1. Present the full draft (including the chosen label) to the user for review.
 2. Do NOT create the GitHub issue until the user explicitly approves it.
-3. Once approved, create the GitHub issue and provide the link to the user.
+3. Once approved, create the GitHub issue on GitHub with ONLY the approved label from the closed list applied, and provide the link to the user.

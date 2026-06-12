@@ -50,6 +50,7 @@ Retrieve all comments on the GitHub issue using the `github-mcp-server`.
 2. **If no implementation plan is found on the GitHub issue, halt immediately.** Do not investigate, deeply analyze, or suggest any technical solution. Stop and inform the user that they must first run the `sp-plan-issue` skill to generate and approve a plan.
 3. If an implementation plan is found, read it thoroughly. This plan is your single source of truth for the implementation.
 4. If you discover that the plan does not align well with the current code, **do not attempt to fix or replan it yourself**. Stop immediately and suggest that the user run the `sp-replan-issue` skill to update the plan.
+5. **Validate that the retrieved plan is a complete technical specification.** It must explicitly specify exact target file paths (using `[NEW]`, `[MODIFY]`, or `[DELETE]` tags), precise class names/signatures/types, database schema updates if any, validation rules, and specific test cases (test class and test case names). **If the plan lacks these essential specification details, halt immediately.** Do not start implementation; inform the user and suggest running `sp-replan-issue` to flesh out the technical specification before proceeding.
 
 ---
 

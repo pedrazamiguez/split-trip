@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import java.time.LocalDateTime
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
@@ -38,7 +39,7 @@ class ContributionRepositoryImpl(
     override suspend fun addContribution(groupId: String, contribution: Contribution) {
         val contributionId = contribution.id.ifBlank { UUID.randomUUID().toString() }
         val currentUserId = authenticationService.currentUserId() ?: ""
-        val currentTimestamp = java.time.LocalDateTime.now()
+        val currentTimestamp = LocalDateTime.now()
 
         val contributionWithMetadata = contribution.copy(
             id = contributionId,

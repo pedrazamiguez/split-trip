@@ -7,4 +7,5 @@
 -->
 <paths>
     <files-path name="receipts" path="receipts/" />
+    <files-path name="avatars_temp" path="avatars_temp/" />
 </paths>
