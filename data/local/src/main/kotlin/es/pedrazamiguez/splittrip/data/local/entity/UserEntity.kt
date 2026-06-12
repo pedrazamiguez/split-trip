@@ -11,5 +11,7 @@ data class UserEntity(
     val displayName: String?,
     val profileImagePath: String?,
     val createdAtMillis: Long?,
-    val lastUpdatedAtMillis: Long?
+    val lastUpdatedAtMillis: Long?,
+    val bio: String? = null,
+    val syncStatus: String = "SYNCED"
 )

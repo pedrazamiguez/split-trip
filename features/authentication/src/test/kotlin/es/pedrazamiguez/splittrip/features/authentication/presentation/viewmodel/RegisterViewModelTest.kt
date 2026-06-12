@@ -6,7 +6,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiAction
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiEvent
-import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.RegisterSubmitHandlerImpl
+import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.RegisterSubmitEventHandlerImpl
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -45,12 +45,12 @@ class RegisterViewModelTest {
         signUpWithEmailUseCase = mockk()
         emailValidationService = mockk()
 
-        val submitHandler = RegisterSubmitHandlerImpl(
+        val submitHandler = RegisterSubmitEventHandlerImpl(
             signUpWithEmailUseCase = signUpWithEmailUseCase,
             emailValidationService = emailValidationService
         )
         viewModel = RegisterViewModel(
-            registerSubmitHandler = submitHandler
+            registerSubmitEventHandler = submitHandler
         )
     }
 

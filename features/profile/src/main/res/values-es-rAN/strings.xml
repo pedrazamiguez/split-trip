@@ -31,4 +31,24 @@
     <string name="profile_unlink_error_failed">No çe pudo dêbbinculâh la cuenta. Inténtalo de nuebo.</string>
     <string name="profile_bio_title">Biografía</string>
     <string name="profile_bio_empty">Aún no çe a añadío ninguna biografía.</string>
+    <string name="profile_edit">Editâh perfîh</string>
+    <string name="edit_profile_title">Editâh perfîh</string>
+    <string name="edit_profile_back">Borbêh</string>
+    <string name="edit_profile_display_name">Nombre de uçuario</string>
+    <string name="edit_profile_display_name_placeholder">Introduçe tu nombre de uçuario</string>
+    <string name="edit_profile_bio">Biografía</string>
+    <string name="edit_profile_bio_placeholder">Cuéntanô çobre ti</string>
+    <string name="edit_profile_save">Guardâh cambiô</string>
+    <string name="crop_title">Recortâh foto de perfîh</string>
+    <string name="crop_confirm">Confirmâh</string>
+    <string name="crop_cancel">Cançelâh</string>
+    <string name="avatar_sheet_title">Cambiâh foto de perfîh</string>
+    <string name="avatar_sheet_camera">Açêh foto</string>
+    <string name="avatar_sheet_gallery">Elehîh de la galería</string>
+    <string name="avatar_sheet_remove">Eliminâh foto</string>
+    <string name="edit_profile_error_name_empty">Er nombre de uçuario no puede êttâh baçío</string>
+    <string name="edit_profile_error_name_length">Er nombre de uçuario no puede çuperâh lô 50 carâtterê</string>
+    <string name="edit_profile_error_bio_length">La biografía no puede çuperâh lô 150 carâtterê</string>
+    <string name="edit_profile_success_saved">Perfîh âttualiçao corrêttamente.</string>
+    <string name="edit_profile_error_image_process">No çe pudo proçeçâh la imahen de perfîh. Inténtalo de nuebo.</string>
 </resources>

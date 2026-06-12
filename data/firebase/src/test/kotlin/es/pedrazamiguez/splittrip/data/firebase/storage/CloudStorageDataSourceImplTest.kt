@@ -117,4 +117,80 @@ class CloudStorageDataSourceImplTest {
         verify(exactly = 1) { mockItem1.delete() }
         verify(exactly = 1) { mockItem2.delete() }
     }
+
+    @Test
+    fun `uploadAvatar uploads file and returns download URL`() = runTest {
+        val mockSnapshot = mockk<UploadTask.TaskSnapshot>()
+        val mockUploadTask = mockk<UploadTask>()
+        every { childRef.putFile(any(), any()) } returns mockUploadTask
+        coEvery { mockUploadTask.await() } returns mockSnapshot
+
+        val mockDownloadUri = mockk<Uri>()
+        every { mockDownloadUri.toString() } returns "https://firebase.storage/avatar.webp"
+        val mockDownloadUrlTask = mockk<Task<Uri>>()
+        every { childRef.downloadUrl } returns mockDownloadUrlTask
+        coEvery { mockDownloadUrlTask.await() } returns mockDownloadUri
+
+        val url = dataSource.uploadAvatar("user-123", "file:///path/to/avatar.jpg", "image/jpeg")
+
+        assertEquals("https://firebase.storage/avatar.webp", url)
+        verify(exactly = 1) { rootRef.child("avatars/user-123/avatar.webp") }
+    }
+
+    @Test
+    fun `uploadAvatar normalises raw path and uploads successfully`() = runTest {
+        val mockSnapshot = mockk<UploadTask.TaskSnapshot>()
+        val mockUploadTask = mockk<UploadTask>()
+        every { childRef.putFile(any(), any()) } returns mockUploadTask
+        coEvery { mockUploadTask.await() } returns mockSnapshot
+
+        val mockDownloadUri = mockk<Uri>()
+        every { mockDownloadUri.toString() } returns "https://firebase.storage/avatar.webp"
+        val mockDownloadUrlTask = mockk<Task<Uri>>()
+        every { childRef.downloadUrl } returns mockDownloadUrlTask
+        coEvery { mockDownloadUrlTask.await() } returns mockDownloadUri
+
+        val url = dataSource.uploadAvatar("user-456", "/raw/filesystem/path/avatar.jpg", "image/jpeg")
+
+        assertEquals("https://firebase.storage/avatar.webp", url)
+        verify(exactly = 1) { rootRef.child("avatars/user-456/avatar.webp") }
+    }
+
+    @Test
+    fun `deleteAvatar lists and deletes all files under prefix`() = runTest {
+        val mockListResult = mockk<com.google.firebase.storage.ListResult>()
+        val mockListTask = mockk<Task<com.google.firebase.storage.ListResult>>()
+
+        val mockItem1 = mockk<StorageReference>()
+        every { mockItem1.path } returns "avatars/user-123/avatar.webp"
+
+        val mockDeleteTask1 = mockk<Task<Void>>()
+        every { mockItem1.delete() } returns mockDeleteTask1
+        coEvery { mockDeleteTask1.await() } returns mockk()
+
+        every { childRef.listAll() } returns mockListTask
+        coEvery { mockListTask.await() } returns mockListResult
+        every { mockListResult.items } returns listOf(mockItem1)
+
+        dataSource.deleteAvatar("user-123")
+
+        verify(exactly = 1) { rootRef.child("avatars/user-123") }
+        verify(exactly = 1) { mockItem1.delete() }
+    }
+
+    @Test
+    fun `deleteAvatar throws exception when delete fails`() = runTest {
+        val mockListResult = mockk<com.google.firebase.storage.ListResult>()
+        val mockListTask = mockk<Task<com.google.firebase.storage.ListResult>>()
+
+        every { childRef.listAll() } returns mockListTask
+        coEvery { mockListTask.await() } throws RuntimeException("Delete failed")
+
+        try {
+            dataSource.deleteAvatar("user-123")
+            org.junit.jupiter.api.Assertions.fail("Expected RuntimeException")
+        } catch (e: RuntimeException) {
+            assertEquals("Delete failed", e.message)
+        }
+    }
 }

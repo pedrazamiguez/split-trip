@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class RegisterSubmitHandlerImpl(
+class RegisterSubmitEventHandlerImpl(
     private val signUpWithEmailUseCase: SignUpWithEmailUseCase,
     private val emailValidationService: EmailValidationService
-) : RegisterSubmitHandler {
+) : RegisterSubmitEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<RegisterUiState>
     private lateinit var _actions: Channel<RegisterUiAction>

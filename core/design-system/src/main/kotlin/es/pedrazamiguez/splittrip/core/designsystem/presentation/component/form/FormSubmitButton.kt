@@ -44,7 +44,7 @@ fun FormSubmitButton(
     val effectiveBottomPadding = if (isKeyboardVisible) 12.dp else 12.dp + bottomNavPadding
 
     Surface(
-        tonalElevation = 3.dp,
+        color = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxWidth()
     ) {
         GradientButton(

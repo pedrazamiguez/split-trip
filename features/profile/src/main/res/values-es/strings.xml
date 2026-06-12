@@ -32,4 +32,27 @@
     <string name="profile_unlink_error_failed">No se pudo desvincular la cuenta. Inténtalo de nuevo.</string>
     <string name="profile_bio_title">Biografía</string>
     <string name="profile_bio_empty">Aún no se ha añadido ninguna biografía.</string>
+
+    <!-- Edit Profile -->
+    <string name="profile_edit">Editar perfil</string>
+    <string name="edit_profile_title">Editar perfil</string>
+    <string name="edit_profile_back">Volver</string>
+    <string name="edit_profile_display_name">Nombre de usuario</string>
+    <string name="edit_profile_display_name_placeholder">Introduce tu nombre de usuario</string>
+    <string name="edit_profile_bio">Biografía</string>
+    <string name="edit_profile_bio_placeholder">Cuéntanos sobre ti</string>
+    <string name="edit_profile_save">Guardar cambios</string>
+    <string name="crop_title">Recortar foto de perfil</string>
+    <string name="crop_confirm">Confirmar</string>
+    <string name="crop_cancel">Cancelar</string>
+    <string name="avatar_sheet_title">Cambiar foto de perfil</string>
+    <string name="avatar_sheet_camera">Hacer foto</string>
+    <string name="avatar_sheet_gallery">Elegir de la galería</string>
+    <string name="avatar_sheet_remove">Eliminar foto</string>
+    <string name="edit_profile_error_name_empty">El nombre de usuario no puede estar vacío</string>
+    <string name="edit_profile_error_name_length">El nombre de usuario no puede superar los 50 caracteres</string>
+    <string name="edit_profile_error_bio_length">La biografía no puede superar los 150 caracteres</string>
+    <string name="edit_profile_success_saved">Perfil actualizado correctamente.</string>
+    <string name="edit_profile_error_image_process">No se pudo procesar la imagen de perfil. Inténtalo de nuevo.</string>
 </resources>
+

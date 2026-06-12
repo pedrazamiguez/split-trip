@@ -28,4 +28,15 @@ interface CloudStorageDataSource {
      * @param expenseId Unique expense identifier.
      */
     suspend fun deleteReceipt(expenseId: String)
+
+    /**
+     * Uploads the user avatar at [localPath] to the `avatars/{userId}/` path in Cloud Storage.
+     * @return Public HTTPS download URL.
+     */
+    suspend fun uploadAvatar(userId: String, localPath: String, mimeType: String): String
+
+    /**
+     * Deletes the user avatar associated with [userId].
+     */
+    suspend fun deleteAvatar(userId: String)
 }

@@ -11,10 +11,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class AuthenticationCollisionHandlerImpl(
+class AuthenticationCollisionEventHandlerImpl(
     private val signInWithEmailUseCase: SignInWithEmailUseCase,
     private val linkGoogleAccountUseCase: LinkGoogleAccountUseCase
-) : AuthenticationCollisionHandler {
+) : AuthenticationCollisionEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AuthenticationUiState>
     private lateinit var scope: CoroutineScope

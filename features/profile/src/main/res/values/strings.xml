@@ -31,4 +31,27 @@
     <string name="profile_unlink_error_failed">Failed to unlink account. Please try again.</string>
     <string name="profile_bio_title">Bio</string>
     <string name="profile_bio_empty">No bio added yet.</string>
+
+    <!-- Edit Profile -->
+    <string name="profile_edit">Edit Profile</string>
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="edit_profile_back">Back</string>
+    <string name="edit_profile_display_name">Display Name</string>
+    <string name="edit_profile_display_name_placeholder">Enter display name</string>
+    <string name="edit_profile_bio">Bio</string>
+    <string name="edit_profile_bio_placeholder">Tell us about yourself</string>
+    <string name="edit_profile_save">Save Changes</string>
+    <string name="crop_title">Crop Profile Picture</string>
+    <string name="crop_confirm">Confirm</string>
+    <string name="crop_cancel">Cancel</string>
+    <string name="avatar_sheet_title">Change Profile Picture</string>
+    <string name="avatar_sheet_camera">Take Photo</string>
+    <string name="avatar_sheet_gallery">Choose from Gallery</string>
+    <string name="avatar_sheet_remove">Remove Photo</string>
+    <string name="edit_profile_error_name_empty">Display name cannot be empty</string>
+    <string name="edit_profile_error_name_length">Display name cannot exceed 50 characters</string>
+    <string name="edit_profile_error_bio_length">Bio cannot exceed 150 characters</string>
+    <string name="edit_profile_success_saved">Profile updated successfully.</string>
+    <string name="edit_profile_error_image_process">Failed to process profile image. Please try again.</string>
 </resources>
+
