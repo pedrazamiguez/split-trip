@@ -43,7 +43,7 @@ internal suspend fun <T> subscribeAndReconcile(
     try {
         cloudFlow.collect { remoteItems ->
             try {
-                Timber.tag(LogTag.SYNC).d("Real-time sync: %d %ss %s", remoteItems.size, entityLabel, logContext)
+                Timber.tag(LogTag.SYNC).v("Real-time sync: %d %ss %s", remoteItems.size, entityLabel, logContext)
                 reconcileLocal(remoteItems)
                 confirmPendingSync(getPendingIds, verifyOnServer, markSynced, entityLabel)
             } catch (e: CancellationException) {

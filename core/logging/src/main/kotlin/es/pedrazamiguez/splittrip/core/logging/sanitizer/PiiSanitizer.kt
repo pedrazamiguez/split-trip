@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.core.logging
+package es.pedrazamiguez.splittrip.core.logging.sanitizer
 
 fun String.maskEmail(): String {
     val emailRegex = """^([^@]+)@([^@]+)$""".toRegex()
@@ -26,4 +26,11 @@ fun String.maskEmail(): String {
     }
 
     return "$maskedLocal@$maskedDomain"
+}
+
+fun String.sanitizePii(): String {
+    val emailRegex = """\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b""".toRegex()
+    return emailRegex.replace(this) { matchResult ->
+        matchResult.value.maskEmail()
+    }
 }

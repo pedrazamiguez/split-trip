@@ -1,7 +1,8 @@
-package es.pedrazamiguez.splittrip.core.logging
+package es.pedrazamiguez.splittrip.core.logging.tree
 
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import es.pedrazamiguez.splittrip.core.logging.LogContext
 import timber.log.Timber
 
 class ProductionCrashlyticsTree(

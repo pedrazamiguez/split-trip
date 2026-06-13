@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -36,6 +37,7 @@ class SubmitResultDelegateTest {
     private lateinit var delegate: SubmitResultDelegate
     private lateinit var savePrefs: SaveLastUsedPreferencesBundle
     private lateinit var formattingHelper: FormattingHelper
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actionsFlow: MutableSharedFlow<AddExpenseUiAction>
 
@@ -51,10 +53,12 @@ class SubmitResultDelegateTest {
             setGroupLastUsedCategoryUseCase = mockk(relaxed = true)
         )
         formattingHelper = mockk(relaxed = true)
+        telemetryTracker = mockk(relaxed = true)
 
         delegate = SubmitResultDelegate(
             saveLastUsedPreferences = savePrefs,
-            formattingHelper = formattingHelper
+            formattingHelper = formattingHelper,
+            telemetryTracker = telemetryTracker
         )
 
         uiState = MutableStateFlow(
@@ -101,6 +105,40 @@ class SubmitResultDelegateTest {
             delegate.handleSuccess(uiState, "group-1") {}
 
             assertFalse(uiState.value.isLoading)
+        }
+
+        @Test
+        fun `tracks expense_added telemetry event on success when not edit mode`() = runTest {
+            uiState.value = uiState.value.copy(isEditMode = false)
+            delegate.handleSuccess(uiState, "group-1") {}
+
+            coVerify {
+                telemetryTracker.trackEvent(
+                    "expense_added",
+                    mapOf(
+                        "currency" to "EUR",
+                        "payment_method" to "CARD",
+                        "category" to "FOOD"
+                    )
+                )
+            }
+        }
+
+        @Test
+        fun `tracks expense_edited telemetry event on success when edit mode`() = runTest {
+            uiState.value = uiState.value.copy(isEditMode = true)
+            delegate.handleSuccess(uiState, "group-1") {}
+
+            coVerify {
+                telemetryTracker.trackEvent(
+                    "expense_edited",
+                    mapOf(
+                        "currency" to "EUR",
+                        "payment_method" to "CARD",
+                        "category" to "FOOD"
+                    )
+                )
+            }
         }
 
         @Test

@@ -6,7 +6,8 @@ import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
 import es.pedrazamiguez.splittrip.core.logging.LogTag
-import es.pedrazamiguez.splittrip.core.logging.maskEmail
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
@@ -46,6 +47,7 @@ class CreateGroupViewModel(
     private val emailValidationService: EmailValidationService,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
+    private val telemetryTracker: TelemetryTracker,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -248,6 +250,10 @@ class CreateGroupViewModel(
                 )
             ).onSuccess {
                 _uiState.update { it.copy(isLoading = false) }
+                telemetryTracker.trackEvent(
+                    "group_created",
+                    mapOf("currency" to (state.selectedCurrency?.code ?: ""))
+                )
                 _actions.emit(
                     CreateGroupUiAction.ShowSuccess(UiText.StringResource(R.string.group_created_success, groupName))
                 )

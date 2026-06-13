@@ -36,6 +36,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.re
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
@@ -54,6 +55,7 @@ import timber.log.Timber
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
     val koin = getKoin()
+    val telemetryTracker = remember(koin) { koin.get<TelemetryTracker>() }
     val navigationProviders = remember(koin) { koin.getAll<NavigationProvider>() }
     val screenUiProviders = remember(koin) { koin.getAll<ScreenUiProvider>() }
     val isOnboardingCompleteUseCase = remember(koin) { koin.get<IsOnboardingCompleteUseCase>() }
@@ -71,6 +73,14 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val onboardingCompleted by isOnboardingCompleteUseCase().collectAsStateWithLifecycle(
         initialValue = null
     )
+
+    LaunchedEffect(isUserLoggedIn) {
+        if (isUserLoggedIn == true) {
+            telemetryTracker.setUserId(authenticationService.currentUserId())
+        } else if (isUserLoggedIn == false) {
+            telemetryTracker.setUserId(null)
+        }
+    }
 
     // Determine the start destination reactively
     val startDestination = NavigationUtils.resolveStartDestination(
@@ -103,6 +113,11 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                 destination.route,
                 arguments?.keySet() ?: emptySet<String>()
             )
+            destination.route?.let { route ->
+                if (route != Routes.MAIN) {
+                    telemetryTracker.trackScreenView(route, null)
+                }
+            }
         }
         navController.addOnDestinationChangedListener(listener)
         onDispose {

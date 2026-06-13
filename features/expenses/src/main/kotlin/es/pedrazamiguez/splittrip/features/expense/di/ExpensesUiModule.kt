@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -229,7 +230,8 @@ val expensesUiModule = module {
                 setGroupLastUsedPaymentMethodUseCase = get<SetGroupLastUsedPaymentMethodUseCase>(),
                 setGroupLastUsedCategoryUseCase = get<SetGroupLastUsedCategoryUseCase>()
             ),
-            formattingHelper = formattingHelper
+            formattingHelper = formattingHelper,
+            telemetryTracker = get<TelemetryTracker>()
         )
 
         val submitHandler = SubmitEventHandler(
