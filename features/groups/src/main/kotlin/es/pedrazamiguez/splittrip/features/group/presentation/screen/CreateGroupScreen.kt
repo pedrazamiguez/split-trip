@@ -9,11 +9,16 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.Cr
 const val CREATE_GROUP_SHARED_ELEMENT_KEY = "create_group_container"
 
 @Composable
-fun CreateGroupScreen(uiState: CreateGroupUiState, onEvent: (CreateGroupUiEvent) -> Unit = {}) {
+fun CreateGroupScreen(
+    uiState: CreateGroupUiState,
+    onScannerClick: () -> Unit,
+    onEvent: (CreateGroupUiEvent) -> Unit = {}
+) {
     SharedTransitionSurface(sharedElementKey = CREATE_GROUP_SHARED_ELEMENT_KEY) {
         CreateGroupForm(
             uiState = uiState,
-            onEvent = onEvent
+            onEvent = onEvent,
+            onScannerClick = onScannerClick
         )
     }
 }

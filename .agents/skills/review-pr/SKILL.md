@@ -87,15 +87,17 @@ Style adjustments, recommendations, or minor refactorings. These trigger a `COMM
 
 ---
 
-## Step 4 — Submit Review
+## Step 4 — Submit Review with Inline Comments
 
-Submit a structured PR review using the GitHub MCP server `pull_request_review_write` or equivalent review submission tool.
+To provide a clear, professional review, you should submit both inline comments on specific lines/files and an overall summary/verdict:
 
-1. **Review Body**: Construct a markdown summary that lists:
-   - A high-level overview of the pull request changes.
-   - Categorized findings grouped under **Blockers / High**, **Medium**, and **Low / Recommendations**. For each finding, reference the file and line ranges if applicable.
-   - A final verdict.
-2. **Review Status**:
-   - If there is at least one **Blocker / High** finding: Set state to `REQUEST_CHANGES`.
-   - If there are only **Medium** or **Low** findings: Set state to `COMMENT`.
-   - If no issues are found and the changes comply fully with all architectural guidelines: Set state to `APPROVE`.
+1. **Create a Pending Review**:
+   - Call the `pull_request_review_write` tool with `method = "create"` and leave the `event` parameter empty. This creates a pending review.
+2. **Add Inline Comments**:
+   - For each finding on specific code blocks or lines, call `add_comment_to_pending_review` with the file `path`, the `line` (or `startLine` and `line`), the `subjectType = "LINE"`, and the comment `body`.
+3. **Submit the Review**:
+   - Call `pull_request_review_write` with `method = "submit_pending"`, the overall summary markdown as `body`, and the appropriate `event`:
+     - If there is at least one **Blocker / High** finding: Set `event` to `REQUEST_CHANGES`. (Note: If you cannot request changes on your own PR, fallback to `COMMENT`).
+     - If there are only **Medium** or **Low** findings: Set `event` to `COMMENT`.
+     - If no issues are found and the changes comply fully with all architectural guidelines: Set `event` to `APPROVE`.
+

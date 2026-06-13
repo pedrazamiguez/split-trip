@@ -45,9 +45,11 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.remember
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.features.main.presentation.component.BottomNavigationBar
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.getKoin
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Suppress("LongMethod") // Orchestration composable: coordinates nav state, deep links and lifecycle effects
@@ -62,6 +64,8 @@ fun MainScreen(
         viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
     )
 ) {
+    val koin = getKoin()
+    val telemetryTracker = remember(koin) { koin.get<TelemetryTracker>() }
     val hazeState = remember { HazeState() }
 
     // Compute visibleProviders internally from SharedViewModel's selectedGroupId.
@@ -120,6 +124,10 @@ fun MainScreen(
     val currentRoute = currentScreenRoute?.destination?.route ?: selectedRoute
     val currentUiProvider = remember(currentRoute) {
         screenUiProviders.firstOrNull { it.route == currentRoute }
+    }
+
+    LaunchedEffect(currentRoute) {
+        telemetryTracker.trackScreenView(currentRoute, null)
     }
 
     // ── Tab-switch detection ─────────────────────────────────────────────

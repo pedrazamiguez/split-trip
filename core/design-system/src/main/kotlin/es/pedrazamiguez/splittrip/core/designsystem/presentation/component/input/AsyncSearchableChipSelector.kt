@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Qrcode
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
@@ -101,7 +102,9 @@ fun <T> AsyncSearchableChipSelector(
     searchIcon: ImageVector = TablerIcons.Outline.Search,
     minQueryLength: Int = 3,
     keyboardType: KeyboardType = KeyboardType.Email,
-    keyboardCapitalization: KeyboardCapitalization = KeyboardCapitalization.None
+    keyboardCapitalization: KeyboardCapitalization = KeyboardCapitalization.None,
+    onScannerClick: (() -> Unit)? = null,
+    scannerContentDescription: String? = null
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
@@ -169,7 +172,9 @@ fun <T> AsyncSearchableChipSelector(
             itemDisplayText = itemDisplayText,
             itemSecondaryText = itemSecondaryText,
             onItemAdded = handleItemAdded,
-            onClearSearch = handleClearSearch
+            onClearSearch = handleClearSearch,
+            onScannerClick = onScannerClick,
+            scannerContentDescription = scannerContentDescription
         )
 
         if (noResultsText != null) {
@@ -228,6 +233,30 @@ private fun <T> AsyncSelectedChipsRow(
     }
 }
 
+@Composable
+private fun AsyncSearchTrailingIcon(
+    isSearching: Boolean,
+    searchQuery: String,
+    clearSearchContentDescription: String?,
+    onClearSearch: () -> Unit,
+    onScannerClick: (() -> Unit)?,
+    scannerContentDescription: String?
+) {
+    when {
+        isSearching -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        searchQuery.isNotEmpty() -> Icon(
+            imageVector = TablerIcons.Outline.X,
+            contentDescription = clearSearchContentDescription,
+            modifier = Modifier.clickable(onClick = onClearSearch)
+        )
+        onScannerClick != null -> Icon(
+            imageVector = TablerIcons.Outline.Qrcode,
+            contentDescription = scannerContentDescription,
+            modifier = Modifier.clickable(onClick = onScannerClick)
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("LongParameterList") // Private composable wrapping ExposedDropdownMenuBox — params cannot be further reduced
 @Composable
@@ -249,7 +278,9 @@ private fun <T> AsyncSearchTextField(
     itemDisplayText: (T) -> String,
     itemSecondaryText: ((T) -> String)?,
     onItemAdded: (T) -> Unit,
-    onClearSearch: () -> Unit
+    onClearSearch: () -> Unit,
+    onScannerClick: (() -> Unit)? = null,
+    scannerContentDescription: String? = null
 ) {
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -265,14 +296,14 @@ private fun <T> AsyncSearchTextField(
             },
             leadingIcon = { Icon(searchIcon, contentDescription = null) },
             trailingIcon = {
-                when {
-                    isSearching -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    searchQuery.isNotEmpty() -> Icon(
-                        imageVector = TablerIcons.Outline.X,
-                        contentDescription = clearSearchContentDescription,
-                        modifier = Modifier.clickable(onClick = onClearSearch)
-                    )
-                }
+                AsyncSearchTrailingIcon(
+                    isSearching = isSearching,
+                    searchQuery = searchQuery,
+                    clearSearchContentDescription = clearSearchContentDescription,
+                    onClearSearch = onClearSearch,
+                    onScannerClick = onScannerClick,
+                    scannerContentDescription = scannerContentDescription
+                )
             },
             singleLine = true,
             keyboardOptions = KeyboardOptions(

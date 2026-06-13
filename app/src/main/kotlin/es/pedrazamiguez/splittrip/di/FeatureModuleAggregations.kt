@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.di.domain.profileDomainModule
 import es.pedrazamiguez.splittrip.di.domain.settingsDomainModule
 import es.pedrazamiguez.splittrip.di.domain.subunitsDomainModule
 import es.pedrazamiguez.splittrip.di.domain.withdrawalsDomainModule
+import es.pedrazamiguez.splittrip.features.activitylog.di.activityLoggingUiModule
 import es.pedrazamiguez.splittrip.features.authentication.di.authenticationUiModule
 import es.pedrazamiguez.splittrip.features.balance.di.balancesUiModule
 import es.pedrazamiguez.splittrip.features.contribution.di.contributionsUiModule
@@ -41,6 +42,12 @@ val balancesFeatureModules = module {
         balancesDomainModule,
         balancesDataModule,
         balancesUiModule
+    )
+}
+
+val activityLoggingFeatureModules = module {
+    includes(
+        activityLoggingUiModule
     )
 }
 

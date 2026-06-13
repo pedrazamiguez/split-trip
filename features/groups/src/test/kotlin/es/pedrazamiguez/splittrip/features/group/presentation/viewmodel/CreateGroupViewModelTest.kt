@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -9,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
@@ -50,7 +52,9 @@ class CreateGroupViewModelTest {
     private lateinit var getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase
     private lateinit var searchUsersByEmailUseCase: SearchUsersByEmailUseCase
     private lateinit var emailValidationService: EmailValidationService
+    private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var groupUiMapper: GroupUiMapper
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var viewModel: CreateGroupViewModel
 
     private val testUser1 = User(
@@ -72,7 +76,9 @@ class CreateGroupViewModelTest {
         getSupportedCurrenciesUseCase = mockk(relaxed = true)
         getUserDefaultCurrencyUseCase = mockk(relaxed = true)
         searchUsersByEmailUseCase = mockk(relaxed = true)
+        getMemberProfilesUseCase = mockk(relaxed = true)
         groupUiMapper = mockk(relaxed = true)
+        telemetryTracker = mockk(relaxed = true)
         emailValidationService = EmailValidationServiceImpl()
 
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
@@ -85,7 +91,9 @@ class CreateGroupViewModelTest {
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
             searchUsersByEmailUseCase = searchUsersByEmailUseCase,
             emailValidationService = emailValidationService,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
+            telemetryTracker = telemetryTracker,
             defaultDispatcher = testDispatcher
         )
     }
@@ -271,7 +279,9 @@ class CreateGroupViewModelTest {
                 getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
                 searchUsersByEmailUseCase = searchUsersByEmailUseCase,
                 emailValidationService = emailValidationService,
+                getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
             advanceUntilIdle()
@@ -296,7 +306,9 @@ class CreateGroupViewModelTest {
                 getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
                 searchUsersByEmailUseCase = searchUsersByEmailUseCase,
                 emailValidationService = emailValidationService,
+                getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
 
@@ -342,7 +354,9 @@ class CreateGroupViewModelTest {
                 getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
                 searchUsersByEmailUseCase = searchUsersByEmailUseCase,
                 emailValidationService = emailValidationService,
+                getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
             advanceUntilIdle()
@@ -412,6 +426,22 @@ class CreateGroupViewModelTest {
             assertEquals(1, actions.size)
             assertTrue(actions[0] is CreateGroupUiAction.ShowSuccess)
             collectJob.cancel()
+        }
+
+        @Test
+        fun `tracks telemetry event on successful creation`() = runTest(testDispatcher) {
+            // Given
+            coEvery { createGroupUseCase(any()) } returns Result.success("group-id")
+            onEvent(CreateGroupUiEvent.NameChanged("Trip"))
+
+            // When
+            viewModel.onEvent(CreateGroupUiEvent.SubmitCreateGroup) {}
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent("group_created", any())
+            }
         }
 
         @Test
@@ -512,6 +542,84 @@ class CreateGroupViewModelTest {
             onEvent(CreateGroupUiEvent.JumpToStep(999))
 
             assertEquals(stepBefore, viewModel.uiState.value.currentStep)
+        }
+    }
+
+    @Nested
+    inner class MemberQrScanning {
+
+        @Test
+        fun `MemberScanned adds partial user immediately`() = runTest(testDispatcher) {
+            // When
+            onEvent(CreateGroupUiEvent.MemberScanned(userId = "user-123", email = "scanned@example.com"))
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            val addedUser = selected.first()
+            assertEquals("user-123", addedUser.userId)
+            assertEquals("scanned@example.com", addedUser.email)
+            assertNull(addedUser.displayName)
+        }
+
+        @Test
+        fun `MemberScanned starts background lookup and updates with full user profile upon success`() = runTest(
+            testDispatcher
+        ) {
+            val fullProfile = User(
+                userId = "user-123",
+                email = "scanned@example.com",
+                displayName = "Scanned User",
+                profileImagePath = "path/to/avatar",
+                bio = "Hello world"
+            )
+            coEvery { getMemberProfilesUseCase(listOf("user-123")) } returns mapOf("user-123" to fullProfile)
+
+            // When
+            onEvent(CreateGroupUiEvent.MemberScanned(userId = "user-123", email = "scanned@example.com"))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            val addedUser = selected.first()
+            assertEquals("user-123", addedUser.userId)
+            assertEquals("scanned@example.com", addedUser.email)
+            assertEquals("Scanned User", addedUser.displayName)
+            assertEquals("path/to/avatar", addedUser.profileImagePath)
+            assertEquals("Hello world", addedUser.bio)
+        }
+
+        @Test
+        fun `MemberScanned keeps partial user if background lookup fails`() = runTest(testDispatcher) {
+            coEvery { getMemberProfilesUseCase(any()) } throws RuntimeException("Network error")
+
+            // When
+            onEvent(CreateGroupUiEvent.MemberScanned(userId = "user-123", email = "scanned@example.com"))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            val addedUser = selected.first()
+            assertEquals("user-123", addedUser.userId)
+            assertEquals("scanned@example.com", addedUser.email)
+            assertNull(addedUser.displayName)
+        }
+
+        @Test
+        fun `MemberScanned does not duplicate already selected user`() = runTest(testDispatcher) {
+            val existing = User(userId = "user-123", email = "scanned@example.com", displayName = "Existing")
+            viewModel.onEvent(CreateGroupUiEvent.MemberSelected(existing)) {}
+
+            // When
+            onEvent(CreateGroupUiEvent.MemberScanned(userId = "user-123", email = "scanned@example.com"))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            assertEquals("Existing", selected.first().displayName)
         }
     }
 }

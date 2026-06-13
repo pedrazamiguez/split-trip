@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
@@ -14,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.navigation.impl.GroupsNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
@@ -44,7 +46,9 @@ val groupsUiModule = module {
             getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>(),
             searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>(),
             emailValidationService = get<EmailValidationService>(),
-            groupUiMapper = get<GroupUiMapper>()
+            getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
+            groupUiMapper = get<GroupUiMapper>(),
+            telemetryTracker = get<TelemetryTracker>()
         )
     }
 
@@ -72,7 +76,12 @@ val groupsUiModule = module {
         )
     } bind NavigationProvider::class
 
-    single { GroupsScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single {
+        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        GroupsScreenUiProviderImpl(
+            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
+        )
+    } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { GroupDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
 }

@@ -7,4 +7,5 @@ object LogTag {
     const val NETWORK = "SplitTrip:Network"
     const val SYNC = "SplitTrip:Sync"
     const val MVI = "SplitTrip:MVI"
+    const val TELEMETRY = "SplitTrip:Telemetry"
 }

@@ -1,6 +1,6 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.model
 
-import es.pedrazamiguez.splittrip.core.logging.maskEmail
+import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
 
 sealed interface RegisterUiEvent {
     data class EmailChanged(val email: String) : RegisterUiEvent {

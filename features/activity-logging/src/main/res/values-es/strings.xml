@@ -1,0 +1,5 @@
+<resources>
+    <string name="activity_logging_title">Actividad</string>
+    <string name="activity_logging_subtitle">Acciones recientes en tus grupos</string>
+    <string name="activity_logging_placeholder">No se encontró actividad reciente</string>
+</resources>

@@ -34,7 +34,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.Lo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
@@ -43,6 +45,7 @@ import es.pedrazamiguez.splittrip.features.authentication.navigation.loginGraph
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
 import es.pedrazamiguez.splittrip.features.onboarding.navigation.onboardingGraph
+import es.pedrazamiguez.splittrip.features.profile.navigation.profileGraph
 import es.pedrazamiguez.splittrip.features.settings.navigation.settingsGraph
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
@@ -52,6 +55,7 @@ import timber.log.Timber
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
     val koin = getKoin()
+    val telemetryTracker = remember(koin) { koin.get<TelemetryTracker>() }
     val navigationProviders = remember(koin) { koin.getAll<NavigationProvider>() }
     val screenUiProviders = remember(koin) { koin.getAll<ScreenUiProvider>() }
     val isOnboardingCompleteUseCase = remember(koin) { koin.get<IsOnboardingCompleteUseCase>() }
@@ -69,6 +73,14 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val onboardingCompleted by isOnboardingCompleteUseCase().collectAsStateWithLifecycle(
         initialValue = null
     )
+
+    LaunchedEffect(isUserLoggedIn) {
+        if (isUserLoggedIn == true) {
+            telemetryTracker.setUserId(authenticationService.currentUserId())
+        } else if (isUserLoggedIn == false) {
+            telemetryTracker.setUserId(null)
+        }
+    }
 
     // Determine the start destination reactively
     val startDestination = NavigationUtils.resolveStartDestination(
@@ -101,6 +113,11 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                 destination.route,
                 arguments?.keySet() ?: emptySet<String>()
             )
+            destination.route?.let { route ->
+                if (route != Routes.MAIN) {
+                    telemetryTracker.trackScreenView(route, null)
+                }
+            }
         }
         navController.addOnDestinationChangedListener(listener)
         onDispose {
@@ -146,10 +163,18 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                         navController = navController,
                         startDestination = stableStartDestination.value!!,
                         modifier = modifier,
-                        enterTransition = { EnterTransition.None },
-                        exitTransition = { ExitTransition.None },
-                        popEnterTransition = { EnterTransition.None },
-                        popExitTransition = { ExitTransition.None }
+                        enterTransition = {
+                            getEnterTransition(initialState.destination.route, targetState.destination.route)
+                        },
+                        exitTransition = {
+                            getExitTransition(initialState.destination.route, targetState.destination.route)
+                        },
+                        popEnterTransition = {
+                            getPopEnterTransition(initialState.destination.route, targetState.destination.route)
+                        },
+                        popExitTransition = {
+                            getPopExitTransition(initialState.destination.route, targetState.destination.route)
+                        }
                     ) {
                         loginGraph(
                             onLoginSuccess = {
@@ -196,6 +221,8 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                         )
 
                         settingsGraph()
+
+                        profileGraph()
                     }
                 }
             }
@@ -219,5 +246,52 @@ private fun replayPendingDeepLink(
         Timber.d("Replaying pending deep link (scheme: %s)", uri.scheme)
         val deepLinkIntent = Intent(Intent.ACTION_VIEW, uri)
         navController.handleDeepLink(deepLinkIntent)
+    }
+}
+
+private fun isLoginOrOnboardingRoute(route: String?): Boolean {
+    return route == Routes.LOGIN ||
+        route == Routes.REGISTER ||
+        route == Routes.FORGOT_PASSWORD ||
+        route == Routes.ONBOARDING
+}
+
+private fun getEnterTransition(initialRoute: String?, targetRoute: String?): EnterTransition {
+    return if (isLoginOrOnboardingRoute(initialRoute) || isLoginOrOnboardingRoute(targetRoute)) {
+        EnterTransition.None
+    } else if (targetRoute == Routes.EDIT_PROFILE) {
+        NavTransitionDefaults.modalEnterTransition
+    } else {
+        NavTransitionDefaults.contentEnterTransition
+    }
+}
+
+private fun getExitTransition(initialRoute: String?, targetRoute: String?): ExitTransition {
+    return if (isLoginOrOnboardingRoute(initialRoute) || isLoginOrOnboardingRoute(targetRoute)) {
+        ExitTransition.None
+    } else if (targetRoute == Routes.EDIT_PROFILE) {
+        NavTransitionDefaults.modalExitTransition
+    } else {
+        NavTransitionDefaults.contentExitTransition
+    }
+}
+
+private fun getPopEnterTransition(initialRoute: String?, targetRoute: String?): EnterTransition {
+    return if (isLoginOrOnboardingRoute(initialRoute) || isLoginOrOnboardingRoute(targetRoute)) {
+        EnterTransition.None
+    } else if (initialRoute == Routes.EDIT_PROFILE) {
+        NavTransitionDefaults.modalPopEnterTransition
+    } else {
+        NavTransitionDefaults.contentPopEnterTransition
+    }
+}
+
+private fun getPopExitTransition(initialRoute: String?, targetRoute: String?): ExitTransition {
+    return if (isLoginOrOnboardingRoute(initialRoute) || isLoginOrOnboardingRoute(targetRoute)) {
+        ExitTransition.None
+    } else if (initialRoute == Routes.EDIT_PROFILE) {
+        NavTransitionDefaults.modalPopExitTransition
+    } else {
+        NavTransitionDefaults.contentPopExitTransition
     }
 }

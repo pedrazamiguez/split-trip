@@ -53,5 +53,9 @@
     <string name="edit_profile_error_bio_length">Bio cannot exceed 150 characters</string>
     <string name="edit_profile_success_saved">Profile updated successfully.</string>
     <string name="edit_profile_error_image_process">Failed to process profile image. Please try again.</string>
+
+    <!-- QR Code Sharing -->
+    <string name="profile_qr_title">Share Profile</string>
+    <string name="profile_qr_subtitle">Show this QR code to another user to let them add you to a group physically.</string>
 </resources>
 

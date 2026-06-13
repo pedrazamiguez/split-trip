@@ -6,12 +6,15 @@ import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
 import es.pedrazamiguez.splittrip.core.logging.LogTag
-import es.pedrazamiguez.splittrip.core.logging.maskEmail
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
@@ -42,7 +45,9 @@ class CreateGroupViewModel(
     private val getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase,
     private val searchUsersByEmailUseCase: SearchUsersByEmailUseCase,
     private val emailValidationService: EmailValidationService,
+    private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
+    private val telemetryTracker: TelemetryTracker,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -62,13 +67,18 @@ class CreateGroupViewModel(
     fun onEvent(event: CreateGroupUiEvent, onCreateGroupSuccess: () -> Unit) {
         Timber.tag(LogTag.MVI).d("Event: ${formatEventForLogging(event)}")
         when (event) {
-            is CreateGroupUiEvent.NameChanged -> handleNameChanged(event.name)
-            is CreateGroupUiEvent.DescriptionChanged -> handleDescriptionChanged(event.description)
+            is CreateGroupUiEvent.NameChanged -> _uiState.update { state ->
+                state.copy(groupName = event.name, isNameValid = event.name.isNotBlank())
+            }
+            is CreateGroupUiEvent.DescriptionChanged -> _uiState.update { state ->
+                state.copy(groupDescription = event.description)
+            }
             is CreateGroupUiEvent.CurrencySelected -> handleCurrencySelected(event.code)
             is CreateGroupUiEvent.ExtraCurrencyToggled -> handleExtraCurrencyToggled(event.code)
             is CreateGroupUiEvent.MemberSearchQueryChanged -> searchMembers(event.query)
             is CreateGroupUiEvent.MemberSelected -> handleMemberSelected(event)
             is CreateGroupUiEvent.MemberRemoved -> handleMemberRemoved(event)
+            is CreateGroupUiEvent.MemberScanned -> handleMemberScanned(event.userId, event.email)
             is CreateGroupUiEvent.SubmitCreateGroup -> handleSubmit(onCreateGroupSuccess)
             is CreateGroupUiEvent.NextStep -> handleNextStep()
             is CreateGroupUiEvent.PreviousStep -> handlePreviousStep()
@@ -101,14 +111,6 @@ class CreateGroupViewModel(
         val state = _uiState.value
         val target = wizardNavigator.jumpToStep(state.currentStep, stepIndex, state.steps) ?: return
         _uiState.update { it.copy(currentStep = target, error = null) }
-    }
-
-    private fun handleNameChanged(name: String) {
-        _uiState.update { it.copy(groupName = name, isNameValid = name.isNotBlank()) }
-    }
-
-    private fun handleDescriptionChanged(description: String) {
-        _uiState.update { it.copy(groupDescription = description) }
     }
 
     private fun handleCurrencySelected(code: String) {
@@ -248,6 +250,10 @@ class CreateGroupViewModel(
                 )
             ).onSuccess {
                 _uiState.update { it.copy(isLoading = false) }
+                telemetryTracker.trackEvent(
+                    "group_created",
+                    mapOf("currency" to (state.selectedCurrency?.code ?: ""))
+                )
                 _actions.emit(
                     CreateGroupUiAction.ShowSuccess(UiText.StringResource(R.string.group_created_success, groupName))
                 )
@@ -260,6 +266,40 @@ class CreateGroupViewModel(
                 _actions.emit(
                     CreateGroupUiAction.ShowError(UiText.StringResource(R.string.group_error_creation_failed))
                 )
+            }
+        }
+    }
+
+    private fun handleMemberScanned(userId: String, email: String) {
+        val alreadySelected = _uiState.value.selectedMembers.any { it.userId == userId }
+        if (alreadySelected) return
+
+        val partialUser = User(
+            userId = userId,
+            email = email,
+            displayName = null,
+            profileImagePath = null,
+            bio = null
+        )
+        _uiState.update { state ->
+            state.copy(
+                selectedMembers = (state.selectedMembers + partialUser).toImmutableList()
+            )
+        }
+
+        viewModelScope.launch {
+            runCatching {
+                getMemberProfilesUseCase(listOf(userId))
+            }.onSuccess { profiles ->
+                val fullUser = profiles[userId] ?: return@onSuccess
+                _uiState.update { state ->
+                    val updated = state.selectedMembers.map {
+                        if (it.userId == userId) fullUser else it
+                    }.toImmutableList()
+                    state.copy(selectedMembers = updated)
+                }
+            }.onFailure { e ->
+                Timber.e(e, "Failed to load profile for scanned user $userId")
             }
         }
     }
@@ -278,6 +318,8 @@ private fun formatEventForLogging(event: CreateGroupUiEvent): String {
             "MemberSelected(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
         is CreateGroupUiEvent.MemberRemoved ->
             "MemberRemoved(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
+        is CreateGroupUiEvent.MemberScanned ->
+            "MemberScanned(userId=${event.userId}, email=${event.email.maskEmail()})"
         else -> event::class.java.simpleName
     }
 }

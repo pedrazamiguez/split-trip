@@ -18,7 +18,8 @@ private fun CreateGroupScreenPreview() {
                     CURRENCY_UI_USD,
                     CURRENCY_UI_MXN
                 )
-            )
+            ),
+            onScannerClick = {}
         )
     }
 }

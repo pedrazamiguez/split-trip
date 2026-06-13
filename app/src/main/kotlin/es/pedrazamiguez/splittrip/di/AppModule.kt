@@ -7,7 +7,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.provider.IntentProvider
 import es.pedrazamiguez.splittrip.core.logging.LogContext
-import es.pedrazamiguez.splittrip.core.logging.LogContextImpl
+import es.pedrazamiguez.splittrip.core.logging.impl.LogContextImpl
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.provider.impl.AppMetadataProviderImpl
