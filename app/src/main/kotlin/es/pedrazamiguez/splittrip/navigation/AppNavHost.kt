@@ -114,7 +114,9 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                 arguments?.keySet() ?: emptySet<String>()
             )
             destination.route?.let { route ->
-                telemetryTracker.trackScreenView(route, null)
+                if (route != Routes.MAIN) {
+                    telemetryTracker.trackScreenView(route, null)
+                }
             }
         }
         navController.addOnDestinationChangedListener(listener)
