@@ -1,10 +1,10 @@
 package es.pedrazamiguez.splittrip.core.logging
 
+import es.pedrazamiguez.splittrip.core.logging.impl.LoggingContinuation
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.coroutines.Continuation
-import kotlin.coroutines.CoroutineContext
 import timber.log.Timber
 
 @Suppress("UNCHECKED_CAST", "SpreadOperator")
@@ -63,26 +63,4 @@ internal fun formatArgsForLogging(args: Array<out Any>?, isSuspending: Boolean):
     val count = actualArgs.size
     val types = actualArgs.map { it?.javaClass?.simpleName ?: "null" }.joinToString()
     return "Args count: $count | Types: [$types]"
-}
-
-@PublishedApi
-internal class LoggingContinuation<T>(
-    private val delegate: Continuation<T>,
-    private val tag: String,
-    private val methodName: String
-) : Continuation<T> {
-    override val context: CoroutineContext
-        get() = delegate.context
-
-    override fun resumeWith(result: kotlin.Result<T>) {
-        result.fold(
-            onSuccess = {
-                Timber.tag(tag).d("Completed $methodName successfully")
-            },
-            onFailure = { e ->
-                Timber.tag(tag).e(e, "Failed $methodName")
-            }
-        )
-        delegate.resumeWith(result)
-    }
 }

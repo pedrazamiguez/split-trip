@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -53,6 +54,7 @@ class CreateGroupViewModelTest {
     private lateinit var emailValidationService: EmailValidationService
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var groupUiMapper: GroupUiMapper
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var viewModel: CreateGroupViewModel
 
     private val testUser1 = User(
@@ -76,6 +78,7 @@ class CreateGroupViewModelTest {
         searchUsersByEmailUseCase = mockk(relaxed = true)
         getMemberProfilesUseCase = mockk(relaxed = true)
         groupUiMapper = mockk(relaxed = true)
+        telemetryTracker = mockk(relaxed = true)
         emailValidationService = EmailValidationServiceImpl()
 
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
@@ -90,6 +93,7 @@ class CreateGroupViewModelTest {
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
+            telemetryTracker = telemetryTracker,
             defaultDispatcher = testDispatcher
         )
     }
@@ -277,6 +281,7 @@ class CreateGroupViewModelTest {
                 emailValidationService = emailValidationService,
                 getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
             advanceUntilIdle()
@@ -303,6 +308,7 @@ class CreateGroupViewModelTest {
                 emailValidationService = emailValidationService,
                 getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
 
@@ -350,6 +356,7 @@ class CreateGroupViewModelTest {
                 emailValidationService = emailValidationService,
                 getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
             advanceUntilIdle()
@@ -419,6 +426,22 @@ class CreateGroupViewModelTest {
             assertEquals(1, actions.size)
             assertTrue(actions[0] is CreateGroupUiAction.ShowSuccess)
             collectJob.cancel()
+        }
+
+        @Test
+        fun `tracks telemetry event on successful creation`() = runTest(testDispatcher) {
+            // Given
+            coEvery { createGroupUseCase(any()) } returns Result.success("group-id")
+            onEvent(CreateGroupUiEvent.NameChanged("Trip"))
+
+            // When
+            viewModel.onEvent(CreateGroupUiEvent.SubmitCreateGroup) {}
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent("group_created", any())
+            }
         }
 
         @Test

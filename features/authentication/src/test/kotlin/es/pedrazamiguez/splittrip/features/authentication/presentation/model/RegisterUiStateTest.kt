@@ -1,7 +1,7 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.model
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.logging.maskEmail
+import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 

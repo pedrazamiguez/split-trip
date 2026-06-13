@@ -10,6 +10,8 @@ import es.pedrazamiguez.splittrip.appcheck.createAppCheckProviderFactory
 import es.pedrazamiguez.splittrip.appcheck.getDebugTokenFromPrefs
 import es.pedrazamiguez.splittrip.appcheck.seedDebugToken
 import es.pedrazamiguez.splittrip.core.logging.LogContext
+import es.pedrazamiguez.splittrip.core.logging.tree.DevelopmentLogcatTree
+import es.pedrazamiguez.splittrip.core.logging.tree.ProductionCrashlyticsTree
 import es.pedrazamiguez.splittrip.data.firebase.messaging.channel.NotificationChannelInitializer
 import es.pedrazamiguez.splittrip.di.activityLoggingFeatureModules
 import es.pedrazamiguez.splittrip.di.appModule
@@ -101,9 +103,9 @@ class App : Application() {
     private fun setupTimber() {
         val logContext = org.koin.core.context.GlobalContext.get().get<LogContext>()
         if (BuildConfig.DEBUG) {
-            Timber.plant(es.pedrazamiguez.splittrip.core.logging.DevelopmentLogcatTree(logContext))
+            Timber.plant(DevelopmentLogcatTree(logContext))
         } else {
-            Timber.plant(es.pedrazamiguez.splittrip.core.logging.ProductionCrashlyticsTree(logContext))
+            Timber.plant(ProductionCrashlyticsTree(logContext))
         }
     }
 }

@@ -21,7 +21,7 @@ val dataRemoteModule = module {
                     val redactedMessage = message.replace(Regex("app_id=[^&\\s]+"), "app_id=REDACTED")
                     Timber.tag(LogTag.NETWORK).d(redactedMessage)
                 }.apply {
-                    level = HttpLoggingInterceptor.Level.BODY
+                    level = HttpLoggingInterceptor.Level.BASIC
                 }
                 addInterceptor(loggingInterceptor)
             }

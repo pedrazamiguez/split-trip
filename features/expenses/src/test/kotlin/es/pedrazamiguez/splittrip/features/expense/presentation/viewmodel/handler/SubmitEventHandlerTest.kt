@@ -107,7 +107,8 @@ class SubmitEventHandlerTest {
             addExpenseUiMapper = addExpenseUiMapper,
             submitResultDelegate = SubmitResultDelegate(
                 saveLastUsedPreferences = saveLastUsedPreferences,
-                formattingHelper = formattingHelper
+                formattingHelper = formattingHelper,
+                telemetryTracker = mockk(relaxed = true)
             )
         ).apply {
             setStrategy(strategy)

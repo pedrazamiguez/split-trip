@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.core.logging
+package es.pedrazamiguez.splittrip.core.logging.sanitizer
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

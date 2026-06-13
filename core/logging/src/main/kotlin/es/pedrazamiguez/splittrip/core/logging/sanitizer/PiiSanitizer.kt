@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.core.logging
+package es.pedrazamiguez.splittrip.core.logging.sanitizer
 
 fun String.maskEmail(): String {
     val emailRegex = """^([^@]+)@([^@]+)$""".toRegex()

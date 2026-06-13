@@ -1,5 +1,6 @@
-package es.pedrazamiguez.splittrip.core.logging
+package es.pedrazamiguez.splittrip.core.logging.tree
 
+import es.pedrazamiguez.splittrip.core.logging.LogContext
 import timber.log.Timber
 
 class DevelopmentLogcatTree(

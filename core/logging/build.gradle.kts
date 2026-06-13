@@ -4,6 +4,10 @@ plugins {
 
 android {
     namespace = "es.pedrazamiguez.splittrip.core.logging"
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -14,6 +18,7 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)

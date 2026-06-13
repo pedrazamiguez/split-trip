@@ -288,7 +288,8 @@ class AddExpenseViewModelTest {
                     setGroupLastUsedPaymentMethodUseCase = setGroupLastUsedPaymentMethodUseCase,
                     setGroupLastUsedCategoryUseCase = setGroupLastUsedCategoryUseCase
                 ),
-                formattingHelper = formattingHelper
+                formattingHelper = formattingHelper,
+                telemetryTracker = mockk(relaxed = true)
             )
         )
 

@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -22,7 +23,8 @@ import timber.log.Timber
  */
 class SubmitResultDelegate(
     private val saveLastUsedPreferences: SaveLastUsedPreferencesBundle,
-    private val formattingHelper: FormattingHelper
+    private val formattingHelper: FormattingHelper,
+    private val telemetryTracker: TelemetryTracker
 ) {
 
     /**
@@ -43,6 +45,15 @@ class SubmitResultDelegate(
         uiState.value.selectedCategory?.id?.let { id ->
             runCatching { saveLastUsedPreferences.setGroupLastUsedCategoryUseCase(groupId, id) }
         }
+        val eventName = if (uiState.value.isEditMode) "expense_edited" else "expense_added"
+        telemetryTracker.trackEvent(
+            eventName,
+            mapOf(
+                "currency" to (uiState.value.selectedCurrency?.code ?: ""),
+                "payment_method" to (uiState.value.selectedPaymentMethod?.id ?: ""),
+                "category" to (uiState.value.selectedCategory?.id ?: "")
+            )
+        )
         uiState.update { it.copy(isLoading = false) }
         onSuccess()
     }
