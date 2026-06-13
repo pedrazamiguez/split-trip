@@ -62,6 +62,7 @@
     <string name="content_description_back">Go back</string>
     <string name="content_description_close">Close</string>
     <string name="content_description_menu">Open menu</string>
+    <string name="content_description_profile">User profile</string>
 
     <!-- Sync Status -->
     <string name="sync_status_pending">Not yet synced to server</string>

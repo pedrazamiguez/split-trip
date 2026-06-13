@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.navigation.impl.GroupsNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
@@ -72,7 +73,12 @@ val groupsUiModule = module {
         )
     } bind NavigationProvider::class
 
-    single { GroupsScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single {
+        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        GroupsScreenUiProviderImpl(
+            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
+        )
+    } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { GroupDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
 }

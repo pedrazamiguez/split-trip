@@ -43,6 +43,7 @@ import es.pedrazamiguez.splittrip.features.authentication.navigation.loginGraph
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
 import es.pedrazamiguez.splittrip.features.onboarding.navigation.onboardingGraph
+import es.pedrazamiguez.splittrip.features.profile.navigation.profileGraph
 import es.pedrazamiguez.splittrip.features.settings.navigation.settingsGraph
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
@@ -196,6 +197,8 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                         )
 
                         settingsGraph()
+
+                        profileGraph()
                     }
                 }
             }

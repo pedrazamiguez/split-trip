@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.features.profile.presentation.screen.ProfileScreen
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.ProfileViewModel
@@ -34,8 +36,10 @@ fun ProfileFeature(profileViewModel: ProfileViewModel = koinViewModel<ProfileVie
         }
     }
 
-    ProfileScreen(
-        uiState = uiState,
-        onEvent = profileViewModel::onEvent
-    )
+    FeatureScaffold(currentRoute = Routes.PROFILE) {
+        ProfileScreen(
+            uiState = uiState,
+            onEvent = profileViewModel::onEvent
+        )
+    }
 }

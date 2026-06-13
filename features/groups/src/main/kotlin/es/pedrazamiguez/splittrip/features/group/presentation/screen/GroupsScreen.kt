@@ -8,10 +8,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.rememberConnectedScrollBehavior
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupsScreenContent
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupsScreenOverlays
@@ -21,7 +24,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 
 @Suppress("kotlin:S107")
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun GroupsScreen(
     uiState: GroupsUiState = GroupsUiState(),
@@ -37,6 +40,7 @@ fun GroupsScreen(
     var hasRestoredScroll by remember { mutableStateOf(false) }
     var selectedGroupForMenu by remember { mutableStateOf<GroupUiModel?>(null) }
     var groupToDelete by remember { mutableStateOf<GroupUiModel?>(null) }
+    val scrollBehavior = rememberConnectedScrollBehavior()
 
     LaunchedEffect(uiState.isLoading) {
         if (!uiState.isLoading && !hasRestoredScroll && uiState.groups.isNotEmpty()) {
@@ -61,7 +65,8 @@ fun GroupsScreen(
         bottomPadding = bottomPadding,
         onCreateGroupClick = onCreateGroupClick,
         onGroupClicked = onGroupClicked,
-        onGroupLongClicked = { selectedGroupForMenu = it }
+        onGroupLongClicked = { selectedGroupForMenu = it },
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     )
 
     GroupsScreenOverlays(
