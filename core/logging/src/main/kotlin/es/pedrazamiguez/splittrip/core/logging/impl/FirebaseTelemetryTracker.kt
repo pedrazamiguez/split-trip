@@ -1,10 +1,12 @@
 package es.pedrazamiguez.splittrip.core.logging.impl
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import com.google.firebase.analytics.FirebaseAnalytics
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 
+@SuppressLint("MissingPermission")
 class FirebaseTelemetryTracker(context: Context) : TelemetryTracker {
     private val firebaseAnalytics = FirebaseAnalytics.getInstance(context)
 
