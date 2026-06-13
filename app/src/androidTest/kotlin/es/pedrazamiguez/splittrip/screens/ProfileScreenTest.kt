@@ -44,7 +44,7 @@ class ProfileScreenTest {
                             displayName = "Jane Doe",
                             email = "jane@example.com",
                             profileImageUrl = null,
-                            memberSinceText = "March 2025"
+                            bio = "This is Jane Doe's bio."
                         )
                     )
                 )
@@ -55,7 +55,7 @@ class ProfileScreenTest {
 
         composeRule.onNodeWithText("Jane Doe").assertIsDisplayed()
         composeRule.onNodeWithText("jane@example.com").assertIsDisplayed()
-        composeRule.onNodeWithText("March 2025", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("This is Jane Doe's bio.", substring = true).assertIsDisplayed()
     }
 
     // ═════════════════════════════════════════════════════════════════════

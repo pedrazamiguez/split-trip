@@ -64,7 +64,8 @@ class AppNavHostTest {
         viewModel {
             AuthenticationViewModel(
                 signInWithEmailUseCase = mockk(relaxed = true),
-                signInWithGoogleUseCase = mockk(relaxed = true)
+                signInWithGoogleUseCase = mockk(relaxed = true),
+                authenticationCollisionEventHandler = mockk(relaxed = true)
             )
         }
 
