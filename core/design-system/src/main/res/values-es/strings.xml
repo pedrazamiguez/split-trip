@@ -110,6 +110,8 @@
     <string name="receipt_attach_camera">Hacer foto</string>
     <string name="receipt_attach_gallery">Elegir de galería</string>
     <string name="receipt_attach_document">Adjuntar documento</string>
+    <string name="camera_permission_required">Se requiere el permiso de cámara para tomar fotos.</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

@@ -18,8 +18,10 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Camera
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Inbox
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
+import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestCameraPermission
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import java.io.File
 
 /**
@@ -37,6 +39,9 @@ fun ReceiptAttachmentHandler(
     onReceiptSelected: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val pillController = LocalTopPillController.current
+    val cameraPermissionRequiredMessage = stringResource(R.string.camera_permission_required)
+
     var cameraTempFile by remember { mutableStateOf<File?>(null) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -52,6 +57,17 @@ fun ReceiptAttachmentHandler(
         }
         cameraTempFile = null
         cameraImageUri = null
+    }
+
+    val requestCameraPermission = rememberRequestCameraPermission { isGranted ->
+        if (isGranted) {
+            val (tempFile, uri) = createReceiptCameraUri(context)
+            cameraTempFile = tempFile
+            cameraImageUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            pillController.showPill(cameraPermissionRequiredMessage)
+        }
     }
 
     // Uses the Android 13+ photo picker to avoid requesting READ_MEDIA_IMAGES permission.
@@ -71,10 +87,7 @@ fun ReceiptAttachmentHandler(
         ReceiptSourceSelectionSheet(
             onCameraSelected = {
                 onDismissSheet()
-                val (tempFile, uri) = createReceiptCameraUri(context)
-                cameraTempFile = tempFile
-                cameraImageUri = uri
-                cameraLauncher.launch(uri)
+                requestCameraPermission()
             },
             onGallerySelected = {
                 onDismissSheet()
