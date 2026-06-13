@@ -49,7 +49,7 @@ fun EditProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
 
             AvatarEditor(
                 avatarUrl = uiState.avatarUrl,
