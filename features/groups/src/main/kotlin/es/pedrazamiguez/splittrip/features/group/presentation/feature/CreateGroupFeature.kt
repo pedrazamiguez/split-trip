@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
@@ -32,12 +33,13 @@ fun CreateGroupFeature(
     val navController = LocalTabNavController.current
 
     var showScanner by remember { mutableStateOf(false) }
+    val scannerPermissionRequiredMessage = stringResource(R.string.scanner_permission_required)
 
     val requestCameraPermission = rememberRequestCameraPermission { isGranted ->
         if (isGranted) {
             showScanner = true
         } else {
-            pillController.showPill(context.getString(R.string.scanner_permission_required))
+            pillController.showPill(scannerPermissionRequiredMessage)
         }
     }
 
