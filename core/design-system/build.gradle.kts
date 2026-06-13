@@ -38,6 +38,9 @@ dependencies {
     api(libs.koin.android)
     api(libs.koin.compose)
 
+    // Image loading
+    implementation(libs.coil.compose)
+
     // Unit Testing (extras — common test deps provided by convention plugin)
     testImplementation(libs.koin.test)
 }

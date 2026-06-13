@@ -5,9 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.rememberConnectedScrollBehavior
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalancesBodyContent
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalancesScreenOverlays
@@ -16,6 +19,7 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.Contributi
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.BalancesUiState
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun BalancesScreen(
     uiState: BalancesUiState = BalancesUiState(),
@@ -24,6 +28,7 @@ fun BalancesScreen(
     onNavigateToWithdrawal: () -> Unit = {}
 ) {
     val bottomPadding = LocalBottomPadding.current
+    val scrollBehavior = rememberConnectedScrollBehavior()
 
     // Local state for the DestructiveConfirmationDialog (ephemeral, driven from sheet action)
     var contributionPendingDelete by remember { mutableStateOf<ContributionUiModel?>(null) }
@@ -34,7 +39,8 @@ fun BalancesScreen(
         bottomPadding = bottomPadding,
         onEvent = onEvent,
         onNavigateToContribution = onNavigateToContribution,
-        onNavigateToWithdrawal = onNavigateToWithdrawal
+        onNavigateToWithdrawal = onNavigateToWithdrawal,
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     )
 
     // ActionBottomSheet overlays (driven by UiState — survives recomposition)

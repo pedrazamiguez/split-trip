@@ -4,7 +4,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -12,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,10 +20,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -42,7 +39,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.StickyActionBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.rememberConnectedScrollBehavior
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -65,6 +62,7 @@ fun ExpensesScreen(
     onDeleteExpense: (expenseId: String) -> Unit = {}
 ) {
     val bottomPadding = LocalBottomPadding.current
+    val scrollBehavior = rememberConnectedScrollBehavior()
 
     var selectedExpenseForMenu by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var expenseToDelete by remember { mutableStateOf<ExpenseUiModel?>(null) }
@@ -89,7 +87,7 @@ fun ExpensesScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection)) {
         DeferredLoadingContainer(
             isLoading = uiState.isLoading,
             loadingContent = { ShimmerLoadingList() }
@@ -117,20 +115,6 @@ fun ExpensesScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
                     ) {
-                        item(key = "header") {
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.expenses_title),
-                                    fontSize = 32.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                BodyText(
-                                    text = stringResource(R.string.expenses_subtitle),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
                         uiState.expenseGroups.forEach { dateGroup ->
                             stickyHeader(key = "header-${dateGroup.dateText}") {
                                 DateHeaderItem(

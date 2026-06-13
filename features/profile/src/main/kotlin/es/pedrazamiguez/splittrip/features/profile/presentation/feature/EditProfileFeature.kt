@@ -13,7 +13,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.features.profile.presentation.component.AvatarAttachmentHandler
 import es.pedrazamiguez.splittrip.features.profile.presentation.component.AvatarCropOverlay
@@ -30,7 +30,7 @@ fun EditProfileFeature(
 ) {
     val pillController = LocalTopPillController.current
     val context = LocalContext.current
-    val tabNavController = LocalTabNavController.current
+    val rootNavController = LocalRootNavController.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var showAvatarSourceSheet by remember { mutableStateOf(false) }
@@ -42,7 +42,7 @@ fun EditProfileFeature(
                     pillController.showPill(message = action.message.asString(context))
                 }
                 EditProfileUiAction.NavigateBack -> {
-                    tabNavController.popBackStack()
+                    rootNavController.popBackStack()
                 }
             }
         }

@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.appcheck.getDebugTokenFromPrefs
 import es.pedrazamiguez.splittrip.appcheck.seedDebugToken
 import es.pedrazamiguez.splittrip.core.logging.LogContext
 import es.pedrazamiguez.splittrip.data.firebase.messaging.channel.NotificationChannelInitializer
+import es.pedrazamiguez.splittrip.di.activityLoggingFeatureModules
 import es.pedrazamiguez.splittrip.di.appModule
 import es.pedrazamiguez.splittrip.di.authenticationFeatureModules
 import es.pedrazamiguez.splittrip.di.balancesFeatureModules
@@ -54,6 +55,7 @@ class App : Application() {
 
                 authenticationFeatureModules,
                 balancesFeatureModules,
+                activityLoggingFeatureModules,
                 contributionsFeatureModules,
                 currenciesFeatureModules,
                 expensesFeatureModules,

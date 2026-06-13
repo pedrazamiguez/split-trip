@@ -1,13 +1,11 @@
 package es.pedrazamiguez.splittrip.features.profile.di
 
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.UserValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserProfileUseCase
-import es.pedrazamiguez.splittrip.features.profile.navigation.impl.ProfileNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUiMapper
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.impl.ProfileUiMapperImpl
 import es.pedrazamiguez.splittrip.features.profile.presentation.screen.impl.EditProfileScreenUiProviderImpl
@@ -48,7 +46,6 @@ val profileUiModule = module {
         )
     }
 
-    factory { ProfileNavigationProviderImpl() } bind NavigationProvider::class
     single { ProfileScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { EditProfileScreenUiProviderImpl() } bind ScreenUiProvider::class
 }

@@ -53,6 +53,7 @@
     <string name="content_description_back">Borbêh</string>
     <string name="content_description_close">Çerrâh</string>
     <string name="content_description_menu">Abrîh menú</string>
+    <string name="content_description_profile">Perfîh de uçuario</string>
     <string name="sync_status_pending">Aún no çincroniçao con er çerbidôh</string>
     <string name="sync_status_failed">Errôh de çincroniçaçión</string>
     <string name="stale_rate_warning">Lô tipô de cambio podrían êttâh deçâttualiçáô</string>

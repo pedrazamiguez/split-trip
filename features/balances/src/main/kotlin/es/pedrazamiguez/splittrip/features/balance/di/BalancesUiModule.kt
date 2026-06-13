@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.balance.navigation.impl.BalancesNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.screen.impl.BalancesScreenUiProviderImpl
@@ -76,5 +77,10 @@ val balancesUiModule = module {
             graphContributors = getAll<TabGraphContributor>()
         )
     } bind NavigationProvider::class
-    single { BalancesScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single {
+        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        BalancesScreenUiProviderImpl(
+            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
+        )
+    } bind ScreenUiProvider::class
 }
