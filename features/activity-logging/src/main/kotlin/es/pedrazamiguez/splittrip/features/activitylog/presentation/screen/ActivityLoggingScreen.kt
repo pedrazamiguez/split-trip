@@ -32,17 +32,19 @@ fun ActivityLoggingScreen(
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                bottom = bottomPadding
+        if (uiState.activities.isEmpty()) {
+            EmptyStateView(
+                title = stringResource(R.string.activity_logging_placeholder),
+                icon = TablerIcons.Outline.Clock
             )
-        ) {
-            item {
-                EmptyStateView(
-                    title = stringResource(R.string.activity_logging_placeholder),
-                    icon = TablerIcons.Outline.Clock
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    bottom = bottomPadding
                 )
+            ) {
+                // Items will be added here when activities are integrated
             }
         }
     }

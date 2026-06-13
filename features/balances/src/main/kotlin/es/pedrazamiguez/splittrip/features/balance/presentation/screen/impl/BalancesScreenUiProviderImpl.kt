@@ -25,6 +25,7 @@ class BalancesScreenUiProviderImpl(
 
         DynamicTopAppBar(
             title = stringResource(R.string.balances_title),
+            subtitle = stringResource(R.string.balances_subtitle),
             actions = {
                 ProfileAvatarButton(
                     avatarUrl = profile?.profileImagePath,

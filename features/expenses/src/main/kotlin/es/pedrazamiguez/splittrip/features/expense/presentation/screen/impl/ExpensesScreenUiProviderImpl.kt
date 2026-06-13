@@ -25,6 +25,7 @@ class ExpensesScreenUiProviderImpl(
 
         DynamicTopAppBar(
             title = stringResource(R.string.expenses_title),
+            subtitle = stringResource(R.string.expenses_subtitle),
             actions = {
                 ProfileAvatarButton(
                     avatarUrl = profile?.profileImagePath,

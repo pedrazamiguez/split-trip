@@ -25,6 +25,7 @@ class GroupsScreenUiProviderImpl(
 
         DynamicTopAppBar(
             title = stringResource(R.string.groups_title),
+            subtitle = stringResource(R.string.groups_subtitle),
             actions = {
                 ProfileAvatarButton(
                     avatarUrl = profile?.profileImagePath,
