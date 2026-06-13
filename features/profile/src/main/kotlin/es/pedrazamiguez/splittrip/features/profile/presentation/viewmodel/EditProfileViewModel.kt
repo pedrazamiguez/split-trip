@@ -229,24 +229,28 @@ class EditProfileViewModel(
                     )
                     _actions.send(EditProfileUiAction.NavigateBack)
                 } else {
-                    val error = result.exceptionOrNull()
-                    Timber.e(error, "Failed to save profile changes")
-                    _uiState.update { it.copy(isSaving = false) }
-                    _actions.send(
-                        EditProfileUiAction.ShowNotification(
-                            UiText.DynamicString(error?.localizedMessage ?: "Failed to save profile changes")
-                        )
+                    handleSaveFailure(
+                        error = result.exceptionOrNull(),
+                        logMessage = "Failed to save profile changes"
                     )
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Exception while saving profile changes")
-                _uiState.update { it.copy(isSaving = false) }
-                _actions.send(
-                    EditProfileUiAction.ShowNotification(
-                        UiText.DynamicString(e.localizedMessage ?: "Failed to save profile changes")
-                    )
+                handleSaveFailure(
+                    error = e,
+                    logMessage = "Exception while saving profile changes"
                 )
             }
         }
+    }
+
+    private suspend fun handleSaveFailure(error: Throwable?, logMessage: String) {
+        Timber.e(error, logMessage)
+        _uiState.update { it.copy(isSaving = false) }
+        val fallbackMessage = "Failed to save profile changes"
+        _actions.send(
+            EditProfileUiAction.ShowNotification(
+                UiText.DynamicString(error?.localizedMessage ?: fallbackMessage)
+            )
+        )
     }
 }

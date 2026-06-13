@@ -41,6 +41,9 @@ dependencies {
     // Image loading
     implementation(libs.coil.compose)
 
+    // QR Code generation
+    implementation(libs.zxing)
+
     // Unit Testing (extras — common test deps provided by convention plugin)
     testImplementation(libs.koin.test)
 }

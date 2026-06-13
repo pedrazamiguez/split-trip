@@ -54,5 +54,9 @@
     <string name="edit_profile_error_bio_length">La biografía no puede superar los 150 caracteres</string>
     <string name="edit_profile_success_saved">Perfil actualizado correctamente.</string>
     <string name="edit_profile_error_image_process">No se pudo procesar la imagen de perfil. Inténtalo de nuevo.</string>
+
+    <!-- QR Code Sharing -->
+    <string name="profile_qr_title">Compartir perfil</string>
+    <string name="profile_qr_subtitle">Muestra este código QR a otro usuario para que pueda añadirte a un grupo físicamente.</string>
 </resources>
 

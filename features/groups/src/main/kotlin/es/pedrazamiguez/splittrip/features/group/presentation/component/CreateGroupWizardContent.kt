@@ -33,6 +33,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.Cr
 internal fun CreateGroupWizardContent(
     uiState: CreateGroupUiState,
     onEvent: (CreateGroupUiEvent) -> Unit,
+    onScannerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     AnimatedContent(
@@ -62,7 +63,11 @@ internal fun CreateGroupWizardContent(
                     onImeNext = nextStep
                 )
                 CreateGroupStep.CURRENCY -> GroupCurrencyStep(uiState = uiState, onEvent = onEvent)
-                CreateGroupStep.MEMBERS -> GroupMembersStep(uiState = uiState, onEvent = onEvent)
+                CreateGroupStep.MEMBERS -> GroupMembersStep(
+                    uiState = uiState,
+                    onEvent = onEvent,
+                    onScannerClick = onScannerClick
+                )
                 CreateGroupStep.REVIEW -> {
                     GroupReviewStep(uiState = uiState)
                     FormErrorBanner(

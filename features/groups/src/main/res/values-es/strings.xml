@@ -87,4 +87,11 @@
     <string name="group_cover_photo_placeholder">Foto de portada</string>
     <string name="group_member_avatar_overflow">+%d</string>
     <string name="group_member_avatar_description">Avatar de miembro</string>
+
+    <!-- QR Scanner -->
+    <string name="scanner_content_description">Escanear código QR</string>
+    <string name="scanner_permission_required">Se necesita permiso de cámara para escanear códigos QR</string>
+    <string name="scanner_invalid_qr">Formato de código QR no válido</string>
+    <string name="scanner_helper_text">Coloca el código QR dentro del recuadro para escanearlo</string>
+    <string name="scanner_close">Cerrar</string>
 </resources>

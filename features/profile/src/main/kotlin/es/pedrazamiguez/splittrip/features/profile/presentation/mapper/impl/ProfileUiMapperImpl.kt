@@ -8,6 +8,7 @@ class ProfileUiMapperImpl : ProfileUiMapper {
 
     override fun toProfileUiModel(user: User): ProfileUiModel = with(user) {
         ProfileUiModel(
+            userId = userId,
             displayName = displayName ?: email,
             email = email,
             profileImageUrl = profileImagePath,

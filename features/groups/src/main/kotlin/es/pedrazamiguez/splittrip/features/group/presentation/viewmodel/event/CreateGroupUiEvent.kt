@@ -10,6 +10,7 @@ sealed interface CreateGroupUiEvent {
     data class MemberSearchQueryChanged(val query: String) : CreateGroupUiEvent
     data class MemberSelected(val user: User) : CreateGroupUiEvent
     data class MemberRemoved(val user: User) : CreateGroupUiEvent
+    data class MemberScanned(val userId: String, val email: String) : CreateGroupUiEvent
     data object SubmitCreateGroup : CreateGroupUiEvent
 
     // ── Wizard Navigation ────────────────────────────────────────────────
