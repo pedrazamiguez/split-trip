@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.Cr
 fun GroupMembersStep(
     uiState: CreateGroupUiState,
     onEvent: (CreateGroupUiEvent) -> Unit,
+    onScannerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     WizardStepLayout(modifier = modifier) {
@@ -35,7 +36,9 @@ fun GroupMembersStep(
             helperText = stringResource(R.string.group_member_search_helper),
             noResultsText = stringResource(R.string.group_member_search_no_results),
             chipRemoveContentDescription = stringResource(R.string.group_member_remove),
-            clearSearchContentDescription = stringResource(R.string.group_member_clear_search)
+            clearSearchContentDescription = stringResource(R.string.group_member_clear_search),
+            onScannerClick = onScannerClick,
+            scannerContentDescription = stringResource(R.string.scanner_content_description)
         )
     }
 }

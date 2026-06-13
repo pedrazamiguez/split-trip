@@ -44,6 +44,11 @@ firebaseBom = "34.12.0"
 mlkitTextRecognition = "19.0.0"
 googleAiEdgeAicore = "0.0.1-exp02"
 
+# Camera & Scanning
+camerax = "1.4.1"
+mlkitBarcodeScanning = "18.3.1"
+zxing = "3.5.3"
+
 # KotlinX & Coroutines
 coroutines = "1.10.2"
 kotlinxCollectionsImmutable = "0.4.0"
@@ -109,6 +114,11 @@ firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "fireb
 firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug" }
 play-services-mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }
 google-ai-edge-aicore = { group = "com.google.ai.edge.aicore", name = "aicore", version.ref = "googleAiEdgeAicore" }
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+play-services-mlkit-barcode-scanning = { group = "com.google.android.gms", name = "play-services-mlkit-barcode-scanning", version.ref = "mlkitBarcodeScanning" }
+zxing = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 
 # Coroutines
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }

@@ -23,6 +23,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.Cr
 fun CreateGroupForm(
     uiState: CreateGroupUiState,
     onEvent: (CreateGroupUiEvent) -> Unit,
+    onScannerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val infoLabel = stringResource(R.string.group_wizard_step_info)
@@ -59,6 +60,7 @@ fun CreateGroupForm(
             CreateGroupWizardContent(
                 uiState = uiState,
                 onEvent = onEvent,
+                onScannerClick = onScannerClick,
                 modifier = Modifier.weight(1f)
             )
         }

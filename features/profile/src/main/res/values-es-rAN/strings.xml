@@ -51,4 +51,6 @@
     <string name="edit_profile_error_bio_length">La biografía no puede çuperâh lô 150 carâtterê</string>
     <string name="edit_profile_success_saved">Perfîh âttualiçao corrêttamente.</string>
     <string name="edit_profile_error_image_process">No çe pudo proçeçâh la imahen de perfîh. Inténtalo de nuebo.</string>
+    <string name="profile_qr_title">Compartîh perfîh</string>
+    <string name="profile_qr_subtitle">Muêttra êtte código QR a otro uçuario pa que pueda añadirte a un grupo fíçicamente.</string>
 </resources>

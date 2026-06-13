@@ -86,4 +86,11 @@
     <string name="group_cover_photo_placeholder">Cover photo</string>
     <string name="group_member_avatar_overflow">+%d</string>
     <string name="group_member_avatar_description">Member avatar</string>
+
+    <!-- QR Scanner -->
+    <string name="scanner_content_description">Scan QR Code</string>
+    <string name="scanner_permission_required">Camera permission is required to scan QR codes</string>
+    <string name="scanner_invalid_qr">Invalid QR code format</string>
+    <string name="scanner_helper_text">Position the QR code inside the frame to scan</string>
+    <string name="scanner_close">Close</string>
 </resources>

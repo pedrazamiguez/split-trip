@@ -76,4 +76,9 @@
     <string name="group_cover_photo_placeholder">Foto de portá</string>
     <string name="group_member_avatar_overflow">+%d</string>
     <string name="group_member_avatar_description">Abatâh de miembro</string>
+    <string name="scanner_content_description">Êccaneâh código QR</string>
+    <string name="scanner_permission_required">Çe neçeçita permiço de cámara pa êccaneâh códigô QR</string>
+    <string name="scanner_invalid_qr">Formato de código QR no bálido</string>
+    <string name="scanner_helper_text">Coloca er código QR dentro del recuadro pa êccaneâl-lo</string>
+    <string name="scanner_close">Çerrâh</string>
 </resources>
