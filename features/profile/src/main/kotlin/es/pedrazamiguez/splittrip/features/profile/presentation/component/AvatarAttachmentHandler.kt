@@ -11,7 +11,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestCameraPermission
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import java.io.File
 
 @Composable
@@ -23,6 +27,9 @@ internal fun AvatarAttachmentHandler(
     onAvatarRemoved: () -> Unit
 ) {
     val context = LocalContext.current
+    val pillController = LocalTopPillController.current
+    val cameraPermissionRequiredMessage = stringResource(DesignSystemR.string.camera_permission_required)
+
     var cameraTempFile by remember { mutableStateOf<File?>(null) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -36,6 +43,17 @@ internal fun AvatarAttachmentHandler(
         }
         cameraTempFile = null
         cameraImageUri = null
+    }
+
+    val requestCameraPermission = rememberRequestCameraPermission { isGranted ->
+        if (isGranted) {
+            val (tempFile, uri) = createAvatarCameraUri(context)
+            cameraTempFile = tempFile
+            cameraImageUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            pillController.showPill(cameraPermissionRequiredMessage)
+        }
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -52,10 +70,7 @@ internal fun AvatarAttachmentHandler(
             showRemoveOption = showRemoveOption,
             onCameraSelected = {
                 onDismissSheet()
-                val (tempFile, uri) = createAvatarCameraUri(context)
-                cameraTempFile = tempFile
-                cameraImageUri = uri
-                cameraLauncher.launch(uri)
+                requestCameraPermission()
             },
             onGallerySelected = {
                 onDismissSheet()

@@ -91,5 +91,6 @@
     <string name="receipt_attach_camera">Açêh foto</string>
     <string name="receipt_attach_gallery">Elehîh de galería</string>
     <string name="receipt_attach_document">Âhhuntâh documento</string>
+    <string name="camera_permission_required">Çe requiere er permiço de cámara pa tomâh fotô.</string>
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>
