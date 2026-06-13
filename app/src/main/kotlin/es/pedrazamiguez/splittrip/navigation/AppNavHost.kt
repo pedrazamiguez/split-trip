@@ -34,6 +34,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.Lo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
@@ -147,10 +148,18 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                         navController = navController,
                         startDestination = stableStartDestination.value!!,
                         modifier = modifier,
-                        enterTransition = { EnterTransition.None },
-                        exitTransition = { ExitTransition.None },
-                        popEnterTransition = { EnterTransition.None },
-                        popExitTransition = { ExitTransition.None }
+                        enterTransition = {
+                            getEnterTransition(initialState.destination.route, targetState.destination.route)
+                        },
+                        exitTransition = {
+                            getExitTransition(initialState.destination.route, targetState.destination.route)
+                        },
+                        popEnterTransition = {
+                            getPopEnterTransition(initialState.destination.route, targetState.destination.route)
+                        },
+                        popExitTransition = {
+                            getPopExitTransition(initialState.destination.route, targetState.destination.route)
+                        }
                     ) {
                         loginGraph(
                             onLoginSuccess = {
@@ -222,5 +231,52 @@ private fun replayPendingDeepLink(
         Timber.d("Replaying pending deep link (scheme: %s)", uri.scheme)
         val deepLinkIntent = Intent(Intent.ACTION_VIEW, uri)
         navController.handleDeepLink(deepLinkIntent)
+    }
+}
+
+private fun isLoginOrOnboardingRoute(route: String?): Boolean {
+    return route == Routes.LOGIN ||
+        route == Routes.REGISTER ||
+        route == Routes.FORGOT_PASSWORD ||
+        route == Routes.ONBOARDING
+}
+
+private fun getEnterTransition(initialRoute: String?, targetRoute: String?): EnterTransition {
+    return if (isLoginOrOnboardingRoute(initialRoute) || isLoginOrOnboardingRoute(targetRoute)) {
+        EnterTransition.None
+    } else if (targetRoute == Routes.EDIT_PROFILE) {
+        NavTransitionDefaults.modalEnterTransition
+    } else {
+        NavTransitionDefaults.contentEnterTransition
+    }
+}
+
+private fun getExitTransition(initialRoute: String?, targetRoute: String?): ExitTransition {
+    return if (isLoginOrOnboardingRoute(initialRoute) || isLoginOrOnboardingRoute(targetRoute)) {
+        ExitTransition.None
+    } else if (targetRoute == Routes.EDIT_PROFILE) {
+        NavTransitionDefaults.modalExitTransition
+    } else {
+        NavTransitionDefaults.contentExitTransition
+    }
+}
+
+private fun getPopEnterTransition(initialRoute: String?, targetRoute: String?): EnterTransition {
+    return if (isLoginOrOnboardingRoute(initialRoute) || isLoginOrOnboardingRoute(targetRoute)) {
+        EnterTransition.None
+    } else if (initialRoute == Routes.EDIT_PROFILE) {
+        NavTransitionDefaults.modalPopEnterTransition
+    } else {
+        NavTransitionDefaults.contentPopEnterTransition
+    }
+}
+
+private fun getPopExitTransition(initialRoute: String?, targetRoute: String?): ExitTransition {
+    return if (isLoginOrOnboardingRoute(initialRoute) || isLoginOrOnboardingRoute(targetRoute)) {
+        ExitTransition.None
+    } else if (initialRoute == Routes.EDIT_PROFILE) {
+        NavTransitionDefaults.modalPopExitTransition
+    } else {
+        NavTransitionDefaults.contentPopExitTransition
     }
 }
