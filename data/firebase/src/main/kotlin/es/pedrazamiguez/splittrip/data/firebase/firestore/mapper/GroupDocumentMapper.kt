@@ -13,6 +13,7 @@ fun Group.toDocument(groupId: String, userId: String) = GroupDocument(
     currency = currency,
     extraCurrencies = extraCurrencies,
     memberIds = members,
+    mainImagePath = mainImagePath ?: "",
     createdBy = userId,
     createdAt = createdAt?.toTimestampUtc(),
     lastUpdatedAt = lastUpdatedAt?.toTimestampUtc()

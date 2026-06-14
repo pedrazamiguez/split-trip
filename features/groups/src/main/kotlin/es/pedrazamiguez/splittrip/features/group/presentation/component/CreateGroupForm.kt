@@ -29,13 +29,15 @@ fun CreateGroupForm(
     val infoLabel = stringResource(R.string.group_wizard_step_info)
     val currencyLabel = stringResource(R.string.group_wizard_step_currency)
     val membersLabel = stringResource(R.string.group_wizard_step_members)
+    val imageLabel = stringResource(R.string.group_wizard_step_image)
     val reviewLabel = stringResource(R.string.group_wizard_step_review)
 
-    val stepLabels = remember(infoLabel, currencyLabel, membersLabel, reviewLabel) {
+    val stepLabels = remember(infoLabel, currencyLabel, membersLabel, imageLabel, reviewLabel) {
         mapOf(
             CreateGroupStep.INFO to infoLabel,
             CreateGroupStep.CURRENCY to currencyLabel,
             CreateGroupStep.MEMBERS to membersLabel,
+            CreateGroupStep.IMAGE to imageLabel,
             CreateGroupStep.REVIEW to reviewLabel
         )
     }

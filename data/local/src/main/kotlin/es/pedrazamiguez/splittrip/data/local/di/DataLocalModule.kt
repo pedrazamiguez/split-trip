@@ -24,6 +24,7 @@ import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalSubunitDataSou
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalUserDataSourceImpl
 import es.pedrazamiguez.splittrip.data.local.datastore.NotificationUserPreferences
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
+import es.pedrazamiguez.splittrip.data.local.service.GroupImageStorageServiceImpl
 import es.pedrazamiguez.splittrip.data.local.service.ProfileImageStorageServiceImpl
 import es.pedrazamiguez.splittrip.data.local.service.ReceiptStorageServiceImpl
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalDataSource
@@ -36,6 +37,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import org.koin.android.ext.koin.androidContext
@@ -149,5 +151,9 @@ val dataLocalModule = module {
 
     single<ProfileImageStorageService> {
         ProfileImageStorageServiceImpl(context = androidContext())
+    }
+
+    single<GroupImageStorageService> {
+        GroupImageStorageServiceImpl(context = androidContext())
     }
 }

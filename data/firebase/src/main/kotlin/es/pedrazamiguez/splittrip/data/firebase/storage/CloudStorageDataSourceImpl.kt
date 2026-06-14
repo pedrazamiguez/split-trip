@@ -101,8 +101,49 @@ internal class CloudStorageDataSourceImpl(
         }
     }
 
+    override suspend fun uploadGroupImage(
+        groupId: String,
+        localPath: String,
+        mimeType: String
+    ): String {
+        val resolvedPath = if (localPath.startsWith("file://")) {
+            android.net.Uri.parse(localPath).path
+                ?: error("Could not resolve filesystem path from URI: $localPath")
+        } else {
+            localPath
+        }
+        val file = File(resolvedPath)
+        val ref = storage.reference.child("$GROUPS_PREFIX/$groupId/group_cover.webp")
+
+        val metadata = com.google.firebase.storage.StorageMetadata.Builder()
+            .setContentType(mimeType)
+            .build()
+
+        ref.putFile(android.net.Uri.fromFile(file), metadata).await()
+        val downloadUrl = ref.downloadUrl.await().toString()
+        Timber.d("Group image uploaded for group $groupId → $downloadUrl")
+        return downloadUrl
+    }
+
+    override suspend fun deleteGroupImage(groupId: String) {
+        val folderRef = storage.reference.child("$GROUPS_PREFIX/$groupId")
+        try {
+            val listResult = folderRef.listAll().await()
+            listResult.items.forEach { item ->
+                item.delete().await()
+                Timber.d("Deleted remote group image file: ${item.path}")
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to delete remote group image for group $groupId")
+            throw e
+        }
+    }
+
     private companion object {
         const val RECEIPTS_PREFIX = "receipts"
         const val AVATARS_PREFIX = "avatars"
+        const val GROUPS_PREFIX = "groups"
     }
 }

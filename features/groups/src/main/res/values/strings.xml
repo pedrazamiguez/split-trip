@@ -93,4 +93,18 @@
     <string name="scanner_invalid_qr">Invalid QR code format</string>
     <string name="scanner_helper_text">Position the QR code inside the frame to scan</string>
     <string name="scanner_close">Close</string>
+
+    <!-- Group Image Wizard Step -->
+    <string name="group_wizard_step_image">Cover Image</string>
+    <string name="group_error_image_processing_failed">Couldn\'t process the selected image. Please try another one</string>
+    <string name="group_image_sheet_title">Group cover image</string>
+    <string name="group_image_sheet_camera">Take photo</string>
+    <string name="group_image_sheet_gallery">Choose from gallery</string>
+    <string name="group_image_sheet_remove">Remove cover image</string>
+    <string name="group_image_step_title">Add a cover image</string>
+    <string name="group_image_step_subtitle">Make your group page feel like home. You can always change this later.</string>
+    <string name="group_image_step_select_btn">Select cover photo</string>
+    <string name="group_image_step_change_btn">Change photo</string>
+    <string name="group_image_step_remove_btn">Remove photo</string>
+    <string name="group_image_step_uploading">Uploading image…</string>
 </resources>

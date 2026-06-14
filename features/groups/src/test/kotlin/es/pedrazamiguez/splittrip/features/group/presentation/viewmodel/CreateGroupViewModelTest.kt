@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
@@ -36,6 +37,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -54,6 +56,7 @@ class CreateGroupViewModelTest {
     private lateinit var emailValidationService: EmailValidationService
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var groupUiMapper: GroupUiMapper
+    private lateinit var groupImageStorageService: GroupImageStorageService
     private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var viewModel: CreateGroupViewModel
 
@@ -78,6 +81,7 @@ class CreateGroupViewModelTest {
         searchUsersByEmailUseCase = mockk(relaxed = true)
         getMemberProfilesUseCase = mockk(relaxed = true)
         groupUiMapper = mockk(relaxed = true)
+        groupImageStorageService = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
         emailValidationService = EmailValidationServiceImpl()
 
@@ -93,6 +97,7 @@ class CreateGroupViewModelTest {
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
+            groupImageStorageService = groupImageStorageService,
             telemetryTracker = telemetryTracker,
             defaultDispatcher = testDispatcher
         )
@@ -281,6 +286,7 @@ class CreateGroupViewModelTest {
                 emailValidationService = emailValidationService,
                 getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                groupImageStorageService = groupImageStorageService,
                 telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
@@ -308,6 +314,7 @@ class CreateGroupViewModelTest {
                 emailValidationService = emailValidationService,
                 getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                groupImageStorageService = groupImageStorageService,
                 telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
@@ -356,6 +363,7 @@ class CreateGroupViewModelTest {
                 emailValidationService = emailValidationService,
                 getMemberProfilesUseCase = getMemberProfilesUseCase,
                 groupUiMapper = groupUiMapper,
+                groupImageStorageService = groupImageStorageService,
                 telemetryTracker = telemetryTracker,
                 defaultDispatcher = testDispatcher
             )
@@ -620,6 +628,82 @@ class CreateGroupViewModelTest {
             val selected = viewModel.uiState.value.selectedMembers
             assertEquals(1, selected.size)
             assertEquals("Existing", selected.first().displayName)
+        }
+    }
+
+    @Nested
+    inner class ImageSelection {
+
+        @Test
+        fun `cleans temp images on init`() = runTest(testDispatcher) {
+            advanceUntilIdle()
+            coVerify(exactly = 1) { groupImageStorageService.cleanTempGroupImages() }
+        }
+
+        @Test
+        fun `GroupImagePicked saves temp image and updates state`() = runTest(testDispatcher) {
+            // Given
+            val pickedUri = "content://picker/image.jpg"
+            val tempUri = "file:///temp/group_temp_123.webp"
+            coEvery { groupImageStorageService.saveTempGroupImage(pickedUri) } returns tempUri
+
+            // When
+            onEvent(CreateGroupUiEvent.GroupImagePicked(pickedUri))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { groupImageStorageService.saveTempGroupImage(pickedUri) }
+            assertEquals(tempUri, viewModel.uiState.value.localGroupImagePath)
+            assertFalse(viewModel.uiState.value.isLoading)
+        }
+
+        @Test
+        fun `GroupImagePicked sets error on failure`() = runTest(testDispatcher) {
+            // Given
+            val pickedUri = "content://picker/image.jpg"
+            coEvery { groupImageStorageService.saveTempGroupImage(pickedUri) } throws
+                RuntimeException("Processing failed")
+
+            // When
+            onEvent(CreateGroupUiEvent.GroupImagePicked(pickedUri))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { groupImageStorageService.saveTempGroupImage(pickedUri) }
+            assertNull(viewModel.uiState.value.localGroupImagePath)
+            assertNotNull(viewModel.uiState.value.error)
+            assertFalse(viewModel.uiState.value.isLoading)
+        }
+
+        @Test
+        fun `GroupImageRemoved clears localGroupImagePath`() = runTest(testDispatcher) {
+            // Given
+            val tempUri = "file:///temp/group_temp_123.webp"
+            coEvery { groupImageStorageService.saveTempGroupImage(any()) } returns tempUri
+            onEvent(CreateGroupUiEvent.GroupImagePicked("content://picker/image.jpg"))
+            advanceUntilIdle()
+            assertEquals(tempUri, viewModel.uiState.value.localGroupImagePath)
+
+            // When
+            onEvent(CreateGroupUiEvent.GroupImageRemoved)
+
+            // Then
+            assertNull(viewModel.uiState.value.localGroupImagePath)
+        }
+
+        @Test
+        fun `ShowImageSourceSheet updates sheet visibility state`() = runTest(testDispatcher) {
+            // When
+            onEvent(CreateGroupUiEvent.ShowImageSourceSheet(true))
+
+            // Then
+            assertTrue(viewModel.uiState.value.showImageSourceSheet)
+
+            // When
+            onEvent(CreateGroupUiEvent.ShowImageSourceSheet(false))
+
+            // Then
+            assertFalse(viewModel.uiState.value.showImageSourceSheet)
         }
     }
 }
