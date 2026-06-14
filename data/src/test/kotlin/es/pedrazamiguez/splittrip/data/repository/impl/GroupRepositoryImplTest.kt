@@ -2,10 +2,12 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -37,6 +39,8 @@ class GroupRepositoryImplTest {
     private lateinit var localGroupDataSource: LocalGroupDataSource
     private lateinit var authenticationService: AuthenticationService
     private lateinit var groupDeletionRetryScheduler: GroupDeletionRetryScheduler
+    private lateinit var groupImageStorageService: GroupImageStorageService
+    private lateinit var cloudStorageDataSource: CloudStorageDataSource
     private lateinit var repository: GroupRepositoryImpl
 
     private val testGroupId = "group-123"
@@ -57,6 +61,8 @@ class GroupRepositoryImplTest {
         localGroupDataSource = mockk(relaxed = true)
         authenticationService = mockk(relaxed = true)
         groupDeletionRetryScheduler = mockk(relaxed = true)
+        groupImageStorageService = mockk(relaxed = true)
+        cloudStorageDataSource = mockk(relaxed = true)
 
         every { authenticationService.requireUserId() } returns "current-user-id"
 
@@ -65,6 +71,8 @@ class GroupRepositoryImplTest {
             localGroupDataSource = localGroupDataSource,
             authenticationService = authenticationService,
             groupDeletionRetryScheduler = groupDeletionRetryScheduler,
+            groupImageStorageService = groupImageStorageService,
+            cloudStorageDataSource = cloudStorageDataSource,
             ioDispatcher = testDispatcher
         )
     }
@@ -82,6 +90,32 @@ class GroupRepositoryImplTest {
 
             // Then
             coVerify(exactly = 1) { localGroupDataSource.deleteGroup(testGroupId) }
+        }
+
+        @Test
+        fun `deletes local group cover image`() = runTest(testDispatcher) {
+            // Given
+            coEvery { localGroupDataSource.deleteGroup(testGroupId) } just Runs
+
+            // When
+            repository.deleteGroup(testGroupId)
+
+            // Then
+            coVerify(exactly = 1) { groupImageStorageService.deleteLocalGroupImage(testGroupId) }
+        }
+
+        @Test
+        fun `deletes remote group cover image in background`() = runTest(testDispatcher) {
+            // Given
+            coEvery { localGroupDataSource.deleteGroup(testGroupId) } just Runs
+            coEvery { cloudStorageDataSource.deleteGroupImage(testGroupId) } just Runs
+
+            // When
+            repository.deleteGroup(testGroupId)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { cloudStorageDataSource.deleteGroupImage(testGroupId) }
         }
 
         @Test
@@ -409,6 +443,82 @@ class GroupRepositoryImplTest {
             coVerify {
                 localGroupDataSource.saveGroup(
                     match { it.syncStatus == SyncStatus.PENDING_SYNC }
+                )
+            }
+        }
+
+        @Test
+        fun `commits local temp image synchronously when mainImagePath is present`() = runTest(testDispatcher) {
+            // Given
+            val newGroup = testGroup.copy(id = "", mainImagePath = "file:///temp/image.webp")
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { groupImageStorageService.commitGroupImage(any(), "file:///temp/image.webp") } returns
+                "file:///permanent/image.webp"
+
+            // When
+            repository.createGroup(newGroup)
+
+            // Then
+            coVerify(exactly = 1) { groupImageStorageService.commitGroupImage(any(), "file:///temp/image.webp") }
+            coVerify {
+                localGroupDataSource.saveGroup(
+                    match { it.mainImagePath == "file:///permanent/image.webp" }
+                )
+            }
+        }
+
+        @Test
+        fun `uploads image to cloud in background when committed local image is present`() = runTest(testDispatcher) {
+            // Given
+            val newGroup = testGroup.copy(id = "", mainImagePath = "file:///temp/image.webp")
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { groupImageStorageService.commitGroupImage(any(), "file:///temp/image.webp") } returns
+                "file:///permanent/image.webp"
+            coEvery {
+                cloudStorageDataSource.uploadGroupImage(any(), "file:///permanent/image.webp", "image/webp")
+            } returns
+                "https://firebase.storage/image.webp"
+
+            // When
+            repository.createGroup(newGroup)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                cloudStorageDataSource.uploadGroupImage(any(), "file:///permanent/image.webp", "image/webp")
+            }
+            coVerify {
+                localGroupDataSource.saveGroup(
+                    match { it.mainImagePath == "https://firebase.storage/image.webp" }
+                )
+                cloudGroupDataSource.createGroup(
+                    match { it.mainImagePath == "https://firebase.storage/image.webp" }
+                )
+            }
+        }
+
+        @Test
+        fun `continues group creation sync even if cloud image upload fails`() = runTest(testDispatcher) {
+            // Given
+            val newGroup = testGroup.copy(id = "", mainImagePath = "file:///temp/image.webp")
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { groupImageStorageService.commitGroupImage(any(), "file:///temp/image.webp") } returns
+                "file:///permanent/image.webp"
+            coEvery { cloudStorageDataSource.uploadGroupImage(any(), any(), any()) } throws
+                RuntimeException("Upload failed")
+            coEvery { cloudGroupDataSource.createGroup(any()) } returns "new-id"
+
+            // When
+            repository.createGroup(newGroup)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                cloudGroupDataSource.createGroup(
+                    match {
+                        it.mainImagePath ==
+                            "file:///permanent/image.webp"
+                    }
                 )
             }
         }

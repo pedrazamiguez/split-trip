@@ -130,8 +130,20 @@ interface GroupDao {
         val remoteIds = groups.map { it.id }.toSet()
         val localIds = getAllGroupIds()
 
+        val existingGroups = localIds.mapNotNull { getGroupById(it) }.associateBy { it.id }
+        val mergedGroups = groups.map { remote ->
+            val local = existingGroups[remote.id]
+            if (local != null) {
+                remote.copy(
+                    mainImagePath = remote.mainImagePath?.takeIf { it.isNotBlank() } ?: local.mainImagePath
+                )
+            } else {
+                remote
+            }
+        }
+
         // Step 2: Upsert remote groups (sets syncStatus to SYNCED for all)
-        insertGroups(groups)
+        insertGroups(mergedGroups)
 
         // Step 3: Restore ALL non-SYNCED statuses that were captured before the upsert.
         // The upsert sets syncStatus to SYNCED for all items (including those that were

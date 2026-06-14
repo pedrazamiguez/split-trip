@@ -22,6 +22,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupCurrencyStep
+import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupImageStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupInfoStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupMembersStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupReviewStep
@@ -67,6 +68,10 @@ internal fun CreateGroupWizardContent(
                     uiState = uiState,
                     onEvent = onEvent,
                     onScannerClick = onScannerClick
+                )
+                CreateGroupStep.IMAGE -> GroupImageStep(
+                    uiState = uiState,
+                    onEvent = onEvent
                 )
                 CreateGroupStep.REVIEW -> {
                     GroupReviewStep(uiState = uiState)

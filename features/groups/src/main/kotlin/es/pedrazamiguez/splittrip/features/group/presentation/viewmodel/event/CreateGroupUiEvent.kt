@@ -19,4 +19,9 @@ sealed interface CreateGroupUiEvent {
 
     /** Jumps directly to a previously completed step by its zero-based index. */
     data class JumpToStep(val stepIndex: Int) : CreateGroupUiEvent
+
+    // ── Image Selection ──────────────────────────────────────────────────
+    data class GroupImagePicked(val uri: String) : CreateGroupUiEvent
+    data object GroupImageRemoved : CreateGroupUiEvent
+    data class ShowImageSourceSheet(val show: Boolean) : CreateGroupUiEvent
 }

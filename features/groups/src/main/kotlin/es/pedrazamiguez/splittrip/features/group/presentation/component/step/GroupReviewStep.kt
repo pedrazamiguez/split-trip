@@ -3,12 +3,20 @@ package es.pedrazamiguez.splittrip.features.group.presentation.component.step
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
@@ -30,6 +38,23 @@ fun GroupReviewStep(
     val none = stringResource(R.string.group_review_none)
 
     WizardStepLayout(modifier = modifier) {
+        if (uiState.localGroupImagePath != null) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(uiState.localGroupImagePath)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = stringResource(
+                    R.string.group_cover_image_description,
+                    uiState.groupName
+                ),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .clip(MaterialTheme.shapes.large)
+            )
+        }
         SectionCard(title = stringResource(R.string.group_review_title)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
