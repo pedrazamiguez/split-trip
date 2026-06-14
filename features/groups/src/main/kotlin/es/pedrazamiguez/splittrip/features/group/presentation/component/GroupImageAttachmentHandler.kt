@@ -8,7 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -30,26 +30,26 @@ internal fun GroupImageAttachmentHandler(
     val pillController = LocalTopPillController.current
     val cameraPermissionRequiredMessage = stringResource(DesignSystemR.string.camera_permission_required)
 
-    var cameraTempFile by remember { mutableStateOf<File?>(null) }
-    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+    var cameraTempFilePath by rememberSaveable { mutableStateOf<String?>(null) }
+    var cameraImageUriStr by rememberSaveable { mutableStateOf<String?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { captured ->
         if (captured) {
-            cameraImageUri?.let { uri -> onImageSelected(uri.toString()) }
+            cameraImageUriStr?.let { uriStr -> onImageSelected(uriStr) }
         } else {
-            cameraTempFile?.delete()
+            cameraTempFilePath?.let { path -> File(path).delete() }
         }
-        cameraTempFile = null
-        cameraImageUri = null
+        cameraTempFilePath = null
+        cameraImageUriStr = null
     }
 
     val requestCameraPermission = rememberRequestCameraPermission { isGranted ->
         if (isGranted) {
             val (tempFile, uri) = createGroupCameraUri(context)
-            cameraTempFile = tempFile
-            cameraImageUri = uri
+            cameraTempFilePath = tempFile.absolutePath
+            cameraImageUriStr = uri.toString()
             cameraLauncher.launch(uri)
         } else {
             pillController.showPill(cameraPermissionRequiredMessage)

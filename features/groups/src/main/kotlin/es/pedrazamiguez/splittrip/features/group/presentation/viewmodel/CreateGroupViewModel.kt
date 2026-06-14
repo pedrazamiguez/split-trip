@@ -4,16 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
 import es.pedrazamiguez.splittrip.core.logging.LogTag
-import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
-import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
-import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
@@ -21,6 +16,9 @@ import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -41,15 +39,15 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class CreateGroupViewModel(
-    private val createGroupUseCase: CreateGroupUseCase,
+    private val createGroupNavigationHandler: CreateGroupNavigationHandler,
+    private val createGroupImageHandler: CreateGroupImageHandler,
+    private val createGroupSubmitHandler: CreateGroupSubmitHandler,
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
     private val getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase,
     private val searchUsersByEmailUseCase: SearchUsersByEmailUseCase,
     private val emailValidationService: EmailValidationService,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
-    private val groupImageStorageService: GroupImageStorageService,
-    private val telemetryTracker: TelemetryTracker,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -59,12 +57,15 @@ class CreateGroupViewModel(
     private val _actions = MutableSharedFlow<CreateGroupUiAction>()
     val actions: SharedFlow<CreateGroupUiAction> = _actions.asSharedFlow()
 
-    private val wizardNavigator = WizardNavigator()
     private var memberSearchJob: Job? = null
 
     init {
+        createGroupNavigationHandler.bind(_uiState, _actions, viewModelScope)
+        createGroupImageHandler.bind(_uiState, _actions, viewModelScope)
+        createGroupSubmitHandler.bind(_uiState, _actions, viewModelScope)
+
         loadCurrencies()
-        cleanTempImages()
+        createGroupImageHandler.cleanTempImages()
     }
 
     @Suppress("CyclomaticComplexMethod")
@@ -83,37 +84,13 @@ class CreateGroupViewModel(
             is CreateGroupUiEvent.MemberSelected -> handleMemberSelected(event)
             is CreateGroupUiEvent.MemberRemoved -> handleMemberRemoved(event)
             is CreateGroupUiEvent.MemberScanned -> handleMemberScanned(event.userId, event.email)
-            is CreateGroupUiEvent.SubmitCreateGroup -> handleSubmit(onCreateGroupSuccess)
+            is CreateGroupUiEvent.SubmitCreateGroup -> createGroupSubmitHandler.handleSubmit(onCreateGroupSuccess)
             is CreateGroupUiEvent.NextStep,
             is CreateGroupUiEvent.PreviousStep,
-            is CreateGroupUiEvent.JumpToStep -> handleNavigation(event)
-            is CreateGroupUiEvent.GroupImagePicked -> handleGroupImagePicked(event.uri)
-            is CreateGroupUiEvent.GroupImageRemoved -> _uiState.update { it.copy(localGroupImagePath = null) }
-            is CreateGroupUiEvent.ShowImageSourceSheet -> _uiState.update { it.copy(showImageSourceSheet = event.show) }
-        }
-    }
-
-    private fun handleNavigation(event: CreateGroupUiEvent) {
-        val state = _uiState.value
-        when (event) {
-            is CreateGroupUiEvent.NextStep -> {
-                val next = wizardNavigator.navigateNext(state.currentStep, state.steps) ?: return
-                _uiState.update { it.copy(currentStep = next, error = null) }
-            }
-            is CreateGroupUiEvent.PreviousStep -> {
-                when (val result = wizardNavigator.navigatePrevious(state.currentStep, null, state.steps)) {
-                    is WizardNavigator.NavigationResult.WithStep ->
-                        _uiState.update { it.copy(currentStep = result.step, error = null) }
-
-                    WizardNavigator.NavigationResult.ExitWizard ->
-                        viewModelScope.launch { _actions.emit(CreateGroupUiAction.NavigateBack) }
-                }
-            }
-            is CreateGroupUiEvent.JumpToStep -> {
-                val target = wizardNavigator.jumpToStep(state.currentStep, event.stepIndex, state.steps) ?: return
-                _uiState.update { it.copy(currentStep = target, error = null) }
-            }
-            else -> {}
+            is CreateGroupUiEvent.JumpToStep -> createGroupNavigationHandler.handleNavigation(event)
+            is CreateGroupUiEvent.GroupImagePicked -> createGroupImageHandler.handleGroupImagePicked(event.uri)
+            is CreateGroupUiEvent.GroupImageRemoved -> createGroupImageHandler.handleGroupImageRemoved()
+            is CreateGroupUiEvent.ShowImageSourceSheet -> createGroupImageHandler.handleShowImageSourceSheet(event.show)
         }
     }
 
@@ -161,16 +138,6 @@ class CreateGroupViewModel(
                     .toImmutableList()
             )
         }
-    }
-
-    private fun handleSubmit(onCreateGroupSuccess: () -> Unit) {
-        if (_uiState.value.groupName.isBlank()) {
-            _uiState.update {
-                it.copy(isNameValid = false, error = UiText.StringResource(R.string.group_error_name_empty))
-            }
-            return
-        }
-        createGroup(onCreateGroupSuccess)
     }
 
     private fun searchMembers(query: String) {
@@ -237,44 +204,6 @@ class CreateGroupViewModel(
         }
     }
 
-    private fun createGroup(onCreateGroupSuccess: () -> Unit) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            val state = _uiState.value
-            val groupName = state.groupName
-
-            createGroupUseCase(
-                Group(
-                    name = groupName,
-                    description = state.groupDescription,
-                    currency = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE,
-                    extraCurrencies = state.extraCurrencies.map { it.code },
-                    members = state.selectedMembers.map { it.userId },
-                    mainImagePath = state.localGroupImagePath
-                )
-            ).onSuccess {
-                _uiState.update { it.copy(isLoading = false) }
-                telemetryTracker.trackEvent(
-                    "group_created",
-                    mapOf("currency" to (state.selectedCurrency?.code ?: ""))
-                )
-                _actions.emit(
-                    CreateGroupUiAction.ShowSuccess(UiText.StringResource(R.string.group_created_success, groupName))
-                )
-                onCreateGroupSuccess()
-            }.onFailure { e ->
-                Timber.e(e, "Failed to create group")
-                _uiState.update {
-                    it.copy(isLoading = false, error = UiText.StringResource(R.string.group_error_creation_failed))
-                }
-                _actions.emit(
-                    CreateGroupUiAction.ShowError(UiText.StringResource(R.string.group_error_creation_failed))
-                )
-            }
-        }
-    }
-
     private fun handleMemberScanned(userId: String, email: String) {
         val alreadySelected = _uiState.value.selectedMembers.any { it.userId == userId }
         if (alreadySelected) return
@@ -311,36 +240,7 @@ class CreateGroupViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        cleanTempImages()
-    }
-
-    private fun cleanTempImages() {
-        viewModelScope.launch {
-            try {
-                groupImageStorageService.cleanTempGroupImages()
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to clean temp group images")
-            }
-        }
-    }
-
-    private fun handleGroupImagePicked(uri: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            runCatching {
-                groupImageStorageService.saveTempGroupImage(uri)
-            }.onSuccess { tempUri ->
-                _uiState.update { it.copy(localGroupImagePath = tempUri, isLoading = false) }
-            }.onFailure { e ->
-                Timber.e(e, "Failed to process group image")
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = UiText.StringResource(R.string.group_error_image_processing_failed)
-                    )
-                }
-            }
-        }
+        createGroupImageHandler.cleanTempImages()
     }
 
     companion object {

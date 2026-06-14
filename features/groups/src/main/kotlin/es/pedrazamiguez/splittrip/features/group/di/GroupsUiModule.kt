@@ -27,6 +27,12 @@ import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.Groups
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.CreateGroupViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDetailViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupsViewModel
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandlerImpl
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -40,27 +46,47 @@ val groupsUiModule = module {
         )
     }
 
-    viewModel {
+    factory<CreateGroupNavigationHandler> {
+        CreateGroupNavigationHandlerImpl()
+    }
+
+    factory<CreateGroupImageHandler> {
+        val groupImageStorageService = get<GroupImageStorageService>()
+        CreateGroupImageHandlerImpl(
+            groupImageStorageService = groupImageStorageService
+        )
+    }
+
+    factory<CreateGroupSubmitHandler> {
         val createGroupUseCase = get<CreateGroupUseCase>()
+        val telemetryTracker = get<TelemetryTracker>()
+        CreateGroupSubmitHandlerImpl(
+            createGroupUseCase = createGroupUseCase,
+            telemetryTracker = telemetryTracker
+        )
+    }
+
+    viewModel {
+        val createGroupNavigationHandler = get<CreateGroupNavigationHandler>()
+        val createGroupImageHandler = get<CreateGroupImageHandler>()
+        val createGroupSubmitHandler = get<CreateGroupSubmitHandler>()
         val getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>()
         val getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>()
         val searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>()
         val emailValidationService = get<EmailValidationService>()
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val groupUiMapper = get<GroupUiMapper>()
-        val groupImageStorageService = get<GroupImageStorageService>()
-        val telemetryTracker = get<TelemetryTracker>()
 
         CreateGroupViewModel(
-            createGroupUseCase = createGroupUseCase,
+            createGroupNavigationHandler = createGroupNavigationHandler,
+            createGroupImageHandler = createGroupImageHandler,
+            createGroupSubmitHandler = createGroupSubmitHandler,
             getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
             searchUsersByEmailUseCase = searchUsersByEmailUseCase,
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
-            groupUiMapper = groupUiMapper,
-            groupImageStorageService = groupImageStorageService,
-            telemetryTracker = telemetryTracker
+            groupUiMapper = groupUiMapper
         )
     }
 

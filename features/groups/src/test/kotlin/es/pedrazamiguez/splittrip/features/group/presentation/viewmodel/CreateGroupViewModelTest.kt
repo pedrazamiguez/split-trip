@@ -16,6 +16,9 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandlerImpl
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -89,16 +92,23 @@ class CreateGroupViewModelTest {
         coEvery { getSupportedCurrenciesUseCase(any()) } returns Result.success(emptyList())
         every { groupUiMapper.toCurrencyUiModels(any()) } returns persistentListOf()
 
-        viewModel = CreateGroupViewModel(
-            createGroupUseCase = createGroupUseCase,
+        viewModel = createViewModel()
+    }
+
+    private fun createViewModel(): CreateGroupViewModel {
+        val navigationHandler = CreateGroupNavigationHandlerImpl()
+        val imageHandler = CreateGroupImageHandlerImpl(groupImageStorageService)
+        val submitHandler = CreateGroupSubmitHandlerImpl(createGroupUseCase, telemetryTracker)
+        return CreateGroupViewModel(
+            createGroupNavigationHandler = navigationHandler,
+            createGroupImageHandler = imageHandler,
+            createGroupSubmitHandler = submitHandler,
             getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
             searchUsersByEmailUseCase = searchUsersByEmailUseCase,
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
-            groupImageStorageService = groupImageStorageService,
-            telemetryTracker = telemetryTracker,
             defaultDispatcher = testDispatcher
         )
     }
@@ -278,18 +288,7 @@ class CreateGroupViewModelTest {
             every { groupUiMapper.toCurrencyUiModels(currencies) } returns mappedCurrencies
 
             // Re-create ViewModel to trigger init with the new stubs
-            viewModel = CreateGroupViewModel(
-                createGroupUseCase = createGroupUseCase,
-                getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
-                getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
-                searchUsersByEmailUseCase = searchUsersByEmailUseCase,
-                emailValidationService = emailValidationService,
-                getMemberProfilesUseCase = getMemberProfilesUseCase,
-                groupUiMapper = groupUiMapper,
-                groupImageStorageService = groupImageStorageService,
-                telemetryTracker = telemetryTracker,
-                defaultDispatcher = testDispatcher
-            )
+            viewModel = createViewModel()
             advanceUntilIdle()
 
             // Then
@@ -306,18 +305,7 @@ class CreateGroupViewModelTest {
                 Result.failure(RuntimeException("Network error"))
 
             // Re-create ViewModel to trigger init with the failure stub
-            viewModel = CreateGroupViewModel(
-                createGroupUseCase = createGroupUseCase,
-                getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
-                getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
-                searchUsersByEmailUseCase = searchUsersByEmailUseCase,
-                emailValidationService = emailValidationService,
-                getMemberProfilesUseCase = getMemberProfilesUseCase,
-                groupUiMapper = groupUiMapper,
-                groupImageStorageService = groupImageStorageService,
-                telemetryTracker = telemetryTracker,
-                defaultDispatcher = testDispatcher
-            )
+            viewModel = createViewModel()
 
             val actions = mutableListOf<CreateGroupUiAction>()
             val collectJob = launch(start = CoroutineStart.UNDISPATCHED) {
@@ -355,18 +343,7 @@ class CreateGroupViewModelTest {
             )
 
             // When — create a fresh ViewModel whose init triggers loadCurrencies
-            viewModel = CreateGroupViewModel(
-                createGroupUseCase = createGroupUseCase,
-                getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
-                getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
-                searchUsersByEmailUseCase = searchUsersByEmailUseCase,
-                emailValidationService = emailValidationService,
-                getMemberProfilesUseCase = getMemberProfilesUseCase,
-                groupUiMapper = groupUiMapper,
-                groupImageStorageService = groupImageStorageService,
-                telemetryTracker = telemetryTracker,
-                defaultDispatcher = testDispatcher
-            )
+            viewModel = createViewModel()
             advanceUntilIdle()
 
             // Then — exactly one call to each use case from init

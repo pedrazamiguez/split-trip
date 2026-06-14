@@ -23,18 +23,19 @@ class GroupImageStorageServiceImpl(
         val uri = Uri.parse(sourceUri)
         val tempDir = File(context.filesDir, TEMP_DIR).also { it.mkdirs() }
         val destFile = File(tempDir, "group_temp_${System.currentTimeMillis()}.webp")
+        var decodedBitmap: Bitmap? = null
+        var rotatedBitmap: Bitmap? = null
 
         try {
             val rotationDegrees = getRotationDegrees(uri, sourceUri)
             val boundsOpts = decodeBounds(uri, sourceUri)
             val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight, MAX_IMAGE_DIMENSION)
-            val decodedBitmap = decodeOriginalBitmap(uri, sourceUri, inSampleSize)
-            val rotatedBitmap = rotateBitmap(decodedBitmap, rotationDegrees)
+            decodedBitmap = decodeOriginalBitmap(uri, sourceUri, inSampleSize)
+            rotatedBitmap = rotateBitmap(decodedBitmap, rotationDegrees)
 
             FileOutputStream(destFile).use { output ->
                 saveWebp(rotatedBitmap, output)
             }
-            rotatedBitmap.recycle()
 
             Timber.d("Saved temp group image to ${destFile.absolutePath}")
             destFile.toUri().toString()
@@ -42,6 +43,10 @@ class GroupImageStorageServiceImpl(
             Timber.e(e, "Failed to save temp group image from $sourceUri")
             throw e
         } finally {
+            rotatedBitmap?.recycle()
+            if (decodedBitmap != null && decodedBitmap != rotatedBitmap && !decodedBitmap.isRecycled) {
+                decodedBitmap.recycle()
+            }
             cleanUpSourceCameraFile(uri, sourceUri)
         }
     }
@@ -98,7 +103,9 @@ class GroupImageStorageServiceImpl(
             val files = tempDir.listFiles() ?: return@withContext
             val threshold = System.currentTimeMillis() - CLEANUP_THRESHOLD_MS
             for (file in files) {
-                if (file.name.startsWith("group_temp_") && file.lastModified() < threshold) {
+                if ((file.name.startsWith("group_temp_") || file.name.startsWith("group_camera_")) &&
+                    file.lastModified() < threshold
+                ) {
                     deleteFileQuietly(file)
                 }
             }

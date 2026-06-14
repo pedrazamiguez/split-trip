@@ -25,7 +25,7 @@ internal class CloudStorageDataSourceImpl(
     ): String {
         // localPath may be a raw filesystem path OR a file:// URI (from ReceiptStorageServiceImpl).
         // Normalise to a plain path before creating a File.
-        val resolvedPath = if (localPath.startsWith("file://")) {
+        val resolvedPath = if (localPath.startsWith(FILE_SCHEME_PREFIX)) {
             android.net.Uri.parse(localPath).path
                 ?: error("Could not resolve filesystem path from URI: $localPath")
         } else {
@@ -66,7 +66,7 @@ internal class CloudStorageDataSourceImpl(
         localPath: String,
         mimeType: String
     ): String {
-        val resolvedPath = if (localPath.startsWith("file://")) {
+        val resolvedPath = if (localPath.startsWith(FILE_SCHEME_PREFIX)) {
             android.net.Uri.parse(localPath).path
                 ?: error("Could not resolve filesystem path from URI: $localPath")
         } else {
@@ -106,7 +106,7 @@ internal class CloudStorageDataSourceImpl(
         localPath: String,
         mimeType: String
     ): String {
-        val resolvedPath = if (localPath.startsWith("file://")) {
+        val resolvedPath = if (localPath.startsWith(FILE_SCHEME_PREFIX)) {
             android.net.Uri.parse(localPath).path
                 ?: error("Could not resolve filesystem path from URI: $localPath")
         } else {
@@ -145,5 +145,6 @@ internal class CloudStorageDataSourceImpl(
         const val RECEIPTS_PREFIX = "receipts"
         const val AVATARS_PREFIX = "avatars"
         const val GROUPS_PREFIX = "groups"
+        const val FILE_SCHEME_PREFIX = "file://"
     }
 }
