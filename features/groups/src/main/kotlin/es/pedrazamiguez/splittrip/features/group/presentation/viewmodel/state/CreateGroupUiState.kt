@@ -28,7 +28,9 @@ data class CreateGroupUiState(
     val isNameValid: Boolean = true,
 
     // ── Wizard ──────────────────────────────────────────────────────────
-    val currentStep: CreateGroupStep = CreateGroupStep.INFO
+    val currentStep: CreateGroupStep = CreateGroupStep.INFO,
+    val localGroupImagePath: String? = null,
+    val showImageSourceSheet: Boolean = false
 ) {
     val steps: List<CreateGroupStep>
         get() = CreateGroupStep.entries
@@ -47,6 +49,7 @@ data class CreateGroupUiState(
             CreateGroupStep.INFO -> groupName.isNotBlank() && isNameValid
             CreateGroupStep.CURRENCY -> selectedCurrency != null
             CreateGroupStep.MEMBERS -> true
+            CreateGroupStep.IMAGE -> true
             CreateGroupStep.REVIEW -> groupName.isNotBlank() && isNameValid && selectedCurrency != null
         }
 }

@@ -39,4 +39,15 @@ interface CloudStorageDataSource {
      * Deletes the user avatar associated with [userId].
      */
     suspend fun deleteAvatar(userId: String)
+
+    /**
+     * Uploads the group image at [localPath] to the `groups/{groupId}/` path in Cloud Storage.
+     * @return Public HTTPS download URL.
+     */
+    suspend fun uploadGroupImage(groupId: String, localPath: String, mimeType: String): String
+
+    /**
+     * Deletes the group cover image associated with [groupId].
+     */
+    suspend fun deleteGroupImage(groupId: String)
 }

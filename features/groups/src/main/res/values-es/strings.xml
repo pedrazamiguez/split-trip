@@ -94,4 +94,18 @@
     <string name="scanner_invalid_qr">Formato de código QR no válido</string>
     <string name="scanner_helper_text">Coloca el código QR dentro del recuadro para escanearlo</string>
     <string name="scanner_close">Cerrar</string>
+
+    <!-- Group Image Wizard Step -->
+    <string name="group_wizard_step_image">Imagen de Portada</string>
+    <string name="group_error_image_processing_failed">No pudimos procesar la imagen seleccionada. Por favor, prueba con otra</string>
+    <string name="group_image_sheet_title">Imagen de portada del grupo</string>
+    <string name="group_image_sheet_camera">Hacer foto</string>
+    <string name="group_image_sheet_gallery">Elegir de la galería</string>
+    <string name="group_image_sheet_remove">Quitar imagen de portada</string>
+    <string name="group_image_step_title">Añade una foto de portada</string>
+    <string name="group_image_step_subtitle">Haz que la página de tu grupo se sienta como en casa. Siempre puedes cambiar esto más tarde.</string>
+    <string name="group_image_step_select_btn">Seleccionar foto de portada</string>
+    <string name="group_image_step_change_btn">Cambiar foto</string>
+    <string name="group_image_step_remove_btn">Quitar foto</string>
+    <string name="group_image_step_uploading">Subiendo imagen…</string>
 </resources>

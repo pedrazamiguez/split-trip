@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContribut
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
@@ -40,15 +41,26 @@ val groupsUiModule = module {
     }
 
     viewModel {
+        val createGroupUseCase = get<CreateGroupUseCase>()
+        val getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>()
+        val getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>()
+        val searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>()
+        val emailValidationService = get<EmailValidationService>()
+        val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
+        val groupUiMapper = get<GroupUiMapper>()
+        val groupImageStorageService = get<GroupImageStorageService>()
+        val telemetryTracker = get<TelemetryTracker>()
+
         CreateGroupViewModel(
-            createGroupUseCase = get<CreateGroupUseCase>(),
-            getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>(),
-            getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>(),
-            searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>(),
-            emailValidationService = get<EmailValidationService>(),
-            getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
-            groupUiMapper = get<GroupUiMapper>(),
-            telemetryTracker = get<TelemetryTracker>()
+            createGroupUseCase = createGroupUseCase,
+            getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
+            getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
+            searchUsersByEmailUseCase = searchUsersByEmailUseCase,
+            emailValidationService = emailValidationService,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            groupUiMapper = groupUiMapper,
+            groupImageStorageService = groupImageStorageService,
+            telemetryTracker = telemetryTracker
         )
     }
 

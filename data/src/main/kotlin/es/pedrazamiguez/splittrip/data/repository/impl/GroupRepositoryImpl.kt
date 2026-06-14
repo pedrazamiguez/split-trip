@@ -3,11 +3,13 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
@@ -33,6 +35,8 @@ class GroupRepositoryImpl(
     private val localGroupDataSource: LocalGroupDataSource,
     private val authenticationService: AuthenticationService,
     private val groupDeletionRetryScheduler: GroupDeletionRetryScheduler,
+    private val groupImageStorageService: GroupImageStorageService,
+    private val cloudStorageDataSource: CloudStorageDataSource,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : GroupRepository {
 
@@ -108,18 +112,13 @@ class GroupRepositoryImpl(
         val currentTimestamp = LocalDateTime.now()
         val currentUserId = authenticationService.requireUserId()
 
-        // Ensure the creator is always in the members list.
-        // This is enforced here (repository layer) so it applies to all callers
-        // and the locally-saved Group is consistent with what Firestore will have.
-        val membersWithCreator = if (currentUserId !in group.members) {
-            group.members + currentUserId
-        } else {
-            group.members
-        }
+        val finalLocalImagePath = commitTempImage(groupId, group.mainImagePath)
+        val membersWithCreator = ensureCreatorInMembers(currentUserId, group.members)
 
         val createdGroup = group.copy(
             id = groupId,
             members = membersWithCreator,
+            mainImagePath = finalLocalImagePath,
             createdAt = group.createdAt ?: currentTimestamp,
             lastUpdatedAt = currentTimestamp,
             syncStatus = SyncStatus.PENDING_SYNC
@@ -130,42 +129,117 @@ class GroupRepositoryImpl(
 
         // Sync to cloud in background with two-phase verification
         syncScope.launch {
-            // Phase 1: Write to Firestore (resolves from local cache if offline)
-            try {
-                cloudGroupDataSource.createGroup(createdGroup)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Only downgrade to SYNC_FAILED if the snapshot listener has not already
-                // confirmed the entity as SYNCED (guards against the ACK-loss race condition).
-                val currentStatus = localGroupDataSource.getGroupById(groupId)?.syncStatus
-                if (currentStatus == SyncStatus.PENDING_SYNC) {
-                    localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNC_FAILED)
-                }
-                Timber.w(e, "Failed to sync group to cloud")
-                return@launch
-            }
-
-            // Phase 2: Verify the write reached the server (Source.SERVER round-trip)
-            try {
-                cloudGroupDataSource.verifyGroupOnServer(groupId)
-                localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNCED)
-                Timber.d("Group synced and confirmed on server: $groupId")
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Server unreachable — write is cached in Firestore, will sync automatically.
-                // Keep as PENDING_SYNC (already the current status from local save).
-                // The confirmPendingSyncGroups() mechanism will transition to SYNCED
-                // when the snapshot listener re-fires after server confirmation.
-                Timber.d(
-                    e,
-                    "Group saved to Firestore cache, pending server confirmation: $groupId"
-                )
-            }
+            syncCreatedGroupToCloud(groupId, createdGroup, finalLocalImagePath)
         }
 
         return groupId
+    }
+
+    private suspend fun commitTempImage(groupId: String, tempPath: String?): String? {
+        if (tempPath.isNullOrBlank()) return null
+        return try {
+            groupImageStorageService.commitGroupImage(groupId, tempPath)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to commit group image $tempPath for group $groupId")
+            null
+        }
+    }
+
+    private fun ensureCreatorInMembers(userId: String, members: List<String>): List<String> {
+        return if (userId !in members) members + userId else members
+    }
+
+    private suspend fun <T> runCloudOp(
+        tag: String = "CloudOp",
+        message: String = "Operation failed",
+        block: suspend () -> T
+    ): T? {
+        return try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "$tag: $message")
+            null
+        }
+    }
+
+    private suspend fun uploadAndSaveLocalImage(
+        groupId: String,
+        createdGroup: Group,
+        localImagePath: String
+    ): String? {
+        val uploadedUrl = runCloudOp(
+            tag = "GroupImageUpload",
+            message = "Failed to upload group image to cloud storage for group $groupId"
+        ) {
+            cloudStorageDataSource.uploadGroupImage(groupId, localImagePath, "image/webp")
+        } ?: return null
+
+        try {
+            val updatedLocalGroup = createdGroup.copy(mainImagePath = uploadedUrl)
+            localGroupDataSource.saveGroup(updatedLocalGroup)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to save updated local group with image url for group $groupId")
+        }
+        return uploadedUrl
+    }
+
+    private suspend fun createGroupInFirestore(
+        groupToSync: Group
+    ): Boolean {
+        return runCloudOp(
+            tag = "FirestoreSync",
+            message = "Failed to sync group to cloud"
+        ) {
+            cloudGroupDataSource.createGroup(groupToSync)
+            true
+        } ?: false
+    }
+
+    private suspend fun verifyGroupSyncOnServer(groupId: String) {
+        runCloudOp(
+            tag = "FirestoreVerify",
+            message = "Group saved to Firestore cache, pending server confirmation: $groupId"
+        ) {
+            cloudGroupDataSource.verifyGroupOnServer(groupId)
+            localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNCED)
+            Timber.d("Group synced and confirmed on server: $groupId")
+            true
+        }
+    }
+
+    private suspend fun syncCreatedGroupToCloud(
+        groupId: String,
+        createdGroup: Group,
+        localImagePath: String?
+    ) {
+        val remoteImageUrl = if (localImagePath != null) {
+            uploadAndSaveLocalImage(groupId, createdGroup, localImagePath)
+        } else {
+            null
+        }
+
+        val groupToSync = if (remoteImageUrl != null) {
+            createdGroup.copy(mainImagePath = remoteImageUrl)
+        } else {
+            createdGroup
+        }
+
+        val createdSuccessfully = createGroupInFirestore(groupToSync)
+        if (!createdSuccessfully) {
+            // Only downgrade to SYNC_FAILED if the snapshot listener has not already
+            // confirmed the entity as SYNCED (guards against the ACK-loss race condition).
+            val currentStatus = localGroupDataSource.getGroupById(groupId)?.syncStatus
+            if (currentStatus == SyncStatus.PENDING_SYNC) {
+                localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNC_FAILED)
+            }
+            return
+        }
+
+        verifyGroupSyncOnServer(groupId)
     }
 
     /**
@@ -183,6 +257,9 @@ class GroupRepositoryImpl(
         // UI updates instantly via the observed Room Flow.
         localGroupDataSource.deleteGroup(groupId)
 
+        // Delete local permanent group image folder/file
+        groupImageStorageService.deleteLocalGroupImage(groupId)
+
         // 2. Signal Firestore to initiate server-side cascading delete.
         // requestGroupDeletion() uses a WriteBatch that atomically sets
         // deletionRequested=true AND deletes the current user's member doc.
@@ -190,6 +267,12 @@ class GroupRepositoryImpl(
         // when MetadataChanges.INCLUDE fires the group_members snapshot listener.
         // Always queue the cloud deletion, even for PENDING_SYNC entities.
         syncScope.launch {
+            try {
+                cloudStorageDataSource.deleteGroupImage(groupId)
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to delete remote group image for group: $groupId")
+            }
+
             try {
                 cloudGroupDataSource.requestGroupDeletion(groupId)
                 Timber.d("Group deletion requested for cloud: $groupId")
