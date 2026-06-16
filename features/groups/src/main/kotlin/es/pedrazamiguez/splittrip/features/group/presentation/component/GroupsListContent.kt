@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
@@ -33,7 +32,6 @@ internal fun GroupsListContent(
 ) {
     val sharedTransitionScope = LocalSharedTransitionScope.current
     val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
-    val fabExtraPadding = 72.dp // Space for StickyActionBar
 
     val selectedGroup = groups.firstOrNull { it.id == selectedGroupId }
     val unselectedGroups = groups.filter { it.id != selectedGroupId }
@@ -45,7 +43,7 @@ internal fun GroupsListContent(
             start = MaterialTheme.spacing.Default,
             top = MaterialTheme.spacing.Default,
             end = MaterialTheme.spacing.Default,
-            bottom = MaterialTheme.spacing.Default + bottomPadding + fabExtraPadding
+            bottom = MaterialTheme.spacing.Default + bottomPadding
         ),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {

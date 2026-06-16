@@ -31,7 +31,6 @@ fun GroupsScreen(
     selectedGroupId: String? = null,
     onGroupClicked: (groupId: String, groupName: String, currency: String) -> Unit = { _, _, _ -> },
     onSelectGroup: (groupId: String, groupName: String, currency: String) -> Unit = { _, _, _ -> },
-    onCreateGroupClick: () -> Unit = {},
     onScrollPositionChanged: (Int, Int) -> Unit = { _, _ -> },
     onDeleteGroup: (groupId: String) -> Unit = {},
     onManageSubunits: (groupId: String) -> Unit = {}
@@ -63,7 +62,6 @@ fun GroupsScreen(
         selectedGroupId = selectedGroupId,
         listState = listState,
         bottomPadding = bottomPadding,
-        onCreateGroupClick = onCreateGroupClick,
         onGroupClicked = onGroupClicked,
         onGroupLongClicked = { selectedGroupForMenu = it },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)

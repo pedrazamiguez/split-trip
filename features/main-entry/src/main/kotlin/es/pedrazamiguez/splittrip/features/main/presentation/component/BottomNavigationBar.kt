@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import dev.chrisbanes.haze.HazeState
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 
 /**
  * Main-tab bottom navigation bar.
@@ -18,6 +19,7 @@ fun BottomNavigationBar(
     selectedRoute: String = "",
     onTabSelected: (String) -> Unit = {},
     items: List<NavigationProvider> = emptyList(),
+    mainAction: MainAction? = null,
     hazeState: HazeState? = null
 ) {
     FloatingNavigationBar(
@@ -25,6 +27,7 @@ fun BottomNavigationBar(
         selectedId = selectedRoute,
         onTabSelected = onTabSelected,
         items = items,
+        mainAction = mainAction,
         hazeState = hazeState
     )
 }

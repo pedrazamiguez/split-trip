@@ -55,9 +55,6 @@ fun GroupsFeature(
                 sharedViewModel.selectGroup(null, null, null)
             }
         },
-        onCreateGroupClick = {
-            navController.navigate(Routes.CREATE_GROUP)
-        },
         onScrollPositionChanged = { index, offset ->
             groupsViewModel.onEvent(
                 GroupsUiEvent.ScrollPositionChanged(index, offset)

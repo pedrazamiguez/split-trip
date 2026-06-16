@@ -9,6 +9,7 @@ interface ScreenUiProvider {
     val topBar: (@Composable () -> Unit)?
         get() = null
 
-    val fab: (@Composable () -> Unit)?
+    val mainAction: MainAction?
+        @Composable
         get() = null
 }

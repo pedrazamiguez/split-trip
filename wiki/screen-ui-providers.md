@@ -14,7 +14,7 @@ We define an interface `ScreenUiProvider` in **`:core:design-system`**. Each Fea
 interface ScreenUiProvider {
     val route: String
     val topBar: (@Composable () -> Unit)? get() = null
-    val fab: (@Composable () -> Unit)? get() = null
+    val mainAction: MainAction? @Composable get() = null
 }
 
 ```
@@ -69,7 +69,14 @@ val currentProvider = providers.find { it.route == currentRoute }
 
 Scaffold(
     topBar = { currentProvider?.topBar?.invoke() },
-    floatingActionButton = { currentProvider?.fab?.invoke() }
+    bottomBar = {
+        BottomNavigationBar(
+            selectedRoute = selectedRoute,
+            onTabSelected = { selectedRoute = it },
+            items = visibleProviders,
+            mainAction = currentProvider?.mainAction
+        )
+    }
 ) { content() }
 
 ```
@@ -98,37 +105,20 @@ A custom FAB with organic shapes:
 * **Idle Breathing (opt-in):** `enableIdleAnimation = true` adds a subtle vertical floating animation (~4px, 3s cycle).
 * **Scroll-Aware Auto-Hide:** Screens use `ScrollAwareFabContainer(listState)` to smoothly hide the FAB on scroll-down and show on scroll-up. This keeps the FAB always composed (preserving shared element transitions) — **do NOT use `AnimatedVisibility`**, which disposes the FAB and breaks return animations.
 
-### `StickyActionBar`
+### `MainAction`
 
-A full-width rounded `Button` pinned at the bottom of the screen, replacing FABs for primary creation actions on main list screens (Groups, Expenses, Subunits):
+A data class modeling the primary screen action to be rendered directly in the floating bottom navigation bar:
 
-* **Higher discoverability** — full width is impossible to miss.
-* **No content occlusion** — no floating overlay hiding list items.
-* **Shared Element:** Supports `sharedTransitionKey` via `fabSharedTransitionModifier` for container-transform animations to destination screens.
-
-```kotlin
-StickyActionBar(
-    text = stringResource(R.string.groups_create_new),
-    icon = Icons.Filled.Add,
-    onClick = onCreateGroup,
-    sharedTransitionKey = SharedElementKeys.CREATE_GROUP,
-    modifier = Modifier.align(Alignment.BottomCenter)
-)
-```
+* **Sleek integration** — rendered side-by-side with the bottom navigation pill.
+* **Organic lateral transitions** — slides, expands, and fades in/out with spring physics.
+* **Pill-shaped CTA** — uses a `80.dp` x `64.dp` rounded pill with a primary gradient.
+* **Container transform** — supports `sharedTransitionKey` for container-transform transitions.
 
 ---
 
-## ⚠️ Important Exception: Shared Element Transitions
+## Shared Element Transitions for Main Actions
 
-While `ScreenUiProvider` is excellent for static configuration, it has limitations for animations.
-
-**If a FAB or action bar needs to animate into a new screen (Container Transform):**
-
-1. Return `null` for `fab` in the `ScreenUiProvider`.
-2. Render the `StickyActionBar` or `ExpressiveFab` **inside the Screen composable** itself.
-3. This allows the button to access the `SharedTransitionScope` of the screen and animate correctly.
-
-*Example: The Groups, Expenses, and Subunits screens render their own `StickyActionBar` with `sharedTransitionKey` to support container-transform animations when clicked.*
+To support container-transform transitions from the main action button (e.g., into the Create Group or Add Expense screens), the `MainAction` data class exposes a `sharedTransitionKey` field. When provided, the design system automatically applies `fabSharedTransitionModifier(key)` to the button in the bottom navigation bar, matching the container transition on the target screen.
 
 ## 🏷️ Screens Without FABs: Inline Card Actions
 
