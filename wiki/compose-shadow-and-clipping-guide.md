@@ -50,9 +50,9 @@ Never apply both the shadow and the content clipping/background to the same cont
 
 ```mermaid
 graph TD
-    A[Outer Box: graphicsLayer { clip = false }] -->|Casts Rounded Shadow| B[Shadow Path]
-    A --> C[Inner Box: clipShape + background]
-    C -->|Clips Ripples & Background| D[NavigationBar / Content]
+    A["Outer Box: graphicsLayer { clip = false }"] -->|Casts Rounded Shadow| B["Shadow Path"]
+    A --> C["Inner Box: clipShape + background"]
+    C -->|Clips Ripples & Background| D["NavigationBar / Content"]
 ```
 
 ### Rule 2: Order Modifiers from Left to Right (Shadows Outer, Animations Inner)
