@@ -376,7 +376,7 @@ override fun getGroupSubunitsFlow(groupId: String): Flow<List<Subunit>> =
 
 * **ScreenUiProvider (MainScreen Orchestration):**
     * Features hosted in the Bottom Tabs **must** implement `ScreenUiProvider` in their DI module.
-    * This allows each screen to define its own **`TopAppBar`** (title, actions) and **`FAB`**, which the `MainScreen` will render.
+    * This allows each screen to define its own **`TopAppBar`** (title, actions) and **`MainAction`**, which the `MainScreen` will render.
     * *Do not* implement a `Scaffold` with a TopBar inside the individual feature screen if it is a main tab screen.
 * **Scaffold:** Full-screen features (non-tab) use `FeatureScaffold`.
 * **Notifications:** Do NOT use `Scaffold(snackbarHost = ...)`. Use `LocalTopPillController` for transient feedback (top pill notifications). Never use bottom snackbars.
@@ -398,7 +398,7 @@ override fun getGroupSubunitsFlow(groupId: String): Flow<List<Subunit>> =
 * The `MainScreen` uses a **floating bottom navigation bar** that overlays content. If screens don't account for this, the last list items, FABs, and buttons will be hidden behind the nav bar.
 * ✅ **Mandatory:** All tab screens (`ScreenUiProvider`-hosted screens) **MUST** read `LocalBottomPadding.current` and apply it as bottom content padding.
     * **For scrollable lists (LazyColumn / LazyGrid):** Use `contentPadding = PaddingValues(bottom = bottomPadding)`.
-    * **For FABs rendered inside screens (not via `ScreenUiProvider.fab`):** Add `Modifier.padding(bottom = bottomPadding)` to position above the nav bar.
+    * **For FABs rendered inside screens (not via `ScreenUiProvider.mainAction`):** Add `Modifier.padding(bottom = bottomPadding)` to position above the nav bar.
     * **For bottom-anchored buttons / actions:** Include `bottomPadding` in the `Spacer` or `padding` below the last interactive element.
 * ❌ **Bad:** Hardcoding `padding(bottom = 80.dp)` — the value is dynamic and depends on the Scaffold's `innerPadding`.
 * ✅ **Good:** `val bottomPadding = LocalBottomPadding.current` → use this value.

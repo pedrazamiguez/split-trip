@@ -60,7 +60,7 @@ Kotlin Android app (Jetpack Compose, Material 3) for shared travel expenses. Mul
 - Notifications: `LocalTopPillController` — top pill notifications replace snackbars. Never use `Scaffold(snackbarHost=...)` in features.
 - **Tab features** register as bottom tabs via `NavigationProvider` interface + Koin `bind`. See `GroupsNavigationProviderImpl`.
 - **Non-tab features** (write-flows extracted into standalone modules) implement `TabGraphContributor` instead. The host tab's `NavigationProvider` injects all `TabGraphContributor` instances via Koin and calls `contributeGraph(builder)` inside `buildGraph()`. This allows runtime route merging without compile-time cross-feature dependencies. See `ContributionsTabGraphContributorImpl`, `WithdrawalsTabGraphContributorImpl`, `SubunitsTabGraphContributorImpl`.
-- Tab screens define TopBar/FAB via `ScreenUiProvider` implementations (not their own Scaffold).
+- Tab screens define TopBar/MainAction via `ScreenUiProvider` implementations (not their own Scaffold).
 
 ## Offline-First Data Flow
 
@@ -94,7 +94,7 @@ contributionsDomainModule + contributionsUiModule → contributionsFeatureModule
 withdrawalsDomainModule + withdrawalsUiModule → withdrawalsFeatureModules  (no dedicated withdrawals data module — relies on `CashWithdrawalRepository` impl from `balancesDataModule` in :data)
 ```
 - **Tab features** UI modules declare: ViewModel, Mapper, `NavigationProvider` (factory + bind), `ScreenUiProvider` (single + bind).
-- **Non-tab features** UI modules declare: ViewModel, Mapper, `TabGraphContributor` (factory + bind). They typically do **not** implement `NavigationProvider` but still register a `ScreenUiProvider` when they need a top bar or FAB (e.g. write-flow screens).
+- **Non-tab features** UI modules declare: ViewModel, Mapper, `TabGraphContributor` (factory + bind). They typically do **not** implement `NavigationProvider` but still register a `ScreenUiProvider` when they need a top bar (e.g. write-flow screens).
 - See `features/groups/.../GroupsUiModule.kt` (tab), `features/contributions/.../ContributionsUiModule.kt` (non-tab), and `features/profile/.../ProfileUiModule.kt` as templates.
 
 ## Testing
@@ -190,7 +190,7 @@ Before creating any new service, utility, formatter, or UI component, **check th
 
 | Category | Components |
 |---|---|
-| **Scaffold & Nav** | `FeatureScaffold`, `ExpressiveFab`, `LargeExpressiveFab`, `StickyActionBar`, `rememberScrollAwareFabVisibility`, `ScrollAwareFabContainer`, `NavigationBarIcon`, `TabGraphContributor` |
+| **Scaffold & Nav** | `FeatureScaffold`, `ExpressiveFab`, `LargeExpressiveFab`, `MainAction`, `rememberScrollAwareFabVisibility`, `ScrollAwareFabContainer`, `NavigationBarIcon`, `TabGraphContributor` |
 | **Layout** | `ShimmerLoadingList`, `ShimmerItemCard`, `EmptyStateView`, `FlatCard`, `SectionCard`, `AnimatedAmount`, `DeferredLoadingContainer` |
 | **Input** | `StyledOutlinedTextField`, `SearchableChipSelector<T>`, `AsyncSearchableChipSelector<T>` |
 | **Currency** | `CurrencyDropdown`, `AmountCurrencyCard`, `CurrencyConversionCard` |

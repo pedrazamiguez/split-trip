@@ -4,7 +4,7 @@ The `MainScreen` is the most complex UI component in the app. Unlike standard fe
 
 1. **Bottom Navigation Management:** It holds the `BottomNavigationBar` and manages switching between tabs (e.g., Groups, Expenses, Balances) using a persistent `BottomNavigationController`.
 2. **Multi-Stack State Preservation:** It maintains a separate `NavHostController` for each tab. It uses `MainViewModel` to save and restore the `Bundle` state of each controller when switching tabs, ensuring the back stack is preserved (e.g., if you drill down into an expense details screen, switch tabs, and come back, the details screen is still there).
-3. **Dynamic UI Construction:** It observes the *current* inner route of the active tab to dynamically decide which `ScreenUiProvider` (TopBar/FAB) to hoist to the parent Scaffold.
+3. **Dynamic UI Construction:** It observes the *current* inner route of the active tab to dynamically decide which `ScreenUiProvider` (TopBar/MainAction) to hoist to the parent Scaffold.
 4. **Visual Effects & Transitions:** It initializes the `SharedTransitionLayout` to enable shared element transitions between screens and manages the `HazeState` for glassmorphism effects on the bottom bar.
 
 ## Why not use `FeatureScaffold`?
@@ -17,7 +17,7 @@ We use `FeatureScaffold` for "leaf" screens (simple screens with one job). `Main
 
 ## Architecture
 
-`MainScreen` acts as the "Host" that swaps content dynamically while keeping the Scaffold (TopBar/BottomBar/FAB) persistent, providing a smooth user experience.
+`MainScreen` acts as the "Host" that swaps content dynamically while keeping the Scaffold (TopBar/BottomBar/MainAction) persistent, providing a smooth user experience.
 
 * **Window Insets:** It consumes `WindowInsets` manually to allow content (like lists) to draw behind the transparent Bottom Navigation Bar, creating an edge-to-edge experience.
 * **Composition Locals:** It provides `LocalTabNavController` and `LocalSharedTransitionScope` to its children, enabling them to trigger global navigation actions or shared animations.

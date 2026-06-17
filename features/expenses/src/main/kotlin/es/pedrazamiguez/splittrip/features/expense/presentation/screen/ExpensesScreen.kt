@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -18,17 +17,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
@@ -36,7 +32,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.StickyActionBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.rememberConnectedScrollBehavior
@@ -56,7 +51,6 @@ import kotlinx.coroutines.flow.debounce
 fun ExpensesScreen(
     uiState: ExpensesUiState = ExpensesUiState(),
     onExpenseClicked: (String) -> Unit = { _ -> },
-    onAddExpenseClick: () -> Unit = {},
     onEditExpenseClick: (String) -> Unit = {},
     onScrollPositionChanged: (Int, Int) -> Unit = { _, _ -> },
     onDeleteExpense: (expenseId: String) -> Unit = {}
@@ -103,7 +97,6 @@ fun ExpensesScreen(
                 else -> {
                     val sharedTransitionScope = LocalSharedTransitionScope.current
                     val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
-                    val fabExtraPadding = 72.dp
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
@@ -111,7 +104,7 @@ fun ExpensesScreen(
                             start = MaterialTheme.spacing.Default,
                             top = MaterialTheme.spacing.Default,
                             end = MaterialTheme.spacing.Default,
-                            bottom = MaterialTheme.spacing.Default + bottomPadding + fabExtraPadding
+                            bottom = MaterialTheme.spacing.Default + bottomPadding
                         ),
                         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
                     ) {
@@ -142,17 +135,6 @@ fun ExpensesScreen(
                 }
             }
         }
-
-        StickyActionBar(
-            text = stringResource(R.string.expenses_add),
-            icon = TablerIcons.Outline.Plus,
-            onClick = onAddExpenseClick,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
-                .padding(bottom = bottomPadding + MaterialTheme.spacing.ExtraSmall),
-            sharedTransitionKey = ADD_EXPENSE_SHARED_ELEMENT_KEY
-        )
     }
 
     selectedExpenseForMenu?.let { expense ->

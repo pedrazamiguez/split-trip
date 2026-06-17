@@ -539,7 +539,6 @@ The Horizon Narrative was implemented across 7 focused sub-issues:
 | `SectionCard.kt` | `core/design-system/.../component/layout/` | Titled card section (built on `FlatCard`) |
 | `PassportChip.kt` | `core/design-system/.../component/chip/` | Signature travel chip with tone-stable colours |
 | `StyledOutlinedTextField.kt` | `core/design-system/.../component/input/` | Soft Field text input with `softFieldColors()` |
-| `StickyActionBar.kt` | `core/design-system/.../component/scaffold/` | Full-width bottom CTA bar (delegates to `GradientButton`) |
 | `TextComponents.kt` | `core/design-system/.../component/text/` | Semantic text wrappers (§3.3) |
 
 ---

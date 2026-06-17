@@ -40,7 +40,7 @@ fun DefaultCurrencyFeature(
     val navController = LocalRootNavController.current
     val scope = rememberCoroutineScope()
 
-    // 3. Wrap with Scaffold (injects TopBar/FAB based on Route)
+    // 3. Wrap with Scaffold (injects TopBar based on Route)
     FeatureScaffold(currentRoute = Routes.SETTINGS_DEFAULT_CURRENCY) {
         
         // 4. Render the Screen

@@ -172,12 +172,12 @@ fun MainScreen(
                         isTabSwitch = isTabSwitch
                     )
                 },
-                floatingActionButton = { currentUiProvider?.fab?.invoke() },
                 bottomBar = {
                     BottomNavigationBar(
                         selectedRoute = selectedRoute,
                         onTabSelected = { route -> selectedRoute = route },
                         items = visibleProviders,
+                        mainAction = currentUiProvider?.mainAction,
                         hazeState = hazeState
                     )
                 },
