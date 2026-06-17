@@ -26,10 +26,9 @@ internal fun SlidingIndicator(
     containerWidth: Dp,
     modifier: Modifier = Modifier
 ) {
-    val totalItemsWidth = itemWidth * itemCount
-    val totalSpacing = containerWidth - totalItemsWidth
-    val spacingPerGap = totalSpacing / (itemCount + 1)
-    val itemOffset = spacingPerGap + (itemWidth + spacingPerGap) * selectedIndex
+    val slotWidth = if (itemCount > 0) containerWidth / itemCount else 0.dp
+    val indicatorWidth = minOf(itemWidth, slotWidth)
+    val itemOffset = slotWidth * selectedIndex + (slotWidth - indicatorWidth) / 2
 
     val indicatorOffset by animateDpAsState(
         targetValue = itemOffset,
@@ -43,7 +42,7 @@ internal fun SlidingIndicator(
     Box(
         modifier = modifier
             .offset(x = indicatorOffset)
-            .width(itemWidth)
+            .width(indicatorWidth)
             .height(NavBarDefaults.BarHeight - 16.dp)
             .clip(RoundedCornerShape(NavBarDefaults.INDICATOR_CORNER_RADIUS))
             .background(MaterialTheme.colorScheme.primaryContainer)

@@ -5,8 +5,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -34,9 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -112,11 +110,16 @@ fun FloatingNavigationBar(
                 modifier = Modifier
                     .weight(1f)
                     .animateContentSize()
-                    .shadow(NavBarDefaults.ShadowElevation, CircleShape)
+                    .graphicsLayer {
+                        shadowElevation = NavBarDefaults.ShadowElevation.toPx()
+                        shape = CircleShape
+                        clip = false
+                    }
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                 contentAlignment = Alignment.Center
             ) {
+                val innerHorizontalPadding = if (mainAction != null) 8.dp else NavBarDefaults.InnerHorizontalPadding
                 NavigationBar(
                     modifier = Modifier.fillMaxWidth(),
                     containerColor = Color.Transparent,
@@ -129,7 +132,7 @@ fun FloatingNavigationBar(
                             .fillMaxWidth()
                             .height(NavBarDefaults.BarHeight)
                             .padding(
-                                horizontal = NavBarDefaults.InnerHorizontalPadding,
+                                horizontal = innerHorizontalPadding,
                                 vertical = NavBarDefaults.InnerVerticalPadding
                             )
                     ) {
@@ -150,7 +153,7 @@ fun FloatingNavigationBar(
                                     item = item,
                                     isSelected = index == selectedIndex,
                                     onClick = { onTabSelected(item.id) },
-                                    modifier = Modifier.width(NavBarDefaults.ItemWidth)
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }
@@ -171,10 +174,6 @@ fun FloatingNavigationBar(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMedium
                     )
-                ) + fadeIn(
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessMedium
-                    )
                 ),
                 exit = slideOutHorizontally(
                     animationSpec = spring(
@@ -182,10 +181,6 @@ fun FloatingNavigationBar(
                     ),
                     targetOffsetX = { it }
                 ) + shrinkHorizontally(
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessMedium
-                    )
-                ) + fadeOut(
                     animationSpec = spring(
                         stiffness = Spring.StiffnessMedium
                     )
@@ -240,7 +235,11 @@ private fun MainActionButton(
             .width(80.dp)
             .height(64.dp)
             .then(sharedModifier)
-            .shadow(NavBarDefaults.ShadowElevation, CircleShape)
+            .graphicsLayer {
+                shadowElevation = NavBarDefaults.ShadowElevation.toPx()
+                shape = CircleShape
+                clip = false
+            }
             .clip(CircleShape)
             .then(containerColorModifier)
             .clickable(
