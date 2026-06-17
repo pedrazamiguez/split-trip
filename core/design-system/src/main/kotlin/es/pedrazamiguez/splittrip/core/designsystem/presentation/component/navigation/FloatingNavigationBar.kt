@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -71,6 +72,7 @@ fun FloatingNavigationBar(
     applyWindowInsets: Boolean = true
 ) {
     val selectedIndex = items.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
+    val pillShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
     // Lift the pill above the system navigation bar unless the parent already applies insets.
     val navBarInset = if (applyWindowInsets) {
@@ -113,13 +115,15 @@ fun FloatingNavigationBar(
             Box(
                 modifier = Modifier
                     .weight(1f)
+                    .height(NavBarDefaults.BarHeight)
+                    .shadow(elevation = barElevation, shape = pillShape)
                     .animateContentSize()
-                    .shadow(elevation = barElevation, shape = CircleShape)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(CircleShape)
+                        .height(NavBarDefaults.BarHeight)
+                        .clip(pillShape)
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                     contentAlignment = Alignment.Center
                 ) {
@@ -235,19 +239,20 @@ private fun MainActionButton(
 
     val isDarkMode = isSystemInDarkTheme()
     val elevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
+    val buttonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
     Box(
         modifier = modifier
             .width(80.dp)
             .height(64.dp)
             .then(sharedModifier)
-            .shadow(elevation = elevation, shape = CircleShape)
+            .shadow(elevation = elevation, shape = buttonShape)
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .clip(CircleShape)
+                .clip(buttonShape)
                 .then(containerColorModifier)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
