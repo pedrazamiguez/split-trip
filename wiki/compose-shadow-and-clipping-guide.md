@@ -163,3 +163,116 @@ If a component is displaying a squared shadow, verify the following:
    val isDarkMode = isSystemInDarkTheme()
    val elevation = if (isDarkMode) 0.dp else baseElevation
    ```
+6. **Does the shadow container participate in `sharedBounds`?**
+   If the element uses a shared element transition, the shadow **must** be on a separate outer wrapper that does NOT have `Modifier.sharedBounds`. See Section 5.
+
+---
+
+## 5. Shared Element Transitions with Floating Actions
+
+This section documents the solution for shadow artifacts that appear specifically during `sharedBounds` container-transform transitions (e.g. a FAB in the bottom nav morphing into a full-screen form and back).
+
+### Background
+
+Shared element transitions in Compose work by lifting the participating element into a **GPU overlay layer** for the duration of the morph. While in that overlay:
+
+- All rendering (shadows, backgrounds, content) is clipped to the **current rectangular morphing bounds** of the container.
+- This clipping happens at the **hardware/GPU layer level** — it is completely independent of any `shape` you declared in `graphicsLayer`.
+- The result: any shadow on a `sharedBounds` participant will appear as a growing/shrinking **rectangle** during the transition, regardless of how you configure `clip`, `clipInOverlayDuringTransition`, or modifier order inside the shared element.
+
+### The Definitive Fix: Isolate the Shadow Outside the Shared Element
+
+The shadow **must** live on an outer wrapper Box that is **never** passed to `Modifier.sharedBounds`. Only the inner Box — which has no shadow of its own — participates in the transition.
+
+```
+OuterBox (graphicsLayer shadow — NOT in sharedBounds, stays in normal render tree)
+  └── SharedBoundsBox (Modifier.sharedBounds — zero shadow, lifted into overlay)
+        └── ContentBox (clip + background + click handlers)
+```
+
+#### ✅ Correct Implementation
+
+```kotlin
+val buttonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
+val elevation = if (isSystemInDarkTheme()) 0.dp else NavBarDefaults.ShadowElevation
+val sharedModifier = fabSharedTransitionModifier(key)
+
+// Outer Box: owns the shadow. Never participates in sharedBounds.
+Box(
+    modifier = modifier
+        .width(80.dp)
+        .height(64.dp)
+        .graphicsLayer {
+            shadowElevation = elevation.toPx()
+            shape = buttonShape
+            clip = false
+        }
+) {
+    // Middle Box: participates in sharedBounds. Has NO shadow.
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .then(sharedModifier) // Modifier.sharedBounds lives here
+    ) {
+        // Inner Box: content, clipping, background, interaction.
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(buttonShape)
+                .background(color)
+                .clickable(onClick = onClick)
+        ) {
+            Icon(...)
+        }
+    }
+}
+```
+
+#### Why It Works
+
+The outer `ShadowBox` is rendered in the Scaffold's normal layer. When `sharedBounds` lifts the inner element into the overlay, the outer box stays fixed in the normal tree. Its `graphicsLayer { shape = buttonShape }` shadow is always rendered correctly rounded. Since the content (the coloured inner box) was opaque and covered the shadow, and the full-screen destination immediately fills the screen, the shadow's momentary visibility during the transition is imperceptible.
+
+### Anti-Patterns That Were Tried and Failed
+
+| Approach | Why it fails |
+|---|---|
+| `Modifier.shadow(...)` on sharedBounds node | `Modifier.shadow` sets `clip = true` implicitly; shadow is clipped rectangularly in the GPU overlay |
+| `graphicsLayer { shadow }` after `.then(sharedModifier)` | Same root cause — the shadow is still on the shared element's overlay layer |
+| `graphicsLayer { shadow }` on inner child Box | The entire subtree including inner children is lifted into the overlay; same rectangular clip applies |
+| `clipInOverlayDuringTransition = null` | Disables Compose-level overlay clipping but the GPU hardware layer still clips at rectangular bounds |
+| `animatedVisibilityScope.transition.isRunning` to zero shadow | Suppresses the artifact but introduces a visible shadow pop-in animation when the transition ends |
+
+### Companion Setup Requirements
+
+For this pattern to work end-to-end, two additional things must be in place:
+
+#### A. Single Root `SharedTransitionLayout` Wrapping the Entire Scaffold
+
+The FAB (inside the `bottomBar` slot) and the destination screen (inside the `NavHost`) must share the same `SharedTransitionLayout` scope. Wrap the entire `Scaffold` at the `MainScreen` level:
+
+```kotlin
+SharedTransitionLayout {
+    CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+        Scaffold(
+            bottomBar = { BottomNavigationBar(...) },   // FAB lives here
+            content = { MainTabsContent(...) }           // NavHost lives here
+        )
+    }
+}
+```
+
+#### B. Provide `LocalAnimatedVisibilityScope` from the `AnimatedVisibility` Block
+
+The FAB's `AnimatedVisibility` scope must be explicitly provided so `fabSharedTransitionModifier` can read it:
+
+```kotlin
+AnimatedVisibility(visible = mainAction != null, ...) {
+    CompositionLocalProvider(LocalAnimatedVisibilityScope provides this) {
+        if (mainAction != null) {
+            MainActionButton(mainAction = mainAction)
+        }
+    }
+}
+```
+

@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -246,32 +245,46 @@ private fun MainActionButton(
     val elevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
     val buttonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
+    // The shadow MUST live on a wrapper that does NOT participate in sharedBounds.
+    // When sharedBounds lifts an element into the GPU overlay for the transition,
+    // any shadow on that element gets clipped to the rectangular morphing bounds —
+    // regardless of the declared shape. Separating the shadow into an outer wrapper
+    // keeps it in the normal render tree where it clips correctly to buttonShape.
     Box(
         modifier = modifier
             .width(80.dp)
             .height(64.dp)
-            .then(sharedModifier)
-            .shadow(elevation = elevation, shape = buttonShape)
+            .graphicsLayer {
+                shadowElevation = elevation.toPx()
+                shape = buttonShape
+                clip = false
+            }
     ) {
         Box(
-            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .clip(buttonShape)
-                .then(containerColorModifier)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = ripple(color = contentColor),
-                    enabled = enabled,
-                    role = Role.Button,
-                    onClick = mainAction.onClick
-                )
+                .then(sharedModifier)
         ) {
-            Icon(
-                imageVector = mainAction.icon,
-                contentDescription = mainAction.contentDescription,
-                tint = contentColor
-            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(buttonShape)
+                    .then(containerColorModifier)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(color = contentColor),
+                        enabled = enabled,
+                        role = Role.Button,
+                        onClick = mainAction.onClick
+                    )
+            ) {
+                Icon(
+                    imageVector = mainAction.icon,
+                    contentDescription = mainAction.contentDescription,
+                    tint = contentColor
+                )
+            }
         }
     }
 }
