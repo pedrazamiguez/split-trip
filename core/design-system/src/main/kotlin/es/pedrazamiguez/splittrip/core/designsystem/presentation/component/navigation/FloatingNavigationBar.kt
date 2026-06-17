@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -116,7 +117,11 @@ fun FloatingNavigationBar(
                 modifier = Modifier
                     .weight(1f)
                     .height(NavBarDefaults.BarHeight)
-                    .shadow(elevation = barElevation, shape = pillShape)
+                    .graphicsLayer {
+                        shadowElevation = barElevation.toPx()
+                        shape = pillShape
+                        clip = false
+                    }
                     .animateContentSize()
             ) {
                 Box(
