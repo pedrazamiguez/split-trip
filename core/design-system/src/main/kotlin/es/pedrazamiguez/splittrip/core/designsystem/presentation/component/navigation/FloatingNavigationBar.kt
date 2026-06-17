@@ -4,19 +4,19 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
@@ -28,13 +28,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -58,7 +59,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.transition.fabSharedTransiti
  * - Elevated shadow for depth
  * - Optional translucent glassmorphism scrim via [hazeState]
  */
-@Suppress("LongMethod") // Compose UI builder DSL
+@Suppress("LongMethod", "CognitiveComplexMethod") // Compose UI builder DSL
 @Composable
 fun FloatingNavigationBar(
     modifier: Modifier = Modifier,
@@ -98,6 +99,9 @@ fun FloatingNavigationBar(
             )
         }
 
+        val isDarkMode = isSystemInDarkTheme()
+        val barElevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -110,51 +114,52 @@ fun FloatingNavigationBar(
                 modifier = Modifier
                     .weight(1f)
                     .animateContentSize()
-                    .graphicsLayer {
-                        shadowElevation = NavBarDefaults.ShadowElevation.toPx()
-                        shape = CircleShape
-                        clip = false
-                    }
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
+                    .shadow(elevation = barElevation, shape = CircleShape)
             ) {
-                val innerHorizontalPadding = if (mainAction != null) 8.dp else NavBarDefaults.InnerHorizontalPadding
-                NavigationBar(
-                    modifier = Modifier.fillMaxWidth(),
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    tonalElevation = 0.dp,
-                    windowInsets = WindowInsets(0, 0, 0, 0)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
                 ) {
-                    BoxWithConstraints(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(NavBarDefaults.BarHeight)
-                            .padding(
-                                horizontal = innerHorizontalPadding,
-                                vertical = NavBarDefaults.InnerVerticalPadding
-                            )
+                    val innerHorizontalPadding = if (mainAction != null) 8.dp else NavBarDefaults.InnerHorizontalPadding
+                    NavigationBar(
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        tonalElevation = 0.dp,
+                        windowInsets = WindowInsets(0, 0, 0, 0)
                     ) {
-                        SlidingIndicator(
-                            selectedIndex = selectedIndex,
-                            itemCount = items.size,
-                            itemWidth = NavBarDefaults.ItemWidth,
-                            containerWidth = maxWidth
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            items.forEachIndexed { index, item ->
-                                FloatingNavItem(
-                                    item = item,
-                                    isSelected = index == selectedIndex,
-                                    onClick = { onTabSelected(item.id) },
-                                    modifier = Modifier.weight(1f)
+                        BoxWithConstraints(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(NavBarDefaults.BarHeight)
+                                .padding(
+                                    horizontal = innerHorizontalPadding,
+                                    vertical = NavBarDefaults.InnerVerticalPadding
                                 )
+                        ) {
+                            SlidingIndicator(
+                                selectedIndex = selectedIndex,
+                                itemCount = items.size,
+                                itemWidth = NavBarDefaults.ItemWidth,
+                                containerWidth = maxWidth
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                items.forEachIndexed { index, item ->
+                                    FloatingNavItem(
+                                        item = item,
+                                        isSelected = index == selectedIndex,
+                                        onClick = { onTabSelected(item.id) },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
                             }
                         }
                     }
@@ -169,21 +174,12 @@ fun FloatingNavigationBar(
                         stiffness = Spring.StiffnessMedium
                     ),
                     initialOffsetX = { it }
-                ) + expandHorizontally(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
                 ),
                 exit = slideOutHorizontally(
                     animationSpec = spring(
                         stiffness = Spring.StiffnessMedium
                     ),
                     targetOffsetX = { it }
-                ) + shrinkHorizontally(
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessMedium
-                    )
                 )
             ) {
                 if (mainAction != null) {
@@ -191,6 +187,36 @@ fun FloatingNavigationBar(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun getActionButtonBackground(enabled: Boolean): Modifier {
+    val startColor = MaterialTheme.colorScheme.primary
+    val subtleEnd = lerp(
+        startColor,
+        MaterialTheme.colorScheme.primaryContainer,
+        0.35f
+    )
+    return if (enabled) {
+        Modifier.background(
+            brush = Brush.linearGradient(colors = listOf(startColor, subtleEnd)),
+            shape = CircleShape
+        )
+    } else {
+        Modifier.background(
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+            shape = CircleShape
+        )
+    }
+}
+
+@Composable
+private fun getActionButtonContentColor(enabled: Boolean): Color {
+    return if (enabled) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     }
 }
 
@@ -203,57 +229,39 @@ private fun MainActionButton(
         fabSharedTransitionModifier(it)
     } ?: Modifier
 
-    val startColor = MaterialTheme.colorScheme.primary
-    val subtleEnd = lerp(
-        startColor,
-        MaterialTheme.colorScheme.primaryContainer,
-        0.35f
-    )
-
     val enabled = mainAction.enabled
-    val containerColorModifier = if (enabled) {
-        Modifier.background(
-            brush = Brush.linearGradient(colors = listOf(startColor, subtleEnd)),
-            shape = CircleShape
-        )
-    } else {
-        Modifier.background(
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-            shape = CircleShape
-        )
-    }
+    val containerColorModifier = getActionButtonBackground(enabled)
+    val contentColor = getActionButtonContentColor(enabled)
 
-    val contentColor = if (enabled) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-    }
+    val isDarkMode = isSystemInDarkTheme()
+    val elevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
 
     Box(
-        contentAlignment = Alignment.Center,
         modifier = modifier
             .width(80.dp)
             .height(64.dp)
             .then(sharedModifier)
-            .graphicsLayer {
-                shadowElevation = NavBarDefaults.ShadowElevation.toPx()
-                shape = CircleShape
-                clip = false
-            }
-            .clip(CircleShape)
-            .then(containerColorModifier)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = contentColor),
-                enabled = enabled,
-                role = Role.Button,
-                onClick = mainAction.onClick
-            )
+            .shadow(elevation = elevation, shape = CircleShape)
     ) {
-        Icon(
-            imageVector = mainAction.icon,
-            contentDescription = mainAction.contentDescription,
-            tint = contentColor
-        )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .then(containerColorModifier)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(color = contentColor),
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = mainAction.onClick
+                )
+        ) {
+            Icon(
+                imageVector = mainAction.icon,
+                contentDescription = mainAction.contentDescription,
+                tint = contentColor
+            )
+        }
     }
 }
