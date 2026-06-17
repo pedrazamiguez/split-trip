@@ -25,8 +25,7 @@ fun FeatureScaffold(currentRoute: String, modifier: Modifier = Modifier, content
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { currentProvider?.topBar?.invoke() },
-        floatingActionButton = { currentProvider?.fab?.invoke() }
+        topBar = { currentProvider?.topBar?.invoke() }
     ) { innerPadding ->
 
         Box(

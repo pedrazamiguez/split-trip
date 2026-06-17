@@ -1,31 +1,50 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
+import es.pedrazamiguez.splittrip.core.designsystem.transition.fabSharedTransitionModifier
 
 /**
  * A floating pill-shaped bottom navigation bar with Material 3 Expressive styling.
@@ -41,17 +60,19 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
  * - Elevated shadow for depth
  * - Optional translucent glassmorphism scrim via [hazeState]
  */
-@Suppress("LongMethod") // Compose UI builder DSL
+@Suppress("LongMethod", "CognitiveComplexMethod") // Compose UI builder DSL
 @Composable
 fun FloatingNavigationBar(
     modifier: Modifier = Modifier,
     selectedId: String = "",
     onTabSelected: (String) -> Unit = {},
     items: List<FloatingNavTab> = emptyList(),
+    mainAction: MainAction? = null,
     hazeState: HazeState? = null,
     applyWindowInsets: Boolean = true
 ) {
     val selectedIndex = items.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
+    val pillShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
     // Lift the pill above the system navigation bar unless the parent already applies insets.
     val navBarInset = if (applyWindowInsets) {
@@ -80,55 +101,189 @@ fun FloatingNavigationBar(
             )
         }
 
-        // Floating pill
-        Box(
+        val isDarkMode = isSystemInDarkTheme()
+        val barElevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
+
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = NavBarDefaults.HorizontalPadding)
-                .padding(bottom = NavBarDefaults.BottomPadding + navBarInset)
-                .shadow(NavBarDefaults.ShadowElevation, CircleShape)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            contentAlignment = Alignment.Center
+                .padding(bottom = NavBarDefaults.BottomPadding + navBarInset),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            NavigationBar(
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                tonalElevation = 0.dp,
-                windowInsets = WindowInsets(0, 0, 0, 0)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(NavBarDefaults.BarHeight)
+                    .graphicsLayer {
+                        shadowElevation = barElevation.toPx()
+                        shape = pillShape
+                        clip = false
+                    }
+                    .animateContentSize()
             ) {
-                BoxWithConstraints(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(NavBarDefaults.BarHeight)
-                        .padding(
-                            horizontal = NavBarDefaults.InnerHorizontalPadding,
-                            vertical = NavBarDefaults.InnerVerticalPadding
-                        )
+                        .clip(pillShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
                 ) {
-                    SlidingIndicator(
-                        selectedIndex = selectedIndex,
-                        itemCount = items.size,
-                        itemWidth = NavBarDefaults.ItemWidth,
-                        containerWidth = maxWidth
-                    )
-
-                    Row(
+                    val innerHorizontalPadding = if (mainAction != null) 8.dp else NavBarDefaults.InnerHorizontalPadding
+                    NavigationBar(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        tonalElevation = 0.dp,
+                        windowInsets = WindowInsets(0, 0, 0, 0)
                     ) {
-                        items.forEachIndexed { index, item ->
-                            FloatingNavItem(
-                                item = item,
-                                isSelected = index == selectedIndex,
-                                onClick = { onTabSelected(item.id) },
-                                modifier = Modifier.width(NavBarDefaults.ItemWidth)
+                        BoxWithConstraints(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(NavBarDefaults.BarHeight)
+                                .padding(
+                                    horizontal = innerHorizontalPadding,
+                                    vertical = NavBarDefaults.InnerVerticalPadding
+                                )
+                        ) {
+                            SlidingIndicator(
+                                selectedIndex = selectedIndex,
+                                itemCount = items.size,
+                                itemWidth = NavBarDefaults.ItemWidth,
+                                containerWidth = maxWidth
                             )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                items.forEachIndexed { index, item ->
+                                    FloatingNavItem(
+                                        item = item,
+                                        isSelected = index == selectedIndex,
+                                        onClick = { onTabSelected(item.id) },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
+            }
+
+            AnimatedVisibility(
+                visible = mainAction != null,
+                enter = slideInHorizontally(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    ),
+                    initialOffsetX = { it }
+                ),
+                exit = slideOutHorizontally(
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMedium
+                    ),
+                    targetOffsetX = { it }
+                )
+            ) {
+                if (mainAction != null) {
+                    MainActionButton(mainAction = mainAction)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun getActionButtonBackground(enabled: Boolean): Modifier {
+    val startColor = MaterialTheme.colorScheme.primary
+    val subtleEnd = lerp(
+        startColor,
+        MaterialTheme.colorScheme.primaryContainer,
+        0.35f
+    )
+    return if (enabled) {
+        Modifier.background(
+            brush = Brush.linearGradient(colors = listOf(startColor, subtleEnd)),
+            shape = CircleShape
+        )
+    } else {
+        Modifier.background(
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+            shape = CircleShape
+        )
+    }
+}
+
+@Composable
+private fun getActionButtonContentColor(enabled: Boolean): Color {
+    return if (enabled) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
+}
+
+@Composable
+private fun MainActionButton(
+    mainAction: MainAction,
+    modifier: Modifier = Modifier
+) {
+    val sharedModifier = mainAction.sharedTransitionKey?.let {
+        fabSharedTransitionModifier(it)
+    } ?: Modifier
+
+    val enabled = mainAction.enabled
+    val containerColorModifier = getActionButtonBackground(enabled)
+    val contentColor = getActionButtonContentColor(enabled)
+
+    val isDarkMode = isSystemInDarkTheme()
+    val elevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
+    val buttonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
+
+    // The shadow MUST live on a wrapper that does NOT participate in sharedBounds.
+    // When sharedBounds lifts an element into the GPU overlay for the transition,
+    // any shadow on that element gets clipped to the rectangular morphing bounds —
+    // regardless of the declared shape. Separating the shadow into an outer wrapper
+    // keeps it in the normal render tree where it clips correctly to buttonShape.
+    Box(
+        modifier = modifier
+            .width(80.dp)
+            .height(64.dp)
+            .graphicsLayer {
+                shadowElevation = elevation.toPx()
+                shape = buttonShape
+                clip = false
+            }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(sharedModifier)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(buttonShape)
+                    .then(containerColorModifier)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(color = contentColor),
+                        enabled = enabled,
+                        role = Role.Button,
+                        onClick = mainAction.onClick
+                    )
+            ) {
+                Icon(
+                    imageVector = mainAction.icon,
+                    contentDescription = mainAction.contentDescription,
+                    tint = contentColor
+                )
             }
         }
     }

@@ -26,6 +26,9 @@ enum class CreateGroupStep(
     /** Invite members by email (optional). */
     MEMBERS,
 
+    /** Optional group cover image selection step. */
+    IMAGE(isOptional = true),
+
     /** Read-only summary — final confirmation before creation. */
     REVIEW(isReview = true)
 }

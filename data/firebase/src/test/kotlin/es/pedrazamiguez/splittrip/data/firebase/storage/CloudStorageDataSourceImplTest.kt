@@ -193,4 +193,45 @@ class CloudStorageDataSourceImplTest {
             assertEquals("Delete failed", e.message)
         }
     }
+
+    @Test
+    fun `uploadGroupImage uploads file and returns download URL`() = runTest {
+        val mockSnapshot = mockk<UploadTask.TaskSnapshot>()
+        val mockUploadTask = mockk<UploadTask>()
+        every { childRef.putFile(any(), any()) } returns mockUploadTask
+        coEvery { mockUploadTask.await() } returns mockSnapshot
+
+        val mockDownloadUri = mockk<Uri>()
+        every { mockDownloadUri.toString() } returns "https://firebase.storage/group_cover.webp"
+        val mockDownloadUrlTask = mockk<Task<Uri>>()
+        every { childRef.downloadUrl } returns mockDownloadUrlTask
+        coEvery { mockDownloadUrlTask.await() } returns mockDownloadUri
+
+        val url = dataSource.uploadGroupImage("group-123", "file:///path/to/group.jpg", "image/jpeg")
+
+        assertEquals("https://firebase.storage/group_cover.webp", url)
+        verify(exactly = 1) { rootRef.child("groups/group-123/group_cover.webp") }
+    }
+
+    @Test
+    fun `deleteGroupImage lists and deletes all files under prefix`() = runTest {
+        val mockListResult = mockk<com.google.firebase.storage.ListResult>()
+        val mockListTask = mockk<Task<com.google.firebase.storage.ListResult>>()
+
+        val mockItem1 = mockk<StorageReference>()
+        every { mockItem1.path } returns "groups/group-123/group_cover.webp"
+
+        val mockDeleteTask1 = mockk<Task<Void>>()
+        every { mockItem1.delete() } returns mockDeleteTask1
+        coEvery { mockDeleteTask1.await() } returns mockk()
+
+        every { childRef.listAll() } returns mockListTask
+        coEvery { mockListTask.await() } returns mockListResult
+        every { mockListResult.items } returns listOf(mockItem1)
+
+        dataSource.deleteGroupImage("group-123")
+
+        verify(exactly = 1) { rootRef.child("groups/group-123") }
+        verify(exactly = 1) { mockItem1.delete() }
+    }
 }

@@ -86,23 +86,15 @@ ScrollAwareFabContainer(
 }
 ```
 
-### 3.2 Sticky Action Bars (Primary Creation Pattern)
+### 3.2 Dynamic Main Action Button (Primary Creation Pattern)
 
-For the main list screens (Groups, Expenses, Subunits), the primary creation action uses a **`StickyActionBar`** — a full-width rounded button pinned at the bottom of the screen. This replaces FABs for primary actions because it provides:
+For the main list screens (Groups, Expenses, Subunits), the primary creation action uses a **Dynamic Main Action Button** integrated directly into the floating bottom navigation bar.
 
-* **Higher discoverability** — full width is impossible to miss.
-* **No content occlusion** — no floating overlay hiding list items.
+* **Space-efficient** — sits side-by-side with the bottom navigation pill when active.
+* **Expressive animations** — utilizes lateral spring-physics transitions to show/hide the button, causing the bottom navigation pill to dynamically shrink/expand in width.
+* **Rounded pill shape** — measures `80.dp` x `64.dp` and is fully rounded (`CircleShape` clipped).
+* **Primary gradient** — uses a linear gradient from `primary` to `primaryContainer` with a standard `0.35f` lerp blend fraction.
 * **Shared element transitions** — supports `sharedTransitionKey` via `fabSharedTransitionModifier`, enabling container-transform animations to destination screens.
-
-```kotlin
-StickyActionBar(
-    text = stringResource(R.string.groups_create_new),
-    icon = Icons.Filled.Add,
-    onClick = onCreateGroup,
-    sharedTransitionKey = SharedElementKeys.CREATE_GROUP,
-    modifier = Modifier.align(Alignment.BottomCenter)
-)
-```
 
 ### 3.3 Contextual Inline Actions (Balances)
 

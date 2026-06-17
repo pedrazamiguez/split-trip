@@ -72,9 +72,6 @@ fun ExpensesFeature(
         onExpenseClicked = { expenseId ->
             navController.navigate(Routes.expenseDetailRoute(expenseId))
         },
-        onAddExpenseClick = {
-            navController.navigate(Routes.ADD_EXPENSE)
-        },
         onEditExpenseClick = { expenseId ->
             navController.navigate(Routes.editExpenseRoute(expenseId))
         },

@@ -47,6 +47,13 @@ class GroupDocumentMapperTest {
         }
 
         @Test
+        fun `maps mainImagePath correctly`() {
+            val document = fullGroup.toDocument(testGroupId, testUserId)
+
+            assertEquals("/images/japan.jpg", document.mainImagePath)
+        }
+
+        @Test
         fun `maps extraCurrencies list`() {
             val document = fullGroup.toDocument(testGroupId, testUserId)
 

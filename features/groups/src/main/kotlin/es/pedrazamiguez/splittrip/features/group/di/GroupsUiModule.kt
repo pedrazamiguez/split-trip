@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContribut
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
@@ -26,6 +27,12 @@ import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.Groups
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.CreateGroupViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDetailViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupsViewModel
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandlerImpl
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -39,16 +46,47 @@ val groupsUiModule = module {
         )
     }
 
+    factory<CreateGroupNavigationHandler> {
+        CreateGroupNavigationHandlerImpl()
+    }
+
+    factory<CreateGroupImageHandler> {
+        val groupImageStorageService = get<GroupImageStorageService>()
+        CreateGroupImageHandlerImpl(
+            groupImageStorageService = groupImageStorageService
+        )
+    }
+
+    factory<CreateGroupSubmitHandler> {
+        val createGroupUseCase = get<CreateGroupUseCase>()
+        val telemetryTracker = get<TelemetryTracker>()
+        CreateGroupSubmitHandlerImpl(
+            createGroupUseCase = createGroupUseCase,
+            telemetryTracker = telemetryTracker
+        )
+    }
+
     viewModel {
+        val createGroupNavigationHandler = get<CreateGroupNavigationHandler>()
+        val createGroupImageHandler = get<CreateGroupImageHandler>()
+        val createGroupSubmitHandler = get<CreateGroupSubmitHandler>()
+        val getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>()
+        val getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>()
+        val searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>()
+        val emailValidationService = get<EmailValidationService>()
+        val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
+        val groupUiMapper = get<GroupUiMapper>()
+
         CreateGroupViewModel(
-            createGroupUseCase = get<CreateGroupUseCase>(),
-            getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>(),
-            getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>(),
-            searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>(),
-            emailValidationService = get<EmailValidationService>(),
-            getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
-            groupUiMapper = get<GroupUiMapper>(),
-            telemetryTracker = get<TelemetryTracker>()
+            createGroupNavigationHandler = createGroupNavigationHandler,
+            createGroupImageHandler = createGroupImageHandler,
+            createGroupSubmitHandler = createGroupSubmitHandler,
+            getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
+            getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
+            searchUsersByEmailUseCase = searchUsersByEmailUseCase,
+            emailValidationService = emailValidationService,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            groupUiMapper = groupUiMapper
         )
     }
 

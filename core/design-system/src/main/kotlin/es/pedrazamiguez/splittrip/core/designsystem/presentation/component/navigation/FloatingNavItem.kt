@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
@@ -100,7 +101,9 @@ internal fun FloatingNavItem(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = contentColor,
-                modifier = Modifier.graphicsLayer { alpha = labelAlpha }
+                modifier = Modifier.graphicsLayer { alpha = labelAlpha },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

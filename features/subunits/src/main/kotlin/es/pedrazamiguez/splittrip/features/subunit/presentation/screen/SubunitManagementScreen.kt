@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -14,21 +13,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.StickyActionBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.features.subunit.R
@@ -60,7 +55,6 @@ fun SubunitManagementScreen(
             }
 
             else -> {
-                val fabExtraPadding = 72.dp // Space for StickyActionBar
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
@@ -68,7 +62,7 @@ fun SubunitManagementScreen(
                         start = MaterialTheme.spacing.Default,
                         top = MaterialTheme.spacing.Default,
                         end = MaterialTheme.spacing.Default,
-                        bottom = MaterialTheme.spacing.Default + bottomPadding + fabExtraPadding
+                        bottom = MaterialTheme.spacing.Default + bottomPadding
                     ),
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
                 ) {
@@ -85,18 +79,6 @@ fun SubunitManagementScreen(
                 }
             }
         }
-
-        StickyActionBar(
-            text = stringResource(R.string.subunit_create),
-            icon = TablerIcons.Outline.Plus,
-            onClick = { onEvent(SubunitManagementUiEvent.CreateSubunit) },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
-                .padding(bottom = bottomPadding + MaterialTheme.spacing.ExtraSmall),
-            enabled = !uiState.isLoading,
-            sharedTransitionKey = CREATE_EDIT_SUBUNIT_SHARED_ELEMENT_KEY
-        )
     }
 
     selectedSubunitForMenu?.let { subunit ->

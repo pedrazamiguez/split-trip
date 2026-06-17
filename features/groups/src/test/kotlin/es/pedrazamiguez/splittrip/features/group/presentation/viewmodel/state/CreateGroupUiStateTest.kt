@@ -45,9 +45,15 @@ class CreateGroupUiStateTest {
         }
 
         @Test
+        fun `currentStepIndex returns correct index for IMAGE`() {
+            val state = CreateGroupUiState(currentStep = CreateGroupStep.IMAGE)
+            assertEquals(3, state.currentStepIndex)
+        }
+
+        @Test
         fun `currentStepIndex returns correct index for REVIEW`() {
             val state = CreateGroupUiState(currentStep = CreateGroupStep.REVIEW)
-            assertEquals(3, state.currentStepIndex)
+            assertEquals(4, state.currentStepIndex)
         }
     }
 
@@ -71,6 +77,12 @@ class CreateGroupUiStateTest {
         @Test
         fun `canGoNext is true on MEMBERS step`() {
             val state = CreateGroupUiState(currentStep = CreateGroupStep.MEMBERS)
+            assertTrue(state.canGoNext)
+        }
+
+        @Test
+        fun `canGoNext is true on IMAGE step`() {
+            val state = CreateGroupUiState(currentStep = CreateGroupStep.IMAGE)
             assertTrue(state.canGoNext)
         }
 
@@ -101,6 +113,12 @@ class CreateGroupUiStateTest {
         @Test
         fun `isOnReviewStep is false when on CURRENCY`() {
             val state = CreateGroupUiState(currentStep = CreateGroupStep.CURRENCY)
+            assertFalse(state.isOnReviewStep)
+        }
+
+        @Test
+        fun `isOnReviewStep is false when on IMAGE`() {
+            val state = CreateGroupUiState(currentStep = CreateGroupStep.IMAGE)
             assertFalse(state.isOnReviewStep)
         }
     }
@@ -161,6 +179,12 @@ class CreateGroupUiStateTest {
         @Test
         fun `MEMBERS step is always valid`() {
             val state = CreateGroupUiState(currentStep = CreateGroupStep.MEMBERS)
+            assertTrue(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `IMAGE step is always valid`() {
+            val state = CreateGroupUiState(currentStep = CreateGroupStep.IMAGE)
             assertTrue(state.isCurrentStepValid)
         }
 
