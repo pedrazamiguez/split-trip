@@ -45,6 +45,7 @@ The project follows **Clean Architecture** with **MVVM** and a **multi-module** 
 ## 🎨 Design Language
 
 * **[The Horizon Narrative — Design Language Specification](horizon-narrative-design-language.md)**: Complete design system reference — colour palette, typography, surface philosophy, component catalog, glassmorphism, and do's/don'ts. The creative foundation for every screen.
+* **[Jetpack Compose Shadow & Clipping Guide](compose-shadow-and-clipping-guide.md)**: Best practices for implementing rounded, ambient shadows in Jetpack Compose without rectangular artifacting during layout animations or transitions.
 
 ## 📚 Service & Component Catalog
 
