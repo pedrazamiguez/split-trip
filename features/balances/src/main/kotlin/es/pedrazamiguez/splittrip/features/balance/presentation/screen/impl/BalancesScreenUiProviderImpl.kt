@@ -5,8 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AdjustmentsHorizontal
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.ProfileAvatarButton
@@ -34,4 +37,12 @@ class BalancesScreenUiProviderImpl(
             }
         )
     }
+
+    override val mainAction: MainAction?
+        @Composable
+        get() = MainAction(
+            icon = TablerIcons.Outline.AdjustmentsHorizontal,
+            contentDescription = stringResource(R.string.balances_filter),
+            onClick = {} // TODO: open filter UI (out of scope)
+        )
 }

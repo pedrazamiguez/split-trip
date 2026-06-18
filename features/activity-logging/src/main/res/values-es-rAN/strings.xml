@@ -4,4 +4,5 @@
     <string name="activity_logging_title">Âttibidá</string>
     <string name="activity_logging_subtitle">Âççionê reçientê en tû grupô</string>
     <string name="activity_logging_placeholder">No çe encontró âttibidá reçiente</string>
+    <string name="activity_logging_filter">Firtrâh âttibidá</string>
 </resources>

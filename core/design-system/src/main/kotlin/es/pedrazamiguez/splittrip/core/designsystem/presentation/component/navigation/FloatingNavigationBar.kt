@@ -1,11 +1,13 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,7 +31,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +76,13 @@ fun FloatingNavigationBar(
     applyWindowInsets: Boolean = true
 ) {
     val selectedIndex = items.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
+
+    // Track the previously-selected tab index to compute slide direction for AnimatedContent.
+    // Higher-index tab: icon enters from right; lower-index tab: icon enters from left.
+    val previousSelectedIndex = remember { mutableIntStateOf(selectedIndex) }
+    val slideDirection = if (selectedIndex >= previousSelectedIndex.intValue) 1 else -1
+    SideEffect { previousSelectedIndex.intValue = selectedIndex }
+
     val pillShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
     // Lift the pill above the system navigation bar unless the parent already applies insets.
@@ -191,7 +202,27 @@ fun FloatingNavigationBar(
                 )
             ) {
                 if (mainAction != null) {
-                    MainActionButton(mainAction = mainAction)
+                    // Direction-aware AnimatedContent fires on every mainAction change (tab switch).
+                    // The outer AnimatedVisibility handles null ↔ non-null spring bounce separately.
+                    AnimatedContent(
+                        targetState = mainAction,
+                        transitionSpec = {
+                            slideInHorizontally(
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessMedium
+                                )
+                            ) { fullWidth -> fullWidth * slideDirection } togetherWith
+                                slideOutHorizontally(
+                                    animationSpec = spring(
+                                        stiffness = Spring.StiffnessMedium
+                                    )
+                                ) { fullWidth -> -fullWidth * slideDirection }
+                        },
+                        label = "MainActionIconTransition"
+                    ) { targetAction ->
+                        MainActionButton(mainAction = targetAction)
+                    }
                 }
             }
         }

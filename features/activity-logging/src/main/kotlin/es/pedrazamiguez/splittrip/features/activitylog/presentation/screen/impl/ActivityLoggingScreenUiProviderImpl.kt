@@ -5,8 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AdjustmentsHorizontal
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.ProfileAvatarButton
@@ -34,4 +37,13 @@ class ActivityLoggingScreenUiProviderImpl(
             }
         )
     }
+
+    override val mainAction: MainAction?
+        @Composable
+        get() = MainAction(
+            icon = TablerIcons.Outline.AdjustmentsHorizontal,
+            // TODO: placeholder — wire to date/filter sheet when activity log feature is fully built
+            contentDescription = stringResource(R.string.activity_logging_filter),
+            onClick = {}
+        )
 }

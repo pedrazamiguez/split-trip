@@ -417,3 +417,68 @@ val TablerIcons.Outline.Calendar: ImageVector
     ).build().also { _Calendar = it }
 
 private var _Calendar: ImageVector? = null
+
+val TablerIcons.Outline.AdjustmentsHorizontal: ImageVector
+    get() = _AdjustmentsHorizontal ?: ImageVector.Builder(
+        name = "Outline.AdjustmentsHorizontal",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).addPath(
+        pathData = addPathNodes("M12 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M4 6l8 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M16 6l4 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M6 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M4 12l2 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M10 12l10 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M4 18l11 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M19 18l1 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).build().also { _AdjustmentsHorizontal = it }
+
+private var _AdjustmentsHorizontal: ImageVector? = null
