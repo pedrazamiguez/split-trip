@@ -1,5 +1,8 @@
 <resources>
-    <string name="activity_logging_title">Activity Log</string>
+    <string name="activity_logging_title">Activity</string>
     <string name="activity_logging_subtitle">Recent actions in your groups</string>
     <string name="activity_logging_placeholder">No recent activity found</string>
+
+    <!-- Main Action -->
+    <string name="activity_logging_filter">Filter activity</string>
 </resources>
