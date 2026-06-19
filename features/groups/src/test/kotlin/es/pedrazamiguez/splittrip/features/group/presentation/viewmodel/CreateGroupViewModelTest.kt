@@ -16,9 +16,9 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandlerImpl
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandlerImpl
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitEventHandlerImpl
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -96,13 +96,13 @@ class CreateGroupViewModelTest {
     }
 
     private fun createViewModel(): CreateGroupViewModel {
-        val navigationHandler = CreateGroupNavigationHandlerImpl()
-        val imageHandler = CreateGroupImageHandlerImpl(groupImageStorageService)
-        val submitHandler = CreateGroupSubmitHandlerImpl(createGroupUseCase, telemetryTracker)
+        val navigationEventHandler = CreateGroupNavigationEventHandlerImpl()
+        val imageEventHandler = CreateGroupImageEventHandlerImpl(groupImageStorageService)
+        val submitEventHandler = CreateGroupSubmitEventHandlerImpl(createGroupUseCase, telemetryTracker)
         return CreateGroupViewModel(
-            createGroupNavigationHandler = navigationHandler,
-            createGroupImageHandler = imageHandler,
-            createGroupSubmitHandler = submitHandler,
+            createGroupNavigationEventHandler = navigationEventHandler,
+            createGroupImageEventHandler = imageEventHandler,
+            createGroupSubmitEventHandler = submitEventHandler,
             getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
             searchUsersByEmailUseCase = searchUsersByEmailUseCase,

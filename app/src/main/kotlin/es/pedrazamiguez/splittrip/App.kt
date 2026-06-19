@@ -30,6 +30,7 @@ import es.pedrazamiguez.splittrip.di.subunitsFeatureModules
 import es.pedrazamiguez.splittrip.di.withdrawalsFeatureModules
 import es.pedrazamiguez.splittrip.features.main.di.mainUiModule
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import timber.log.Timber
 
@@ -101,7 +102,7 @@ class App : Application() {
     }
 
     private fun setupTimber() {
-        val logContext = org.koin.core.context.GlobalContext.get().get<LogContext>()
+        val logContext = GlobalContext.get().get<LogContext>()
         if (BuildConfig.DEBUG) {
             Timber.plant(DevelopmentLogcatTree(logContext))
         } else {

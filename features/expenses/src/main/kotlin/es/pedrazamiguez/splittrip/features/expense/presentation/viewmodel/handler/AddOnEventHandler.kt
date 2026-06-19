@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
@@ -344,7 +345,7 @@ class AddOnEventHandler(
 
         // Build domain-level add-on list for calculation
         val domainAddOns = resolvedAddOns.map { uiModel ->
-            es.pedrazamiguez.splittrip.domain.model.AddOn(
+            AddOn(
                 groupAmountCents = uiModel.groupAmountCents
                     .takeIf { uiModel.mode != AddOnMode.INCLUDED } ?: 0L,
                 mode = uiModel.mode,

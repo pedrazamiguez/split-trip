@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.firebase.auth.service.impl
 
+import android.util.Base64
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
@@ -174,9 +175,9 @@ class AuthenticationServiceImpl(
         return runCatching {
             val parts = idToken.split(".")
             if (parts.size > 1) {
-                val decodedBytes = android.util.Base64.decode(
+                val decodedBytes = Base64.decode(
                     parts[1],
-                    android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP
+                    Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
                 )
                 val payload = String(decodedBytes, Charsets.UTF_8)
                 EMAIL_REGEX.find(payload)?.groupValues?.get(1)

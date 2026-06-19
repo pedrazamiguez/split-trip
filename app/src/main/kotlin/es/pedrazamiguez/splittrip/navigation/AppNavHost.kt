@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -107,7 +108,7 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val currentOnboardingCompleted = rememberUpdatedState(onboardingCompleted)
 
     DisposableEffect(navController) {
-        val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, arguments ->
+        val listener = NavController.OnDestinationChangedListener { _, destination, arguments ->
             Timber.tag(LogTag.NAVIGATION).i(
                 "Navigated to: %s | Arg keys: %s",
                 destination.route,

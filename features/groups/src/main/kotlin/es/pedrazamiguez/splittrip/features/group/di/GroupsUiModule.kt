@@ -27,12 +27,12 @@ import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.Groups
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.CreateGroupViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDetailViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupsViewModel
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandlerImpl
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandlerImpl
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitEventHandlerImpl
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -46,30 +46,30 @@ val groupsUiModule = module {
         )
     }
 
-    factory<CreateGroupNavigationHandler> {
-        CreateGroupNavigationHandlerImpl()
+    factory<CreateGroupNavigationEventHandler> {
+        CreateGroupNavigationEventHandlerImpl()
     }
 
-    factory<CreateGroupImageHandler> {
+    factory<CreateGroupImageEventHandler> {
         val groupImageStorageService = get<GroupImageStorageService>()
-        CreateGroupImageHandlerImpl(
+        CreateGroupImageEventHandlerImpl(
             groupImageStorageService = groupImageStorageService
         )
     }
 
-    factory<CreateGroupSubmitHandler> {
+    factory<CreateGroupSubmitEventHandler> {
         val createGroupUseCase = get<CreateGroupUseCase>()
         val telemetryTracker = get<TelemetryTracker>()
-        CreateGroupSubmitHandlerImpl(
+        CreateGroupSubmitEventHandlerImpl(
             createGroupUseCase = createGroupUseCase,
             telemetryTracker = telemetryTracker
         )
     }
 
     viewModel {
-        val createGroupNavigationHandler = get<CreateGroupNavigationHandler>()
-        val createGroupImageHandler = get<CreateGroupImageHandler>()
-        val createGroupSubmitHandler = get<CreateGroupSubmitHandler>()
+        val createGroupNavigationEventHandler = get<CreateGroupNavigationEventHandler>()
+        val createGroupImageEventHandler = get<CreateGroupImageEventHandler>()
+        val createGroupSubmitEventHandler = get<CreateGroupSubmitEventHandler>()
         val getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>()
         val getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>()
         val searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>()
@@ -78,9 +78,9 @@ val groupsUiModule = module {
         val groupUiMapper = get<GroupUiMapper>()
 
         CreateGroupViewModel(
-            createGroupNavigationHandler = createGroupNavigationHandler,
-            createGroupImageHandler = createGroupImageHandler,
-            createGroupSubmitHandler = createGroupSubmitHandler,
+            createGroupNavigationEventHandler = createGroupNavigationEventHandler,
+            createGroupImageEventHandler = createGroupImageEventHandler,
+            createGroupSubmitEventHandler = createGroupSubmitEventHandler,
             getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
             searchUsersByEmailUseCase = searchUsersByEmailUseCase,

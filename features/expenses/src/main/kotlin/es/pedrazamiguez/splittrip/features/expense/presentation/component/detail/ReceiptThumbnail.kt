@@ -1,6 +1,9 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -138,7 +141,7 @@ private fun isPdf(uriString: String, mimeType: String?): Boolean {
     return false
 }
 
-private fun renderPdfFirstPage(context: android.content.Context, uri: Uri): Bitmap? {
+private fun renderPdfFirstPage(context: Context, uri: Uri): Bitmap? {
     var pfd: ParcelFileDescriptor? = null
     var renderer: PdfRenderer? = null
     var page: PdfRenderer.Page? = null
@@ -155,8 +158,8 @@ private fun renderPdfFirstPage(context: android.content.Context, uri: Uri): Bitm
                     480,
                     Bitmap.Config.ARGB_8888
                 )
-                val canvas = android.graphics.Canvas(destBitmap)
-                canvas.drawColor(android.graphics.Color.WHITE)
+                val canvas = Canvas(destBitmap)
+                canvas.drawColor(Color.WHITE)
                 page.render(destBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 return destBitmap
             }

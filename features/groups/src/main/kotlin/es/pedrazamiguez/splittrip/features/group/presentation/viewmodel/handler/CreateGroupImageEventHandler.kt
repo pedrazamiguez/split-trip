@@ -6,7 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-interface CreateGroupSubmitHandler {
+interface CreateGroupImageEventHandler {
 
     fun bind(
         stateFlow: MutableStateFlow<CreateGroupUiState>,
@@ -14,5 +14,11 @@ interface CreateGroupSubmitHandler {
         scope: CoroutineScope
     )
 
-    fun handleSubmit(onCreateGroupSuccess: () -> Unit)
+    fun handleGroupImagePicked(uri: String)
+
+    fun handleGroupImageRemoved()
+
+    fun handleShowImageSourceSheet(show: Boolean)
+
+    fun cleanTempImages()
 }

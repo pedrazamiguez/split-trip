@@ -23,12 +23,12 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class CreateGroupSubmitHandlerImplTest {
+class CreateGroupSubmitEventHandlerImplTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var createGroupUseCase: CreateGroupUseCase
     private lateinit var telemetryTracker: TelemetryTracker
-    private lateinit var handler: CreateGroupSubmitHandlerImpl
+    private lateinit var handler: CreateGroupSubmitEventHandlerImpl
     private lateinit var stateFlow: MutableStateFlow<CreateGroupUiState>
     private lateinit var actionsFlow: MutableSharedFlow<CreateGroupUiAction>
 
@@ -36,7 +36,7 @@ class CreateGroupSubmitHandlerImplTest {
     fun setUp() {
         createGroupUseCase = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
-        handler = CreateGroupSubmitHandlerImpl(createGroupUseCase, telemetryTracker)
+        handler = CreateGroupSubmitEventHandlerImpl(createGroupUseCase, telemetryTracker)
         stateFlow = MutableStateFlow(CreateGroupUiState())
         actionsFlow = MutableSharedFlow()
     }

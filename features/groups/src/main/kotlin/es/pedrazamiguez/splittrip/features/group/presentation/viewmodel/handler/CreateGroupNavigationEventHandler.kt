@@ -1,12 +1,13 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-interface CreateGroupImageHandler {
+interface CreateGroupNavigationEventHandler {
 
     fun bind(
         stateFlow: MutableStateFlow<CreateGroupUiState>,
@@ -14,11 +15,5 @@ interface CreateGroupImageHandler {
         scope: CoroutineScope
     )
 
-    fun handleGroupImagePicked(uri: String)
-
-    fun handleGroupImageRemoved()
-
-    fun handleShowImageSourceSheet(show: Boolean)
-
-    fun cleanTempImages()
+    fun handleNavigation(event: CreateGroupUiEvent)
 }

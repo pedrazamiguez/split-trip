@@ -15,6 +15,8 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
+import java.time.LocalDateTime
+import java.time.LocalTime
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -107,7 +109,7 @@ class ExpenseUiMapper(
             .groupBy { it.createdAt?.toLocalDate() }
             .map { (date, dayExpenses) ->
                 val dateText = date?.let {
-                    java.time.LocalDateTime.of(it, java.time.LocalTime.MIDNIGHT)
+                    LocalDateTime.of(it, LocalTime.MIDNIGHT)
                         .formatShortDate(appLocale)
                 } ?: ""
 

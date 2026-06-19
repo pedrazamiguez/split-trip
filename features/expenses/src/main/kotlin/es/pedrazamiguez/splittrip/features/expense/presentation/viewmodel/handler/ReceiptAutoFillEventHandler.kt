@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AutoFillBanner
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.ZoneOffset
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
@@ -273,7 +274,7 @@ class ReceiptAutoFillEventHandler(
             // Re-read selected currency decimal places in case currency changed
             val decimalDigits = _uiState.value.selectedCurrency?.decimalDigits ?: 2
             try {
-                val scaledAmount = extractedAmount.setScale(decimalDigits, java.math.RoundingMode.HALF_UP)
+                val scaledAmount = extractedAmount.setScale(decimalDigits, RoundingMode.HALF_UP)
                 val cents = scaledAmount.movePointRight(decimalDigits).longValueExact()
                 val amountString = formattingHelper.formatCentsValue(cents, decimalDigits)
                 onAmountChanged?.invoke(amountString)

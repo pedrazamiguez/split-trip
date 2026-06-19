@@ -10,7 +10,9 @@ import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -170,7 +172,7 @@ class GroupImageStorageServiceImpl(
         }
     }
 
-    private fun openInputStream(uri: Uri): java.io.InputStream? {
+    private fun openInputStream(uri: Uri): InputStream? {
         try {
             val stream = context.contentResolver.openInputStream(uri)
             if (stream != null) return stream
@@ -181,7 +183,7 @@ class GroupImageStorageServiceImpl(
         val resolvedFile = resolveLocalFileFromUri(context, uri)
         if (resolvedFile != null && resolvedFile.exists()) {
             return try {
-                java.io.FileInputStream(resolvedFile)
+                FileInputStream(resolvedFile)
             } catch (e: Exception) {
                 Timber.e(
                     e,

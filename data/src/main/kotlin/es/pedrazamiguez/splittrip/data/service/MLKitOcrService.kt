@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.service
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import com.google.mlkit.vision.common.InputImage
@@ -14,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.model.TextBlock
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import java.io.IOException
 import java.time.Instant
+import java.util.Locale
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -78,7 +80,7 @@ internal class PdfPageRendererImpl(private val context: Context) : PdfPageRender
         }
 
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        bitmap.eraseColor(android.graphics.Color.WHITE)
+        bitmap.eraseColor(Color.WHITE)
         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
         return bitmap
     }
@@ -128,7 +130,7 @@ internal class MLKitOcrService(
 
     override suspend fun recogniseText(attachment: ReceiptAttachment): Result<RawReceiptText> {
         return try {
-            val mimeType = attachment.mimeType.lowercase(java.util.Locale.ROOT)
+            val mimeType = attachment.mimeType.lowercase(Locale.ROOT)
             require(mimeType in SUPPORTED_MIME_TYPES) {
                 "Unsupported MIME type: ${attachment.mimeType}"
             }

@@ -16,9 +16,9 @@ import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -39,9 +39,9 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class CreateGroupViewModel(
-    private val createGroupNavigationHandler: CreateGroupNavigationHandler,
-    private val createGroupImageHandler: CreateGroupImageHandler,
-    private val createGroupSubmitHandler: CreateGroupSubmitHandler,
+    private val createGroupNavigationEventHandler: CreateGroupNavigationEventHandler,
+    private val createGroupImageEventHandler: CreateGroupImageEventHandler,
+    private val createGroupSubmitEventHandler: CreateGroupSubmitEventHandler,
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
     private val getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase,
     private val searchUsersByEmailUseCase: SearchUsersByEmailUseCase,
@@ -60,12 +60,12 @@ class CreateGroupViewModel(
     private var memberSearchJob: Job? = null
 
     init {
-        createGroupNavigationHandler.bind(_uiState, _actions, viewModelScope)
-        createGroupImageHandler.bind(_uiState, _actions, viewModelScope)
-        createGroupSubmitHandler.bind(_uiState, _actions, viewModelScope)
+        createGroupNavigationEventHandler.bind(_uiState, _actions, viewModelScope)
+        createGroupImageEventHandler.bind(_uiState, _actions, viewModelScope)
+        createGroupSubmitEventHandler.bind(_uiState, _actions, viewModelScope)
 
         loadCurrencies()
-        createGroupImageHandler.cleanTempImages()
+        createGroupImageEventHandler.cleanTempImages()
     }
 
     @Suppress("CyclomaticComplexMethod")
@@ -84,13 +84,15 @@ class CreateGroupViewModel(
             is CreateGroupUiEvent.MemberSelected -> handleMemberSelected(event)
             is CreateGroupUiEvent.MemberRemoved -> handleMemberRemoved(event)
             is CreateGroupUiEvent.MemberScanned -> handleMemberScanned(event.userId, event.email)
-            is CreateGroupUiEvent.SubmitCreateGroup -> createGroupSubmitHandler.handleSubmit(onCreateGroupSuccess)
+            is CreateGroupUiEvent.SubmitCreateGroup -> createGroupSubmitEventHandler.handleSubmit(onCreateGroupSuccess)
             is CreateGroupUiEvent.NextStep,
             is CreateGroupUiEvent.PreviousStep,
-            is CreateGroupUiEvent.JumpToStep -> createGroupNavigationHandler.handleNavigation(event)
-            is CreateGroupUiEvent.GroupImagePicked -> createGroupImageHandler.handleGroupImagePicked(event.uri)
-            is CreateGroupUiEvent.GroupImageRemoved -> createGroupImageHandler.handleGroupImageRemoved()
-            is CreateGroupUiEvent.ShowImageSourceSheet -> createGroupImageHandler.handleShowImageSourceSheet(event.show)
+            is CreateGroupUiEvent.JumpToStep -> createGroupNavigationEventHandler.handleNavigation(event)
+            is CreateGroupUiEvent.GroupImagePicked -> createGroupImageEventHandler.handleGroupImagePicked(event.uri)
+            is CreateGroupUiEvent.GroupImageRemoved -> createGroupImageEventHandler.handleGroupImageRemoved()
+            is CreateGroupUiEvent.ShowImageSourceSheet -> createGroupImageEventHandler.handleShowImageSourceSheet(
+                event.show
+            )
         }
     }
 
@@ -240,7 +242,7 @@ class CreateGroupViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        createGroupImageHandler.cleanTempImages()
+        createGroupImageEventHandler.cleanTempImages()
     }
 
     companion object {

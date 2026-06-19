@@ -12,6 +12,7 @@ import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.features.authentication.presentation.component.CollisionMergeDialog
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
@@ -46,7 +47,7 @@ fun LoginFeature(
 
     val isGoogleSignInAvailable = !webClientId.isNullOrEmpty()
 
-    val navController = es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController.current
+    val navController = LocalRootNavController.current
 
     LoginScreen(
         uiState = uiState,
@@ -61,7 +62,7 @@ fun LoginFeature(
             navController.navigate(Routes.FORGOT_PASSWORD)
         },
         onStartJourneyClick = {
-            navController.navigate(es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes.REGISTER)
+            navController.navigate(Routes.REGISTER)
         },
         onGoogleSignInClick = {
             if (!isGoogleSignInAvailable) return@LoginScreen

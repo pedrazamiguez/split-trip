@@ -11,7 +11,9 @@ import androidx.exifinterface.media.ExifInterface
 import es.pedrazamiguez.splittrip.domain.model.CropRect
 import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -132,7 +134,7 @@ class ProfileImageStorageServiceImpl(
         }
     }
 
-    private fun openInputStream(uri: Uri): java.io.InputStream? {
+    private fun openInputStream(uri: Uri): InputStream? {
         try {
             val stream = context.contentResolver.openInputStream(uri)
             if (stream != null) return stream
@@ -150,7 +152,7 @@ class ProfileImageStorageServiceImpl(
             }
             if (fileToOpen != null) {
                 return try {
-                    java.io.FileInputStream(fileToOpen)
+                    FileInputStream(fileToOpen)
                 } catch (e: Exception) {
                     Timber.e(
                         e,

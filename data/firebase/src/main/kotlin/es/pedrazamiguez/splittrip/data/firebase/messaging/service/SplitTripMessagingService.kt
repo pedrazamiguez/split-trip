@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.firebase.messaging.service
 
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
@@ -256,7 +257,7 @@ class SplitTripMessagingService :
         if (activeNotifications == null) return 1
         return activeNotifications.count { sbn ->
             sbn.notification?.group == groupId &&
-                (sbn.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY) == 0
+                (sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY) == 0
         }
     }
 

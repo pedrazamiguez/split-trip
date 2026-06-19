@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.core.designsystem.permission
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +32,6 @@ fun rememberRequestCameraPermission(onPermissionResult: (Boolean) -> Unit): () -
     }
 }
 
-fun checkCameraPermission(context: android.content.Context): Boolean {
+fun checkCameraPermission(context: Context): Boolean {
     return ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
 }

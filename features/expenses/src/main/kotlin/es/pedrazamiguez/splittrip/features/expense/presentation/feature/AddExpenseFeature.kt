@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Cash
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.receipt.ReceiptAttachmentHandler
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
@@ -31,13 +32,14 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 fun AddExpenseFeature(
     expenseId: String? = null,
     addExpenseViewModel: AddExpenseViewModel = koinViewModel<AddExpenseViewModel> {
-        org.koin.core.parameter.parametersOf(expenseId)
+        parametersOf(expenseId)
     },
     sharedViewModel: SharedViewModel = koinViewModel(
         viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
@@ -148,7 +150,7 @@ fun AddExpenseFeature(
                 is AddExpenseUiEvent.ViewReceiptFullScreen -> {
                     state.receiptUri?.let { uri ->
                         navController.navigate(
-                            es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes.receiptViewerRoute(
+                            Routes.receiptViewerRoute(
                                 uri,
                                 state.receiptAttachment?.mimeType
                             )

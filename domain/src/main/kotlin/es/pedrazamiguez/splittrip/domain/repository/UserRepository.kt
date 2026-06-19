@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.repository
 
 import es.pedrazamiguez.splittrip.domain.model.User
+import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
     suspend fun saveGoogleUser(user: User): Result<Unit>
@@ -48,5 +49,5 @@ interface UserRepository {
     /**
      * Observes the current authenticated user's profile.
      */
-    fun observeCurrentUserProfile(): kotlinx.coroutines.flow.Flow<User?>
+    fun observeCurrentUserProfile(): Flow<User?>
 }

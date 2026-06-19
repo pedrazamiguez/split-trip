@@ -10,7 +10,9 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -43,7 +45,7 @@ class FormEventHandler(
     private var formPostCallback: ((FormPostAction) -> Unit)? = null
     private var onReceiptAttached: ((ReceiptAttachment) -> Unit)? = null
 
-    private var attachReceiptJob: kotlinx.coroutines.Job? = null
+    private var attachReceiptJob: Job? = null
 
     override fun bind(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
@@ -230,7 +232,7 @@ class FormEventHandler(
                     onReceiptAttached?.invoke(attachment)
                 }
                 .onFailure { e ->
-                    if (e is kotlin.coroutines.cancellation.CancellationException) throw e
+                    if (e is CancellationException) throw e
                     Timber.e(e, "Failed to attach receipt from URI: $uri")
                     _actionsFlow.emit(
                         AddExpenseUiAction.ShowError(UiText.StringResource(R.string.add_expense_receipt_attach_error))

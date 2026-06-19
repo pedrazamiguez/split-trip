@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -120,8 +121,8 @@ class AddOnCrudDelegate(
 
     internal fun buildExchangeRateLabel(
         isForeign: Boolean,
-        groupCurrency: es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel?,
-        addOnCurrency: es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel?
+        groupCurrency: CurrencyUiModel?,
+        addOnCurrency: CurrencyUiModel?
     ): String {
         if (!isForeign || groupCurrency == null || addOnCurrency == null) return ""
         return addExpenseOptionsMapper.buildExchangeRateLabel(groupCurrency, addOnCurrency)
@@ -129,7 +130,7 @@ class AddOnCrudDelegate(
 
     internal fun buildGroupAmountLabel(
         isForeign: Boolean,
-        groupCurrency: es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel?
+        groupCurrency: CurrencyUiModel?
     ): String {
         if (!isForeign || groupCurrency == null) return ""
         return addExpenseOptionsMapper.buildGroupAmountLabel(groupCurrency)

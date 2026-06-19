@@ -21,6 +21,8 @@ import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.action
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.event.CreateEditSubunitUiEvent
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.CreateEditSubunitStep
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.CreateEditSubunitUiState
+import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -283,7 +285,7 @@ class CreateEditSubunitViewModel(
             // Parse the typed value (locale-safe) and redistribute remaining to other selected members
             val normalized = CurrencyConverter.normalizeAmountString(share)
             val parsedValue = normalized.toBigDecimalOrNull()
-                ?.divide(java.math.BigDecimal("100"), 10, java.math.RoundingMode.HALF_UP)
+                ?.divide(BigDecimal("100"), 10, RoundingMode.HALF_UP)
             if (parsedValue != null) {
                 // Other locked members (excluding the currently edited one)
                 val otherLockedIds = (updatedLocks - userId).filter { it in form.selectedMemberIds }
@@ -294,8 +296,8 @@ class CreateEditSubunitViewModel(
                     val lockedText = updatedShares[lockedId] ?: ""
                     val lockedNorm = CurrencyConverter.normalizeAmountString(lockedText)
                     val lockedVal = lockedNorm.toBigDecimalOrNull()
-                        ?.divide(java.math.BigDecimal("100"), 10, java.math.RoundingMode.HALF_UP)
-                        ?: java.math.BigDecimal.ZERO
+                        ?.divide(BigDecimal("100"), 10, RoundingMode.HALF_UP)
+                        ?: BigDecimal.ZERO
                     lockedId to lockedVal
                 }
 

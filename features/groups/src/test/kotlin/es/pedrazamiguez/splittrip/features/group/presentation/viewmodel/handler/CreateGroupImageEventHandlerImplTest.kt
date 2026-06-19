@@ -19,18 +19,18 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class CreateGroupImageHandlerImplTest {
+class CreateGroupImageEventHandlerImplTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var groupImageStorageService: GroupImageStorageService
-    private lateinit var handler: CreateGroupImageHandlerImpl
+    private lateinit var handler: CreateGroupImageEventHandlerImpl
     private lateinit var stateFlow: MutableStateFlow<CreateGroupUiState>
     private lateinit var actionsFlow: MutableSharedFlow<CreateGroupUiAction>
 
     @BeforeEach
     fun setUp() {
         groupImageStorageService = mockk(relaxed = true)
-        handler = CreateGroupImageHandlerImpl(groupImageStorageService)
+        handler = CreateGroupImageEventHandlerImpl(groupImageStorageService)
         stateFlow = MutableStateFlow(CreateGroupUiState())
         actionsFlow = MutableSharedFlow()
     }
