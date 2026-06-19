@@ -31,8 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,17 +74,8 @@ fun FloatingNavigationBar(
 ) {
     val selectedIndex = items.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
 
-    // Track the previously-selected tab index to compute slide direction for AnimatedContent.
-    // Higher-index tab: icon enters from right; lower-index tab: icon enters from left.
-    val previousSelectedIndex = remember { mutableIntStateOf(selectedIndex) }
-    val slideDirection = if (selectedIndex >= previousSelectedIndex.intValue) 1 else -1
-    SideEffect { previousSelectedIndex.intValue = selectedIndex }
-
-    // Hoist shadow properties out of MainActionButton so the shadow wrapper can live OUTSIDE
-    // AnimatedContent. AnimatedContent lifts composables into an offscreen GPU layer during
-    // animation — identical to sharedBounds. Any shadow inside that layer is clipped to the
-    // rectangular layer bounds regardless of clip = false. Keeping the shadow in the normal
-    // render tree guarantees it is always rendered with the correct rounded shape.
+    // Shadow is hoisted to the outer wrapper to prevent it from being clipped
+    // inside the sharedBounds GPU overlay during transitions.
     val isDarkModeForAction = isSystemInDarkTheme()
     val actionElevation = if (isDarkModeForAction) 0.dp else NavBarDefaults.ShadowElevation
     val actionButtonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
@@ -210,11 +199,8 @@ fun FloatingNavigationBar(
                 )
             ) {
                 if (mainAction != null) {
-                    // Shadow lives OUTSIDE AnimatedContent — stays in the normal render tree.
-                    // AnimatedContent (like sharedBounds) lifts composables into an offscreen GPU
-                    // compositing layer during animation. Any shadow inside that layer is clipped to
-                    // the rectangular layer bounds, causing the squared-shadow artifact. Placing the
-                    // shadow wrapper here ensures it is never lifted and always renders rounded.
+                    // Shadow is wrapped here so it stays in the normal render tree, avoiding clipping
+                    // inside the sharedBounds GPU overlay during transitions.
                     Box(
                         modifier = Modifier
                             .width(80.dp)
@@ -225,27 +211,7 @@ fun FloatingNavigationBar(
                                 clip = false
                             }
                     ) {
-                        // Direction-aware AnimatedContent fires on every mainAction change (tab switch).
-                        // The outer AnimatedVisibility handles null ↔ non-null spring bounce separately.
-                        AnimatedContent(
-                            targetState = mainAction,
-                            transitionSpec = {
-                                slideInHorizontally(
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessMedium
-                                    )
-                                ) { fullWidth -> fullWidth * slideDirection } togetherWith
-                                    slideOutHorizontally(
-                                        animationSpec = spring(
-                                            stiffness = Spring.StiffnessMedium
-                                        )
-                                    ) { fullWidth -> -fullWidth * slideDirection }
-                            },
-                            label = "MainActionIconTransition"
-                        ) { targetAction ->
-                            MainActionButton(mainAction = targetAction)
-                        }
+                        MainActionButton(mainAction = mainAction)
                     }
                 }
             }
@@ -283,6 +249,17 @@ private fun getActionButtonContentColor(enabled: Boolean): Color {
     }
 }
 
+private val MainActionIconTransitionSpec = slideInHorizontally(
+    animationSpec = spring(
+        dampingRatio = Spring.DampingRatioMediumBouncy,
+        stiffness = Spring.StiffnessMedium
+    )
+) { it } togetherWith slideOutHorizontally(
+    animationSpec = spring(
+        stiffness = Spring.StiffnessMedium
+    )
+) { -it }
+
 @Composable
 private fun MainActionButton(
     mainAction: MainAction,
@@ -297,17 +274,11 @@ private fun MainActionButton(
     val contentColor = getActionButtonContentColor(enabled)
     val buttonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
-    // The outer Box retains graphicsLayer { clip = false } to preserve the three-layer
-    // isolation pattern required for sharedBounds: the sharedBounds modifier must NOT be on
-    // the same layer as the shadow. Shadow ownership has been lifted to the FloatingNavigationBar
-    // call site (outside AnimatedContent) to prevent rectangular clipping during icon-slide
-    // animations. See wiki/compose-shadow-and-clipping-guide.md §5.
+    // graphicsLayer { clip = false } is retained to isolate the sharedBounds modifier from the shadow layer.
     Box(
         modifier = modifier
             .fillMaxSize()
             .graphicsLayer {
-                // shadowElevation intentionally 0: shadow is owned by the outer wrapper in
-                // FloatingNavigationBar that lives outside the AnimatedContent compositing layer.
                 shadowElevation = 0f
                 shape = buttonShape
                 clip = false
@@ -332,11 +303,17 @@ private fun MainActionButton(
                         onClick = mainAction.onClick
                     )
             ) {
-                Icon(
-                    imageVector = mainAction.icon,
-                    contentDescription = mainAction.contentDescription,
-                    tint = contentColor
-                )
+                AnimatedContent(
+                    targetState = mainAction.icon,
+                    transitionSpec = { MainActionIconTransitionSpec },
+                    label = "MainActionIconTransition"
+                ) { icon ->
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = mainAction.contentDescription,
+                        tint = contentColor
+                    )
+                }
             }
         }
     }
