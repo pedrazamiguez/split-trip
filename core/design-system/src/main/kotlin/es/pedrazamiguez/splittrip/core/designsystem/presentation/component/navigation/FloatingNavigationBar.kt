@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
@@ -8,7 +7,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -257,17 +255,6 @@ private fun getActionButtonContentColor(enabled: Boolean): Color {
     }
 }
 
-private val MainActionIconTransitionSpec = slideInHorizontally(
-    animationSpec = spring(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = Spring.StiffnessMedium
-    )
-) { it } togetherWith slideOutHorizontally(
-    animationSpec = spring(
-        stiffness = Spring.StiffnessMedium
-    )
-) { -it }
-
 @Composable
 private fun rememberMainActionButtonScale(
     isPressed: Boolean,
@@ -339,17 +326,11 @@ private fun MainActionButton(
                         onClick = mainAction.onClick
                     )
             ) {
-                AnimatedContent(
-                    targetState = mainAction.icon,
-                    transitionSpec = { MainActionIconTransitionSpec },
-                    label = "MainActionIconTransition"
-                ) { icon ->
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = mainAction.contentDescription,
-                        tint = contentColor
-                    )
-                }
+                Icon(
+                    imageVector = mainAction.icon,
+                    contentDescription = mainAction.contentDescription,
+                    tint = contentColor
+                )
             }
         }
     }
