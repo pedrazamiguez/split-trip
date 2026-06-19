@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.currentBackStackEntryAsState
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.SquareRoundedPlus
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
@@ -33,7 +33,7 @@ class SubunitManagementScreenUiProviderImpl(override val route: String = Routes.
             val backStackEntry by navController.currentBackStackEntryAsState()
             val groupId = backStackEntry?.arguments?.getString("groupId") ?: return null
             return MainAction(
-                icon = TablerIcons.Outline.Plus,
+                icon = TablerIcons.Outline.SquareRoundedPlus,
                 contentDescription = stringResource(R.string.subunit_create),
                 onClick = { navController.navigate(Routes.createEditSubunitRoute(groupId)) },
                 sharedTransitionKey = CREATE_EDIT_SUBUNIT_SHARED_ELEMENT_KEY

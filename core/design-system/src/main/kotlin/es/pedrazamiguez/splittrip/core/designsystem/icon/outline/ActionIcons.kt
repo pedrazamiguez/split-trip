@@ -417,68 +417,108 @@ val TablerIcons.Outline.Calendar: ImageVector
     ).build().also { _Calendar = it }
 
 private var _Calendar: ImageVector? = null
-
-val TablerIcons.Outline.AdjustmentsHorizontal: ImageVector
-    get() = _AdjustmentsHorizontal ?: ImageVector.Builder(
-        name = "Outline.AdjustmentsHorizontal",
+val TablerIcons.Outline.SquareRoundedPlus: ImageVector
+    get() = _SquareRoundedPlus ?: ImageVector.Builder(
+        name = "Outline.SquareRoundedPlus",
         defaultWidth = 24.dp,
         defaultHeight = 24.dp,
         viewportWidth = 24f,
         viewportHeight = 24f
     ).addPath(
-        pathData = addPathNodes("M12 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"),
+        pathData = addPathNodes("M12 3c7.2 0 9 1.8 9 9c0 7.2 -1.8 9 -9 9c-7.2 0 -9 -1.8 -9 -9c0 -7.2 1.8 -9 9 -9"),
         stroke = SolidColor(Color.Black),
         strokeLineWidth = 2f,
         strokeLineCap = StrokeCap.Round,
         strokeLineJoin = StrokeJoin.Round
     ).addPath(
-        pathData = addPathNodes("M4 6l8 0"),
+        pathData = addPathNodes("M15 12h-6"),
         stroke = SolidColor(Color.Black),
         strokeLineWidth = 2f,
         strokeLineCap = StrokeCap.Round,
         strokeLineJoin = StrokeJoin.Round
     ).addPath(
-        pathData = addPathNodes("M16 6l4 0"),
+        pathData = addPathNodes("M12 9v6"),
         stroke = SolidColor(Color.Black),
         strokeLineWidth = 2f,
         strokeLineCap = StrokeCap.Round,
         strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M6 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M4 12l2 0"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M10 12l10 0"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M4 18l11 0"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M19 18l1 0"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).build().also { _AdjustmentsHorizontal = it }
+    ).build().also { _SquareRoundedPlus = it }
 
-private var _AdjustmentsHorizontal: ImageVector? = null
+private var _SquareRoundedPlus: ImageVector? = null
+
+val TablerIcons.Outline.AdjustmentsDown: ImageVector
+    get() = _AdjustmentsDown ?: ImageVector.Builder(
+        name = "Outline.AdjustmentsDown",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).addPath(
+        pathData = addPathNodes("M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M6 4v4"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M6 12v8"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M13.945 15.53a2 2 0 1 0 -1.945 2.47"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M12 4v10"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M12 18v2"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M18 4v1"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M18 9v3"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M19 16v6"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M22 19l-3 3l-3 -3"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).build().also { _AdjustmentsDown = it }
+
+private var _AdjustmentsDown: ImageVector? = null

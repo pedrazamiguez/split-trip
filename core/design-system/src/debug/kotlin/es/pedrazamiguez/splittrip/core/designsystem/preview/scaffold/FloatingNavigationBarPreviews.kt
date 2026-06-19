@@ -3,8 +3,8 @@ package es.pedrazamiguez.splittrip.core.designsystem.preview.scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AdjustmentsHorizontal
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BasketPlus
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartArcs
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
@@ -61,7 +61,7 @@ private fun FloatingNavigationBarWithNoActionPreview() {
     }
 }
 
-/** Plus action — simulates Groups or Expenses tab selection. */
+/** Add action — simulates Groups or Expenses tab selection. */
 @PreviewThemes
 @Composable
 private fun FloatingNavigationBarWithPlusActionPreview() {
@@ -70,7 +70,7 @@ private fun FloatingNavigationBarWithPlusActionPreview() {
             items = previewTabs,
             selectedId = "groups",
             mainAction = MainAction(
-                icon = TablerIcons.Outline.Plus,
+                icon = TablerIcons.Outline.BasketPlus,
                 contentDescription = "Add",
                 onClick = {}
             ),
@@ -79,7 +79,7 @@ private fun FloatingNavigationBarWithPlusActionPreview() {
     }
 }
 
-/** AdjustmentsHorizontal action — simulates Balances or Activity tab selection. */
+/** ChartArcs action — simulates Balances tab selection. */
 @PreviewThemes
 @Composable
 private fun FloatingNavigationBarWithFilterActionPreview() {
@@ -88,8 +88,8 @@ private fun FloatingNavigationBarWithFilterActionPreview() {
             items = previewTabs,
             selectedId = "balances",
             mainAction = MainAction(
-                icon = TablerIcons.Outline.AdjustmentsHorizontal,
-                contentDescription = "Filter",
+                icon = TablerIcons.Outline.ChartArcs,
+                contentDescription = "Chart",
                 onClick = {}
             ),
             applyWindowInsets = false

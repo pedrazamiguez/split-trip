@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AdjustmentsHorizontal
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartArcs
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
@@ -41,7 +41,7 @@ class BalancesScreenUiProviderImpl(
     override val mainAction: MainAction?
         @Composable
         get() = MainAction(
-            icon = TablerIcons.Outline.AdjustmentsHorizontal,
+            icon = TablerIcons.Outline.ChartArcs,
             contentDescription = stringResource(R.string.balances_filter),
             onClick = {} // TODO: open filter UI (out of scope)
         )

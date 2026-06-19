@@ -5,8 +5,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraphBuilder
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.ReceiptFilled
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.BasketFilled
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Basket
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.NavigationBarIcon
@@ -21,7 +21,7 @@ class ExpensesNavigationProviderImpl(
 
     @Composable
     override fun Icon(isSelected: Boolean, tint: Color) = NavigationBarIcon(
-        icon = if (isSelected) TablerIcons.Filled.ReceiptFilled else TablerIcons.Outline.Receipt,
+        icon = if (isSelected) TablerIcons.Filled.BasketFilled else TablerIcons.Outline.Basket,
         contentDescription = getLabel(),
         isSelected = isSelected,
         tint = tint
