@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navi
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInHorizontally
@@ -11,6 +12,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,10 +33,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -61,6 +66,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.transition.fabSharedTransiti
  * - Elevated shadow for depth
  * - Optional translucent glassmorphism scrim via [hazeState]
  */
+private const val ACTION_BUTTON_TAP_SCALE = 1.05f
+private const val ACTION_BUTTON_TAB_BOUNCE_SCALE = 0.92f
+
 @Suppress("LongMethod", "CognitiveComplexMethod") // Compose UI builder DSL
 @Composable
 fun FloatingNavigationBar(
@@ -261,6 +269,37 @@ private val MainActionIconTransitionSpec = slideInHorizontally(
 ) { -it }
 
 @Composable
+private fun rememberMainActionButtonScale(
+    isPressed: Boolean,
+    mainAction: MainAction
+): Float {
+    val scale = remember { Animatable(1f) }
+
+    LaunchedEffect(isPressed) {
+        scale.animateTo(
+            targetValue = if (isPressed) ACTION_BUTTON_TAP_SCALE else 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+        )
+    }
+
+    LaunchedEffect(mainAction) {
+        scale.snapTo(ACTION_BUTTON_TAB_BOUNCE_SCALE)
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+        )
+    }
+
+    return scale.value
+}
+
+@Composable
 private fun MainActionButton(
     mainAction: MainAction,
     modifier: Modifier = Modifier
@@ -270,33 +309,30 @@ private fun MainActionButton(
     } ?: Modifier
 
     val enabled = mainAction.enabled
-    val containerColorModifier = getActionButtonBackground(enabled)
     val contentColor = getActionButtonContentColor(enabled)
     val buttonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scaleFactor = rememberMainActionButtonScale(isPressed = isPressed, mainAction = mainAction)
+
     // graphicsLayer { clip = false } is retained to isolate the sharedBounds modifier from the shadow layer.
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .graphicsLayer {
-                shadowElevation = 0f
-                shape = buttonShape
-                clip = false
-            }
+        modifier = modifier.fillMaxSize().graphicsLayer {
+            shadowElevation = 0f
+            shape = buttonShape
+            clip = false
+        }
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(sharedModifier)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().scale(scaleFactor).then(sharedModifier)) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(buttonShape)
-                    .then(containerColorModifier)
+                    .then(getActionButtonBackground(enabled))
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = interactionSource,
                         indication = ripple(color = contentColor),
                         enabled = enabled,
                         role = Role.Button,
