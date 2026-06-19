@@ -11,8 +11,10 @@ import es.pedrazamiguez.splittrip.data.local.mapper.toSplitEntities
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 class LocalExpenseDataSourceImpl(
@@ -44,11 +46,11 @@ class LocalExpenseDataSourceImpl(
             expense.copy(splits = splitEntities.toDomainSplits())
         }
 
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getExpenseByIdFlow(expenseId: String): Flow<Expense?> =
         expenseDao.getExpenseByIdFlow(expenseId).flatMapLatest { entity ->
             if (entity == null) {
-                kotlinx.coroutines.flow.flowOf(null)
+                flowOf(null)
             } else {
                 expenseSplitDao.getSplitsByExpenseIdFlow(expenseId).map { splits ->
                     entity.toDomain().copy(splits = splits.toDomainSplits())

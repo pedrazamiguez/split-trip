@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class CreateGroupNavigationHandlerImpl : CreateGroupNavigationHandler {
+class CreateGroupNavigationEventHandlerImpl : CreateGroupNavigationEventHandler {
     private lateinit var _uiState: MutableStateFlow<CreateGroupUiState>
     private lateinit var _actions: MutableSharedFlow<CreateGroupUiAction>
     private lateinit var scope: CoroutineScope

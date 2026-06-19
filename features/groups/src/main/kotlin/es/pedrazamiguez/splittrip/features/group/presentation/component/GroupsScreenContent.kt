@@ -14,10 +14,11 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.GroupsUiState
 
 @Composable
 internal fun GroupsScreenContent(
-    uiState: es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.GroupsUiState,
+    uiState: GroupsUiState,
     selectedGroupId: String?,
     listState: LazyListState,
     bottomPadding: Dp,

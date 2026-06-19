@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.util.Date
 
 fun Expense.toDocument(expenseId: String, groupId: String, groupDocRef: DocumentReference, userId: String) =
     ExpenseDocument(
@@ -114,14 +115,14 @@ fun ExpenseDocument.toDomain(): Expense {
 // ── AddOn ↔ AddOnDocument mappers ────────────────────────────────────
 
 private fun buildReceiptAttachmentDocuments(
-    attachment: es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment?
+    attachment: ReceiptAttachment?
 ): List<AttachmentDocument> {
     val remoteUrl = attachment?.remoteUrl ?: return emptyList()
     return listOf(
         AttachmentDocument(
             path = remoteUrl,
             mime = attachment.mimeType,
-            uploadedAt = Timestamp(java.util.Date(attachment.capturedAtMillis))
+            uploadedAt = Timestamp(Date(attachment.capturedAtMillis))
         )
     )
 }

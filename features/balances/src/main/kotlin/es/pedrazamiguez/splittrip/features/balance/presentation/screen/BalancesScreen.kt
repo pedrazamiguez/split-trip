@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.screen
 
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +20,7 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.Contributi
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.BalancesUiState
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BalancesScreen(
     uiState: BalancesUiState = BalancesUiState(),

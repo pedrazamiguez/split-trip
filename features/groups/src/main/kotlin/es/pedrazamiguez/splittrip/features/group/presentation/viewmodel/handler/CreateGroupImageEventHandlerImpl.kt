@@ -12,9 +12,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class CreateGroupImageHandlerImpl(
+class CreateGroupImageEventHandlerImpl(
     private val groupImageStorageService: GroupImageStorageService
-) : CreateGroupImageHandler {
+) : CreateGroupImageEventHandler {
     private lateinit var _uiState: MutableStateFlow<CreateGroupUiState>
     private lateinit var _actions: MutableSharedFlow<CreateGroupUiAction>
     private lateinit var scope: CoroutineScope

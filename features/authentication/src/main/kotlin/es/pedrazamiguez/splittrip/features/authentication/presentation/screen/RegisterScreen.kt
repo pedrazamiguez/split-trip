@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.authentication.presentation.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -70,7 +71,7 @@ fun RegisterScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(MaterialTheme.spacing.Large),
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
+                        verticalArrangement = Arrangement.spacedBy(
                             MaterialTheme.spacing.Default
                         ),
                         horizontalAlignment = Alignment.CenterHorizontally

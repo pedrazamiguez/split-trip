@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
+import es.pedrazamiguez.splittrip.domain.model.Currency as DomainCurrency
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -130,7 +131,7 @@ private fun resolveNativeSymbol(currency: Currency): String? {
     return symbol.takeIf { it != currency.currencyCode }
 }
 
-fun es.pedrazamiguez.splittrip.domain.model.Currency.formatDisplay(): String {
+fun DomainCurrency.formatDisplay(): String {
     val currencyInstance =
         runCatching { Currency.getInstance(code) }.getOrElse {
             Currency.getInstance(

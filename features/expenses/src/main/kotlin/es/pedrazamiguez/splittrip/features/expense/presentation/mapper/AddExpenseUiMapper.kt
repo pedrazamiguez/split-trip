@@ -28,6 +28,8 @@ import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -60,8 +62,8 @@ class AddExpenseUiMapper(
             Instant.ofEpochMilli(dateMillis),
             ZoneOffset.UTC
         )
-        val formatter = java.time.format.DateTimeFormatter
-            .ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+        val formatter = DateTimeFormatter
+            .ofLocalizedDate(FormatStyle.MEDIUM)
             .withLocale(locale)
         return dateTime.format(formatter)
     }
@@ -75,8 +77,8 @@ class AddExpenseUiMapper(
             Instant.ofEpochMilli(dateMillis),
             ZoneOffset.UTC
         )
-        val formatter = java.time.format.DateTimeFormatter
-            .ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT)
+        val formatter = DateTimeFormatter
+            .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
             .withLocale(locale)
         return dateTime.format(formatter)
     }

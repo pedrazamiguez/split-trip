@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
@@ -429,7 +430,7 @@ private fun StepCircle(
     }
 }
 
-private fun Modifier.dashedBorderIfNeeded(enabled: Boolean, color: androidx.compose.ui.graphics.Color): Modifier =
+private fun Modifier.dashedBorderIfNeeded(enabled: Boolean, color: Color): Modifier =
     if (!enabled) {
         this
     } else {

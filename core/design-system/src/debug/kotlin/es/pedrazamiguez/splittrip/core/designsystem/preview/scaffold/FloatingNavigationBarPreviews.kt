@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.preview.scaffold
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BasketPlus
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartArcs
@@ -20,7 +21,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemes
 private data class PreviewTab(
     override val id: String,
     val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
+    val icon: ImageVector
 ) : FloatingNavTab {
 
     @Composable

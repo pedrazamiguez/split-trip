@@ -4,6 +4,8 @@ import android.content.Context
 import es.pedrazamiguez.splittrip.data.R
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -332,11 +334,11 @@ private fun parseDate(jsonObject: JSONObject): LocalDate? {
     }
 }
 
-private fun parseTime(jsonObject: JSONObject): java.time.LocalTime? {
+private fun parseTime(jsonObject: JSONObject): LocalTime? {
     val timeStr = jsonObject.optString("time").takeIf { it.isNotEmpty() && it != "null" }
     return timeStr?.let {
         try {
-            java.time.LocalTime.parse(it)
+            LocalTime.parse(it)
         } catch (_: Exception) {
             Timber.w("ReceiptExtractionService: failed to parse time string '%s'", it)
             null
@@ -348,7 +350,7 @@ private fun parseCategory(jsonObject: JSONObject): String? {
     val categoryStr = jsonObject.optString("category").takeIf { it.isNotEmpty() && it != "null" }
     return categoryStr?.let {
         try {
-            es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory.fromString(it).name
+            ExpenseCategory.fromString(it).name
         } catch (_: Exception) {
             null
         }
@@ -359,7 +361,7 @@ private fun parsePaymentMethod(jsonObject: JSONObject): String? {
     val paymentMethodStr = jsonObject.optString("paymentMethod").takeIf { it.isNotEmpty() && it != "null" }
     return paymentMethodStr?.let {
         try {
-            es.pedrazamiguez.splittrip.domain.enums.PaymentMethod.fromString(it).name
+            PaymentMethod.fromString(it).name
         } catch (_: Exception) {
             null
         }

@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOp
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranchePreviewUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
@@ -26,8 +27,8 @@ data class AddExpenseUiState(
     val loadedGroupId: String? = null,
     val groupName: String? = null,
     val currentUserId: String? = null,
-    val screenTitleRes: Int = es.pedrazamiguez.splittrip.features.expense.R.string.add_expense_title,
-    val submitLabelRes: Int = es.pedrazamiguez.splittrip.features.expense.R.string.add_expense_submit_button,
+    val screenTitleRes: Int = R.string.add_expense_title,
+    val submitLabelRes: Int = R.string.add_expense_submit_button,
     val isEditMode: Boolean = false,
 
     // Inputs

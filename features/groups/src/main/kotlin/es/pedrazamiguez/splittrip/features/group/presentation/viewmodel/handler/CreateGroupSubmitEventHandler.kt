@@ -1,13 +1,12 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-interface CreateGroupNavigationHandler {
+interface CreateGroupSubmitEventHandler {
 
     fun bind(
         stateFlow: MutableStateFlow<CreateGroupUiState>,
@@ -15,5 +14,5 @@ interface CreateGroupNavigationHandler {
         scope: CoroutineScope
     )
 
-    fun handleNavigation(event: CreateGroupUiEvent)
+    fun handleSubmit(onCreateGroupSuccess: () -> Unit)
 }

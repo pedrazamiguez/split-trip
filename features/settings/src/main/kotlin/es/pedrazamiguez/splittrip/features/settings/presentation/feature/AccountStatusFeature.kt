@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -118,7 +119,7 @@ private fun linkGoogleAccount(
         try {
             val idToken = getGoogleIdToken(activity, webClientId)
             viewModel.onEvent(AccountStatusUiEvent.LinkGoogle(idToken))
-        } catch (_: androidx.credentials.exceptions.GetCredentialCancellationException) {
+        } catch (_: GetCredentialCancellationException) {
             // User cancelled - do nothing
         } catch (e: Exception) {
             Timber.e(e, "Google account linking failed")

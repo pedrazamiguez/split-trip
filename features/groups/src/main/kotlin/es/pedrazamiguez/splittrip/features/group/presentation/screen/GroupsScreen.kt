@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.screen
 
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,7 +25,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 
 @Suppress("kotlin:S107")
-@OptIn(FlowPreview::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(FlowPreview::class, ExperimentalMaterial3Api::class)
 @Composable
 fun GroupsScreen(
     uiState: GroupsUiState = GroupsUiState(),

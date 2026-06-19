@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -169,22 +170,22 @@ class UserPreferences(
 
     // ── Active AI Engine (User-scoped, auth-reactive) ─────────────────────
 
-    val activeAiEngine: Flow<es.pedrazamiguez.splittrip.domain.enums.AiEngineType> = userScopedFlow { userId ->
+    val activeAiEngine: Flow<AiEngineType> = userScopedFlow { userId ->
         context.dataStore.data.map { prefs ->
             val name = prefs[stringPreferencesKey("${userId}_$ACTIVE_AI_ENGINE")]
             if (name != null) {
                 try {
-                    es.pedrazamiguez.splittrip.domain.enums.AiEngineType.valueOf(name)
+                    AiEngineType.valueOf(name)
                 } catch (_: Exception) {
-                    es.pedrazamiguez.splittrip.domain.enums.AiEngineType.AI_CORE_GEMMA_4
+                    AiEngineType.AI_CORE_GEMMA_4
                 }
             } else {
-                es.pedrazamiguez.splittrip.domain.enums.AiEngineType.AI_CORE_GEMMA_4
+                AiEngineType.AI_CORE_GEMMA_4
             }
         }
     }
 
-    suspend fun setActiveAiEngine(engineType: es.pedrazamiguez.splittrip.domain.enums.AiEngineType) {
+    suspend fun setActiveAiEngine(engineType: AiEngineType) {
         context.dataStore.edit { prefs ->
             prefs[stringPreferencesKey(userKey(ACTIVE_AI_ENGINE))] = engineType.name
         }

@@ -15,10 +15,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class CreateGroupSubmitHandlerImpl(
+class CreateGroupSubmitEventHandlerImpl(
     private val createGroupUseCase: CreateGroupUseCase,
     private val telemetryTracker: TelemetryTracker
-) : CreateGroupSubmitHandler {
+) : CreateGroupSubmitEventHandler {
     private lateinit var _uiState: MutableStateFlow<CreateGroupUiState>
     private lateinit var _actions: MutableSharedFlow<CreateGroupUiAction>
     private lateinit var scope: CoroutineScope

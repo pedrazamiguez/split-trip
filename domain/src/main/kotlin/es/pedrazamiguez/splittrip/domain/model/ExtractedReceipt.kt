@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.model
 
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalTime
 
 /**
  * Value object representing structured fields extracted from a raw receipt.
@@ -22,7 +23,7 @@ data class ExtractedReceipt(
     val amount: BigDecimal?,
     val currency: String?,
     val date: LocalDate?,
-    val time: java.time.LocalTime? = null,
+    val time: LocalTime? = null,
     val title: String?,
     val vendor: String? = null,
     val category: String? = null,

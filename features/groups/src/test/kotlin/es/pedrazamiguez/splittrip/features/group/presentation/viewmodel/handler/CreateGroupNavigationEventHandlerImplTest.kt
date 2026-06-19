@@ -15,16 +15,16 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class CreateGroupNavigationHandlerImplTest {
+class CreateGroupNavigationEventHandlerImplTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private lateinit var handler: CreateGroupNavigationHandlerImpl
+    private lateinit var handler: CreateGroupNavigationEventHandlerImpl
     private lateinit var stateFlow: MutableStateFlow<CreateGroupUiState>
     private lateinit var actionsFlow: MutableSharedFlow<CreateGroupUiAction>
 
     @BeforeEach
     fun setUp() {
-        handler = CreateGroupNavigationHandlerImpl()
+        handler = CreateGroupNavigationEventHandlerImpl()
         stateFlow = MutableStateFlow(CreateGroupUiState())
         actionsFlow = MutableSharedFlow()
     }
