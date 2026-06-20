@@ -19,16 +19,17 @@ class SignInWithEmailUseCaseImpl(
 ) : SignInWithEmailUseCase {
 
     override suspend operator fun invoke(email: String, password: String): Result<String> = runCatching {
+        val normalizedEmail = User.normalizeEmail(email)
         val userId = authenticationService
-            .signIn(email, password)
+            .signIn(normalizedEmail, password)
             .getOrThrow()
 
         val profile = userRepository.getCurrentUserProfile()
         if (profile == null) {
             val defaultUser = User(
                 userId = userId,
-                email = email,
-                displayName = email.substringBefore('@'),
+                email = normalizedEmail,
+                displayName = normalizedEmail.substringBefore('@'),
                 profileImagePath = null,
                 createdAt = LocalDateTime.now(ZoneOffset.UTC)
             )
@@ -42,7 +43,7 @@ class SignInWithEmailUseCaseImpl(
             }
 
         userPreferenceRepository.setHasSignedOut(false)
-        reconcileUnregisteredUserUseCase(email, userId).getOrThrow()
+        reconcileUnregisteredUserUseCase(normalizedEmail, userId).getOrThrow()
 
         userId
     }

@@ -151,7 +151,9 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
     }
 
     override suspend fun deleteUser(userId: String) {
-        firestore.collection(UserDocument.COLLECTION_PATH).document(userId).delete().await()
+        retryOnPermissionDenied("deleteUser") {
+            firestore.collection(UserDocument.COLLECTION_PATH).document(userId).delete().await()
+        }
     }
 }
 

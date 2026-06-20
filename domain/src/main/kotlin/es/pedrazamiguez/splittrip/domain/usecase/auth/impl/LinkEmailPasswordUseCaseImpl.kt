@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth.impl
 
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
@@ -12,15 +13,16 @@ class LinkEmailPasswordUseCaseImpl(
 ) : LinkEmailPasswordUseCase {
 
     override suspend operator fun invoke(email: String, password: String): Result<Unit> = runCatching {
-        authenticationService.linkEmailPassword(email, password).getOrThrow()
+        val normalizedEmail = User.normalizeEmail(email)
+        authenticationService.linkEmailPassword(normalizedEmail, password).getOrThrow()
         val userId = authenticationService.requireUserId()
 
         val existingProfile = userRepository.getCurrentUserProfile()
         if (existingProfile != null) {
-            val updatedProfile = existingProfile.copy(email = email)
+            val updatedProfile = existingProfile.copy(email = normalizedEmail)
             userRepository.saveUser(updatedProfile).getOrThrow()
         }
 
-        reconcileUnregisteredUserUseCase(email, userId).getOrThrow()
+        reconcileUnregisteredUserUseCase(normalizedEmail, userId).getOrThrow()
     }
 }

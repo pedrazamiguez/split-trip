@@ -15,10 +15,25 @@ data class User(
     val isPending: Boolean = false
 ) {
     companion object {
+        fun normalizeEmail(email: String): String {
+            val cleanEmail = email.trim().lowercase()
+            val parts = cleanEmail.split("@")
+            if (parts.size != 2) return cleanEmail
+            val localPart = parts[0]
+            val domain = parts[1]
+
+            if (domain == "gmail.com" || domain == "googlemail.com") {
+                val baseLocal = localPart.substringBefore("+")
+                val normalizedLocal = baseLocal.replace(".", "")
+                return "$normalizedLocal@$domain"
+            }
+            return cleanEmail
+        }
+
         fun generatePendingUserId(email: String): String {
-            val trimmedEmail = email.trim().lowercase()
+            val normalized = normalizeEmail(email)
             val digest = MessageDigest.getInstance("SHA-256")
-            val hash = digest.digest(trimmedEmail.toByteArray(Charsets.UTF_8))
+            val hash = digest.digest(normalized.toByteArray(Charsets.UTF_8))
             val hashString = hash.joinToString("") { "%02x".format(it) }
             return "pending_$hashString"
         }

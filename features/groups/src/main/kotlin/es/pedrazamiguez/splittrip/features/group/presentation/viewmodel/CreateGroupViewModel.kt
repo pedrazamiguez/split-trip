@@ -157,12 +157,13 @@ class CreateGroupViewModel(
             searchUsersByEmailUseCase(query).onSuccess { users ->
                 val selectedIds = _uiState.value.selectedMembers.map { it.userId }.toSet()
                 val results = if (users.isEmpty()) {
-                    val pendingUserId = User.generatePendingUserId(query)
+                    val normalizedEmail = User.normalizeEmail(query)
+                    val pendingUserId = User.generatePendingUserId(normalizedEmail)
                     if (pendingUserId !in selectedIds) {
                         listOf(
                             User(
                                 userId = pendingUserId,
-                                email = query.trim().lowercase(),
+                                email = normalizedEmail,
                                 isPending = true
                             )
                         )
