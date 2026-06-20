@@ -14,12 +14,28 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isPendingUserOfCurrentAuth(pendingUserId) {
+      return isAuthenticated()
+        && ("email" in request.auth.token)
+        && pendingUserId == "pending_" + hashing.sha256(request.auth.token.email.lower().toUtf8()).toHexString();
+    }
+
+    function isMemberOrPending(memberIds) {
+      return isAuthenticated() && (
+        request.auth.uid in memberIds ||
+        (
+          "email" in request.auth.token &&
+          ("pending_" + hashing.sha256(request.auth.token.email.lower().toUtf8()).toHexString() in memberIds)
+        )
+      );
+    }
+
     // ---------------------------------------------------------------
     // Users
     // ---------------------------------------------------------------
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) || isPendingUserOfCurrentAuth(userId);
 
       // Devices subcollection — only the owning user can manage their devices
       match /devices/{deviceId} {
@@ -54,8 +70,7 @@ service cloud.firestore {
       // (membership enforced at app level; rule allows read for now)
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated()
-        && request.auth.uid in resource.data.memberIds;
+      allow update, delete: if isMemberOrPending(resource.data.memberIds);
 
       // Members subcollection
       match /members/{memberId} {
