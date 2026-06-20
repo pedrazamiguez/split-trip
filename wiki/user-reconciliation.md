@@ -39,7 +39,7 @@ sequenceDiagram
 
 1. **Deterministic Placeholder UIDs:**
    If we assign random temporary IDs to unregistered invitees, a person added to multiple groups by different creators would have distinct, unlinked IDs. To avoid this, we generate a deterministic UID derived from their email address:
-   $$\text{userId} = \text{"pending\_"} + \text{sha256(email.trim().lowercase())}$$
+   `userId = "pending_" + sha256(email.trim().lowercase())`
    This guarantees that if multiple group creators add the same email address, they will all reference the exact same pending user UID.
 2. **Anonymous Auth at Startup:**
    On fresh app start, the app automatically signs in the user using Firebase Anonymous Authentication (`signInAnonymously()`). This allows immediate, offline-first interactions without requiring credentials.
@@ -62,8 +62,8 @@ The reconciliation flow spans the entire multi-module architecture:
 
 ### A. The Domain Layer
 
-* **[User](file:///Users/pedrazamiguez/Projects/split-trip/domain/src/main/kotlin/es/pedrazamiguez/splittrip/domain/model/User.kt):** Represents the user model. Features `isPending: Boolean` to differentiate unregistered placeholder profiles.
-* **[ReconcileUnregisteredUserUseCase](file:///Users/pedrazamiguez/Projects/split-trip/domain/src/main/kotlin/es/pedrazamiguez/splittrip/domain/usecase/user/impl/ReconcileUnregisteredUserUseCaseImpl.kt):**
+* **[User](../domain/src/main/kotlin/es/pedrazamiguez/splittrip/domain/model/User.kt):** Represents the user model. Features `isPending: Boolean` to differentiate unregistered placeholder profiles.
+* **[ReconcileUnregisteredUserUseCase](../domain/src/main/kotlin/es/pedrazamiguez/splittrip/domain/usecase/user/impl/ReconcileUnregisteredUserUseCaseImpl.kt):**
   1. Checks if `isReconciled` is already `true` for the active user (early exit).
   2. Generates the deterministic `pendingUserId` from the email.
   3. Invokes the `groupRepository.reconcileUnregisteredUser(pendingUserId, activeUserId)` to migrate groups and financial data.
@@ -72,7 +72,7 @@ The reconciliation flow spans the entire multi-module architecture:
 
 ### B. The Cloud / Remote Layer (Firestore)
 
-Because many documents reference member UIDs, the cloud migration must be atomic. It is implemented in **[FirestoreGroupDataSourceImpl](file:///Users/pedrazamiguez/Projects/split-trip/data/firebase/src/main/kotlin/es/pedrazamiguez/splittrip/data/firebase/firestore/datasource/impl/FirestoreGroupDataSourceImpl.kt)**:
+Because many documents reference member UIDs, the cloud migration must be atomic. It is implemented in **[FirestoreGroupDataSourceImpl](../data/firebase/src/main/kotlin/es/pedrazamiguez/splittrip/data/firebase/firestore/datasource/impl/FirestoreGroupDataSourceImpl.kt)**:
 
 1. **Find Matching Groups:** Queries the `/groups` collection where `memberIds` array contains `pendingUserId`.
 2. **Execute Transaction:** For each matching group, a Firestore Transaction executes to ensure atomicity. Due to Firestore transaction constraints, **all read operations are executed before any write/update operations**:
@@ -91,15 +91,15 @@ Because many documents reference member UIDs, the cloud migration must be atomic
 
 ## 3. Firestore Security Rules
 
-To allow secure, decentralized reconciliation, `/Users/pedrazamiguez/Projects/split-trip/firestore.rules` enforces strict conditions:
+To allow secure, decentralized reconciliation, `firestore.rules` enforces strict conditions:
 
 1. **Pending User Profile Access:**
    Any authenticated user is permitted to create a pending profile (when adding an unregistered member by email), but only the authenticated owner matching that email's hash can delete or update it.
    ```javascript
    function isPendingUserOfCurrentAuth(pendingUserId) {
      return isAuthenticated()
-       && ("email" in request.auth.token)
-       && pendingUserId == "pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString();
+       && request.auth.token.email != null
+       && pendingUserId == "pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString().lower();
    }
    ```
 2. **Group Modification Access:**
@@ -109,8 +109,8 @@ To allow secure, decentralized reconciliation, `/Users/pedrazamiguez/Projects/sp
      return isAuthenticated() && (
        request.auth.uid in memberIds ||
        (
-         "email" in request.auth.token &&
-         ("pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString() in memberIds)
+         request.auth.token.email != null &&
+         ("pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString().lower() in memberIds)
        )
      );
    }
@@ -122,6 +122,6 @@ To allow secure, decentralized reconciliation, `/Users/pedrazamiguez/Projects/sp
 
 If a user signs in but the app crashes, loses network, or encounters a temporary error before the reconciliation completes, they might be left in a partially reconciled state.
 
-To guarantee eventual consistency, **[AppNavHost](file:///Users/pedrazamiguez/Projects/split-trip/app/src/main/kotlin/es/pedrazamiguez/splittrip/navigation/AppNavHost.kt)** features a **Self-Healing LaunchedEffect**:
+To guarantee eventual consistency, **[AppNavHost](../app/src/main/kotlin/es/pedrazamiguez/splittrip/navigation/AppNavHost.kt)** features a **Self-Healing LaunchedEffect**:
 * When `isUserLoggedIn == true` and the local preference `isReconciled == false`, a background coroutine is launched to automatically trigger `ReconcileUnregisteredUserUseCase`.
 * If it succeeds, the flag is saved, and no further attempts are made. If it fails, it will safely retry on the next app launch or navigation state re-entry.

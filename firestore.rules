@@ -16,16 +16,16 @@ service cloud.firestore {
 
     function isPendingUserOfCurrentAuth(pendingUserId) {
       return isAuthenticated()
-        && ("email" in request.auth.token)
-        && pendingUserId == "pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString();
+        && request.auth.token.email != null
+        && pendingUserId == "pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString().lower();
     }
 
     function isMemberOrPending(memberIds) {
       return isAuthenticated() && (
         request.auth.uid in memberIds ||
         (
-          "email" in request.auth.token &&
-          ("pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString() in memberIds)
+          request.auth.token.email != null &&
+          ("pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString().lower() in memberIds)
         )
       );
     }
