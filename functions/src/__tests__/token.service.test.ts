@@ -21,7 +21,11 @@ jest.mock("firebase-admin", () => {
 });
 
 import * as admin from "firebase-admin";
-import { getRecipientTokens, getGroupMemberUserIds, getUserDeviceTokens } from "../services/token.service";
+import {
+  getRecipientTokens,
+  getGroupMemberUserIds,
+  getUserDeviceTokens,
+} from "../services/token.service";
 
 // Helper to create a mock Firestore query chain
 function mockFirestoreChain(docs: Array<{ data: () => Record<string, unknown> }>) {
@@ -122,9 +126,7 @@ describe("token.service", () => {
         { data: () => ({ userId: "user3" }) },
       ];
 
-      const deviceDocsUser2 = [
-        { data: () => ({ token: "token_user2_device1" }) },
-      ];
+      const deviceDocsUser2 = [{ data: () => ({ token: "token_user2_device1" }) }];
 
       const deviceDocsUser3 = [
         { data: () => ({ token: "token_user3_device1" }) },
@@ -168,9 +170,7 @@ describe("token.service", () => {
     });
 
     it("returns empty array when all members are the actor", async () => {
-      const memberDocs = [
-        { data: () => ({ userId: "actor" }) },
-      ];
+      const memberDocs = [{ data: () => ({ userId: "actor" }) }];
 
       (firestoreMock.collection as jest.Mock).mockImplementation(() => ({
         doc: () => ({
@@ -185,7 +185,3 @@ describe("token.service", () => {
     });
   });
 });
-
-
-
-

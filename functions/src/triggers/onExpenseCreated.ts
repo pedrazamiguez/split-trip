@@ -8,7 +8,13 @@
 import "../config";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
-import { ExpenseDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";
+import {
+  ExpenseDoc,
+  NotificationType,
+  FcmDataPayload,
+  NotificationDisplay,
+  NotificationChannelId,
+} from "../types";
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
@@ -41,7 +47,10 @@ export const onExpenseCreated = onDocumentCreated(
     // Suppress notifications during cascading group deletion (or missing group)
     if (!groupData || groupData.deletionRequested) {
       if (groupData?.deletionRequested) {
-        logger.info("onExpenseCreated: Suppressed — group is being deleted", { groupId, expenseId });
+        logger.info("onExpenseCreated: Suppressed — group is being deleted", {
+          groupId,
+          expenseId,
+        });
       }
       return;
     }
@@ -75,4 +84,3 @@ export const onExpenseCreated = onDocumentCreated(
     await sendDataMessage(tokens, payload, display);
   }
 );
-

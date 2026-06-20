@@ -12,7 +12,13 @@
 import "../config";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
-import { CashWithdrawalDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";
+import {
+  CashWithdrawalDoc,
+  NotificationType,
+  FcmDataPayload,
+  NotificationDisplay,
+  NotificationChannelId,
+} from "../types";
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
@@ -41,9 +47,7 @@ export const onCashWithdrawal = onDocumentCreated(
     const targetId = withdrawal.withdrawnBy;
     const isImpersonation = !!targetId && targetId !== actorId;
 
-    const namePromises: Promise<string>[] = [
-      getActorDisplayName(actorId),
-    ];
+    const namePromises: Promise<string>[] = [getActorDisplayName(actorId)];
     if (isImpersonation) {
       namePromises.push(getActorDisplayName(targetId));
     }
@@ -56,15 +60,16 @@ export const onCashWithdrawal = onDocumentCreated(
     // Suppress notifications during cascading group deletion (or missing group)
     if (!groupData || groupData.deletionRequested) {
       if (groupData?.deletionRequested) {
-        logger.info("onCashWithdrawal: Suppressed — group is being deleted", { groupId, withdrawalId });
+        logger.info("onCashWithdrawal: Suppressed — group is being deleted", {
+          groupId,
+          withdrawalId,
+        });
       }
       return;
     }
 
     const actorName = displayNames[0] as string;
-    const targetName = isImpersonation
-      ? displayNames[1] as string
-      : actorName;
+    const targetName = isImpersonation ? (displayNames[1] as string) : actorName;
 
     // Exclude the actor (createdBy) from notifications — target member receives one
     const tokens = await getRecipientTokens(groupId, actorId, groupData.memberIds);
@@ -88,9 +93,7 @@ export const onCashWithdrawal = onDocumentCreated(
       bodyLocKey: isImpersonation
         ? "notification_cash_withdrawal_body_on_behalf"
         : "notification_cash_withdrawal_body_brief",
-      bodyLocArgs: isImpersonation
-        ? [actorName, targetName]
-        : [actorName],
+      bodyLocArgs: isImpersonation ? [actorName, targetName] : [actorName],
       channelId: NotificationChannelId.FINANCIAL,
     };
 
