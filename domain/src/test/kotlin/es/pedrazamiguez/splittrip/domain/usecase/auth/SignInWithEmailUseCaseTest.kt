@@ -146,6 +146,22 @@ class SignInWithEmailUseCaseTest {
                 )
             }
         }
+
+        @Test
+        fun `succeeds even when reconciliation fails`() = runTest {
+            // Given
+            coEvery { authenticationService.signIn(email, password) } returns Result.success(userId)
+            coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
+            coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns
+                Result.failure(RuntimeException("Reconciliation failed"))
+
+            // When
+            val result = useCase(email, password)
+
+            // Then
+            assertTrue(result.isSuccess)
+            assertEquals(userId, result.getOrNull())
+        }
     }
 
     @Nested

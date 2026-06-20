@@ -22,6 +22,6 @@ class LinkGoogleAccountUseCaseImpl(
             userRepository.saveUser(updatedProfile).getOrThrow()
         }
 
-        reconcileUnregisteredUserUseCase(email, userId).getOrThrow()
+        reconcileUnregisteredUserUseCase(email, userId)
     }
 }

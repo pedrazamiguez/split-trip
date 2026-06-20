@@ -35,6 +35,7 @@ class UserPreferences(
         private const val SELECTED_GROUP_CURRENCY = "selected_group_currency"
         private const val DEFAULT_CURRENCY = "default_currency"
         private const val ACTIVE_AI_ENGINE = "active_ai_engine"
+        private const val IS_RECONCILED = "is_reconciled"
     }
 
     // ── Device ID (Device-scoped) ────────────────────────────────────────
@@ -261,6 +262,20 @@ class UserPreferences(
             } else {
                 prefs.remove(key)
             }
+        }
+    }
+
+    // ── User Reconciliation Status (User-scoped, auth-reactive) ──────────
+
+    val isReconciled: Flow<Boolean> = userScopedFlow { userId ->
+        context.dataStore.data.map { prefs ->
+            prefs[booleanPreferencesKey("${userId}_$IS_RECONCILED")] ?: false
+        }
+    }
+
+    suspend fun setIsReconciled(reconciled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[booleanPreferencesKey(userKey(IS_RECONCILED))] = reconciled
         }
     }
 }

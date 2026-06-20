@@ -43,7 +43,7 @@ class SignInWithEmailUseCaseImpl(
             }
 
         userPreferenceRepository.setHasSignedOut(false)
-        reconcileUnregisteredUserUseCase(normalizedEmail, userId).getOrThrow()
+        reconcileUnregisteredUserUseCase(normalizedEmail, userId)
 
         userId
     }

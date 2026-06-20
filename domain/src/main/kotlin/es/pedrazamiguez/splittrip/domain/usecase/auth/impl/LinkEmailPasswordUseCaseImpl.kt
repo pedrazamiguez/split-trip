@@ -23,6 +23,6 @@ class LinkEmailPasswordUseCaseImpl(
             userRepository.saveUser(updatedProfile).getOrThrow()
         }
 
-        reconcileUnregisteredUserUseCase(normalizedEmail, userId).getOrThrow()
+        reconcileUnregisteredUserUseCase(normalizedEmail, userId)
     }
 }

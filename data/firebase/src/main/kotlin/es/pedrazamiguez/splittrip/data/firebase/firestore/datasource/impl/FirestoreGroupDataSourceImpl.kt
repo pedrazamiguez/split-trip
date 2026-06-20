@@ -10,7 +10,6 @@ import com.google.firebase.firestore.Source
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ContributionDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocument
-import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseSplitDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupMemberDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.UserDocument
@@ -340,46 +339,53 @@ class FirestoreGroupDataSourceImpl(
             .await()
 
         firestore.runTransaction { transaction ->
-            // 1. Group members list update
+            // --- ALL READS FIRST ---
             val freshGroupDoc = transaction.get(groupDocRef)
-            val memberIds = freshGroupDoc.get("memberIds") as? List<*> ?: emptyList<Any>()
-            val updatedMemberIds = memberIds.map { if (it == pendingUserId) activeUserId else it }
-            transaction.update(groupDocRef, "memberIds", updatedMemberIds)
+            val pendingMemberSnap = transaction.get(memberDocRef)
+            val freshExpenseSnaps = expensesQuery.documents.map { transaction.get(it.reference) }
+            val freshContributionSnaps = contributionsQuery.documents.map { transaction.get(it.reference) }
+            val freshWithdrawalSnaps = withdrawalsQuery.documents.map { transaction.get(it.reference) }
 
-            // 2. Member subcollection document migration
-            migrateMemberDocument(transaction, memberDocRef, activeMemberDocRef, activeUserId, userRef)
+            // --- ALL WRITES AFTER ---
+            updateGroupMembersInTransaction(transaction, groupDocRef, freshGroupDoc, pendingUserId, activeUserId)
 
-            // 3. Expenses updates
-            updateExpensesInTransaction(transaction, expensesQuery.documents, pendingUserId, activeUserId, userRef)
-
-            // 4. Contributions updates
-            updateContributionsInTransaction(
+            migrateMemberDocumentInTransaction(
                 transaction,
-                contributionsQuery.documents,
-                pendingUserId,
+                memberDocRef,
+                activeMemberDocRef,
+                pendingMemberSnap,
                 activeUserId,
                 userRef
             )
 
-            // 5. Cash withdrawals updates
-            updateWithdrawalsInTransaction(
-                transaction,
-                withdrawalsQuery.documents,
-                pendingUserId,
-                activeUserId,
-                userRef
-            )
+            updateExpensesInTransaction(transaction, freshExpenseSnaps, pendingUserId, activeUserId, userRef)
+
+            updateContributionsInTransaction(transaction, freshContributionSnaps, pendingUserId, activeUserId, userRef)
+
+            updateWithdrawalsInTransaction(transaction, freshWithdrawalSnaps, pendingUserId, activeUserId, userRef)
         }.await()
     }
 
-    private fun migrateMemberDocument(
+    private fun updateGroupMembersInTransaction(
+        transaction: com.google.firebase.firestore.Transaction,
+        groupDocRef: DocumentReference,
+        freshGroupDoc: DocumentSnapshot,
+        pendingUserId: String,
+        activeUserId: String
+    ) {
+        val memberIds = freshGroupDoc.get("memberIds") as? List<*> ?: emptyList<Any>()
+        val updatedMemberIds = memberIds.map { if (it == pendingUserId) activeUserId else it }
+        transaction.update(groupDocRef, "memberIds", updatedMemberIds)
+    }
+
+    private fun migrateMemberDocumentInTransaction(
         transaction: com.google.firebase.firestore.Transaction,
         memberDocRef: DocumentReference,
         activeMemberDocRef: DocumentReference,
+        pendingMemberSnap: DocumentSnapshot,
         activeUserId: String,
         userRef: DocumentReference
     ) {
-        val pendingMemberSnap = transaction.get(memberDocRef)
         if (pendingMemberSnap.exists()) {
             val memberDoc = pendingMemberSnap.toObject(GroupMemberDocument::class.java)
             if (memberDoc != null) {
@@ -396,174 +402,48 @@ class FirestoreGroupDataSourceImpl(
 
     private fun updateExpensesInTransaction(
         transaction: com.google.firebase.firestore.Transaction,
-        expenseDocs: List<DocumentSnapshot>,
+        expenseSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String,
         userRef: DocumentReference
     ) {
-        for (expSnap in expenseDocs) {
-            val freshExpSnap = transaction.get(expSnap.reference)
+        for (freshExpSnap in expenseSnaps) {
             val expense = freshExpSnap.toObject(ExpenseDocument::class.java) ?: continue
-            val updatedExpense = getUpdatedExpenseIfNeedsUpdate(expense, pendingUserId, activeUserId, userRef)
+            val updatedExpense = expense.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId, userRef)
             if (updatedExpense != null) {
-                transaction.set(expSnap.reference, updatedExpense)
+                transaction.set(freshExpSnap.reference, updatedExpense)
             }
-        }
-    }
-
-    private fun getUpdatedExpenseIfNeedsUpdate(
-        expense: ExpenseDocument,
-        pendingUserId: String,
-        activeUserId: String,
-        userRef: DocumentReference
-    ): ExpenseDocument? {
-        var needsUpdate = false
-        var payerId = expense.payerId
-        var payerRef = expense.payerRef
-        var createdBy = expense.createdBy
-        var createdByRef = expense.createdByRef
-
-        if (payerId == pendingUserId) {
-            payerId = activeUserId
-            payerRef = userRef
-            needsUpdate = true
-        }
-        if (createdBy == pendingUserId) {
-            createdBy = activeUserId
-            createdByRef = userRef
-            needsUpdate = true
-        }
-
-        val updatedSplits = expense.splits.map { split ->
-            val updatedSplit = getUpdatedSplitIfNeedsUpdate(split, pendingUserId, activeUserId, userRef)
-            if (updatedSplit != null) {
-                needsUpdate = true
-                updatedSplit
-            } else {
-                split
-            }
-        }
-
-        return if (needsUpdate) {
-            expense.copy(
-                payerId = payerId,
-                payerRef = payerRef,
-                createdBy = createdBy,
-                createdByRef = createdByRef,
-                splits = updatedSplits
-            )
-        } else {
-            null
-        }
-    }
-
-    private fun getUpdatedSplitIfNeedsUpdate(
-        split: ExpenseSplitDocument,
-        pendingUserId: String,
-        activeUserId: String,
-        userRef: DocumentReference
-    ): ExpenseSplitDocument? {
-        var splitUpdated = false
-        var sUserId = split.userId
-        var sUserRef = split.userRef
-        var sCoveredById = split.isCoveredById
-        var sCoveredByRef = split.isCoveredByRef
-
-        if (sUserId == pendingUserId) {
-            sUserId = activeUserId
-            sUserRef = userRef
-            splitUpdated = true
-        }
-        if (sCoveredById == pendingUserId) {
-            sCoveredById = activeUserId
-            sCoveredByRef = userRef
-            splitUpdated = true
-        }
-
-        return if (splitUpdated) {
-            split.copy(
-                userId = sUserId,
-                userRef = sUserRef,
-                isCoveredById = sCoveredById,
-                isCoveredByRef = sCoveredByRef
-            )
-        } else {
-            null
         }
     }
 
     private fun updateContributionsInTransaction(
         transaction: com.google.firebase.firestore.Transaction,
-        contributionDocs: List<DocumentSnapshot>,
+        contributionSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String,
         userRef: DocumentReference
     ) {
-        for (contrSnap in contributionDocs) {
-            val freshContrSnap = transaction.get(contrSnap.reference)
-            val contribution = freshContrSnap.toObject(ContributionDocument::class.java)
-            if (contribution != null) {
-                var needsUpdate = false
-                var cUserId = contribution.userId
-                var cCreatedBy = contribution.createdBy
-                var cCreatedByRef = contribution.createdByRef
-
-                if (cUserId == pendingUserId) {
-                    cUserId = activeUserId
-                    needsUpdate = true
-                }
-                if (cCreatedBy == pendingUserId) {
-                    cCreatedBy = activeUserId
-                    cCreatedByRef = userRef
-                    needsUpdate = true
-                }
-
-                if (needsUpdate) {
-                    val updatedContribution = contribution.copy(
-                        userId = cUserId,
-                        createdBy = cCreatedBy,
-                        createdByRef = cCreatedByRef
-                    )
-                    transaction.set(contrSnap.reference, updatedContribution)
-                }
+        for (freshContrSnap in contributionSnaps) {
+            val contribution = freshContrSnap.toObject(ContributionDocument::class.java) ?: continue
+            val updatedContribution = contribution.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId, userRef)
+            if (updatedContribution != null) {
+                transaction.set(freshContrSnap.reference, updatedContribution)
             }
         }
     }
 
     private fun updateWithdrawalsInTransaction(
         transaction: com.google.firebase.firestore.Transaction,
-        withdrawalDocs: List<DocumentSnapshot>,
+        withdrawalSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String,
         userRef: DocumentReference
     ) {
-        for (withdSnap in withdrawalDocs) {
-            val freshWithdSnap = transaction.get(withdSnap.reference)
-            val withdrawal = freshWithdSnap.toObject(CashWithdrawalDocument::class.java)
-            if (withdrawal != null) {
-                var needsUpdate = false
-                var wWithdrawnBy = withdrawal.withdrawnBy
-                var wCreatedBy = withdrawal.createdBy
-                var wCreatedByRef = withdrawal.createdByRef
-
-                if (wWithdrawnBy == pendingUserId) {
-                    wWithdrawnBy = activeUserId
-                    needsUpdate = true
-                }
-                if (wCreatedBy == pendingUserId) {
-                    wCreatedBy = activeUserId
-                    wCreatedByRef = userRef
-                    needsUpdate = true
-                }
-
-                if (needsUpdate) {
-                    val updatedWithdrawal = withdrawal.copy(
-                        withdrawnBy = wWithdrawnBy,
-                        createdBy = wCreatedBy,
-                        createdByRef = wCreatedByRef
-                    )
-                    transaction.set(withdSnap.reference, updatedWithdrawal)
-                }
+        for (freshWithdSnap in withdrawalSnaps) {
+            val withdrawal = freshWithdSnap.toObject(CashWithdrawalDocument::class.java) ?: continue
+            val updatedWithdrawal = withdrawal.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId, userRef)
+            if (updatedWithdrawal != null) {
+                transaction.set(freshWithdSnap.reference, updatedWithdrawal)
             }
         }
     }

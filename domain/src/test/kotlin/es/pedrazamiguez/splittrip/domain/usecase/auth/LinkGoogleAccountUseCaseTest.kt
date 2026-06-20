@@ -66,4 +66,18 @@ class LinkGoogleAccountUseCaseTest {
         assertEquals(exception, result.exceptionOrNull())
         coVerify(exactly = 0) { reconcileUnregisteredUserUseCase(any(), any()) }
     }
+
+    @Test
+    fun `succeeds even when reconciliation fails`() = runTest {
+        coEvery { authenticationService.linkGoogleAccount(idToken) } returns Result.success(Unit)
+        coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns
+            Result.failure(RuntimeException("Reconciliation failed"))
+
+        val result = useCase(idToken)
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) { authenticationService.linkGoogleAccount(idToken) }
+        coVerify(exactly = 1) { userRepository.saveUser(any()) }
+        coVerify(exactly = 1) { reconcileUnregisteredUserUseCase(email, userId) }
+    }
 }

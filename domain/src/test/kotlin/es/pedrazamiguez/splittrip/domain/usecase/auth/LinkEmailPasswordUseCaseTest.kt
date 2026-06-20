@@ -65,4 +65,18 @@ class LinkEmailPasswordUseCaseTest {
         assertEquals(exception, result.exceptionOrNull())
         coVerify(exactly = 0) { reconcileUnregisteredUserUseCase(any(), any()) }
     }
+
+    @Test
+    fun `succeeds even when reconciliation fails`() = runTest {
+        coEvery { authenticationService.linkEmailPassword(email, password) } returns Result.success(Unit)
+        coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns
+            Result.failure(RuntimeException("Reconciliation failed"))
+
+        val result = useCase(email, password)
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) { authenticationService.linkEmailPassword(email, password) }
+        coVerify(exactly = 1) { userRepository.saveUser(any()) }
+        coVerify(exactly = 1) { reconcileUnregisteredUserUseCase(email, userId) }
+    }
 }

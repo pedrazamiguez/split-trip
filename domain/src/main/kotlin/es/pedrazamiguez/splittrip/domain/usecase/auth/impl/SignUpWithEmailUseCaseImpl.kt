@@ -26,7 +26,7 @@ class SignUpWithEmailUseCaseImpl(
             // cause the email sign-up flow to fail.
         }
         userPreferenceRepository.setHasSignedOut(false)
-        reconcileUnregisteredUserUseCase(normalizedEmail, userId).getOrThrow()
+        reconcileUnregisteredUserUseCase(normalizedEmail, userId)
         userId
     }
 }

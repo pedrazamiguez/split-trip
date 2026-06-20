@@ -92,6 +92,22 @@ class SignInWithGoogleUseCaseTest {
             assertTrue(result.isSuccess)
             assertEquals(firebaseUser.userId, result.getOrNull())
         }
+
+        @Test
+        fun `succeeds even when reconciliation fails`() = runTest {
+            // Given
+            coEvery { authenticationService.signInWithGoogle(idToken) } returns Result.success(firebaseUser)
+            coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
+            coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns
+                Result.failure(RuntimeException("Reconciliation failed"))
+
+            // When
+            val result = useCase(idToken)
+
+            // Then - sign-in should still succeed (reconciliation is best-effort/non-blocking)
+            assertTrue(result.isSuccess)
+            assertEquals(firebaseUser.userId, result.getOrNull())
+        }
     }
 
     @Nested

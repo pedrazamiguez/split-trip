@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.repository
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface UserPreferenceRepository {
 
     fun getUserDefaultCurrency(): Flow<String>
@@ -22,6 +23,9 @@ interface UserPreferenceRepository {
 
     fun getHasSignedOut(): Flow<Boolean>
     suspend fun setHasSignedOut(signedOut: Boolean)
+
+    fun getIsReconciled(): Flow<Boolean>
+    suspend fun setIsReconciled(reconciled: Boolean)
 
     suspend fun clearAll()
 }

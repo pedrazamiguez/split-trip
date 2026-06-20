@@ -25,7 +25,7 @@ class SignInWithGoogleUseCaseImpl(
             }
 
         userPreferenceRepository.setHasSignedOut(false)
-        reconcileUnregisteredUserUseCase(user.email, user.userId).getOrThrow()
+        reconcileUnregisteredUserUseCase(user.email, user.userId)
 
         user.userId
     }

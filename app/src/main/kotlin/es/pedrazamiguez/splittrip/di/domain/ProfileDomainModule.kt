@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.di.domain
 
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.UserValidationService
 import es.pedrazamiguez.splittrip.domain.service.impl.UserValidationServiceImpl
@@ -51,7 +52,8 @@ val profileDomainModule = module {
     factory<ReconcileUnregisteredUserUseCase> {
         ReconcileUnregisteredUserUseCaseImpl(
             groupRepository = get<GroupRepository>(),
-            userRepository = get<UserRepository>()
+            userRepository = get<UserRepository>(),
+            userPreferenceRepository = get<UserPreferenceRepository>()
         )
     }
 }

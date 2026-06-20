@@ -44,6 +44,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 import es.pedrazamiguez.splittrip.features.authentication.navigation.loginGraph
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
@@ -54,7 +55,11 @@ import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 import timber.log.Timber
 
-@Suppress("LongMethod", "CognitiveComplexMethod") // Navigation host DSL with auth/onboarding branching
+@Suppress(
+    "LongMethod",
+    "CognitiveComplexMethod",
+    "CyclomaticComplexMethod"
+) // Navigation host DSL with auth/onboarding branching
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
     val koin = getKoin()
@@ -67,6 +72,7 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val warmCurrencyCacheUseCase = remember(koin) { koin.get<WarmCurrencyCacheUseCase>() }
     val userPreferenceRepository = remember(koin) { koin.get<UserPreferenceRepository>() }
     val signInAnonymouslyUseCase = remember(koin) { koin.get<SignInAnonymouslyUseCase>() }
+    val reconcileUnregisteredUserUseCase = remember(koin) { koin.get<ReconcileUnregisteredUserUseCase>() }
     val deepLinkHolder = remember(koin) { koin.get<DeepLinkHolder>() }
     val scope = rememberCoroutineScope()
 
@@ -79,6 +85,7 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
         initialValue = null
     )
     val hasSignedOut by userPreferenceRepository.getHasSignedOut().collectAsStateWithLifecycle(initialValue = null)
+    val isReconciled by userPreferenceRepository.getIsReconciled().collectAsStateWithLifecycle(initialValue = null)
 
     LaunchedEffect(isUserLoggedIn, hasSignedOut) {
         if (isUserLoggedIn == false && hasSignedOut == false) {
@@ -91,6 +98,24 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
             telemetryTracker.setUserId(authenticationService.currentUserId())
         } else if (isUserLoggedIn == false) {
             telemetryTracker.setUserId(null)
+        }
+    }
+
+    LaunchedEffect(isUserLoggedIn, isReconciled) {
+        val currentUserId = authenticationService.currentUserId()
+        val currentUserEmail = authenticationService.currentUserEmail()
+        if (isUserLoggedIn == true && isReconciled == false) {
+            if (currentUserId != null && currentUserEmail != null) {
+                scope.launch {
+                    reconcileUnregisteredUserUseCase(currentUserEmail, currentUserId)
+                        .onSuccess {
+                            Timber.d("Self-healing reconciliation succeeded for user: $currentUserId")
+                        }
+                        .onFailure { e ->
+                            Timber.e(e, "Self-healing reconciliation failed for user: $currentUserId")
+                        }
+                }
+            }
         }
     }
 

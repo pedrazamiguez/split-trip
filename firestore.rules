@@ -17,7 +17,7 @@ service cloud.firestore {
     function isPendingUserOfCurrentAuth(pendingUserId) {
       return isAuthenticated()
         && ("email" in request.auth.token)
-        && pendingUserId == "pending_" + hashing.sha256(request.auth.token.email.lower().toUtf8()).toHexString();
+        && pendingUserId == "pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString();
     }
 
     function isMemberOrPending(memberIds) {
@@ -25,7 +25,7 @@ service cloud.firestore {
         request.auth.uid in memberIds ||
         (
           "email" in request.auth.token &&
-          ("pending_" + hashing.sha256(request.auth.token.email.lower().toUtf8()).toHexString() in memberIds)
+          ("pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString() in memberIds)
         )
       );
     }
