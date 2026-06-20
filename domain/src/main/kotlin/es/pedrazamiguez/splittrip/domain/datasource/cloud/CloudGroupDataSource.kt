@@ -57,4 +57,9 @@ interface CloudGroupDataSource {
      * @throws Exception if the server is unreachable (e.g., airplane mode).
      */
     suspend fun verifyGroupOnServer(groupId: String): Boolean
+
+    /**
+     * Replaces pending user IDs with active user IDs across group memberships, expenses, splits, contributions, and withdrawals in Firestore.
+     */
+    suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String)
 }

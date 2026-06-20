@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth.impl
 
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
@@ -8,7 +9,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.notification.UnregisterDeviceTo
 class SignOutUseCaseImpl(
     private val unregisterDeviceTokenUseCase: UnregisterDeviceTokenUseCase,
     private val localDatabaseCleaner: LocalDatabaseCleanerService,
-    private val authenticationService: AuthenticationService
+    private val authenticationService: AuthenticationService,
+    private val userPreferenceRepository: UserPreferenceRepository
 ) : SignOutUseCase {
 
     override suspend operator fun invoke(): Result<Unit> {
@@ -26,6 +28,7 @@ class SignOutUseCaseImpl(
         //    preferences (default currency, MRU lists, onboarding state) if they
         //    sign back in on the same device.
         val cleanupResult = if (signOutResult.isSuccess) {
+            userPreferenceRepository.setHasSignedOut(true)
             runCatching { localDatabaseCleaner.clearAll() }
         } else {
             Result.success(Unit)

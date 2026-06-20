@@ -198,6 +198,46 @@ class CreateGroupViewModelTest {
         }
 
         @Test
+        fun `triggers search for unregistered email and returns pending user in results`() = runTest(testDispatcher) {
+            // Given — email search returns empty list (unregistered)
+            val unregisteredEmail = "unregistered@example.com"
+            coEvery { searchUsersByEmailUseCase(unregisteredEmail) } returns Result.success(emptyList())
+
+            // When
+            onEvent(CreateGroupUiEvent.MemberSearchQueryChanged(unregisteredEmail))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { searchUsersByEmailUseCase(unregisteredEmail) }
+            val results = viewModel.uiState.value.memberSearchResults
+            assertEquals(1, results.size)
+            assertTrue(results[0].isPending)
+            assertEquals(unregisteredEmail, results[0].email)
+            assertEquals(User.generatePendingUserId(unregisteredEmail), results[0].userId)
+        }
+
+        @Test
+        fun `does not return pending user in search results if already selected`() = runTest(testDispatcher) {
+            // Given — pending user is already selected
+            val unregisteredEmail = "unregistered@example.com"
+            val pendingUser = User(
+                userId = User.generatePendingUserId(unregisteredEmail),
+                email = unregisteredEmail,
+                isPending = true
+            )
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser))
+
+            coEvery { searchUsersByEmailUseCase(unregisteredEmail) } returns Result.success(emptyList())
+
+            // When
+            onEvent(CreateGroupUiEvent.MemberSearchQueryChanged(unregisteredEmail))
+            advanceUntilIdle()
+
+            // Then — not in search results because it's already selected
+            assertTrue(viewModel.uiState.value.memberSearchResults.isEmpty())
+        }
+
+        @Test
         fun `search failure clears results`() = runTest(testDispatcher) {
             // Given
             coEvery { searchUsersByEmailUseCase(any()) } returns
@@ -361,7 +401,7 @@ class CreateGroupViewModelTest {
         fun `passes selected member userIds to CreateGroupUseCase`() = runTest(testDispatcher) {
             // Given
             val groupSlot = slot<Group>()
-            coEvery { createGroupUseCase(capture(groupSlot)) } returns Result.success("group-id")
+            coEvery { createGroupUseCase(capture(groupSlot), any()) } returns Result.success("group-id")
 
             onEvent(CreateGroupUiEvent.NameChanged("Trip"))
             onEvent(CreateGroupUiEvent.MemberSelected(testUser1))
@@ -382,7 +422,7 @@ class CreateGroupViewModelTest {
         fun `creates group with empty members when none selected`() = runTest(testDispatcher) {
             // Given
             val groupSlot = slot<Group>()
-            coEvery { createGroupUseCase(capture(groupSlot)) } returns Result.success("group-id")
+            coEvery { createGroupUseCase(capture(groupSlot), any()) } returns Result.success("group-id")
 
             onEvent(CreateGroupUiEvent.NameChanged("Solo Trip"))
 
@@ -397,7 +437,7 @@ class CreateGroupViewModelTest {
         @Test
         fun `emits ShowSuccess action on successful creation`() = runTest(testDispatcher) {
             // Given
-            coEvery { createGroupUseCase(any()) } returns Result.success("group-id")
+            coEvery { createGroupUseCase(any(), any()) } returns Result.success("group-id")
             onEvent(CreateGroupUiEvent.NameChanged("Trip"))
 
             // When
@@ -416,7 +456,7 @@ class CreateGroupViewModelTest {
         @Test
         fun `tracks telemetry event on successful creation`() = runTest(testDispatcher) {
             // Given
-            coEvery { createGroupUseCase(any()) } returns Result.success("group-id")
+            coEvery { createGroupUseCase(any(), any()) } returns Result.success("group-id")
             onEvent(CreateGroupUiEvent.NameChanged("Trip"))
 
             // When
@@ -432,7 +472,7 @@ class CreateGroupViewModelTest {
         @Test
         fun `emits ShowError action on creation failure`() = runTest(testDispatcher) {
             // Given
-            coEvery { createGroupUseCase(any()) } returns Result.failure(RuntimeException("Failed"))
+            coEvery { createGroupUseCase(any(), any()) } returns Result.failure(RuntimeException("Failed"))
             onEvent(CreateGroupUiEvent.NameChanged("Trip"))
 
             // When
@@ -456,7 +496,7 @@ class CreateGroupViewModelTest {
 
             // Then
             assertFalse(viewModel.uiState.value.isNameValid)
-            coVerify(exactly = 0) { createGroupUseCase(any()) }
+            coVerify(exactly = 0) { createGroupUseCase(any(), any()) }
         }
     }
 

@@ -38,7 +38,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
@@ -63,6 +65,8 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val setOnboardingCompleteUseCase = remember(koin) { koin.get<SetOnboardingCompleteUseCase>() }
     val authenticationService = remember(koin) { koin.get<AuthenticationService>() }
     val warmCurrencyCacheUseCase = remember(koin) { koin.get<WarmCurrencyCacheUseCase>() }
+    val userPreferenceRepository = remember(koin) { koin.get<UserPreferenceRepository>() }
+    val signInAnonymouslyUseCase = remember(koin) { koin.get<SignInAnonymouslyUseCase>() }
     val deepLinkHolder = remember(koin) { koin.get<DeepLinkHolder>() }
     val scope = rememberCoroutineScope()
 
@@ -74,6 +78,13 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val onboardingCompleted by isOnboardingCompleteUseCase().collectAsStateWithLifecycle(
         initialValue = null
     )
+    val hasSignedOut by userPreferenceRepository.getHasSignedOut().collectAsStateWithLifecycle(initialValue = null)
+
+    LaunchedEffect(isUserLoggedIn, hasSignedOut) {
+        if (isUserLoggedIn == false && hasSignedOut == false) {
+            signInAnonymouslyUseCase()
+        }
+    }
 
     LaunchedEffect(isUserLoggedIn) {
         if (isUserLoggedIn == true) {

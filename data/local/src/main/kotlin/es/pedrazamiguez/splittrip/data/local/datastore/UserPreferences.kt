@@ -27,6 +27,7 @@ class UserPreferences(
         private val SHOULD_SHOW_LANGUAGE_PILL_KEY = booleanPreferencesKey("should_show_language_pill")
         private val APP_THEME_KEY = stringPreferencesKey("app_theme")
         private val DEVICE_ID_KEY = stringPreferencesKey("device_id")
+        private val HAS_SIGNED_OUT_KEY = booleanPreferencesKey("has_signed_out")
 
         // User-scoped key name constants (prefixed at access time via userKey())
         private const val SELECTED_GROUP_ID = "selected_group_id"
@@ -109,6 +110,18 @@ class UserPreferences(
             } else {
                 prefs.remove(PENDING_FCM_TOKEN_KEY)
             }
+        }
+    }
+
+    // ── Sign Out Status (Device-scoped) ──────────────────────────────────
+
+    val hasSignedOut: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[HAS_SIGNED_OUT_KEY] ?: false
+    }
+
+    suspend fun setHasSignedOut(signedOut: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[HAS_SIGNED_OUT_KEY] = signedOut
         }
     }
 

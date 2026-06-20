@@ -24,6 +24,12 @@ interface GroupDao {
     fun getAllGroupsFlow(): Flow<List<GroupEntity>>
 
     /**
+     * Gets all groups from the database.
+     */
+    @Query("SELECT * FROM groups")
+    suspend fun getAllGroups(): List<GroupEntity>
+
+    /**
      * Gets a single group by ID.
      */
     @Query("SELECT * FROM groups WHERE id = :groupId")

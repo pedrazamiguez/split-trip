@@ -13,7 +13,8 @@ data class UserDocument(
 
     val createdAt: Timestamp? = null,
     val lastUpdatedBy: String? = null,
-    val lastUpdatedAt: Timestamp? = null
+    val lastUpdatedAt: Timestamp? = null,
+    val isPending: Boolean = false
 ) {
     companion object {
         const val COLLECTION_PATH = "users"

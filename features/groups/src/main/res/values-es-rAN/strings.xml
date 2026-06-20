@@ -70,6 +70,7 @@
     <string name="group_member_search_no_results">No çe encontró ningún uçuario con eçe emaîh</string>
     <string name="group_member_remove">Quitâh miembro</string>
     <string name="group_member_clear_search">Limpiâh búqqueda</string>
+    <string name="group_member_add_unregistered">Añadîh %1$s (No rehîttrao)</string>
     <string name="action_manage_subunits">Hêttionâh çubunidadê</string>
     <string name="group_active_badge">Âttibo aora</string>
     <string name="group_cover_image_description">Imahen de portá de %1$s</string>

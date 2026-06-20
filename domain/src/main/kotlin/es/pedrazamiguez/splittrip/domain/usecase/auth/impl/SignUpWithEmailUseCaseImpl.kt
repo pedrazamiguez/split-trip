@@ -1,12 +1,16 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth.impl
 
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 
 class SignUpWithEmailUseCaseImpl(
     private val authenticationService: AuthenticationService,
-    private val registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
+    private val registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
+    private val userPreferenceRepository: UserPreferenceRepository,
+    private val reconcileUnregisteredUserUseCase: ReconcileUnregisteredUserUseCase
 ) : SignUpWithEmailUseCase {
 
     override suspend operator fun invoke(
@@ -19,6 +23,8 @@ class SignUpWithEmailUseCaseImpl(
             // Device token registration is best-effort and should not
             // cause the email sign-up flow to fail.
         }
+        userPreferenceRepository.setHasSignedOut(false)
+        reconcileUnregisteredUserUseCase(email, userId).getOrThrow()
         userId
     }
 }

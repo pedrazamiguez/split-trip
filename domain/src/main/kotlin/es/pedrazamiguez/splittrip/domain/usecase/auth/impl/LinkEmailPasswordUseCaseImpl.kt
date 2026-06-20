@@ -1,13 +1,26 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth.impl
 
+import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 
 class LinkEmailPasswordUseCaseImpl(
-    private val authenticationService: AuthenticationService
+    private val authenticationService: AuthenticationService,
+    private val userRepository: UserRepository,
+    private val reconcileUnregisteredUserUseCase: ReconcileUnregisteredUserUseCase
 ) : LinkEmailPasswordUseCase {
 
-    override suspend operator fun invoke(email: String, password: String): Result<Unit> {
-        return authenticationService.linkEmailPassword(email, password)
+    override suspend operator fun invoke(email: String, password: String): Result<Unit> = runCatching {
+        authenticationService.linkEmailPassword(email, password).getOrThrow()
+        val userId = authenticationService.requireUserId()
+
+        val existingProfile = userRepository.getCurrentUserProfile()
+        if (existingProfile != null) {
+            val updatedProfile = existingProfile.copy(email = email)
+            userRepository.saveUser(updatedProfile).getOrThrow()
+        }
+
+        reconcileUnregisteredUserUseCase(email, userId).getOrThrow()
     }
 }

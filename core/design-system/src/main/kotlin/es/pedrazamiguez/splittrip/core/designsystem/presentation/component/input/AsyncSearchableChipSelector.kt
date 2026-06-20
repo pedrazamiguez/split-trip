@@ -92,6 +92,7 @@ fun <T> AsyncSearchableChipSelector(
     isSearching: Boolean = false,
     modifier: Modifier = Modifier,
     itemSecondaryText: ((T) -> String)? = null,
+    dropdownItemDisplayText: ((T) -> String)? = null,
     title: String? = null,
     searchLabel: String = "",
     searchPlaceholder: String = "",
@@ -170,6 +171,7 @@ fun <T> AsyncSearchableChipSelector(
             searchResults = searchResults,
             itemKey = itemKey,
             itemDisplayText = itemDisplayText,
+            dropdownItemDisplayText = dropdownItemDisplayText,
             itemSecondaryText = itemSecondaryText,
             onItemAdded = handleItemAdded,
             onClearSearch = handleClearSearch,
@@ -276,6 +278,7 @@ private fun <T> AsyncSearchTextField(
     searchResults: List<T>,
     itemKey: (T) -> Any,
     itemDisplayText: (T) -> String,
+    dropdownItemDisplayText: ((T) -> String)?,
     itemSecondaryText: ((T) -> String)?,
     onItemAdded: (T) -> Unit,
     onClearSearch: () -> Unit,
@@ -330,6 +333,7 @@ private fun <T> AsyncSearchTextField(
                     searchResults = searchResults,
                     itemKey = itemKey,
                     itemDisplayText = itemDisplayText,
+                    dropdownItemDisplayText = dropdownItemDisplayText,
                     itemSecondaryText = itemSecondaryText,
                     onItemAdded = onItemAdded
                 )
@@ -344,20 +348,22 @@ private fun <T> AsyncDropdownMenuItems(
     searchResults: List<T>,
     itemKey: (T) -> Any,
     itemDisplayText: (T) -> String,
+    dropdownItemDisplayText: ((T) -> String)?,
     itemSecondaryText: ((T) -> String)?,
     onItemAdded: (T) -> Unit
 ) {
     searchResults.forEach { item ->
         key(itemKey(item)) {
+            val displayText = dropdownItemDisplayText?.invoke(item) ?: itemDisplayText(item)
             DropdownMenuItem(
                 text = {
                     if (itemSecondaryText != null) {
                         Column {
-                            BodyText(text = itemDisplayText(item))
+                            BodyText(text = displayText)
                             SecondaryBodyText(text = itemSecondaryText(item))
                         }
                     } else {
-                        BodyText(text = itemDisplayText(item))
+                        BodyText(text = displayText)
                     }
                 },
                 onClick = { onItemAdded(item) },

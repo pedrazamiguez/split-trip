@@ -24,4 +24,8 @@ class LocalUserDataSourceImpl(private val userDao: UserDao) : LocalUserDataSourc
     override fun observeUser(userId: String): Flow<User?> {
         return userDao.observeUserById(userId).map { it?.toDomain() }
     }
+
+    override suspend fun deleteUser(userId: String) {
+        userDao.deleteUserById(userId)
+    }
 }

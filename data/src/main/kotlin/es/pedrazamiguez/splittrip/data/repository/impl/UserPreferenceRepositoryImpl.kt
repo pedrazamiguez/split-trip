@@ -39,6 +39,12 @@ class UserPreferenceRepositoryImpl(
         userPreferences.setAppTheme(themeCode)
     }
 
+    override fun getHasSignedOut(): Flow<Boolean> = userPreferences.hasSignedOut
+
+    override suspend fun setHasSignedOut(signedOut: Boolean) {
+        userPreferences.setHasSignedOut(signedOut)
+    }
+
     override suspend fun clearAll() {
         userPreferences.clearAll()
     }

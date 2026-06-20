@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth
 
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignUpWithEmailUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -17,6 +19,8 @@ class SignUpWithEmailUseCaseTest {
 
     private lateinit var authenticationService: AuthenticationService
     private lateinit var registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
+    private lateinit var reconcileUnregisteredUserUseCase: ReconcileUnregisteredUserUseCase
     private lateinit var useCase: SignUpWithEmailUseCase
 
     private val email = "newuser@example.com"
@@ -28,10 +32,16 @@ class SignUpWithEmailUseCaseTest {
     fun setUp() {
         authenticationService = mockk()
         registerDeviceTokenUseCase = mockk()
+        userPreferenceRepository = mockk()
+        reconcileUnregisteredUserUseCase = mockk()
         useCase = SignUpWithEmailUseCaseImpl(
             authenticationService = authenticationService,
-            registerDeviceTokenUseCase = registerDeviceTokenUseCase
+            registerDeviceTokenUseCase = registerDeviceTokenUseCase,
+            userPreferenceRepository = userPreferenceRepository,
+            reconcileUnregisteredUserUseCase = reconcileUnregisteredUserUseCase
         )
+        coEvery { userPreferenceRepository.setHasSignedOut(any()) } returns Unit
+        coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns Result.success(Unit)
     }
 
     @Nested

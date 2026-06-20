@@ -26,7 +26,8 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                 "userId" to user.userId,
                 "email" to user.email.trim().lowercase(),
                 "lastUpdatedBy" to user.userId,
-                "lastUpdatedAt" to now
+                "lastUpdatedAt" to now,
+                "isPending" to user.isPending
             )
 
             val userCreatedAtTimestamp = user.createdAt.toTimestampUtc()
@@ -78,7 +79,8 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                             displayName = userDoc.displayName,
                             profileImagePath = userDoc.profileImagePath,
                             bio = userDoc.bio,
-                            createdAt = userDoc.createdAt.toLocalDateTimeUtc()
+                            createdAt = userDoc.createdAt.toLocalDateTimeUtc(),
+                            isPending = userDoc.isPending
                         )
                     }
                 }
@@ -112,7 +114,8 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                             displayName = userDoc.displayName,
                             profileImagePath = userDoc.profileImagePath,
                             bio = userDoc.bio,
-                            createdAt = userDoc.createdAt.toLocalDateTimeUtc()
+                            createdAt = userDoc.createdAt.toLocalDateTimeUtc(),
+                            isPending = userDoc.isPending
                         )
                     }
                 }
@@ -133,5 +136,9 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
             "lastUpdatedAt" to Timestamp(Date())
         )
         docRef.update(updates).await()
+    }
+
+    override suspend fun deleteUser(userId: String) {
+        firestore.collection(UserDocument.COLLECTION_PATH).document(userId).delete().await()
     }
 }

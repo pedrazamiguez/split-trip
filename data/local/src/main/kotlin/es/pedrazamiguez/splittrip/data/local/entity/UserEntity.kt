@@ -13,5 +13,6 @@ data class UserEntity(
     val createdAtMillis: Long?,
     val lastUpdatedAtMillis: Long?,
     val bio: String? = null,
-    val syncStatus: String = "SYNCED"
+    val syncStatus: String = "SYNCED",
+    val isPending: Boolean = false
 )

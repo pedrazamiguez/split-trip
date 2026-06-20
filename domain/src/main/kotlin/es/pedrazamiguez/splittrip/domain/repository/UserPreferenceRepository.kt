@@ -20,5 +20,8 @@ interface UserPreferenceRepository {
     fun getAppTheme(): Flow<String?>
     suspend fun setAppTheme(themeCode: String)
 
+    fun getHasSignedOut(): Flow<Boolean>
+    suspend fun setHasSignedOut(signedOut: Boolean)
+
     suspend fun clearAll()
 }

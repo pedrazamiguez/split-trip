@@ -31,4 +31,8 @@ interface AuthenticationService {
     suspend fun getLinkedProviders(): Result<List<AuthProviderType>>
 
     fun getCurrentUserCreationTimestamp(): Long?
+
+    suspend fun signInAnonymously(): Result<String>
+
+    fun currentUserEmail(): String?
 }

@@ -9,4 +9,5 @@ interface LocalUserDataSource {
     suspend fun getUsersByIds(userIds: List<String>): List<User>
     suspend fun updateSyncStatus(userId: String, syncStatus: SyncStatus)
     fun observeUser(userId: String): Flow<User?>
+    suspend fun deleteUser(userId: String)
 }

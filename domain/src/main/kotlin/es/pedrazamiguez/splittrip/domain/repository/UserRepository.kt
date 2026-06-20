@@ -50,4 +50,9 @@ interface UserRepository {
      * Observes the current authenticated user's profile.
      */
     fun observeCurrentUserProfile(): Flow<User?>
+
+    /**
+     * Deletes a pending user profile locally and remotely.
+     */
+    suspend fun deletePendingUser(userId: String): Result<Unit>
 }
