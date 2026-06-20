@@ -35,7 +35,10 @@ service cloud.firestore {
     // ---------------------------------------------------------------
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId) || isPendingUserOfCurrentAuth(userId);
+      allow create, update: if isOwner(userId)
+                             || isPendingUserOfCurrentAuth(userId)
+                             || (isAuthenticated() && userId.matches('pending_.*') && request.resource.data.isPending == true);
+      allow delete: if isOwner(userId) || isPendingUserOfCurrentAuth(userId);
 
       // Devices subcollection — only the owning user can manage their devices
       match /devices/{deviceId} {

@@ -4,6 +4,7 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Source
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
@@ -21,11 +22,15 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+
+private const val MAX_RETRY_ATTEMPTS = 3
+private const val RETRY_DELAY_MS = 500L
 
 @Suppress("TooManyFunctions")
 class FirestoreGroupDataSourceImpl(
@@ -277,6 +282,12 @@ class FirestoreGroupDataSourceImpl(
     }
 
     override suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String) {
+        retryOnPermissionDenied("reconcileUnregisteredUser") {
+            executeReconcileUnregisteredUser(pendingUserId, activeUserId)
+        }
+    }
+
+    private suspend fun executeReconcileUnregisteredUser(pendingUserId: String, activeUserId: String) {
         val userRef = firestore.collection(UserDocument.COLLECTION_PATH).document(activeUserId)
 
         val matchingGroupsSnapshot = firestore.collection(GroupDocument.COLLECTION_PATH)
@@ -554,6 +565,24 @@ class FirestoreGroupDataSourceImpl(
                     transaction.set(withdSnap.reference, updatedWithdrawal)
                 }
             }
+        }
+    }
+}
+
+private suspend inline fun <T> retryOnPermissionDenied(
+    methodName: String,
+    crossinline block: suspend () -> T
+): T {
+    var attempt = 0
+    while (true) {
+        try {
+            return block()
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code != FirebaseFirestoreException.Code.PERMISSION_DENIED || ++attempt >= MAX_RETRY_ATTEMPTS) {
+                throw e
+            }
+            Timber.w("$methodName PERMISSION_DENIED. Retrying (attempt $attempt/$MAX_RETRY_ATTEMPTS)")
+            delay(RETRY_DELAY_MS)
         }
     }
 }
