@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -37,10 +38,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 import es.pedrazamiguez.splittrip.features.authentication.navigation.loginGraph
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
@@ -51,7 +55,11 @@ import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 import timber.log.Timber
 
-@Suppress("LongMethod", "CognitiveComplexMethod") // Navigation host DSL with auth/onboarding branching
+@Suppress(
+    "LongMethod",
+    "CognitiveComplexMethod",
+    "CyclomaticComplexMethod"
+) // Navigation host DSL with auth/onboarding branching
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
     val koin = getKoin()
@@ -62,6 +70,9 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val setOnboardingCompleteUseCase = remember(koin) { koin.get<SetOnboardingCompleteUseCase>() }
     val authenticationService = remember(koin) { koin.get<AuthenticationService>() }
     val warmCurrencyCacheUseCase = remember(koin) { koin.get<WarmCurrencyCacheUseCase>() }
+    val userPreferenceRepository = remember(koin) { koin.get<UserPreferenceRepository>() }
+    val signInAnonymouslyUseCase = remember(koin) { koin.get<SignInAnonymouslyUseCase>() }
+    val reconcileUnregisteredUserUseCase = remember(koin) { koin.get<ReconcileUnregisteredUserUseCase>() }
     val deepLinkHolder = remember(koin) { koin.get<DeepLinkHolder>() }
     val scope = rememberCoroutineScope()
 
@@ -73,12 +84,38 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val onboardingCompleted by isOnboardingCompleteUseCase().collectAsStateWithLifecycle(
         initialValue = null
     )
+    val hasSignedOut by userPreferenceRepository.getHasSignedOut().collectAsStateWithLifecycle(initialValue = null)
+    val isReconciled by userPreferenceRepository.getIsReconciled().collectAsStateWithLifecycle(initialValue = null)
+
+    LaunchedEffect(isUserLoggedIn, hasSignedOut) {
+        if (isUserLoggedIn == false && hasSignedOut == false) {
+            signInAnonymouslyUseCase()
+        }
+    }
 
     LaunchedEffect(isUserLoggedIn) {
         if (isUserLoggedIn == true) {
             telemetryTracker.setUserId(authenticationService.currentUserId())
         } else if (isUserLoggedIn == false) {
             telemetryTracker.setUserId(null)
+        }
+    }
+
+    LaunchedEffect(isUserLoggedIn, isReconciled) {
+        val currentUserId = authenticationService.currentUserId()
+        val currentUserEmail = authenticationService.currentUserEmail()
+        if (isUserLoggedIn == true && isReconciled == false) {
+            if (currentUserId != null && currentUserEmail != null) {
+                scope.launch {
+                    reconcileUnregisteredUserUseCase(currentUserEmail, currentUserId)
+                        .onSuccess {
+                            Timber.d("Self-healing reconciliation succeeded for user: $currentUserId")
+                        }
+                        .onFailure { e ->
+                            Timber.e(e, "Self-healing reconciliation failed for user: $currentUserId")
+                        }
+                }
+            }
         }
     }
 
@@ -107,7 +144,7 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val currentOnboardingCompleted = rememberUpdatedState(onboardingCompleted)
 
     DisposableEffect(navController) {
-        val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, arguments ->
+        val listener = NavController.OnDestinationChangedListener { _, destination, arguments ->
             Timber.tag(LogTag.NAVIGATION).i(
                 "Navigated to: %s | Arg keys: %s",
                 destination.route,

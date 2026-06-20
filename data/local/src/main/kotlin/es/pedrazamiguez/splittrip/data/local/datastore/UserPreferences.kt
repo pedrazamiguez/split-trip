@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -26,6 +27,7 @@ class UserPreferences(
         private val SHOULD_SHOW_LANGUAGE_PILL_KEY = booleanPreferencesKey("should_show_language_pill")
         private val APP_THEME_KEY = stringPreferencesKey("app_theme")
         private val DEVICE_ID_KEY = stringPreferencesKey("device_id")
+        private val HAS_SIGNED_OUT_KEY = booleanPreferencesKey("has_signed_out")
 
         // User-scoped key name constants (prefixed at access time via userKey())
         private const val SELECTED_GROUP_ID = "selected_group_id"
@@ -33,6 +35,7 @@ class UserPreferences(
         private const val SELECTED_GROUP_CURRENCY = "selected_group_currency"
         private const val DEFAULT_CURRENCY = "default_currency"
         private const val ACTIVE_AI_ENGINE = "active_ai_engine"
+        private const val IS_RECONCILED = "is_reconciled"
     }
 
     // ── Device ID (Device-scoped) ────────────────────────────────────────
@@ -111,6 +114,18 @@ class UserPreferences(
         }
     }
 
+    // ── Sign Out Status (Device-scoped) ──────────────────────────────────
+
+    val hasSignedOut: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[HAS_SIGNED_OUT_KEY] ?: false
+    }
+
+    suspend fun setHasSignedOut(signedOut: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[HAS_SIGNED_OUT_KEY] = signedOut
+        }
+    }
+
     // ── Selected Group (User-scoped, auth-reactive) ──────────────────────
 
     val selectedGroupId: Flow<String?> = userScopedFlow { userId ->
@@ -169,22 +184,22 @@ class UserPreferences(
 
     // ── Active AI Engine (User-scoped, auth-reactive) ─────────────────────
 
-    val activeAiEngine: Flow<es.pedrazamiguez.splittrip.domain.enums.AiEngineType> = userScopedFlow { userId ->
+    val activeAiEngine: Flow<AiEngineType> = userScopedFlow { userId ->
         context.dataStore.data.map { prefs ->
             val name = prefs[stringPreferencesKey("${userId}_$ACTIVE_AI_ENGINE")]
             if (name != null) {
                 try {
-                    es.pedrazamiguez.splittrip.domain.enums.AiEngineType.valueOf(name)
+                    AiEngineType.valueOf(name)
                 } catch (_: Exception) {
-                    es.pedrazamiguez.splittrip.domain.enums.AiEngineType.AI_CORE_GEMMA_4
+                    AiEngineType.AI_CORE_GEMMA_4
                 }
             } else {
-                es.pedrazamiguez.splittrip.domain.enums.AiEngineType.AI_CORE_GEMMA_4
+                AiEngineType.AI_CORE_GEMMA_4
             }
         }
     }
 
-    suspend fun setActiveAiEngine(engineType: es.pedrazamiguez.splittrip.domain.enums.AiEngineType) {
+    suspend fun setActiveAiEngine(engineType: AiEngineType) {
         context.dataStore.edit { prefs ->
             prefs[stringPreferencesKey(userKey(ACTIVE_AI_ENGINE))] = engineType.name
         }
@@ -247,6 +262,20 @@ class UserPreferences(
             } else {
                 prefs.remove(key)
             }
+        }
+    }
+
+    // ── User Reconciliation Status (User-scoped, auth-reactive) ──────────
+
+    val isReconciled: Flow<Boolean> = userScopedFlow { userId ->
+        context.dataStore.data.map { prefs ->
+            prefs[booleanPreferencesKey("${userId}_$IS_RECONCILED")] ?: false
+        }
+    }
+
+    suspend fun setIsReconciled(reconciled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[booleanPreferencesKey(userKey(IS_RECONCILED))] = reconciled
         }
     }
 }

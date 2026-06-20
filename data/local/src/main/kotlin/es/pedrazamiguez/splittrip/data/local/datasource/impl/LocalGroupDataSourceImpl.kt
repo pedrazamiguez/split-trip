@@ -51,4 +51,16 @@ class LocalGroupDataSourceImpl(private val groupDao: GroupDao) : LocalGroupDataS
     override suspend fun clearAllGroups() {
         groupDao.clearAllGroups()
     }
+
+    override suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String) {
+        val groups = groupDao.getAllGroups()
+        val updatedGroups = groups.filter { pendingUserId in it.memberIds }.map { entity ->
+            entity.copy(
+                memberIds = entity.memberIds.map { id -> if (id == pendingUserId) activeUserId else id }
+            )
+        }
+        if (updatedGroups.isNotEmpty()) {
+            groupDao.insertGroups(updatedGroups)
+        }
+    }
 }

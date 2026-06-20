@@ -317,3 +317,44 @@ val TablerIcons.Outline.Receipt: ImageVector
     ).build().also { _Receipt = it }
 
 private var _Receipt: ImageVector? = null
+
+val TablerIcons.Outline.UsersPlus: ImageVector
+    get() = _UsersPlus ?: ImageVector.Builder(
+        name = "Outline.UsersPlus",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).addPath(
+        pathData = addPathNodes("M5 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M3 21v-2a4 4 0 0 1 4 -4h4c.96 0 1.84 .338 2.53 .901"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M16 3.13a4 4 0 0 1 0 7.75"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M16 19h6"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M19 16v6"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).build().also { _UsersPlus = it }
+
+private var _UsersPlus: ImageVector? = null

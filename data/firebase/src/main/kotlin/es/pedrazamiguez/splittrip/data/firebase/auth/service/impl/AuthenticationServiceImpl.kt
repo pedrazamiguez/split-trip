@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.firebase.auth.service.impl
 
+import android.util.Base64
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
+@Suppress("TooManyFunctions")
 class AuthenticationServiceImpl(
     private val firebaseAuth: FirebaseAuth,
     private val cloudUserDataSource: CloudUserDataSource
@@ -156,9 +158,6 @@ class AuthenticationServiceImpl(
         user.unlink(providerId).await()
     }
 
-    private fun requireCurrentUser(): FirebaseUser =
-        firebaseAuth.currentUser ?: error("No active user")
-
     override suspend fun getLinkedProviders(): Result<List<AuthProviderType>> = runCatching {
         val user = firebaseAuth.currentUser ?: return@runCatching emptyList()
         user.providerData.mapNotNull { userInfo ->
@@ -170,13 +169,22 @@ class AuthenticationServiceImpl(
         }.distinct()
     }
 
+    override suspend fun signInAnonymously(): Result<String> = runCatching {
+        firebaseAuth.signInAnonymously().await().user?.uid ?: ""
+    }
+
+    override fun currentUserEmail(): String? = firebaseAuth.currentUser?.email
+
+    private fun requireCurrentUser(): FirebaseUser =
+        firebaseAuth.currentUser ?: error("No active user")
+
     private fun extractEmailFromIdToken(idToken: String): String? {
         return runCatching {
             val parts = idToken.split(".")
             if (parts.size > 1) {
-                val decodedBytes = android.util.Base64.decode(
+                val decodedBytes = Base64.decode(
                     parts[1],
-                    android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP
+                    Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
                 )
                 val payload = String(decodedBytes, Charsets.UTF_8)
                 EMAIL_REGEX.find(payload)?.groupValues?.get(1)

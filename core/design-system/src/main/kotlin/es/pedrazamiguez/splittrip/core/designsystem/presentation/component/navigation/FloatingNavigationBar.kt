@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navi
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInHorizontally
@@ -9,6 +10,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,11 +31,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -60,6 +64,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.transition.fabSharedTransiti
  * - Elevated shadow for depth
  * - Optional translucent glassmorphism scrim via [hazeState]
  */
+private const val ACTION_BUTTON_TAP_SCALE = 1.05f
+private const val ACTION_BUTTON_TAB_BOUNCE_SCALE = 0.92f
+
 @Suppress("LongMethod", "CognitiveComplexMethod") // Compose UI builder DSL
 @Composable
 fun FloatingNavigationBar(
@@ -72,6 +79,13 @@ fun FloatingNavigationBar(
     applyWindowInsets: Boolean = true
 ) {
     val selectedIndex = items.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
+
+    // Shadow is hoisted to the outer wrapper to prevent it from being clipped
+    // inside the sharedBounds GPU overlay during transitions.
+    val isDarkModeForAction = isSystemInDarkTheme()
+    val actionElevation = if (isDarkModeForAction) 0.dp else NavBarDefaults.ShadowElevation
+    val actionButtonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
+
     val pillShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
     // Lift the pill above the system navigation bar unless the parent already applies insets.
@@ -191,7 +205,20 @@ fun FloatingNavigationBar(
                 )
             ) {
                 if (mainAction != null) {
-                    MainActionButton(mainAction = mainAction)
+                    // Shadow is wrapped here so it stays in the normal render tree, avoiding clipping
+                    // inside the sharedBounds GPU overlay during transitions.
+                    Box(
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(64.dp)
+                            .graphicsLayer {
+                                shadowElevation = actionElevation.toPx()
+                                shape = actionButtonShape
+                                clip = false
+                            }
+                    ) {
+                        MainActionButton(mainAction = mainAction)
+                    }
                 }
             }
         }
@@ -229,6 +256,37 @@ private fun getActionButtonContentColor(enabled: Boolean): Color {
 }
 
 @Composable
+private fun rememberMainActionButtonScale(
+    isPressed: Boolean,
+    mainAction: MainAction
+): Float {
+    val scale = remember { Animatable(1f) }
+
+    LaunchedEffect(isPressed) {
+        scale.animateTo(
+            targetValue = if (isPressed) ACTION_BUTTON_TAP_SCALE else 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+        )
+    }
+
+    LaunchedEffect(mainAction) {
+        scale.snapTo(ACTION_BUTTON_TAB_BOUNCE_SCALE)
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+        )
+    }
+
+    return scale.value
+}
+
+@Composable
 private fun MainActionButton(
     mainAction: MainAction,
     modifier: Modifier = Modifier
@@ -238,41 +296,30 @@ private fun MainActionButton(
     } ?: Modifier
 
     val enabled = mainAction.enabled
-    val containerColorModifier = getActionButtonBackground(enabled)
     val contentColor = getActionButtonContentColor(enabled)
-
-    val isDarkMode = isSystemInDarkTheme()
-    val elevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
     val buttonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
-    // The shadow MUST live on a wrapper that does NOT participate in sharedBounds.
-    // When sharedBounds lifts an element into the GPU overlay for the transition,
-    // any shadow on that element gets clipped to the rectangular morphing bounds —
-    // regardless of the declared shape. Separating the shadow into an outer wrapper
-    // keeps it in the normal render tree where it clips correctly to buttonShape.
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scaleFactor = rememberMainActionButtonScale(isPressed = isPressed, mainAction = mainAction)
+
+    // graphicsLayer { clip = false } is retained to isolate the sharedBounds modifier from the shadow layer.
     Box(
-        modifier = modifier
-            .width(80.dp)
-            .height(64.dp)
-            .graphicsLayer {
-                shadowElevation = elevation.toPx()
-                shape = buttonShape
-                clip = false
-            }
+        modifier = modifier.fillMaxSize().graphicsLayer {
+            shadowElevation = 0f
+            shape = buttonShape
+            clip = false
+        }
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(sharedModifier)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().scale(scaleFactor).then(sharedModifier)) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(buttonShape)
-                    .then(containerColorModifier)
+                    .then(getActionButtonBackground(enabled))
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = interactionSource,
                         indication = ripple(color = contentColor),
                         enabled = enabled,
                         role = Role.Button,

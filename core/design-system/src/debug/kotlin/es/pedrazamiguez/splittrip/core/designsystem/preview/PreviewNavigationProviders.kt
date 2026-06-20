@@ -8,9 +8,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraphBuilder
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.ReceiptFilled
+import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.BasketFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.UserFilled
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Basket
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Scale
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
@@ -49,8 +49,8 @@ object PreviewNavigationProviders {
         order = 50,
         requiresSelectedGroup = true,
         labelResId = R.string.nav_expenses,
-        selectedIcon = TablerIcons.Filled.ReceiptFilled,
-        unselectedIcon = TablerIcons.Outline.Receipt
+        selectedIcon = TablerIcons.Filled.BasketFilled,
+        unselectedIcon = TablerIcons.Outline.Basket
     )
 
     val profile: NavigationProvider = createProvider(

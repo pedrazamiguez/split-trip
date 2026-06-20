@@ -474,4 +474,35 @@ class ArchitectureTest {
                 }
         }
     }
+
+    @Nested
+    @DisplayName("Import Constraints")
+    inner class ImportConstraints {
+
+        @Test
+        @DisplayName("Production code must not use Fully Qualified Names (FQN) for classes or objects")
+        fun `source code must not use fully qualified names`() {
+            val fqnRegex = """\b[a-z0-9_]+(?:\.[a-z0-9_]+)+\.[A-Z][A-Za-z0-9_]*""".toRegex()
+            // Regex to match block comments, single-line comments, character literals, and string literals
+            val commentOrStringRegex = (
+                "(/\\*[\\s\\S]*?\\*/)|(//.*)|" +
+                    "(\"\"\"[\\s\\S]*?\"\"\"|\"(?:\\\\.|[^\"\\\\])*\")|('(?:\\\\.|[^'\\\\])')"
+                ).toRegex()
+            val packageOrImportRegex = """^(package|import)\s+.*""".toRegex()
+
+            projectProductionScope.files.assertTrue { file ->
+                val bodyText = file.text.lines()
+                    .filterNot { it.trim().matches(packageOrImportRegex) }
+                    .joinToString("\n")
+
+                val cleanedText = commentOrStringRegex.replace(bodyText, " ")
+
+                val match = fqnRegex.find(cleanedText)
+                if (match != null) {
+                    println("FQN Violation in ${file.name} (${file.projectPath}): Found '${match.value}'")
+                }
+                match == null
+            }
+        }
+    }
 }

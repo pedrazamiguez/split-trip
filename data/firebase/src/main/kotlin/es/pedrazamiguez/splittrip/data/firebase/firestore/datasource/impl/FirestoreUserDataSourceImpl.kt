@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.UserDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toLocalDateTimeUtc
@@ -9,8 +11,12 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toTimestampUtc
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.model.User
 import java.util.Date
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+
+private const val MAX_RETRY_ATTEMPTS = 3
+private const val RETRY_DELAY_MS = 500L
 
 class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : CloudUserDataSource {
 
@@ -19,6 +25,12 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
         val docRef = firestore.collection(UserDocument.COLLECTION_PATH)
             .document(user.userId)
 
+        retryOnPermissionDenied("saveUser") {
+            executeSaveUserTransaction(user, now, docRef)
+        }
+    }
+
+    private suspend fun executeSaveUserTransaction(user: User, now: Timestamp, docRef: DocumentReference) {
         firestore.runTransaction { transaction ->
             val existingDoc = transaction.get(docRef)
 
@@ -26,7 +38,8 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                 "userId" to user.userId,
                 "email" to user.email.trim().lowercase(),
                 "lastUpdatedBy" to user.userId,
-                "lastUpdatedAt" to now
+                "lastUpdatedAt" to now,
+                "isPending" to user.isPending
             )
 
             val userCreatedAtTimestamp = user.createdAt.toTimestampUtc()
@@ -78,7 +91,8 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                             displayName = userDoc.displayName,
                             profileImagePath = userDoc.profileImagePath,
                             bio = userDoc.bio,
-                            createdAt = userDoc.createdAt.toLocalDateTimeUtc()
+                            createdAt = userDoc.createdAt.toLocalDateTimeUtc(),
+                            isPending = userDoc.isPending
                         )
                     }
                 }
@@ -112,7 +126,8 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                             displayName = userDoc.displayName,
                             profileImagePath = userDoc.profileImagePath,
                             bio = userDoc.bio,
-                            createdAt = userDoc.createdAt.toLocalDateTimeUtc()
+                            createdAt = userDoc.createdAt.toLocalDateTimeUtc(),
+                            isPending = userDoc.isPending
                         )
                     }
                 }
@@ -133,5 +148,29 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
             "lastUpdatedAt" to Timestamp(Date())
         )
         docRef.update(updates).await()
+    }
+
+    override suspend fun deleteUser(userId: String) {
+        retryOnPermissionDenied("deleteUser") {
+            firestore.collection(UserDocument.COLLECTION_PATH).document(userId).delete().await()
+        }
+    }
+}
+
+private suspend inline fun <T> retryOnPermissionDenied(
+    methodName: String,
+    crossinline block: suspend () -> T
+): T {
+    var attempt = 0
+    while (true) {
+        try {
+            return block()
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code != FirebaseFirestoreException.Code.PERMISSION_DENIED || ++attempt >= MAX_RETRY_ATTEMPTS) {
+                throw e
+            }
+            Timber.w("$methodName PERMISSION_DENIED. Retrying (attempt $attempt/$MAX_RETRY_ATTEMPTS)")
+            delay(RETRY_DELAY_MS)
+        }
     }
 }

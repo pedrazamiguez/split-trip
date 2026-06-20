@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBala
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.Locale
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -297,7 +298,7 @@ class BalancesUiMapper(
         groupCurrency: String,
         memberProfiles: Map<String, User>,
         cashContext: MemberBalanceCashContext,
-        locale: java.util.Locale
+        locale: Locale
     ): MemberBalanceUiModel {
         val isNegativeCash = balance.cashInHand < 0
         return MemberBalanceUiModel(
@@ -359,7 +360,7 @@ class BalancesUiMapper(
         subunitsMap: Map<String, Subunit>,
         groupMemberIds: List<String>,
         groupCurrency: String,
-        locale: java.util.Locale
+        locale: Locale
     ): ImmutableList<CashBreakdownUiModel> {
         val scopeOrder = mapOf(PayerType.GROUP to 0, PayerType.SUBUNIT to 1, PayerType.USER to 2)
         return withdrawals
@@ -384,7 +385,7 @@ class BalancesUiMapper(
         withdrawal: CashWithdrawal,
         nativeShare: Long,
         groupCurrency: String,
-        locale: java.util.Locale,
+        locale: Locale,
         subunitsMap: Map<String, Subunit>
     ): CashBreakdownUiModel {
         val groupEquivalent = BigDecimal(nativeShare)
@@ -467,7 +468,7 @@ class BalancesUiMapper(
     private fun mapCurrencyBreakdowns(
         amounts: List<CurrencyAmount>,
         groupCurrency: String,
-        locale: java.util.Locale
+        locale: Locale
     ): ImmutableList<CurrencyBreakdownUiModel> {
         return amounts.map { ca ->
             CurrencyBreakdownUiModel(

@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.data.firebase.storage
 
+import android.net.Uri
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageMetadata
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import java.io.File
 import kotlinx.coroutines.CancellationException
@@ -26,7 +28,7 @@ internal class CloudStorageDataSourceImpl(
         // localPath may be a raw filesystem path OR a file:// URI (from ReceiptStorageServiceImpl).
         // Normalise to a plain path before creating a File.
         val resolvedPath = if (localPath.startsWith(FILE_SCHEME_PREFIX)) {
-            android.net.Uri.parse(localPath).path
+            Uri.parse(localPath).path
                 ?: error("Could not resolve filesystem path from URI: $localPath")
         } else {
             localPath
@@ -35,11 +37,11 @@ internal class CloudStorageDataSourceImpl(
         val extension = file.extension.ifBlank { "bin" }
         val ref = storage.reference.child("$RECEIPTS_PREFIX/$expenseId/receipt.$extension")
 
-        val metadata = com.google.firebase.storage.StorageMetadata.Builder()
+        val metadata = StorageMetadata.Builder()
             .setContentType(mimeType)
             .build()
 
-        ref.putFile(android.net.Uri.fromFile(file), metadata).await()
+        ref.putFile(Uri.fromFile(file), metadata).await()
         val downloadUrl = ref.downloadUrl.await().toString()
         Timber.d("Receipt uploaded for expense $expenseId → $downloadUrl")
         return downloadUrl
@@ -67,7 +69,7 @@ internal class CloudStorageDataSourceImpl(
         mimeType: String
     ): String {
         val resolvedPath = if (localPath.startsWith(FILE_SCHEME_PREFIX)) {
-            android.net.Uri.parse(localPath).path
+            Uri.parse(localPath).path
                 ?: error("Could not resolve filesystem path from URI: $localPath")
         } else {
             localPath
@@ -75,11 +77,11 @@ internal class CloudStorageDataSourceImpl(
         val file = File(resolvedPath)
         val ref = storage.reference.child("$AVATARS_PREFIX/$userId/avatar.webp")
 
-        val metadata = com.google.firebase.storage.StorageMetadata.Builder()
+        val metadata = StorageMetadata.Builder()
             .setContentType(mimeType)
             .build()
 
-        ref.putFile(android.net.Uri.fromFile(file), metadata).await()
+        ref.putFile(Uri.fromFile(file), metadata).await()
         val downloadUrl = ref.downloadUrl.await().toString()
         Timber.d("Avatar uploaded for user $userId → $downloadUrl")
         return downloadUrl
@@ -107,7 +109,7 @@ internal class CloudStorageDataSourceImpl(
         mimeType: String
     ): String {
         val resolvedPath = if (localPath.startsWith(FILE_SCHEME_PREFIX)) {
-            android.net.Uri.parse(localPath).path
+            Uri.parse(localPath).path
                 ?: error("Could not resolve filesystem path from URI: $localPath")
         } else {
             localPath
@@ -115,11 +117,11 @@ internal class CloudStorageDataSourceImpl(
         val file = File(resolvedPath)
         val ref = storage.reference.child("$GROUPS_PREFIX/$groupId/group_cover.webp")
 
-        val metadata = com.google.firebase.storage.StorageMetadata.Builder()
+        val metadata = StorageMetadata.Builder()
             .setContentType(mimeType)
             .build()
 
-        ref.putFile(android.net.Uri.fromFile(file), metadata).await()
+        ref.putFile(Uri.fromFile(file), metadata).await()
         val downloadUrl = ref.downloadUrl.await().toString()
         Timber.d("Group image uploaded for group $groupId → $downloadUrl")
         return downloadUrl

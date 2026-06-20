@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import com.google.ai.edge.aicore.GenerativeModel
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -24,7 +25,7 @@ class AICoreInferenceRepositoryImpl(
             val response = generativeModel.generateContent(prompt)
             val text = response.text ?: ""
             Result.success(text)
-        } catch (e: kotlinx.coroutines.CancellationException) {
+        } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Timber.e(e, "AICoreInferenceRepositoryImpl: generateContent failed")

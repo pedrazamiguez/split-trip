@@ -66,4 +66,9 @@ interface LocalGroupDataSource {
      * Clears all groups from local storage.
      */
     suspend fun clearAllGroups()
+
+    /**
+     * Replaces pending user IDs with active user IDs in local group members lists.
+     */
+    suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String)
 }

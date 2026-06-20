@@ -15,10 +15,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class CreateGroupSubmitHandlerImpl(
+class CreateGroupSubmitEventHandlerImpl(
     private val createGroupUseCase: CreateGroupUseCase,
     private val telemetryTracker: TelemetryTracker
-) : CreateGroupSubmitHandler {
+) : CreateGroupSubmitEventHandler {
     private lateinit var _uiState: MutableStateFlow<CreateGroupUiState>
     private lateinit var _actions: MutableSharedFlow<CreateGroupUiAction>
     private lateinit var scope: CoroutineScope
@@ -58,7 +58,8 @@ class CreateGroupSubmitHandlerImpl(
                     extraCurrencies = state.extraCurrencies.map { it.code },
                     members = state.selectedMembers.map { it.userId },
                     mainImagePath = state.localGroupImagePath
-                )
+                ),
+                state.selectedMembers
             ).onSuccess {
                 _uiState.update { it.copy(isLoading = false) }
                 telemetryTracker.trackEvent(

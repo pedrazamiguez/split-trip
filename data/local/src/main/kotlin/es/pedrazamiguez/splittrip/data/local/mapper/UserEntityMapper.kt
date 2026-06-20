@@ -13,7 +13,8 @@ fun UserEntity.toDomain(): User = User(
     profileImagePath = profileImagePath,
     bio = bio,
     syncStatus = SyncStatus.fromStringOrDefault(syncStatus),
-    createdAt = createdAtMillis?.toLocalDateTimeUtc()
+    createdAt = createdAtMillis?.toLocalDateTimeUtc(),
+    isPending = isPending
 )
 
 fun User.toEntity(): UserEntity = UserEntity(
@@ -24,7 +25,8 @@ fun User.toEntity(): UserEntity = UserEntity(
     createdAtMillis = createdAt?.toEpochMillisUtc(),
     lastUpdatedAtMillis = System.currentTimeMillis(),
     bio = bio,
-    syncStatus = syncStatus.name
+    syncStatus = syncStatus.name,
+    isPending = isPending
 )
 
 fun List<UserEntity>.toDomain(): List<User> = map { it.toDomain() }

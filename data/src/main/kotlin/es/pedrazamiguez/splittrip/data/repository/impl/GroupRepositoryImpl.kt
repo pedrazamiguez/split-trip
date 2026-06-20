@@ -282,4 +282,14 @@ class GroupRepositoryImpl(
             }
         }
     }
+
+    override suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String) {
+        localGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId)
+        try {
+            cloudGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to reconcile unregistered user in the cloud")
+            throw e
+        }
+    }
 }

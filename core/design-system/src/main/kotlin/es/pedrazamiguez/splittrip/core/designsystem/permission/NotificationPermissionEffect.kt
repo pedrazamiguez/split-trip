@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.core.designsystem.permission
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,7 +46,7 @@ fun rememberRequestNotificationPermission(onPermissionResult: (Boolean) -> Unit)
     }
 }
 
-fun checkNotificationPermission(context: android.content.Context): Boolean {
+fun checkNotificationPermission(context: Context): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         return ContextCompat.checkSelfPermission(
             context,

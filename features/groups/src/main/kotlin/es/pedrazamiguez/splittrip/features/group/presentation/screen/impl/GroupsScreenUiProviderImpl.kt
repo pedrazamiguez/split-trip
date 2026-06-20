@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersPlus
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
@@ -45,7 +45,7 @@ class GroupsScreenUiProviderImpl(
         get() {
             val tabNavController = LocalTabNavController.current
             return MainAction(
-                icon = TablerIcons.Outline.Plus,
+                icon = TablerIcons.Outline.UsersPlus,
                 contentDescription = stringResource(R.string.groups_create),
                 onClick = { tabNavController.navigate(Routes.CREATE_GROUP) },
                 sharedTransitionKey = CREATE_GROUP_SHARED_ELEMENT_KEY

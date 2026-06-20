@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy
 
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AddExpenseUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -48,9 +49,7 @@ class AddExpenseFlowStrategy(
         expense: Expense,
         uiState: AddExpenseUiState
     ): Result<Unit> {
-        val pairedSubunitId = if (uiState.contributionScope ==
-            es.pedrazamiguez.splittrip.domain.enums.PayerType.SUBUNIT
-        ) {
+        val pairedSubunitId = if (uiState.contributionScope == PayerType.SUBUNIT) {
             uiState.selectedContributionSubunitId
         } else {
             null

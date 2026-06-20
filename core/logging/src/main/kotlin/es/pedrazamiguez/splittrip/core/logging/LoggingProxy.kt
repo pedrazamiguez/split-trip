@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.coroutines.Continuation
+import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import timber.log.Timber
 
 private const val MAX_STRING_ARG_LENGTH = 60
@@ -33,7 +34,7 @@ inline fun <reified T : Any> createLoggingProxy(target: T, tag: String): T {
 
                     try {
                         val result = method.invoke(target, *newArgs)
-                        if (result != kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED) {
+                        if (result != COROUTINE_SUSPENDED) {
                             Timber.tag(tag).d("Completed $interfaceName.$methodName successfully")
                         }
                         return result

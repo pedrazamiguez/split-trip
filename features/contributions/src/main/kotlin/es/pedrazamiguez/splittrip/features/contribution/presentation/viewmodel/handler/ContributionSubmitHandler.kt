@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AddContributionUseCase
@@ -58,7 +59,7 @@ class ContributionSubmitHandler(
 
         // Validate subunit selection against loaded options (only for SUBUNIT scope)
         val selectedSubunitId = state.selectedSubunitId
-        if (state.contributionScope == es.pedrazamiguez.splittrip.domain.enums.PayerType.SUBUNIT &&
+        if (state.contributionScope == PayerType.SUBUNIT &&
             selectedSubunitId != null
         ) {
             val validSubunitIds = state.subunitOptions.map { it.id }.toSet()

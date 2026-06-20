@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 29,
-    "identityHash": "a11a38e1433a563cd60a2a153e91acfd",
+    "identityHash": "bc9d2c7e9bf39fd121450bf859b45147",
     "entities": [
       {
         "tableName": "currencies",
@@ -736,7 +736,7 @@
       },
       {
         "tableName": "users",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` TEXT NOT NULL, `email` TEXT NOT NULL, `displayName` TEXT, `profileImagePath` TEXT, `createdAtMillis` INTEGER, `lastUpdatedAtMillis` INTEGER, `bio` TEXT, `syncStatus` TEXT NOT NULL, PRIMARY KEY(`userId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` TEXT NOT NULL, `email` TEXT NOT NULL, `displayName` TEXT, `profileImagePath` TEXT, `createdAtMillis` INTEGER, `lastUpdatedAtMillis` INTEGER, `bio` TEXT, `syncStatus` TEXT NOT NULL, `isPending` INTEGER NOT NULL, PRIMARY KEY(`userId`))",
         "fields": [
           {
             "fieldPath": "userId",
@@ -779,6 +779,12 @@
             "fieldPath": "syncStatus",
             "columnName": "syncStatus",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPending",
+            "columnName": "isPending",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -880,7 +886,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a11a38e1433a563cd60a2a153e91acfd')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bc9d2c7e9bf39fd121450bf859b45147')"
     ]
   }
 }

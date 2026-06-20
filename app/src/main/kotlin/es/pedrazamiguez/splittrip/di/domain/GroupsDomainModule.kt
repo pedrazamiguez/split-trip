@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.di.domain
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.createLoggingProxy
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
@@ -30,7 +31,10 @@ val groupsDomainModule = module {
     }
     factory<CreateGroupUseCase> {
         createLoggingProxy<CreateGroupUseCase>(
-            CreateGroupUseCaseImpl(groupRepository = get<GroupRepository>()),
+            CreateGroupUseCaseImpl(
+                groupRepository = get<GroupRepository>(),
+                userRepository = get<UserRepository>()
+            ),
             LogTag.USE_CASE
         )
     }
