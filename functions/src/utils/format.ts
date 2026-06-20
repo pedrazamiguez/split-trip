@@ -13,4 +13,3 @@ export function buildDeepLink(groupId: string, path?: string): string {
   const base = `splittrip://groups/${groupId}`;
   return path ? `${base}/${path}` : base;
 }
-

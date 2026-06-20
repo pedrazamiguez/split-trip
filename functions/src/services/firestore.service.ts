@@ -46,4 +46,3 @@ export async function getActorDisplayName(userId: string): Promise<string> {
     return "Someone";
   }
 }
-

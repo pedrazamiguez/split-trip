@@ -154,10 +154,7 @@ async function removeStaleTokens(staleTokens: string[]): Promise<void> {
 
   for (const token of staleTokens) {
     try {
-      const devicesSnap = await db
-        .collectionGroup("devices")
-        .where("token", "==", token)
-        .get();
+      const devicesSnap = await db.collectionGroup("devices").where("token", "==", token).get();
 
       devicesSnap.forEach((doc) => {
         docsToDelete.push(doc.ref);
@@ -179,4 +176,3 @@ async function removeStaleTokens(staleTokens: string[]): Promise<void> {
 
   logger.info("Deleted stale device documents", { count: docsToDelete.length });
 }
-
