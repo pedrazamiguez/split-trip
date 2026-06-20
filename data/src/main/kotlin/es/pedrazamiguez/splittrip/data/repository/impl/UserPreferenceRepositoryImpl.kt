@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 class UserPreferenceRepositoryImpl(
     private val userPreferences: UserPreferences
 ) : UserPreferenceRepository {
@@ -37,6 +38,18 @@ class UserPreferenceRepositoryImpl(
 
     override suspend fun setAppTheme(themeCode: String) {
         userPreferences.setAppTheme(themeCode)
+    }
+
+    override fun getHasSignedOut(): Flow<Boolean> = userPreferences.hasSignedOut
+
+    override suspend fun setHasSignedOut(signedOut: Boolean) {
+        userPreferences.setHasSignedOut(signedOut)
+    }
+
+    override fun getIsReconciled(): Flow<Boolean> = userPreferences.isReconciled
+
+    override suspend fun setIsReconciled(reconciled: Boolean) {
+        userPreferences.setIsReconciled(reconciled)
     }
 
     override suspend fun clearAll() {

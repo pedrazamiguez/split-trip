@@ -56,7 +56,7 @@ class CreateGroupSubmitEventHandlerImplTest {
         assertFalse(stateFlow.value.isNameValid)
         assertNotNull(stateFlow.value.error)
         assertFalse(callbackCalled)
-        coVerify(exactly = 0) { createGroupUseCase(any()) }
+        coVerify(exactly = 0) { createGroupUseCase(any(), any()) }
     }
 
     @Test
@@ -65,7 +65,7 @@ class CreateGroupSubmitEventHandlerImplTest {
         handler.bind(stateFlow, actionsFlow, this)
         stateFlow.value = stateFlow.value.copy(groupName = "My Group", groupDescription = "Description")
         val groupSlot = slot<Group>()
-        coEvery { createGroupUseCase(capture(groupSlot)) } returns Result.success("group-123")
+        coEvery { createGroupUseCase(capture(groupSlot), any()) } returns Result.success("group-123")
 
         val actions = mutableListOf<CreateGroupUiAction>()
         val collectJob = launch {
@@ -78,7 +78,7 @@ class CreateGroupSubmitEventHandlerImplTest {
         advanceUntilIdle()
 
         // Then
-        coVerify(exactly = 1) { createGroupUseCase(any()) }
+        coVerify(exactly = 1) { createGroupUseCase(any(), any()) }
         coVerify(exactly = 1) { telemetryTracker.trackEvent("group_created", any()) }
         assertTrue(callbackCalled)
         assertFalse(stateFlow.value.isLoading)
@@ -98,7 +98,7 @@ class CreateGroupSubmitEventHandlerImplTest {
         // Given
         handler.bind(stateFlow, actionsFlow, this)
         stateFlow.value = stateFlow.value.copy(groupName = "My Group")
-        coEvery { createGroupUseCase(any()) } returns Result.failure(RuntimeException("Create failed"))
+        coEvery { createGroupUseCase(any(), any()) } returns Result.failure(RuntimeException("Create failed"))
 
         val actions = mutableListOf<CreateGroupUiAction>()
         val collectJob = launch {
@@ -111,7 +111,7 @@ class CreateGroupSubmitEventHandlerImplTest {
         advanceUntilIdle()
 
         // Then
-        coVerify(exactly = 1) { createGroupUseCase(any()) }
+        coVerify(exactly = 1) { createGroupUseCase(any(), any()) }
         assertFalse(callbackCalled)
         assertFalse(stateFlow.value.isLoading)
         assertNotNull(stateFlow.value.error)

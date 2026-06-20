@@ -192,4 +192,9 @@ class UserRepositoryImpl(
             emit(null)
         }
     }
+
+    override suspend fun deletePendingUser(userId: String): Result<Unit> = runCatching {
+        localUserDataSource.deleteUser(userId)
+        cloudUserDataSource.deleteUser(userId)
+    }
 }

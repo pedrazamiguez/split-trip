@@ -27,6 +27,7 @@ class UserPreferences(
         private val SHOULD_SHOW_LANGUAGE_PILL_KEY = booleanPreferencesKey("should_show_language_pill")
         private val APP_THEME_KEY = stringPreferencesKey("app_theme")
         private val DEVICE_ID_KEY = stringPreferencesKey("device_id")
+        private val HAS_SIGNED_OUT_KEY = booleanPreferencesKey("has_signed_out")
 
         // User-scoped key name constants (prefixed at access time via userKey())
         private const val SELECTED_GROUP_ID = "selected_group_id"
@@ -34,6 +35,7 @@ class UserPreferences(
         private const val SELECTED_GROUP_CURRENCY = "selected_group_currency"
         private const val DEFAULT_CURRENCY = "default_currency"
         private const val ACTIVE_AI_ENGINE = "active_ai_engine"
+        private const val IS_RECONCILED = "is_reconciled"
     }
 
     // ── Device ID (Device-scoped) ────────────────────────────────────────
@@ -109,6 +111,18 @@ class UserPreferences(
             } else {
                 prefs.remove(PENDING_FCM_TOKEN_KEY)
             }
+        }
+    }
+
+    // ── Sign Out Status (Device-scoped) ──────────────────────────────────
+
+    val hasSignedOut: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[HAS_SIGNED_OUT_KEY] ?: false
+    }
+
+    suspend fun setHasSignedOut(signedOut: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[HAS_SIGNED_OUT_KEY] = signedOut
         }
     }
 
@@ -248,6 +262,20 @@ class UserPreferences(
             } else {
                 prefs.remove(key)
             }
+        }
+    }
+
+    // ── User Reconciliation Status (User-scoped, auth-reactive) ──────────
+
+    val isReconciled: Flow<Boolean> = userScopedFlow { userId ->
+        context.dataStore.data.map { prefs ->
+            prefs[booleanPreferencesKey("${userId}_$IS_RECONCILED")] ?: false
+        }
+    }
+
+    suspend fun setIsReconciled(reconciled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[booleanPreferencesKey(userKey(IS_RECONCILED))] = reconciled
         }
     }
 }

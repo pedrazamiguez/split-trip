@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
+@Suppress("TooManyFunctions")
 class AuthenticationServiceImpl(
     private val firebaseAuth: FirebaseAuth,
     private val cloudUserDataSource: CloudUserDataSource
@@ -157,9 +158,6 @@ class AuthenticationServiceImpl(
         user.unlink(providerId).await()
     }
 
-    private fun requireCurrentUser(): FirebaseUser =
-        firebaseAuth.currentUser ?: error("No active user")
-
     override suspend fun getLinkedProviders(): Result<List<AuthProviderType>> = runCatching {
         val user = firebaseAuth.currentUser ?: return@runCatching emptyList()
         user.providerData.mapNotNull { userInfo ->
@@ -170,6 +168,15 @@ class AuthenticationServiceImpl(
             }
         }.distinct()
     }
+
+    override suspend fun signInAnonymously(): Result<String> = runCatching {
+        firebaseAuth.signInAnonymously().await().user?.uid ?: ""
+    }
+
+    override fun currentUserEmail(): String? = firebaseAuth.currentUser?.email
+
+    private fun requireCurrentUser(): FirebaseUser =
+        firebaseAuth.currentUser ?: error("No active user")
 
     private fun extractEmailFromIdToken(idToken: String): String? {
         return runCatching {

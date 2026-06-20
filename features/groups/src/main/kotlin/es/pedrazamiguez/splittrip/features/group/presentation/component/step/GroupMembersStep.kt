@@ -19,6 +19,7 @@ fun GroupMembersStep(
     onScannerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val addUnregisteredFormat = stringResource(R.string.group_member_add_unregistered)
     WizardStepLayout(modifier = modifier) {
         AsyncSearchableChipSelector(
             searchResults = uiState.memberSearchResults,
@@ -28,7 +29,14 @@ fun GroupMembersStep(
             onItemRemoved = { onEvent(CreateGroupUiEvent.MemberRemoved(it)) },
             itemKey = { it.userId },
             itemDisplayText = { it.displayName ?: it.email },
-            itemSecondaryText = { it.email },
+            dropdownItemDisplayText = {
+                if (it.isPending) {
+                    String.format(addUnregisteredFormat, it.email)
+                } else {
+                    it.displayName ?: it.email
+                }
+            },
+            itemSecondaryText = { if (it.isPending) "" else it.email },
             isSearching = uiState.isSearchingMembers,
             title = stringResource(R.string.group_field_members),
             searchLabel = stringResource(R.string.group_member_search),

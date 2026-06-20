@@ -192,6 +192,8 @@ object JacocoExclusions {
         "**/domain/usecase/auth/impl/LinkEmailPasswordUseCaseImpl*.*",
         "**/domain/usecase/auth/impl/UnlinkProviderUseCaseImpl*.*",
         "**/domain/usecase/auth/impl/LinkGoogleAccountUseCaseImpl*.*",
+        "**/domain/usecase/auth/impl/SignInAnonymouslyUseCaseImpl*.*",
+        "**/domain/usecase/user/impl/ReconcileUnregisteredUserUseCaseImpl*.*",
         // ── Kotlin coroutines internals leaking into the JaCoCo class path ────────
         // SafeCollector.common is an internal coroutines file; it's not our code.
         "**/SafeCollector*.*",

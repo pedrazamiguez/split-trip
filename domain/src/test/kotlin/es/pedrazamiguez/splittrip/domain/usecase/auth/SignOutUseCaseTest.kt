@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth
 
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignOutUseCaseImpl
@@ -19,6 +20,7 @@ class SignOutUseCaseTest {
     private lateinit var unregisterDeviceTokenUseCase: UnregisterDeviceTokenUseCase
     private lateinit var localDatabaseCleaner: LocalDatabaseCleanerService
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var useCase: SignOutUseCase
 
     @BeforeEach
@@ -26,11 +28,14 @@ class SignOutUseCaseTest {
         unregisterDeviceTokenUseCase = mockk()
         localDatabaseCleaner = mockk()
         authenticationService = mockk()
+        userPreferenceRepository = mockk()
         useCase = SignOutUseCaseImpl(
             unregisterDeviceTokenUseCase = unregisterDeviceTokenUseCase,
             localDatabaseCleaner = localDatabaseCleaner,
-            authenticationService = authenticationService
+            authenticationService = authenticationService,
+            userPreferenceRepository = userPreferenceRepository
         )
+        coEvery { userPreferenceRepository.setHasSignedOut(any()) } returns Unit
     }
 
     @Nested

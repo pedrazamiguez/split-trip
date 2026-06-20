@@ -14,12 +14,33 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isPendingUserOfCurrentAuth(pendingUserId) {
+      return isAuthenticated()
+        && request.auth.token.email != null
+        && pendingUserId == "pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString().lower();
+    }
+
+    function isMemberOrPending(memberIds) {
+      return isAuthenticated() && (
+        request.auth.uid in memberIds ||
+        (
+          request.auth.token.email != null &&
+          ("pending_" + hashing.sha256(request.auth.token.email.lower()).toHexString().lower() in memberIds)
+        )
+      );
+    }
+
     // ---------------------------------------------------------------
     // Users
     // ---------------------------------------------------------------
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+                             || isPendingUserOfCurrentAuth(userId)
+                             || (isAuthenticated() && userId.matches('pending_.*') && request.resource.data.isPending == true);
+      allow delete: if isOwner(userId)
+                     || isPendingUserOfCurrentAuth(userId)
+                     || (isAuthenticated() && userId.matches('pending_.*'));
 
       // Devices subcollection — only the owning user can manage their devices
       match /devices/{deviceId} {
@@ -54,8 +75,7 @@ service cloud.firestore {
       // (membership enforced at app level; rule allows read for now)
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated()
-        && request.auth.uid in resource.data.memberIds;
+      allow update, delete: if isMemberOrPending(resource.data.memberIds);
 
       // Members subcollection
       match /members/{memberId} {

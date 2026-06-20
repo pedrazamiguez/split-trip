@@ -8,4 +8,5 @@ interface GroupRepository {
     suspend fun getGroupById(groupId: String): Group?
     suspend fun deleteGroup(groupId: String)
     fun getAllGroupsFlow(): Flow<List<Group>>
+    suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String)
 }

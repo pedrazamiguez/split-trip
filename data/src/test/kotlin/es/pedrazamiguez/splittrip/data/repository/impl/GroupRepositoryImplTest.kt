@@ -726,4 +726,46 @@ class GroupRepositoryImplTest {
             coVerify(exactly = 0) { cloudGroupDataSource.verifyGroupOnServer(any()) }
         }
     }
+
+    @Nested
+    inner class ReconcileUnregisteredUser {
+
+        @Test
+        fun `reconciles locally first, then reconciles cloud`() = runTest(testDispatcher) {
+            // Given
+            val pendingUserId = "pending-uid-123"
+            val activeUserId = "active-uid-456"
+            coEvery { localGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) } just Runs
+            coEvery { cloudGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) } just Runs
+
+            // When
+            repository.reconcileUnregisteredUser(pendingUserId, activeUserId)
+
+            // Then
+            coVerify(exactly = 1) { localGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) }
+            coVerify(exactly = 1) { cloudGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) }
+        }
+
+        @Test
+        fun `propagates exception when cloud reconciliation fails`() = runTest(testDispatcher) {
+            // Given
+            val pendingUserId = "pending-uid-123"
+            val activeUserId = "active-uid-456"
+            val expectedException = RuntimeException("Cloud failed")
+            coEvery { localGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) } just Runs
+            coEvery { cloudGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) } throws
+                expectedException
+
+            // When
+            val result = runCatching {
+                repository.reconcileUnregisteredUser(pendingUserId, activeUserId)
+            }
+
+            // Then
+            org.junit.jupiter.api.Assertions.assertTrue(result.isFailure)
+            assertEquals(expectedException, result.exceptionOrNull())
+            coVerify(exactly = 1) { localGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) }
+            coVerify(exactly = 1) { cloudGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) }
+        }
+    }
 }

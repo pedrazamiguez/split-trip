@@ -395,6 +395,36 @@ class UserPreferencesTest {
         assertEquals("AI_CORE_GEMMA_4", result)
     }
 
+    // ── User Reconciliation Status (User-scoped) ──────────────────────────
+
+    @Test
+    fun `isReconciled defaults to false`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        val result = prefs.isReconciled.first()
+        assertFalse(result)
+    }
+
+    @Test
+    fun `isReconciled is isolated per user`() = runTest {
+        val prefsA = createUserPreferences(USER_A_ID)
+        prefsA.setIsReconciled(true)
+
+        val prefsB = createUserPreferences(USER_B_ID)
+        val result = prefsB.isReconciled.first()
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `same user reads back their own isReconciled`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        prefs.setIsReconciled(true)
+
+        val result = prefs.isReconciled.first()
+
+        assertTrue(result)
+    }
+
     // ── App Language & Language Changed Pill (Device-scoped) ─────────────
 
     @Test

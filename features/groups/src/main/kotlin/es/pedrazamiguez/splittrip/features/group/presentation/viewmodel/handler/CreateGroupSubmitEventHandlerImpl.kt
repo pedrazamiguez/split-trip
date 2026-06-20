@@ -58,7 +58,8 @@ class CreateGroupSubmitEventHandlerImpl(
                     extraCurrencies = state.extraCurrencies.map { it.code },
                     members = state.selectedMembers.map { it.userId },
                     mainImagePath = state.localGroupImagePath
-                )
+                ),
+                state.selectedMembers
             ).onSuccess {
                 _uiState.update { it.copy(isLoading = false) }
                 telemetryTracker.trackEvent(

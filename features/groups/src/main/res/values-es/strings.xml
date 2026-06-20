@@ -77,6 +77,7 @@
     <string name="group_member_search_no_results">No se encontró ningún usuario con ese email</string>
     <string name="group_member_remove">Quitar miembro</string>
     <string name="group_member_clear_search">Limpiar búsqueda</string>
+    <string name="group_member_add_unregistered">Añadir %1$s (No registrado)</string>
 
     <!-- Subunit management (navigation only — details in :features:subunits) -->
     <string name="action_manage_subunits">Gestionar subunidades</string>
