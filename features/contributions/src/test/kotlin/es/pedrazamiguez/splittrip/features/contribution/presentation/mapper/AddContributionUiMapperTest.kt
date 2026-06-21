@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.User
 import io.mockk.every
@@ -18,13 +19,15 @@ import org.junit.jupiter.api.Test
 class AddContributionUiMapperTest {
 
     private lateinit var localeProvider: LocaleProvider
+    private lateinit var userUiMapper: UserUiMapper
     private lateinit var mapper: AddContributionUiMapper
 
     @BeforeEach
     fun setUp() {
         localeProvider = mockk()
+        userUiMapper = UserUiMapper()
         every { localeProvider.getCurrentLocale() } returns Locale.US
-        mapper = AddContributionUiMapper(localeProvider)
+        mapper = AddContributionUiMapper(localeProvider, userUiMapper)
     }
 
     // ── formatInputAmountWithCurrency ─────────────────────────────────────────
@@ -63,9 +66,9 @@ class AddContributionUiMapperTest {
             val esLocaleProvider = mockk<LocaleProvider>()
             every { esLocaleProvider.getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
 
-            val usResult = AddContributionUiMapper(usLocaleProvider)
+            val usResult = AddContributionUiMapper(usLocaleProvider, userUiMapper)
                 .formatInputAmountWithCurrency("1000", "EUR")
-            val esResult = AddContributionUiMapper(esLocaleProvider)
+            val esResult = AddContributionUiMapper(esLocaleProvider, userUiMapper)
                 .formatInputAmountWithCurrency("1000", "EUR")
 
             // Both non-blank, but formatted differently for their respective locales
@@ -155,9 +158,24 @@ class AddContributionUiMapperTest {
         }
 
         @Test
-        fun `falls back to userId when displayName is blank`() {
+        fun `falls back to email when displayName is blank`() {
             val profiles = mapOf(
                 "user-1" to User(userId = "user-1", email = "a@test.com", displayName = "")
+            )
+
+            val result = mapper.toMemberOptions(
+                memberIds = listOf("user-1"),
+                memberProfiles = profiles,
+                currentUserId = "user-1"
+            )
+
+            assertEquals("a@test.com", result[0].displayName)
+        }
+
+        @Test
+        fun `falls back to userId when both displayName and email are blank`() {
+            val profiles = mapOf(
+                "user-1" to User(userId = "user-1", email = "", displayName = "")
             )
 
             val result = mapper.toMemberOptions(

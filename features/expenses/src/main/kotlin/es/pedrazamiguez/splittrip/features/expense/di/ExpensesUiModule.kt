@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
@@ -326,7 +327,8 @@ val expensesUiModule = module {
             resourceProvider = get<ResourceProvider>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             addOnCalculationService = get<AddOnCalculationService>(),
-            scheduledBadgeUiMapper = get<ScheduledBadgeUiMapper>()
+            scheduledBadgeUiMapper = get<ScheduledBadgeUiMapper>(),
+            userUiMapper = get<UserUiMapper>()
         )
     }
 

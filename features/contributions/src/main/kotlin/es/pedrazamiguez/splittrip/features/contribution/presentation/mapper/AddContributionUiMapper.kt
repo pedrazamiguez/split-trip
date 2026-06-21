@@ -4,10 +4,10 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.util.DisplayNameResolver
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatAmountWithCurrency
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.resolveCurrencySymbol
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.User
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 
 /**
  * Presentation-layer mapper for the Add Contribution wizard.
@@ -16,7 +16,8 @@ import kotlinx.collections.immutable.toImmutableList
  * Follows the **concrete-only** UiMapper pattern (no interface).
  */
 class AddContributionUiMapper(
-    private val localeProvider: LocaleProvider
+    private val localeProvider: LocaleProvider,
+    private val userUiMapper: UserUiMapper
 ) {
 
     /**
@@ -52,14 +53,11 @@ class AddContributionUiMapper(
         memberIds: List<String>,
         memberProfiles: Map<String, User>,
         currentUserId: String?
-    ): ImmutableList<MemberOptionUiModel> = memberIds.map { memberId ->
-        MemberOptionUiModel(
-            userId = memberId,
-            displayName = memberProfiles[memberId]?.displayName?.takeIf { it.isNotBlank() }
-                ?: memberId,
-            isCurrentUser = memberId == currentUserId
-        )
-    }.toImmutableList()
+    ): ImmutableList<MemberOptionUiModel> = userUiMapper.toMemberOptions(
+        memberIds = memberIds,
+        memberProfiles = memberProfiles,
+        currentUserId = currentUserId
+    )
 
     /**
      * Looks up the display name for a given userId from a pre-mapped member list.

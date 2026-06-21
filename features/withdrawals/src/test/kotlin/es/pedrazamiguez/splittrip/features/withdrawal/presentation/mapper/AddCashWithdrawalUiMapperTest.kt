@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.withdrawal.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.Currency
@@ -21,12 +22,14 @@ import org.junit.jupiter.api.Test
 class AddCashWithdrawalUiMapperTest {
 
     private lateinit var resourceProvider: ResourceProvider
+    private lateinit var userUiMapper: UserUiMapper
     private lateinit var mapper: AddCashWithdrawalUiMapper
 
     @BeforeEach
     fun setUp() {
         resourceProvider = mockk(relaxed = true)
-        mapper = AddCashWithdrawalUiMapper(resourceProvider)
+        userUiMapper = UserUiMapper()
+        mapper = AddCashWithdrawalUiMapper(resourceProvider, userUiMapper)
     }
 
     @Nested
@@ -172,10 +175,25 @@ class AddCashWithdrawalUiMapperTest {
         }
 
         @Test
-        fun `toMemberOptions falls back to userId when displayName is blank`() {
+        fun `toMemberOptions falls back to email when displayName is blank`() {
             val result = mapper.toMemberOptions(
                 memberIds = listOf("user-3"),
                 memberProfiles = profiles,
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("user3@test.com", result[0].displayName)
+        }
+
+        @Test
+        fun `toMemberOptions falls back to userId when both displayName and email are blank`() {
+            val noEmailProfiles = mapOf(
+                "user-3" to User(userId = "user-3", email = "", displayName = "")
+            )
+            val result = mapper.toMemberOptions(
+                memberIds = listOf("user-3"),
+                memberProfiles = noEmailProfiles,
                 currentUserId = null
             )
 

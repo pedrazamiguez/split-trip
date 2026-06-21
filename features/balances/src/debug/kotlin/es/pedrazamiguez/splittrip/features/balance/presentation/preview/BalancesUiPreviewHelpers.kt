@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.preview
 
 import androidx.compose.runtime.Composable
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.MappedPreview
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
@@ -26,7 +27,7 @@ fun BalanceCardPreviewHelper(
     MappedPreview(
         domain = domainBalance,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider)
+            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
         },
         transform = { mapper, domain ->
             mapper.mapBalance(domain, groupName)
@@ -44,7 +45,7 @@ fun ContributionItemPreviewHelper(
     MappedPreview(
         domain = domainContribution,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider)
+            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
         },
         transform = { mapper, domain ->
             mapper.mapContributions(
@@ -66,7 +67,7 @@ fun ContributionListPreviewHelper(
     MappedPreview(
         domain = domainContributions,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider)
+            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
         },
         transform = { mapper, domain ->
             mapper.mapContributions(
@@ -95,7 +96,7 @@ fun ActivityListPreviewHelper(
     MappedPreview(
         domain = domainContributions to domainWithdrawals,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider)
+            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
         },
         transform = { mapper, domain ->
             mapper.mapActivity(
@@ -120,7 +121,7 @@ fun CashWithdrawalItemPreviewHelper(
     MappedPreview(
         domain = domainWithdrawal,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider)
+            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
         },
         transform = { mapper, domain ->
             mapper.mapCashWithdrawals(
@@ -144,7 +145,7 @@ fun MemberBalanceItemPreviewHelper(
     MappedPreview(
         domain = domainBalance,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider)
+            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
         },
         transform = { mapper, domain ->
             mapper.mapMemberBalances(
@@ -172,7 +173,7 @@ fun MemberBalanceListPreviewHelper(
     MappedPreview(
         domain = domainBalances,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider)
+            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
         },
         transform = { mapper, domain ->
             mapper.mapMemberBalances(
@@ -207,7 +208,7 @@ fun CashBreakdownPreviewHelper(
     MappedPreview(
         domain = Triple(memberBalance, withdrawals, groupCurrency),
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider)
+            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
         },
         transform = { mapper, (balance, wds, currency) ->
             val uiModel = mapper.mapMemberBalances(
