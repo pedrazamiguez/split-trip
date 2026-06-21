@@ -26,7 +26,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -243,7 +248,6 @@ private fun AnimatedTopBar(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MainTabsContent(
     navigationProviders: List<NavigationProvider>,
@@ -251,47 +255,80 @@ private fun MainTabsContent(
     mainViewModel: MainViewModel,
     selectedRoute: String
 ) {
-    for (provider in navigationProviders) {
-        val navController = navControllers.getValue(provider)
-        val isSelected = selectedRoute == provider.route
-
-        DisposableEffect(isSelected) {
-            if (isSelected) {
-                val savedBundle = mainViewModel.getBundle(provider.route)
-                if (savedBundle != null) {
-                    navController.restoreState(savedBundle)
-                }
-            }
-            onDispose {
-                if (isSelected) {
-                    mainViewModel.setBundle(provider.route, navController.saveState())
-                }
-            }
+    Box(modifier = Modifier.fillMaxSize()) {
+        for (provider in navigationProviders) {
+            val navController = navControllers.getValue(provider)
+            val isSelected = selectedRoute == provider.route
+            TabContent(
+                provider = provider,
+                navController = navController,
+                mainViewModel = mainViewModel,
+                isSelected = isSelected
+            )
         }
+    }
+}
 
-        if (isSelected) {
-            CompositionLocalProvider(LocalTabNavController provides navController) {
-                SharedTransitionLayout {
-                    CompositionLocalProvider(LocalSharedTransitionScope provides this) {
-                        NavHost(
-                            navController = navController,
-                            startDestination = provider.route,
-                            modifier = Modifier.fillMaxSize(),
-                            enterTransition = {
-                                NavTransitionDefaults.contentEnterTransition
-                            },
-                            exitTransition = {
-                                NavTransitionDefaults.contentExitTransition
-                            },
-                            popEnterTransition = {
-                                NavTransitionDefaults.contentPopEnterTransition
-                            },
-                            popExitTransition = {
-                                NavTransitionDefaults.contentPopExitTransition
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun TabContent(
+    provider: NavigationProvider,
+    navController: NavHostController,
+    mainViewModel: MainViewModel,
+    isSelected: Boolean
+) {
+    DisposableEffect(provider.route) {
+        val savedBundle = mainViewModel.getBundle(provider.route)
+        if (savedBundle != null) {
+            navController.restoreState(savedBundle)
+        }
+        onDispose {}
+    }
+
+    val tabModifier = Modifier
+        .fillMaxSize()
+        .zIndex(if (isSelected) 1f else 0f)
+        .graphicsLayer { alpha = if (isSelected) 1f else 0f }
+        .then(
+            if (!isSelected) {
+                Modifier
+                    .clearAndSetSemantics {}
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent(pass = PointerEventPass.Initial).changes.forEach {
+                                    it.consume()
+                                }
                             }
-                        ) {
-                            provider.buildGraph(this)
                         }
+                    }
+            } else {
+                Modifier
+            }
+        )
+
+    Box(modifier = tabModifier) {
+        CompositionLocalProvider(LocalTabNavController provides navController) {
+            SharedTransitionLayout {
+                CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = provider.route,
+                        modifier = Modifier.fillMaxSize(),
+                        enterTransition = {
+                            NavTransitionDefaults.contentEnterTransition
+                        },
+                        exitTransition = {
+                            NavTransitionDefaults.contentExitTransition
+                        },
+                        popEnterTransition = {
+                            NavTransitionDefaults.contentPopEnterTransition
+                        },
+                        popExitTransition = {
+                            NavTransitionDefaults.contentPopExitTransition
+                        }
+                    ) {
+                        provider.buildGraph(this)
                     }
                 }
             }
