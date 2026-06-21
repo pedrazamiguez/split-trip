@@ -6,6 +6,8 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -45,8 +47,10 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavContro
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalProfileAvatarUrl
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalTopAppBarState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.ProvideTopAppBarState
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.rememberTopAppBarState
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.TopAppBarScrollBehaviorState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
@@ -96,6 +100,14 @@ fun MainScreen(
         navControllers[provider] = rememberNavController()
     }
 
+    // Build a stable map of TopAppBarScrollBehaviorStates for ALL providers
+    val tabScrollStates = remember(navigationProviders) {
+        navigationProviders.associate { it.route to TopAppBarScrollBehaviorState() }
+    }
+
+    // Observe current user profile at root level to prevent avatar blinking on tab switches
+    val profile by mainViewModel.currentUserProfile.collectAsStateWithLifecycle()
+
     // Use the properly ordered visible providers directly (preserves tab order)
     // No need to re-filter since visibleProviders is already correctly ordered from AppNavHost
 
@@ -123,6 +135,7 @@ fun MainScreen(
 
     val selectedProvider = navigationProviders.first { it.route == selectedRoute }
     val selectedNavController = navControllers.getValue(selectedProvider)
+    val selectedScrollState = tabScrollStates.getValue(selectedRoute)
 
     // Extract current route/provider for cleaner topBar/FAB usage
     val currentScreenRoute by selectedNavController.currentBackStackEntryAsState()
@@ -161,13 +174,13 @@ fun MainScreen(
     }
 
     // Wrap Scaffold in CompositionLocalProvider to provide LocalTabNavController for topBar/FAB
-    // Also provide TopAppBarState for scroll-aware top bars
-    val topAppBarState = rememberTopAppBarState()
-
+    // Provide LocalProfileAvatarUrl to prevent profile avatar blinking
+    // Provide dynamic TopAppBarState matching the active tab's scroll behavior
     CompositionLocalProvider(
-        LocalTabNavController provides selectedNavController
+        LocalTabNavController provides selectedNavController,
+        LocalProfileAvatarUrl provides profile?.profileImagePath
     ) {
-        ProvideTopAppBarState(state = topAppBarState) {
+        ProvideTopAppBarState(state = selectedScrollState) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
                 topBar = {
@@ -203,7 +216,8 @@ fun MainScreen(
                             navigationProviders = navigationProviders,
                             navControllers = navControllers,
                             mainViewModel = mainViewModel,
-                            selectedRoute = selectedRoute
+                            selectedRoute = selectedRoute,
+                            tabScrollStates = tabScrollStates
                         )
                     }
                 }
@@ -230,7 +244,8 @@ private fun AnimatedTopBar(
         targetState = currentRoute,
         transitionSpec = {
             if (isTabSwitch) {
-                EnterTransition.None togetherWith ExitTransition.None
+                EnterTransition.None togetherWith ExitTransition.None using
+                    SizeTransform(clip = false) { _, _ -> snap() }
             } else {
                 NavTransitionDefaults.topBarEnterTransition togetherWith
                     NavTransitionDefaults.topBarExitTransition using
@@ -253,17 +268,20 @@ private fun MainTabsContent(
     navigationProviders: List<NavigationProvider>,
     navControllers: Map<NavigationProvider, NavHostController>,
     mainViewModel: MainViewModel,
-    selectedRoute: String
+    selectedRoute: String,
+    tabScrollStates: Map<String, TopAppBarScrollBehaviorState>
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         for (provider in navigationProviders) {
             val navController = navControllers.getValue(provider)
             val isSelected = selectedRoute == provider.route
+            val tabScrollState = tabScrollStates.getValue(provider.route)
             TabContent(
                 provider = provider,
                 navController = navController,
                 mainViewModel = mainViewModel,
-                isSelected = isSelected
+                isSelected = isSelected,
+                tabScrollState = tabScrollState
             )
         }
     }
@@ -275,7 +293,8 @@ private fun TabContent(
     provider: NavigationProvider,
     navController: NavHostController,
     mainViewModel: MainViewModel,
-    isSelected: Boolean
+    isSelected: Boolean,
+    tabScrollState: TopAppBarScrollBehaviorState
 ) {
     DisposableEffect(provider.route) {
         val savedBundle = mainViewModel.getBundle(provider.route)
@@ -285,30 +304,13 @@ private fun TabContent(
         onDispose {}
     }
 
-    val tabModifier = Modifier
-        .fillMaxSize()
-        .zIndex(if (isSelected) 1f else 0f)
-        .graphicsLayer { alpha = if (isSelected) 1f else 0f }
-        .then(
-            if (!isSelected) {
-                Modifier
-                    .clearAndSetSemantics {}
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                awaitPointerEvent(pass = PointerEventPass.Initial).changes.forEach {
-                                    it.consume()
-                                }
-                            }
-                        }
-                    }
-            } else {
-                Modifier
-            }
-        )
+    val tabModifier = Modifier.tabVisibilityModifier(isSelected)
 
     Box(modifier = tabModifier) {
-        CompositionLocalProvider(LocalTabNavController provides navController) {
+        CompositionLocalProvider(
+            LocalTabNavController provides navController,
+            LocalTopAppBarState provides tabScrollState
+        ) {
             SharedTransitionLayout {
                 CompositionLocalProvider(LocalSharedTransitionScope provides this) {
                     NavHost(
@@ -335,3 +337,25 @@ private fun TabContent(
         }
     }
 }
+
+private fun Modifier.tabVisibilityModifier(isSelected: Boolean): Modifier = this
+    .fillMaxSize()
+    .zIndex(if (isSelected) 1f else 0f)
+    .graphicsLayer { alpha = if (isSelected) 1f else 0f }
+    .then(
+        if (!isSelected) {
+            Modifier
+                .clearAndSetSemantics {}
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent(pass = PointerEventPass.Initial).changes.forEach {
+                                it.consume()
+                            }
+                        }
+                    }
+                }
+        } else {
+            Modifier
+        }
+    )
