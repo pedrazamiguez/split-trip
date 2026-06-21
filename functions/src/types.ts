@@ -149,4 +149,3 @@ export interface NotificationDisplay {
   /** Android notification channel ID for routing. */
   channelId: string;
 }
-

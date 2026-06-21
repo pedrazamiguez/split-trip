@@ -16,7 +16,13 @@
 import "../config";
 import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
-import { GroupMemberDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";
+import {
+  GroupMemberDoc,
+  NotificationType,
+  FcmDataPayload,
+  NotificationDisplay,
+  NotificationChannelId,
+} from "../types";
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
@@ -46,9 +52,7 @@ export const onMemberRemoved = onDocumentDeleted(
     const actorId = member.removedBy || removedUserId;
     const isAdminAction = actorId !== removedUserId;
 
-    const namePromises: Promise<string>[] = [
-      getActorDisplayName(actorId),
-    ];
+    const namePromises: Promise<string>[] = [getActorDisplayName(actorId)];
     if (isAdminAction) {
       namePromises.push(getActorDisplayName(removedUserId));
     }
@@ -67,9 +71,7 @@ export const onMemberRemoved = onDocumentDeleted(
     }
 
     const actorDisplayName = displayNames[0] as string;
-    const memberDisplayName = isAdminAction
-      ? displayNames[1] as string
-      : actorDisplayName;
+    const memberDisplayName = isAdminAction ? (displayNames[1] as string) : actorDisplayName;
 
     // Exclude the real actor from notifications
     const tokens = await getRecipientTokens(groupId, actorId, groupData.memberIds);
@@ -91,13 +93,10 @@ export const onMemberRemoved = onDocumentDeleted(
       bodyLocKey: isAdminAction
         ? "notification_member_removed_by_admin_body"
         : "notification_member_removed_body",
-      bodyLocArgs: isAdminAction
-        ? [actorDisplayName, memberDisplayName]
-        : [memberDisplayName],
+      bodyLocArgs: isAdminAction ? [actorDisplayName, memberDisplayName] : [memberDisplayName],
       channelId: NotificationChannelId.MEMBERSHIP,
     };
 
     await sendDataMessage(tokens, payload, display);
   }
 );
-

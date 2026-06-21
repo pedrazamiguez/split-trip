@@ -17,7 +17,13 @@ import "../config";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
-import { GroupDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";
+import {
+  GroupDoc,
+  NotificationType,
+  FcmDataPayload,
+  NotificationDisplay,
+  NotificationChannelId,
+} from "../types";
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getActorDisplayName } from "../services/firestore.service";
@@ -183,4 +189,3 @@ export const onGroupDeletionRequested = onDocumentUpdated(
     }
   }
 );
-
