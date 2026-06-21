@@ -33,7 +33,11 @@ data class CreateGroupUiState(
     val showImageSourceSheet: Boolean = false
 ) {
     val steps: List<CreateGroupStep>
-        get() = CreateGroupStep.entries
+        get() = if (selectedMembers.any { it.isPending }) {
+            CreateGroupStep.entries
+        } else {
+            CreateGroupStep.entries.filter { it != CreateGroupStep.UNREGISTERED_NAMES }
+        }
 
     val currentStepIndex: Int
         get() = steps.indexOf(currentStep).coerceAtLeast(0)
@@ -49,6 +53,7 @@ data class CreateGroupUiState(
             CreateGroupStep.INFO -> groupName.isNotBlank() && isNameValid
             CreateGroupStep.CURRENCY -> selectedCurrency != null
             CreateGroupStep.MEMBERS -> true
+            CreateGroupStep.UNREGISTERED_NAMES -> true
             CreateGroupStep.IMAGE -> true
             CreateGroupStep.REVIEW -> groupName.isNotBlank() && isNameValid && selectedCurrency != null
         }

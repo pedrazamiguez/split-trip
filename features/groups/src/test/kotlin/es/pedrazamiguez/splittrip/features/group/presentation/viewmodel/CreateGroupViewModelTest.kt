@@ -723,4 +723,65 @@ class CreateGroupViewModelTest {
             assertFalse(viewModel.uiState.value.showImageSourceSheet)
         }
     }
+
+    @Nested
+    inner class UnregisteredTravelerNames {
+
+        @Test
+        fun `UnregisteredMemberDisplayNameChanged updates display name of pending user`() = runTest(testDispatcher) {
+            // Given
+            val pendingUser = User(userId = "pending-123", email = "pending@example.com", isPending = true)
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser))
+            advanceUntilIdle()
+
+            // When
+            onEvent(CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged("pending-123", "  Jake  "))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            assertEquals("Jake", selected.first().displayName)
+        }
+
+        @Test
+        fun `UnregisteredMemberDisplayNameChanged sets display name to null if blank`() = runTest(testDispatcher) {
+            // Given
+            val pendingUser =
+                User(userId = "pending-123", email = "pending@example.com", displayName = "Jake", isPending = true)
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser))
+            advanceUntilIdle()
+
+            // When
+            onEvent(CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged("pending-123", "   "))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            assertNull(selected.first().displayName)
+        }
+
+        @Test
+        fun `UnregisteredMemberDisplayNameChanged does not modify other users`() = runTest(testDispatcher) {
+            // Given
+            val pendingUser1 =
+                User(userId = "pending-1", email = "p1@example.com", displayName = "Jake", isPending = true)
+            val pendingUser2 =
+                User(userId = "pending-2", email = "p2@example.com", displayName = "Elwood", isPending = true)
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser1))
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser2))
+            advanceUntilIdle()
+
+            // When
+            onEvent(CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged("pending-1", "Joliet Jake"))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(2, selected.size)
+            assertEquals("Joliet Jake", selected.find { it.userId == "pending-1" }?.displayName)
+            assertEquals("Elwood", selected.find { it.userId == "pending-2" }?.displayName)
+        }
+    }
 }

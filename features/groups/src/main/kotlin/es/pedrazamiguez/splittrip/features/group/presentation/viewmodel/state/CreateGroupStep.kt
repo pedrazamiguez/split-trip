@@ -26,6 +26,9 @@ enum class CreateGroupStep(
     /** Invite members by email (optional). */
     MEMBERS,
 
+    /** Optional display name assignment step for unregistered invitees. */
+    UNREGISTERED_NAMES(isOptional = true),
+
     /** Optional group cover image selection step. */
     IMAGE(isOptional = true),
 

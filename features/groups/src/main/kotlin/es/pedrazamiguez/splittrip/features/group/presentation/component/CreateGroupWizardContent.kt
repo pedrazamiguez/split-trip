@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.component.step.Gro
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupInfoStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupMembersStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupReviewStep
+import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupUnregisteredNamesStep
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupStep
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
@@ -68,6 +69,10 @@ internal fun CreateGroupWizardContent(
                     uiState = uiState,
                     onEvent = onEvent,
                     onScannerClick = onScannerClick
+                )
+                CreateGroupStep.UNREGISTERED_NAMES -> GroupUnregisteredNamesStep(
+                    uiState = uiState,
+                    onEvent = onEvent
                 )
                 CreateGroupStep.IMAGE -> GroupImageStep(
                     uiState = uiState,

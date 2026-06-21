@@ -24,4 +24,7 @@ sealed interface CreateGroupUiEvent {
     data class GroupImagePicked(val uri: String) : CreateGroupUiEvent
     data object GroupImageRemoved : CreateGroupUiEvent
     data class ShowImageSourceSheet(val show: Boolean) : CreateGroupUiEvent
+
+    // ── Unregistered Members ─────────────────────────────────────────────
+    data class UnregisteredMemberDisplayNameChanged(val userId: String, val displayName: String) : CreateGroupUiEvent
 }

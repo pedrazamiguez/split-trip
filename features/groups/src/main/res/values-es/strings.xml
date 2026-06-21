@@ -97,7 +97,7 @@
     <string name="scanner_close">Cerrar</string>
 
     <!-- Group Image Wizard Step -->
-    <string name="group_wizard_step_image">Imagen de Portada</string>
+    <string name="group_wizard_step_image">Portada</string>
     <string name="group_error_image_processing_failed">No pudimos procesar la imagen seleccionada. Por favor, prueba con otra</string>
     <string name="group_image_sheet_title">Imagen de portada del grupo</string>
     <string name="group_image_sheet_camera">Hacer foto</string>
@@ -109,4 +109,9 @@
     <string name="group_image_step_change_btn">Cambiar foto</string>
     <string name="group_image_step_remove_btn">Quitar foto</string>
     <string name="group_image_step_uploading">Subiendo imagen…</string>
+
+    <!-- Unregistered members display names step -->
+    <string name="group_wizard_step_unregistered_names">Viajeros</string>
+    <string name="group_unregistered_names_title">Viajeros no registrados</string>
+    <string name="group_unregistered_names_subtitle">Asigna nombres para los viajeros que aún no están registrados, así será más fácil identificarlos en los gastos y balances.</string>
 </resources>
