@@ -84,6 +84,18 @@ class CreateGroupViewModel(
             is CreateGroupUiEvent.MemberSelected -> handleMemberSelected(event)
             is CreateGroupUiEvent.MemberRemoved -> handleMemberRemoved(event)
             is CreateGroupUiEvent.MemberScanned -> handleMemberScanned(event.userId, event.email)
+            is CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged -> {
+                _uiState.update { state ->
+                    val updated = state.selectedMembers.map { user ->
+                        if (user.userId == event.userId) {
+                            user.copy(displayName = event.displayName.trim().takeIf { it.isNotBlank() })
+                        } else {
+                            user
+                        }
+                    }.toImmutableList()
+                    state.copy(selectedMembers = updated)
+                }
+            }
             is CreateGroupUiEvent.SubmitCreateGroup -> createGroupSubmitEventHandler.handleSubmit(onCreateGroupSuccess)
             is CreateGroupUiEvent.NextStep,
             is CreateGroupUiEvent.PreviousStep,
@@ -278,6 +290,8 @@ private fun formatEventForLogging(event: CreateGroupUiEvent): String {
             "MemberRemoved(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
         is CreateGroupUiEvent.MemberScanned ->
             "MemberScanned(userId=${event.userId}, email=${event.email.maskEmail()})"
+        is CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged ->
+            "UnregisteredMemberDisplayNameChanged(userId=${event.userId}, nameLength=${event.displayName.length})"
         else -> event::class.java.simpleName
     }
 }

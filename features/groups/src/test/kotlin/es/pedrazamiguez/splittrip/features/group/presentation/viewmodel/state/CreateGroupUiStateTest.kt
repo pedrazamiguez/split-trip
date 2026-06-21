@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.model.User
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -21,9 +22,24 @@ class CreateGroupUiStateTest {
     inner class StepsAndIndex {
 
         @Test
-        fun `steps contains all CreateGroupStep entries`() {
-            val state = CreateGroupUiState()
+        fun `steps contains all CreateGroupStep entries when there is at least one unregistered member`() {
+            val state = CreateGroupUiState(
+                selectedMembers = kotlinx.collections.immutable.persistentListOf(
+                    User(userId = "1", email = "test@example.com", isPending = true)
+                )
+            )
             assertEquals(CreateGroupStep.entries, state.steps)
+        }
+
+        @Test
+        fun `steps filters out UNREGISTERED_NAMES when there are no unregistered members`() {
+            val state = CreateGroupUiState(
+                selectedMembers = kotlinx.collections.immutable.persistentListOf(
+                    User(userId = "1", email = "test@example.com", isPending = false)
+                )
+            )
+            val expected = CreateGroupStep.entries.filter { it != CreateGroupStep.UNREGISTERED_NAMES }
+            assertEquals(expected, state.steps)
         }
 
         @Test
@@ -45,15 +61,48 @@ class CreateGroupUiStateTest {
         }
 
         @Test
+        fun `currentStepIndex returns correct index for UNREGISTERED_NAMES when pending member exists`() {
+            val state = CreateGroupUiState(
+                currentStep = CreateGroupStep.UNREGISTERED_NAMES,
+                selectedMembers = kotlinx.collections.immutable.persistentListOf(
+                    User(userId = "1", email = "test@example.com", isPending = true)
+                )
+            )
+            assertEquals(3, state.currentStepIndex)
+        }
+
+        @Test
         fun `currentStepIndex returns correct index for IMAGE`() {
             val state = CreateGroupUiState(currentStep = CreateGroupStep.IMAGE)
             assertEquals(3, state.currentStepIndex)
         }
 
         @Test
+        fun `currentStepIndex returns correct index for IMAGE when pending member exists`() {
+            val state = CreateGroupUiState(
+                currentStep = CreateGroupStep.IMAGE,
+                selectedMembers = kotlinx.collections.immutable.persistentListOf(
+                    User(userId = "1", email = "test@example.com", isPending = true)
+                )
+            )
+            assertEquals(4, state.currentStepIndex)
+        }
+
+        @Test
         fun `currentStepIndex returns correct index for REVIEW`() {
             val state = CreateGroupUiState(currentStep = CreateGroupStep.REVIEW)
             assertEquals(4, state.currentStepIndex)
+        }
+
+        @Test
+        fun `currentStepIndex returns correct index for REVIEW when pending member exists`() {
+            val state = CreateGroupUiState(
+                currentStep = CreateGroupStep.REVIEW,
+                selectedMembers = kotlinx.collections.immutable.persistentListOf(
+                    User(userId = "1", email = "test@example.com", isPending = true)
+                )
+            )
+            assertEquals(5, state.currentStepIndex)
         }
     }
 
@@ -179,6 +228,12 @@ class CreateGroupUiStateTest {
         @Test
         fun `MEMBERS step is always valid`() {
             val state = CreateGroupUiState(currentStep = CreateGroupStep.MEMBERS)
+            assertTrue(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `UNREGISTERED_NAMES step is always valid`() {
+            val state = CreateGroupUiState(currentStep = CreateGroupStep.UNREGISTERED_NAMES)
             assertTrue(state.isCurrentStepValid)
         }
 

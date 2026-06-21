@@ -96,7 +96,7 @@
     <string name="scanner_close">Close</string>
 
     <!-- Group Image Wizard Step -->
-    <string name="group_wizard_step_image">Cover Image</string>
+    <string name="group_wizard_step_image">Image</string>
     <string name="group_error_image_processing_failed">Couldn\'t process the selected image. Please try another one</string>
     <string name="group_image_sheet_title">Group cover image</string>
     <string name="group_image_sheet_camera">Take photo</string>
@@ -108,4 +108,9 @@
     <string name="group_image_step_change_btn">Change photo</string>
     <string name="group_image_step_remove_btn">Remove photo</string>
     <string name="group_image_step_uploading">Uploading image…</string>
+
+    <!-- Unregistered members display names step -->
+    <string name="group_wizard_step_unregistered_names">Travelers</string>
+    <string name="group_unregistered_names_title">Unregistered travelers</string>
+    <string name="group_unregistered_names_subtitle">Assign display names for people who aren\'t registered yet so they are easier to recognize in splits and balances.</string>
 </resources>
