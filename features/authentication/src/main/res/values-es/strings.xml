@@ -14,6 +14,7 @@
     <string name="login_start_journey">Comienza un viaje</string>
     <string name="login_forgot_password_message">La recuperación de contraseña no está implementada todavía.</string>
     <string name="login_start_journey_message">El registro no está implementado todavía.</string>
+    <string name="login_guest_button">Continuar como invitado</string>
 
     <!-- Register Screen -->
     <string name="register_title">Únete a la expedición</string>

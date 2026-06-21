@@ -5,6 +5,7 @@
     <string name="groups_subtitle">Tû compî de abentura</string>
     <string name="groups_not_found">¡Aún no tienê ningún grupo! Crea uno y empieça a compartîh gâttô</string>
     <string name="groups_error_loading">No pudimô cargâh tû grupô. Inténtalo de nuebo mâh tarde</string>
+    <string name="groups_anonymous_warning">Uçando cuenta de imbitao. Bincula tu cuenta en Ahûttê pa ebitâh perdêh datô.</string>
     <string name="groups_create">Creâh grupo</string>
     <string name="groups_info">Info</string>
     <string name="groups_back">Borbêh</string>

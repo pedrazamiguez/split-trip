@@ -42,11 +42,12 @@ fun LoginScreen(
     onGoogleSignInClick: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
     onStartJourneyClick: () -> Unit = {},
+    onContinueAsGuestClick: () -> Unit = {},
     doubleTapBackHandler: DoubleTapBackToExitHandler = remember { DoubleTapBackToExitHandler() },
     navController: NavHostController = rememberNavController()
 ) {
     val activity = LocalActivity.current
-    val anyLoading = uiState.isLoading || uiState.isGoogleLoading
+    val anyLoading = uiState.isLoading || uiState.isGoogleLoading || uiState.isGuestLoading
 
     // Page background gradient
     val backgroundGradient = Brush.verticalGradient(
@@ -84,7 +85,8 @@ fun LoginScreen(
                     isGoogleSignInAvailable = isGoogleSignInAvailable,
                     onEvent = onEvent,
                     onGoogleSignInClick = onGoogleSignInClick,
-                    onForgotPasswordClick = onForgotPasswordClick
+                    onForgotPasswordClick = onForgotPasswordClick,
+                    onContinueAsGuestClick = onContinueAsGuestClick
                 )
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.Large))

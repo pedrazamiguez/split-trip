@@ -4,6 +4,7 @@
     <string name="groups_subtitle">Tus compis de aventura</string>
     <string name="groups_not_found">¡Aún no tienes ningún grupo! Crea uno y empieza a compartir gastos</string>
     <string name="groups_error_loading">No pudimos cargar tus grupos. Inténtalo de nuevo más tarde</string>
+    <string name="groups_anonymous_warning">Usando cuenta de invitado. Vincula tu cuenta en Ajustes para evitar perder datos.</string>
     <string name="groups_create">Crear grupo</string>
     <string name="groups_info">Info</string>
     <string name="groups_back">Volver</string>

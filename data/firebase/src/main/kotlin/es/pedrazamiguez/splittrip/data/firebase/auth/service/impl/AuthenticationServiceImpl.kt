@@ -175,6 +175,8 @@ class AuthenticationServiceImpl(
 
     override fun currentUserEmail(): String? = firebaseAuth.currentUser?.email
 
+    override fun isAnonymous(): Boolean = firebaseAuth.currentUser?.isAnonymous == true
+
     private fun requireCurrentUser(): FirebaseUser =
         firebaseAuth.currentUser ?: error("No active user")
 

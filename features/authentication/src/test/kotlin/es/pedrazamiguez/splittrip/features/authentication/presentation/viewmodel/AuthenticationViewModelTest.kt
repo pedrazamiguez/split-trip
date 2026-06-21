@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.authentication.presentation.viewmode
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
@@ -36,6 +37,7 @@ class AuthenticationViewModelTest {
 
     private lateinit var signInWithEmailUseCase: SignInWithEmailUseCase
     private lateinit var signInWithGoogleUseCase: SignInWithGoogleUseCase
+    private lateinit var signInAnonymouslyUseCase: SignInAnonymouslyUseCase
     private lateinit var linkGoogleAccountUseCase: LinkGoogleAccountUseCase
     private lateinit var viewModel: AuthenticationViewModel
 
@@ -44,6 +46,7 @@ class AuthenticationViewModelTest {
         Dispatchers.setMain(testDispatcher)
         signInWithEmailUseCase = mockk()
         signInWithGoogleUseCase = mockk()
+        signInAnonymouslyUseCase = mockk()
         linkGoogleAccountUseCase = mockk()
 
         val collisionHandler = AuthenticationCollisionEventHandlerImpl(
@@ -53,6 +56,7 @@ class AuthenticationViewModelTest {
         viewModel = AuthenticationViewModel(
             signInWithEmailUseCase = signInWithEmailUseCase,
             signInWithGoogleUseCase = signInWithGoogleUseCase,
+            signInAnonymouslyUseCase = signInAnonymouslyUseCase,
             authenticationCollisionEventHandler = collisionHandler
         )
     }
@@ -328,6 +332,49 @@ class AuthenticationViewModelTest {
 
             assertFalse(viewModel.uiState.value.showCollisionDialog)
             assertNull(viewModel.uiState.value.pendingGoogleIdToken)
+        }
+    }
+
+    // ── ContinueAsGuest ──────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("ContinueAsGuest")
+    inner class ContinueAsGuest {
+
+        @Test
+        fun `success calls onLoginSuccess and clears guest loading`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    signInAnonymouslyUseCase()
+                } returns Result.success("guest-user-id")
+
+                var successCalled = false
+                viewModel.onEvent(
+                    AuthenticationUiEvent.ContinueAsGuest
+                ) { successCalled = true }
+                advanceUntilIdle()
+
+                assertTrue(successCalled)
+                assertFalse(viewModel.uiState.value.isGuestLoading)
+                assertNull(viewModel.uiState.value.error)
+            }
+
+        @Test
+        fun `failure sets error in state and clears guest loading`() = runTest(testDispatcher) {
+            coEvery {
+                signInAnonymouslyUseCase()
+            } returns Result.failure(RuntimeException("Anonymous sign-in failed"))
+
+            viewModel.onEvent(
+                AuthenticationUiEvent.ContinueAsGuest
+            ) {}
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isGuestLoading)
+            val error = viewModel.uiState.value.error
+            assertNotNull(error)
+            assertTrue(error is UiText.DynamicString)
+            assertEquals("Anonymous sign-in failed", (error as UiText.DynamicString).value)
         }
     }
 }

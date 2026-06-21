@@ -22,4 +22,5 @@ sealed interface AuthenticationUiEvent {
     }
     data object SubmitCollisionMerge : AuthenticationUiEvent
     data object DismissCollisionDialog : AuthenticationUiEvent
+    data object ContinueAsGuest : AuthenticationUiEvent
 }

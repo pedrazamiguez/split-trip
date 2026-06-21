@@ -3,6 +3,7 @@
     <string name="groups_subtitle">Your travel squad</string>
     <string name="groups_not_found">No groups yet! Create one and start splitting costs</string>
     <string name="groups_error_loading">Couldn\'t load your groups. Please try again later</string>
+    <string name="groups_anonymous_warning">Using guest account. Link your account in Settings to prevent data loss.</string>
     <string name="groups_create">Create group</string>
     <string name="groups_info">Info</string>
     <string name="groups_back">Back</string>

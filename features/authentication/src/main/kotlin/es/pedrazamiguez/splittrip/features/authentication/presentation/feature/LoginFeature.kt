@@ -108,6 +108,9 @@ fun LoginFeature(
                     )
                 }
             }
+        },
+        onContinueAsGuestClick = {
+            viewModel.onEvent(AuthenticationUiEvent.ContinueAsGuest, onLoginSuccess)
         }
     )
 

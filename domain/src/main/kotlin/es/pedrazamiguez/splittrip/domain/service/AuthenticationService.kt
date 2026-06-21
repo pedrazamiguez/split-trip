@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.model.User
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface AuthenticationService {
 
     fun currentUserId(): String?
@@ -35,4 +36,6 @@ interface AuthenticationService {
     suspend fun signInAnonymously(): Result<String>
 
     fun currentUserEmail(): String?
+
+    fun isAnonymous(): Boolean
 }

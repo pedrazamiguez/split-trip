@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
@@ -25,6 +26,7 @@ fun GroupsFeature(
     )
 ) {
     val navController = LocalTabNavController.current
+    val rootNavController = LocalRootNavController.current
     val pillController = LocalTopPillController.current
     val context = LocalContext.current
 
@@ -45,6 +47,9 @@ fun GroupsFeature(
     GroupsScreen(
         uiState = uiState,
         selectedGroupId = selectedGroupId,
+        onUpgradeClicked = {
+            rootNavController.navigate(Routes.SETTINGS_ACCOUNT_STATUS)
+        },
         onGroupClicked = { groupId, _, _ ->
             navController.navigate(Routes.groupDetailRoute(groupId))
         },

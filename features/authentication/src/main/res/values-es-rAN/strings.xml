@@ -14,6 +14,7 @@
     <string name="login_start_journey">Comiença un biahe</string>
     <string name="login_forgot_password_message">La recuperaçión de contraçeña no êttá implementá todabía.</string>
     <string name="login_start_journey_message">El rehîttro no êttá implementao todabía.</string>
+    <string name="login_guest_button">Continuâh como imbitao</string>
     <string name="register_title">Únete a la êppediçión</string>
     <string name="register_subtitle">Crea tu cuenta pa empeçâh a compartîh gâttô</string>
     <string name="register_display_name_label">Nombre de uçuario</string>

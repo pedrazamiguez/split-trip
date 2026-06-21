@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
@@ -90,11 +91,17 @@ val groupsUiModule = module {
     }
 
     viewModel {
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
+        val deleteGroupUseCase = get<DeleteGroupUseCase>()
+        val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
+        val groupUiMapper = get<GroupUiMapper>()
+        val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         GroupsViewModel(
-            getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>(),
-            deleteGroupUseCase = get<DeleteGroupUseCase>(),
-            getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
-            groupUiMapper = get<GroupUiMapper>()
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            deleteGroupUseCase = deleteGroupUseCase,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            groupUiMapper = groupUiMapper,
+            isUserAnonymousUseCase = isUserAnonymousUseCase
         )
     }
 

@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth
 
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInAnonymouslyUseCaseImpl
 import io.mockk.coEvery
@@ -15,13 +16,16 @@ import org.junit.jupiter.api.Test
 class SignInAnonymouslyUseCaseTest {
 
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var useCase: SignInAnonymouslyUseCase
 
     @BeforeEach
     fun setUp() {
         authenticationService = mockk()
+        userPreferenceRepository = mockk(relaxed = true)
         useCase = SignInAnonymouslyUseCaseImpl(
-            authenticationService = authenticationService
+            authenticationService = authenticationService,
+            userPreferenceRepository = userPreferenceRepository
         )
     }
 
@@ -29,7 +33,7 @@ class SignInAnonymouslyUseCaseTest {
     inner class Invoke {
 
         @Test
-        fun `returns active user ID on successful anonymous sign-in`() = runTest {
+        fun `returns active user ID and resets hasSignedOut to false on successful anonymous sign-in`() = runTest {
             // Given
             val anonymousUserId = "anonymous-uid-123"
             coEvery { authenticationService.signInAnonymously() } returns Result.success(anonymousUserId)
@@ -41,10 +45,11 @@ class SignInAnonymouslyUseCaseTest {
             assertTrue(result.isSuccess)
             assertEquals(anonymousUserId, result.getOrNull())
             coVerify(exactly = 1) { authenticationService.signInAnonymously() }
+            coVerify(exactly = 1) { userPreferenceRepository.setHasSignedOut(false) }
         }
 
         @Test
-        fun `returns failure when authentication service fails`() = runTest {
+        fun `returns failure and does not reset hasSignedOut when authentication service fails`() = runTest {
             // Given
             val exception = RuntimeException("Auth error")
             coEvery { authenticationService.signInAnonymously() } returns Result.failure(exception)
@@ -56,6 +61,7 @@ class SignInAnonymouslyUseCaseTest {
             assertTrue(result.isFailure)
             assertEquals(exception, result.exceptionOrNull())
             coVerify(exactly = 1) { authenticationService.signInAnonymously() }
+            coVerify(exactly = 0) { userPreferenceRepository.setHasSignedOut(any()) }
         }
     }
 }
