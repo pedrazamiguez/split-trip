@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.contribution.di
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
@@ -23,7 +24,8 @@ val contributionsUiModule = module {
 
     single {
         AddContributionUiMapper(
-            localeProvider = get<LocaleProvider>()
+            localeProvider = get<LocaleProvider>(),
+            userUiMapper = get<UserUiMapper>()
         )
     }
 

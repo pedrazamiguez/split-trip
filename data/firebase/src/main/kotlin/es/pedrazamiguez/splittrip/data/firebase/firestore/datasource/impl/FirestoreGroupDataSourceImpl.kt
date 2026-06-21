@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Source
+import com.google.firebase.firestore.Transaction
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ContributionDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocument
@@ -367,7 +368,7 @@ class FirestoreGroupDataSourceImpl(
     }
 
     private fun updateGroupMembersInTransaction(
-        transaction: com.google.firebase.firestore.Transaction,
+        transaction: Transaction,
         groupDocRef: DocumentReference,
         freshGroupDoc: DocumentSnapshot,
         pendingUserId: String,
@@ -379,7 +380,7 @@ class FirestoreGroupDataSourceImpl(
     }
 
     private fun migrateMemberDocumentInTransaction(
-        transaction: com.google.firebase.firestore.Transaction,
+        transaction: Transaction,
         memberDocRef: DocumentReference,
         activeMemberDocRef: DocumentReference,
         pendingMemberSnap: DocumentSnapshot,
@@ -401,7 +402,7 @@ class FirestoreGroupDataSourceImpl(
     }
 
     private fun updateExpensesInTransaction(
-        transaction: com.google.firebase.firestore.Transaction,
+        transaction: Transaction,
         expenseSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String,
@@ -417,7 +418,7 @@ class FirestoreGroupDataSourceImpl(
     }
 
     private fun updateContributionsInTransaction(
-        transaction: com.google.firebase.firestore.Transaction,
+        transaction: Transaction,
         contributionSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String,
@@ -433,7 +434,7 @@ class FirestoreGroupDataSourceImpl(
     }
 
     private fun updateWithdrawalsInTransaction(
-        transaction: com.google.firebase.firestore.Transaction,
+        transaction: Transaction,
         withdrawalSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String,

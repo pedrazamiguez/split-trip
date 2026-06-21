@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
@@ -49,7 +50,7 @@ class BalancesUiMapperMemberBalancesTest {
             "ATM — Jan 10"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_rate, any(), any(), any()) } returns
             "@ 0.027 THB/EUR"
-        mapper = BalancesUiMapper(localeProvider, resourceProvider)
+        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
     }
 
     @Nested

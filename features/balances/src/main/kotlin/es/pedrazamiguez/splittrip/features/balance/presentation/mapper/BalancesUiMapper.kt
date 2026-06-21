@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatCurrencyAmount
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
@@ -33,7 +34,8 @@ import kotlinx.collections.immutable.toImmutableList
 
 class BalancesUiMapper(
     private val localeProvider: LocaleProvider,
-    private val resourceProvider: ResourceProvider
+    private val resourceProvider: ResourceProvider,
+    private val userUiMapper: UserUiMapper
 ) {
 
     companion object {
@@ -488,10 +490,7 @@ class BalancesUiMapper(
      * fallback hierarchy: displayName → email → raw userId.
      */
     private fun resolveDisplayName(userId: String, memberProfiles: Map<String, User>): String {
-        val user = memberProfiles[userId] ?: return userId
-        return user.displayName?.takeIf { it.isNotBlank() }
-            ?: user.email.takeIf { it.isNotBlank() }
-            ?: userId
+        return userUiMapper.mapToDisplayName(memberProfiles[userId], userId)
     }
 
     /**
@@ -508,7 +507,6 @@ class BalancesUiMapper(
     ): String? {
         if (createdBy.isBlank() || createdBy == targetUserId) return null
         val user = memberProfiles[createdBy] ?: return null
-        return user.displayName?.takeIf { it.isNotBlank() }
-            ?: user.email.takeIf { it.isNotBlank() }
+        return userUiMapper.mapToDisplayName(user)
     }
 }
