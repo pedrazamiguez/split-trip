@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -18,6 +20,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.rememberConnectedScrollBehavior
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.BreakdownCardSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.CashTranchesDetailSection
@@ -27,12 +30,15 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.SplitBreakdownSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpenseDetailUiState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpenseDetailScreen(
     uiState: ExpenseDetailUiState = ExpenseDetailUiState(),
     modifier: Modifier = Modifier,
     onReceiptTap: (() -> Unit)? = null
 ) {
+    val scrollBehavior = rememberConnectedScrollBehavior()
+
     when {
         uiState.isLoading -> ShimmerLoadingList()
         uiState.hasError || uiState.expense == null -> {
@@ -48,6 +54,7 @@ fun ExpenseDetailScreen(
             Column(
                 modifier = modifier
                     .fillMaxSize()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = MaterialTheme.spacing.Default),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
