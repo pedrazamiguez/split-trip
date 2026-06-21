@@ -14,7 +14,15 @@ plugins {
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.cpd)
     alias(libs.plugins.sonarqube)
+    alias(libs.plugins.version.catalog.update)
     id("splittrip.quality.root")
+}
+
+versionCatalogUpdate {
+    sortByKey.set(true)
+    keep {
+        keepUnusedVersions.set(true)
+    }
 }
 
 apply(from = "gradle/git-hooks.gradle.kts")
