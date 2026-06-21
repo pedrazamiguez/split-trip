@@ -5,11 +5,14 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -33,6 +36,7 @@ class MainViewModelTest {
     private lateinit var registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
     private lateinit var getGroupByIdUseCase: GetGroupByIdUseCase
     private lateinit var warmCurrencyCacheUseCase: WarmCurrencyCacheUseCase
+    private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
 
     @BeforeEach
     fun setUp() {
@@ -40,7 +44,9 @@ class MainViewModelTest {
         registerDeviceTokenUseCase = mockk(relaxed = true)
         getGroupByIdUseCase = mockk(relaxed = true)
         warmCurrencyCacheUseCase = mockk(relaxed = true)
+        observeCurrentUserProfileUseCase = mockk(relaxed = true)
         coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
+        every { observeCurrentUserProfileUseCase() } returns flowOf(null)
     }
 
     @AfterEach
@@ -51,7 +57,8 @@ class MainViewModelTest {
     private fun createViewModel(): MainViewModel = MainViewModel(
         registerDeviceTokenUseCase = registerDeviceTokenUseCase,
         getGroupByIdUseCase = getGroupByIdUseCase,
-        warmCurrencyCacheUseCase = warmCurrencyCacheUseCase
+        warmCurrencyCacheUseCase = warmCurrencyCacheUseCase,
+        observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
     )
 
     @Nested

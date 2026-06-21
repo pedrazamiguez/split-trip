@@ -107,7 +107,7 @@ class AddContributionViewModelTest {
                     displayName = profiles[id]?.displayName ?: id,
                     isCurrentUser = id == currentUserId
                 )
-            }.let { persistentListOf<MemberOptionUiModel>().addAll(it) }
+            }.let { persistentListOf<MemberOptionUiModel>().addingAll(it) }
         }
         every {
             addContributionUiMapper.resolveDisplayName(any(), any())

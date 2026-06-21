@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.features.activitylog.di
 
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
-import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.activitylog.navigation.impl.ActivityLoggingNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.activitylog.presentation.screen.impl.ActivityLoggingScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.activitylog.presentation.viewmodel.ActivityLoggingViewModel
@@ -17,9 +16,6 @@ val activityLoggingUiModule = module {
 
     factory { ActivityLoggingNavigationProviderImpl() } bind NavigationProvider::class
     single {
-        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
-        ActivityLoggingScreenUiProviderImpl(
-            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
-        )
+        ActivityLoggingScreenUiProviderImpl()
     } bind ScreenUiProvider::class
 }

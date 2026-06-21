@@ -44,7 +44,6 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPayment
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.expense.navigation.impl.ExpensesNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
@@ -309,10 +308,7 @@ val expensesUiModule = module {
     factory { ExpensesNavigationProviderImpl() } bind NavigationProvider::class
 
     single {
-        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
-        ExpensesScreenUiProviderImpl(
-            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
-        )
+        ExpensesScreenUiProviderImpl()
     } bind ScreenUiProvider::class
     single(named("addExpenseProvider")) { AddExpenseScreenUiProviderImpl(Routes.ADD_EXPENSE) } bind
         ScreenUiProvider::class
