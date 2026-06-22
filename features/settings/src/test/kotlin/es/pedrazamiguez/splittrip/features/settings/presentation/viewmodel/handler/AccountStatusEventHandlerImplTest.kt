@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.hand
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
@@ -55,6 +56,7 @@ class AccountStatusEventHandlerImplTest {
     private lateinit var linkEmailPasswordUseCase: LinkEmailPasswordUseCase
     private lateinit var unlinkProviderUseCase: UnlinkProviderUseCase
     private lateinit var accountStatusUiMapper: AccountStatusUiMapper
+    private lateinit var authenticationService: AuthenticationService
 
     private lateinit var handler: AccountStatusEventHandlerImpl
     private lateinit var stateFlow: MutableStateFlow<AccountStatusUiState>
@@ -77,9 +79,12 @@ class AccountStatusEventHandlerImplTest {
         linkEmailPasswordUseCase = mockk()
         unlinkProviderUseCase = mockk()
         accountStatusUiMapper = mockk()
+        authenticationService = mockk()
 
         stateFlow = MutableStateFlow(AccountStatusUiState())
         actionsFlow = MutableSharedFlow()
+
+        coEvery { authenticationService.isAnonymous() } returns false
 
         handler = AccountStatusEventHandlerImpl(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
@@ -87,7 +92,8 @@ class AccountStatusEventHandlerImplTest {
             linkGoogleAccountUseCase = linkGoogleAccountUseCase,
             linkEmailPasswordUseCase = linkEmailPasswordUseCase,
             unlinkProviderUseCase = unlinkProviderUseCase,
-            accountStatusUiMapper = accountStatusUiMapper
+            accountStatusUiMapper = accountStatusUiMapper,
+            authenticationService = authenticationService
         )
 
         handler.bind(stateFlow, actionsFlow, CoroutineScope(testDispatcher))
@@ -231,6 +237,7 @@ class AccountStatusEventHandlerImplTest {
 
         @Test
         fun `submitting with empty fields sets error`() = runTest(testDispatcher) {
+            stateFlow.value = stateFlow.value.copy(email = "test@example.com")
             handler.handleShowLinkEmailDialog()
             handler.handleSubmitLinkEmailPassword()
 
@@ -238,6 +245,20 @@ class AccountStatusEventHandlerImplTest {
             assertTrue(stateFlow.value.linkPasswordError is UiText.StringResource)
             assertEquals(
                 R.string.account_status_link_email_dialog_error_empty,
+                (stateFlow.value.linkPasswordError as UiText.StringResource).resId
+            )
+        }
+
+        @Test
+        fun `submitting with empty email for anonymous user sets email empty error`() = runTest(testDispatcher) {
+            stateFlow.value = stateFlow.value.copy(isAnonymous = true, linkEmailInput = "")
+            handler.handleShowLinkEmailDialog()
+            handler.handleSubmitLinkEmailPassword()
+
+            assertNotNull(stateFlow.value.linkPasswordError)
+            assertTrue(stateFlow.value.linkPasswordError is UiText.StringResource)
+            assertEquals(
+                R.string.account_status_link_email_dialog_error_email_empty,
                 (stateFlow.value.linkPasswordError as UiText.StringResource).resId
             )
         }

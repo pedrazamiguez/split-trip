@@ -15,21 +15,36 @@ import es.pedrazamiguez.splittrip.features.settings.R
 internal fun AccountStatusHeader(
     email: String,
     joinDateText: String,
+    isAnonymous: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Spacer(modifier = modifier.height(MaterialTheme.spacing.Medium))
 
-    LargeBodyText(
-        text = email,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-
-    if (joinDateText.isNotBlank()) {
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
-        Text(
-            text = stringResource(R.string.account_status_member_since, joinDateText),
-            style = MaterialTheme.typography.bodyMedium,
+    if (isAnonymous) {
+        LargeBodyText(
+            text = stringResource(R.string.account_status_guest_label),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
+        Text(
+            text = stringResource(R.string.account_status_guest_warning),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+    } else {
+        LargeBodyText(
+            text = email,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        if (joinDateText.isNotBlank()) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
+            Text(
+                text = stringResource(R.string.account_status_member_since, joinDateText),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }

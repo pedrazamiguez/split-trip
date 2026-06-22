@@ -37,5 +37,9 @@ interface AuthenticationService {
 
     fun currentUserEmail(): String?
 
+    fun currentUserDisplayName(): String?
+
+    fun currentUserPhotoUrl(): String?
+
     fun isAnonymous(): Boolean
 }

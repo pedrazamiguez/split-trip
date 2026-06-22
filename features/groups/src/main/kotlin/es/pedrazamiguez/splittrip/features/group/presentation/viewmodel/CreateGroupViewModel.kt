@@ -8,6 +8,8 @@ import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -38,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
+@Suppress("LongParameterList")
 class CreateGroupViewModel(
     private val createGroupNavigationEventHandler: CreateGroupNavigationEventHandler,
     private val createGroupImageEventHandler: CreateGroupImageEventHandler,
@@ -48,6 +51,7 @@ class CreateGroupViewModel(
     private val emailValidationService: EmailValidationService,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
+    private val featureGateService: FeatureGateService,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -66,6 +70,12 @@ class CreateGroupViewModel(
 
         loadCurrencies()
         createGroupImageEventHandler.cleanTempImages()
+
+        viewModelScope.launch {
+            featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).collect { isEnabled ->
+                _uiState.update { it.copy(isCoverUploadEnabled = isEnabled) }
+            }
+        }
     }
 
     @Suppress("CyclomaticComplexMethod")

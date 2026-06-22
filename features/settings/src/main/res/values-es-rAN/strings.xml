@@ -156,4 +156,10 @@
     <string name="account_status_delete_request_submitted">La çoliçitûh de eliminaçión de cuenta a çido embiá</string>
     <string name="account_status_linked">Binculao</string>
     <string name="account_status_not_linked">No binculao</string>
+    <string name="account_status_guest_label">Cuenta de imbitao</string>
+    <string name="account_status_guest_warning">Tu çeçión çe guarda de forma locâh. Bincula una cuenta de Google o Emaîh pa ebitâh perdêh datô.</string>
+    <string name="account_status_link_email_dialog_email">Dirêççión de correo elêttrónico</string>
+    <string name="account_status_link_email_dialog_error_email_empty">Er correo no puede êttâh baçío</string>
+    <string name="settings_logout_guest_dialog_title">¿Rêttableçêh çeçión de imbitao?</string>
+    <string name="settings_logout_guest_dialog_text">Çerrâh çeçión o rêttableçêh borrará de forma permanente tôh lô biahê, gâttô y çardô localê. ¡Açegúrate de binculâh tu cuenta antê pa guardâh tû datô!</string>
 </resources>

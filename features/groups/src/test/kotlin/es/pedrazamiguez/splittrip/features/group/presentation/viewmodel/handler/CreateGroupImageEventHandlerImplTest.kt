@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 import io.mockk.coEvery
@@ -8,6 +10,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -23,6 +26,7 @@ class CreateGroupImageEventHandlerImplTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var groupImageStorageService: GroupImageStorageService
+    private lateinit var featureGateService: FeatureGateService
     private lateinit var handler: CreateGroupImageEventHandlerImpl
     private lateinit var stateFlow: MutableStateFlow<CreateGroupUiState>
     private lateinit var actionsFlow: MutableSharedFlow<CreateGroupUiAction>
@@ -30,7 +34,9 @@ class CreateGroupImageEventHandlerImplTest {
     @BeforeEach
     fun setUp() {
         groupImageStorageService = mockk(relaxed = true)
-        handler = CreateGroupImageEventHandlerImpl(groupImageStorageService)
+        featureGateService = mockk(relaxed = true)
+        coEvery { featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD) } returns flowOf(true)
+        handler = CreateGroupImageEventHandlerImpl(groupImageStorageService, featureGateService)
         stateFlow = MutableStateFlow(CreateGroupUiState())
         actionsFlow = MutableSharedFlow()
     }
@@ -114,5 +120,23 @@ class CreateGroupImageEventHandlerImplTest {
 
         // Then
         coVerify(exactly = 1) { groupImageStorageService.cleanTempGroupImages() }
+    }
+
+    @Test
+    fun `handleGroupImagePicked blocks when GROUP_COVER_UPLOAD is disabled`() = runTest(testDispatcher) {
+        // Given
+        handler.bind(stateFlow, actionsFlow, this)
+        val pickedUri = "content://picker/image.jpg"
+        coEvery { featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD) } returns flowOf(false)
+
+        // When
+        handler.handleGroupImagePicked(pickedUri)
+        advanceUntilIdle()
+
+        // Then
+        coVerify(exactly = 0) { groupImageStorageService.saveTempGroupImage(any()) }
+        assertNull(stateFlow.value.localGroupImagePath)
+        assertFalse(stateFlow.value.isLoading)
+        assertNotNull(stateFlow.value.error)
     }
 }

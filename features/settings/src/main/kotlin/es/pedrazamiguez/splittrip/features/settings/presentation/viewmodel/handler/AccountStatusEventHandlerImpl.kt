@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.hand
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
@@ -28,6 +29,7 @@ class AccountStatusEventHandlerImpl(
     private val linkGoogleAccountUseCase: LinkGoogleAccountUseCase,
     private val linkEmailPasswordUseCase: LinkEmailPasswordUseCase,
     private val unlinkProviderUseCase: UnlinkProviderUseCase,
+    private val authenticationService: AuthenticationService,
     private val accountStatusUiMapper: AccountStatusUiMapper
 ) : AccountStatusEventHandler {
 
@@ -49,6 +51,7 @@ class AccountStatusEventHandlerImpl(
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
+                val isAnon = authenticationService.isAnonymous()
                 val user = getCurrentUserProfileUseCase()
                 val linkedProvidersResult = getLinkedProvidersUseCase()
                 val linkedProviders = linkedProvidersResult.getOrElse { e ->
@@ -62,7 +65,18 @@ class AccountStatusEventHandlerImpl(
                             isLoading = false,
                             email = user.email,
                             joinDateText = accountStatusUiMapper.formatJoinDate(user.createdAt),
-                            linkedProviders = linkedProviders
+                            linkedProviders = linkedProviders,
+                            isAnonymous = false
+                        )
+                    }
+                } else if (isAnon) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            email = "",
+                            joinDateText = "",
+                            linkedProviders = linkedProviders,
+                            isAnonymous = true
                         )
                     }
                 } else {
@@ -122,6 +136,7 @@ class AccountStatusEventHandlerImpl(
         _uiState.update {
             it.copy(
                 showLinkEmailDialog = true,
+                linkEmailInput = "",
                 linkPasswordInput = "",
                 linkConfirmPasswordInput = "",
                 linkPasswordError = null
@@ -133,6 +148,10 @@ class AccountStatusEventHandlerImpl(
         _uiState.update { it.copy(showLinkEmailDialog = false) }
     }
 
+    override fun handleLinkEmailChanged(value: String) {
+        _uiState.update { it.copy(linkEmailInput = value) }
+    }
+
     override fun handleLinkPasswordChanged(value: String) {
         _uiState.update { it.copy(linkPasswordInput = value) }
     }
@@ -142,9 +161,21 @@ class AccountStatusEventHandlerImpl(
     }
 
     override fun handleSubmitLinkEmailPassword() {
+        val isAnon = _uiState.value.isAnonymous
+        val email = if (isAnon) _uiState.value.linkEmailInput.trim() else _uiState.value.email
         val password = _uiState.value.linkPasswordInput
         val confirmPassword = _uiState.value.linkConfirmPasswordInput
-        val email = _uiState.value.email
+
+        if (email.isEmpty()) {
+            _uiState.update {
+                it.copy(
+                    linkPasswordError = UiText.StringResource(
+                        R.string.account_status_link_email_dialog_error_email_empty
+                    )
+                )
+            }
+            return
+        }
 
         if (password.isEmpty() || confirmPassword.isEmpty()) {
             _uiState.update {

@@ -114,4 +114,9 @@
     <string name="group_wizard_step_unregistered_names">Travelers</string>
     <string name="group_unregistered_names_title">Unregistered travelers</string>
     <string name="group_unregistered_names_subtitle">Assign display names for people who aren\'t registered yet so they are easier to recognize in splits and balances.</string>
+
+    <!-- Guest limits/gating -->
+    <string name="group_error_limit_groups_exceeded">Guest users can only create 1 group. Please link your account in Settings to lift this limit.</string>
+    <string name="group_error_limit_members_exceeded">Guest groups are limited to 3 members. Please link your account in Settings to lift this limit.</string>
+    <string name="group_error_limit_cover_upload_disabled">Cover image upload is disabled for guest accounts. Please link your account in Settings to upload custom images.</string>
 </resources>

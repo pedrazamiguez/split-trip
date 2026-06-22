@@ -98,4 +98,7 @@
     <string name="group_wizard_step_unregistered_names">Biaherô</string>
     <string name="group_unregistered_names_title">Biaherô no rehîttráô</string>
     <string name="group_unregistered_names_subtitle">Açînna nombrê pa lô biaherô que aún no êttán rehîttráô, açí çerá mâh fáçî identificâl-lô en lô gâttô y balançê.</string>
+    <string name="group_error_limit_groups_exceeded">Lô uçuariô imbitáô çolo pueden creâh 1 grupo. Bincula tu cuenta en Ahûttê pa eliminâh êtte límite.</string>
+    <string name="group_error_limit_members_exceeded">Lô grupô de imbitáô êttán limitáô a 3 miembrô. Bincula tu cuenta en Ahûttê pa eliminâh êtte límite.</string>
+    <string name="group_error_limit_cover_upload_disabled">La çubida de imáhenê de portá êttá deçâttibá pa cuentâ de imbitao. Bincula tu cuenta en Ahûttê pa çubîh imáhenê perçonaliçâh.</string>
 </resources>

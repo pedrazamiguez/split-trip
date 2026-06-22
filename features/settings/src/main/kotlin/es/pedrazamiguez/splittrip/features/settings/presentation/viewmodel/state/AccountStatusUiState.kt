@@ -12,8 +12,10 @@ data class AccountStatusUiState(
     val linkedProviders: ImmutableList<AuthProviderType> = persistentListOf(),
     val isLinking: Boolean = false,
     val showLinkEmailDialog: Boolean = false,
+    val linkEmailInput: String = "",
     val linkPasswordInput: String = "",
     val linkConfirmPasswordInput: String = "",
     val linkPasswordError: UiText? = null,
-    val showDeleteAccountDialog: Boolean = false
+    val showDeleteAccountDialog: Boolean = false,
+    val isAnonymous: Boolean = false
 )

@@ -7,9 +7,12 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
@@ -53,6 +56,8 @@ class CreateGroupViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var createGroupUseCase: CreateGroupUseCase
+    private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
+    private lateinit var featureGateService: FeatureGateService
     private lateinit var getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase
     private lateinit var getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase
     private lateinit var searchUsersByEmailUseCase: SearchUsersByEmailUseCase
@@ -79,6 +84,8 @@ class CreateGroupViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         createGroupUseCase = mockk(relaxed = true)
+        getUserGroupsFlowUseCase = mockk(relaxed = true)
+        featureGateService = mockk(relaxed = true)
         getSupportedCurrenciesUseCase = mockk(relaxed = true)
         getUserDefaultCurrencyUseCase = mockk(relaxed = true)
         searchUsersByEmailUseCase = mockk(relaxed = true)
@@ -89,6 +96,9 @@ class CreateGroupViewModelTest {
         emailValidationService = EmailValidationServiceImpl()
 
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+        every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
+        every { featureGateService.isFeatureEnabled(any()) } returns flowOf(true)
+        coEvery { featureGateService.checkLimit(any(), any()) } returns flowOf(LimitResult.Allowed)
         coEvery { getSupportedCurrenciesUseCase(any()) } returns Result.success(emptyList())
         every { groupUiMapper.toCurrencyUiModels(any()) } returns persistentListOf()
 
@@ -97,8 +107,13 @@ class CreateGroupViewModelTest {
 
     private fun createViewModel(): CreateGroupViewModel {
         val navigationEventHandler = CreateGroupNavigationEventHandlerImpl()
-        val imageEventHandler = CreateGroupImageEventHandlerImpl(groupImageStorageService)
-        val submitEventHandler = CreateGroupSubmitEventHandlerImpl(createGroupUseCase, telemetryTracker)
+        val imageEventHandler = CreateGroupImageEventHandlerImpl(groupImageStorageService, featureGateService)
+        val submitEventHandler = CreateGroupSubmitEventHandlerImpl(
+            createGroupUseCase = createGroupUseCase,
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            featureGateService = featureGateService,
+            telemetryTracker = telemetryTracker
+        )
         return CreateGroupViewModel(
             createGroupNavigationEventHandler = navigationEventHandler,
             createGroupImageEventHandler = imageEventHandler,
@@ -109,6 +124,7 @@ class CreateGroupViewModelTest {
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
+            featureGateService = featureGateService,
             defaultDispatcher = testDispatcher
         )
     }

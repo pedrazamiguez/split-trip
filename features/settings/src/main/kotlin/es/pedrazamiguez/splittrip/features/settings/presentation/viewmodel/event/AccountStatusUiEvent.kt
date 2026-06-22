@@ -7,6 +7,7 @@ sealed interface AccountStatusUiEvent {
     data class LinkGoogle(val idToken: String) : AccountStatusUiEvent
     data object ShowLinkEmailDialog : AccountStatusUiEvent
     data object DismissLinkEmailDialog : AccountStatusUiEvent
+    data class LinkEmailChanged(val value: String) : AccountStatusUiEvent
     data class LinkPasswordChanged(val value: String) : AccountStatusUiEvent
     data class LinkConfirmPasswordChanged(val value: String) : AccountStatusUiEvent
     data object SubmitLinkEmailPassword : AccountStatusUiEvent

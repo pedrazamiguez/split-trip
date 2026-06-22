@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupIma
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupImageAttachmentHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupImageHeader
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupImagePreview
+import es.pedrazamiguez.splittrip.features.group.presentation.component.LockedGroupImagePreview
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 
@@ -21,31 +22,36 @@ fun GroupImageStep(
     modifier: Modifier = Modifier
 ) {
     val hasImage = uiState.localGroupImagePath != null
+    val isUploadEnabled = uiState.isCoverUploadEnabled
 
     WizardStepLayout(modifier = modifier) {
         GroupImageHeader()
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
-        GroupImagePreview(
-            localGroupImagePath = uiState.localGroupImagePath,
-            groupName = uiState.groupName
-        )
+        if (isUploadEnabled) {
+            GroupImagePreview(
+                localGroupImagePath = uiState.localGroupImagePath,
+                groupName = uiState.groupName
+            )
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
 
-        GroupImageActions(
-            hasImage = hasImage,
-            onSelectClick = { onEvent(CreateGroupUiEvent.ShowImageSourceSheet(true)) },
-            onRemoveClick = { onEvent(CreateGroupUiEvent.GroupImageRemoved) }
-        )
+            GroupImageActions(
+                hasImage = hasImage,
+                onSelectClick = { onEvent(CreateGroupUiEvent.ShowImageSourceSheet(true)) },
+                onRemoveClick = { onEvent(CreateGroupUiEvent.GroupImageRemoved) }
+            )
 
-        GroupImageAttachmentHandler(
-            showSheet = uiState.showImageSourceSheet,
-            showRemoveOption = hasImage,
-            onDismissSheet = { onEvent(CreateGroupUiEvent.ShowImageSourceSheet(false)) },
-            onImageSelected = { uri -> onEvent(CreateGroupUiEvent.GroupImagePicked(uri)) },
-            onImageRemoved = { onEvent(CreateGroupUiEvent.GroupImageRemoved) }
-        )
+            GroupImageAttachmentHandler(
+                showSheet = uiState.showImageSourceSheet,
+                showRemoveOption = hasImage,
+                onDismissSheet = { onEvent(CreateGroupUiEvent.ShowImageSourceSheet(false)) },
+                onImageSelected = { uri -> onEvent(CreateGroupUiEvent.GroupImagePicked(uri)) },
+                onImageRemoved = { onEvent(CreateGroupUiEvent.GroupImageRemoved) }
+            )
+        } else {
+            LockedGroupImagePreview()
+        }
     }
 }

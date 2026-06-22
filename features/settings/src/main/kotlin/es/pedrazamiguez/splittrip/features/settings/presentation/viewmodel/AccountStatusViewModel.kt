@@ -48,6 +48,9 @@ class AccountStatusViewModel(
             AccountStatusUiEvent.DismissLinkEmailDialog ->
                 accountStatusEventHandler.handleDismissLinkEmailDialog()
 
+            is AccountStatusUiEvent.LinkEmailChanged ->
+                accountStatusEventHandler.handleLinkEmailChanged(event.value)
+
             is AccountStatusUiEvent.LinkPasswordChanged ->
                 accountStatusEventHandler.handleLinkPasswordChanged(event.value)
 

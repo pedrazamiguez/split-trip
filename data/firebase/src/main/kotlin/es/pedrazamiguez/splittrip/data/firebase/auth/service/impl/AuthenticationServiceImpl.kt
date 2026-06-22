@@ -184,6 +184,10 @@ class AuthenticationServiceImpl(
 
     override fun currentUserEmail(): String? = firebaseAuth.currentUser?.email
 
+    override fun currentUserDisplayName(): String? = firebaseAuth.currentUser?.displayName
+
+    override fun currentUserPhotoUrl(): String? = firebaseAuth.currentUser?.photoUrl?.toString()
+
     override fun isAnonymous(): Boolean = firebaseAuth.currentUser?.isAnonymous == true
 
     private fun requireCurrentUser(): FirebaseUser =

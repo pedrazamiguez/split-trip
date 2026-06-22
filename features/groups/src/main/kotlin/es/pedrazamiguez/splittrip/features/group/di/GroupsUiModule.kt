@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
@@ -52,16 +53,22 @@ val groupsUiModule = module {
 
     factory<CreateGroupImageEventHandler> {
         val groupImageStorageService = get<GroupImageStorageService>()
+        val featureGateService = get<FeatureGateService>()
         CreateGroupImageEventHandlerImpl(
-            groupImageStorageService = groupImageStorageService
+            groupImageStorageService = groupImageStorageService,
+            featureGateService = featureGateService
         )
     }
 
     factory<CreateGroupSubmitEventHandler> {
         val createGroupUseCase = get<CreateGroupUseCase>()
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
+        val featureGateService = get<FeatureGateService>()
         val telemetryTracker = get<TelemetryTracker>()
         CreateGroupSubmitEventHandlerImpl(
             createGroupUseCase = createGroupUseCase,
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            featureGateService = featureGateService,
             telemetryTracker = telemetryTracker
         )
     }
@@ -76,6 +83,7 @@ val groupsUiModule = module {
         val emailValidationService = get<EmailValidationService>()
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val groupUiMapper = get<GroupUiMapper>()
+        val featureGateService = get<FeatureGateService>()
 
         CreateGroupViewModel(
             createGroupNavigationEventHandler = createGroupNavigationEventHandler,
@@ -86,7 +94,8 @@ val groupsUiModule = module {
             searchUsersByEmailUseCase = searchUsersByEmailUseCase,
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
-            groupUiMapper = groupUiMapper
+            groupUiMapper = groupUiMapper,
+            featureGateService = featureGateService
         )
     }
 
