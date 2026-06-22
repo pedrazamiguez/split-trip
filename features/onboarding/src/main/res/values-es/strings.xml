@@ -4,5 +4,13 @@
     <string name="onboarding_welcome_title">¿Listo para viajar sin líos?</string>
     <string name="onboarding_welcome_subtitle">Comparte gastos con tu grupo sin conversaciones incómodas sobre dinero</string>
     <string name="onboarding_complete_button">¡Empezamos!</string>
+
+    <!-- Reconciliation Screen -->
+    <string name="reconciliation_title">¡Te estábamos esperando!</string>
+    <string name="reconciliation_message">Tus amigos ya te han añadido a grupos y registrado gastos bajo %1$s. Toca abajo para recuperar todos tus datos.</string>
+    <string name="reconciliation_migrate_button">Migrar mis datos</string>
+    <string name="reconciliation_progress_message">Estamos migrando tus datos…</string>
+    <string name="reconciliation_error_invalid_user">Sesión de usuario no válida. Por favor, inicia sesión de nuevo.</string>
+    <string name="reconciliation_error_migration_failed">Error en la migración. Por favor, comprueba tu conexión a internet e inténtalo de nuevo.</string>
 </resources>
 

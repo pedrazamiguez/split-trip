@@ -3,5 +3,13 @@
     <string name="onboarding_welcome_title">Ready to travel smart?</string>
     <string name="onboarding_welcome_subtitle">Split expenses with your crew without the awkward money talks</string>
     <string name="onboarding_complete_button">Let\'s start!</string>
+
+    <!-- Reconciliation Screen -->
+    <string name="reconciliation_title">We were waiting for you!</string>
+    <string name="reconciliation_message">Your friends have already added you to groups and logged expenses under %1$s. Tap below to retrieve all your data.</string>
+    <string name="reconciliation_migrate_button">Migrate My Data</string>
+    <string name="reconciliation_progress_message">We are migrating your data…</string>
+    <string name="reconciliation_error_invalid_user">Invalid user session. Please sign in again.</string>
+    <string name="reconciliation_error_migration_failed">Migration failed. Please check your internet connection and try again.</string>
 </resources>
 
