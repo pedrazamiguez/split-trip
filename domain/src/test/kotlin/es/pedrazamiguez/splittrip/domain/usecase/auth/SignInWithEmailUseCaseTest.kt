@@ -6,7 +6,6 @@ import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInWithEmailUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -23,7 +22,6 @@ class SignInWithEmailUseCaseTest {
     private lateinit var userRepository: UserRepository
     private lateinit var registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
     private lateinit var userPreferenceRepository: UserPreferenceRepository
-    private lateinit var reconcileUnregisteredUserUseCase: ReconcileUnregisteredUserUseCase
     private lateinit var useCase: SignInWithEmailUseCase
 
     private val email = "user@example.com"
@@ -36,18 +34,15 @@ class SignInWithEmailUseCaseTest {
         userRepository = mockk()
         registerDeviceTokenUseCase = mockk()
         userPreferenceRepository = mockk()
-        reconcileUnregisteredUserUseCase = mockk()
         useCase = SignInWithEmailUseCaseImpl(
             authenticationService = authenticationService,
             userRepository = userRepository,
             registerDeviceTokenUseCase = registerDeviceTokenUseCase,
-            userPreferenceRepository = userPreferenceRepository,
-            reconcileUnregisteredUserUseCase = reconcileUnregisteredUserUseCase
+            userPreferenceRepository = userPreferenceRepository
         )
         coEvery { userRepository.getCurrentUserProfile() } returns User(userId, email, "user", null, null)
         coEvery { userRepository.saveUser(any()) } returns Result.success(Unit)
         coEvery { userPreferenceRepository.setHasSignedOut(any()) } returns Unit
-        coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns Result.success(Unit)
     }
 
     @Nested
@@ -145,22 +140,6 @@ class SignInWithEmailUseCaseTest {
                     }
                 )
             }
-        }
-
-        @Test
-        fun `succeeds even when reconciliation fails`() = runTest {
-            // Given
-            coEvery { authenticationService.signIn(email, password) } returns Result.success(userId)
-            coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
-            coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns
-                Result.failure(RuntimeException("Reconciliation failed"))
-
-            // When
-            val result = useCase(email, password)
-
-            // Then
-            assertTrue(result.isSuccess)
-            assertEquals(userId, result.getOrNull())
         }
     }
 

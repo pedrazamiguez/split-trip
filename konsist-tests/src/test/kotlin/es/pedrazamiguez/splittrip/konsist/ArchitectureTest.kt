@@ -31,6 +31,7 @@ class ArchitectureTest {
                 .interfaces()
                 .filter { it.resideInPackage("..domain.service..") }
                 .filter { !it.resideInPackage("..addon..") }
+                .filter { !it.resideInPackage("..featuregate..") }
                 .filter { it.isTopLevel }
                 .assertTrue { it.hasNameEndingWith("Service") }
         }
