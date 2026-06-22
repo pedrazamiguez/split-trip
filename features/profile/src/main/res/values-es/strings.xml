@@ -58,5 +58,12 @@
     <!-- QR Code Sharing -->
     <string name="profile_qr_title">Compartir perfil</string>
     <string name="profile_qr_subtitle">Muestra este código QR a otro usuario para que pueda añadirte a un grupo físicamente.</string>
+
+    <!-- Guest Profile -->
+    <string name="profile_guest_title">Usuario Invitado</string>
+    <string name="profile_guest_subtitle">Sesión local</string>
+    <string name="profile_guest_promo_title">Vincula tu cuenta</string>
+    <string name="profile_guest_promo_text">Crea una cuenta permanente para invitar amigos, sincronizar tus viajes entre dispositivos y evitar perder tus datos.</string>
+    <string name="profile_guest_promo_button">Vincular cuenta</string>
 </resources>
 

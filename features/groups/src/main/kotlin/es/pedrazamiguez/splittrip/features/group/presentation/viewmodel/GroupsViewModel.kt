@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -46,7 +47,8 @@ class GroupsViewModel(
     getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
     private val deleteGroupUseCase: DeleteGroupUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
-    private val groupUiMapper: GroupUiMapper
+    private val groupUiMapper: GroupUiMapper,
+    private val isUserAnonymousUseCase: IsUserAnonymousUseCase
 ) : ViewModel() {
 
     // Scroll state is managed separately as it's UI-only state
@@ -131,13 +133,15 @@ class GroupsViewModel(
                     )
                 )
             },
-        _scrollState
-    ) { dataState, scrollState ->
+        _scrollState,
+        isUserAnonymousUseCase()
+    ) { dataState, scrollState, isAnonymous ->
         GroupsUiState(
             isLoading = dataState.isLoading,
             groups = dataState.groups,
             scrollPosition = scrollState.position,
-            scrollOffset = scrollState.offset
+            scrollOffset = scrollState.offset,
+            isAnonymous = isAnonymous
         )
     }.stateIn(
         scope = viewModelScope,

@@ -14,6 +14,7 @@
     <string name="login_start_journey">Comienza un viaje</string>
     <string name="login_forgot_password_message">La recuperación de contraseña no está implementada todavía.</string>
     <string name="login_start_journey_message">El registro no está implementado todavía.</string>
+    <string name="login_guest_button">Continuar como invitado</string>
 
     <!-- Register Screen -->
     <string name="register_title">Únete a la expedición</string>
@@ -51,5 +52,6 @@
     <string name="register_collision_dialog_message">Ya existe una cuenta con este correo electrónico a través de Google. ¿Te gustaría ir a la pantalla de inicio de sesión para entrar con Google?</string>
     <string name="register_collision_dialog_confirm">Ir al inicio de sesión</string>
     <string name="register_collision_dialog_cancel">Cancelar</string>
+    <string name="login_error_admin_restricted">El acceso de invitados está desactivado temporalmente por el administrador.</string>
 </resources>
 

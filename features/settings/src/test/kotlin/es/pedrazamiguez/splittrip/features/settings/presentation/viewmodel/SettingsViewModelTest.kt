@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.enums.Currency
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
@@ -37,6 +38,7 @@ class SettingsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var signOutUseCase: SignOutUseCase
+    private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
     private lateinit var getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase
     private lateinit var getAppLanguageUseCase: GetAppLanguageUseCase
     private lateinit var getShouldShowLanguagePillUseCase: GetShouldShowLanguagePillUseCase
@@ -47,12 +49,14 @@ class SettingsViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         signOutUseCase = mockk()
+        isUserAnonymousUseCase = mockk()
         getUserDefaultCurrencyUseCase = mockk()
         getAppLanguageUseCase = mockk()
         getShouldShowLanguagePillUseCase = mockk()
         consumeLanguagePillUseCase = mockk()
         getAppThemeUseCase = mockk()
 
+        every { isUserAnonymousUseCase() } returns flowOf(false)
         every { getAppLanguageUseCase() } returns flowOf(null)
         every { getShouldShowLanguagePillUseCase() } returns flowOf(false)
         every { getAppThemeUseCase() } returns flowOf("system")
@@ -65,6 +69,7 @@ class SettingsViewModelTest {
 
     private fun createViewModel(): SettingsViewModel = SettingsViewModel(
         signOutUseCase = signOutUseCase,
+        isUserAnonymousUseCase = isUserAnonymousUseCase,
         getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
         getAppLanguageUseCase = getAppLanguageUseCase,
         getShouldShowLanguagePillUseCase = getShouldShowLanguagePillUseCase,

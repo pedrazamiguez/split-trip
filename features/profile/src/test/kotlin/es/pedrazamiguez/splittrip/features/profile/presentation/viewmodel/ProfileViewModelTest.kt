@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUiMapper
@@ -13,6 +14,7 @@ import io.mockk.mockk
 import java.time.LocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -36,6 +38,7 @@ class ProfileViewModelTest {
 
     private lateinit var getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase
     private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
+    private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
     private lateinit var profileUiMapper: ProfileUiMapper
     private lateinit var viewModel: ProfileViewModel
 
@@ -59,9 +62,11 @@ class ProfileViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getCurrentUserProfileUseCase = mockk()
         observeCurrentUserProfileUseCase = mockk()
+        isUserAnonymousUseCase = mockk()
         profileUiMapper = mockk()
 
-        every { observeCurrentUserProfileUseCase() } returns kotlinx.coroutines.flow.flowOf(null)
+        every { isUserAnonymousUseCase() } returns flowOf(false)
+        every { observeCurrentUserProfileUseCase() } returns flowOf(null)
         every { profileUiMapper.toProfileUiModel(testUser) } returns testProfileUiModel
     }
 
@@ -74,6 +79,7 @@ class ProfileViewModelTest {
         viewModel = ProfileViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            isUserAnonymousUseCase = isUserAnonymousUseCase,
             profileUiMapper = profileUiMapper
         )
     }

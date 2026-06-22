@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.authentication.di
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SendPasswordResetEmailUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
@@ -38,10 +39,12 @@ val authenticationUiModule = module {
     viewModel {
         val signInWithEmailUseCase = get<SignInWithEmailUseCase>()
         val signInWithGoogleUseCase = get<SignInWithGoogleUseCase>()
+        val signInAnonymouslyUseCase = get<SignInAnonymouslyUseCase>()
         val authenticationCollisionEventHandler = get<AuthenticationCollisionEventHandler>()
         AuthenticationViewModel(
             signInWithEmailUseCase = signInWithEmailUseCase,
             signInWithGoogleUseCase = signInWithGoogleUseCase,
+            signInAnonymouslyUseCase = signInAnonymouslyUseCase,
             authenticationCollisionEventHandler = authenticationCollisionEventHandler
         )
     }

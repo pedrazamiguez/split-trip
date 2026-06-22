@@ -184,4 +184,10 @@
     <string name="account_status_delete_request_submitted">La solicitud de eliminación de cuenta ha sido enviada</string>
     <string name="account_status_linked">Vinculado</string>
     <string name="account_status_not_linked">No vinculado</string>
+    <string name="account_status_guest_label">Cuenta de invitado</string>
+    <string name="account_status_guest_warning">Tu sesión se guarda de forma local. Vincula una cuenta de Google o Email para evitar perder datos.</string>
+    <string name="account_status_link_email_dialog_email">Dirección de correo electrónico</string>
+    <string name="account_status_link_email_dialog_error_email_empty">El correo no puede estar vacío</string>
+    <string name="settings_logout_guest_dialog_title">¿Restablecer sesión de invitado?</string>
+    <string name="settings_logout_guest_dialog_text">Cerrar sesión o restablecer borrará de forma permanente todos los viajes, gastos y saldos locales. ¡Asegúrate de vincular tu cuenta antes para guardar tus datos!</string>
 </resources>

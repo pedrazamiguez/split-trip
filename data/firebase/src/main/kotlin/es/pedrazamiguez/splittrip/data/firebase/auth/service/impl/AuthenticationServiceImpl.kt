@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.firebase.auth.service.impl
 import android.util.Base64
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -10,6 +11,7 @@ import com.google.firebase.auth.UserProfileChangeRequest
 import es.pedrazamiguez.splittrip.core.common.extensions.toLocalDateTimeUtc
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
+import es.pedrazamiguez.splittrip.domain.exception.AdminRestrictedOperationException
 import es.pedrazamiguez.splittrip.domain.exception.EmailCollisionException
 import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -170,10 +172,23 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun signInAnonymously(): Result<String> = runCatching {
-        firebaseAuth.signInAnonymously().await().user?.uid ?: ""
+        try {
+            firebaseAuth.signInAnonymously().await().user?.uid ?: ""
+        } catch (e: FirebaseAuthException) {
+            if (e.errorCode == "ERROR_ADMIN_RESTRICTED_OPERATION") {
+                throw AdminRestrictedOperationException(e)
+            }
+            throw e
+        }
     }
 
     override fun currentUserEmail(): String? = firebaseAuth.currentUser?.email
+
+    override fun currentUserDisplayName(): String? = firebaseAuth.currentUser?.displayName
+
+    override fun currentUserPhotoUrl(): String? = firebaseAuth.currentUser?.photoUrl?.toString()
+
+    override fun isAnonymous(): Boolean = firebaseAuth.currentUser?.isAnonymous == true
 
     private fun requireCurrentUser(): FirebaseUser =
         firebaseAuth.currentUser ?: error("No active user")

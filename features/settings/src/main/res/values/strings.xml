@@ -185,4 +185,10 @@
     <string name="account_status_delete_request_submitted">Account deletion request has been submitted</string>
     <string name="account_status_linked">Linked</string>
     <string name="account_status_not_linked">Not linked</string>
+    <string name="account_status_guest_label">Guest Account</string>
+    <string name="account_status_guest_warning">Your session is saved locally. Please link a Google or Email account to prevent data loss.</string>
+    <string name="account_status_link_email_dialog_email">Email Address</string>
+    <string name="account_status_link_email_dialog_error_email_empty">Email cannot be empty</string>
+    <string name="settings_logout_guest_dialog_title">Reset Guest Session?</string>
+    <string name="settings_logout_guest_dialog_text">Resetting or logging out will permanently delete all local trips, expenses, and balances. Make sure you link your account first to save your data!</string>
 </resources>

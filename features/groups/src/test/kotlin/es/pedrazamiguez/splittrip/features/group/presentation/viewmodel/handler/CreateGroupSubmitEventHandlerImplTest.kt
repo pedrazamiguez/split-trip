@@ -2,15 +2,21 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
+import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -27,6 +33,8 @@ class CreateGroupSubmitEventHandlerImplTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var createGroupUseCase: CreateGroupUseCase
+    private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
+    private lateinit var featureGateService: FeatureGateService
     private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var handler: CreateGroupSubmitEventHandlerImpl
     private lateinit var stateFlow: MutableStateFlow<CreateGroupUiState>
@@ -35,8 +43,19 @@ class CreateGroupSubmitEventHandlerImplTest {
     @BeforeEach
     fun setUp() {
         createGroupUseCase = mockk(relaxed = true)
+        getUserGroupsFlowUseCase = mockk(relaxed = true)
+        featureGateService = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
-        handler = CreateGroupSubmitEventHandlerImpl(createGroupUseCase, telemetryTracker)
+
+        every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
+        coEvery { featureGateService.checkLimit(any(), any()) } returns flowOf(LimitResult.Allowed)
+
+        handler = CreateGroupSubmitEventHandlerImpl(
+            createGroupUseCase = createGroupUseCase,
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            featureGateService = featureGateService,
+            telemetryTracker = telemetryTracker
+        )
         stateFlow = MutableStateFlow(CreateGroupUiState())
         actionsFlow = MutableSharedFlow()
     }
@@ -120,5 +139,49 @@ class CreateGroupSubmitEventHandlerImplTest {
         assertTrue(actions[0] is CreateGroupUiAction.ShowError)
 
         collectJob.cancel()
+    }
+
+    @Test
+    fun `handleSubmit blocks when MAX_GROUPS_COUNT is blocked`() = runTest(testDispatcher) {
+        // Given
+        handler.bind(stateFlow, actionsFlow, this)
+        stateFlow.value = stateFlow.value.copy(groupName = "My Group")
+        coEvery { featureGateService.checkLimit(GatedLimit.MAX_GROUPS_COUNT, any()) } returns
+            flowOf(LimitResult.Blocked(GatedLimit.MAX_GROUPS_COUNT, true))
+
+        var callbackCalled = false
+
+        // When
+        handler.handleSubmit { callbackCalled = true }
+        advanceUntilIdle()
+
+        // Then
+        coVerify(exactly = 0) { createGroupUseCase(any(), any()) }
+        assertFalse(callbackCalled)
+        assertFalse(stateFlow.value.isLoading)
+        assertNotNull(stateFlow.value.error)
+    }
+
+    @Test
+    fun `handleSubmit blocks when MAX_MEMBERS_PER_GROUP is blocked`() = runTest(testDispatcher) {
+        // Given
+        handler.bind(stateFlow, actionsFlow, this)
+        stateFlow.value = stateFlow.value.copy(groupName = "My Group")
+        coEvery { featureGateService.checkLimit(GatedLimit.MAX_GROUPS_COUNT, any()) } returns
+            flowOf(LimitResult.Allowed)
+        coEvery { featureGateService.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, any()) } returns
+            flowOf(LimitResult.Blocked(GatedLimit.MAX_MEMBERS_PER_GROUP, true))
+
+        var callbackCalled = false
+
+        // When
+        handler.handleSubmit { callbackCalled = true }
+        advanceUntilIdle()
+
+        // Then
+        coVerify(exactly = 0) { createGroupUseCase(any(), any()) }
+        assertFalse(callbackCalled)
+        assertFalse(stateFlow.value.isLoading)
+        assertNotNull(stateFlow.value.error)
     }
 }

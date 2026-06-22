@@ -31,7 +31,8 @@ internal fun LoginFormCard(
     isGoogleSignInAvailable: Boolean,
     onEvent: (AuthenticationUiEvent) -> Unit,
     onGoogleSignInClick: () -> Unit,
-    onForgotPasswordClick: () -> Unit
+    onForgotPasswordClick: () -> Unit,
+    onContinueAsGuestClick: () -> Unit
 ) {
     val cardColor = MaterialTheme.colorScheme.surfaceContainer
 
@@ -76,6 +77,16 @@ internal fun LoginFormCard(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
+
+            SecondaryButton(
+                text = stringResource(R.string.login_guest_button),
+                onClick = onContinueAsGuestClick,
+                enabled = !anyLoading,
+                isLoading = uiState.isGuestLoading,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             if (uiState.error != null) {
                 LoginErrorText(errorMessage = uiState.error.asString())

@@ -30,7 +30,8 @@ data class CreateGroupUiState(
     // ── Wizard ──────────────────────────────────────────────────────────
     val currentStep: CreateGroupStep = CreateGroupStep.INFO,
     val localGroupImagePath: String? = null,
-    val showImageSourceSheet: Boolean = false
+    val showImageSourceSheet: Boolean = false,
+    val isCoverUploadEnabled: Boolean = true
 ) {
     val steps: List<CreateGroupStep>
         get() = if (selectedMembers.any { it.isPending }) {
