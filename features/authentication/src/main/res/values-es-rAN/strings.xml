@@ -45,4 +45,5 @@
     <string name="register_collision_dialog_message">Ya êççîtte una cuenta con êtte correo elêttrónico a trabêh de Google. ¿Te gûttaría îh a la pantaya de iniçio de çeçión pa entrâh con Google?</string>
     <string name="register_collision_dialog_confirm">Îh al iniçio de çeçión</string>
     <string name="register_collision_dialog_cancel">Cançelâh</string>
+    <string name="login_error_admin_restricted">El âççeço de imbitáô êttá deçâttibao temporarmente por el âmminîttradôh.</string>
 </resources>

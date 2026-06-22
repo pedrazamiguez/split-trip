@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.domain.exception.AdminRestrictedOperationException
 import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
@@ -163,9 +164,17 @@ class AuthenticationViewModel(
                     onLoginSuccess()
                 }
                 .onFailure { e ->
+                    val errorText = when (e) {
+                        is AdminRestrictedOperationException -> {
+                            UiText.StringResource(R.string.login_error_admin_restricted)
+                        }
+                        else -> {
+                            UiText.DynamicString(e.message ?: "Guest login failed")
+                        }
+                    }
                     _uiState.update {
                         it.copy(
-                            error = UiText.DynamicString(e.message ?: "Guest login failed"),
+                            error = errorText,
                             isGuestLoading = false
                         )
                     }

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.exception.AdminRestrictedOperationException
 import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
@@ -375,6 +376,24 @@ class AuthenticationViewModelTest {
             assertNotNull(error)
             assertTrue(error is UiText.DynamicString)
             assertEquals("Anonymous sign-in failed", (error as UiText.DynamicString).value)
+        }
+
+        @Test
+        fun `admin restricted failure sets localized error in state`() = runTest(testDispatcher) {
+            coEvery {
+                signInAnonymouslyUseCase()
+            } returns Result.failure(AdminRestrictedOperationException())
+
+            viewModel.onEvent(
+                AuthenticationUiEvent.ContinueAsGuest
+            ) {}
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isGuestLoading)
+            val error = viewModel.uiState.value.error
+            assertNotNull(error)
+            assertTrue(error is UiText.StringResource)
+            assertEquals(R.string.login_error_admin_restricted, (error as UiText.StringResource).resId)
         }
     }
 }

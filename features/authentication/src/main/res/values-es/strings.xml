@@ -52,5 +52,6 @@
     <string name="register_collision_dialog_message">Ya existe una cuenta con este correo electrónico a través de Google. ¿Te gustaría ir a la pantalla de inicio de sesión para entrar con Google?</string>
     <string name="register_collision_dialog_confirm">Ir al inicio de sesión</string>
     <string name="register_collision_dialog_cancel">Cancelar</string>
+    <string name="login_error_admin_restricted">El acceso de invitados está desactivado temporalmente por el administrador.</string>
 </resources>
 

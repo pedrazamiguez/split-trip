@@ -4,9 +4,11 @@ import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
+import es.pedrazamiguez.splittrip.domain.exception.AdminRestrictedOperationException
 import es.pedrazamiguez.splittrip.domain.model.User
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -415,6 +417,58 @@ class AuthenticationServiceImplTest {
             assertEquals(2, providers.size)
             assertTrue(providers.contains(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.EMAIL_PASSWORD))
             assertTrue(providers.contains(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.GOOGLE))
+        }
+    }
+
+    @Nested
+    inner class SignInAnonymously {
+
+        @Test
+        fun `signInAnonymously returns uid on success`() = runTest {
+            // Given
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.uid } returns testUserId
+            val authResult = mockk<AuthResult>()
+            every { authResult.user } returns firebaseUser
+            every { firebaseAuth.signInAnonymously() } returns Tasks.forResult(authResult)
+
+            // When
+            val result = service.signInAnonymously()
+
+            // Then
+            assertTrue(result.isSuccess)
+            assertEquals(testUserId, result.getOrNull())
+        }
+
+        @Test
+        fun `signInAnonymously throws AdminRestrictedOperationException on restriction`() =
+            runTest {
+                // Given
+                val firebaseException = mockk<FirebaseAuthException>()
+                every { firebaseException.errorCode } returns "ERROR_ADMIN_RESTRICTED_OPERATION"
+                every { firebaseAuth.signInAnonymously() } returns Tasks.forException(firebaseException)
+
+                // When
+                val result = service.signInAnonymously()
+
+                // Then
+                assertTrue(result.isFailure)
+                assertTrue(result.exceptionOrNull() is AdminRestrictedOperationException)
+            }
+
+        @Test
+        fun `signInAnonymously propagates other FirebaseAuthException errors`() = runTest {
+            // Given
+            val firebaseException = mockk<FirebaseAuthException>()
+            every { firebaseException.errorCode } returns "ERROR_OTHER"
+            every { firebaseAuth.signInAnonymously() } returns Tasks.forException(firebaseException)
+
+            // When
+            val result = service.signInAnonymously()
+
+            // Then
+            assertTrue(result.isFailure)
+            assertEquals(firebaseException, result.exceptionOrNull())
         }
     }
 }
