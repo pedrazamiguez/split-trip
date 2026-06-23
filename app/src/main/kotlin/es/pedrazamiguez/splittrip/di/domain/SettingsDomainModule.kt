@@ -1,9 +1,12 @@
 package es.pedrazamiguez.splittrip.di.domain
 
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.service.impl.AppConfigServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
@@ -197,6 +200,12 @@ val settingsDomainModule = module {
     factory<SetAppThemeUseCase> {
         SetAppThemeUseCaseImpl(
             preferenceRepository = get<UserPreferenceRepository>()
+        )
+    }
+
+    single<AppConfigService> {
+        AppConfigServiceImpl(
+            appConfigRepository = get<AppConfigRepository>()
         )
     }
 }

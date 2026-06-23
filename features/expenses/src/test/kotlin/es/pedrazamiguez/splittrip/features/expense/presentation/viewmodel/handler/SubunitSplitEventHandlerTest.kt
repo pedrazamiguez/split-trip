@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
@@ -121,6 +122,9 @@ class SubunitSplitEventHandlerTest {
         val localeProvider = mockk<LocaleProvider>()
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
+        val appConfigService = mockk<AppConfigService>()
+        every { appConfigService.defaultCurrencyCode } returns MutableStateFlow("EUR")
+
         val splitPreviewService = SplitPreviewServiceImpl()
         val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
         val formattingHelper = FormattingHelper(localeProvider)
@@ -148,7 +152,8 @@ class SubunitSplitEventHandlerTest {
                 EntitySplitFlattenDelegate(splitPreviewService, remainderDistributionService)
             ),
             intraSubunitSplitDelegate = intraSubunitSplitDelegate,
-            splitRowMappingDelegate = splitRowMappingDelegate
+            splitRowMappingDelegate = splitRowMappingDelegate,
+            appConfigService = appConfigService
         )
 
         uiState = MutableStateFlow(baseEntityState)

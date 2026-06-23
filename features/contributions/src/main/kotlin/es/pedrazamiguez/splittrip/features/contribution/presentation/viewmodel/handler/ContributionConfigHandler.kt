@@ -1,10 +1,10 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
@@ -35,7 +35,8 @@ class ContributionConfigHandler(
     private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val authenticationService: AuthenticationService,
-    private val addContributionUiMapper: AddContributionUiMapper
+    private val addContributionUiMapper: AddContributionUiMapper,
+    private val appConfigService: AppConfigService
 ) : AddContributionEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddContributionUiState>
@@ -46,7 +47,7 @@ class ContributionConfigHandler(
     private var allSubunits: List<Subunit> = emptyList()
 
     /** Current group currency code — set synchronously from SharedViewModel. */
-    var groupCurrency: String = AppConstants.DEFAULT_CURRENCY_CODE
+    var groupCurrency: String = appConfigService.defaultCurrencyCode.value
         private set
 
     /** The currently loaded group ID — used to avoid redundant reloads. */
@@ -72,7 +73,7 @@ class ContributionConfigHandler(
      * [loadGroupConfig] completes, ensuring the currency symbol is visible on frame 1.
      */
     fun setGroupCurrency(currency: String?) {
-        val resolvedCurrency = currency ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val resolvedCurrency = currency ?: appConfigService.defaultCurrencyCode.value
         groupCurrency = resolvedCurrency
         val symbol = addContributionUiMapper.resolveCurrencySymbol(resolvedCurrency)
         _uiState.update {
@@ -96,7 +97,7 @@ class ContributionConfigHandler(
         loadConfigJob = scope.launch {
             try {
                 val group = getGroupByIdUseCase(groupId)
-                val currency = group?.currency ?: AppConstants.DEFAULT_CURRENCY_CODE
+                val currency = group?.currency ?: appConfigService.defaultCurrencyCode.value
                 groupCurrency = currency
 
                 val currentUserId = authenticationService.currentUserId()

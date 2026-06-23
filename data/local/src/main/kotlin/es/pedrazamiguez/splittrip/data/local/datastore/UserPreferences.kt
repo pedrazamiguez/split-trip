@@ -4,18 +4,23 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 private const val MAX_RECENT_ITEMS = 3
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("TooManyFunctions")
 class UserPreferences(
     context: Context,
-    authenticationService: AuthenticationService
+    authenticationService: AuthenticationService,
+    private val appConfigRepository: AppConfigRepository
 ) : BaseUserPreferences(context, authenticationService) {
 
     private companion object {
@@ -170,9 +175,13 @@ class UserPreferences(
     // ── Default Currency (User-scoped, auth-reactive) ────────────────────
 
     val defaultCurrency: Flow<String> = userScopedFlow { userId ->
-        context.dataStore.data.map { prefs ->
-            prefs[stringPreferencesKey("${userId}_$DEFAULT_CURRENCY")]
-                ?: AppConstants.DEFAULT_CURRENCY_CODE
+        context.dataStore.data.flatMapLatest { prefs ->
+            val customCurrency = prefs[stringPreferencesKey("${userId}_$DEFAULT_CURRENCY")]
+            if (customCurrency != null) {
+                flowOf(customCurrency)
+            } else {
+                appConfigRepository.defaultCurrencyCode
+            }
         }
     }
 

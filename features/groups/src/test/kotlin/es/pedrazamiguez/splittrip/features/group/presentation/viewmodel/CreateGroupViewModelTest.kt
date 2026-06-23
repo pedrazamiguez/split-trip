@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -32,6 +33,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -66,6 +68,7 @@ class CreateGroupViewModelTest {
     private lateinit var groupUiMapper: GroupUiMapper
     private lateinit var groupImageStorageService: GroupImageStorageService
     private lateinit var telemetryTracker: TelemetryTracker
+    private lateinit var appConfigService: AppConfigService
     private lateinit var viewModel: CreateGroupViewModel
 
     private val testUser1 = User(
@@ -94,6 +97,9 @@ class CreateGroupViewModelTest {
         groupImageStorageService = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
         emailValidationService = EmailValidationServiceImpl()
+        appConfigService = mockk(relaxed = true) {
+            every { defaultCurrencyCode } returns MutableStateFlow("EUR")
+        }
 
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
         every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
@@ -112,7 +118,8 @@ class CreateGroupViewModelTest {
             createGroupUseCase = createGroupUseCase,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             featureGateService = featureGateService,
-            telemetryTracker = telemetryTracker
+            telemetryTracker = telemetryTracker,
+            appConfigService = appConfigService
         )
         return CreateGroupViewModel(
             createGroupNavigationEventHandler = navigationEventHandler,
@@ -125,6 +132,7 @@ class CreateGroupViewModelTest {
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
             featureGateService = featureGateService,
+            appConfigService = appConfigService,
             defaultDispatcher = testDispatcher
         )
     }

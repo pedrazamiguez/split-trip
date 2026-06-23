@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
@@ -36,6 +37,7 @@ class CreateGroupSubmitEventHandlerImplTest {
     private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
     private lateinit var featureGateService: FeatureGateService
     private lateinit var telemetryTracker: TelemetryTracker
+    private lateinit var appConfigService: AppConfigService
     private lateinit var handler: CreateGroupSubmitEventHandlerImpl
     private lateinit var stateFlow: MutableStateFlow<CreateGroupUiState>
     private lateinit var actionsFlow: MutableSharedFlow<CreateGroupUiAction>
@@ -46,6 +48,9 @@ class CreateGroupSubmitEventHandlerImplTest {
         getUserGroupsFlowUseCase = mockk(relaxed = true)
         featureGateService = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
+        appConfigService = mockk(relaxed = true) {
+            every { defaultCurrencyCode } returns MutableStateFlow("EUR")
+        }
 
         every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
         coEvery { featureGateService.checkLimit(any(), any()) } returns flowOf(LimitResult.Allowed)
@@ -54,7 +59,8 @@ class CreateGroupSubmitEventHandlerImplTest {
             createGroupUseCase = createGroupUseCase,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             featureGateService = featureGateService,
-            telemetryTracker = telemetryTracker
+            telemetryTracker = telemetryTracker,
+            appConfigService = appConfigService
         )
         stateFlow = MutableStateFlow(CreateGroupUiState())
         actionsFlow = MutableSharedFlow()

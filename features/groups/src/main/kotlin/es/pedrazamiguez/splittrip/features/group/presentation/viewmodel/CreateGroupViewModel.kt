@@ -2,11 +2,11 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
@@ -52,6 +52,7 @@ class CreateGroupViewModel(
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
     private val featureGateService: FeatureGateService,
+    private val appConfigService: AppConfigService,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -218,7 +219,7 @@ class CreateGroupViewModel(
                 withContext(defaultDispatcher) {
                     val userDefaultCurrency =
                         getUserDefaultCurrencyUseCase().firstOrNull()
-                            ?: AppConstants.DEFAULT_CURRENCY_CODE
+                            ?: appConfigService.defaultCurrencyCode.value
 
                     val sortedCurrencies = getSupportedCurrenciesUseCase().getOrThrow()
                     val mappedCurrencies = groupUiMapper.toCurrencyUiModels(sortedCurrencies)
