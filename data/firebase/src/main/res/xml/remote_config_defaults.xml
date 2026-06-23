@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defaultsMap xmlns:android="http://schemas.android.com/apk/res/android">
+    <entry>
+        <key>default_currency_code</key>
+        <value>EUR</value>
+    </entry>
+    <entry>
+        <key>balance_computation_debounce_ms</key>
+        <value>300</value>
+    </entry>
+</defaultsMap>

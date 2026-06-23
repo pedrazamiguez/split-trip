@@ -5,9 +5,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.storage.FirebaseStorage
 import es.pedrazamiguez.splittrip.core.common.provider.AppMetadataProvider
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.core.common.provider.RemoteConfigProvider
 import es.pedrazamiguez.splittrip.data.firebase.auth.service.impl.AuthenticationServiceImpl
 import es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl.FirestoreCashWithdrawalDataSourceImpl
 import es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl.FirestoreContributionDataSourceImpl
@@ -19,6 +21,7 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl.Firest
 import es.pedrazamiguez.splittrip.data.firebase.installation.service.impl.CloudMetadataServiceImpl
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.factory.NotificationHandlerFactory
 import es.pedrazamiguez.splittrip.data.firebase.messaging.repository.impl.FirebaseDeviceRepositoryImpl
+import es.pedrazamiguez.splittrip.data.firebase.provider.FirebaseRemoteConfigProvider
 import es.pedrazamiguez.splittrip.data.firebase.storage.CloudStorageDataSourceImpl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
@@ -37,6 +40,14 @@ import org.koin.dsl.module
 val dataFirebaseModule = module {
 
     single { FirebaseAppCheck.getInstance() }
+
+    single<FirebaseRemoteConfig> { FirebaseRemoteConfig.getInstance() }
+
+    single<RemoteConfigProvider> {
+        FirebaseRemoteConfigProvider(
+            firebaseRemoteConfig = get<FirebaseRemoteConfig>()
+        )
+    }
 
     single<FirebaseAuth> { FirebaseAuth.getInstance() }
 

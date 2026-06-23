@@ -1,7 +1,17 @@
 package es.pedrazamiguez.splittrip.core.common.constant
 
+import es.pedrazamiguez.splittrip.core.common.provider.RemoteConfigProvider
+
 object AppConstants {
-    const val DEFAULT_CURRENCY_CODE = "EUR"
+    private const val FALLBACK_DEFAULT_CURRENCY_CODE = "EUR"
+    private const val FALLBACK_BALANCE_COMPUTATION_DEBOUNCE_MS = 300L
+
+    @Volatile
+    var remoteConfigProvider: RemoteConfigProvider? = null
+
+    val DEFAULT_CURRENCY_CODE: String
+        get() = remoteConfigProvider?.getString("default_currency_code") ?: FALLBACK_DEFAULT_CURRENCY_CODE
+
     const val FLOW_RETENTION_TIME = 5_000L
 
     /**
@@ -41,5 +51,7 @@ object AppConstants {
      * (which completes in < 100 ms on Room's IO dispatcher) while keeping the UI
      * responsive to genuine user-initiated changes.
      */
-    const val BALANCE_COMPUTATION_DEBOUNCE_MS = 300L
+    val BALANCE_COMPUTATION_DEBOUNCE_MS: Long
+        get() = remoteConfigProvider?.getLong("balance_computation_debounce_ms")
+            ?: FALLBACK_BALANCE_COMPUTATION_DEBOUNCE_MS
 }
