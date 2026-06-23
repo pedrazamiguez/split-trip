@@ -67,16 +67,22 @@ class CreateGroupSubmitEventHandlerImpl(
                                     createGroup(onCreateGroupSuccess)
                                 }
                                 is LimitResult.Blocked -> {
+                                    val errorRes = if (memberLimitResult.upgradeRequired) {
+                                        UiText.StringResource(R.string.group_error_limit_members_exceeded)
+                                    } else {
+                                        UiText.StringResource(
+                                            R.string.group_error_limit_members_registered_exceeded,
+                                            appConfigService.maxMembersPerGroup.value
+                                        )
+                                    }
                                     _uiState.update {
                                         it.copy(
                                             isLoading = false,
-                                            error = UiText.StringResource(R.string.group_error_limit_members_exceeded)
+                                            error = errorRes
                                         )
                                     }
                                     _actions.emit(
-                                        CreateGroupUiAction.ShowError(
-                                            UiText.StringResource(R.string.group_error_limit_members_exceeded)
-                                        )
+                                        CreateGroupUiAction.ShowError(errorRes)
                                     )
                                 }
                             }

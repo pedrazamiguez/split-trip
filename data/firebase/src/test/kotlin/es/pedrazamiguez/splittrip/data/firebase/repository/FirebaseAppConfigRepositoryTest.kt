@@ -47,15 +47,17 @@ class FirebaseAppConfigRepositoryTest {
     }
 
     @Test
-    fun `defaultCurrencyCode and balanceComputationDebounceMs expose values from config`() {
+    fun `defaultCurrencyCode, balanceComputationDebounceMs and maxMembersPerGroup expose values from config`() {
         every { firebaseRemoteConfig.getString("default_currency_code") } returns "USD"
         every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 500L
+        every { firebaseRemoteConfig.getLong("max_members_per_group") } returns 15L
 
         // Trigger updates
         repository = FirebaseAppConfigRepository(firebaseRemoteConfig)
 
         assertEquals("USD", repository.defaultCurrencyCode.value)
         assertEquals(500L, repository.balanceComputationDebounceMs.value)
+        assertEquals(15, repository.maxMembersPerGroup.value)
     }
 
     @Test
@@ -67,12 +69,14 @@ class FirebaseAppConfigRepositoryTest {
 
         every { firebaseRemoteConfig.getString("default_currency_code") } returns "GBP"
         every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 100L
+        every { firebaseRemoteConfig.getLong("max_members_per_group") } returns 25L
 
         val result = repository.fetchConfiguration()
 
         assertTrue(result)
         assertEquals("GBP", repository.defaultCurrencyCode.value)
         assertEquals(100L, repository.balanceComputationDebounceMs.value)
+        assertEquals(25, repository.maxMembersPerGroup.value)
         verify(exactly = 1) { firebaseRemoteConfig.fetchAndActivate() }
     }
 

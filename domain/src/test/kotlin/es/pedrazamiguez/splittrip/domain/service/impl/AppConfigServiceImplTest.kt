@@ -15,8 +15,10 @@ class AppConfigServiceImplTest {
         val repository = mockk<AppConfigRepository>()
         val defaultCurrencyFlow = MutableStateFlow("EUR")
         val debounceFlow = MutableStateFlow(300L)
+        val maxMembersFlow = MutableStateFlow(20)
         every { repository.defaultCurrencyCode } returns defaultCurrencyFlow
         every { repository.balanceComputationDebounceMs } returns debounceFlow
+        every { repository.maxMembersPerGroup } returns maxMembersFlow
 
         // When
         val service = AppConfigServiceImpl(repository)
@@ -24,7 +26,9 @@ class AppConfigServiceImplTest {
         // Then
         assertEquals(defaultCurrencyFlow, service.defaultCurrencyCode)
         assertEquals(debounceFlow, service.balanceComputationDebounceMs)
+        assertEquals(maxMembersFlow, service.maxMembersPerGroup)
         assertEquals("EUR", service.defaultCurrencyCode.value)
         assertEquals(300L, service.balanceComputationDebounceMs.value)
+        assertEquals(20, service.maxMembersPerGroup.value)
     }
 }

@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.data.service.FeatureGateServiceImpl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -22,7 +23,8 @@ val authenticationDataModule = module {
 
     single<FeatureGateService> {
         FeatureGateServiceImpl(
-            authenticationService = get<AuthenticationService>()
+            authenticationService = get<AuthenticationService>(),
+            appConfigRepository = get<AppConfigRepository>()
         )
     }
 }

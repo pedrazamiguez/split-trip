@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 private object DefaultAppConfigService : AppConfigService {
     override val defaultCurrencyCode: StateFlow<String> = MutableStateFlow("EUR")
     override val balanceComputationDebounceMs: StateFlow<Long> = MutableStateFlow(300L)
+    override val maxMembersPerGroup: StateFlow<Int> = MutableStateFlow(20)
 }
 
 /**
