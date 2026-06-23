@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.model.Currency as DomainCurrency
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -22,12 +21,15 @@ fun Expense.formatAmount(locale: Locale = Locale.getDefault()): String =
 fun Expense.formatSourceAmount(locale: Locale = Locale.getDefault()): String =
     formatCurrencyAmount(amount = sourceAmount, currencyCode = sourceCurrency, locale = locale)
 
-fun formatCurrencyAmount(amount: Long, currencyCode: String, locale: Locale): String {
+fun formatCurrencyAmount(
+    amount: Long,
+    currencyCode: String,
+    locale: Locale,
+    defaultCurrencyCode: String = "EUR"
+): String {
     val currencyInstance =
         runCatching { Currency.getInstance(currencyCode) }.getOrElse {
-            Currency.getInstance(
-                AppConstants.DEFAULT_CURRENCY_CODE
-            )
+            Currency.getInstance(defaultCurrencyCode)
         }
     val fractionDigits = currencyInstance.defaultFractionDigits
     val divisor = BigDecimal.TEN.pow(fractionDigits)
@@ -131,11 +133,11 @@ private fun resolveNativeSymbol(currency: Currency): String? {
     return symbol.takeIf { it != currency.currencyCode }
 }
 
-fun DomainCurrency.formatDisplay(): String {
+fun DomainCurrency.formatDisplay(defaultCurrencyCode: String = "EUR"): String {
     val currencyInstance =
         runCatching { Currency.getInstance(code) }.getOrElse {
             Currency.getInstance(
-                AppConstants.DEFAULT_CURRENCY_CODE
+                defaultCurrencyCode
             )
         }
     var nativeSymbol = resolveNativeSymbol(currencyInstance)
@@ -170,13 +172,17 @@ fun DomainCurrency.formatDisplay(): String {
  * @param currencyCode ISO 4217 currency code used to determine decimal places
  * @return Amount in the currency's smallest unit, or 0 if input is unparseable
  */
-fun parseAmountToSmallestUnit(amountString: String, currencyCode: String): Long {
+fun parseAmountToSmallestUnit(
+    amountString: String,
+    currencyCode: String,
+    defaultCurrencyCode: String = "EUR"
+): Long {
     val normalizedString = CurrencyConverter.normalizeAmountString(amountString.trim())
     val amount = normalizedString.toBigDecimalOrNull() ?: BigDecimal.ZERO
     val decimalPlaces = runCatching {
         Currency.getInstance(currencyCode).defaultFractionDigits
     }.getOrElse {
-        Currency.getInstance(AppConstants.DEFAULT_CURRENCY_CODE).defaultFractionDigits
+        Currency.getInstance(defaultCurrencyCode).defaultFractionDigits
     }
     val multiplier = BigDecimal.TEN.pow(decimalPlaces)
     return amount.multiply(multiplier).setScale(0, RoundingMode.HALF_UP).toLong()

@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
@@ -44,6 +45,7 @@ val balancesUiModule = module {
     viewModel {
         val deleteContributionUseCase = get<DeleteContributionUseCase>()
         val deleteCashWithdrawalUseCase = get<DeleteCashWithdrawalUseCase>()
+        val appConfigService = get<AppConfigService>()
 
         val balancesActivityEventHandler: BalancesActivityEventHandler =
             BalancesActivityEventHandlerImpl(
@@ -69,6 +71,7 @@ val balancesUiModule = module {
             authenticationService = get<AuthenticationService>(),
             balancesUiMapper = get<BalancesUiMapper>(),
             activityEventHandler = balancesActivityEventHandler,
+            appConfigService = appConfigService,
             computationDispatcher = Dispatchers.Default
         )
     }

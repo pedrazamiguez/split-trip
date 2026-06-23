@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
@@ -40,6 +41,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -77,6 +79,7 @@ class BalancesViewModelTest {
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var deleteContributionUseCase: DeleteContributionUseCase
     private lateinit var deleteCashWithdrawalUseCase: DeleteCashWithdrawalUseCase
+    private lateinit var appConfigService: AppConfigService
     private lateinit var viewModel: BalancesViewModel
 
     private val testGroupId = "group-123"
@@ -137,6 +140,10 @@ class BalancesViewModelTest {
         getMemberProfilesUseCase = mockk()
         deleteContributionUseCase = mockk(relaxed = true)
         deleteCashWithdrawalUseCase = mockk(relaxed = true)
+        appConfigService = mockk(relaxed = true) {
+            every { defaultCurrencyCode } returns MutableStateFlow("EUR")
+            every { balanceComputationDebounceMs } returns MutableStateFlow(300L)
+        }
 
         // Default mock for getGroupByIdUseCase
         coEvery { getGroupByIdUseCase(testGroupId) } returns testGroup
@@ -760,6 +767,7 @@ class BalancesViewModelTest {
             deleteContributionUseCase = deleteContributionUseCase,
             deleteCashWithdrawalUseCase = deleteCashWithdrawalUseCase
         ),
+        appConfigService = appConfigService,
         computationDispatcher = testDispatcher
     )
 }

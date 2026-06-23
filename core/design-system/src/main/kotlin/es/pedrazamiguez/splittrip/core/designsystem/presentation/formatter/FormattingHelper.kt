@@ -1,8 +1,16 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+private object DefaultAppConfigService : AppConfigService {
+    override val defaultCurrencyCode: StateFlow<String> = MutableStateFlow("EUR")
+    override val balanceComputationDebounceMs: StateFlow<Long> = MutableStateFlow(300L)
+}
 
 /**
  * Shared formatting helper that wraps [LocaleProvider] and provides locale-aware
@@ -12,7 +20,8 @@ import java.time.LocalDateTime
  * Delegates to the existing top-level extension functions in `:core:design-system`.
  */
 class FormattingHelper(
-    private val localeProvider: LocaleProvider
+    private val localeProvider: LocaleProvider,
+    private val appConfigService: AppConfigService = DefaultAppConfigService
 ) {
 
     /**
@@ -50,7 +59,8 @@ class FormattingHelper(
         formatCurrencyAmount(
             amount = cents,
             currencyCode = currencyCode,
-            locale = localeProvider.getCurrentLocale()
+            locale = localeProvider.getCurrentLocale(),
+            defaultCurrencyCode = appConfigService.defaultCurrencyCode.value
         )
 
     /**

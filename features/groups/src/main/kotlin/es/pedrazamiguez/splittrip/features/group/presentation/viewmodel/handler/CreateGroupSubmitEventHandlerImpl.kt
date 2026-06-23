@@ -1,9 +1,9 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
@@ -24,7 +24,8 @@ class CreateGroupSubmitEventHandlerImpl(
     private val createGroupUseCase: CreateGroupUseCase,
     private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
     private val featureGateService: FeatureGateService,
-    private val telemetryTracker: TelemetryTracker
+    private val telemetryTracker: TelemetryTracker,
+    private val appConfigService: AppConfigService
 ) : CreateGroupSubmitEventHandler {
     private lateinit var _uiState: MutableStateFlow<CreateGroupUiState>
     private lateinit var _actions: MutableSharedFlow<CreateGroupUiAction>
@@ -110,7 +111,7 @@ class CreateGroupSubmitEventHandlerImpl(
                 Group(
                     name = groupName,
                     description = state.groupDescription,
-                    currency = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE,
+                    currency = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value,
                     extraCurrencies = state.extraCurrencies.map { it.code },
                     members = state.selectedMembers.map { it.userId },
                     mainImagePath = state.localGroupImagePath

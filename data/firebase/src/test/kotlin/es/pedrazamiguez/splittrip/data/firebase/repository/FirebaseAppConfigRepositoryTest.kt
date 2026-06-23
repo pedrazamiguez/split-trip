@@ -1,35 +1,44 @@
-package es.pedrazamiguez.splittrip.data.firebase.provider
+package es.pedrazamiguez.splittrip.data.firebase.repository
 
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import io.mockk.clearAllMocks
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class FirebaseRemoteConfigProviderTest {
+@OptIn(ExperimentalCoroutinesApi::class)
+class FirebaseAppConfigRepositoryTest {
 
     private lateinit var firebaseRemoteConfig: FirebaseRemoteConfig
-    private lateinit var provider: FirebaseRemoteConfigProvider
+    private lateinit var repository: FirebaseAppConfigRepository
 
     @BeforeEach
     fun setUp() {
         firebaseRemoteConfig = mockk(relaxed = true)
         every { firebaseRemoteConfig.setDefaultsAsync(any<Int>()) } returns mockk(relaxed = true)
 
-        provider = FirebaseRemoteConfigProvider(firebaseRemoteConfig)
+        repository = FirebaseAppConfigRepository(firebaseRemoteConfig)
     }
 
     @AfterEach
     fun tearDown() {
         clearAllMocks()
+        unmockkAll()
     }
 
     @Test
@@ -38,57 +47,45 @@ class FirebaseRemoteConfigProviderTest {
     }
 
     @Test
-    fun `getString delegates to FirebaseRemoteConfig`() {
-        every { firebaseRemoteConfig.getString("test_key") } returns "test_value"
+    fun `defaultCurrencyCode and balanceComputationDebounceMs expose values from config`() {
+        every { firebaseRemoteConfig.getString("default_currency_code") } returns "USD"
+        every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 500L
 
-        val result = provider.getString("test_key")
+        // Trigger updates
+        repository = FirebaseAppConfigRepository(firebaseRemoteConfig)
 
-        assertEquals("test_value", result)
-        verify(exactly = 1) { firebaseRemoteConfig.getString("test_key") }
+        assertEquals("USD", repository.defaultCurrencyCode.value)
+        assertEquals(500L, repository.balanceComputationDebounceMs.value)
     }
 
     @Test
-    fun `getLong delegates to FirebaseRemoteConfig`() {
-        every { firebaseRemoteConfig.getLong("test_key") } returns 42L
-
-        val result = provider.getLong("test_key")
-
-        assertEquals(42L, result)
-        verify(exactly = 1) { firebaseRemoteConfig.getLong("test_key") }
-    }
-
-    @Test
-    fun `getBoolean delegates to FirebaseRemoteConfig`() {
-        every { firebaseRemoteConfig.getBoolean("test_key") } returns true
-
-        val result = provider.getBoolean("test_key")
-
-        assertTrue(result)
-        verify(exactly = 1) { firebaseRemoteConfig.getBoolean("test_key") }
-    }
-
-    @Test
-    fun `fetchAndActivate delegates to FirebaseRemoteConfig and triggers callback`() {
+    fun `fetchConfiguration delegates to FirebaseRemoteConfig and updates flows`() = runTest {
+        mockkStatic("kotlinx.coroutines.tasks.TasksKt")
         val mockTask = mockk<Task<Boolean>>()
         every { firebaseRemoteConfig.fetchAndActivate() } returns mockTask
+        coEvery { mockTask.await() } returns true
 
-        val listenerSlot = slot<OnCompleteListener<Boolean>>()
-        every { mockTask.addOnCompleteListener(capture(listenerSlot)) } returns mockTask
-        every { mockTask.isSuccessful } returns true
+        every { firebaseRemoteConfig.getString("default_currency_code") } returns "GBP"
+        every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 100L
 
-        var callbackCalled = false
-        var callbackSuccess = false
+        val result = repository.fetchConfiguration()
 
-        provider.fetchAndActivate { success ->
-            callbackCalled = true
-            callbackSuccess = success
-        }
-
-        listenerSlot.captured.onComplete(mockTask)
-
-        assertTrue(callbackCalled)
-        assertTrue(callbackSuccess)
+        assertTrue(result)
+        assertEquals("GBP", repository.defaultCurrencyCode.value)
+        assertEquals(100L, repository.balanceComputationDebounceMs.value)
         verify(exactly = 1) { firebaseRemoteConfig.fetchAndActivate() }
+    }
+
+    @Test
+    fun `fetchConfiguration handles failure safely`() = runTest {
+        mockkStatic("kotlinx.coroutines.tasks.TasksKt")
+        val mockTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.fetchAndActivate() } returns mockTask
+        coEvery { mockTask.await() } throws RuntimeException("Network Error")
+
+        val result = repository.fetchConfiguration()
+
+        assertFalse(result)
     }
 
     @Test

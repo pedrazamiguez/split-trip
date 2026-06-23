@@ -36,6 +36,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
@@ -48,7 +49,8 @@ val dataLocalModule = module {
     single {
         UserPreferences(
             context = androidContext(),
-            authenticationService = get<AuthenticationService>()
+            authenticationService = get<AuthenticationService>(),
+            appConfigRepository = get<AppConfigRepository>()
         )
     }
 

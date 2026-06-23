@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
 import es.pedrazamiguez.splittrip.domain.service.impl.ContributionValidationServiceImpl
@@ -28,6 +29,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -57,6 +59,7 @@ class AddContributionViewModelTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var contributionValidationService: ContributionValidationService
     private lateinit var addContributionUiMapper: AddContributionUiMapper
+    private lateinit var appConfigService: AppConfigService
     private lateinit var configHandler: ContributionConfigHandler
     private lateinit var submitHandler: ContributionSubmitHandler
     private lateinit var viewModel: AddContributionViewModel
@@ -90,7 +93,9 @@ class AddContributionViewModelTest {
         authenticationService = mockk()
         contributionValidationService = ContributionValidationServiceImpl()
         addContributionUiMapper = mockk(relaxed = true)
+        appConfigService = mockk()
 
+        every { appConfigService.defaultCurrencyCode } returns MutableStateFlow("EUR")
         every { addContributionUiMapper.resolveCurrencySymbol(any()) } returns "€"
         every {
             addContributionUiMapper.formatInputAmountWithCurrency(any(), any())
@@ -125,7 +130,8 @@ class AddContributionViewModelTest {
             getGroupSubunitsUseCase = getGroupSubunitsUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             authenticationService = authenticationService,
-            addContributionUiMapper = addContributionUiMapper
+            addContributionUiMapper = addContributionUiMapper,
+            appConfigService = appConfigService
         )
 
         submitHandler = ContributionSubmitHandler(

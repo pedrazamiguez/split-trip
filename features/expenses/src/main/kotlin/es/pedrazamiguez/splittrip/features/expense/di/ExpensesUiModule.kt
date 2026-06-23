@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMa
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
@@ -161,6 +162,7 @@ val expensesUiModule = module {
         val addExpenseOptionsUiMapper = get<AddExpenseOptionsUiMapper>()
         val addExpenseSplitUiMapper = get<AddExpenseSplitUiMapper>()
         val formattingHelper = get<FormattingHelper>()
+        val appConfigService = get<AppConfigService>()
 
         val splitRowMappingDelegate = SplitRowMappingDelegate(
             splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>(),
@@ -168,11 +170,12 @@ val expensesUiModule = module {
             formattingHelper = formattingHelper
         )
 
-        val splitHandler = SplitEventHandler(
+        val splitEventHandler = SplitEventHandler(
             splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>(),
             splitPreviewService = get<SplitPreviewService>(),
             formattingHelper = formattingHelper,
-            splitRowMappingDelegate = splitRowMappingDelegate
+            splitRowMappingDelegate = splitRowMappingDelegate,
+            appConfigService = appConfigService
         )
 
         val intraSubunitSplitDelegate = IntraSubunitSplitDelegate(
@@ -182,11 +185,12 @@ val expensesUiModule = module {
             formattingHelper = formattingHelper
         )
 
-        val subunitSplitHandler = SubunitSplitEventHandler(
+        val subunitSplitEventHandler = SubunitSplitEventHandler(
             splitPreviewService = get<SplitPreviewService>(),
             addExpenseSplitMapper = addExpenseSplitUiMapper,
             intraSubunitSplitDelegate = intraSubunitSplitDelegate,
-            splitRowMappingDelegate = splitRowMappingDelegate
+            splitRowMappingDelegate = splitRowMappingDelegate,
+            appConfigService = appConfigService
         )
 
         val withdrawalPoolSelectionDelegate = WithdrawalPoolSelectionDelegate(
@@ -202,7 +206,7 @@ val expensesUiModule = module {
             addExpenseOptionsMapper = addExpenseOptionsUiMapper
         )
 
-        val currencyHandler = CurrencyEventHandler(
+        val currencyEventHandler = CurrencyEventHandler(
             getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
             formattingHelper = formattingHelper,
@@ -211,7 +215,7 @@ val expensesUiModule = module {
             cashRateDelegate = cashRateDelegate
         )
 
-        val configHandler = ConfigEventHandler(
+        val configEventHandler = ConfigEventHandler(
             getGroupExpenseConfigUseCase = get<GetGroupExpenseConfigUseCase>(),
             getGroupLastUsedCurrencyUseCase = get<GetGroupLastUsedCurrencyUseCase>(),
             getGroupLastUsedPaymentMethodUseCase = get<GetGroupLastUsedPaymentMethodUseCase>(),
@@ -234,7 +238,7 @@ val expensesUiModule = module {
             telemetryTracker = get<TelemetryTracker>()
         )
 
-        val submitHandler = SubmitEventHandler(
+        val submitEventHandler = SubmitEventHandler(
             expenseValidationService = get<ExpenseValidationService>(),
             addOnCalculationService = get<AddOnCalculationService>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
@@ -257,7 +261,7 @@ val expensesUiModule = module {
             exchangeRateDelegate = addOnExchangeRateDelegate
         )
 
-        val addOnHandler = AddOnEventHandler(
+        val addOnEventHandler = AddOnEventHandler(
             addOnCalculationService = get<AddOnCalculationService>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
@@ -268,7 +272,7 @@ val expensesUiModule = module {
             addOnCrudDelegate = addOnCrudDelegate
         )
 
-        val formHandler = FormEventHandler(
+        val formEventHandler = FormEventHandler(
             addExpenseUiMapper = addExpenseUiMapper,
             attachReceiptUseCase = get<AttachReceiptUseCase>()
         )
@@ -280,8 +284,8 @@ val expensesUiModule = module {
             addExpenseUiMapper = addExpenseUiMapper
         )
 
-        val strategyFactory = ExpenseFlowStrategyFactory(
-            configEventHandler = configHandler,
+        val expenseFlowStrategyFactory = ExpenseFlowStrategyFactory(
+            configEventHandler = configEventHandler,
             addExpenseUseCase = get<AddExpenseUseCase>(),
             updateExpenseUseCase = get<UpdateExpenseUseCase>(),
             getExpenseByIdUseCase = get<GetExpenseByIdUseCase>(),
@@ -293,15 +297,15 @@ val expensesUiModule = module {
 
         AddExpenseViewModel(
             expenseId = expenseId,
-            configEventHandler = configHandler,
-            currencyEventHandler = currencyHandler,
-            splitEventHandler = splitHandler,
-            subunitSplitEventHandler = subunitSplitHandler,
-            addOnEventHandler = addOnHandler,
-            submitEventHandler = submitHandler,
-            formEventHandler = formHandler,
+            configEventHandler = configEventHandler,
+            currencyEventHandler = currencyEventHandler,
+            splitEventHandler = splitEventHandler,
+            subunitSplitEventHandler = subunitSplitEventHandler,
+            addOnEventHandler = addOnEventHandler,
+            submitEventHandler = submitEventHandler,
+            formEventHandler = formEventHandler,
             receiptAutoFillEventHandler = receiptAutoFillEventHandler,
-            strategyFactory = strategyFactory
+            strategyFactory = expenseFlowStrategyFactory
         )
     }
 

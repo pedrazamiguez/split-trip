@@ -1,9 +1,9 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
@@ -33,7 +33,8 @@ class SubunitSplitEventHandler(
     private val splitPreviewService: SplitPreviewService,
     private val addExpenseSplitMapper: AddExpenseSplitUiMapper,
     private val intraSubunitSplitDelegate: IntraSubunitSplitDelegate,
-    private val splitRowMappingDelegate: SplitRowMappingDelegate
+    private val splitRowMappingDelegate: SplitRowMappingDelegate,
+    private val appConfigService: AppConfigService
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -239,7 +240,7 @@ class SubunitSplitEventHandler(
     // Entity-level exact amount edit + locked redistribution
     fun handleEntityAmountChanged(entityId: String, typedAmount: String) {
         val state = _uiState.value
-        val currencyCode = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
         val decimalDigits = state.selectedCurrency?.decimalDigits ?: 2
         val sourceAmountCents = parseSourceAmountToCents()
 
@@ -277,7 +278,7 @@ class SubunitSplitEventHandler(
     // Entity-level percentage edit + locked redistribution
     fun handleEntityPercentageChanged(entityId: String, typedPercentage: String) {
         val state = _uiState.value
-        val currencyCode = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
         val sourceAmountCents = parseSourceAmountToCents()
 
         val mappedSplits = splitRowMappingDelegate.applyPercentageUpdate(
@@ -299,7 +300,7 @@ class SubunitSplitEventHandler(
 
     fun handleIntraSubunitSplitTypeChanged(subunitId: String, splitTypeId: String) {
         val selectedType = _uiState.value.availableSplitTypes.find { it.id == splitTypeId } ?: return
-        val currencyCode = _uiState.value.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = _uiState.value.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
 
         val updatedSplits = _uiState.value.entitySplits.map { entity ->
             if (entity.userId == subunitId) {
@@ -317,7 +318,7 @@ class SubunitSplitEventHandler(
     // Intra-subunit exact amount edit + locked redistribution
     fun handleIntraSubunitAmountChanged(subunitId: String, userId: String, typedAmount: String) {
         val state = _uiState.value
-        val currencyCode = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
         val decimalDigits = state.selectedCurrency?.decimalDigits ?: 2
 
         val updatedSplits = state.entitySplits.map { entity ->
@@ -347,7 +348,7 @@ class SubunitSplitEventHandler(
     // Intra-subunit percentage edit + locked redistribution
     fun handleIntraSubunitPercentageChanged(subunitId: String, userId: String, typedPercentage: String) {
         val state = _uiState.value
-        val currencyCode = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
 
         val updatedSplits = state.entitySplits.map { entity ->
             if (entity.userId == subunitId) {
@@ -400,7 +401,7 @@ class SubunitSplitEventHandler(
         if (state.entitySplits.isEmpty()) return
 
         val splitType = state.selectedSplitType?.let { SplitType.fromString(it.id) } ?: return
-        val currencyCode = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
         val sourceAmountCents = parseSourceAmountToCents()
         val decimalDigits = state.selectedCurrency?.decimalDigits ?: 2
 

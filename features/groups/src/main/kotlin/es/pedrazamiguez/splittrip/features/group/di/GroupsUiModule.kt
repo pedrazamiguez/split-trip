@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -65,11 +66,13 @@ val groupsUiModule = module {
         val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
         val featureGateService = get<FeatureGateService>()
         val telemetryTracker = get<TelemetryTracker>()
+        val appConfigService = get<AppConfigService>()
         CreateGroupSubmitEventHandlerImpl(
             createGroupUseCase = createGroupUseCase,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             featureGateService = featureGateService,
-            telemetryTracker = telemetryTracker
+            telemetryTracker = telemetryTracker,
+            appConfigService = appConfigService
         )
     }
 
@@ -84,6 +87,7 @@ val groupsUiModule = module {
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val groupUiMapper = get<GroupUiMapper>()
         val featureGateService = get<FeatureGateService>()
+        val appConfigService = get<AppConfigService>()
 
         CreateGroupViewModel(
             createGroupNavigationEventHandler = createGroupNavigationEventHandler,
@@ -95,7 +99,8 @@ val groupsUiModule = module {
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            appConfigService = appConfigService
         )
     }
 

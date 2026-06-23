@@ -9,7 +9,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.storage.FirebaseStorage
 import es.pedrazamiguez.splittrip.core.common.provider.AppMetadataProvider
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
-import es.pedrazamiguez.splittrip.core.common.provider.RemoteConfigProvider
 import es.pedrazamiguez.splittrip.data.firebase.auth.service.impl.AuthenticationServiceImpl
 import es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl.FirestoreCashWithdrawalDataSourceImpl
 import es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl.FirestoreContributionDataSourceImpl
@@ -21,7 +20,7 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl.Firest
 import es.pedrazamiguez.splittrip.data.firebase.installation.service.impl.CloudMetadataServiceImpl
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.factory.NotificationHandlerFactory
 import es.pedrazamiguez.splittrip.data.firebase.messaging.repository.impl.FirebaseDeviceRepositoryImpl
-import es.pedrazamiguez.splittrip.data.firebase.provider.FirebaseRemoteConfigProvider
+import es.pedrazamiguez.splittrip.data.firebase.repository.FirebaseAppConfigRepository
 import es.pedrazamiguez.splittrip.data.firebase.storage.CloudStorageDataSourceImpl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
@@ -31,6 +30,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudNotificationDataS
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.DeviceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
@@ -43,9 +43,9 @@ val dataFirebaseModule = module {
 
     single<FirebaseRemoteConfig> { FirebaseRemoteConfig.getInstance() }
 
-    single<RemoteConfigProvider> {
-        FirebaseRemoteConfigProvider(
-            firebaseRemoteConfig = get<FirebaseRemoteConfig>()
+    single<AppConfigRepository> {
+        FirebaseAppConfigRepository(
+            remoteConfig = get<FirebaseRemoteConfig>()
         )
     }
 

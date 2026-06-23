@@ -3,11 +3,12 @@ package es.pedrazamiguez.splittrip.data.local.datastore
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.test.core.app.ApplicationProvider
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -27,6 +28,7 @@ class UserPreferencesTest {
 
     private lateinit var context: Context
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var appConfigRepository: AppConfigRepository
 
     private companion object {
         private const val USER_A_ID = "user-a-123"
@@ -38,6 +40,9 @@ class UserPreferencesTest {
     fun setUp() = runTest {
         context = ApplicationProvider.getApplicationContext()
         authenticationService = mockk()
+        appConfigRepository = mockk(relaxed = true) {
+            every { defaultCurrencyCode } returns MutableStateFlow("EUR")
+        }
         context.dataStore.edit { it.clear() }
     }
 
@@ -50,7 +55,7 @@ class UserPreferencesTest {
     private fun createUserPreferences(userId: String? = USER_A_ID): UserPreferences {
         every { authenticationService.currentUserId() } returns userId
         every { authenticationService.authState } returns flowOf(userId != null)
-        return UserPreferences(context, authenticationService)
+        return UserPreferences(context, authenticationService, appConfigRepository)
     }
 
     // ── User Isolation Tests ─────────────────────────────────────────────
@@ -108,7 +113,7 @@ class UserPreferencesTest {
         val result = prefsB.defaultCurrency.first()
 
         // Then — User B gets the fallback, NOT User A's currency
-        assertEquals(AppConstants.DEFAULT_CURRENCY_CODE, result)
+        assertEquals("EUR", result)
     }
 
     @Test
@@ -228,7 +233,7 @@ class UserPreferencesTest {
     fun `clearAll only removes current user keys`() = runTest {
         // Use a single instance — the userId is resolved dynamically via the mock
         every { authenticationService.authState } returns flowOf(true)
-        val prefs = UserPreferences(context, authenticationService)
+        val prefs = UserPreferences(context, authenticationService, appConfigRepository)
 
         // Given — User A writes preferences
         every { authenticationService.currentUserId() } returns USER_A_ID
@@ -249,7 +254,7 @@ class UserPreferencesTest {
         assertNull(prefs.selectedGroupId.first())
         assertNull(prefs.selectedGroupName.first())
         assertNull(prefs.selectedGroupCurrency.first())
-        assertEquals(AppConstants.DEFAULT_CURRENCY_CODE, prefs.defaultCurrency.first())
+        assertEquals("EUR", prefs.defaultCurrency.first())
 
         // Then — User B's data is still intact
         every { authenticationService.currentUserId() } returns USER_B_ID
@@ -301,7 +306,7 @@ class UserPreferencesTest {
         val result = prefsAuth.defaultCurrency.first()
 
         // Then — Authenticated user gets the default, not the anonymous value
-        assertEquals(AppConstants.DEFAULT_CURRENCY_CODE, result)
+        assertEquals("EUR", result)
     }
 
     // ── setSelectedGroup null handling ────────────────────────────────────
