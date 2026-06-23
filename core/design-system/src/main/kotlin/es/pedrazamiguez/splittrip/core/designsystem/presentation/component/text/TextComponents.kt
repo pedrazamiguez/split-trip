@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 
 /**
@@ -62,7 +63,8 @@ fun ScreenTitleText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     Text(
         text = text,
@@ -71,7 +73,8 @@ fun ScreenTitleText(
         style = MaterialTheme.typography.headlineLarge,
         fontWeight = FontWeight.Bold,
         maxLines = maxLines,
-        overflow = overflowFor(maxLines)
+        overflow = overflowFor(maxLines),
+        textAlign = textAlign
     )
 }
 
@@ -211,7 +214,8 @@ fun BodyText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     Text(
         text = text,
@@ -220,7 +224,8 @@ fun BodyText(
         style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.Normal,
         maxLines = maxLines,
-        overflow = overflowFor(maxLines)
+        overflow = overflowFor(maxLines),
+        textAlign = textAlign
     )
 }
 

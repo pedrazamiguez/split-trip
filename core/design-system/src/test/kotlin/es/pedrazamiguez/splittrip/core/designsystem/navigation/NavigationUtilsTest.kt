@@ -34,7 +34,10 @@ class NavigationUtilsTest {
             assertNull(
                 NavigationUtils.resolveStartDestination(
                     isUserLoggedIn = null,
-                    onboardingCompleted = true
+                    onboardingCompleted = true,
+                    isReconciled = true,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = false
                 )
             )
         }
@@ -44,7 +47,10 @@ class NavigationUtilsTest {
             assertNull(
                 NavigationUtils.resolveStartDestination(
                     isUserLoggedIn = true,
-                    onboardingCompleted = null
+                    onboardingCompleted = null,
+                    isReconciled = true,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = false
                 )
             )
         }
@@ -54,7 +60,10 @@ class NavigationUtilsTest {
             assertNull(
                 NavigationUtils.resolveStartDestination(
                     isUserLoggedIn = null,
-                    onboardingCompleted = null
+                    onboardingCompleted = null,
+                    isReconciled = true,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = false
                 )
             )
         }
@@ -65,7 +74,10 @@ class NavigationUtilsTest {
                 Routes.LOGIN,
                 NavigationUtils.resolveStartDestination(
                     isUserLoggedIn = false,
-                    onboardingCompleted = false
+                    onboardingCompleted = false,
+                    isReconciled = false,
+                    isReconciliationChecked = false,
+                    hasPendingReconciliation = null
                 )
             )
         }
@@ -76,7 +88,63 @@ class NavigationUtilsTest {
                 Routes.LOGIN,
                 NavigationUtils.resolveStartDestination(
                     isUserLoggedIn = false,
-                    onboardingCompleted = true
+                    onboardingCompleted = true,
+                    isReconciled = true,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = false
+                )
+            )
+        }
+
+        @Test
+        fun `returns null when isReconciled is unknown`() {
+            assertNull(
+                NavigationUtils.resolveStartDestination(
+                    isUserLoggedIn = true,
+                    onboardingCompleted = false,
+                    isReconciled = null,
+                    isReconciliationChecked = false,
+                    hasPendingReconciliation = null
+                )
+            )
+        }
+
+        @Test
+        fun `returns null when isReconciled is false and reconciliation is not checked`() {
+            assertNull(
+                NavigationUtils.resolveStartDestination(
+                    isUserLoggedIn = true,
+                    onboardingCompleted = false,
+                    isReconciled = false,
+                    isReconciliationChecked = false,
+                    hasPendingReconciliation = null
+                )
+            )
+        }
+
+        @Test
+        fun `returns RECONCILIATION when isReconciled is false, checked, and has pending data`() {
+            assertEquals(
+                Routes.RECONCILIATION,
+                NavigationUtils.resolveStartDestination(
+                    isUserLoggedIn = true,
+                    onboardingCompleted = false,
+                    isReconciled = false,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = true
+                )
+            )
+        }
+
+        @Test
+        fun `returns null when isReconciled is false, checked, but does not have pending data`() {
+            assertNull(
+                NavigationUtils.resolveStartDestination(
+                    isUserLoggedIn = true,
+                    onboardingCompleted = false,
+                    isReconciled = false,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = false
                 )
             )
         }
@@ -87,7 +155,10 @@ class NavigationUtilsTest {
                 Routes.ONBOARDING,
                 NavigationUtils.resolveStartDestination(
                     isUserLoggedIn = true,
-                    onboardingCompleted = false
+                    onboardingCompleted = false,
+                    isReconciled = true,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = false
                 )
             )
         }
@@ -98,7 +169,10 @@ class NavigationUtilsTest {
                 Routes.MAIN,
                 NavigationUtils.resolveStartDestination(
                     isUserLoggedIn = true,
-                    onboardingCompleted = true
+                    onboardingCompleted = true,
+                    isReconciled = true,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = false
                 )
             )
         }

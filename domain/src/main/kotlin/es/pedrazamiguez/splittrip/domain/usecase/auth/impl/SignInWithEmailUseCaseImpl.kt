@@ -6,7 +6,6 @@ import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -14,8 +13,7 @@ class SignInWithEmailUseCaseImpl(
     private val authenticationService: AuthenticationService,
     private val userRepository: UserRepository,
     private val registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
-    private val userPreferenceRepository: UserPreferenceRepository,
-    private val reconcileUnregisteredUserUseCase: ReconcileUnregisteredUserUseCase
+    private val userPreferenceRepository: UserPreferenceRepository
 ) : SignInWithEmailUseCase {
 
     override suspend operator fun invoke(email: String, password: String): Result<String> = runCatching {
@@ -43,7 +41,6 @@ class SignInWithEmailUseCaseImpl(
             }
 
         userPreferenceRepository.setHasSignedOut(false)
-        reconcileUnregisteredUserUseCase(normalizedEmail, userId)
 
         userId
     }

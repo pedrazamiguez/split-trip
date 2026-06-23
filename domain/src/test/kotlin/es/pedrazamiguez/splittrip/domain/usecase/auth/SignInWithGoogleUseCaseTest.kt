@@ -5,7 +5,6 @@ import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignInWithGoogleUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -21,7 +20,6 @@ class SignInWithGoogleUseCaseTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
     private lateinit var userPreferenceRepository: UserPreferenceRepository
-    private lateinit var reconcileUnregisteredUserUseCase: ReconcileUnregisteredUserUseCase
     private lateinit var useCase: SignInWithGoogleUseCase
 
     private val idToken = "google-id-token"
@@ -37,16 +35,13 @@ class SignInWithGoogleUseCaseTest {
         authenticationService = mockk()
         registerDeviceTokenUseCase = mockk()
         userPreferenceRepository = mockk()
-        reconcileUnregisteredUserUseCase = mockk()
         useCase = SignInWithGoogleUseCaseImpl(
             authenticationService = authenticationService,
             registerDeviceTokenUseCase = registerDeviceTokenUseCase,
-            userPreferenceRepository = userPreferenceRepository,
-            reconcileUnregisteredUserUseCase = reconcileUnregisteredUserUseCase
+            userPreferenceRepository = userPreferenceRepository
         )
         coEvery { authenticationService.currentUserEmail() } returns "user@example.com"
         coEvery { userPreferenceRepository.setHasSignedOut(any()) } returns Unit
-        coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns Result.success(Unit)
     }
 
     @Nested
@@ -89,22 +84,6 @@ class SignInWithGoogleUseCaseTest {
             val result = useCase(idToken)
 
             // Then - sign-in should still succeed (device token is best-effort)
-            assertTrue(result.isSuccess)
-            assertEquals(firebaseUser.userId, result.getOrNull())
-        }
-
-        @Test
-        fun `succeeds even when reconciliation fails`() = runTest {
-            // Given
-            coEvery { authenticationService.signInWithGoogle(idToken) } returns Result.success(firebaseUser)
-            coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
-            coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns
-                Result.failure(RuntimeException("Reconciliation failed"))
-
-            // When
-            val result = useCase(idToken)
-
-            // Then - sign-in should still succeed (reconciliation is best-effort/non-blocking)
             assertTrue(result.isSuccess)
             assertEquals(firebaseUser.userId, result.getOrNull())
         }

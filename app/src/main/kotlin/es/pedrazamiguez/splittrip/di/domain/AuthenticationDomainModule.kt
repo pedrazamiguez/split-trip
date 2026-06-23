@@ -40,8 +40,7 @@ val authenticationDomainModule = module {
             SignUpWithEmailUseCaseImpl(
                 authenticationService = get<AuthenticationService>(),
                 registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>(),
-                userPreferenceRepository = get<UserPreferenceRepository>(),
-                reconcileUnregisteredUserUseCase = get<ReconcileUnregisteredUserUseCase>()
+                userPreferenceRepository = get<UserPreferenceRepository>()
             ),
             LogTag.USE_CASE
         )
@@ -52,8 +51,7 @@ val authenticationDomainModule = module {
                 authenticationService = get<AuthenticationService>(),
                 userRepository = get<UserRepository>(),
                 registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>(),
-                userPreferenceRepository = get<UserPreferenceRepository>(),
-                reconcileUnregisteredUserUseCase = get<ReconcileUnregisteredUserUseCase>()
+                userPreferenceRepository = get<UserPreferenceRepository>()
             ),
             LogTag.USE_CASE
         )
@@ -63,8 +61,7 @@ val authenticationDomainModule = module {
             SignInWithGoogleUseCaseImpl(
                 authenticationService = get<AuthenticationService>(),
                 registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>(),
-                userPreferenceRepository = get<UserPreferenceRepository>(),
-                reconcileUnregisteredUserUseCase = get<ReconcileUnregisteredUserUseCase>()
+                userPreferenceRepository = get<UserPreferenceRepository>()
             ),
             LogTag.USE_CASE
         )
