@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
@@ -8,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
 import io.mockk.coEvery
@@ -50,6 +52,7 @@ class CreateGroupSubmitEventHandlerImplTest {
         telemetryTracker = mockk(relaxed = true)
         appConfigService = mockk(relaxed = true) {
             every { defaultCurrencyCode } returns MutableStateFlow("EUR")
+            every { maxMembersPerGroup } returns MutableStateFlow(20)
         }
 
         every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
@@ -189,5 +192,32 @@ class CreateGroupSubmitEventHandlerImplTest {
         assertFalse(callbackCalled)
         assertFalse(stateFlow.value.isLoading)
         assertNotNull(stateFlow.value.error)
+    }
+
+    @Test
+    fun `handleSubmit blocks when MAX_MEMBERS_PER_GROUP is blocked for registered user`() = runTest(testDispatcher) {
+        // Given
+        handler.bind(stateFlow, actionsFlow, this)
+        stateFlow.value = stateFlow.value.copy(groupName = "My Group")
+        coEvery { featureGateService.checkLimit(GatedLimit.MAX_GROUPS_COUNT, any()) } returns
+            flowOf(LimitResult.Allowed)
+        coEvery { featureGateService.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, any()) } returns
+            flowOf(LimitResult.Blocked(GatedLimit.MAX_MEMBERS_PER_GROUP, false))
+
+        var callbackCalled = false
+
+        // When
+        handler.handleSubmit { callbackCalled = true }
+        advanceUntilIdle()
+
+        // Then
+        coVerify(exactly = 0) { createGroupUseCase(any(), any()) }
+        assertFalse(callbackCalled)
+        assertFalse(stateFlow.value.isLoading)
+        assertNotNull(stateFlow.value.error)
+        assertEquals(
+            UiText.StringResource(R.string.group_error_limit_members_registered_exceeded, 20),
+            stateFlow.value.error
+        )
     }
 }

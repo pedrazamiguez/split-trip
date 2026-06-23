@@ -9,4 +9,5 @@ class AppConfigServiceImpl(
 ) : AppConfigService {
     override val defaultCurrencyCode: StateFlow<String> = appConfigRepository.defaultCurrencyCode
     override val balanceComputationDebounceMs: StateFlow<Long> = appConfigRepository.balanceComputationDebounceMs
+    override val maxMembersPerGroup: StateFlow<Int> = appConfigRepository.maxMembersPerGroup
 }

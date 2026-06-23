@@ -8,4 +8,8 @@
         <key>balance_computation_debounce_ms</key>
         <value>300</value>
     </entry>
+    <entry>
+        <key>max_members_per_group</key>
+        <value>20</value>
+    </entry>
 </defaultsMap>

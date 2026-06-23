@@ -22,6 +22,9 @@ class FirebaseAppConfigRepository(
     private val _balanceComputationDebounceMs = MutableStateFlow(DEFAULT_BALANCE_DEBOUNCE_MS)
     override val balanceComputationDebounceMs: StateFlow<Long> = _balanceComputationDebounceMs.asStateFlow()
 
+    private val _maxMembersPerGroup = MutableStateFlow(DEFAULT_MAX_MEMBERS_PER_GROUP)
+    override val maxMembersPerGroup: StateFlow<Int> = _maxMembersPerGroup.asStateFlow()
+
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         updateFlowsFromConfig()
@@ -64,10 +67,13 @@ class FirebaseAppConfigRepository(
             remoteConfig.getString("default_currency_code").takeIf { it.isNotBlank() } ?: DEFAULT_CURRENCY
         val debounce = remoteConfig.getLong("balance_computation_debounce_ms")
         _balanceComputationDebounceMs.value = if (debounce > 0) debounce else DEFAULT_BALANCE_DEBOUNCE_MS
+        val maxMembers = remoteConfig.getLong("max_members_per_group").toInt()
+        _maxMembersPerGroup.value = if (maxMembers > 0) maxMembers else DEFAULT_MAX_MEMBERS_PER_GROUP
     }
 
     companion object {
         private const val DEFAULT_CURRENCY = "EUR"
         private const val DEFAULT_BALANCE_DEBOUNCE_MS = 300L
+        private const val DEFAULT_MAX_MEMBERS_PER_GROUP = 20
     }
 }

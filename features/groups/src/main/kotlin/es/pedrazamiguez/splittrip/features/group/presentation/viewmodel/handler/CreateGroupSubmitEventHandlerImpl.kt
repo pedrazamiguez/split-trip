@@ -49,55 +49,51 @@ class CreateGroupSubmitEventHandlerImpl(
             return
         }
 
+        checkLimitsAndCreateGroup(onCreateGroupSuccess)
+    }
+
+    private fun checkLimitsAndCreateGroup(onCreateGroupSuccess: () -> Unit) {
         scope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             val currentGroups = getUserGroupsFlowUseCase().firstOrNull() ?: emptyList()
-            val groupsCount = currentGroups.size
-
-            featureGateService.checkLimit(GatedLimit.MAX_GROUPS_COUNT, groupsCount).collect { limitResult ->
-                when (limitResult) {
-                    is LimitResult.Allowed -> {
-                        val membersCount = _uiState.value.selectedMembers.size
-                        featureGateService.checkLimit(
-                            GatedLimit.MAX_MEMBERS_PER_GROUP,
-                            membersCount
-                        ).collect { memberLimitResult ->
-                            when (memberLimitResult) {
-                                is LimitResult.Allowed -> {
-                                    createGroup(onCreateGroupSuccess)
-                                }
-                                is LimitResult.Blocked -> {
-                                    _uiState.update {
-                                        it.copy(
-                                            isLoading = false,
-                                            error = UiText.StringResource(R.string.group_error_limit_members_exceeded)
-                                        )
-                                    }
-                                    _actions.emit(
-                                        CreateGroupUiAction.ShowError(
-                                            UiText.StringResource(R.string.group_error_limit_members_exceeded)
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    is LimitResult.Blocked -> {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                error = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
-                            )
-                        }
-                        _actions.emit(
-                            CreateGroupUiAction.ShowError(
-                                UiText.StringResource(R.string.group_error_limit_groups_exceeded)
-                            )
-                        )
+            featureGateService.checkLimit(GatedLimit.MAX_GROUPS_COUNT, currentGroups.size)
+                .collect { limitResult ->
+                    when (limitResult) {
+                        is LimitResult.Allowed -> checkMemberLimitAndCreateGroup(onCreateGroupSuccess)
+                        is LimitResult.Blocked -> handleGroupsLimitBlocked()
                     }
                 }
-            }
         }
+    }
+
+    private suspend fun checkMemberLimitAndCreateGroup(onCreateGroupSuccess: () -> Unit) {
+        val membersCount = _uiState.value.selectedMembers.size
+        featureGateService.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, membersCount)
+            .collect { memberLimitResult ->
+                when (memberLimitResult) {
+                    is LimitResult.Allowed -> createGroup(onCreateGroupSuccess)
+                    is LimitResult.Blocked -> handleMembersLimitBlocked(memberLimitResult)
+                }
+            }
+    }
+
+    private suspend fun handleGroupsLimitBlocked() {
+        val errorRes = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
+        _uiState.update { it.copy(isLoading = false, error = errorRes) }
+        _actions.emit(CreateGroupUiAction.ShowError(errorRes))
+    }
+
+    private suspend fun handleMembersLimitBlocked(memberLimitResult: LimitResult.Blocked) {
+        val errorRes = if (memberLimitResult.upgradeRequired) {
+            UiText.StringResource(R.string.group_error_limit_members_exceeded)
+        } else {
+            UiText.StringResource(
+                R.string.group_error_limit_members_registered_exceeded,
+                appConfigService.maxMembersPerGroup.value
+            )
+        }
+        _uiState.update { it.copy(isLoading = false, error = errorRes) }
+        _actions.emit(CreateGroupUiAction.ShowError(errorRes))
     }
 
     private fun createGroup(onCreateGroupSuccess: () -> Unit) {
