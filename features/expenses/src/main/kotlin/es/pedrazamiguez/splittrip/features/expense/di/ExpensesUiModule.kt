@@ -5,9 +5,11 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
@@ -43,7 +45,6 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPayment
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.expense.navigation.impl.ExpensesNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
@@ -161,6 +162,7 @@ val expensesUiModule = module {
         val addExpenseOptionsUiMapper = get<AddExpenseOptionsUiMapper>()
         val addExpenseSplitUiMapper = get<AddExpenseSplitUiMapper>()
         val formattingHelper = get<FormattingHelper>()
+        val appConfigService = get<AppConfigService>()
 
         val splitRowMappingDelegate = SplitRowMappingDelegate(
             splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>(),
@@ -168,11 +170,12 @@ val expensesUiModule = module {
             formattingHelper = formattingHelper
         )
 
-        val splitHandler = SplitEventHandler(
+        val splitEventHandler = SplitEventHandler(
             splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>(),
             splitPreviewService = get<SplitPreviewService>(),
             formattingHelper = formattingHelper,
-            splitRowMappingDelegate = splitRowMappingDelegate
+            splitRowMappingDelegate = splitRowMappingDelegate,
+            appConfigService = appConfigService
         )
 
         val intraSubunitSplitDelegate = IntraSubunitSplitDelegate(
@@ -182,11 +185,12 @@ val expensesUiModule = module {
             formattingHelper = formattingHelper
         )
 
-        val subunitSplitHandler = SubunitSplitEventHandler(
+        val subunitSplitEventHandler = SubunitSplitEventHandler(
             splitPreviewService = get<SplitPreviewService>(),
             addExpenseSplitMapper = addExpenseSplitUiMapper,
             intraSubunitSplitDelegate = intraSubunitSplitDelegate,
-            splitRowMappingDelegate = splitRowMappingDelegate
+            splitRowMappingDelegate = splitRowMappingDelegate,
+            appConfigService = appConfigService
         )
 
         val withdrawalPoolSelectionDelegate = WithdrawalPoolSelectionDelegate(
@@ -202,7 +206,7 @@ val expensesUiModule = module {
             addExpenseOptionsMapper = addExpenseOptionsUiMapper
         )
 
-        val currencyHandler = CurrencyEventHandler(
+        val currencyEventHandler = CurrencyEventHandler(
             getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
             formattingHelper = formattingHelper,
@@ -211,7 +215,7 @@ val expensesUiModule = module {
             cashRateDelegate = cashRateDelegate
         )
 
-        val configHandler = ConfigEventHandler(
+        val configEventHandler = ConfigEventHandler(
             getGroupExpenseConfigUseCase = get<GetGroupExpenseConfigUseCase>(),
             getGroupLastUsedCurrencyUseCase = get<GetGroupLastUsedCurrencyUseCase>(),
             getGroupLastUsedPaymentMethodUseCase = get<GetGroupLastUsedPaymentMethodUseCase>(),
@@ -234,7 +238,7 @@ val expensesUiModule = module {
             telemetryTracker = get<TelemetryTracker>()
         )
 
-        val submitHandler = SubmitEventHandler(
+        val submitEventHandler = SubmitEventHandler(
             expenseValidationService = get<ExpenseValidationService>(),
             addOnCalculationService = get<AddOnCalculationService>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
@@ -257,7 +261,7 @@ val expensesUiModule = module {
             exchangeRateDelegate = addOnExchangeRateDelegate
         )
 
-        val addOnHandler = AddOnEventHandler(
+        val addOnEventHandler = AddOnEventHandler(
             addOnCalculationService = get<AddOnCalculationService>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
@@ -268,7 +272,7 @@ val expensesUiModule = module {
             addOnCrudDelegate = addOnCrudDelegate
         )
 
-        val formHandler = FormEventHandler(
+        val formEventHandler = FormEventHandler(
             addExpenseUiMapper = addExpenseUiMapper,
             attachReceiptUseCase = get<AttachReceiptUseCase>()
         )
@@ -280,8 +284,8 @@ val expensesUiModule = module {
             addExpenseUiMapper = addExpenseUiMapper
         )
 
-        val strategyFactory = ExpenseFlowStrategyFactory(
-            configEventHandler = configHandler,
+        val expenseFlowStrategyFactory = ExpenseFlowStrategyFactory(
+            configEventHandler = configEventHandler,
             addExpenseUseCase = get<AddExpenseUseCase>(),
             updateExpenseUseCase = get<UpdateExpenseUseCase>(),
             getExpenseByIdUseCase = get<GetExpenseByIdUseCase>(),
@@ -293,25 +297,22 @@ val expensesUiModule = module {
 
         AddExpenseViewModel(
             expenseId = expenseId,
-            configEventHandler = configHandler,
-            currencyEventHandler = currencyHandler,
-            splitEventHandler = splitHandler,
-            subunitSplitEventHandler = subunitSplitHandler,
-            addOnEventHandler = addOnHandler,
-            submitEventHandler = submitHandler,
-            formEventHandler = formHandler,
+            configEventHandler = configEventHandler,
+            currencyEventHandler = currencyEventHandler,
+            splitEventHandler = splitEventHandler,
+            subunitSplitEventHandler = subunitSplitEventHandler,
+            addOnEventHandler = addOnEventHandler,
+            submitEventHandler = submitEventHandler,
+            formEventHandler = formEventHandler,
             receiptAutoFillEventHandler = receiptAutoFillEventHandler,
-            strategyFactory = strategyFactory
+            strategyFactory = expenseFlowStrategyFactory
         )
     }
 
     factory { ExpensesNavigationProviderImpl() } bind NavigationProvider::class
 
     single {
-        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
-        ExpensesScreenUiProviderImpl(
-            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
-        )
+        ExpensesScreenUiProviderImpl()
     } bind ScreenUiProvider::class
     single(named("addExpenseProvider")) { AddExpenseScreenUiProviderImpl(Routes.ADD_EXPENSE) } bind
         ScreenUiProvider::class
@@ -326,7 +327,8 @@ val expensesUiModule = module {
             resourceProvider = get<ResourceProvider>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             addOnCalculationService = get<AddOnCalculationService>(),
-            scheduledBadgeUiMapper = get<ScheduledBadgeUiMapper>()
+            scheduledBadgeUiMapper = get<ScheduledBadgeUiMapper>(),
+            userUiMapper = get<UserUiMapper>()
         )
     }
 

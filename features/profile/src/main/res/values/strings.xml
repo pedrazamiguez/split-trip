@@ -57,5 +57,12 @@
     <!-- QR Code Sharing -->
     <string name="profile_qr_title">Share Profile</string>
     <string name="profile_qr_subtitle">Show this QR code to another user to let them add you to a group physically.</string>
+
+    <!-- Guest Profile -->
+    <string name="profile_guest_title">Guest User</string>
+    <string name="profile_guest_subtitle">Offline Session</string>
+    <string name="profile_guest_promo_title">Link your account</string>
+    <string name="profile_guest_promo_text">Create a permanent account to invite friends, sync your trips across devices, and keep your data safe.</string>
+    <string name="profile_guest_promo_button">Link Account</string>
 </resources>
 

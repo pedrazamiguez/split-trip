@@ -1,9 +1,13 @@
 package es.pedrazamiguez.splittrip.domain.usecase.auth.impl
 
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class LinkGoogleAccountUseCaseImpl(
     private val authenticationService: AuthenticationService,
@@ -17,10 +21,22 @@ class LinkGoogleAccountUseCaseImpl(
         val userId = authenticationService.requireUserId()
 
         val existingProfile = userRepository.getCurrentUserProfile()
-        if (existingProfile != null) {
-            val updatedProfile = existingProfile.copy(email = email)
-            userRepository.saveUser(updatedProfile).getOrThrow()
+        val profileToSave = existingProfile?.copy(email = email) ?: run {
+            val creationTimestamp = authenticationService.getCurrentUserCreationTimestamp()
+            val createdAt = if (creationTimestamp != null) {
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(creationTimestamp), ZoneOffset.UTC)
+            } else {
+                LocalDateTime.now(ZoneOffset.UTC)
+            }
+            User(
+                userId = userId,
+                email = email,
+                displayName = authenticationService.currentUserDisplayName() ?: email.substringBefore("@"),
+                profileImagePath = authenticationService.currentUserPhotoUrl(),
+                createdAt = createdAt
+            )
         }
+        userRepository.saveUser(profileToSave).getOrThrow()
 
         reconcileUnregisteredUserUseCase(email, userId)
     }

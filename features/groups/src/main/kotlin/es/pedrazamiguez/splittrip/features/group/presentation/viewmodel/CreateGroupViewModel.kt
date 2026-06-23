@@ -2,12 +2,14 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -38,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
+@Suppress("LongParameterList")
 class CreateGroupViewModel(
     private val createGroupNavigationEventHandler: CreateGroupNavigationEventHandler,
     private val createGroupImageEventHandler: CreateGroupImageEventHandler,
@@ -48,6 +51,8 @@ class CreateGroupViewModel(
     private val emailValidationService: EmailValidationService,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
+    private val featureGateService: FeatureGateService,
+    private val appConfigService: AppConfigService,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -66,6 +71,12 @@ class CreateGroupViewModel(
 
         loadCurrencies()
         createGroupImageEventHandler.cleanTempImages()
+
+        viewModelScope.launch {
+            featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).collect { isEnabled ->
+                _uiState.update { it.copy(isCoverUploadEnabled = isEnabled) }
+            }
+        }
     }
 
     @Suppress("CyclomaticComplexMethod")
@@ -84,6 +95,18 @@ class CreateGroupViewModel(
             is CreateGroupUiEvent.MemberSelected -> handleMemberSelected(event)
             is CreateGroupUiEvent.MemberRemoved -> handleMemberRemoved(event)
             is CreateGroupUiEvent.MemberScanned -> handleMemberScanned(event.userId, event.email)
+            is CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged -> {
+                _uiState.update { state ->
+                    val updated = state.selectedMembers.map { user ->
+                        if (user.userId == event.userId) {
+                            user.copy(displayName = event.displayName.trim().takeIf { it.isNotBlank() })
+                        } else {
+                            user
+                        }
+                    }.toImmutableList()
+                    state.copy(selectedMembers = updated)
+                }
+            }
             is CreateGroupUiEvent.SubmitCreateGroup -> createGroupSubmitEventHandler.handleSubmit(onCreateGroupSuccess)
             is CreateGroupUiEvent.NextStep,
             is CreateGroupUiEvent.PreviousStep,
@@ -196,7 +219,7 @@ class CreateGroupViewModel(
                 withContext(defaultDispatcher) {
                     val userDefaultCurrency =
                         getUserDefaultCurrencyUseCase().firstOrNull()
-                            ?: AppConstants.DEFAULT_CURRENCY_CODE
+                            ?: appConfigService.defaultCurrencyCode.value
 
                     val sortedCurrencies = getSupportedCurrenciesUseCase().getOrThrow()
                     val mappedCurrencies = groupUiMapper.toCurrencyUiModels(sortedCurrencies)
@@ -278,6 +301,8 @@ private fun formatEventForLogging(event: CreateGroupUiEvent): String {
             "MemberRemoved(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
         is CreateGroupUiEvent.MemberScanned ->
             "MemberScanned(userId=${event.userId}, email=${event.email.maskEmail()})"
+        is CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged ->
+            "UnregisteredMemberDisplayNameChanged(userId=${event.userId}, nameLength=${event.displayName.length})"
         else -> event::class.java.simpleName
     }
 }

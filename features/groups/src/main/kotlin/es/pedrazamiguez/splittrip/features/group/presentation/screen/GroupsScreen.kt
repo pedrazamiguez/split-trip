@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.debounce
 fun GroupsScreen(
     uiState: GroupsUiState = GroupsUiState(),
     selectedGroupId: String? = null,
+    onUpgradeClicked: () -> Unit = {},
     onGroupClicked: (groupId: String, groupName: String, currency: String) -> Unit = { _, _, _ -> },
     onSelectGroup: (groupId: String, groupName: String, currency: String) -> Unit = { _, _, _ -> },
     onScrollPositionChanged: (Int, Int) -> Unit = { _, _ -> },
@@ -65,6 +66,7 @@ fun GroupsScreen(
         bottomPadding = bottomPadding,
         onGroupClicked = onGroupClicked,
         onGroupLongClicked = { selectedGroupForMenu = it },
+        onUpgradeClicked = onUpgradeClicked,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     )
 

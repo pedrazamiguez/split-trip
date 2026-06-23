@@ -7,6 +7,7 @@ data class AuthenticationUiState(
     val password: String = "",
     val isLoading: Boolean = false,
     val isGoogleLoading: Boolean = false,
+    val isGuestLoading: Boolean = false,
     val error: UiText? = null,
     val showCollisionDialog: Boolean = false,
     val collisionEmail: String = "",

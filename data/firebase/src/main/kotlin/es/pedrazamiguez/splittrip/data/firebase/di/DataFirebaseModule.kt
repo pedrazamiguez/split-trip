@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.storage.FirebaseStorage
 import es.pedrazamiguez.splittrip.core.common.provider.AppMetadataProvider
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
@@ -19,6 +20,7 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl.Firest
 import es.pedrazamiguez.splittrip.data.firebase.installation.service.impl.CloudMetadataServiceImpl
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.factory.NotificationHandlerFactory
 import es.pedrazamiguez.splittrip.data.firebase.messaging.repository.impl.FirebaseDeviceRepositoryImpl
+import es.pedrazamiguez.splittrip.data.firebase.repository.FirebaseAppConfigRepository
 import es.pedrazamiguez.splittrip.data.firebase.storage.CloudStorageDataSourceImpl
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
@@ -28,6 +30,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudNotificationDataS
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.DeviceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
@@ -37,6 +40,14 @@ import org.koin.dsl.module
 val dataFirebaseModule = module {
 
     single { FirebaseAppCheck.getInstance() }
+
+    single<FirebaseRemoteConfig> { FirebaseRemoteConfig.getInstance() }
+
+    single<AppConfigRepository> {
+        FirebaseAppConfigRepository(
+            remoteConfig = get<FirebaseRemoteConfig>()
+        )
+    }
 
     single<FirebaseAuth> { FirebaseAuth.getInstance() }
 

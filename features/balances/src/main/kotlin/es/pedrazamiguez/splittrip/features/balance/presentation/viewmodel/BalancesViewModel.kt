@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
@@ -45,6 +46,7 @@ class BalancesViewModel(
     private val authenticationService: AuthenticationService,
     private val balancesUiMapper: BalancesUiMapper,
     private val activityEventHandler: BalancesActivityEventHandler,
+    private val appConfigService: AppConfigService,
     private val computationDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -69,7 +71,7 @@ class BalancesViewModel(
             .filterNotNull()
             .flatMapLatest { groupId ->
                 val group = useCases.getGroupByIdUseCase(groupId)
-                val currency = group?.currency ?: AppConstants.DEFAULT_CURRENCY_CODE
+                val currency = group?.currency ?: appConfigService.defaultCurrencyCode.value
                 val groupName = group?.name ?: ""
                 val currentUserId = authenticationService.currentUserId()
                 val groupMemberIds = group?.members ?: emptyList()
@@ -98,7 +100,7 @@ class BalancesViewModel(
                         // that updates expenses + splits + withdrawals in quick succession) so that
                         // the CPU-bound computeMemberBalances() runs once per logical batch rather
                         // than once per individual table write.
-                        .debounce(AppConstants.BALANCE_COMPUTATION_DEBOUNCE_MS),
+                        .debounce { appConfigService.balanceComputationDebounceMs.value },
                     _lastSeenBalance
                 ) { snapshot, lastSeen ->
                     val balance = snapshot.balance

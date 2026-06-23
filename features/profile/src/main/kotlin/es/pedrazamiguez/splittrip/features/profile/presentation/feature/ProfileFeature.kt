@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
@@ -19,6 +20,7 @@ import org.koin.androidx.compose.koinViewModel
 fun ProfileFeature(profileViewModel: ProfileViewModel = koinViewModel<ProfileViewModel>()) {
     val pillController = LocalTopPillController.current
     val context = LocalContext.current
+    val rootNavController = LocalRootNavController.current
 
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -39,6 +41,9 @@ fun ProfileFeature(profileViewModel: ProfileViewModel = koinViewModel<ProfileVie
     FeatureScaffold(currentRoute = Routes.PROFILE) {
         ProfileScreen(
             uiState = uiState,
+            onLinkAccountClick = {
+                rootNavController.navigate(Routes.SETTINGS_ACCOUNT_STATUS)
+            },
             onEvent = profileViewModel::onEvent
         )
     }

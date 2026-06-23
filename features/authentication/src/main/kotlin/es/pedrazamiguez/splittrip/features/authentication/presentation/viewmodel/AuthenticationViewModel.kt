@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.domain.exception.AdminRestrictedOperationException
 import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
+import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInWithGoogleUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
@@ -20,6 +22,7 @@ import timber.log.Timber
 class AuthenticationViewModel(
     private val signInWithEmailUseCase: SignInWithEmailUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
+    private val signInAnonymouslyUseCase: SignInAnonymouslyUseCase,
     private val authenticationCollisionEventHandler: AuthenticationCollisionEventHandler
 ) : ViewModel() {
 
@@ -72,6 +75,10 @@ class AuthenticationViewModel(
 
             AuthenticationUiEvent.DismissCollisionDialog -> {
                 authenticationCollisionEventHandler.handleDismissCollisionDialog()
+            }
+
+            AuthenticationUiEvent.ContinueAsGuest -> {
+                loginAnonymously(onLoginSuccess)
             }
         }
     }
@@ -138,6 +145,38 @@ class AuthenticationViewModel(
                                 isGoogleLoading = false
                             )
                         }
+                    }
+                }
+        }
+    }
+
+    private fun loginAnonymously(onLoginSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isGuestLoading = true,
+                    error = null
+                )
+            }
+            signInAnonymouslyUseCase()
+                .onSuccess {
+                    _uiState.update { it.copy(isGuestLoading = false) }
+                    onLoginSuccess()
+                }
+                .onFailure { e ->
+                    val errorText = when (e) {
+                        is AdminRestrictedOperationException -> {
+                            UiText.StringResource(R.string.login_error_admin_restricted)
+                        }
+                        else -> {
+                            UiText.DynamicString(e.message ?: "Guest login failed")
+                        }
+                    }
+                    _uiState.update {
+                        it.copy(
+                            error = errorText,
+                            isGuestLoading = false
+                        )
                     }
                 }
         }

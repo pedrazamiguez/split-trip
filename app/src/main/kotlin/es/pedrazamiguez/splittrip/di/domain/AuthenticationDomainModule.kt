@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SendPasswordResetEmailUseCase
@@ -18,6 +19,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.UnlinkProviderUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.GetLinkedProvidersUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.IsUserAnonymousUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.LinkEmailPasswordUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.LinkGoogleAccountUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SendPasswordResetEmailUseCaseImpl
@@ -38,8 +40,7 @@ val authenticationDomainModule = module {
             SignUpWithEmailUseCaseImpl(
                 authenticationService = get<AuthenticationService>(),
                 registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>(),
-                userPreferenceRepository = get<UserPreferenceRepository>(),
-                reconcileUnregisteredUserUseCase = get<ReconcileUnregisteredUserUseCase>()
+                userPreferenceRepository = get<UserPreferenceRepository>()
             ),
             LogTag.USE_CASE
         )
@@ -50,8 +51,7 @@ val authenticationDomainModule = module {
                 authenticationService = get<AuthenticationService>(),
                 userRepository = get<UserRepository>(),
                 registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>(),
-                userPreferenceRepository = get<UserPreferenceRepository>(),
-                reconcileUnregisteredUserUseCase = get<ReconcileUnregisteredUserUseCase>()
+                userPreferenceRepository = get<UserPreferenceRepository>()
             ),
             LogTag.USE_CASE
         )
@@ -61,8 +61,7 @@ val authenticationDomainModule = module {
             SignInWithGoogleUseCaseImpl(
                 authenticationService = get<AuthenticationService>(),
                 registerDeviceTokenUseCase = get<RegisterDeviceTokenUseCase>(),
-                userPreferenceRepository = get<UserPreferenceRepository>(),
-                reconcileUnregisteredUserUseCase = get<ReconcileUnregisteredUserUseCase>()
+                userPreferenceRepository = get<UserPreferenceRepository>()
             ),
             LogTag.USE_CASE
         )
@@ -128,6 +127,15 @@ val authenticationDomainModule = module {
     factory<SignInAnonymouslyUseCase> {
         createLoggingProxy<SignInAnonymouslyUseCase>(
             SignInAnonymouslyUseCaseImpl(
+                authenticationService = get<AuthenticationService>(),
+                userPreferenceRepository = get<UserPreferenceRepository>()
+            ),
+            LogTag.USE_CASE
+        )
+    }
+    factory<IsUserAnonymousUseCase> {
+        createLoggingProxy<IsUserAnonymousUseCase>(
+            IsUserAnonymousUseCaseImpl(
                 authenticationService = get<AuthenticationService>()
             ),
             LogTag.USE_CASE

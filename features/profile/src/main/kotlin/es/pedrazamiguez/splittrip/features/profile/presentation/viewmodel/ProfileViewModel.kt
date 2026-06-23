@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.profile.R
@@ -14,6 +15,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,6 +30,7 @@ import timber.log.Timber
 class ProfileViewModel(
     private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
+    private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
     private val profileUiMapper: ProfileUiMapper
 ) : ViewModel() {
 
@@ -49,28 +52,33 @@ class ProfileViewModel(
 
     private fun observeProfile() {
         viewModelScope.launch {
-            observeCurrentUserProfileUseCase()
-                .collect { user ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            hasError = user == null,
-                            profile = user?.let { profileUiMapper.toProfileUiModel(it) }
-                        )
-                    }
+            combine(
+                observeCurrentUserProfileUseCase(),
+                isUserAnonymousUseCase()
+            ) { user, isAnonymous ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        hasError = user == null && !isAnonymous,
+                        isAnonymous = isAnonymous,
+                        profile = user?.let { profileUiMapper.toProfileUiModel(it) }
+                    )
                 }
+            }.collect {}
         }
         loadProfile()
     }
 
     private fun loadProfile() {
         viewModelScope.launch {
-            if (_uiState.value.profile == null) {
+            val isAnon = _uiState.value.isAnonymous
+            if (_uiState.value.profile == null && !isAnon) {
                 _uiState.update { it.copy(isLoading = true, hasError = false) }
             }
             try {
                 val user = getCurrentUserProfileUseCase()
-                if (user == null && _uiState.value.profile == null) {
+                val currentIsAnon = _uiState.value.isAnonymous
+                if (user == null && _uiState.value.profile == null && !currentIsAnon) {
                     val errorText = UiText.StringResource(R.string.profile_error_loading)
                     _uiState.update {
                         it.copy(isLoading = false, hasError = true)
@@ -79,7 +87,8 @@ class ProfileViewModel(
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load profile")
-                if (_uiState.value.profile == null) {
+                val currentIsAnon = _uiState.value.isAnonymous
+                if (_uiState.value.profile == null && !currentIsAnon) {
                     val errorText = UiText.StringResource(R.string.profile_error_loading)
                     _uiState.update {
                         it.copy(isLoading = false, hasError = true)

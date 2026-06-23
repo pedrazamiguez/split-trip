@@ -13,6 +13,7 @@
     <string name="login_start_journey">Start a journey</string>
     <string name="login_forgot_password_message">Password recovery is not implemented yet.</string>
     <string name="login_start_journey_message">Registration is not implemented yet.</string>
+    <string name="login_guest_button">Continue as Guest</string>
 
     <!-- Register Screen -->
     <string name="register_title">Join the Expedition</string>
@@ -50,4 +51,5 @@
     <string name="register_collision_dialog_message">An account with this email is already registered via Google. Would you like to go to the Login screen to sign in with Google?</string>
     <string name="register_collision_dialog_confirm">Go to Login</string>
     <string name="register_collision_dialog_cancel">Cancel</string>
+    <string name="login_error_admin_restricted">Guest access is temporarily disabled by the administrator.</string>
 </resources>

@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.GroupExpenseConfig
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
@@ -77,6 +78,7 @@ import java.math.BigDecimal
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -191,7 +193,10 @@ class AddExpenseViewModelTest {
         resourceProvider = mockk(relaxed = true)
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
-        val formattingHelper = FormattingHelper(localeProvider)
+        val appConfigService = mockk<AppConfigService>()
+        every { appConfigService.defaultCurrencyCode } returns MutableStateFlow("EUR")
+
+        val formattingHelper = FormattingHelper(localeProvider, appConfigService)
         val splitPreviewService = SplitPreviewServiceImpl()
         val remainderDistributionService = RemainderDistributionServiceImpl()
         val addExpenseSplitMapper = AddExpenseSplitUiMapper(
@@ -228,7 +233,8 @@ class AddExpenseViewModelTest {
             splitCalculatorFactory = splitCalculatorFactory,
             splitPreviewService = splitPreviewService,
             formattingHelper = formattingHelper,
-            splitRowMappingDelegate = splitRowMappingDelegate
+            splitRowMappingDelegate = splitRowMappingDelegate,
+            appConfigService = appConfigService
         )
 
         val intraSubunitSplitDelegate = IntraSubunitSplitDelegate(
@@ -242,7 +248,8 @@ class AddExpenseViewModelTest {
             splitPreviewService = splitPreviewService,
             addExpenseSplitMapper = addExpenseSplitMapper,
             intraSubunitSplitDelegate = intraSubunitSplitDelegate,
-            splitRowMappingDelegate = splitRowMappingDelegate
+            splitRowMappingDelegate = splitRowMappingDelegate,
+            appConfigService = appConfigService
         )
 
         val currencyHandler = CurrencyEventHandler(

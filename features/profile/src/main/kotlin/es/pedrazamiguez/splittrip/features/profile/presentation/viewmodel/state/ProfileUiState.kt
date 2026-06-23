@@ -5,5 +5,6 @@ import es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiM
 data class ProfileUiState(
     val isLoading: Boolean = true,
     val profile: ProfileUiModel? = null,
-    val hasError: Boolean = false
+    val hasError: Boolean = false,
+    val isAnonymous: Boolean = false
 )

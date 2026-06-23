@@ -4,4 +4,10 @@
     <string name="onboarding_welcome_title">¿Lîtto pa biahâh çin líô?</string>
     <string name="onboarding_welcome_subtitle">Comparte gâttô con tu grupo çin comberçaçionê incómodâ çobre dinero</string>
     <string name="onboarding_complete_button">¡Empeçamô!</string>
+    <string name="reconciliation_title">¡Te êttábamô êpperando!</string>
+    <string name="reconciliation_message">Tû amigô ya te an añadío a grupô y rehîttrao gâttô baho %1$s. Toca abaho pa recuperâh tôh tû datô.</string>
+    <string name="reconciliation_migrate_button">Migrâh mî datô</string>
+    <string name="reconciliation_progress_message">Êttamô migrando tû datô…</string>
+    <string name="reconciliation_error_invalid_user">Çeçión de uçuario no bálida. Por fabôh, iniçia çeçión de nuebo.</string>
+    <string name="reconciliation_error_migration_failed">Errôh en la migraçión. Por fabôh, comprueba tu conêççión a intênnêh e inténtalo de nuebo.</string>
 </resources>

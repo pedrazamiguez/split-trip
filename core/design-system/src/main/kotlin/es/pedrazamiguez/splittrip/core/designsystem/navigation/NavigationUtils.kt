@@ -8,20 +8,24 @@ package es.pedrazamiguez.splittrip.core.designsystem.navigation
  */
 object NavigationUtils {
 
-    /**
-     * Resolves the initial start destination for the root navigation graph.
-     *
-     * Returns `null` while auth or onboarding state is still loading, which
-     * signals the caller to show a splash/loading indicator. Once both values
-     * are known the appropriate route is returned.
-     *
-     * @param isUserLoggedIn `null` while loading, `true`/`false` once known.
-     * @param onboardingCompleted `null` while loading, `true`/`false` once known.
-     * @return The route to use as [NavHost] startDestination, or `null` if undetermined.
-     */
-    fun resolveStartDestination(isUserLoggedIn: Boolean?, onboardingCompleted: Boolean?): String? = when {
-        isUserLoggedIn == null || onboardingCompleted == null -> null
+    fun resolveStartDestination(
+        isUserLoggedIn: Boolean?,
+        onboardingCompleted: Boolean?,
+        isReconciled: Boolean?,
+        isReconciliationChecked: Boolean,
+        hasPendingReconciliation: Boolean?
+    ): String? = when {
+        isUserLoggedIn == null || onboardingCompleted == null || isReconciled == null -> null
         isUserLoggedIn == false -> Routes.LOGIN
+        isReconciled == false -> {
+            if (!isReconciliationChecked) {
+                null
+            } else if (hasPendingReconciliation == true) {
+                Routes.RECONCILIATION
+            } else {
+                null
+            }
+        }
         onboardingCompleted == false -> Routes.ONBOARDING
         else -> Routes.MAIN
     }

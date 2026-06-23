@@ -29,7 +29,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.screen.Settings
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
 import org.koin.androidx.compose.koinViewModel
 
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
 fun SettingsFeature(
     navController: NavHostController = LocalRootNavController.current,
@@ -44,6 +44,7 @@ fun SettingsFeature(
     val currentLanguageCode by settingsViewModel.currentLanguageCode.collectAsStateWithLifecycle()
     val shouldShowLanguagePill by settingsViewModel.shouldShowLanguagePill.collectAsStateWithLifecycle()
     val currentThemeCode by settingsViewModel.currentThemeCode.collectAsStateWithLifecycle()
+    val isAnonymous by settingsViewModel.isAnonymous.collectAsStateWithLifecycle()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -115,9 +116,19 @@ fun SettingsFeature(
     }
 
     if (showLogoutDialog) {
+        val title = if (isAnonymous) {
+            stringResource(R.string.settings_logout_guest_dialog_title)
+        } else {
+            stringResource(R.string.settings_logout_dialog_title)
+        }
+        val text = if (isAnonymous) {
+            stringResource(R.string.settings_logout_guest_dialog_text)
+        } else {
+            stringResource(R.string.settings_logout_dialog_text)
+        }
         DestructiveConfirmationDialog(
-            title = stringResource(R.string.settings_logout_dialog_title),
-            text = stringResource(R.string.settings_logout_dialog_text),
+            title = title,
+            text = text,
             confirmLabel = stringResource(R.string.settings_logout_dialog_confirm),
             onConfirm = {
                 showLogoutDialog = false

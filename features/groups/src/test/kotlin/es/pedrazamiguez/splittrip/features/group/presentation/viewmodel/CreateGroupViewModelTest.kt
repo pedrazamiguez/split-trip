@@ -5,11 +5,15 @@ import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
@@ -29,6 +33,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -53,6 +58,8 @@ class CreateGroupViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var createGroupUseCase: CreateGroupUseCase
+    private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
+    private lateinit var featureGateService: FeatureGateService
     private lateinit var getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase
     private lateinit var getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase
     private lateinit var searchUsersByEmailUseCase: SearchUsersByEmailUseCase
@@ -61,6 +68,7 @@ class CreateGroupViewModelTest {
     private lateinit var groupUiMapper: GroupUiMapper
     private lateinit var groupImageStorageService: GroupImageStorageService
     private lateinit var telemetryTracker: TelemetryTracker
+    private lateinit var appConfigService: AppConfigService
     private lateinit var viewModel: CreateGroupViewModel
 
     private val testUser1 = User(
@@ -79,6 +87,8 @@ class CreateGroupViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         createGroupUseCase = mockk(relaxed = true)
+        getUserGroupsFlowUseCase = mockk(relaxed = true)
+        featureGateService = mockk(relaxed = true)
         getSupportedCurrenciesUseCase = mockk(relaxed = true)
         getUserDefaultCurrencyUseCase = mockk(relaxed = true)
         searchUsersByEmailUseCase = mockk(relaxed = true)
@@ -87,8 +97,14 @@ class CreateGroupViewModelTest {
         groupImageStorageService = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
         emailValidationService = EmailValidationServiceImpl()
+        appConfigService = mockk(relaxed = true) {
+            every { defaultCurrencyCode } returns MutableStateFlow("EUR")
+        }
 
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+        every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
+        every { featureGateService.isFeatureEnabled(any()) } returns flowOf(true)
+        coEvery { featureGateService.checkLimit(any(), any()) } returns flowOf(LimitResult.Allowed)
         coEvery { getSupportedCurrenciesUseCase(any()) } returns Result.success(emptyList())
         every { groupUiMapper.toCurrencyUiModels(any()) } returns persistentListOf()
 
@@ -97,8 +113,14 @@ class CreateGroupViewModelTest {
 
     private fun createViewModel(): CreateGroupViewModel {
         val navigationEventHandler = CreateGroupNavigationEventHandlerImpl()
-        val imageEventHandler = CreateGroupImageEventHandlerImpl(groupImageStorageService)
-        val submitEventHandler = CreateGroupSubmitEventHandlerImpl(createGroupUseCase, telemetryTracker)
+        val imageEventHandler = CreateGroupImageEventHandlerImpl(groupImageStorageService, featureGateService)
+        val submitEventHandler = CreateGroupSubmitEventHandlerImpl(
+            createGroupUseCase = createGroupUseCase,
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            featureGateService = featureGateService,
+            telemetryTracker = telemetryTracker,
+            appConfigService = appConfigService
+        )
         return CreateGroupViewModel(
             createGroupNavigationEventHandler = navigationEventHandler,
             createGroupImageEventHandler = imageEventHandler,
@@ -109,6 +131,8 @@ class CreateGroupViewModelTest {
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
+            featureGateService = featureGateService,
+            appConfigService = appConfigService,
             defaultDispatcher = testDispatcher
         )
     }
@@ -721,6 +745,67 @@ class CreateGroupViewModelTest {
 
             // Then
             assertFalse(viewModel.uiState.value.showImageSourceSheet)
+        }
+    }
+
+    @Nested
+    inner class UnregisteredTravelerNames {
+
+        @Test
+        fun `UnregisteredMemberDisplayNameChanged updates display name of pending user`() = runTest(testDispatcher) {
+            // Given
+            val pendingUser = User(userId = "pending-123", email = "pending@example.com", isPending = true)
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser))
+            advanceUntilIdle()
+
+            // When
+            onEvent(CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged("pending-123", "  Jake  "))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            assertEquals("Jake", selected.first().displayName)
+        }
+
+        @Test
+        fun `UnregisteredMemberDisplayNameChanged sets display name to null if blank`() = runTest(testDispatcher) {
+            // Given
+            val pendingUser =
+                User(userId = "pending-123", email = "pending@example.com", displayName = "Jake", isPending = true)
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser))
+            advanceUntilIdle()
+
+            // When
+            onEvent(CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged("pending-123", "   "))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            assertNull(selected.first().displayName)
+        }
+
+        @Test
+        fun `UnregisteredMemberDisplayNameChanged does not modify other users`() = runTest(testDispatcher) {
+            // Given
+            val pendingUser1 =
+                User(userId = "pending-1", email = "p1@example.com", displayName = "Jake", isPending = true)
+            val pendingUser2 =
+                User(userId = "pending-2", email = "p2@example.com", displayName = "Elwood", isPending = true)
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser1))
+            onEvent(CreateGroupUiEvent.MemberSelected(pendingUser2))
+            advanceUntilIdle()
+
+            // When
+            onEvent(CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged("pending-1", "Joliet Jake"))
+            advanceUntilIdle()
+
+            // Then
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(2, selected.size)
+            assertEquals("Joliet Jake", selected.find { it.userId == "pending-1" }?.displayName)
+            assertEquals("Elwood", selected.find { it.userId == "pending-2" }?.displayName)
         }
     }
 }

@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
@@ -40,7 +41,7 @@ class BalancesUiMapperTest {
         every { resourceProvider.getString(R.string.balances_contribution_scope_group) } returns "Group"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_personal) } returns "Personal"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_group) } returns "Group"
-        mapper = BalancesUiMapper(localeProvider, resourceProvider)
+        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
     }
 
     @Nested

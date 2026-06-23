@@ -17,4 +17,3 @@ describe("buildDeepLink", () => {
     expect(link).toBe("splittrip://groups/group123");
   });
 });
-

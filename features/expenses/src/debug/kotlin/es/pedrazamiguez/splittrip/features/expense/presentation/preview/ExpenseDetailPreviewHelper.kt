@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.MappedPreview
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -261,7 +262,8 @@ fun ExpenseDetailPreviewHelper(
                 scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
                     formattingHelper = formattingHelper,
                     resourceProvider = resourceProvider
-                )
+                ),
+                userUiMapper = UserUiMapper()
             )
         },
         transform = { mapper, domain ->

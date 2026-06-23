@@ -1,10 +1,8 @@
 package es.pedrazamiguez.splittrip.navigation
 
 import android.content.Intent
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -16,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -25,12 +24,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import es.pedrazamiguez.splittrip.R
-import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.BrandedLoadingScreen
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
@@ -40,17 +39,17 @@ import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
-import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliationUseCase
 import es.pedrazamiguez.splittrip.features.authentication.navigation.loginGraph
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
 import es.pedrazamiguez.splittrip.features.onboarding.navigation.onboardingGraph
 import es.pedrazamiguez.splittrip.features.profile.navigation.profileGraph
 import es.pedrazamiguez.splittrip.features.settings.navigation.settingsGraph
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 import timber.log.Timber
@@ -71,8 +70,7 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val authenticationService = remember(koin) { koin.get<AuthenticationService>() }
     val warmCurrencyCacheUseCase = remember(koin) { koin.get<WarmCurrencyCacheUseCase>() }
     val userPreferenceRepository = remember(koin) { koin.get<UserPreferenceRepository>() }
-    val signInAnonymouslyUseCase = remember(koin) { koin.get<SignInAnonymouslyUseCase>() }
-    val reconcileUnregisteredUserUseCase = remember(koin) { koin.get<ReconcileUnregisteredUserUseCase>() }
+    val checkPendingReconciliationUseCase = remember(koin) { koin.get<CheckPendingReconciliationUseCase>() }
     val deepLinkHolder = remember(koin) { koin.get<DeepLinkHolder>() }
     val scope = rememberCoroutineScope()
 
@@ -84,14 +82,10 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val onboardingCompleted by isOnboardingCompleteUseCase().collectAsStateWithLifecycle(
         initialValue = null
     )
-    val hasSignedOut by userPreferenceRepository.getHasSignedOut().collectAsStateWithLifecycle(initialValue = null)
     val isReconciled by userPreferenceRepository.getIsReconciled().collectAsStateWithLifecycle(initialValue = null)
 
-    LaunchedEffect(isUserLoggedIn, hasSignedOut) {
-        if (isUserLoggedIn == false && hasSignedOut == false) {
-            signInAnonymouslyUseCase()
-        }
-    }
+    var isReconciliationChecked by remember { mutableStateOf(false) }
+    var hasPendingReconciliation by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(isUserLoggedIn) {
         if (isUserLoggedIn == true) {
@@ -102,27 +96,39 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     }
 
     LaunchedEffect(isUserLoggedIn, isReconciled) {
-        val currentUserId = authenticationService.currentUserId()
-        val currentUserEmail = authenticationService.currentUserEmail()
         if (isUserLoggedIn == true && isReconciled == false) {
-            if (currentUserId != null && currentUserEmail != null) {
-                scope.launch {
-                    reconcileUnregisteredUserUseCase(currentUserEmail, currentUserId)
-                        .onSuccess {
-                            Timber.d("Self-healing reconciliation succeeded for user: $currentUserId")
+            val email = authenticationService.currentUserEmail()
+            if (email != null) {
+                checkPendingReconciliationUseCase(email)
+                    .onSuccess { hasPending ->
+                        if (hasPending) {
+                            hasPendingReconciliation = true
+                            isReconciliationChecked = true
+                        } else {
+                            userPreferenceRepository.setIsReconciled(true)
+                            hasPendingReconciliation = false
+                            isReconciliationChecked = true
                         }
-                        .onFailure { e ->
-                            Timber.e(e, "Self-healing reconciliation failed for user: $currentUserId")
-                        }
-                }
+                    }
+                    .onFailure {
+                        // Fallback on error to proceed silently or keep splash
+                        isReconciliationChecked = true
+                    }
+            } else {
+                isReconciliationChecked = true
             }
+        } else {
+            isReconciliationChecked = true
         }
     }
 
     // Determine the start destination reactively
     val startDestination = NavigationUtils.resolveStartDestination(
         isUserLoggedIn = isUserLoggedIn,
-        onboardingCompleted = onboardingCompleted
+        onboardingCompleted = onboardingCompleted,
+        isReconciled = isReconciled,
+        isReconciliationChecked = isReconciliationChecked,
+        hasPendingReconciliation = hasPendingReconciliation
     )
 
     // Latch the first resolved startDestination so the NavHost graph is never
@@ -169,26 +175,24 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
         LocalTopPillController provides pillController
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Crossfade(
-                targetState = stableStartDestination.value != null,
-                animationSpec = tween(
-                    durationMillis = UiConstants.SPLASH_CROSSFADE_DURATION_MS
-                ),
-                label = "splash-crossfade"
-            ) { destinationResolved ->
-                if (!destinationResolved) {
+            DeferredLoadingContainer(
+                isLoading = stableStartDestination.value == null,
+                loadingContent = {
                     BrandedLoadingScreen(
                         painter = painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = stringResource(R.string.app_name)
                     )
-                } else {
+                }
+            ) {
+                val route = stableStartDestination.value
+                if (route != null) {
                     // When the user is already authenticated and onboarding is complete,
                     // startDestination = Routes.MAIN. NavHost natively processes the Activity
                     // intent's deep link on first composition, extracting arguments into the
                     // backStackEntry. The DeepLinkHolder may hold a stale copy saved in
                     // MainActivity.onCreate() — consume it to prevent accidental replay.
-                    LaunchedEffect(stableStartDestination.value) {
-                        if (stableStartDestination.value == Routes.MAIN) {
+                    LaunchedEffect(route) {
+                        if (route == Routes.MAIN) {
                             deepLinkHolder.consumePendingDeepLink()
                             // Cold start with existing auth — warm cache in background.
                             // No-op if cache is already populated from a previous session.
@@ -198,7 +202,7 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
 
                     NavHost(
                         navController = navController,
-                        startDestination = stableStartDestination.value!!,
+                        startDestination = route,
                         modifier = modifier,
                         enterTransition = {
                             getEnterTransition(initialState.destination.route, targetState.destination.route)
@@ -215,20 +219,42 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                     ) {
                         loginGraph(
                             onLoginSuccess = {
-                                val destination =
-                                    NavigationUtils.resolvePostLoginDestination(
+                                scope.launch {
+                                    val email = authenticationService.currentUserEmail()
+                                    val currentUserId = authenticationService.currentUserId()
+                                    if (email != null && currentUserId != null) {
+                                        val isReconciledVal = userPreferenceRepository.getIsReconciled().first()
+                                        if (!isReconciledVal) {
+                                            checkPendingReconciliationUseCase(email)
+                                                .onSuccess { hasPending ->
+                                                    if (hasPending) {
+                                                        navController.navigate(Routes.RECONCILIATION) {
+                                                            popUpTo(Routes.LOGIN) { inclusive = true }
+                                                        }
+                                                        return@launch
+                                                    } else {
+                                                        userPreferenceRepository.setIsReconciled(true)
+                                                    }
+                                                }
+                                                .onFailure {
+                                                    // Fail-safe: proceed if check fails
+                                                }
+                                        }
+                                    }
+                                    val destination = NavigationUtils.resolvePostLoginDestination(
                                         currentOnboardingCompleted.value
                                     )
-                                navController.navigate(destination) {
-                                    popUpTo(Routes.LOGIN) { inclusive = true }
+                                    navController.navigate(destination) {
+                                        popUpTo(Routes.LOGIN) { inclusive = true }
+                                    }
+                                    // Replay pending deep link after auth gate (cold start scenario)
+                                    if (destination == Routes.MAIN) {
+                                        replayPendingDeepLink(deepLinkHolder, navController)
+                                    }
+                                    // Warm currency cache while user navigates through
+                                    // onboarding or the main screen — fire-and-forget.
+                                    scope.launch { warmCurrencyCacheUseCase() }
                                 }
-                                // Replay pending deep link after auth gate (cold start scenario)
-                                if (destination == Routes.MAIN) {
-                                    replayPendingDeepLink(deepLinkHolder, navController)
-                                }
-                                // Warm currency cache while user navigates through
-                                // onboarding or the main screen — fire-and-forget.
-                                scope.launch { warmCurrencyCacheUseCase() }
                             }
                         )
 
@@ -248,6 +274,16 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                                     }
                                     // Replay pending deep link after onboarding gate
                                     replayPendingDeepLink(deepLinkHolder, navController)
+                                }
+                            },
+                            onReconciliationComplete = {
+                                val destination = if (currentOnboardingCompleted.value == true) {
+                                    Routes.MAIN
+                                } else {
+                                    Routes.ONBOARDING
+                                }
+                                navController.navigate(destination) {
+                                    popUpTo(Routes.RECONCILIATION) { inclusive = true }
                                 }
                             }
                         )

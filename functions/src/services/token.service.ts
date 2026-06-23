@@ -27,7 +27,7 @@ export async function getRecipientTokens(
   excludeUserId: string,
   memberIds?: string[]
 ): Promise<string[]> {
-  const allMemberIds = memberIds ?? await getGroupMemberUserIds(groupId);
+  const allMemberIds = memberIds ?? (await getGroupMemberUserIds(groupId));
 
   // Exclude the actor
   const recipientUserIds = allMemberIds.filter((uid) => uid !== excludeUserId);
@@ -38,9 +38,7 @@ export async function getRecipientTokens(
   }
 
   // Fetch device tokens for all recipients in parallel
-  const tokenArrays = await Promise.all(
-    recipientUserIds.map((uid) => getUserDeviceTokens(uid))
-  );
+  const tokenArrays = await Promise.all(recipientUserIds.map((uid) => getUserDeviceTokens(uid)));
 
   return tokenArrays.flat();
 }
@@ -49,11 +47,7 @@ export async function getRecipientTokens(
  * Reads the members subcollection of a group and returns their user IDs.
  */
 export async function getGroupMemberUserIds(groupId: string): Promise<string[]> {
-  const membersSnap = await db()
-    .collection("groups")
-    .doc(groupId)
-    .collection("members")
-    .get();
+  const membersSnap = await db().collection("groups").doc(groupId).collection("members").get();
 
   return membersSnap.docs
     .map((doc) => (doc.data() as GroupMemberDoc).userId)
@@ -64,14 +58,7 @@ export async function getGroupMemberUserIds(groupId: string): Promise<string[]> 
  * Reads all device documents for a user and returns their FCM tokens.
  */
 export async function getUserDeviceTokens(userId: string): Promise<string[]> {
-  const devicesSnap = await db()
-    .collection("users")
-    .doc(userId)
-    .collection("devices")
-    .get();
+  const devicesSnap = await db().collection("users").doc(userId).collection("devices").get();
 
-  return devicesSnap.docs
-    .map((doc) => (doc.data() as DeviceDoc).token)
-    .filter((token) => !!token);
+  return devicesSnap.docs.map((doc) => (doc.data() as DeviceDoc).token).filter((token) => !!token);
 }
-

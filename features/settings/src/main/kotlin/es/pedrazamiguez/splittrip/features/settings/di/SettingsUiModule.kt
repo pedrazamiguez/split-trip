@@ -3,10 +3,12 @@ package es.pedrazamiguez.splittrip.features.settings.di
 import android.app.Application
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
@@ -49,13 +51,21 @@ import org.koin.dsl.module
 val settingsUiModule = module {
 
     viewModel {
+        val signOutUseCase = get<SignOutUseCase>()
+        val getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>()
+        val getAppLanguageUseCase = get<GetAppLanguageUseCase>()
+        val getShouldShowLanguagePillUseCase = get<GetShouldShowLanguagePillUseCase>()
+        val consumeLanguagePillUseCase = get<ConsumeLanguagePillUseCase>()
+        val getAppThemeUseCase = get<GetAppThemeUseCase>()
+        val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         SettingsViewModel(
-            signOutUseCase = get<SignOutUseCase>(),
-            getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>(),
-            getAppLanguageUseCase = get<GetAppLanguageUseCase>(),
-            getShouldShowLanguagePillUseCase = get<GetShouldShowLanguagePillUseCase>(),
-            consumeLanguagePillUseCase = get<ConsumeLanguagePillUseCase>(),
-            getAppThemeUseCase = get<GetAppThemeUseCase>()
+            signOutUseCase = signOutUseCase,
+            getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
+            getAppLanguageUseCase = getAppLanguageUseCase,
+            getShouldShowLanguagePillUseCase = getShouldShowLanguagePillUseCase,
+            consumeLanguagePillUseCase = consumeLanguagePillUseCase,
+            getAppThemeUseCase = getAppThemeUseCase,
+            isUserAnonymousUseCase = isUserAnonymousUseCase
         )
     }
 
@@ -107,6 +117,7 @@ val settingsUiModule = module {
             linkGoogleAccountUseCase = get<LinkGoogleAccountUseCase>(),
             linkEmailPasswordUseCase = get<LinkEmailPasswordUseCase>(),
             unlinkProviderUseCase = get<UnlinkProviderUseCase>(),
+            authenticationService = get<AuthenticationService>(),
             accountStatusUiMapper = get<AccountStatusUiMapper>()
         )
     }

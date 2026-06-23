@@ -60,11 +60,11 @@ class AppNavHostTest {
      */
     private fun createFeatureTestModule() = module {
         // ── ViewModels required by feature screens ────────────────────
-        // Login screen needs AuthenticationViewModel
         viewModel {
             AuthenticationViewModel(
                 signInWithEmailUseCase = mockk(relaxed = true),
                 signInWithGoogleUseCase = mockk(relaxed = true),
+                signInAnonymouslyUseCase = mockk(relaxed = true),
                 authenticationCollisionEventHandler = mockk(relaxed = true)
             )
         }

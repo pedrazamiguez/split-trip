@@ -8,12 +8,21 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.crashlytics) apply false
+    alias(libs.plugins.firebase.perf) apply false
     alias(libs.plugins.devtools.ksp) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.cpd)
     alias(libs.plugins.sonarqube)
+    alias(libs.plugins.version.catalog.update)
     id("splittrip.quality.root")
+}
+
+versionCatalogUpdate {
+    sortByKey.set(true)
+    keep {
+        keepUnusedVersions.set(true)
+    }
 }
 
 apply(from = "gradle/git-hooks.gradle.kts")

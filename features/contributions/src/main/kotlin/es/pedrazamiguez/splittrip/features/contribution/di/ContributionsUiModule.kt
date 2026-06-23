@@ -2,7 +2,9 @@ package es.pedrazamiguez.splittrip.features.contribution.di
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AddContributionUseCase
@@ -23,7 +25,8 @@ val contributionsUiModule = module {
 
     single {
         AddContributionUiMapper(
-            localeProvider = get<LocaleProvider>()
+            localeProvider = get<LocaleProvider>(),
+            userUiMapper = get<UserUiMapper>()
         )
     }
 
@@ -34,24 +37,26 @@ val contributionsUiModule = module {
     viewModel {
         val addContributionUiMapper = get<AddContributionUiMapper>()
         val contributionValidationService = get<ContributionValidationService>()
+        val appConfigService = get<AppConfigService>()
 
-        val configHandler = ContributionConfigHandler(
+        val contributionConfigHandler = ContributionConfigHandler(
             getGroupByIdUseCase = get<GetGroupByIdUseCase>(),
             getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             authenticationService = get<AuthenticationService>(),
-            addContributionUiMapper = addContributionUiMapper
+            addContributionUiMapper = addContributionUiMapper,
+            appConfigService = appConfigService
         )
 
-        val submitHandler = ContributionSubmitHandler(
+        val contributionSubmitHandler = ContributionSubmitHandler(
             addContributionUseCase = get<AddContributionUseCase>(),
             contributionValidationService = contributionValidationService,
-            groupCurrencyProvider = { configHandler.groupCurrency }
+            groupCurrencyProvider = { contributionConfigHandler.groupCurrency }
         )
 
         AddContributionViewModel(
-            configHandler = configHandler,
-            submitHandler = submitHandler,
+            configHandler = contributionConfigHandler,
+            submitHandler = contributionSubmitHandler,
             contributionValidationService = contributionValidationService,
             addContributionUiMapper = addContributionUiMapper
         )

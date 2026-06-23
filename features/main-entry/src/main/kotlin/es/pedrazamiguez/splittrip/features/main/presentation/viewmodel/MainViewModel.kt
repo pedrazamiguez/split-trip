@@ -3,21 +3,38 @@ package es.pedrazamiguez.splittrip.features.main.presentation.viewmodel
 import android.os.Bundle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class MainViewModel(
     private val registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
     private val getGroupByIdUseCase: GetGroupByIdUseCase,
-    private val warmCurrencyCacheUseCase: WarmCurrencyCacheUseCase
+    private val warmCurrencyCacheUseCase: WarmCurrencyCacheUseCase,
+    private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
 ) : ViewModel() {
 
     private val bundles = ConcurrentHashMap<String, Bundle?>()
+
+    val currentUserProfile: StateFlow<User?> = observeCurrentUserProfileUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(
+                stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
+                replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
+            ),
+            initialValue = null
+        )
 
     fun getBundle(route: String): Bundle? = bundles[route]
 

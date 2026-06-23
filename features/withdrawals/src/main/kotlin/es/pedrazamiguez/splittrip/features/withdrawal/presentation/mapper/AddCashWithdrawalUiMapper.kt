@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.common.util.DisplayNameResolver
 import es.pedrazamiguez.splittrip.core.designsystem.extension.resolveLocalizedName
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatDisplay
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.Currency
@@ -13,7 +14,8 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
 class AddCashWithdrawalUiMapper(
-    private val resourceProvider: ResourceProvider
+    private val resourceProvider: ResourceProvider,
+    private val userUiMapper: UserUiMapper
 ) {
 
     // ── Domain → UI Model Mapping ──────────────────────────────────────────
@@ -44,14 +46,11 @@ class AddCashWithdrawalUiMapper(
         memberIds: List<String>,
         memberProfiles: Map<String, User>,
         currentUserId: String?
-    ): ImmutableList<MemberOptionUiModel> = memberIds.map { memberId ->
-        MemberOptionUiModel(
-            userId = memberId,
-            displayName = memberProfiles[memberId]?.displayName?.takeIf { it.isNotBlank() }
-                ?: memberId,
-            isCurrentUser = memberId == currentUserId
-        )
-    }.toImmutableList()
+    ): ImmutableList<MemberOptionUiModel> = userUiMapper.toMemberOptions(
+        memberIds = memberIds,
+        memberProfiles = memberProfiles,
+        currentUserId = currentUserId
+    )
 
     /**
      * Looks up the display name for a given userId from a pre-mapped member list.

@@ -53,4 +53,9 @@
     <string name="edit_profile_error_image_process">No çe pudo proçeçâh la imahen de perfîh. Inténtalo de nuebo.</string>
     <string name="profile_qr_title">Compartîh perfîh</string>
     <string name="profile_qr_subtitle">Muêttra êtte código QR a otro uçuario pa que pueda añadirte a un grupo fíçicamente.</string>
+    <string name="profile_guest_title">Uçuario Imbitao</string>
+    <string name="profile_guest_subtitle">Çeçión locâh</string>
+    <string name="profile_guest_promo_title">Bincula tu cuenta</string>
+    <string name="profile_guest_promo_text">Crea una cuenta permanente pa imbitâh amigô, çincroniçâh tû biahê entre dîppoçitibô y ebitâh perdêh tû datô.</string>
+    <string name="profile_guest_promo_button">Binculâh cuenta</string>
 </resources>

@@ -24,11 +24,16 @@ import es.pedrazamiguez.splittrip.di.dataModules
 import es.pedrazamiguez.splittrip.di.expensesFeatureModules
 import es.pedrazamiguez.splittrip.di.groupsFeatureModules
 import es.pedrazamiguez.splittrip.di.notificationModules
+import es.pedrazamiguez.splittrip.di.onboardingFeatureModules
 import es.pedrazamiguez.splittrip.di.profileFeatureModules
 import es.pedrazamiguez.splittrip.di.settingsFeatureModules
 import es.pedrazamiguez.splittrip.di.subunitsFeatureModules
 import es.pedrazamiguez.splittrip.di.withdrawalsFeatureModules
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.features.main.di.mainUiModule
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
@@ -66,7 +71,8 @@ class App : Application() {
                 subunitsFeatureModules,
                 profileFeatureModules,
                 settingsFeatureModules,
-                withdrawalsFeatureModules
+                withdrawalsFeatureModules,
+                onboardingFeatureModules
             )
         }
 
@@ -77,6 +83,16 @@ class App : Application() {
         }
 
         NotificationChannelInitializer.createChannels(this)
+
+        val appConfigRepository = GlobalContext.get().get<AppConfigRepository>()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                appConfigRepository.fetchConfiguration()
+                Timber.d("AppConfigRepository fetchConfiguration completed successfully")
+            } catch (e: Exception) {
+                Timber.e(e, "AppConfigRepository fetchConfiguration failed")
+            }
+        }
     }
 
     private fun probeAppCheckToken() {

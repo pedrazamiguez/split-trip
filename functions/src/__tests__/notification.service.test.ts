@@ -31,7 +31,12 @@ jest.mock("firebase-admin", () => {
 
 import * as admin from "firebase-admin";
 import { sendDataMessage } from "../services/notification.service";
-import { NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";
+import {
+  NotificationType,
+  FcmDataPayload,
+  NotificationDisplay,
+  NotificationChannelId,
+} from "../types";
 
 describe("notification.service", () => {
   let sendEachForMulticastMock: jest.Mock;
@@ -61,7 +66,8 @@ describe("notification.service", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    sendEachForMulticastMock = (admin.messaging() as unknown as { sendEachForMulticast: jest.Mock }).sendEachForMulticast;
+    sendEachForMulticastMock = (admin.messaging() as unknown as { sendEachForMulticast: jest.Mock })
+      .sendEachForMulticast;
     const db = admin.firestore() as unknown as {
       collectionGroup: jest.Mock;
       batch: jest.Mock;
@@ -226,4 +232,3 @@ describe("notification.service", () => {
     expect(call.android.notification.bodyLocKey).toBe("notification_default_body");
   });
 });
-

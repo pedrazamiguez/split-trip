@@ -1,10 +1,10 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -30,7 +30,8 @@ class SplitEventHandler(
     private val splitCalculatorFactory: ExpenseSplitCalculatorFactory,
     private val splitPreviewService: SplitPreviewService,
     private val formattingHelper: FormattingHelper,
-    private val splitRowMappingDelegate: SplitRowMappingDelegate
+    private val splitRowMappingDelegate: SplitRowMappingDelegate,
+    private val appConfigService: AppConfigService
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -101,7 +102,7 @@ class SplitEventHandler(
     fun recalculateSplits() {
         val state = _uiState.value
         val splitType = state.selectedSplitType?.let { SplitType.fromString(it.id) } ?: return
-        val currencyCode = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
 
         val activeParticipantIds = state.splits
             .filter { !it.isExcluded }
@@ -137,7 +138,7 @@ class SplitEventHandler(
      */
     fun handleExactAmountChanged(editedUserId: String, typedAmount: String) {
         val state = _uiState.value
-        val currencyCode = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
         val decimalDigits = state.selectedCurrency?.decimalDigits ?: 2
         val sourceAmountCents = parseSourceAmountToCents()
         if (sourceAmountCents <= 0) {
@@ -174,7 +175,7 @@ class SplitEventHandler(
      */
     fun handlePercentageChanged(editedUserId: String, typedPercentage: String) {
         val state = _uiState.value
-        val currencyCode = state.selectedCurrency?.code ?: AppConstants.DEFAULT_CURRENCY_CODE
+        val currencyCode = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value
         val sourceAmountCents = parseSourceAmountToCents()
 
         val updatedSplits = splitRowMappingDelegate.applyPercentageUpdate(

@@ -1,11 +1,11 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
@@ -42,6 +42,7 @@ class ContributionConfigHandlerTest {
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var addContributionUiMapper: AddContributionUiMapper
+    private lateinit var appConfigService: AppConfigService
 
     private lateinit var uiState: MutableStateFlow<AddContributionUiState>
     private lateinit var actions: MutableSharedFlow<AddContributionUiAction>
@@ -70,16 +71,21 @@ class ContributionConfigHandlerTest {
         getMemberProfilesUseCase = mockk()
         authenticationService = mockk()
         addContributionUiMapper = mockk(relaxed = true)
+        appConfigService = mockk()
 
         uiState = MutableStateFlow(AddContributionUiState())
         actions = MutableSharedFlow(extraBufferCapacity = 1)
+
+        val defaultCurrencyFlow = MutableStateFlow("EUR")
+        every { appConfigService.defaultCurrencyCode } returns defaultCurrencyFlow
 
         handler = ContributionConfigHandler(
             getGroupByIdUseCase = getGroupByIdUseCase,
             getGroupSubunitsUseCase = getGroupSubunitsUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             authenticationService = authenticationService,
-            addContributionUiMapper = addContributionUiMapper
+            addContributionUiMapper = addContributionUiMapper,
+            appConfigService = appConfigService
         )
 
         // Default stubs
@@ -128,8 +134,8 @@ class ContributionConfigHandlerTest {
 
             handler.setGroupCurrency(null)
 
-            assertEquals(AppConstants.DEFAULT_CURRENCY_CODE, handler.groupCurrency)
-            assertEquals(AppConstants.DEFAULT_CURRENCY_CODE, uiState.value.groupCurrencyCode)
+            assertEquals("EUR", handler.groupCurrency)
+            assertEquals("EUR", uiState.value.groupCurrencyCode)
         }
     }
 

@@ -12,7 +12,13 @@
 import "../config";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
-import { ContributionDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";
+import {
+  ContributionDoc,
+  NotificationType,
+  FcmDataPayload,
+  NotificationDisplay,
+  NotificationChannelId,
+} from "../types";
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
@@ -41,9 +47,7 @@ export const onContributionAdded = onDocumentCreated(
     const targetId = contribution.userId;
     const isImpersonation = !!targetId && targetId !== actorId;
 
-    const namePromises: Promise<string>[] = [
-      getActorDisplayName(actorId),
-    ];
+    const namePromises: Promise<string>[] = [getActorDisplayName(actorId)];
     if (isImpersonation) {
       namePromises.push(getActorDisplayName(targetId));
     }
@@ -56,15 +60,16 @@ export const onContributionAdded = onDocumentCreated(
     // Suppress notifications during cascading group deletion (or missing group)
     if (!groupData || groupData.deletionRequested) {
       if (groupData?.deletionRequested) {
-        logger.info("onContributionAdded: Suppressed — group is being deleted", { groupId, contributionId });
+        logger.info("onContributionAdded: Suppressed — group is being deleted", {
+          groupId,
+          contributionId,
+        });
       }
       return;
     }
 
     const actorName = displayNames[0] as string;
-    const targetName = isImpersonation
-      ? displayNames[1] as string
-      : actorName;
+    const targetName = isImpersonation ? (displayNames[1] as string) : actorName;
 
     // Exclude the actor (createdBy) from notifications — target member receives one
     const tokens = await getRecipientTokens(groupId, actorId, groupData.memberIds);
@@ -88,9 +93,7 @@ export const onContributionAdded = onDocumentCreated(
       bodyLocKey: isImpersonation
         ? "notification_contribution_added_body_on_behalf"
         : "notification_contribution_added_body_brief",
-      bodyLocArgs: isImpersonation
-        ? [actorName, targetName]
-        : [actorName],
+      bodyLocArgs: isImpersonation ? [actorName, targetName] : [actorName],
       channelId: NotificationChannelId.FINANCIAL,
     };
 

@@ -6,8 +6,11 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
@@ -16,7 +19,6 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.navigation.impl.GroupsNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
@@ -52,17 +54,25 @@ val groupsUiModule = module {
 
     factory<CreateGroupImageEventHandler> {
         val groupImageStorageService = get<GroupImageStorageService>()
+        val featureGateService = get<FeatureGateService>()
         CreateGroupImageEventHandlerImpl(
-            groupImageStorageService = groupImageStorageService
+            groupImageStorageService = groupImageStorageService,
+            featureGateService = featureGateService
         )
     }
 
     factory<CreateGroupSubmitEventHandler> {
         val createGroupUseCase = get<CreateGroupUseCase>()
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
+        val featureGateService = get<FeatureGateService>()
         val telemetryTracker = get<TelemetryTracker>()
+        val appConfigService = get<AppConfigService>()
         CreateGroupSubmitEventHandlerImpl(
             createGroupUseCase = createGroupUseCase,
-            telemetryTracker = telemetryTracker
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            featureGateService = featureGateService,
+            telemetryTracker = telemetryTracker,
+            appConfigService = appConfigService
         )
     }
 
@@ -76,6 +86,8 @@ val groupsUiModule = module {
         val emailValidationService = get<EmailValidationService>()
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val groupUiMapper = get<GroupUiMapper>()
+        val featureGateService = get<FeatureGateService>()
+        val appConfigService = get<AppConfigService>()
 
         CreateGroupViewModel(
             createGroupNavigationEventHandler = createGroupNavigationEventHandler,
@@ -86,16 +98,24 @@ val groupsUiModule = module {
             searchUsersByEmailUseCase = searchUsersByEmailUseCase,
             emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
-            groupUiMapper = groupUiMapper
+            groupUiMapper = groupUiMapper,
+            featureGateService = featureGateService,
+            appConfigService = appConfigService
         )
     }
 
     viewModel {
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
+        val deleteGroupUseCase = get<DeleteGroupUseCase>()
+        val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
+        val groupUiMapper = get<GroupUiMapper>()
+        val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         GroupsViewModel(
-            getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>(),
-            deleteGroupUseCase = get<DeleteGroupUseCase>(),
-            getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
-            groupUiMapper = get<GroupUiMapper>()
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            deleteGroupUseCase = deleteGroupUseCase,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            groupUiMapper = groupUiMapper,
+            isUserAnonymousUseCase = isUserAnonymousUseCase
         )
     }
 
@@ -115,10 +135,7 @@ val groupsUiModule = module {
     } bind NavigationProvider::class
 
     single {
-        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
-        GroupsScreenUiProviderImpl(
-            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
-        )
+        GroupsScreenUiProviderImpl()
     } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { GroupDetailScreenUiProviderImpl() } bind ScreenUiProvider::class

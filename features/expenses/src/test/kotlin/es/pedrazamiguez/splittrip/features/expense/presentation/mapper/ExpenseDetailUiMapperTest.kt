@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
@@ -89,7 +90,8 @@ class ExpenseDetailUiMapperTest {
             resourceProvider = resourceProvider,
             expenseCalculatorService = expenseCalculatorService,
             addOnCalculationService = addOnCalculationService,
-            scheduledBadgeUiMapper = scheduledBadgeUiMapper
+            scheduledBadgeUiMapper = scheduledBadgeUiMapper,
+            userUiMapper = UserUiMapper()
         )
     }
 

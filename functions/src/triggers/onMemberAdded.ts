@@ -14,7 +14,13 @@
 import "../config";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
-import { GroupMemberDoc, NotificationType, FcmDataPayload, NotificationDisplay, NotificationChannelId } from "../types";
+import {
+  GroupMemberDoc,
+  NotificationType,
+  FcmDataPayload,
+  NotificationDisplay,
+  NotificationChannelId,
+} from "../types";
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
@@ -43,9 +49,7 @@ export const onMemberAdded = onDocumentCreated(
     const actorId = member.addedBy || newMemberUserId;
     const isAdminAction = actorId !== newMemberUserId;
 
-    const namePromises: Promise<string>[] = [
-      getActorDisplayName(actorId),
-    ];
+    const namePromises: Promise<string>[] = [getActorDisplayName(actorId)];
     if (isAdminAction) {
       namePromises.push(getActorDisplayName(newMemberUserId));
     }
@@ -64,9 +68,7 @@ export const onMemberAdded = onDocumentCreated(
     }
 
     const actorDisplayName = displayNames[0] as string;
-    const memberDisplayName = isAdminAction
-      ? displayNames[1] as string
-      : actorDisplayName;
+    const memberDisplayName = isAdminAction ? (displayNames[1] as string) : actorDisplayName;
 
     // Exclude the real actor (admin or self-joiner) from notifications
     const tokens = await getRecipientTokens(groupId, actorId, groupData.memberIds);
@@ -88,9 +90,7 @@ export const onMemberAdded = onDocumentCreated(
       bodyLocKey: isAdminAction
         ? "notification_member_added_by_admin_body"
         : "notification_member_added_body",
-      bodyLocArgs: isAdminAction
-        ? [actorDisplayName, memberDisplayName]
-        : [memberDisplayName],
+      bodyLocArgs: isAdminAction ? [actorDisplayName, memberDisplayName] : [memberDisplayName],
       channelId: NotificationChannelId.MEMBERSHIP,
     };
 

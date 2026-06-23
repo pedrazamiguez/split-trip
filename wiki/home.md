@@ -51,6 +51,10 @@ The project follows **Clean Architecture** with **MVVM** and a **multi-module** 
 
 * **[Core Services & Components Catalog](core-services-catalog.md)**: Comprehensive reference of all reusable UI components, formatters, domain services, and preview utilities. **Check here before creating new code** to avoid duplication.
 
+## ⚙️ Developer Tooling & Maintenance
+
+* **[Version Catalog Maintenance & Dependency Updates](version-catalog-maintenance.md)**: How to check and upgrade project dependencies using the on-demand Version Catalog Update plugin, plugin rules, and upgrade best practices.
+
 ## 🚀 Getting Started
 
 Check the sidebar to navigate through specific architectural concepts like our **ScreenUiProvider** system, Navigation strategies, and UI patterns.
