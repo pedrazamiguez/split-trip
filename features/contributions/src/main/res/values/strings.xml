@@ -10,6 +10,7 @@
     <string name="contribution_add_money_contributing_for">Contributing</string>
     <string name="contribution_add_money_for_group">For the whole group</string>
     <string name="contribution_add_money_for_me">For me</string>
+    <string name="contribution_add_money_for_member">For %1$s</string>
     <string name="contribution_add_money_for_subunit">For %1$s</string>
 
     <!-- Contribution Wizard Navigation -->
@@ -30,6 +31,6 @@
 
     <!-- Member Picker -->
     <string name="contribution_member_picker_title">Contributing member</string>
-    <string name="contribution_member_picker_you_suffix">(You)</string>
+    <string name="contribution_member_picker_you_label">You</string>
 </resources>
 

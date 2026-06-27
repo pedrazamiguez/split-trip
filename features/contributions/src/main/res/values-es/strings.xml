@@ -11,6 +11,7 @@
     <string name="contribution_add_money_contributing_for">Aportando</string>
     <string name="contribution_add_money_for_group">Para todo el grupo</string>
     <string name="contribution_add_money_for_me">Para mí</string>
+    <string name="contribution_add_money_for_member">Para %1$s</string>
     <string name="contribution_add_money_for_subunit">Para %1$s</string>
 
     <!-- Contribution Wizard Navigation -->
@@ -31,6 +32,6 @@
 
     <!-- Member Picker -->
     <string name="contribution_member_picker_title">Miembro contribuyente</string>
-    <string name="contribution_member_picker_you_suffix">(Tú)</string>
+    <string name="contribution_member_picker_you_label">Tú</string>
 </resources>
 
