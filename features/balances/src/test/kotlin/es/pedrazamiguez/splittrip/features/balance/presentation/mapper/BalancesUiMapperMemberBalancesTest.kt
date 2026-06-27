@@ -170,24 +170,30 @@ class BalancesUiMapperMemberBalancesTest {
         }
 
         @Test
-        fun `members sorted by absolute pocketBalance descending after current user`() {
+        fun `members sorted alphabetically by display name after current user`() {
             val balances = listOf(
                 MemberBalance(userId = "user-1", pocketBalance = 100L),
                 MemberBalance(userId = "user-2", pocketBalance = -5000L),
                 MemberBalance(userId = "user-3", pocketBalance = 3000L)
             )
 
+            val customProfiles = mapOf(
+                "user-1" to User(userId = "user-1", email = "alice@test.com", displayName = "Alice"),
+                "user-2" to User(userId = "user-2", email = "charlie@test.com", displayName = "Charlie"),
+                "user-3" to User(userId = "user-3", email = "bob@test.com", displayName = "Bob")
+            )
+
             val result = mapper.mapMemberBalances(
                 balances = balances,
                 currency = currency,
                 currentUserId = "user-1",
-                memberProfiles = memberProfiles
+                memberProfiles = customProfiles
             )
 
-            // user-1 first (current user), then user-2 (|5000|), then user-3 (|3000|)
+            // Expected order: user-1 (current user), then user-3 ("Bob"), then user-2 ("Charlie")
             assertEquals("user-1", result[0].userId)
-            assertEquals("user-2", result[1].userId)
-            assertEquals("user-3", result[2].userId)
+            assertEquals("user-3", result[1].userId)
+            assertEquals("user-2", result[2].userId)
         }
 
         @Test

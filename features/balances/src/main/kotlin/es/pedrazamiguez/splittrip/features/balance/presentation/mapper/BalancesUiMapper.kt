@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 
+import es.pedrazamiguez.splittrip.core.common.extensions.localeAwareComparator
 import es.pedrazamiguez.splittrip.core.common.extensions.toEpochMillisUtc
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
@@ -257,7 +258,7 @@ class BalancesUiMapper(
 
     /**
      * Maps per-member domain balances to UI models with formatted amounts.
-     * Sort order: current user first, then by |pocketBalance| descending (most extreme first).
+     * Sort order: current user first, then alphabetically by display name (resolved by mapper).
      *
      * @param groupCurrency The group's base currency code, used to determine whether
      *                      to show equivalents for per-currency breakdowns.
@@ -274,22 +275,25 @@ class BalancesUiMapper(
         cashContext: MemberBalanceCashContext = MemberBalanceCashContext()
     ): ImmutableList<MemberBalanceUiModel> {
         val locale = localeProvider.getCurrentLocale()
-        return balances
-            .sortedWith(
-                compareByDescending<MemberBalance> { it.userId == currentUserId }
-                    .thenByDescending { kotlin.math.abs(it.pocketBalance) }
+        val mappedBalances = balances.map { balance ->
+            mapSingleMemberBalance(
+                balance = balance,
+                currentUserId = currentUserId,
+                currency = currency,
+                groupCurrency = groupCurrency,
+                memberProfiles = memberProfiles,
+                cashContext = cashContext,
+                locale = locale
             )
-            .map { balance ->
-                mapSingleMemberBalance(
-                    balance = balance,
-                    currentUserId = currentUserId,
-                    currency = currency,
-                    groupCurrency = groupCurrency,
-                    memberProfiles = memberProfiles,
-                    cashContext = cashContext,
-                    locale = locale
-                )
-            }
+        }
+
+        val displayNameComparator = localeAwareComparator<MemberBalanceUiModel>(locale) { it.displayName }
+
+        return mappedBalances
+            .sortedWith(
+                compareByDescending<MemberBalanceUiModel> { it.isCurrentUser }
+                    .thenComparing(displayNameComparator)
+            )
             .toImmutableList()
     }
 
