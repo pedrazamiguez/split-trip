@@ -10,6 +10,7 @@
     <string name="withdrawal_cash_for_group">Pa tó er grupo</string>
     <string name="withdrawal_cash_for_subunit">Pa %1$s</string>
     <string name="withdrawal_cash_for_me">Pa mí</string>
+    <string name="withdrawal_cash_for_member">Pa %1$s</string>
     <string name="withdrawal_scope_personal">Perçonâh</string>
     <string name="withdrawal_scope_group">Grupo</string>
     <string name="withdrawal_exchange_rate_title">Tipo de cambio</string>
@@ -50,5 +51,5 @@
     <string name="withdrawal_review_member">Retirao por</string>
     <string name="withdrawal_review_none">—</string>
     <string name="withdrawal_member_picker_title">Miembro que retira</string>
-    <string name="withdrawal_member_picker_you_suffix">(Tú)</string>
+    <string name="withdrawal_member_picker_you_label">Tú</string>
 </resources>

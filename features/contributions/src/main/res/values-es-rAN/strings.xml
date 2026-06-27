@@ -11,6 +11,7 @@
     <string name="contribution_add_money_contributing_for">Aportando</string>
     <string name="contribution_add_money_for_group">Pa tó er grupo</string>
     <string name="contribution_add_money_for_me">Pa mí</string>
+    <string name="contribution_add_money_for_member">Pa %1$s</string>
     <string name="contribution_add_money_for_subunit">Pa %1$s</string>
     <string name="contribution_wizard_next">Çigiente</string>
     <string name="contribution_wizard_back">Atrâh</string>
@@ -25,5 +26,5 @@
     <string name="contribution_review_member">Miembro contribuyente</string>
     <string name="contribution_review_none">—</string>
     <string name="contribution_member_picker_title">Miembro contribuyente</string>
-    <string name="contribution_member_picker_you_suffix">(Tú)</string>
+    <string name="contribution_member_picker_you_label">Tú</string>
 </resources>

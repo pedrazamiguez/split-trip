@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,13 +28,13 @@ import kotlinx.collections.immutable.ImmutableList
  * Reusable member picker card for selecting a group member from a radio group.
  *
  * Renders a card with a title and a radio button for each available member.
- * The current user's name is visually distinguished with a localised suffix
- * (e.g. "Ana (You)").
+ * The current user's name is visually distinguished with a localised label
+ * (e.g. "You").
  *
  * Designed for use in contribution and cash withdrawal flows where a user can
  * perform actions on behalf of another group member (impersonation).
  *
- * @param labels            Localised labels for the card title and current-user suffix.
+ * @param labels            Localised labels for the card title and current-user label.
  * @param members           Available group members to render as radio rows.
  * @param selectedMemberId  ID of the currently selected member, or `null` if none selected.
  * @param onMemberSelected  Callback emitting the chosen member's user ID.
@@ -52,7 +54,7 @@ fun MemberPickerCard(
             Column(modifier = Modifier.selectableGroup()) {
                 members.forEach { member ->
                     val displayText = if (member.isCurrentUser) {
-                        "${member.displayName} ${labels.currentUserSuffix}"
+                        labels.currentUserLabel
                     } else {
                         member.displayName
                     }
@@ -73,6 +75,7 @@ private fun MemberRadioRow(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -80,7 +83,9 @@ private fun MemberRadioRow(
             .selectable(
                 selected = selected,
                 onClick = onClick,
-                role = Role.RadioButton
+                role = Role.RadioButton,
+                interactionSource = interactionSource,
+                indication = null
             )
             .padding(vertical = MaterialTheme.spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically
