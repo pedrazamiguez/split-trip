@@ -8,7 +8,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
@@ -428,8 +430,36 @@ class BalancesUiMapper(
                 ""
             },
             scopeLabel = resolveCashBreakdownScopeLabel(withdrawal, subunitsMap),
-            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP
+            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP,
+            formattedAddOns = formatWithdrawalAddOns(withdrawal.addOns, groupCurrency, locale)
         )
+    }
+
+    /** Formats a list of withdrawal add-ons (excluding discount types) into a localized string. */
+    private fun formatWithdrawalAddOns(
+        addOns: List<AddOn>,
+        groupCurrency: String,
+        locale: Locale
+    ): String {
+        val nonDiscountAddOns = addOns.filter { it.type != AddOnType.DISCOUNT }
+        if (nonDiscountAddOns.isEmpty()) return ""
+        return nonDiscountAddOns.joinToString(separator = ", ") { addOn ->
+            val description = addOn.description
+            val labelText = if (!description.isNullOrBlank()) {
+                description
+            } else {
+                when (addOn.type) {
+                    AddOnType.TIP -> resourceProvider.getString(R.string.balances_cash_breakdown_add_on_tip)
+                    AddOnType.FEE -> resourceProvider.getString(R.string.balances_cash_breakdown_add_on_fee)
+                    AddOnType.SURCHARGE -> resourceProvider.getString(
+                        R.string.balances_cash_breakdown_add_on_surcharge
+                    )
+                    AddOnType.DISCOUNT -> "" // Filtered out
+                }
+            }
+            val formattedAmount = formatCurrencyAmount(addOn.groupAmountCents, groupCurrency, locale)
+            resourceProvider.getString(R.string.balances_cash_breakdown_fee_tip, labelText, formattedAmount)
+        }
     }
 
     /** Resolves the user's attributed native share (in withdrawal currency cents) for display. */

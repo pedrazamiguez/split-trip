@@ -28,5 +28,6 @@ data class CashBreakdownUiModel(
     val formattedNativeRemaining: String = "",
     val formattedEquivalent: String = "",
     val scopeLabel: String = "",
-    val isEstimatedShare: Boolean = false
+    val isEstimatedShare: Boolean = false,
+    val formattedAddOns: String = ""
 )

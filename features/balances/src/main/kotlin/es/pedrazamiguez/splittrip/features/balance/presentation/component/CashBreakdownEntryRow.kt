@@ -50,6 +50,12 @@ internal fun CashBreakdownEntryRow(
                     maxLines = Int.MAX_VALUE
                 )
             }
+            if (item.formattedAddOns.isNotBlank()) {
+                CaptionText(
+                    text = item.formattedAddOns,
+                    maxLines = Int.MAX_VALUE
+                )
+            }
         }
         Column(
             horizontalAlignment = Alignment.End,

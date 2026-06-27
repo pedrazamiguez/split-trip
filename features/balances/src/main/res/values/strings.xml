@@ -89,6 +89,12 @@
     <!-- Fallback when the subunit referenced by a withdrawal is no longer found (data integrity edge case) -->
     <string name="balances_cash_breakdown_unknown_subunit">Unknown subunit</string>
 
+    <!-- Cash Breakdown Add-ons -->
+    <string name="balances_cash_breakdown_fee_tip">%1$s: %2$s</string>
+    <string name="balances_cash_breakdown_add_on_tip">Tip</string>
+    <string name="balances_cash_breakdown_add_on_fee">Fee</string>
+    <string name="balances_cash_breakdown_add_on_surcharge">Surcharge</string>
+
     <!-- Main Action -->
     <string name="balances_filter">Filter balances</string>
 

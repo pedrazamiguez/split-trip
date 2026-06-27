@@ -3,7 +3,9 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
@@ -50,6 +52,15 @@ class BalancesUiMapperMemberBalancesTest {
             "ATM — Jan 10"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_rate, any(), any(), any()) } returns
             "@ 0.027 THB/EUR"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_tip) } returns "Tip"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_fee) } returns "Fee"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_surcharge) } returns "Surcharge"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_fee_tip, any(), any()) } answers {
+            val varargArray = args[1] as Array<*>
+            val label = varargArray[0] as String
+            val amount = varargArray[1] as String
+            "$label: $amount"
+        }
         every {
             resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.user_pending_fallback)
         } returns "Pending member"
@@ -950,6 +961,176 @@ class BalancesUiMapperMemberBalancesTest {
             assertEquals("Couple", breakdown[1].scopeLabel) // SUBUNIT
             assertFalse(breakdown[2].isEstimatedShare) // USER
         }
+
+        @Test
+        fun `formattedAddOns is empty when withdrawal has no add-ons`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = cashWithdrawal("w1", scope = PayerType.USER, addOns = emptyList())
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            assertTrue(result[0].cashBreakdown[0].formattedAddOns.isEmpty())
+        }
+
+        @Test
+        fun `formattedAddOns filters out DISCOUNT type add-ons`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.USER,
+                addOns = listOf(
+                    AddOn(
+                        id = "a1",
+                        type = AddOnType.DISCOUNT,
+                        amountCents = 100L,
+                        groupAmountCents = 100L,
+                        description = "Discount"
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            assertTrue(result[0].cashBreakdown[0].formattedAddOns.isEmpty())
+        }
+
+        @Test
+        fun `formattedAddOns uses description when present`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.USER,
+                addOns = listOf(
+                    AddOn(
+                        id = "a1",
+                        type = AddOnType.FEE,
+                        amountCents = 275L,
+                        groupAmountCents = 275L,
+                        description = "ATM Fee"
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            val formatted = result[0].cashBreakdown[0].formattedAddOns
+            assertTrue(formatted.contains("ATM Fee"))
+            assertTrue(formatted.contains("2.75"))
+        }
+
+        @Test
+        fun `formattedAddOns maps using type fallbacks when description is missing`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.USER,
+                addOns = listOf(
+                    AddOn(
+                        id = "a1",
+                        type = AddOnType.TIP,
+                        amountCents = 100L,
+                        groupAmountCents = 100L,
+                        description = null
+                    ),
+                    AddOn(
+                        id = "a2",
+                        type = AddOnType.FEE,
+                        amountCents = 200L,
+                        groupAmountCents = 200L,
+                        description = ""
+                    ),
+                    AddOn(
+                        id = "a3",
+                        type = AddOnType.SURCHARGE,
+                        amountCents = 300L,
+                        groupAmountCents = 300L,
+                        description = "  "
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            val formatted = result[0].cashBreakdown[0].formattedAddOns
+            assertTrue(formatted.contains("Tip"))
+            assertTrue(formatted.contains("Fee"))
+            assertTrue(formatted.contains("Surcharge"))
+            assertTrue(formatted.contains("1.00"))
+            assertTrue(formatted.contains("2.00"))
+            assertTrue(formatted.contains("3.00"))
+        }
+
+        @Test
+        fun `formattedAddOns joins multiple non-discount add-ons with a comma`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.USER,
+                addOns = listOf(
+                    AddOn(
+                        id = "a1",
+                        type = AddOnType.FEE,
+                        amountCents = 150L,
+                        groupAmountCents = 150L,
+                        description = "ATM Fee"
+                    ),
+                    AddOn(
+                        id = "a2",
+                        type = AddOnType.SURCHARGE,
+                        amountCents = 100L,
+                        groupAmountCents = 100L,
+                        description = "Bank Fee"
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            val formatted = result[0].cashBreakdown[0].formattedAddOns
+            assertTrue(formatted.contains("ATM Fee"))
+            assertTrue(formatted.contains("Bank Fee"))
+            assertTrue(formatted.contains(", "))
+        }
     }
 }
 
@@ -966,7 +1147,8 @@ private fun cashWithdrawal(
     subunitId: String? = null,
     amountWithdrawn: Long = 100000L,
     currency: String = "EUR",
-    createdAt: LocalDateTime? = null
+    createdAt: LocalDateTime? = null,
+    addOns: List<AddOn> = emptyList()
 ) = CashWithdrawal(
     id = id,
     withdrawnBy = withdrawnBy,
@@ -977,5 +1159,6 @@ private fun cashWithdrawal(
     remainingAmount = amountWithdrawn, // Defaults to full amount; no FIFO consumption
     deductedBaseAmount = amountWithdrawn,
     exchangeRate = BigDecimal.ONE,
-    createdAt = createdAt
+    createdAt = createdAt,
+    addOns = addOns
 )
