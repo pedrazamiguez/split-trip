@@ -42,7 +42,7 @@ private fun gatherExpenseExtras(
     val rawExtras = mutableListOf<RawExtraItem>()
     for (expense in expenses) {
         val activeSplits = expense.splits.filter { !it.isExcluded }
-        val scopeLabel = when {
+        val (scopeLabel, scopeType) = when {
             activeSplits.size == 1 -> {
                 val userId = activeSplits.first().userId
                 context.userUiMapper.mapToDisplayName(
@@ -50,19 +50,20 @@ private fun gatherExpenseExtras(
                     userId,
                     context.currentUserId,
                     youLabel
-                )
+                ) to PayerType.USER
             }
             activeSplits.isNotEmpty() &&
                 activeSplits.all {
                     it.subunitId != null && it.subunitId == activeSplits.first().subunitId
                 } -> {
                 val subunitId = activeSplits.first().subunitId!!
-                context.subunitsMap[subunitId]?.name ?: context.resourceProvider.getString(
+                val name = context.subunitsMap[subunitId]?.name ?: context.resourceProvider.getString(
                     R.string.balances_cash_breakdown_unknown_subunit
                 )
+                name to PayerType.SUBUNIT
             }
             else -> {
-                context.resourceProvider.getString(R.string.balances_contribution_scope_group)
+                context.resourceProvider.getString(R.string.balances_contribution_scope_group) to PayerType.GROUP
             }
         }
         val title = expense.title.ifBlank {
@@ -76,7 +77,8 @@ private fun gatherExpenseExtras(
                         parentTitle = title,
                         createdAt = expense.createdAt,
                         addOn = addOn,
-                        scopeLabel = scopeLabel
+                        scopeLabel = scopeLabel,
+                        scopeType = scopeType
                     )
                 )
             }
@@ -126,7 +128,8 @@ private fun gatherWithdrawalExtras(
                         parentTitle = title,
                         createdAt = withdrawal.createdAt,
                         addOn = addOn,
-                        scopeLabel = scopeLabel
+                        scopeLabel = scopeLabel,
+                        scopeType = withdrawal.withdrawalScope
                     )
                 )
             }
@@ -145,13 +148,16 @@ private fun buildTypeBreakdown(
     for (type in groups) {
         val itemsOfType = sortedRawExtras.filter { it.addOn.type == type }
         if (itemsOfType.isNotEmpty()) {
-            val groupedByScope = itemsOfType.groupBy { it.scopeLabel }
+            val groupedByScope = itemsOfType.groupBy { ScopeKey(it.scopeLabel, it.scopeType) }
             val uiItems = groupedByScope.entries
-                .sortedBy { it.key }
-                .map { (scopeLabel, items) ->
+                .sortedWith(
+                    compareBy<Map.Entry<ScopeKey, List<RawExtraItem>>> { it.key.type.sortWeight() }
+                        .thenBy { it.key.label }
+                )
+                .map { (scopeKey, items) ->
                     val sumCents = items.sumOf { it.addOn.groupAmountCents }
                     ExtraItemUiModel(
-                        parentTitle = scopeLabel,
+                        parentTitle = scopeKey.label,
                         dateText = "",
                         description = null,
                         formattedAmount = formatCurrencyAmount(
@@ -159,7 +165,8 @@ private fun buildTypeBreakdown(
                             context.groupCurrency,
                             context.locale
                         ),
-                        scopeLabel = ""
+                        scopeLabel = "",
+                        scopeType = scopeKey.type
                     )
                 }.toImmutableList()
 
@@ -193,4 +200,15 @@ private fun buildTypeBreakdown(
         }
     }
     return result.toImmutableList()
+}
+
+private data class ScopeKey(
+    val label: String,
+    val type: PayerType
+)
+
+private fun PayerType.sortWeight(): Int = when (this) {
+    PayerType.GROUP -> 0
+    PayerType.SUBUNIT -> 1
+    PayerType.USER -> 2
 }

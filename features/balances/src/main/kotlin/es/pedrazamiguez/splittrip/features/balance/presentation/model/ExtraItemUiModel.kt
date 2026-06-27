@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.model
 
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import java.time.LocalDateTime
 
@@ -13,12 +14,14 @@ data class ExtraItemUiModel(
     val description: String? = null,
     val formattedAmount: String = "",
     // e.g., "Group", "Ana's Family", "You", "Andrés"
-    val scopeLabel: String = ""
+    val scopeLabel: String = "",
+    val scopeType: PayerType = PayerType.GROUP
 )
 
 internal data class RawExtraItem(
     val parentTitle: String,
     val createdAt: LocalDateTime?,
     val addOn: AddOn,
-    val scopeLabel: String
+    val scopeLabel: String,
+    val scopeType: PayerType
 )

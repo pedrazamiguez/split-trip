@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -1307,6 +1308,75 @@ class BalancesUiMapperTest {
             assertEquals(1, result[0].items.size)
             assertEquals("Group", result[0].items[0].parentTitle)
             assertTrue(result[0].items[0].formattedAmount.contains("3.00"))
+        }
+
+        private fun makeFeeExpense(id: String, title: String, splits: List<ExpenseSplit> = emptyList()) = Expense(
+            id = id,
+            title = title,
+            splits = splits,
+            addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 100))
+        )
+
+        @Test
+        fun `sorts groups within a section by scope biggest to smallest then alphabetically`() {
+            val expenseGroup = makeFeeExpense("e_group", "Group fee")
+            val expenseUser1 =
+                makeFeeExpense("e_user1", "Antonia fee", listOf(ExpenseSplit(userId = "u2", amountCents = 100)))
+            val expenseUser2 =
+                makeFeeExpense("e_user2", "You fee", listOf(ExpenseSplit(userId = "u1", amountCents = 100)))
+            val expenseSubunit1 = makeFeeExpense(
+                "e_subunit1",
+                "Golfas fee",
+                listOf(
+                    ExpenseSplit(userId = "u1", amountCents = 50, subunitId = "s1"),
+                    ExpenseSplit(userId = "u2", amountCents = 50, subunitId = "s1")
+                )
+            )
+            val expenseSubunit2 = makeFeeExpense(
+                "e_subunit2",
+                "Zsubunit fee",
+                listOf(
+                    ExpenseSplit(userId = "u1", amountCents = 50, subunitId = "s2"),
+                    ExpenseSplit(userId = "u2", amountCents = 50, subunitId = "s2")
+                )
+            )
+
+            val memberProfiles = mapOf(
+                "u1" to User(userId = "u1", email = "u1@example.com", displayName = "Antónia"),
+                "u2" to User(userId = "u2", email = "u2@example.com", displayName = "Antonia")
+            )
+            val subunitsMap = mapOf(
+                "s1" to Subunit(id = "s1", name = "Golfas"),
+                "s2" to Subunit(id = "s2", name = "Zsubunit")
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expenseGroup, expenseUser1, expenseUser2, expenseSubunit1, expenseSubunit2),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = memberProfiles,
+                subunitsMap = subunitsMap,
+                currentUserId = "u1"
+            )
+
+            assertEquals(1, result.size)
+            val feesSection = result[0]
+            assertEquals(5, feesSection.items.size)
+
+            assertEquals("Group", feesSection.items[0].parentTitle)
+            assertEquals(PayerType.GROUP, feesSection.items[0].scopeType)
+
+            assertEquals("Golfas", feesSection.items[1].parentTitle)
+            assertEquals(PayerType.SUBUNIT, feesSection.items[1].scopeType)
+
+            assertEquals("Zsubunit", feesSection.items[2].parentTitle)
+            assertEquals(PayerType.SUBUNIT, feesSection.items[2].scopeType)
+
+            assertEquals("Antonia", feesSection.items[3].parentTitle)
+            assertEquals(PayerType.USER, feesSection.items[3].scopeType)
+
+            assertEquals("You", feesSection.items[4].parentTitle)
+            assertEquals(PayerType.USER, feesSection.items[4].scopeType)
         }
     }
 }
