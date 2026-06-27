@@ -52,15 +52,6 @@ class BalancesUiMapperMemberBalancesTest {
             "ATM — Jan 10"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_rate, any(), any(), any()) } returns
             "@ 0.027 THB/EUR"
-        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_tip) } returns "Tip"
-        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_fee) } returns "Fee"
-        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_surcharge) } returns "Surcharge"
-        every { resourceProvider.getString(R.string.balances_cash_breakdown_fee_tip, any(), any()) } answers {
-            val varargArray = args[1] as Array<*>
-            val label = varargArray[0] as String
-            val amount = varargArray[1] as String
-            "$label: $amount"
-        }
         every {
             resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.user_pending_fallback)
         } returns "Pending member"
@@ -1011,7 +1002,7 @@ class BalancesUiMapperMemberBalancesTest {
         }
 
         @Test
-        fun `formattedAddOns uses description when present`() {
+        fun `formattedAddOns attributes full fee amount to withdrawing user under USER scope`() {
             val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
             val withdrawal = cashWithdrawal(
                 id = "w1",
@@ -1020,8 +1011,8 @@ class BalancesUiMapperMemberBalancesTest {
                     AddOn(
                         id = "a1",
                         type = AddOnType.FEE,
-                        amountCents = 275L,
-                        groupAmountCents = 275L,
+                        amountCents = 245L,
+                        groupAmountCents = 245L,
                         description = "ATM Fee"
                     )
                 )
@@ -1038,80 +1029,63 @@ class BalancesUiMapperMemberBalancesTest {
             )
 
             val formatted = result[0].cashBreakdown[0].formattedAddOns
-            assertTrue(formatted.contains("ATM Fee"))
-            assertTrue(formatted.contains("2.75"))
+            // Antonia paid 2.45 ATM fee, should see the full 2.45 EUR fee
+            assertTrue(formatted.contains("2.45"))
+            assertFalse(formatted.contains("ATM Fee"))
         }
 
         @Test
-        fun `formattedAddOns maps using type fallbacks when description is missing`() {
-            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+        fun `formattedAddOns divides fee amount equally among group members under GROUP scope`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 50000L)
             val withdrawal = cashWithdrawal(
                 id = "w1",
-                scope = PayerType.USER,
+                scope = PayerType.GROUP,
                 addOns = listOf(
                     AddOn(
                         id = "a1",
-                        type = AddOnType.TIP,
-                        amountCents = 100L,
-                        groupAmountCents = 100L,
-                        description = null
-                    ),
+                        type = AddOnType.FEE,
+                        amountCents = 300L,
+                        groupAmountCents = 300L,
+                        description = "ATM Fee"
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = listOf("user-1", "user-2", "user-3") // 3 members
+                )
+            )
+
+            val formatted = result[0].cashBreakdown[0].formattedAddOns
+            // Total fee is 3.00 EUR. Split among 3 members, each pays 1.00 EUR
+            assertTrue(formatted.contains("1.00"))
+            assertFalse(formatted.contains("ATM Fee"))
+        }
+
+        @Test
+        fun `formattedAddOns scales fee amount proportionally based on memberShares under SUBUNIT scope`() {
+            val subunit = Subunit(
+                id = "sub-1",
+                name = "Golfas",
+                memberShares = mapOf("user-1" to BigDecimal("0.5"), "user-2" to BigDecimal("0.5"))
+            )
+            val balance = MemberBalance(userId = "user-1", cashInHand = 10000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.SUBUNIT,
+                subunitId = "sub-1",
+                addOns = listOf(
                     AddOn(
-                        id = "a2",
+                        id = "a1",
                         type = AddOnType.FEE,
                         amountCents = 200L,
                         groupAmountCents = 200L,
-                        description = ""
-                    ),
-                    AddOn(
-                        id = "a3",
-                        type = AddOnType.SURCHARGE,
-                        amountCents = 300L,
-                        groupAmountCents = 300L,
-                        description = "  "
-                    )
-                )
-            )
-
-            val result = mapper.mapMemberBalances(
-                balances = listOf(balance),
-                currency = currency,
-                currentUserId = currentUserId,
-                cashContext = MemberBalanceCashContext(
-                    withdrawals = listOf(withdrawal),
-                    groupMemberIds = groupMemberIds
-                )
-            )
-
-            val formatted = result[0].cashBreakdown[0].formattedAddOns
-            assertTrue(formatted.contains("Tip"))
-            assertTrue(formatted.contains("Fee"))
-            assertTrue(formatted.contains("Surcharge"))
-            assertTrue(formatted.contains("1.00"))
-            assertTrue(formatted.contains("2.00"))
-            assertTrue(formatted.contains("3.00"))
-        }
-
-        @Test
-        fun `formattedAddOns joins multiple non-discount add-ons with a comma`() {
-            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
-            val withdrawal = cashWithdrawal(
-                id = "w1",
-                scope = PayerType.USER,
-                addOns = listOf(
-                    AddOn(
-                        id = "a1",
-                        type = AddOnType.FEE,
-                        amountCents = 150L,
-                        groupAmountCents = 150L,
                         description = "ATM Fee"
-                    ),
-                    AddOn(
-                        id = "a2",
-                        type = AddOnType.SURCHARGE,
-                        amountCents = 100L,
-                        groupAmountCents = 100L,
-                        description = "Bank Fee"
                     )
                 )
             )
@@ -1122,14 +1096,15 @@ class BalancesUiMapperMemberBalancesTest {
                 currentUserId = currentUserId,
                 cashContext = MemberBalanceCashContext(
                     withdrawals = listOf(withdrawal),
+                    subunitsMap = mapOf("sub-1" to subunit),
                     groupMemberIds = groupMemberIds
                 )
             )
 
             val formatted = result[0].cashBreakdown[0].formattedAddOns
-            assertTrue(formatted.contains("ATM Fee"))
-            assertTrue(formatted.contains("Bank Fee"))
-            assertTrue(formatted.contains(", "))
+            // Total fee is 2.00 EUR. At 50% share, user-1 pays 1.00 EUR
+            assertTrue(formatted.contains("1.00"))
+            assertFalse(formatted.contains("ATM Fee"))
         }
     }
 }

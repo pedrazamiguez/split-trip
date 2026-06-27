@@ -30,6 +30,7 @@ import kotlinx.collections.immutable.ImmutableList
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CashBreakdownBottomSheet(
+    memberName: String,
     breakdown: ImmutableList<CashBreakdownUiModel>,
     formattedTotal: String,
     onDismiss: () -> Unit
@@ -53,6 +54,13 @@ fun CashBreakdownBottomSheet(
         ) {
             SheetTitleText(
                 text = stringResource(R.string.balances_cash_breakdown_title),
+                modifier = Modifier.padding(bottom = MaterialTheme.spacing.ExtraSmall)
+            )
+            Text(
+                text = memberName,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = MaterialTheme.spacing.Default)
             )
 

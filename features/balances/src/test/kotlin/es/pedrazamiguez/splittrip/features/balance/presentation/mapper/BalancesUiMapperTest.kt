@@ -42,15 +42,6 @@ class BalancesUiMapperTest {
         every { resourceProvider.getString(R.string.balances_contribution_scope_group) } returns "Group"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_personal) } returns "Personal"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_group) } returns "Group"
-        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_tip) } returns "Tip"
-        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_fee) } returns "Fee"
-        every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_surcharge) } returns "Surcharge"
-        every { resourceProvider.getString(R.string.balances_cash_breakdown_fee_tip, any(), any()) } answers {
-            val varargArray = args[1] as Array<*>
-            val label = varargArray[0] as String
-            val amount = varargArray[1] as String
-            "$label: $amount"
-        }
         every {
             resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.user_pending_fallback)
         } returns "Pending member"

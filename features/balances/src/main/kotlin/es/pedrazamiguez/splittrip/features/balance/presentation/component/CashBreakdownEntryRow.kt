@@ -50,12 +50,6 @@ internal fun CashBreakdownEntryRow(
                     maxLines = Int.MAX_VALUE
                 )
             }
-            if (item.formattedAddOns.isNotBlank()) {
-                CaptionText(
-                    text = item.formattedAddOns,
-                    maxLines = Int.MAX_VALUE
-                )
-            }
         }
         Column(
             horizontalAlignment = Alignment.End,
@@ -72,6 +66,12 @@ internal fun CashBreakdownEntryRow(
                 CaptionText(
                     text = item.formattedEquivalent,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+            if (item.formattedAddOns.isNotBlank()) {
+                CaptionText(
+                    text = item.formattedAddOns,
+                    color = MaterialTheme.colorScheme.error
                 )
             }
         }
