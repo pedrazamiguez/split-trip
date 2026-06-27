@@ -49,4 +49,6 @@ data class MemberBalance(
     val cashInHandByCurrency: List<CurrencyAmount> = emptyList(),
     val cashSpentByCurrency: List<CurrencyAmount> = emptyList(),
     val nonCashSpentByCurrency: List<CurrencyAmount> = emptyList()
-)
+) {
+    val totalBalance: Long get() = pocketBalance + cashInHand
+}

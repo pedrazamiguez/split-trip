@@ -55,7 +55,7 @@ internal fun MemberBalanceSummaryRow(
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = memberBalance.formattedPocketBalance,
+                text = memberBalance.formattedTotalBalance,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = balanceColor

@@ -170,24 +170,30 @@ class BalancesUiMapperMemberBalancesTest {
         }
 
         @Test
-        fun `members sorted by absolute pocketBalance descending after current user`() {
+        fun `members sorted alphabetically by display name after current user`() {
             val balances = listOf(
                 MemberBalance(userId = "user-1", pocketBalance = 100L),
                 MemberBalance(userId = "user-2", pocketBalance = -5000L),
                 MemberBalance(userId = "user-3", pocketBalance = 3000L)
             )
 
+            val customProfiles = mapOf(
+                "user-1" to User(userId = "user-1", email = "alice@test.com", displayName = "Alice"),
+                "user-2" to User(userId = "user-2", email = "charlie@test.com", displayName = "Charlie"),
+                "user-3" to User(userId = "user-3", email = "bob@test.com", displayName = "Bob")
+            )
+
             val result = mapper.mapMemberBalances(
                 balances = balances,
                 currency = currency,
                 currentUserId = "user-1",
-                memberProfiles = memberProfiles
+                memberProfiles = customProfiles
             )
 
-            // user-1 first (current user), then user-2 (|5000|), then user-3 (|3000|)
+            // Expected order: user-1 (current user), then user-3 ("Bob"), then user-2 ("Charlie")
             assertEquals("user-1", result[0].userId)
-            assertEquals("user-2", result[1].userId)
-            assertEquals("user-3", result[2].userId)
+            assertEquals("user-3", result[1].userId)
+            assertEquals("user-2", result[2].userId)
         }
 
         @Test
@@ -233,6 +239,61 @@ class BalancesUiMapperMemberBalancesTest {
             val item = result[0]
             assertTrue(item.formattedCashSpent.contains("15"))
             assertTrue(item.formattedNonCashSpent.contains("25"))
+        }
+
+        @Test
+        fun `formats totalBalance field correctly`() {
+            val balances = listOf(
+                MemberBalance(
+                    userId = "user-1",
+                    pocketBalance = 1500L,
+                    cashInHand = 2500L
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = balances,
+                currency = currency,
+                currentUserId = currentUserId,
+                memberProfiles = memberProfiles
+            )
+
+            val item = result[0]
+            // totalBalance = 1500 + 2500 = 4000L. US locale EUR formatting contains "40"
+            assertTrue(item.formattedTotalBalance.contains("40"))
+        }
+
+        @Test
+        fun `positive balance flagged based on totalBalance`() {
+            val balances = listOf(
+                // Negative pocket but positive cash offsets it -> total = 500 >= 0 (positive)
+                MemberBalance(userId = "user-1", pocketBalance = -1000L, cashInHand = 1500L),
+                // Positive pocket but negative cash offsets it -> total = -500 < 0 (negative)
+                MemberBalance(userId = "user-2", pocketBalance = 1000L, cashInHand = -1500L),
+                // Negative pocket and negative cash -> total = -2500 < 0 (negative)
+                MemberBalance(userId = "user-3", pocketBalance = -1000L, cashInHand = -1500L),
+                // Positive pocket and positive cash -> total = 2500 >= 0 (positive)
+                MemberBalance(
+                    userId = "user-4",
+                    pocketBalance = 1000L,
+                    cashInHand = 1500L
+                )
+            )
+
+            val profiles = memberProfiles + ("user-4" to User(userId = "user-4", email = "david@test.com"))
+
+            val result = mapper.mapMemberBalances(
+                balances = balances,
+                currency = currency,
+                currentUserId = null,
+                memberProfiles = profiles
+            )
+
+            val byUser = result.associateBy { it.userId }
+            assertTrue(byUser["user-1"]!!.isPositiveBalance)
+            assertFalse(byUser["user-2"]!!.isPositiveBalance)
+            assertFalse(byUser["user-3"]!!.isPositiveBalance)
+            assertTrue(byUser["user-4"]!!.isPositiveBalance)
         }
 
         @Test
