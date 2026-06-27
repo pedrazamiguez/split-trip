@@ -10,10 +10,10 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
-import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
+import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -25,6 +25,7 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakd
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CurrencyBreakdownUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceCashContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
@@ -230,6 +231,30 @@ class BalancesUiMapper(
         return (contributionItems + withdrawalItems)
             .sortedByDescending { it.sortTimestamp }
             .toImmutableList()
+    }
+
+    fun mapExtrasBreakdown(
+        expenses: List<Expense>,
+        withdrawals: List<CashWithdrawal>,
+        groupCurrency: String,
+        memberProfiles: Map<String, User>,
+        subunitsMap: Map<String, Subunit>,
+        currentUserId: String?
+    ): ImmutableList<ExtrasBreakdownUiModel> {
+        val context = ExtrasBreakdownContext(
+            groupCurrency = groupCurrency,
+            memberProfiles = memberProfiles,
+            subunitsMap = subunitsMap,
+            currentUserId = currentUserId,
+            locale = localeProvider.getCurrentLocale(),
+            resourceProvider = resourceProvider,
+            userUiMapper = userUiMapper
+        )
+        return mapExtrasBreakdown(
+            expenses = expenses,
+            withdrawals = withdrawals,
+            context = context
+        )
     }
 
     /**
@@ -526,81 +551,5 @@ class BalancesUiMapper(
         if (createdBy.isBlank() || createdBy == targetUserId) return null
         val user = memberProfiles[createdBy] ?: return null
         return userUiMapper.mapToDisplayName(user)
-    }
-}
-
-/** Computes the user's attributed native share (in withdrawal currency cents) for display. */
-private fun computeUserNativeShare(
-    withdrawal: CashWithdrawal,
-    userId: String,
-    groupMemberIds: List<String>,
-    subunitsMap: Map<String, Subunit>
-): Long {
-    val remaining = withdrawal.remainingAmount
-    return when (withdrawal.withdrawalScope) {
-        PayerType.USER -> if (withdrawal.withdrawnBy == userId) remaining else 0L
-        PayerType.GROUP -> {
-            if (groupMemberIds.isEmpty()) 0L else remaining / groupMemberIds.size
-        }
-        PayerType.SUBUNIT -> {
-            val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
-            val share = subunit?.memberShares?.get(userId) ?: return 0L
-            BigDecimal(remaining)
-                .multiply(share)
-                .setScale(0, RoundingMode.HALF_UP)
-                .toLong()
-        }
-    }
-}
-
-/** Computes the total scaled fee cents for a member over all withdrawals. */
-private fun computeMemberTotalFees(
-    userId: String,
-    withdrawals: List<CashWithdrawal>,
-    groupMemberIds: List<String>,
-    subunitsMap: Map<String, Subunit>
-): Long {
-    return withdrawals.sumOf { withdrawal ->
-        if (withdrawal.amountWithdrawn == 0L || withdrawal.remainingAmount <= 0L) return@sumOf 0L
-        val nativeShare = computeUserNativeShare(withdrawal, userId, groupMemberIds, subunitsMap)
-        if (nativeShare > 0L) {
-            val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
-            withdrawal.addOns
-                .filter { it.type != AddOnType.DISCOUNT }
-                .sumOf { addOn ->
-                    computeAddOnShare(
-                        addOn = addOn,
-                        scope = withdrawal.withdrawalScope,
-                        withdrawnBy = withdrawal.withdrawnBy,
-                        userId = userId,
-                        groupMemberIds = groupMemberIds,
-                        subunit = subunit
-                    )
-                }
-        } else {
-            0L
-        }
-    }
-}
-
-/** Helper to compute a single add-on's share for a member. */
-private fun computeAddOnShare(
-    addOn: AddOn,
-    scope: PayerType,
-    withdrawnBy: String,
-    userId: String,
-    groupMemberIds: List<String>,
-    subunit: Subunit?
-): Long {
-    return when (scope) {
-        PayerType.USER -> if (withdrawnBy == userId) addOn.groupAmountCents else 0L
-        PayerType.GROUP -> if (groupMemberIds.isEmpty()) 0L else addOn.groupAmountCents / groupMemberIds.size
-        PayerType.SUBUNIT -> {
-            val share = subunit?.memberShares?.get(userId) ?: BigDecimal.ZERO
-            BigDecimal(addOn.groupAmountCents)
-                .multiply(share)
-                .setScale(0, RoundingMode.HALF_UP)
-                .toLong()
-        }
     }
 }

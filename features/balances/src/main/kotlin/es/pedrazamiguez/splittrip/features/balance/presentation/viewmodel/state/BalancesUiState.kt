@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityItemUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -16,6 +17,7 @@ data class BalancesUiState(
     val cashWithdrawals: ImmutableList<CashWithdrawalUiModel> = persistentListOf(),
     val memberBalances: ImmutableList<MemberBalanceUiModel> = persistentListOf(),
     val activityItems: ImmutableList<ActivityItemUiModel> = persistentListOf(),
+    val extrasBreakdown: ImmutableList<ExtrasBreakdownUiModel> = persistentListOf(),
     val shouldAnimateBalance: Boolean = false,
     val previousBalance: String = "",
     val balanceRollingUp: Boolean = true,
