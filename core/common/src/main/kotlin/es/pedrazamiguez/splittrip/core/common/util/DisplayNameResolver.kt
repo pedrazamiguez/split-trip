@@ -31,12 +31,21 @@ object DisplayNameResolver {
         currentUserId: String?,
         youLabel: String,
         displayName: String?,
-        email: String = ""
+        email: String = "",
+        pendingLabel: String? = null
     ): String {
         if (userId == null) return ""
         if (userId == currentUserId) return youLabel
-        return displayName?.takeIf { it.isNotBlank() }
+
+        val resolvedName = displayName?.takeIf { it.isNotBlank() }
             ?: email.takeIf { it.isNotBlank() }
-            ?: userId
+
+        if (resolvedName != null) return resolvedName
+
+        if (userId.startsWith("pending_") && !pendingLabel.isNullOrBlank()) {
+            return pendingLabel
+        }
+
+        return userId
     }
 }

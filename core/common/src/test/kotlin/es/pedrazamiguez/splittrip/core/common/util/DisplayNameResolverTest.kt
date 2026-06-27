@@ -144,4 +144,82 @@ class DisplayNameResolverTest {
             assertEquals("Charlie", result)
         }
     }
+
+    @Nested
+    inner class PendingFallback {
+
+        @Test
+        fun `returns pendingLabel when userId starts with pending_ and display name and email are blank`() {
+            val result = DisplayNameResolver.resolve(
+                userId = "pending_user-123",
+                currentUserId = "user-1",
+                youLabel = "You",
+                displayName = null,
+                email = "",
+                pendingLabel = "Pending Member"
+            )
+
+            assertEquals("Pending Member", result)
+        }
+
+        @Test
+        fun `returns userId when userId starts with pending_ but pendingLabel is null or blank`() {
+            val resultNull = DisplayNameResolver.resolve(
+                userId = "pending_user-123",
+                currentUserId = "user-1",
+                youLabel = "You",
+                displayName = null,
+                email = "",
+                pendingLabel = null
+            )
+            val resultBlank = DisplayNameResolver.resolve(
+                userId = "pending_user-123",
+                currentUserId = "user-1",
+                youLabel = "You",
+                displayName = null,
+                email = "",
+                pendingLabel = "   "
+            )
+
+            assertEquals("pending_user-123", resultNull)
+            assertEquals("pending_user-123", resultBlank)
+        }
+
+        @Test
+        fun `returns displayName or email instead of pendingLabel if present even if pending user`() {
+            val resultDisplayName = DisplayNameResolver.resolve(
+                userId = "pending_user-123",
+                currentUserId = "user-1",
+                youLabel = "You",
+                displayName = "Alice",
+                email = "",
+                pendingLabel = "Pending Member"
+            )
+            val resultEmail = DisplayNameResolver.resolve(
+                userId = "pending_user-123",
+                currentUserId = "user-1",
+                youLabel = "You",
+                displayName = "",
+                email = "alice@example.com",
+                pendingLabel = "Pending Member"
+            )
+
+            assertEquals("Alice", resultDisplayName)
+            assertEquals("alice@example.com", resultEmail)
+        }
+
+        @Test
+        fun `returns userId when userId does not start with pending_ even if pendingLabel is provided`() {
+            val result = DisplayNameResolver.resolve(
+                userId = "user-123",
+                currentUserId = "user-1",
+                youLabel = "You",
+                displayName = null,
+                email = "",
+                pendingLabel = "Pending Member"
+            )
+
+            assertEquals("user-123", result)
+        }
+    }
 }

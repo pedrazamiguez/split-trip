@@ -263,7 +263,7 @@ fun ExpenseDetailPreviewHelper(
                     formattingHelper = formattingHelper,
                     resourceProvider = resourceProvider
                 ),
-                userUiMapper = UserUiMapper()
+                userUiMapper = UserUiMapper(resourceProvider)
             )
         },
         transform = { mapper, domain ->
