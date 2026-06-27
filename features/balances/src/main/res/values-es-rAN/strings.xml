@@ -70,5 +70,10 @@
     <string name="balances_cash_breakdown_atm_fallback">ÂMM — %1$s</string>
     <string name="balances_cash_breakdown_view_cd">Bêh dêggloçe de efêttibo</string>
     <string name="balances_cash_breakdown_unknown_subunit">Çubunidá dêcconoçida</string>
+    <string name="balances_cash_breakdown_fee_tip">%1$s: %2$s</string>
+    <string name="balances_cash_breakdown_add_on_tip">Propina</string>
+    <string name="balances_cash_breakdown_add_on_fee">Comiçión</string>
+    <string name="balances_cash_breakdown_add_on_surcharge">Recargo</string>
+    <string name="balances_cash_breakdown_total_fees_label">Comiçionê</string>
     <string name="balances_filter">Firtrâh çardô</string>
 </resources>

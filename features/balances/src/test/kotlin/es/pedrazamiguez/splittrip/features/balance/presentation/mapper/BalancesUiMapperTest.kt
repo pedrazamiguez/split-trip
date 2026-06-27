@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -962,7 +963,8 @@ class BalancesUiMapperTest {
         exchangeRate: BigDecimal = BigDecimal("37.037"),
         title: String? = null,
         notes: String? = null,
-        createdAt: LocalDateTime? = null
+        createdAt: LocalDateTime? = null,
+        addOns: List<AddOn> = emptyList()
     ) = CashWithdrawal(
         id = id,
         groupId = groupId,
@@ -977,7 +979,8 @@ class BalancesUiMapperTest {
         exchangeRate = exchangeRate,
         title = title,
         notes = notes,
-        createdAt = createdAt
+        createdAt = createdAt,
+        addOns = addOns
     )
 
     private fun assertIsContribution(item: ActivityItemUiModel, expectedId: String) {

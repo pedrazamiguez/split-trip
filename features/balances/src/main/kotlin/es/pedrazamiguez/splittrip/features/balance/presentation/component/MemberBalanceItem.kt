@@ -70,8 +70,10 @@ fun MemberBalanceItem(memberBalance: MemberBalanceUiModel, modifier: Modifier = 
 
     if (showCashBreakdown) {
         CashBreakdownBottomSheet(
+            memberName = displayName,
             breakdown = memberBalance.cashBreakdown,
             formattedTotal = memberBalance.formattedCashInHand,
+            formattedTotalFees = memberBalance.formattedTotalFees,
             onDismiss = { showCashBreakdown = false }
         )
     }

@@ -68,6 +68,12 @@ internal fun CashBreakdownEntryRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
+            if (item.formattedAddOns.isNotBlank()) {
+                CaptionText(
+                    text = item.formattedAddOns,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }

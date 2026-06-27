@@ -88,6 +88,13 @@
     <!-- Fallback cuando la subunidad referenciada por una retirada ya no existe (caso límite de integridad de datos) -->
     <string name="balances_cash_breakdown_unknown_subunit">Subunidad desconocida</string>
 
+    <!-- Cash Breakdown Add-ons -->
+    <string name="balances_cash_breakdown_fee_tip">%1$s: %2$s</string>
+    <string name="balances_cash_breakdown_add_on_tip">Propina</string>
+    <string name="balances_cash_breakdown_add_on_fee">Comisión</string>
+    <string name="balances_cash_breakdown_add_on_surcharge">Recargo</string>
+    <string name="balances_cash_breakdown_total_fees_label">Comisiones</string>
+
     <!-- Main Action -->
     <string name="balances_filter">Filtrar saldos</string>
 

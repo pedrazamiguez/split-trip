@@ -8,7 +8,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
@@ -64,16 +66,8 @@ class BalancesUiMapper(
         return GroupPocketBalanceUiModel(
             groupName = groupName,
             formattedBalance = formatCurrencyAmount(balance.virtualBalance, balance.currency, locale),
-            formattedTotalContributed = formatCurrencyAmount(
-                balance.totalContributions,
-                balance.currency,
-                locale
-            ),
-            formattedTotalSpent = formatCurrencyAmount(
-                balance.totalExpenses,
-                balance.currency,
-                locale
-            ),
+            formattedTotalContributed = formatCurrencyAmount(balance.totalContributions, balance.currency, locale),
+            formattedTotalSpent = formatCurrencyAmount(balance.totalExpenses, balance.currency, locale),
             currency = balance.currency,
             cashBalances = cashBalanceUiModels,
             formattedTotalCashEquivalent = if (balance.totalCashEquivalent > 0) {
@@ -121,11 +115,7 @@ class BalancesUiMapper(
                 id = contribution.id,
                 displayName = resolveDisplayName(contribution.userId, memberProfiles),
                 isCurrentUser = contribution.userId == currentUserId,
-                formattedAmount = formatCurrencyAmount(
-                    contribution.amount,
-                    contribution.currency,
-                    locale
-                ),
+                formattedAmount = formatCurrencyAmount(contribution.amount, contribution.currency, locale),
                 dateText = contribution.createdAt?.formatShortDate(locale) ?: "",
                 scopeLabel = scopeLabel,
                 isSubunitContribution = isSubunit,
@@ -210,24 +200,18 @@ class BalancesUiMapper(
         memberProfiles: Map<String, User> = emptyMap(),
         subunits: Map<String, Subunit> = emptyMap()
     ): ImmutableList<ActivityItemUiModel> {
-        // Precompute sort timestamps from domain models
-        val contributionTimestampsById = contributions.associate { contribution ->
-            val timestamp = contribution.createdAt?.toEpochMillisUtc() ?: 0L
-            contribution.id to timestamp
-        }
-
-        val withdrawalTimestampsById = withdrawals.associate { withdrawal ->
-            val timestamp = withdrawal.createdAt?.toEpochMillisUtc() ?: 0L
-            withdrawal.id to timestamp
-        }
-
-        // Reuse existing mappers for UiModel construction
         val contributionUiModels = mapContributions(
             contributions = contributions,
             currentUserId = currentUserId,
             memberProfiles = memberProfiles,
             subunits = subunits
         )
+        val contributionItems = contributions.zip(contributionUiModels) { domain, ui ->
+            ActivityItemUiModel.ContributionItem(
+                contribution = ui,
+                sortTimestamp = domain.createdAt?.toEpochMillisUtc() ?: 0L
+            )
+        }
 
         val withdrawalUiModels = mapCashWithdrawals(
             withdrawals = withdrawals,
@@ -236,18 +220,10 @@ class BalancesUiMapper(
             memberProfiles = memberProfiles,
             subunits = subunits
         )
-
-        val contributionItems = contributionUiModels.map { uiModel ->
-            ActivityItemUiModel.ContributionItem(
-                contribution = uiModel,
-                sortTimestamp = contributionTimestampsById[uiModel.id] ?: 0L
-            )
-        }
-
-        val withdrawalItems = withdrawalUiModels.map { uiModel ->
+        val withdrawalItems = withdrawals.zip(withdrawalUiModels) { domain, ui ->
             ActivityItemUiModel.CashWithdrawalItem(
-                withdrawal = uiModel,
-                sortTimestamp = withdrawalTimestampsById[uiModel.id] ?: 0L
+                withdrawal = ui,
+                sortTimestamp = domain.createdAt?.toEpochMillisUtc() ?: 0L
             )
         }
 
@@ -307,6 +283,22 @@ class BalancesUiMapper(
         locale: Locale
     ): MemberBalanceUiModel {
         val isNegativeCash = balance.cashInHand < 0
+        val totalFeeCents = if (isNegativeCash) {
+            0L
+        } else {
+            computeMemberTotalFees(
+                userId = balance.userId,
+                withdrawals = cashContext.withdrawals,
+                groupMemberIds = cashContext.groupMemberIds,
+                subunitsMap = cashContext.subunitsMap
+            )
+        }
+        val formattedTotalFees = if (totalFeeCents > 0L) {
+            formatCurrencyAmount(totalFeeCents, groupCurrency, locale)
+        } else {
+            ""
+        }
+
         return MemberBalanceUiModel(
             userId = balance.userId,
             displayName = resolveDisplayName(balance.userId, memberProfiles),
@@ -342,7 +334,8 @@ class BalancesUiMapper(
                     groupCurrency = groupCurrency,
                     locale = locale
                 )
-            }
+            },
+            formattedTotalFees = formattedTotalFees
         )
     }
 
@@ -379,7 +372,15 @@ class BalancesUiMapper(
                 if (withdrawal.amountWithdrawn == 0L || withdrawal.remainingAmount <= 0L) return@mapNotNull null
                 val nativeShare = computeUserNativeShare(withdrawal, userId, groupMemberIds, subunitsMap)
                 if (nativeShare <= 0L) return@mapNotNull null
-                buildCashBreakdownEntry(withdrawal, nativeShare, groupCurrency, locale, subunitsMap)
+                buildCashBreakdownEntry(
+                    withdrawal = withdrawal,
+                    nativeShare = nativeShare,
+                    userId = userId,
+                    groupMemberIds = groupMemberIds,
+                    groupCurrency = groupCurrency,
+                    locale = locale,
+                    subunitsMap = subunitsMap
+                )
             }
             .toImmutableList()
     }
@@ -391,6 +392,8 @@ class BalancesUiMapper(
     private fun buildCashBreakdownEntry(
         withdrawal: CashWithdrawal,
         nativeShare: Long,
+        userId: String,
+        groupMemberIds: List<String>,
         groupCurrency: String,
         locale: Locale,
         subunitsMap: Map<String, Subunit>
@@ -428,32 +431,42 @@ class BalancesUiMapper(
                 ""
             },
             scopeLabel = resolveCashBreakdownScopeLabel(withdrawal, subunitsMap),
-            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP
+            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP,
+            formattedAddOns = formatWithdrawalAddOns(
+                withdrawal = withdrawal,
+                userId = userId,
+                groupMemberIds = groupMemberIds,
+                subunitsMap = subunitsMap,
+                groupCurrency = groupCurrency,
+                locale = locale
+            )
         )
     }
 
-    /** Resolves the user's attributed native share (in withdrawal currency cents) for display. */
-    private fun computeUserNativeShare(
+    /** Formats the user's share of withdrawal add-ons (excluding discount types) into a plain amount string. */
+    private fun formatWithdrawalAddOns(
         withdrawal: CashWithdrawal,
         userId: String,
         groupMemberIds: List<String>,
-        subunitsMap: Map<String, Subunit>
-    ): Long {
-        val remaining = withdrawal.remainingAmount
-        return when (withdrawal.withdrawalScope) {
-            PayerType.USER -> if (withdrawal.withdrawnBy == userId) remaining else 0L
-            PayerType.GROUP -> {
-                if (groupMemberIds.isEmpty()) 0L else remaining / groupMemberIds.size
-            }
-            PayerType.SUBUNIT -> {
-                val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
-                val share = subunit?.memberShares?.get(userId) ?: return 0L
-                BigDecimal(remaining)
-                    .multiply(share)
-                    .setScale(0, RoundingMode.HALF_UP)
-                    .toLong()
-            }
+        subunitsMap: Map<String, Subunit>,
+        groupCurrency: String,
+        locale: Locale
+    ): String {
+        val nonDiscountAddOns = withdrawal.addOns.filter { it.type != AddOnType.DISCOUNT }
+        if (nonDiscountAddOns.isEmpty()) return ""
+        val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
+        val totalUserAddOnCents = nonDiscountAddOns.sumOf { addOn ->
+            computeAddOnShare(
+                addOn = addOn,
+                scope = withdrawal.withdrawalScope,
+                withdrawnBy = withdrawal.withdrawnBy,
+                userId = userId,
+                groupMemberIds = groupMemberIds,
+                subunit = subunit
+            )
         }
+        if (totalUserAddOnCents <= 0L) return ""
+        return formatCurrencyAmount(totalUserAddOnCents, groupCurrency, locale)
     }
 
     private fun resolveCashBreakdownScopeLabel(
@@ -513,5 +526,81 @@ class BalancesUiMapper(
         if (createdBy.isBlank() || createdBy == targetUserId) return null
         val user = memberProfiles[createdBy] ?: return null
         return userUiMapper.mapToDisplayName(user)
+    }
+}
+
+/** Computes the user's attributed native share (in withdrawal currency cents) for display. */
+private fun computeUserNativeShare(
+    withdrawal: CashWithdrawal,
+    userId: String,
+    groupMemberIds: List<String>,
+    subunitsMap: Map<String, Subunit>
+): Long {
+    val remaining = withdrawal.remainingAmount
+    return when (withdrawal.withdrawalScope) {
+        PayerType.USER -> if (withdrawal.withdrawnBy == userId) remaining else 0L
+        PayerType.GROUP -> {
+            if (groupMemberIds.isEmpty()) 0L else remaining / groupMemberIds.size
+        }
+        PayerType.SUBUNIT -> {
+            val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
+            val share = subunit?.memberShares?.get(userId) ?: return 0L
+            BigDecimal(remaining)
+                .multiply(share)
+                .setScale(0, RoundingMode.HALF_UP)
+                .toLong()
+        }
+    }
+}
+
+/** Computes the total scaled fee cents for a member over all withdrawals. */
+private fun computeMemberTotalFees(
+    userId: String,
+    withdrawals: List<CashWithdrawal>,
+    groupMemberIds: List<String>,
+    subunitsMap: Map<String, Subunit>
+): Long {
+    return withdrawals.sumOf { withdrawal ->
+        if (withdrawal.amountWithdrawn == 0L || withdrawal.remainingAmount <= 0L) return@sumOf 0L
+        val nativeShare = computeUserNativeShare(withdrawal, userId, groupMemberIds, subunitsMap)
+        if (nativeShare > 0L) {
+            val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
+            withdrawal.addOns
+                .filter { it.type != AddOnType.DISCOUNT }
+                .sumOf { addOn ->
+                    computeAddOnShare(
+                        addOn = addOn,
+                        scope = withdrawal.withdrawalScope,
+                        withdrawnBy = withdrawal.withdrawnBy,
+                        userId = userId,
+                        groupMemberIds = groupMemberIds,
+                        subunit = subunit
+                    )
+                }
+        } else {
+            0L
+        }
+    }
+}
+
+/** Helper to compute a single add-on's share for a member. */
+private fun computeAddOnShare(
+    addOn: AddOn,
+    scope: PayerType,
+    withdrawnBy: String,
+    userId: String,
+    groupMemberIds: List<String>,
+    subunit: Subunit?
+): Long {
+    return when (scope) {
+        PayerType.USER -> if (withdrawnBy == userId) addOn.groupAmountCents else 0L
+        PayerType.GROUP -> if (groupMemberIds.isEmpty()) 0L else addOn.groupAmountCents / groupMemberIds.size
+        PayerType.SUBUNIT -> {
+            val share = subunit?.memberShares?.get(userId) ?: BigDecimal.ZERO
+            BigDecimal(addOn.groupAmountCents)
+                .multiply(share)
+                .setScale(0, RoundingMode.HALF_UP)
+                .toLong()
+        }
     }
 }
