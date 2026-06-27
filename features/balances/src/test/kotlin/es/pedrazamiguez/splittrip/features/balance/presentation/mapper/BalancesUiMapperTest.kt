@@ -3,11 +3,13 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
+import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -1059,6 +1061,352 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(SyncStatus.SYNC_FAILED, result[0].syncStatus)
+        }
+    }
+
+    @Nested
+    @DisplayName("mapExtrasBreakdown")
+    inner class MapExtrasBreakdown {
+
+        @BeforeEach
+        fun setUpMocks() {
+            every { resourceProvider.getString(R.string.balances_extras_expense_fallback) } returns "Expense"
+            every { resourceProvider.getString(eq(R.string.balances_extras_atm_fallback), any()) } answers {
+                val date = (args[1] as Array<*>)[0] as String
+                "ATM — $date"
+            }
+            every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_fee) } returns "Fee"
+            every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_surcharge) } returns "Surcharge"
+            every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_tip) } returns "Tip"
+            every { resourceProvider.getString(R.string.balances_member_you) } returns "You"
+            every {
+                resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit)
+            } returns "Unknown subunit"
+        }
+
+        @Test
+        fun `returns empty list when expenses and withdrawals have no add-ons`() {
+            val result = mapper.mapExtrasBreakdown(
+                expenses = emptyList(),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `returns empty list when all add-ons are DISCOUNT type`() {
+            val expense = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(AddOn(type = AddOnType.DISCOUNT, groupAmountCents = 100))
+            )
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `maps single expense add-on to correct type group and formats amount`() {
+            val expense = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 150)),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("Fee", result[0].typeLabel)
+            assertTrue(result[0].formattedSubtotal.contains("1.50"))
+            assertEquals(1, result[0].items.size)
+            assertEquals("Dinner", result[0].items[0].parentTitle)
+            assertTrue(
+                result[0].items[0].dateText.contains("10") &&
+                    result[0].items[0].dateText.contains("Jan")
+            )
+            assertTrue(result[0].items[0].formattedAmount.contains("1.50"))
+        }
+
+        @Test
+        fun `maps single withdrawal add-on to correct type group`() {
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                title = "ATM 1",
+                addOns = listOf(AddOn(type = AddOnType.TIP, groupAmountCents = 200)),
+                createdAt = LocalDateTime.of(2026, 1, 12, 10, 0)
+            )
+            val result = mapper.mapExtrasBreakdown(
+                expenses = emptyList(),
+                withdrawals = listOf(withdrawal),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("Tip", result[0].typeLabel)
+            assertTrue(result[0].formattedSubtotal.contains("2.00"))
+            assertEquals("ATM 1", result[0].items[0].parentTitle)
+        }
+
+        @Test
+        fun `withdrawal with null title uses ATM fallback label`() {
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                title = null,
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 200)),
+                createdAt = LocalDateTime.of(2026, 1, 12, 10, 0)
+            )
+            val result = mapper.mapExtrasBreakdown(
+                expenses = emptyList(),
+                withdrawals = listOf(withdrawal),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            val parentTitle = result[0].items[0].parentTitle
+            assertTrue(parentTitle.contains("ATM —") && parentTitle.contains("Jan") && parentTitle.contains("12"))
+        }
+
+        @Test
+        fun `groups multiple add-ons of same type into one section`() {
+            val expense1 = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 150)),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+            val expense2 = Expense(
+                id = "e2",
+                title = "Taxi",
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 250)),
+                createdAt = LocalDateTime.of(2026, 1, 11, 12, 0)
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense1, expense2),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("Fee", result[0].typeLabel)
+            assertTrue(result[0].formattedSubtotal.contains("4.00"))
+            assertEquals(2, result[0].items.size)
+            assertEquals("Taxi", result[0].items[0].parentTitle)
+            assertEquals("Dinner", result[0].items[1].parentTitle)
+        }
+
+        @Test
+        fun `produces separate sections for TIP FEE and SURCHARGE`() {
+            val expense = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(
+                    AddOn(type = AddOnType.FEE, groupAmountCents = 100),
+                    AddOn(type = AddOnType.SURCHARGE, groupAmountCents = 200),
+                    AddOn(type = AddOnType.TIP, groupAmountCents = 300)
+                ),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(3, result.size)
+            assertEquals("Fee", result[0].typeLabel)
+            assertEquals("Surcharge", result[1].typeLabel)
+            assertEquals("Tip", result[2].typeLabel)
+        }
+
+        @Test
+        fun `section order is FEE then SURCHARGE then TIP`() {
+            val expense = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(
+                    AddOn(type = AddOnType.TIP, groupAmountCents = 300),
+                    AddOn(type = AddOnType.FEE, groupAmountCents = 100),
+                    AddOn(type = AddOnType.SURCHARGE, groupAmountCents = 200)
+                ),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(3, result.size)
+            assertEquals("Fee", result[0].typeLabel)
+            assertEquals("Surcharge", result[1].typeLabel)
+            assertEquals("Tip", result[2].typeLabel)
+        }
+
+        @Test
+        fun `sub-total per section is correct sum of groupAmountCents`() {
+            val expense = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(
+                    AddOn(type = AddOnType.FEE, groupAmountCents = 100),
+                    AddOn(type = AddOnType.FEE, groupAmountCents = 150)
+                ),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertTrue(result[0].formattedSubtotal.contains("2.50"))
+        }
+
+        @Test
+        fun `items within a section are sorted by date descending`() {
+            val expenseOlder = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 100)),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+            val expenseNewer = Expense(
+                id = "e2",
+                title = "Drinks",
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 150)),
+                createdAt = LocalDateTime.of(2026, 1, 10, 14, 0)
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expenseOlder, expenseNewer),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("Drinks", result[0].items[0].parentTitle)
+            assertEquals("Dinner", result[0].items[1].parentTitle)
+        }
+
+        @Test
+        fun `add-on description is preserved on ExtraItemUiModel`() {
+            val expense = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(
+                    AddOn(type = AddOnType.FEE, groupAmountCents = 100, description = "Service charge")
+                ),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("Service charge", result[0].items[0].description)
+        }
+
+        @Test
+        fun `null add-on description is preserved as null`() {
+            val expense = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 100, description = null)),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertNull(result[0].items[0].description)
+        }
+
+        @Test
+        fun `mixes expense and withdrawal add-ons into same type bucket`() {
+            val expense = Expense(
+                id = "e1",
+                title = "Dinner",
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 100)),
+                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
+            )
+            val withdrawal = CashWithdrawal(
+                id = "w1",
+                title = "ATM 1",
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 200)),
+                createdAt = LocalDateTime.of(2026, 1, 11, 12, 0)
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(expense),
+                withdrawals = listOf(withdrawal),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("Fee", result[0].typeLabel)
+            assertTrue(result[0].formattedSubtotal.contains("3.00"))
+            assertEquals(2, result[0].items.size)
+            assertEquals("ATM 1", result[0].items[0].parentTitle)
+            assertEquals("Dinner", result[0].items[1].parentTitle)
         }
     }
 }

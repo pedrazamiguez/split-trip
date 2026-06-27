@@ -27,6 +27,7 @@ internal fun BalancesBodyContent(
     onEvent: (BalancesUiEvent) -> Unit,
     onNavigateToContribution: () -> Unit,
     onNavigateToWithdrawal: () -> Unit,
+    onShowExtrasBreakdown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
@@ -60,7 +61,8 @@ internal fun BalancesBodyContent(
                         bottomPadding = bottomPadding,
                         onEvent = onEvent,
                         onNavigateToContribution = onNavigateToContribution,
-                        onNavigateToWithdrawal = onNavigateToWithdrawal
+                        onNavigateToWithdrawal = onNavigateToWithdrawal,
+                        onShowExtrasBreakdown = onShowExtrasBreakdown
                     )
                 }
             }

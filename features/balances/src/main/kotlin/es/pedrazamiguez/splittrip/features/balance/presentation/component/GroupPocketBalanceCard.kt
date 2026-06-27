@@ -25,7 +25,8 @@ fun GroupPocketBalanceCard(
     balanceRollingUp: Boolean = true,
     onBalanceAnimationComplete: () -> Unit = {},
     onAddMoney: () -> Unit = {},
-    onWithdrawCash: () -> Unit = {}
+    onWithdrawCash: () -> Unit = {},
+    onShowExtrasBreakdown: () -> Unit = {}
 ) {
     FlatCard(modifier = modifier.fillMaxWidth(), elevation = CARD_SHADOW_ELEVATION) {
         Column(
@@ -42,7 +43,10 @@ fun GroupPocketBalanceCard(
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
-            PocketBalanceStatsRow(balance = balance)
+            PocketBalanceStatsRow(
+                balance = balance,
+                onShowExtrasBreakdown = onShowExtrasBreakdown
+            )
 
             if (balance.cashBalances.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))

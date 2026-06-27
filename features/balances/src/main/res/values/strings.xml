@@ -96,7 +96,17 @@
     <string name="balances_cash_breakdown_add_on_surcharge">Surcharge</string>
     <string name="balances_cash_breakdown_total_fees_label">Fees</string>
 
+    <!-- Extras Breakdown Bottom Sheet -->
+    <string name="balances_extras_breakdown_title">Extras breakdown</string>
+    <string name="balances_extras_breakdown_cd">View extras breakdown</string>
+    <string name="balances_extras_breakdown_empty">No extras recorded</string>
+    <string name="balances_extras_breakdown_total">Total</string>
+    <string name="balances_extras_breakdown_subtotal">Subtotal</string>
+    <string name="balances_extras_expense_fallback">Expense</string>
+    <string name="balances_extras_atm_fallback">ATM — %1$s</string>
+
     <!-- Main Action -->
     <string name="balances_filter">Filter balances</string>
 
 </resources>
+
