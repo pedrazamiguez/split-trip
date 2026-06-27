@@ -74,5 +74,6 @@
     <string name="balances_cash_breakdown_add_on_tip">Propina</string>
     <string name="balances_cash_breakdown_add_on_fee">Comiçión</string>
     <string name="balances_cash_breakdown_add_on_surcharge">Recargo</string>
+    <string name="balances_cash_breakdown_total_fees_label">Comiçionê</string>
     <string name="balances_filter">Firtrâh çardô</string>
 </resources>

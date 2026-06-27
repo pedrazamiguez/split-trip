@@ -969,6 +969,7 @@ class BalancesUiMapperMemberBalancesTest {
             )
 
             assertTrue(result[0].cashBreakdown[0].formattedAddOns.isEmpty())
+            assertEquals("", result[0].formattedTotalFees)
         }
 
         @Test
@@ -999,6 +1000,7 @@ class BalancesUiMapperMemberBalancesTest {
             )
 
             assertTrue(result[0].cashBreakdown[0].formattedAddOns.isEmpty())
+            assertEquals("", result[0].formattedTotalFees)
         }
 
         @Test
@@ -1032,6 +1034,7 @@ class BalancesUiMapperMemberBalancesTest {
             // Antonia paid 2.45 ATM fee, should see the full 2.45 EUR fee
             assertTrue(formatted.contains("2.45"))
             assertFalse(formatted.contains("ATM Fee"))
+            assertTrue(result[0].formattedTotalFees.contains("2.45"))
         }
 
         @Test
@@ -1065,6 +1068,7 @@ class BalancesUiMapperMemberBalancesTest {
             // Total fee is 3.00 EUR. Split among 3 members, each pays 1.00 EUR
             assertTrue(formatted.contains("1.00"))
             assertFalse(formatted.contains("ATM Fee"))
+            assertTrue(result[0].formattedTotalFees.contains("1.00"))
         }
 
         @Test
@@ -1105,6 +1109,7 @@ class BalancesUiMapperMemberBalancesTest {
             // Total fee is 2.00 EUR. At 50% share, user-1 pays 1.00 EUR
             assertTrue(formatted.contains("1.00"))
             assertFalse(formatted.contains("ATM Fee"))
+            assertTrue(result[0].formattedTotalFees.contains("1.00"))
         }
     }
 }

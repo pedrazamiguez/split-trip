@@ -13,6 +13,7 @@ private fun CashBreakdownBottomSheetPreview() {
             memberName = "Andrés Pedraza Miguez",
             breakdown = breakdown,
             formattedTotal = formattedTotal,
+            formattedTotalFees = "3.45 €",
             onDismiss = {}
         )
     }
@@ -26,6 +27,7 @@ private fun CashBreakdownBottomSheetEmptyPreview() {
             memberName = "Andrés Pedraza Miguez",
             breakdown = persistentListOf(),
             formattedTotal = "฿ 0",
+            formattedTotalFees = "",
             onDismiss = {}
         )
     }

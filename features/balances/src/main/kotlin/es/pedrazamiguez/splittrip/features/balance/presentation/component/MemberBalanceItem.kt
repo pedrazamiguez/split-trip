@@ -73,6 +73,7 @@ fun MemberBalanceItem(memberBalance: MemberBalanceUiModel, modifier: Modifier = 
             memberName = displayName,
             breakdown = memberBalance.cashBreakdown,
             formattedTotal = memberBalance.formattedCashInHand,
+            formattedTotalFees = memberBalance.formattedTotalFees,
             onDismiss = { showCashBreakdown = false }
         )
     }

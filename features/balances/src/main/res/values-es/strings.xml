@@ -93,6 +93,7 @@
     <string name="balances_cash_breakdown_add_on_tip">Propina</string>
     <string name="balances_cash_breakdown_add_on_fee">Comisión</string>
     <string name="balances_cash_breakdown_add_on_surcharge">Recargo</string>
+    <string name="balances_cash_breakdown_total_fees_label">Comisiones</string>
 
     <!-- Main Action -->
     <string name="balances_filter">Filtrar saldos</string>
