@@ -236,6 +236,61 @@ class BalancesUiMapperMemberBalancesTest {
         }
 
         @Test
+        fun `formats totalBalance field correctly`() {
+            val balances = listOf(
+                MemberBalance(
+                    userId = "user-1",
+                    pocketBalance = 1500L,
+                    cashInHand = 2500L
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = balances,
+                currency = currency,
+                currentUserId = currentUserId,
+                memberProfiles = memberProfiles
+            )
+
+            val item = result[0]
+            // totalBalance = 1500 + 2500 = 4000L. US locale EUR formatting contains "40"
+            assertTrue(item.formattedTotalBalance.contains("40"))
+        }
+
+        @Test
+        fun `positive balance flagged based on totalBalance`() {
+            val balances = listOf(
+                // Negative pocket but positive cash offsets it -> total = 500 >= 0 (positive)
+                MemberBalance(userId = "user-1", pocketBalance = -1000L, cashInHand = 1500L),
+                // Positive pocket but negative cash offsets it -> total = -500 < 0 (negative)
+                MemberBalance(userId = "user-2", pocketBalance = 1000L, cashInHand = -1500L),
+                // Negative pocket and negative cash -> total = -2500 < 0 (negative)
+                MemberBalance(userId = "user-3", pocketBalance = -1000L, cashInHand = -1500L),
+                // Positive pocket and positive cash -> total = 2500 >= 0 (positive)
+                MemberBalance(
+                    userId = "user-4",
+                    pocketBalance = 1000L,
+                    cashInHand = 1500L
+                )
+            )
+
+            val profiles = memberProfiles + ("user-4" to User(userId = "user-4", email = "david@test.com"))
+
+            val result = mapper.mapMemberBalances(
+                balances = balances,
+                currency = currency,
+                currentUserId = null,
+                memberProfiles = profiles
+            )
+
+            val byUser = result.associateBy { it.userId }
+            assertTrue(byUser["user-1"]!!.isPositiveBalance)
+            assertFalse(byUser["user-2"]!!.isPositiveBalance)
+            assertFalse(byUser["user-3"]!!.isPositiveBalance)
+            assertTrue(byUser["user-4"]!!.isPositiveBalance)
+        }
+
+        @Test
         fun `maps currency breakdown with foreign equivalent`() {
             val balances = listOf(
                 MemberBalance(

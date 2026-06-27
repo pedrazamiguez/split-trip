@@ -315,9 +315,10 @@ class BalancesUiMapper(
             },
             formattedTotalSpent = formatCurrencyAmount(balance.totalSpent, currency, locale),
             formattedPocketBalance = formatCurrencyAmount(balance.pocketBalance, currency, locale),
+            formattedTotalBalance = formatCurrencyAmount(balance.totalBalance, currency, locale),
             formattedCashSpent = formatCurrencyAmount(balance.cashSpent, currency, locale),
             formattedNonCashSpent = formatCurrencyAmount(balance.nonCashSpent, currency, locale),
-            isPositiveBalance = balance.pocketBalance >= 0,
+            isPositiveBalance = balance.totalBalance >= 0,
             hasNegativeCashInHand = isNegativeCash,
             cashInHandByCurrency = if (isNegativeCash) {
                 persistentListOf()

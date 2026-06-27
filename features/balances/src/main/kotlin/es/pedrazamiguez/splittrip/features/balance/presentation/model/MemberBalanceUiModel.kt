@@ -30,6 +30,7 @@ data class MemberBalanceUiModel(
     val formattedCashInHand: String = "",
     val formattedTotalSpent: String = "",
     val formattedPocketBalance: String = "",
+    val formattedTotalBalance: String = "",
     val formattedCashSpent: String = "",
     val formattedNonCashSpent: String = "",
     val isPositiveBalance: Boolean = true,
