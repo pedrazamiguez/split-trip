@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.group.R
@@ -19,10 +20,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
@@ -41,6 +42,7 @@ import timber.log.Timber
 class GroupDetailViewModel(
     private val getGroupByIdUseCase: GetGroupByIdUseCase,
     private val getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase,
+    private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper
 ) : ViewModel() {
@@ -81,16 +83,19 @@ class GroupDetailViewModel(
 
             val groupUiModel = groupUiMapper.toGroupUiModel(group, memberProfiles)
 
-            getGroupSubunitsFlowUseCase(groupId)
-                .map { subunits ->
-                    GroupDetailUiState(
-                        group = groupUiModel,
-                        isLoading = false,
-                        subunitsCount = subunits.size
-                    )
-                }
+            combine(
+                getGroupSubunitsFlowUseCase(groupId),
+                getUserGroupsFlowUseCase()
+            ) { subunits, userGroups ->
+                GroupDetailUiState(
+                    group = groupUiModel,
+                    isLoading = false,
+                    subunitsCount = subunits.size,
+                    isOnlyGroup = userGroups.size == 1
+                )
+            }
                 .catch { e ->
-                    Timber.e(e, "Error loading subunits for group $groupId")
+                    Timber.e(e, "Error loading subunits or groups for group $groupId")
                     emit(GroupDetailUiState(group = groupUiModel, isLoading = false))
                 }
         }

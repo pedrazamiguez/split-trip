@@ -27,11 +27,18 @@ fun ContributionScopeStep(
     onEvent: (AddContributionUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val selectedMember = uiState.groupMembers.firstOrNull { it.userId == uiState.selectedMemberId }
+    val personalLabel = if (selectedMember == null || selectedMember.isCurrentUser) {
+        stringResource(R.string.contribution_add_money_for_me)
+    } else {
+        stringResource(R.string.contribution_add_money_for_member, selectedMember.displayName)
+    }
+
     WizardStepLayout(modifier = modifier) {
         MemberPickerCard(
             labels = MemberPickerCardLabels(
                 title = stringResource(R.string.contribution_member_picker_title),
-                currentUserSuffix = stringResource(R.string.contribution_member_picker_you_suffix)
+                currentUserLabel = stringResource(R.string.contribution_member_picker_you_label)
             ),
             members = uiState.groupMembers,
             selectedMemberId = uiState.selectedMemberId,
@@ -44,7 +51,7 @@ fun ContributionScopeStep(
             labels = PayerTypeScopeCardLabels(
                 title = stringResource(R.string.contribution_add_money_contributing_for),
                 groupLabel = stringResource(R.string.contribution_add_money_for_group),
-                personalLabel = stringResource(R.string.contribution_add_money_for_me),
+                personalLabel = personalLabel,
                 subunitLabelTemplate = stringResource(R.string.contribution_add_money_for_subunit)
             ),
             selectedScope = uiState.contributionScope,

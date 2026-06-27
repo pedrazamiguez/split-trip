@@ -178,6 +178,14 @@ class BalancesViewModel(
                             memberProfiles,
                             subunitsMap
                         ),
+                        extrasBreakdown = balancesUiMapper.mapExtrasBreakdown(
+                            expenses = expenses,
+                            withdrawals = withdrawals,
+                            groupCurrency = currency,
+                            memberProfiles = memberProfiles,
+                            subunitsMap = subunitsMap,
+                            currentUserId = currentUserId
+                        ),
                         shouldAnimateBalance = formattedBalance.isNotBlank() &&
                             formattedBalance != lastSeen,
                         previousBalance = lastSeen ?: "",

@@ -120,11 +120,17 @@ val groupsUiModule = module {
     }
 
     viewModel {
+        val getGroupByIdUseCase = get<GetGroupByIdUseCase>()
+        val getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>()
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
+        val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
+        val groupUiMapper = get<GroupUiMapper>()
         GroupDetailViewModel(
-            getGroupByIdUseCase = get<GetGroupByIdUseCase>(),
-            getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>(),
-            getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
-            groupUiMapper = get<GroupUiMapper>()
+            getGroupByIdUseCase = getGroupByIdUseCase,
+            getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            groupUiMapper = groupUiMapper
         )
     }
 

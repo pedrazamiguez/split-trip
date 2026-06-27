@@ -170,6 +170,8 @@ class BalancesViewModelTest {
 
         // Default mock for mapper
         every { balancesUiMapper.mapBalance(any(), any()) } returns testBalanceUiModel
+        every { balancesUiMapper.mapExtrasBreakdown(any(), any(), any(), any(), any(), any()) } returns
+            persistentListOf()
         every { balancesUiMapper.mapMemberBalances(any(), any(), any(), any(), any(), any()) } returns
             persistentListOf()
         every { balancesUiMapper.mapContributions(any(), any(), any(), any()) } answers {

@@ -30,6 +30,7 @@ data class MemberBalanceUiModel(
     val formattedCashInHand: String = "",
     val formattedTotalSpent: String = "",
     val formattedPocketBalance: String = "",
+    val formattedTotalBalance: String = "",
     val formattedCashSpent: String = "",
     val formattedNonCashSpent: String = "",
     val isPositiveBalance: Boolean = true,
@@ -37,5 +38,6 @@ data class MemberBalanceUiModel(
     val cashInHandByCurrency: ImmutableList<CurrencyBreakdownUiModel> = persistentListOf(),
     val cashSpentByCurrency: ImmutableList<CurrencyBreakdownUiModel> = persistentListOf(),
     val nonCashSpentByCurrency: ImmutableList<CurrencyBreakdownUiModel> = persistentListOf(),
-    val cashBreakdown: ImmutableList<CashBreakdownUiModel> = persistentListOf()
+    val cashBreakdown: ImmutableList<CashBreakdownUiModel> = persistentListOf(),
+    val formattedTotalFees: String = ""
 )

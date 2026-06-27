@@ -25,7 +25,7 @@ class AddContributionUiMapperTest {
     @BeforeEach
     fun setUp() {
         localeProvider = mockk()
-        userUiMapper = UserUiMapper()
+        userUiMapper = UserUiMapper(mockk(relaxed = true))
         every { localeProvider.getCurrentLocale() } returns Locale.US
         mapper = AddContributionUiMapper(localeProvider, userUiMapper)
     }

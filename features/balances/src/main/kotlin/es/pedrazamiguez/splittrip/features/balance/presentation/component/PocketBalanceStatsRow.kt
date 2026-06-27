@@ -20,10 +20,14 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocke
 @Composable
 internal fun PocketBalanceStatsRow(
     balance: GroupPocketBalanceUiModel,
+    onShowExtrasBreakdown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Column {
                 Text(
                     text = stringResource(R.string.balances_total_contributed),
@@ -53,21 +57,10 @@ internal fun PocketBalanceStatsRow(
         }
         if (balance.formattedTotalExtras != null) {
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = stringResource(R.string.balances_total_extras),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = balance.formattedTotalExtras,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
+            ExtrasStatsSection(
+                formattedTotalExtras = balance.formattedTotalExtras,
+                onShowExtrasBreakdown = onShowExtrasBreakdown
+            )
         }
     }
 }

@@ -3,7 +3,9 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
@@ -50,7 +52,10 @@ class BalancesUiMapperMemberBalancesTest {
             "ATM — Jan 10"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_rate, any(), any(), any()) } returns
             "@ 0.027 THB/EUR"
-        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
+        every {
+            resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.user_pending_fallback)
+        } returns "Pending member"
+        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
     }
 
     @Nested
@@ -167,24 +172,30 @@ class BalancesUiMapperMemberBalancesTest {
         }
 
         @Test
-        fun `members sorted by absolute pocketBalance descending after current user`() {
+        fun `members sorted alphabetically by display name after current user`() {
             val balances = listOf(
                 MemberBalance(userId = "user-1", pocketBalance = 100L),
                 MemberBalance(userId = "user-2", pocketBalance = -5000L),
                 MemberBalance(userId = "user-3", pocketBalance = 3000L)
             )
 
+            val customProfiles = mapOf(
+                "user-1" to User(userId = "user-1", email = "alice@test.com", displayName = "Alice"),
+                "user-2" to User(userId = "user-2", email = "charlie@test.com", displayName = "Charlie"),
+                "user-3" to User(userId = "user-3", email = "bob@test.com", displayName = "Bob")
+            )
+
             val result = mapper.mapMemberBalances(
                 balances = balances,
                 currency = currency,
                 currentUserId = "user-1",
-                memberProfiles = memberProfiles
+                memberProfiles = customProfiles
             )
 
-            // user-1 first (current user), then user-2 (|5000|), then user-3 (|3000|)
+            // Expected order: user-1 (current user), then user-3 ("Bob"), then user-2 ("Charlie")
             assertEquals("user-1", result[0].userId)
-            assertEquals("user-2", result[1].userId)
-            assertEquals("user-3", result[2].userId)
+            assertEquals("user-3", result[1].userId)
+            assertEquals("user-2", result[2].userId)
         }
 
         @Test
@@ -230,6 +241,61 @@ class BalancesUiMapperMemberBalancesTest {
             val item = result[0]
             assertTrue(item.formattedCashSpent.contains("15"))
             assertTrue(item.formattedNonCashSpent.contains("25"))
+        }
+
+        @Test
+        fun `formats totalBalance field correctly`() {
+            val balances = listOf(
+                MemberBalance(
+                    userId = "user-1",
+                    pocketBalance = 1500L,
+                    cashInHand = 2500L
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = balances,
+                currency = currency,
+                currentUserId = currentUserId,
+                memberProfiles = memberProfiles
+            )
+
+            val item = result[0]
+            // totalBalance = 1500 + 2500 = 4000L. US locale EUR formatting contains "40"
+            assertTrue(item.formattedTotalBalance.contains("40"))
+        }
+
+        @Test
+        fun `positive balance flagged based on totalBalance`() {
+            val balances = listOf(
+                // Negative pocket but positive cash offsets it -> total = 500 >= 0 (positive)
+                MemberBalance(userId = "user-1", pocketBalance = -1000L, cashInHand = 1500L),
+                // Positive pocket but negative cash offsets it -> total = -500 < 0 (negative)
+                MemberBalance(userId = "user-2", pocketBalance = 1000L, cashInHand = -1500L),
+                // Negative pocket and negative cash -> total = -2500 < 0 (negative)
+                MemberBalance(userId = "user-3", pocketBalance = -1000L, cashInHand = -1500L),
+                // Positive pocket and positive cash -> total = 2500 >= 0 (positive)
+                MemberBalance(
+                    userId = "user-4",
+                    pocketBalance = 1000L,
+                    cashInHand = 1500L
+                )
+            )
+
+            val profiles = memberProfiles + ("user-4" to User(userId = "user-4", email = "david@test.com"))
+
+            val result = mapper.mapMemberBalances(
+                balances = balances,
+                currency = currency,
+                currentUserId = null,
+                memberProfiles = profiles
+            )
+
+            val byUser = result.associateBy { it.userId }
+            assertTrue(byUser["user-1"]!!.isPositiveBalance)
+            assertFalse(byUser["user-2"]!!.isPositiveBalance)
+            assertFalse(byUser["user-3"]!!.isPositiveBalance)
+            assertTrue(byUser["user-4"]!!.isPositiveBalance)
         }
 
         @Test
@@ -886,6 +952,165 @@ class BalancesUiMapperMemberBalancesTest {
             assertEquals("Couple", breakdown[1].scopeLabel) // SUBUNIT
             assertFalse(breakdown[2].isEstimatedShare) // USER
         }
+
+        @Test
+        fun `formattedAddOns is empty when withdrawal has no add-ons`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = cashWithdrawal("w1", scope = PayerType.USER, addOns = emptyList())
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            assertTrue(result[0].cashBreakdown[0].formattedAddOns.isEmpty())
+            assertEquals("", result[0].formattedTotalFees)
+        }
+
+        @Test
+        fun `formattedAddOns filters out DISCOUNT type add-ons`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.USER,
+                addOns = listOf(
+                    AddOn(
+                        id = "a1",
+                        type = AddOnType.DISCOUNT,
+                        amountCents = 100L,
+                        groupAmountCents = 100L,
+                        description = "Discount"
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            assertTrue(result[0].cashBreakdown[0].formattedAddOns.isEmpty())
+            assertEquals("", result[0].formattedTotalFees)
+        }
+
+        @Test
+        fun `formattedAddOns attributes full fee amount to withdrawing user under USER scope`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 100000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.USER,
+                addOns = listOf(
+                    AddOn(
+                        id = "a1",
+                        type = AddOnType.FEE,
+                        amountCents = 245L,
+                        groupAmountCents = 245L,
+                        description = "ATM Fee"
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            val formatted = result[0].cashBreakdown[0].formattedAddOns
+            // Antonia paid 2.45 ATM fee, should see the full 2.45 EUR fee
+            assertTrue(formatted.contains("2.45"))
+            assertFalse(formatted.contains("ATM Fee"))
+            assertTrue(result[0].formattedTotalFees.contains("2.45"))
+        }
+
+        @Test
+        fun `formattedAddOns divides fee amount equally among group members under GROUP scope`() {
+            val balance = MemberBalance(userId = "user-1", cashInHand = 50000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.GROUP,
+                addOns = listOf(
+                    AddOn(
+                        id = "a1",
+                        type = AddOnType.FEE,
+                        amountCents = 300L,
+                        groupAmountCents = 300L,
+                        description = "ATM Fee"
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    groupMemberIds = listOf("user-1", "user-2", "user-3") // 3 members
+                )
+            )
+
+            val formatted = result[0].cashBreakdown[0].formattedAddOns
+            // Total fee is 3.00 EUR. Split among 3 members, each pays 1.00 EUR
+            assertTrue(formatted.contains("1.00"))
+            assertFalse(formatted.contains("ATM Fee"))
+            assertTrue(result[0].formattedTotalFees.contains("1.00"))
+        }
+
+        @Test
+        fun `formattedAddOns scales fee amount proportionally based on memberShares under SUBUNIT scope`() {
+            val subunit = Subunit(
+                id = "sub-1",
+                name = "Golfas",
+                memberShares = mapOf("user-1" to BigDecimal("0.5"), "user-2" to BigDecimal("0.5"))
+            )
+            val balance = MemberBalance(userId = "user-1", cashInHand = 10000L)
+            val withdrawal = cashWithdrawal(
+                id = "w1",
+                scope = PayerType.SUBUNIT,
+                subunitId = "sub-1",
+                addOns = listOf(
+                    AddOn(
+                        id = "a1",
+                        type = AddOnType.FEE,
+                        amountCents = 200L,
+                        groupAmountCents = 200L,
+                        description = "ATM Fee"
+                    )
+                )
+            )
+
+            val result = mapper.mapMemberBalances(
+                balances = listOf(balance),
+                currency = currency,
+                currentUserId = currentUserId,
+                cashContext = MemberBalanceCashContext(
+                    withdrawals = listOf(withdrawal),
+                    subunitsMap = mapOf("sub-1" to subunit),
+                    groupMemberIds = groupMemberIds
+                )
+            )
+
+            val formatted = result[0].cashBreakdown[0].formattedAddOns
+            // Total fee is 2.00 EUR. At 50% share, user-1 pays 1.00 EUR
+            assertTrue(formatted.contains("1.00"))
+            assertFalse(formatted.contains("ATM Fee"))
+            assertTrue(result[0].formattedTotalFees.contains("1.00"))
+        }
     }
 }
 
@@ -902,7 +1127,8 @@ private fun cashWithdrawal(
     subunitId: String? = null,
     amountWithdrawn: Long = 100000L,
     currency: String = "EUR",
-    createdAt: LocalDateTime? = null
+    createdAt: LocalDateTime? = null,
+    addOns: List<AddOn> = emptyList()
 ) = CashWithdrawal(
     id = id,
     withdrawnBy = withdrawnBy,
@@ -913,5 +1139,6 @@ private fun cashWithdrawal(
     remainingAmount = amountWithdrawn, // Defaults to full amount; no FIFO consumption
     deductedBaseAmount = amountWithdrawn,
     exchangeRate = BigDecimal.ONE,
-    createdAt = createdAt
+    createdAt = createdAt,
+    addOns = addOns
 )

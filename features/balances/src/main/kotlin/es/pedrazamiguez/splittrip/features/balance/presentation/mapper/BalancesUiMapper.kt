@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 
+import es.pedrazamiguez.splittrip.core.common.extensions.localeAwareComparator
 import es.pedrazamiguez.splittrip.core.common.extensions.toEpochMillisUtc
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
@@ -7,10 +8,12 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
+import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -22,6 +25,7 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakd
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CurrencyBreakdownUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceCashContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
@@ -63,16 +67,8 @@ class BalancesUiMapper(
         return GroupPocketBalanceUiModel(
             groupName = groupName,
             formattedBalance = formatCurrencyAmount(balance.virtualBalance, balance.currency, locale),
-            formattedTotalContributed = formatCurrencyAmount(
-                balance.totalContributions,
-                balance.currency,
-                locale
-            ),
-            formattedTotalSpent = formatCurrencyAmount(
-                balance.totalExpenses,
-                balance.currency,
-                locale
-            ),
+            formattedTotalContributed = formatCurrencyAmount(balance.totalContributions, balance.currency, locale),
+            formattedTotalSpent = formatCurrencyAmount(balance.totalExpenses, balance.currency, locale),
             currency = balance.currency,
             cashBalances = cashBalanceUiModels,
             formattedTotalCashEquivalent = if (balance.totalCashEquivalent > 0) {
@@ -120,11 +116,7 @@ class BalancesUiMapper(
                 id = contribution.id,
                 displayName = resolveDisplayName(contribution.userId, memberProfiles),
                 isCurrentUser = contribution.userId == currentUserId,
-                formattedAmount = formatCurrencyAmount(
-                    contribution.amount,
-                    contribution.currency,
-                    locale
-                ),
+                formattedAmount = formatCurrencyAmount(contribution.amount, contribution.currency, locale),
                 dateText = contribution.createdAt?.formatShortDate(locale) ?: "",
                 scopeLabel = scopeLabel,
                 isSubunitContribution = isSubunit,
@@ -209,24 +201,18 @@ class BalancesUiMapper(
         memberProfiles: Map<String, User> = emptyMap(),
         subunits: Map<String, Subunit> = emptyMap()
     ): ImmutableList<ActivityItemUiModel> {
-        // Precompute sort timestamps from domain models
-        val contributionTimestampsById = contributions.associate { contribution ->
-            val timestamp = contribution.createdAt?.toEpochMillisUtc() ?: 0L
-            contribution.id to timestamp
-        }
-
-        val withdrawalTimestampsById = withdrawals.associate { withdrawal ->
-            val timestamp = withdrawal.createdAt?.toEpochMillisUtc() ?: 0L
-            withdrawal.id to timestamp
-        }
-
-        // Reuse existing mappers for UiModel construction
         val contributionUiModels = mapContributions(
             contributions = contributions,
             currentUserId = currentUserId,
             memberProfiles = memberProfiles,
             subunits = subunits
         )
+        val contributionItems = contributions.zip(contributionUiModels) { domain, ui ->
+            ActivityItemUiModel.ContributionItem(
+                contribution = ui,
+                sortTimestamp = domain.createdAt?.toEpochMillisUtc() ?: 0L
+            )
+        }
 
         val withdrawalUiModels = mapCashWithdrawals(
             withdrawals = withdrawals,
@@ -235,18 +221,10 @@ class BalancesUiMapper(
             memberProfiles = memberProfiles,
             subunits = subunits
         )
-
-        val contributionItems = contributionUiModels.map { uiModel ->
-            ActivityItemUiModel.ContributionItem(
-                contribution = uiModel,
-                sortTimestamp = contributionTimestampsById[uiModel.id] ?: 0L
-            )
-        }
-
-        val withdrawalItems = withdrawalUiModels.map { uiModel ->
+        val withdrawalItems = withdrawals.zip(withdrawalUiModels) { domain, ui ->
             ActivityItemUiModel.CashWithdrawalItem(
-                withdrawal = uiModel,
-                sortTimestamp = withdrawalTimestampsById[uiModel.id] ?: 0L
+                withdrawal = ui,
+                sortTimestamp = domain.createdAt?.toEpochMillisUtc() ?: 0L
             )
         }
 
@@ -255,9 +233,33 @@ class BalancesUiMapper(
             .toImmutableList()
     }
 
+    fun mapExtrasBreakdown(
+        expenses: List<Expense>,
+        withdrawals: List<CashWithdrawal>,
+        groupCurrency: String,
+        memberProfiles: Map<String, User>,
+        subunitsMap: Map<String, Subunit>,
+        currentUserId: String?
+    ): ImmutableList<ExtrasBreakdownUiModel> {
+        val context = ExtrasBreakdownContext(
+            groupCurrency = groupCurrency,
+            memberProfiles = memberProfiles,
+            subunitsMap = subunitsMap,
+            currentUserId = currentUserId,
+            locale = localeProvider.getCurrentLocale(),
+            resourceProvider = resourceProvider,
+            userUiMapper = userUiMapper
+        )
+        return mapExtrasBreakdown(
+            expenses = expenses,
+            withdrawals = withdrawals,
+            context = context
+        )
+    }
+
     /**
      * Maps per-member domain balances to UI models with formatted amounts.
-     * Sort order: current user first, then by |pocketBalance| descending (most extreme first).
+     * Sort order: current user first, then alphabetically by display name (resolved by mapper).
      *
      * @param groupCurrency The group's base currency code, used to determine whether
      *                      to show equivalents for per-currency breakdowns.
@@ -274,22 +276,25 @@ class BalancesUiMapper(
         cashContext: MemberBalanceCashContext = MemberBalanceCashContext()
     ): ImmutableList<MemberBalanceUiModel> {
         val locale = localeProvider.getCurrentLocale()
-        return balances
-            .sortedWith(
-                compareByDescending<MemberBalance> { it.userId == currentUserId }
-                    .thenByDescending { kotlin.math.abs(it.pocketBalance) }
+        val mappedBalances = balances.map { balance ->
+            mapSingleMemberBalance(
+                balance = balance,
+                currentUserId = currentUserId,
+                currency = currency,
+                groupCurrency = groupCurrency,
+                memberProfiles = memberProfiles,
+                cashContext = cashContext,
+                locale = locale
             )
-            .map { balance ->
-                mapSingleMemberBalance(
-                    balance = balance,
-                    currentUserId = currentUserId,
-                    currency = currency,
-                    groupCurrency = groupCurrency,
-                    memberProfiles = memberProfiles,
-                    cashContext = cashContext,
-                    locale = locale
-                )
-            }
+        }
+
+        val displayNameComparator = localeAwareComparator<MemberBalanceUiModel>(locale) { it.displayName }
+
+        return mappedBalances
+            .sortedWith(
+                compareByDescending<MemberBalanceUiModel> { it.isCurrentUser }
+                    .thenComparing(displayNameComparator)
+            )
             .toImmutableList()
     }
 
@@ -303,6 +308,22 @@ class BalancesUiMapper(
         locale: Locale
     ): MemberBalanceUiModel {
         val isNegativeCash = balance.cashInHand < 0
+        val totalFeeCents = if (isNegativeCash) {
+            0L
+        } else {
+            computeMemberTotalFees(
+                userId = balance.userId,
+                withdrawals = cashContext.withdrawals,
+                groupMemberIds = cashContext.groupMemberIds,
+                subunitsMap = cashContext.subunitsMap
+            )
+        }
+        val formattedTotalFees = if (totalFeeCents > 0L) {
+            formatCurrencyAmount(totalFeeCents, groupCurrency, locale)
+        } else {
+            ""
+        }
+
         return MemberBalanceUiModel(
             userId = balance.userId,
             displayName = resolveDisplayName(balance.userId, memberProfiles),
@@ -315,9 +336,10 @@ class BalancesUiMapper(
             },
             formattedTotalSpent = formatCurrencyAmount(balance.totalSpent, currency, locale),
             formattedPocketBalance = formatCurrencyAmount(balance.pocketBalance, currency, locale),
+            formattedTotalBalance = formatCurrencyAmount(balance.totalBalance, currency, locale),
             formattedCashSpent = formatCurrencyAmount(balance.cashSpent, currency, locale),
             formattedNonCashSpent = formatCurrencyAmount(balance.nonCashSpent, currency, locale),
-            isPositiveBalance = balance.pocketBalance >= 0,
+            isPositiveBalance = balance.totalBalance >= 0,
             hasNegativeCashInHand = isNegativeCash,
             cashInHandByCurrency = if (isNegativeCash) {
                 persistentListOf()
@@ -337,7 +359,8 @@ class BalancesUiMapper(
                     groupCurrency = groupCurrency,
                     locale = locale
                 )
-            }
+            },
+            formattedTotalFees = formattedTotalFees
         )
     }
 
@@ -374,7 +397,15 @@ class BalancesUiMapper(
                 if (withdrawal.amountWithdrawn == 0L || withdrawal.remainingAmount <= 0L) return@mapNotNull null
                 val nativeShare = computeUserNativeShare(withdrawal, userId, groupMemberIds, subunitsMap)
                 if (nativeShare <= 0L) return@mapNotNull null
-                buildCashBreakdownEntry(withdrawal, nativeShare, groupCurrency, locale, subunitsMap)
+                buildCashBreakdownEntry(
+                    withdrawal = withdrawal,
+                    nativeShare = nativeShare,
+                    userId = userId,
+                    groupMemberIds = groupMemberIds,
+                    groupCurrency = groupCurrency,
+                    locale = locale,
+                    subunitsMap = subunitsMap
+                )
             }
             .toImmutableList()
     }
@@ -386,6 +417,8 @@ class BalancesUiMapper(
     private fun buildCashBreakdownEntry(
         withdrawal: CashWithdrawal,
         nativeShare: Long,
+        userId: String,
+        groupMemberIds: List<String>,
         groupCurrency: String,
         locale: Locale,
         subunitsMap: Map<String, Subunit>
@@ -423,32 +456,42 @@ class BalancesUiMapper(
                 ""
             },
             scopeLabel = resolveCashBreakdownScopeLabel(withdrawal, subunitsMap),
-            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP
+            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP,
+            formattedAddOns = formatWithdrawalAddOns(
+                withdrawal = withdrawal,
+                userId = userId,
+                groupMemberIds = groupMemberIds,
+                subunitsMap = subunitsMap,
+                groupCurrency = groupCurrency,
+                locale = locale
+            )
         )
     }
 
-    /** Resolves the user's attributed native share (in withdrawal currency cents) for display. */
-    private fun computeUserNativeShare(
+    /** Formats the user's share of withdrawal add-ons (excluding discount types) into a plain amount string. */
+    private fun formatWithdrawalAddOns(
         withdrawal: CashWithdrawal,
         userId: String,
         groupMemberIds: List<String>,
-        subunitsMap: Map<String, Subunit>
-    ): Long {
-        val remaining = withdrawal.remainingAmount
-        return when (withdrawal.withdrawalScope) {
-            PayerType.USER -> if (withdrawal.withdrawnBy == userId) remaining else 0L
-            PayerType.GROUP -> {
-                if (groupMemberIds.isEmpty()) 0L else remaining / groupMemberIds.size
-            }
-            PayerType.SUBUNIT -> {
-                val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
-                val share = subunit?.memberShares?.get(userId) ?: return 0L
-                BigDecimal(remaining)
-                    .multiply(share)
-                    .setScale(0, RoundingMode.HALF_UP)
-                    .toLong()
-            }
+        subunitsMap: Map<String, Subunit>,
+        groupCurrency: String,
+        locale: Locale
+    ): String {
+        val nonDiscountAddOns = withdrawal.addOns.filter { it.type != AddOnType.DISCOUNT }
+        if (nonDiscountAddOns.isEmpty()) return ""
+        val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
+        val totalUserAddOnCents = nonDiscountAddOns.sumOf { addOn ->
+            computeAddOnShare(
+                addOn = addOn,
+                scope = withdrawal.withdrawalScope,
+                withdrawnBy = withdrawal.withdrawnBy,
+                userId = userId,
+                groupMemberIds = groupMemberIds,
+                subunit = subunit
+            )
         }
+        if (totalUserAddOnCents <= 0L) return ""
+        return formatCurrencyAmount(totalUserAddOnCents, groupCurrency, locale)
     }
 
     private fun resolveCashBreakdownScopeLabel(

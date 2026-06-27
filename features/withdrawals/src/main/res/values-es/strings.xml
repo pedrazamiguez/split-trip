@@ -10,6 +10,7 @@
     <string name="withdrawal_cash_for_group">Para todo el grupo</string>
     <string name="withdrawal_cash_for_subunit">Para %1$s</string>
     <string name="withdrawal_cash_for_me">Para mí</string>
+    <string name="withdrawal_cash_for_member">Para %1$s</string>
     <string name="withdrawal_scope_personal">Personal</string>
     <string name="withdrawal_scope_group">Grupo</string>
 
@@ -62,6 +63,6 @@
 
     <!-- Member Picker -->
     <string name="withdrawal_member_picker_title">Miembro que retira</string>
-    <string name="withdrawal_member_picker_you_suffix">(Tú)</string>
+    <string name="withdrawal_member_picker_you_label">Tú</string>
 </resources>
 

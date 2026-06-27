@@ -88,7 +88,27 @@
     <!-- Fallback cuando la subunidad referenciada por una retirada ya no existe (caso límite de integridad de datos) -->
     <string name="balances_cash_breakdown_unknown_subunit">Subunidad desconocida</string>
 
+    <!-- Cash Breakdown Add-ons -->
+    <string name="balances_cash_breakdown_fee_tip">%1$s: %2$s</string>
+    <string name="balances_cash_breakdown_add_on_tip">Propina</string>
+    <string name="balances_cash_breakdown_add_on_fee">Comisión</string>
+    <string name="balances_cash_breakdown_add_on_surcharge">Recargo</string>
+    <string name="balances_cash_breakdown_total_fees_label">Comisiones</string>
+
+    <!-- Extras Breakdown Bottom Sheet -->
+    <string name="balances_extras_breakdown_title">Desglose de extras</string>
+    <string name="balances_extras_breakdown_cd">Ver desglose de extras</string>
+    <string name="balances_extras_breakdown_empty">No hay extras registrados</string>
+    <string name="balances_extras_breakdown_total">Total</string>
+    <string name="balances_extras_breakdown_subtotal">Subtotal</string>
+    <string name="balances_extras_add_on_fee_plural">Comisiones</string>
+    <string name="balances_extras_add_on_surcharge_plural">Recargos</string>
+    <string name="balances_extras_add_on_tip_plural">Propinas</string>
+    <string name="balances_extras_expense_fallback">Gasto</string>
+    <string name="balances_extras_atm_fallback">Cajero — %1$s</string>
+
     <!-- Main Action -->
     <string name="balances_filter">Filtrar saldos</string>
 
 </resources>
+

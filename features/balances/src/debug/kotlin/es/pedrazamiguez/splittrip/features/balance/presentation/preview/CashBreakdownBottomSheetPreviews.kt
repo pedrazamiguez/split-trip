@@ -10,8 +10,10 @@ import kotlinx.collections.immutable.persistentListOf
 private fun CashBreakdownBottomSheetPreview() {
     CashBreakdownPreviewHelper { breakdown, formattedTotal ->
         CashBreakdownBottomSheet(
+            memberName = "Andrés Pedraza Miguez",
             breakdown = breakdown,
             formattedTotal = formattedTotal,
+            formattedTotalFees = "3.45 €",
             onDismiss = {}
         )
     }
@@ -22,8 +24,10 @@ private fun CashBreakdownBottomSheetPreview() {
 private fun CashBreakdownBottomSheetEmptyPreview() {
     CashBreakdownPreviewHelper(withdrawals = emptyList()) { _, _ ->
         CashBreakdownBottomSheet(
+            memberName = "Andrés Pedraza Miguez",
             breakdown = persistentListOf(),
             formattedTotal = "฿ 0",
+            formattedTotalFees = "",
             onDismiss = {}
         )
     }

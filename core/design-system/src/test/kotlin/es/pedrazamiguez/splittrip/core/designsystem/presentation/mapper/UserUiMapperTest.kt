@@ -1,6 +1,10 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper
 
+import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.domain.model.User
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -9,7 +13,10 @@ import org.junit.jupiter.api.Test
 
 class UserUiMapperTest {
 
-    private val mapper = UserUiMapper()
+    private val resourceProvider = mockk<ResourceProvider> {
+        every { getString(R.string.user_pending_fallback) } returns "Pending member"
+    }
+    private val mapper = UserUiMapper(resourceProvider)
 
     @Nested
     inner class MapToDisplayName {
@@ -39,6 +46,12 @@ class UserUiMapperTest {
         fun `falls back to userId when user profile is null`() {
             val result = mapper.mapToDisplayName(user = null, fallbackUserId = "user-1")
             assertEquals("user-1", result)
+        }
+
+        @Test
+        fun `returns localized fallback string when user profile is null and userId starts with pending_`() {
+            val result = mapper.mapToDisplayName(user = null, fallbackUserId = "pending_user-1")
+            assertEquals("Pending member", result)
         }
 
         @Test

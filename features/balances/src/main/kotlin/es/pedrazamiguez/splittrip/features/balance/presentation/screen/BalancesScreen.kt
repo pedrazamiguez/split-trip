@@ -8,13 +8,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.rememberConnectedScrollBehavior
-import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalancesBodyContent
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalancesScreenOverlays
+import es.pedrazamiguez.splittrip.features.balance.presentation.component.ContributionDeleteDialog
+import es.pedrazamiguez.splittrip.features.balance.presentation.component.ExtrasBreakdownBottomSheet
+import es.pedrazamiguez.splittrip.features.balance.presentation.component.WithdrawalDeleteDialog
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
@@ -31,9 +31,9 @@ fun BalancesScreen(
     val bottomPadding = LocalBottomPadding.current
     val scrollBehavior = rememberConnectedScrollBehavior()
 
-    // Local state for the DestructiveConfirmationDialog (ephemeral, driven from sheet action)
     var contributionPendingDelete by remember { mutableStateOf<ContributionUiModel?>(null) }
     var withdrawalPendingDelete by remember { mutableStateOf<CashWithdrawalUiModel?>(null) }
+    var showExtrasBreakdown by remember { mutableStateOf(false) }
 
     BalancesBodyContent(
         uiState = uiState,
@@ -41,29 +41,28 @@ fun BalancesScreen(
         onEvent = onEvent,
         onNavigateToContribution = onNavigateToContribution,
         onNavigateToWithdrawal = onNavigateToWithdrawal,
+        onShowExtrasBreakdown = { showExtrasBreakdown = true },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     )
 
-    // ActionBottomSheet overlays (driven by UiState — survives recomposition)
     BalancesScreenOverlays(
         uiState = uiState,
         onEvent = onEvent,
-        onContributionDeleteRequested = { contribution ->
-            contributionPendingDelete = contribution
-        },
-        onWithdrawalDeleteRequested = { withdrawal ->
-            withdrawalPendingDelete = withdrawal
-        }
+        onContributionDeleteRequested = { contributionPendingDelete = it },
+        onWithdrawalDeleteRequested = { withdrawalPendingDelete = it }
     )
 
-    // DestructiveConfirmationDialog for contribution
+    if (showExtrasBreakdown) {
+        ExtrasBreakdownBottomSheet(
+            breakdown = uiState.extrasBreakdown,
+            formattedGrandTotal = uiState.pocketBalance.formattedTotalExtras ?: "",
+            onDismiss = { showExtrasBreakdown = false }
+        )
+    }
+
     contributionPendingDelete?.let { contribution ->
-        DestructiveConfirmationDialog(
-            title = stringResource(R.string.balances_delete_contribution_dialog_title),
-            text = stringResource(
-                R.string.balances_delete_contribution_dialog_text,
-                contribution.formattedAmount
-            ),
+        ContributionDeleteDialog(
+            contribution = contribution,
             onDismiss = { contributionPendingDelete = null },
             onConfirm = {
                 onEvent(BalancesUiEvent.DeleteContributionConfirmed(contribution.id))
@@ -72,14 +71,9 @@ fun BalancesScreen(
         )
     }
 
-    // DestructiveConfirmationDialog for cash withdrawal
     withdrawalPendingDelete?.let { withdrawal ->
-        DestructiveConfirmationDialog(
-            title = stringResource(R.string.balances_delete_withdrawal_dialog_title),
-            text = stringResource(
-                R.string.balances_delete_withdrawal_dialog_text,
-                withdrawal.formattedAmount
-            ),
+        WithdrawalDeleteDialog(
+            withdrawal = withdrawal,
             onDismiss = { withdrawalPendingDelete = null },
             onConfirm = {
                 onEvent(BalancesUiEvent.DeleteWithdrawalConfirmed(withdrawal.id))
