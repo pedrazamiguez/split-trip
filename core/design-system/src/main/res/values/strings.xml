@@ -64,6 +64,9 @@
     <string name="content_description_menu">Open menu</string>
     <string name="content_description_profile">User profile</string>
 
+    <!-- User Fallback -->
+    <string name="user_pending_fallback">Pending member</string>
+
     <!-- Sync Status -->
     <string name="sync_status_pending">Not yet synced to server</string>
     <string name="sync_status_failed">Sync failed</string>

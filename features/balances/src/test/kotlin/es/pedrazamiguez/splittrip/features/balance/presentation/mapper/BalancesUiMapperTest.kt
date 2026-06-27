@@ -41,7 +41,10 @@ class BalancesUiMapperTest {
         every { resourceProvider.getString(R.string.balances_contribution_scope_group) } returns "Group"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_personal) } returns "Personal"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_group) } returns "Group"
-        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
+        every {
+            resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.user_pending_fallback)
+        } returns "Pending member"
+        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
     }
 
     @Nested

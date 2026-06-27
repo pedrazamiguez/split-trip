@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper
 
+import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.common.util.DisplayNameResolver
+import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.User
 import kotlinx.collections.immutable.ImmutableList
@@ -11,7 +13,9 @@ import kotlinx.collections.immutable.toImmutableList
  *
  * Provides shared formatting and resolution for User profiles.
  */
-class UserUiMapper {
+class UserUiMapper(
+    private val resourceProvider: ResourceProvider
+) {
 
     /**
      * Resolves the display name for a [User] domain object, falling back through the hierarchy:
@@ -33,7 +37,8 @@ class UserUiMapper {
             currentUserId = if (youLabel.isNotBlank()) currentUserId else null,
             youLabel = youLabel,
             displayName = user?.displayName,
-            email = user?.email.orEmpty()
+            email = user?.email.orEmpty(),
+            pendingLabel = resourceProvider.getString(R.string.user_pending_fallback)
         )
     }
 

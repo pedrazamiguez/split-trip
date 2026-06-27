@@ -28,7 +28,7 @@ class AddCashWithdrawalUiMapperTest {
     @BeforeEach
     fun setUp() {
         resourceProvider = mockk(relaxed = true)
-        userUiMapper = UserUiMapper()
+        userUiMapper = UserUiMapper(resourceProvider)
         mapper = AddCashWithdrawalUiMapper(resourceProvider, userUiMapper)
     }
 

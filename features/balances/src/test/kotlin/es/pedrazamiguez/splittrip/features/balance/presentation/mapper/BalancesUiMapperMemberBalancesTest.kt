@@ -50,7 +50,10 @@ class BalancesUiMapperMemberBalancesTest {
             "ATM — Jan 10"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_rate, any(), any(), any()) } returns
             "@ 0.027 THB/EUR"
-        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper())
+        every {
+            resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.user_pending_fallback)
+        } returns "Pending member"
+        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
     }
 
     @Nested

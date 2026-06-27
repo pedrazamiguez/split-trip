@@ -91,7 +91,7 @@ class ExpenseDetailUiMapperTest {
             expenseCalculatorService = expenseCalculatorService,
             addOnCalculationService = addOnCalculationService,
             scheduledBadgeUiMapper = scheduledBadgeUiMapper,
-            userUiMapper = UserUiMapper()
+            userUiMapper = UserUiMapper(resourceProvider)
         )
     }
 
