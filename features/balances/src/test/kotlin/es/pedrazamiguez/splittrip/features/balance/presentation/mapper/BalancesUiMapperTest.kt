@@ -1075,13 +1075,14 @@ class BalancesUiMapperTest {
                 val date = (args[1] as Array<*>)[0] as String
                 "ATM — $date"
             }
-            every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_fee) } returns "Fee"
-            every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_surcharge) } returns "Surcharge"
-            every { resourceProvider.getString(R.string.balances_cash_breakdown_add_on_tip) } returns "Tip"
+            every { resourceProvider.getString(R.string.balances_extras_add_on_fee_plural) } returns "Fees"
+            every { resourceProvider.getString(R.string.balances_extras_add_on_surcharge_plural) } returns "Surcharges"
+            every { resourceProvider.getString(R.string.balances_extras_add_on_tip_plural) } returns "Tips"
             every { resourceProvider.getString(R.string.balances_member_you) } returns "You"
             every {
                 resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit)
             } returns "Unknown subunit"
+            every { resourceProvider.getString(R.string.balances_contribution_scope_group) } returns "Group"
         }
 
         @Test
@@ -1116,7 +1117,7 @@ class BalancesUiMapperTest {
         }
 
         @Test
-        fun `maps single expense add-on to correct type group and formats amount`() {
+        fun `maps single expense add-on to correct type group and scope`() {
             val expense = Expense(
                 id = "e1",
                 title = "Dinner",
@@ -1133,19 +1134,15 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(1, result.size)
-            assertEquals("Fee", result[0].typeLabel)
+            assertEquals("Fees", result[0].typeLabel)
             assertTrue(result[0].formattedSubtotal.contains("1.50"))
             assertEquals(1, result[0].items.size)
-            assertEquals("Dinner", result[0].items[0].parentTitle)
-            assertTrue(
-                result[0].items[0].dateText.contains("10") &&
-                    result[0].items[0].dateText.contains("Jan")
-            )
+            assertEquals("Group", result[0].items[0].parentTitle)
             assertTrue(result[0].items[0].formattedAmount.contains("1.50"))
         }
 
         @Test
-        fun `maps single withdrawal add-on to correct type group`() {
+        fun `maps single withdrawal add-on to correct type group and scope`() {
             val withdrawal = CashWithdrawal(
                 id = "w1",
                 title = "ATM 1",
@@ -1162,35 +1159,13 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(1, result.size)
-            assertEquals("Tip", result[0].typeLabel)
+            assertEquals("Tips", result[0].typeLabel)
             assertTrue(result[0].formattedSubtotal.contains("2.00"))
-            assertEquals("ATM 1", result[0].items[0].parentTitle)
+            assertEquals("Group", result[0].items[0].parentTitle)
         }
 
         @Test
-        fun `withdrawal with null title uses ATM fallback label`() {
-            val withdrawal = CashWithdrawal(
-                id = "w1",
-                title = null,
-                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 200)),
-                createdAt = LocalDateTime.of(2026, 1, 12, 10, 0)
-            )
-            val result = mapper.mapExtrasBreakdown(
-                expenses = emptyList(),
-                withdrawals = listOf(withdrawal),
-                groupCurrency = "EUR",
-                memberProfiles = emptyMap(),
-                subunitsMap = emptyMap(),
-                currentUserId = null
-            )
-
-            assertEquals(1, result.size)
-            val parentTitle = result[0].items[0].parentTitle
-            assertTrue(parentTitle.contains("ATM —") && parentTitle.contains("Jan") && parentTitle.contains("12"))
-        }
-
-        @Test
-        fun `groups multiple add-ons of same type into one section`() {
+        fun `groups multiple add-ons of same type by scope and sums amount`() {
             val expense1 = Expense(
                 id = "e1",
                 title = "Dinner",
@@ -1214,11 +1189,11 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(1, result.size)
-            assertEquals("Fee", result[0].typeLabel)
+            assertEquals("Fees", result[0].typeLabel)
             assertTrue(result[0].formattedSubtotal.contains("4.00"))
-            assertEquals(2, result[0].items.size)
-            assertEquals("Taxi", result[0].items[0].parentTitle)
-            assertEquals("Dinner", result[0].items[1].parentTitle)
+            assertEquals(1, result[0].items.size)
+            assertEquals("Group", result[0].items[0].parentTitle)
+            assertTrue(result[0].items[0].formattedAmount.contains("4.00"))
         }
 
         @Test
@@ -1244,9 +1219,9 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(3, result.size)
-            assertEquals("Fee", result[0].typeLabel)
-            assertEquals("Surcharge", result[1].typeLabel)
-            assertEquals("Tip", result[2].typeLabel)
+            assertEquals("Fees", result[0].typeLabel)
+            assertEquals("Surcharges", result[1].typeLabel)
+            assertEquals("Tips", result[2].typeLabel)
         }
 
         @Test
@@ -1272,9 +1247,9 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(3, result.size)
-            assertEquals("Fee", result[0].typeLabel)
-            assertEquals("Surcharge", result[1].typeLabel)
-            assertEquals("Tip", result[2].typeLabel)
+            assertEquals("Fees", result[0].typeLabel)
+            assertEquals("Surcharges", result[1].typeLabel)
+            assertEquals("Tips", result[2].typeLabel)
         }
 
         @Test
@@ -1303,82 +1278,7 @@ class BalancesUiMapperTest {
         }
 
         @Test
-        fun `items within a section are sorted by date descending`() {
-            val expenseOlder = Expense(
-                id = "e1",
-                title = "Dinner",
-                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 100)),
-                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
-            )
-            val expenseNewer = Expense(
-                id = "e2",
-                title = "Drinks",
-                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 150)),
-                createdAt = LocalDateTime.of(2026, 1, 10, 14, 0)
-            )
-
-            val result = mapper.mapExtrasBreakdown(
-                expenses = listOf(expenseOlder, expenseNewer),
-                withdrawals = emptyList(),
-                groupCurrency = "EUR",
-                memberProfiles = emptyMap(),
-                subunitsMap = emptyMap(),
-                currentUserId = null
-            )
-
-            assertEquals(1, result.size)
-            assertEquals("Drinks", result[0].items[0].parentTitle)
-            assertEquals("Dinner", result[0].items[1].parentTitle)
-        }
-
-        @Test
-        fun `add-on description is preserved on ExtraItemUiModel`() {
-            val expense = Expense(
-                id = "e1",
-                title = "Dinner",
-                addOns = listOf(
-                    AddOn(type = AddOnType.FEE, groupAmountCents = 100, description = "Service charge")
-                ),
-                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
-            )
-
-            val result = mapper.mapExtrasBreakdown(
-                expenses = listOf(expense),
-                withdrawals = emptyList(),
-                groupCurrency = "EUR",
-                memberProfiles = emptyMap(),
-                subunitsMap = emptyMap(),
-                currentUserId = null
-            )
-
-            assertEquals(1, result.size)
-            assertEquals("Service charge", result[0].items[0].description)
-        }
-
-        @Test
-        fun `null add-on description is preserved as null`() {
-            val expense = Expense(
-                id = "e1",
-                title = "Dinner",
-                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 100, description = null)),
-                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
-            )
-
-            val result = mapper.mapExtrasBreakdown(
-                expenses = listOf(expense),
-                withdrawals = emptyList(),
-                groupCurrency = "EUR",
-                memberProfiles = emptyMap(),
-                subunitsMap = emptyMap(),
-                currentUserId = null
-            )
-
-            assertEquals(1, result.size)
-            assertNull(result[0].items[0].description)
-        }
-
-        @Test
-        fun `mixes expense and withdrawal add-ons into same type bucket`() {
+        fun `mixes expense and withdrawal add-ons into same type bucket and groups by scope`() {
             val expense = Expense(
                 id = "e1",
                 title = "Dinner",
@@ -1402,11 +1302,11 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(1, result.size)
-            assertEquals("Fee", result[0].typeLabel)
+            assertEquals("Fees", result[0].typeLabel)
             assertTrue(result[0].formattedSubtotal.contains("3.00"))
-            assertEquals(2, result[0].items.size)
-            assertEquals("ATM 1", result[0].items[0].parentTitle)
-            assertEquals("Dinner", result[0].items[1].parentTitle)
+            assertEquals(1, result[0].items.size)
+            assertEquals("Group", result[0].items[0].parentTitle)
+            assertTrue(result[0].items[0].formattedAmount.contains("3.00"))
         }
     }
 }

@@ -102,6 +102,9 @@
     <string name="balances_extras_breakdown_empty">No extras recorded</string>
     <string name="balances_extras_breakdown_total">Total</string>
     <string name="balances_extras_breakdown_subtotal">Subtotal</string>
+    <string name="balances_extras_add_on_fee_plural">Fees</string>
+    <string name="balances_extras_add_on_surcharge_plural">Surcharges</string>
+    <string name="balances_extras_add_on_tip_plural">Tips</string>
     <string name="balances_extras_expense_fallback">Expense</string>
     <string name="balances_extras_atm_fallback">ATM — %1$s</string>
 

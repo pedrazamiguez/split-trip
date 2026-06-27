@@ -80,6 +80,9 @@
     <string name="balances_extras_breakdown_empty">No ay êttrâ rehîttráô</string>
     <string name="balances_extras_breakdown_total">Totâh</string>
     <string name="balances_extras_breakdown_subtotal">Çûttotâh</string>
+    <string name="balances_extras_add_on_fee_plural">Comiçionê</string>
+    <string name="balances_extras_add_on_surcharge_plural">Recargô</string>
+    <string name="balances_extras_add_on_tip_plural">Propinâ</string>
     <string name="balances_extras_expense_fallback">Gâtto</string>
     <string name="balances_extras_atm_fallback">Cahero — %1$s</string>
     <string name="balances_filter">Firtrâh çardô</string>

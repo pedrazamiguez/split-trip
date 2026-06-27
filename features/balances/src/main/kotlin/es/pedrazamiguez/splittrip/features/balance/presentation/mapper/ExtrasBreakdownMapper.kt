@@ -145,19 +145,23 @@ private fun buildTypeBreakdown(
     for (type in groups) {
         val itemsOfType = sortedRawExtras.filter { it.addOn.type == type }
         if (itemsOfType.isNotEmpty()) {
-            val uiItems = itemsOfType.map { rawItem ->
-                ExtraItemUiModel(
-                    parentTitle = rawItem.parentTitle,
-                    dateText = rawItem.createdAt?.formatShortDate(context.locale) ?: "",
-                    description = rawItem.addOn.description,
-                    formattedAmount = formatCurrencyAmount(
-                        rawItem.addOn.groupAmountCents,
-                        context.groupCurrency,
-                        context.locale
-                    ),
-                    scopeLabel = rawItem.scopeLabel
-                )
-            }.toImmutableList()
+            val groupedByScope = itemsOfType.groupBy { it.scopeLabel }
+            val uiItems = groupedByScope.entries
+                .sortedBy { it.key }
+                .map { (scopeLabel, items) ->
+                    val sumCents = items.sumOf { it.addOn.groupAmountCents }
+                    ExtraItemUiModel(
+                        parentTitle = scopeLabel,
+                        dateText = "",
+                        description = null,
+                        formattedAmount = formatCurrencyAmount(
+                            sumCents,
+                            context.groupCurrency,
+                            context.locale
+                        ),
+                        scopeLabel = ""
+                    )
+                }.toImmutableList()
 
             val subtotalCents = itemsOfType.sumOf { it.addOn.groupAmountCents }
             val formattedSubtotal = formatCurrencyAmount(
@@ -168,13 +172,13 @@ private fun buildTypeBreakdown(
 
             val typeLabel = when (type) {
                 AddOnType.FEE -> context.resourceProvider.getString(
-                    R.string.balances_cash_breakdown_add_on_fee
+                    R.string.balances_extras_add_on_fee_plural
                 )
                 AddOnType.SURCHARGE -> context.resourceProvider.getString(
-                    R.string.balances_cash_breakdown_add_on_surcharge
+                    R.string.balances_extras_add_on_surcharge_plural
                 )
                 AddOnType.TIP -> context.resourceProvider.getString(
-                    R.string.balances_cash_breakdown_add_on_tip
+                    R.string.balances_extras_add_on_tip_plural
                 )
                 else -> ""
             }

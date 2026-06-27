@@ -37,12 +37,8 @@ internal fun ExtrasBreakdownContent(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
     ) {
-        val showSubtotal = breakdown.size > 1
         for (section in breakdown) {
-            ExtrasBreakdownSection(
-                section = section,
-                showSubtotal = showSubtotal
-            )
+            ExtrasBreakdownSection(section = section)
         }
 
         Row(

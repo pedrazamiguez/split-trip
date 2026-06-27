@@ -101,6 +101,9 @@
     <string name="balances_extras_breakdown_empty">No hay extras registrados</string>
     <string name="balances_extras_breakdown_total">Total</string>
     <string name="balances_extras_breakdown_subtotal">Subtotal</string>
+    <string name="balances_extras_add_on_fee_plural">Comisiones</string>
+    <string name="balances_extras_add_on_surcharge_plural">Recargos</string>
+    <string name="balances_extras_add_on_tip_plural">Propinas</string>
     <string name="balances_extras_expense_fallback">Gasto</string>
     <string name="balances_extras_atm_fallback">Cajero — %1$s</string>
 
