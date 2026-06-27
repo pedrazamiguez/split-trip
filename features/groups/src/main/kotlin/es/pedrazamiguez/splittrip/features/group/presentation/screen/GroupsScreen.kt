@@ -73,6 +73,7 @@ fun GroupsScreen(
     GroupsScreenOverlays(
         selectedGroup = selectedGroupForMenu,
         selectedGroupId = selectedGroupId,
+        isSoleGroup = uiState.groups.size == 1,
         onSelectGroup = onSelectGroup,
         onManageSubunits = onManageSubunits,
         onMenuDismiss = { selectedGroupForMenu = null },

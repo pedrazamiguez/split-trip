@@ -53,7 +53,9 @@ fun GroupDetailFeature(
             val group = uiState.group
             if (group != null) {
                 if (selectedGroupId == groupId) {
-                    sharedViewModel.selectGroup(null, null, null)
+                    if (!uiState.isOnlyGroup) {
+                        sharedViewModel.selectGroup(null, null, null)
+                    }
                 } else {
                     sharedViewModel.selectGroup(group.id, group.name, group.currency)
                 }

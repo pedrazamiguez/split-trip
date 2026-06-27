@@ -6,5 +6,6 @@ data class GroupDetailUiState(
     val group: GroupUiModel? = null,
     val isLoading: Boolean = true,
     val hasError: Boolean = false,
-    val subunitsCount: Int = 0
+    val subunitsCount: Int = 0,
+    val isOnlyGroup: Boolean = false
 )
