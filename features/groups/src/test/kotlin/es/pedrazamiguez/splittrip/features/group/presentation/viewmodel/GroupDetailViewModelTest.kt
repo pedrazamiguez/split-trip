@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
@@ -43,6 +44,7 @@ class GroupDetailViewModelTest {
 
     private lateinit var getGroupByIdUseCase: GetGroupByIdUseCase
     private lateinit var getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase
+    private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var groupUiMapper: GroupUiMapper
     private lateinit var viewModel: GroupDetailViewModel
@@ -67,6 +69,7 @@ class GroupDetailViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getGroupByIdUseCase = mockk()
         getGroupSubunitsFlowUseCase = mockk()
+        getUserGroupsFlowUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         groupUiMapper = mockk()
 
@@ -74,6 +77,7 @@ class GroupDetailViewModelTest {
         coEvery { getGroupByIdUseCase(any()) } returns testGroup
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
         every { getGroupSubunitsFlowUseCase(any()) } returns flowOf(emptyList())
+        every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup))
         every { groupUiMapper.toGroupUiModel(any(), any()) } returns testGroupUiModel
 
         viewModel = createViewModel()
@@ -87,6 +91,7 @@ class GroupDetailViewModelTest {
     private fun createViewModel() = GroupDetailViewModel(
         getGroupByIdUseCase = getGroupByIdUseCase,
         getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
+        getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
         getMemberProfilesUseCase = getMemberProfilesUseCase,
         groupUiMapper = groupUiMapper
     )
@@ -261,6 +266,35 @@ class GroupDetailViewModelTest {
 
             coVerify(exactly = 0) { getMemberProfilesUseCase(any()) }
             assertFalse(viewModel.uiState.value.isLoading)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `isOnlyGroup is true when user has only one group`() = runTest(testDispatcher) {
+            every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup))
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isOnlyGroup)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `isOnlyGroup is false when user has multiple groups`() = runTest(testDispatcher) {
+            val groups = listOf(testGroup, testGroup.copy(id = "other-group"))
+            every { getUserGroupsFlowUseCase() } returns flowOf(groups)
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isOnlyGroup)
 
             collectJob.cancel()
         }

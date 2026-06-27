@@ -37,6 +37,14 @@ fun GroupsFeature(
         groupsViewModel.onEvent(GroupsUiEvent.LoadGroups)
     }
 
+    // Auto-select the first/only group when there is exactly 1 group and none is selected
+    LaunchedEffect(uiState.isLoading, uiState.groups, selectedGroupId) {
+        if (!uiState.isLoading && uiState.groups.size == 1 && selectedGroupId == null) {
+            val soleGroup = uiState.groups.first()
+            sharedViewModel.selectGroup(soleGroup.id, soleGroup.name, soleGroup.currency)
+        }
+    }
+
     // Collect and handle UiActions
     LaunchedEffect(Unit) {
         groupsViewModel.actions.collectLatest { action ->

@@ -177,12 +177,14 @@ fun GroupDetailScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         if (isActiveGroup) {
-                            SecondaryButton(
-                                text = stringResource(R.string.action_deselect_group),
-                                onClick = onSelectGroup,
-                                leadingIcon = TablerIcons.Outline.X,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            if (!uiState.isOnlyGroup) {
+                                SecondaryButton(
+                                    text = stringResource(R.string.action_deselect_group),
+                                    onClick = onSelectGroup,
+                                    leadingIcon = TablerIcons.Outline.X,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         } else {
                             GradientButton(
                                 text = stringResource(R.string.group_detail_select_as_active),

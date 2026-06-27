@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 internal fun GroupsScreenOverlays(
     selectedGroup: GroupUiModel?,
     selectedGroupId: String?,
+    isSoleGroup: Boolean,
     onSelectGroup: (groupId: String, groupName: String, currency: String) -> Unit,
     onManageSubunits: (String) -> Unit,
     onMenuDismiss: () -> Unit,
@@ -32,18 +33,24 @@ internal fun GroupsScreenOverlays(
         }
         val selectActionIcon = if (isActive) TablerIcons.Outline.X else TablerIcons.Outline.CircleCheck
 
+        val selectAction = if (isActive && isSoleGroup) {
+            null
+        } else {
+            SheetAction(
+                text = selectActionText,
+                icon = selectActionIcon,
+                onClick = {
+                    onSelectGroup(group.id, group.name, group.currency)
+                    onMenuDismiss()
+                }
+            )
+        }
+
         ActionBottomSheet(
             title = stringResource(R.string.group_actions_title, group.name),
             icon = TablerIcons.Outline.UsersGroup,
-            actions = listOf(
-                SheetAction(
-                    text = selectActionText,
-                    icon = selectActionIcon,
-                    onClick = {
-                        onSelectGroup(group.id, group.name, group.currency)
-                        onMenuDismiss()
-                    }
-                ),
+            actions = listOfNotNull(
+                selectAction,
                 SheetAction(
                     text = stringResource(R.string.action_edit_group),
                     icon = TablerIcons.Outline.Edit,
