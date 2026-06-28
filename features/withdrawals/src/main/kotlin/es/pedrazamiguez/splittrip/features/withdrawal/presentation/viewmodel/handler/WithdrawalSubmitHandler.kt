@@ -89,6 +89,15 @@ class WithdrawalSubmitHandler(
                 )
                 addCashWithdrawalUseCase(groupId, withdrawal).getOrThrow()
                 onSuccess()
+            } catch (e: es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException) {
+                _uiState.update { it.copy(isLoading = false) }
+                _actions.emit(
+                    AddCashWithdrawalUiAction.ShowError(
+                        UiText.StringResource(
+                            es.pedrazamiguez.splittrip.core.designsystem.R.string.group_error_archived
+                        )
+                    )
+                )
             } catch (e: Exception) {
                 Timber.e(e, "Failed to add cash withdrawal")
                 _uiState.update { it.copy(isLoading = false) }

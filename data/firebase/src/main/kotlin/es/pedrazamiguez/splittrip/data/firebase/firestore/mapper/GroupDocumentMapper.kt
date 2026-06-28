@@ -4,6 +4,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupMemberDocument
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.model.Group
 
 fun Group.toDocument(groupId: String, userId: String) = GroupDocument(
@@ -14,9 +15,10 @@ fun Group.toDocument(groupId: String, userId: String) = GroupDocument(
     extraCurrencies = extraCurrencies,
     memberIds = members,
     mainImagePath = mainImagePath ?: "",
-    createdBy = userId,
+    createdBy = createdBy.ifBlank { userId },
     createdAt = createdAt?.toTimestampUtc(),
-    lastUpdatedAt = lastUpdatedAt?.toTimestampUtc()
+    lastUpdatedAt = lastUpdatedAt?.toTimestampUtc(),
+    status = status.name
 )
 
 fun GroupDocument.toDomain() = Group(
@@ -28,7 +30,9 @@ fun GroupDocument.toDomain() = Group(
     members = memberIds.sorted(),
     mainImagePath = mainImagePath.takeIf { it.isNotBlank() },
     createdAt = createdAt?.toLocalDateTimeUtc(),
-    lastUpdatedAt = lastUpdatedAt?.toLocalDateTimeUtc()
+    lastUpdatedAt = lastUpdatedAt?.toLocalDateTimeUtc(),
+    status = GroupStatus.fromStringOrDefault(status),
+    createdBy = createdBy
 )
 
 fun toAdminMemberDocument(groupDocRef: DocumentReference, userId: String, addedBy: String = userId) =

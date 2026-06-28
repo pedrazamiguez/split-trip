@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -16,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUs
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetMemberBalancesFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -80,13 +82,15 @@ class BalancesViewModelTest {
     private lateinit var deleteContributionUseCase: DeleteContributionUseCase
     private lateinit var deleteCashWithdrawalUseCase: DeleteCashWithdrawalUseCase
     private lateinit var appConfigService: AppConfigService
+    private lateinit var observeGroupUseCase: ObserveGroupUseCase
     private lateinit var viewModel: BalancesViewModel
 
     private val testGroupId = "group-123"
     private val testGroup = Group(
         id = testGroupId,
         name = "Trip to Paris",
-        currency = "EUR"
+        currency = "EUR",
+        status = GroupStatus.ACTIVE
     )
 
     private val testContribution1 = Contribution(
@@ -144,6 +148,7 @@ class BalancesViewModelTest {
             every { defaultCurrencyCode } returns MutableStateFlow("EUR")
             every { balanceComputationDebounceMs } returns MutableStateFlow(300L)
         }
+        observeGroupUseCase = mockk()
 
         // Default mock for getGroupByIdUseCase
         coEvery { getGroupByIdUseCase(testGroupId) } returns testGroup
@@ -157,6 +162,7 @@ class BalancesViewModelTest {
         // Default mock for last-seen balance (no previous balance stored)
         every { getLastSeenBalanceUseCase(any()) } returns flowOf(null)
         coEvery { setLastSeenBalanceUseCase(any(), any()) } just Runs
+        every { observeGroupUseCase(any()) } returns flowOf(testGroup)
 
         // Default mock for cash withdrawals flow
         every { getCashWithdrawalsFlowUseCase(any()) } returns flowOf(emptyList())
@@ -761,7 +767,8 @@ class BalancesViewModelTest {
             setLastSeenBalanceUseCase = setLastSeenBalanceUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             deleteContributionUseCase = deleteContributionUseCase,
-            deleteCashWithdrawalUseCase = deleteCashWithdrawalUseCase
+            deleteCashWithdrawalUseCase = deleteCashWithdrawalUseCase,
+            observeGroupUseCase = observeGroupUseCase
         ),
         authenticationService = authenticationService,
         balancesUiMapper = balancesUiMapper,

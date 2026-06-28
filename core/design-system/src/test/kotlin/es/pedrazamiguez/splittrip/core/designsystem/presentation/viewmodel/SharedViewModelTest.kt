@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
@@ -36,6 +37,7 @@ class SharedViewModelTest {
     private lateinit var getSelectedGroupNameUseCase: GetSelectedGroupNameUseCase
     private lateinit var getSelectedGroupCurrencyUseCase: GetSelectedGroupCurrencyUseCase
     private lateinit var setSelectedGroupUseCase: SetSelectedGroupUseCase
+    private lateinit var observeSelectedGroupUseCase: ObserveSelectedGroupUseCase
 
     @BeforeEach
     fun setUp() {
@@ -44,6 +46,8 @@ class SharedViewModelTest {
         getSelectedGroupNameUseCase = mockk()
         getSelectedGroupCurrencyUseCase = mockk()
         setSelectedGroupUseCase = mockk(relaxed = true)
+        observeSelectedGroupUseCase = mockk()
+        every { observeSelectedGroupUseCase() } returns flowOf(null)
     }
 
     @AfterEach
@@ -55,7 +59,8 @@ class SharedViewModelTest {
         getSelectedGroupIdUseCase = getSelectedGroupIdUseCase,
         getSelectedGroupNameUseCase = getSelectedGroupNameUseCase,
         getSelectedGroupCurrencyUseCase = getSelectedGroupCurrencyUseCase,
-        setSelectedGroupUseCase = setSelectedGroupUseCase
+        setSelectedGroupUseCase = setSelectedGroupUseCase,
+        observeSelectedGroupUseCase = observeSelectedGroupUseCase
     )
 
     @Nested

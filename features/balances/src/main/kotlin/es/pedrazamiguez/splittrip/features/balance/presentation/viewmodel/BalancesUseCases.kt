@@ -29,5 +29,6 @@ data class BalancesUseCases(
     val setLastSeenBalanceUseCase: SetLastSeenBalanceUseCase,
     val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     val deleteContributionUseCase: DeleteContributionUseCase,
-    val deleteCashWithdrawalUseCase: DeleteCashWithdrawalUseCase
+    val deleteCashWithdrawalUseCase: DeleteCashWithdrawalUseCase,
+    val observeGroupUseCase: es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 )

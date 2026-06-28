@@ -1,19 +1,23 @@
 package es.pedrazamiguez.splittrip.domain.usecase.expense
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.DeleteExpenseUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -29,6 +33,7 @@ class DeleteExpenseUseCaseTest {
     private lateinit var cashWithdrawalRepository: CashWithdrawalRepository
     private lateinit var groupMembershipService: GroupMembershipService
     private lateinit var contributionRepository: ContributionRepository
+    private lateinit var groupRepository: GroupRepository
     private lateinit var useCase: DeleteExpenseUseCase
 
     @BeforeEach
@@ -37,13 +42,44 @@ class DeleteExpenseUseCaseTest {
         cashWithdrawalRepository = mockk(relaxed = true)
         groupMembershipService = mockk()
         contributionRepository = mockk(relaxed = true)
+        groupRepository = mockk()
+
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
+        coEvery { groupRepository.getGroupById(any()) } returns mockk {
+            every { status } returns GroupStatus.ACTIVE
+        }
+
         useCase = DeleteExpenseUseCaseImpl(
             expenseRepository,
             cashWithdrawalRepository,
             groupMembershipService,
-            contributionRepository
+            contributionRepository,
+            groupRepository
         )
+    }
+
+    // ── Group Archived validation ─────────────────────────────────────────────
+
+    @Nested
+    inner class GroupArchivedValidation {
+
+        @Test
+        fun `throws GroupArchivedException when group is archived`() = runTest {
+            // Given
+            val groupId = "group-123"
+            val expenseId = "expense-456"
+            coEvery { groupRepository.getGroupById(groupId) } returns mockk {
+                every { status } returns GroupStatus.ARCHIVED
+            }
+
+            // When / Then
+            try {
+                useCase(groupId, expenseId)
+                fail("Expected GroupArchivedException to be thrown")
+            } catch (e: GroupArchivedException) {
+                // Expected
+            }
+        }
     }
 
     // ── Membership validation ─────────────────────────────────────────────────

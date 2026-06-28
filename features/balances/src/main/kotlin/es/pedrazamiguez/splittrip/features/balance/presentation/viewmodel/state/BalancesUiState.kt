@@ -24,5 +24,6 @@ data class BalancesUiState(
     /** Item pending deletion — drives `ActionBottomSheet` and `DestructiveConfirmationDialog` visibility. */
     val contributionToDelete: ContributionUiModel? = null,
     /** Item pending deletion — drives `ActionBottomSheet` and `DestructiveConfirmationDialog` visibility. */
-    val withdrawalToDelete: CashWithdrawalUiModel? = null
+    val withdrawalToDelete: CashWithdrawalUiModel? = null,
+    val isGroupArchived: Boolean = false
 )

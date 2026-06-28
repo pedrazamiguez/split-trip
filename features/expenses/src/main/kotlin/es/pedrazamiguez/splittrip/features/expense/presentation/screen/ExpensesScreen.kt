@@ -130,7 +130,11 @@ fun ExpensesScreen(
                                             animatedVisibilityScope = animatedVisibilityScope
                                         ),
                                     onClick = onExpenseClicked,
-                                    onLongClick = { selectedExpenseForMenu = expense }
+                                    onLongClick = {
+                                        if (!uiState.isGroupArchived) {
+                                            selectedExpenseForMenu = expense
+                                        }
+                                    }
                                 )
                             }
                         }

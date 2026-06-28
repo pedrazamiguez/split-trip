@@ -97,6 +97,10 @@ class GroupRepositoryImpl(
         }
     }
 
+    override fun getGroupByIdFlow(groupId: String): Flow<Group?> {
+        return localGroupDataSource.getGroupByIdFlow(groupId)
+    }
+
     /**
      * Creates a group locally first, then syncs to cloud.
      * Ensures offline support by saving to local database before cloud sync.
@@ -123,7 +127,8 @@ class GroupRepositoryImpl(
             mainImagePath = finalLocalImagePath,
             createdAt = group.createdAt ?: currentTimestamp,
             lastUpdatedAt = currentTimestamp,
-            syncStatus = SyncStatus.PENDING_SYNC
+            syncStatus = SyncStatus.PENDING_SYNC,
+            createdBy = currentUserId
         )
 
         // Save to local FIRST - UI updates instantly

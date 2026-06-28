@@ -97,6 +97,15 @@ class ContributionSubmitHandler(
                 onSuccess()
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException) {
+                _uiState.update { it.copy(isLoading = false) }
+                _actions.emit(
+                    AddContributionUiAction.ShowError(
+                        UiText.StringResource(
+                            es.pedrazamiguez.splittrip.core.designsystem.R.string.group_error_archived
+                        )
+                    )
+                )
             } catch (e: Exception) {
                 Timber.e(e, "Failed to add contribution")
                 _uiState.update { it.copy(isLoading = false) }

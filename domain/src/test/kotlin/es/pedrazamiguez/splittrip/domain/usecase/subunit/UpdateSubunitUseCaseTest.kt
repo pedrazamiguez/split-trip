@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.usecase.subunit
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.exception.ValidationException
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -122,6 +124,21 @@ class UpdateSubunitUseCaseTest {
     @Nested
     @DisplayName("Validation")
     inner class Validation {
+
+        @Test
+        fun `fails when group is archived`() = runTest {
+            coEvery { groupRepository.getGroupById(groupId) } returns Group(
+                id = groupId,
+                name = "Test Group",
+                members = groupMembers,
+                status = GroupStatus.ARCHIVED
+            )
+
+            val result = useCase(groupId, subunit)
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is GroupArchivedException)
+        }
 
         @Test
         fun `fails when validation returns Invalid`() = runTest {

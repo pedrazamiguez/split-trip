@@ -23,13 +23,17 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.DestructiveButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -37,9 +41,11 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.component.MemberAvatarStack
 import es.pedrazamiguez.splittrip.features.group.presentation.component.SelectedGroupCoverImage
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.GroupDetailUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.GroupDetailUiState
 
 private val CONTENT_HORIZONTAL_PADDING = 16.dp
@@ -52,7 +58,8 @@ fun GroupDetailScreen(
     uiState: GroupDetailUiState = GroupDetailUiState(),
     isActiveGroup: Boolean = false,
     onSelectGroup: () -> Unit = {},
-    onManageSubunits: () -> Unit = {}
+    onManageSubunits: () -> Unit = {},
+    onEvent: (GroupDetailUiEvent) -> Unit = {}
 ) {
     val bottomPadding = LocalBottomPadding.current
 
@@ -66,6 +73,17 @@ fun GroupDetailScreen(
         }
         else -> {
             val group = uiState.group
+
+            if (uiState.showArchiveConfirmation) {
+                DestructiveConfirmationDialog(
+                    title = stringResource(DesignSystemR.string.group_detail_end_trip_title),
+                    text = stringResource(DesignSystemR.string.group_detail_end_trip_message),
+                    onConfirm = { onEvent(GroupDetailUiEvent.ArchiveConfirmed) },
+                    onDismiss = { onEvent(GroupDetailUiEvent.ArchiveCancelled) },
+                    confirmLabel = stringResource(DesignSystemR.string.group_detail_end_trip_confirm)
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -83,6 +101,31 @@ fun GroupDetailScreen(
                         .padding(horizontal = CONTENT_HORIZONTAL_PADDING),
                     verticalArrangement = Arrangement.spacedBy(SECTION_VERTICAL_SPACING)
                 ) {
+                    if (group.status == GroupStatus.ARCHIVED) {
+                        FlatCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.errorContainer
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = TablerIcons.Outline.Lock,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    text = stringResource(DesignSystemR.string.group_detail_archived_label),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
 
                     // Members label
@@ -199,6 +242,15 @@ fun GroupDetailScreen(
                             leadingIcon = TablerIcons.Outline.Sitemap,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        if (group.status == GroupStatus.ACTIVE && uiState.isUserAdmin) {
+                            DestructiveButton(
+                                text = stringResource(DesignSystemR.string.group_detail_end_trip),
+                                onClick = { onEvent(GroupDetailUiEvent.ArchiveClicked) },
+                                leadingIcon = TablerIcons.Outline.Lock,
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !uiState.isArchiving
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge + bottomPadding))

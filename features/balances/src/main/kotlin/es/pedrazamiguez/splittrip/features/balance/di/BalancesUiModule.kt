@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupPocketBalanceFl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -66,7 +67,8 @@ val balancesUiModule = module {
                 setLastSeenBalanceUseCase = get<SetLastSeenBalanceUseCase>(),
                 getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
                 deleteContributionUseCase = deleteContributionUseCase,
-                deleteCashWithdrawalUseCase = deleteCashWithdrawalUseCase
+                deleteCashWithdrawalUseCase = deleteCashWithdrawalUseCase,
+                observeGroupUseCase = get<ObserveGroupUseCase>()
             ),
             authenticationService = get<AuthenticationService>(),
             balancesUiMapper = get<BalancesUiMapper>(),

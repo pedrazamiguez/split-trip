@@ -49,7 +49,9 @@ class GroupUiMapperImpl(
                 syncStatus = syncStatus,
                 imageUrl = mainImagePath?.takeIf { it.isNotBlank() },
                 memberAvatarUrls = avatarUrls.toImmutableList(),
-                memberOverflowCount = overflowCount
+                memberOverflowCount = overflowCount,
+                status = status,
+                createdBy = createdBy
             )
         }
 

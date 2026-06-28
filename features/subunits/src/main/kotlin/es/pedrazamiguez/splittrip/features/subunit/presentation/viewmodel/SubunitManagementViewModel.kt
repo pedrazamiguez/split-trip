@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.DeleteSubunitUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -20,9 +22,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -39,7 +41,8 @@ class SubunitManagementViewModel(
     private val deleteSubunitUseCase: DeleteSubunitUseCase,
     private val getGroupByIdUseCase: GetGroupByIdUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
-    private val subunitUiMapper: SubunitUiMapper
+    private val subunitUiMapper: SubunitUiMapper,
+    private val observeGroupUseCase: ObserveGroupUseCase
 ) : ViewModel() {
 
     private val _groupId = MutableStateFlow("")
@@ -50,20 +53,24 @@ class SubunitManagementViewModel(
     val uiState: StateFlow<SubunitManagementUiState> = _groupId
         .filter { it.isNotBlank() }
         .flatMapLatest { groupId ->
+            val groupFlow = observeGroupUseCase(groupId)
             val group = getGroupByIdUseCase(groupId)
             val memberIds = group?.members ?: emptyList()
             val memberProfiles = getMemberProfilesUseCase(memberIds)
             val groupName = group?.name ?: ""
 
-            getGroupSubunitsFlowUseCase(groupId)
-                .map { subunits ->
-                    SubunitManagementUiState(
-                        isLoading = false,
-                        groupId = groupId,
-                        groupName = groupName,
-                        subunits = subunitUiMapper.toSubunitUiModelList(subunits, memberProfiles)
-                    )
-                }
+            combine(
+                getGroupSubunitsFlowUseCase(groupId),
+                groupFlow
+            ) { subunits, reactiveGroup ->
+                SubunitManagementUiState(
+                    isLoading = false,
+                    groupId = groupId,
+                    groupName = groupName,
+                    subunits = subunitUiMapper.toSubunitUiModelList(subunits, memberProfiles),
+                    isGroupArchived = reactiveGroup?.status == GroupStatus.ARCHIVED
+                )
+            }
         }
         .stateIn(
             scope = viewModelScope,

@@ -86,6 +86,15 @@ class SubmitResultDelegate(
         uiState.update { it.copy(isLoading = false, error = null) }
 
         when (error) {
+            is es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException -> {
+                actionsFlow.emit(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(
+                            es.pedrazamiguez.splittrip.core.designsystem.R.string.group_error_archived
+                        )
+                    )
+                )
+            }
             is InsufficientCashException -> {
                 if (currentState.isInsufficientCash) {
                     // Preview already showed insufficient cash — genuine shortage, not a race.

@@ -1,13 +1,17 @@
 package es.pedrazamiguez.splittrip.domain.usecase.balance
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteContributionUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -21,17 +25,49 @@ class DeleteContributionUseCaseTest {
 
     private lateinit var contributionRepository: ContributionRepository
     private lateinit var groupMembershipService: GroupMembershipService
+    private lateinit var groupRepository: GroupRepository
     private lateinit var useCase: DeleteContributionUseCase
 
     @BeforeEach
     fun setUp() {
         contributionRepository = mockk()
         groupMembershipService = mockk()
+        groupRepository = mockk()
+
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
+        coEvery { groupRepository.getGroupById(any()) } returns mockk {
+            every { status } returns GroupStatus.ACTIVE
+        }
+
         useCase = DeleteContributionUseCaseImpl(
             contributionRepository = contributionRepository,
-            groupMembershipService = groupMembershipService
+            groupMembershipService = groupMembershipService,
+            groupRepository = groupRepository
         )
+    }
+
+    // ── Group Archived validation ─────────────────────────────────────────────
+
+    @Nested
+    inner class GroupArchivedValidation {
+
+        @Test
+        fun `throws GroupArchivedException when group is archived`() = runTest {
+            // Given
+            val groupId = "group-123"
+            val contributionId = "contrib-456"
+            coEvery { groupRepository.getGroupById(groupId) } returns mockk {
+                every { status } returns GroupStatus.ARCHIVED
+            }
+
+            // When / Then
+            try {
+                useCase(groupId, contributionId)
+                fail("Expected GroupArchivedException to be thrown")
+            } catch (e: GroupArchivedException) {
+                // Expected
+            }
+        }
     }
 
     // ── Membership validation ─────────────────────────────────────────────────

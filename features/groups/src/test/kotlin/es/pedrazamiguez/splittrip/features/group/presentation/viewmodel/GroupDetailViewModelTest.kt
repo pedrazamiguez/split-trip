@@ -3,8 +3,10 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
-import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
@@ -42,11 +44,13 @@ class GroupDetailViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var getGroupByIdUseCase: GetGroupByIdUseCase
     private lateinit var getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase
     private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var groupUiMapper: GroupUiMapper
+    private lateinit var observeGroupUseCase: ObserveGroupUseCase
+    private lateinit var authenticationService: AuthenticationService
+    private lateinit var archiveGroupUseCase: ArchiveGroupUseCase
     private lateinit var viewModel: GroupDetailViewModel
 
     private val testGroupId = "group-123"
@@ -55,7 +59,8 @@ class GroupDetailViewModelTest {
         name = "Summer Trip",
         description = "A fun trip",
         currency = "EUR",
-        members = listOf("user-1", "user-2")
+        members = listOf("user-1", "user-2"),
+        createdBy = "user-1"
     )
     private val testGroupUiModel = GroupUiModel(
         id = testGroupId,
@@ -67,18 +72,21 @@ class GroupDetailViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        getGroupByIdUseCase = mockk()
         getGroupSubunitsFlowUseCase = mockk()
         getUserGroupsFlowUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         groupUiMapper = mockk()
+        observeGroupUseCase = mockk()
+        authenticationService = mockk(relaxed = true)
+        archiveGroupUseCase = mockk(relaxed = true)
 
         // Default stubs
-        coEvery { getGroupByIdUseCase(any()) } returns testGroup
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
         every { getGroupSubunitsFlowUseCase(any()) } returns flowOf(emptyList())
         every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup))
         every { groupUiMapper.toGroupUiModel(any(), any()) } returns testGroupUiModel
+        every { observeGroupUseCase(any()) } returns flowOf(testGroup)
+        every { authenticationService.currentUserId() } returns "user-1"
 
         viewModel = createViewModel()
     }
@@ -89,11 +97,13 @@ class GroupDetailViewModelTest {
     }
 
     private fun createViewModel() = GroupDetailViewModel(
-        getGroupByIdUseCase = getGroupByIdUseCase,
         getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
         getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
         getMemberProfilesUseCase = getMemberProfilesUseCase,
-        groupUiMapper = groupUiMapper
+        groupUiMapper = groupUiMapper,
+        observeGroupUseCase = observeGroupUseCase,
+        authenticationService = authenticationService,
+        archiveGroupUseCase = archiveGroupUseCase
     )
 
     @Nested
@@ -153,7 +163,7 @@ class GroupDetailViewModelTest {
             advanceUntilIdle()
 
             // Use case should only be called once (only one unique id was set)
-            coVerify(exactly = 1) { getGroupByIdUseCase(testGroupId) }
+            io.mockk.verify(exactly = 1) { observeGroupUseCase(testGroupId) }
 
             collectJob.cancel()
         }
@@ -163,7 +173,7 @@ class GroupDetailViewModelTest {
             val secondGroupId = "group-456"
             val secondGroup = testGroup.copy(id = secondGroupId, name = "Winter Trip")
             val secondGroupUiModel = testGroupUiModel.copy(id = secondGroupId, name = "Winter Trip")
-            coEvery { getGroupByIdUseCase(secondGroupId) } returns secondGroup
+            every { observeGroupUseCase(secondGroupId) } returns flowOf(secondGroup)
             every { getGroupSubunitsFlowUseCase(secondGroupId) } returns flowOf(emptyList())
             every { groupUiMapper.toGroupUiModel(secondGroup, any()) } returns secondGroupUiModel
 
@@ -257,7 +267,7 @@ class GroupDetailViewModelTest {
         @Test
         fun `group with no members skips member profile fetch`() = runTest(testDispatcher) {
             val groupWithNoMembers = testGroup.copy(members = emptyList())
-            coEvery { getGroupByIdUseCase(testGroupId) } returns groupWithNoMembers
+            every { observeGroupUseCase(testGroupId) } returns flowOf(groupWithNoMembers)
 
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
@@ -304,8 +314,8 @@ class GroupDetailViewModelTest {
     inner class ErrorPaths {
 
         @Test
-        fun `getGroupByIdUseCase throwing emits error state`() = runTest(testDispatcher) {
-            coEvery { getGroupByIdUseCase(testGroupId) } throws IOException("Network error")
+        fun `observeGroupUseCase throwing emits error state`() = runTest(testDispatcher) {
+            every { observeGroupUseCase(testGroupId) } returns flow { throw IOException("Network error") }
 
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 

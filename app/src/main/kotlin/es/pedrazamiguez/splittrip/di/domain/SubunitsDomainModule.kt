@@ -50,7 +50,8 @@ val subunitsDomainModule = module {
     factory<DeleteSubunitUseCase> {
         DeleteSubunitUseCaseImpl(
             subunitRepository = get<SubunitRepository>(),
-            groupMembershipService = get<GroupMembershipService>()
+            groupMembershipService = get<GroupMembershipService>(),
+            groupRepository = get<GroupRepository>()
         )
     }
 }

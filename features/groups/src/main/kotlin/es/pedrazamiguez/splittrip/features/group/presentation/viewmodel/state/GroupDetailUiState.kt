@@ -7,5 +7,8 @@ data class GroupDetailUiState(
     val isLoading: Boolean = true,
     val hasError: Boolean = false,
     val subunitsCount: Int = 0,
-    val isOnlyGroup: Boolean = false
+    val isOnlyGroup: Boolean = false,
+    val showArchiveConfirmation: Boolean = false,
+    val isUserAdmin: Boolean = false,
+    val isArchiving: Boolean = false
 )

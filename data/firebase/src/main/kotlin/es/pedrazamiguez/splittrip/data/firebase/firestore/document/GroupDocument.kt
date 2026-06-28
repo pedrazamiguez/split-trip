@@ -14,7 +14,8 @@ data class GroupDocument(
     val createdBy: String = "",
     val createdByRef: DocumentReference? = null,
     val createdAt: Timestamp? = null,
-    val lastUpdatedAt: Timestamp? = null
+    val lastUpdatedAt: Timestamp? = null,
+    val status: String = "ACTIVE"
 ) {
     companion object {
         const val COLLECTION_PATH = "groups"

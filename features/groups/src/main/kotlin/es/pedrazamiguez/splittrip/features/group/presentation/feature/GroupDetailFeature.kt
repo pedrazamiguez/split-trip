@@ -64,6 +64,7 @@ fun GroupDetailFeature(
         },
         onManageSubunits = {
             navController.navigate(Routes.manageSubunitsRoute(groupId))
-        }
+        },
+        onEvent = groupDetailViewModel::onEvent
     )
 }

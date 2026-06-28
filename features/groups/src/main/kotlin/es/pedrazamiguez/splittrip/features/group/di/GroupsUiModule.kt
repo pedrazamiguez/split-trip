@@ -7,15 +7,18 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContribut
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -126,17 +129,21 @@ val groupsUiModule = module {
     }
 
     viewModel {
-        val getGroupByIdUseCase = get<GetGroupByIdUseCase>()
+        val observeGroupUseCase = get<ObserveGroupUseCase>()
         val getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>()
         val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val groupUiMapper = get<GroupUiMapper>()
+        val authenticationService = get<AuthenticationService>()
+        val archiveGroupUseCase = get<ArchiveGroupUseCase>()
         GroupDetailViewModel(
-            getGroupByIdUseCase = getGroupByIdUseCase,
+            observeGroupUseCase = observeGroupUseCase,
             getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
-            groupUiMapper = groupUiMapper
+            groupUiMapper = groupUiMapper,
+            authenticationService = authenticationService,
+            archiveGroupUseCase = archiveGroupUseCase
         )
     }
 

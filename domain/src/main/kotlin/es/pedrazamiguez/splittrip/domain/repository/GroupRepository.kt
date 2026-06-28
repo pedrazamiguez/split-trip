@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface GroupRepository {
     suspend fun createGroup(group: Group): String
     suspend fun getGroupById(groupId: String): Group?
+    fun getGroupByIdFlow(groupId: String): Flow<Group?>
     suspend fun updateGroup(group: Group)
     suspend fun deleteGroup(groupId: String)
     fun getAllGroupsFlow(): Flow<List<Group>>

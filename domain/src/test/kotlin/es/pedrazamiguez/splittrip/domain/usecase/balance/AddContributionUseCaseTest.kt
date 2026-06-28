@@ -1,10 +1,13 @@
 package es.pedrazamiguez.splittrip.domain.usecase.balance
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
@@ -30,6 +33,7 @@ class AddContributionUseCaseTest {
     private lateinit var groupMembershipService: GroupMembershipService
     private lateinit var subunitRepository: SubunitRepository
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var groupRepository: GroupRepository
     private val contributionValidationService = ContributionValidationServiceImpl()
     private lateinit var useCase: AddContributionUseCase
 
@@ -48,16 +52,43 @@ class AddContributionUseCaseTest {
         groupMembershipService = mockk()
         subunitRepository = mockk()
         authenticationService = mockk()
+        groupRepository = mockk()
+
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
         every { authenticationService.requireUserId() } returns currentUserId
         coEvery { subunitRepository.getGroupSubunits(any()) } returns emptyList()
+        coEvery { groupRepository.getGroupById(any()) } returns mockk {
+            every { status } returns GroupStatus.ACTIVE
+        }
+
         useCase = AddContributionUseCaseImpl(
             contributionRepository,
             groupMembershipService,
             contributionValidationService,
             subunitRepository,
-            authenticationService
+            authenticationService,
+            groupRepository
         )
+    }
+
+    // ── Group Archived validation ─────────────────────────────────────────────
+
+    @Nested
+    inner class GroupArchivedValidation {
+
+        @Test
+        fun `fails when group is archived`() = runTest {
+            coEvery { groupRepository.getGroupById(groupId) } returns mockk {
+                every { status } returns GroupStatus.ARCHIVED
+            }
+
+            try {
+                useCase(groupId, contribution)
+                fail("Expected GroupArchivedException to be thrown")
+            } catch (e: GroupArchivedException) {
+                // Expected
+            }
+        }
     }
 
     // ── Delegation ────────────────────────────────────────────────────────────

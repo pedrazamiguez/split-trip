@@ -399,10 +399,18 @@ class CreateEditSubunitViewModel(
                     Timber.e(error, "Failed to save subunit")
                     _formState.update { it.copy(isSaving = false) }
 
-                    val errorMessage = if (error is ValidationException) {
-                        UiText.StringResource(R.string.subunit_error_validation_failed)
-                    } else {
-                        UiText.StringResource(R.string.subunit_error_save_failed)
+                    val errorMessage = when (error) {
+                        is es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException -> {
+                            UiText.StringResource(
+                                es.pedrazamiguez.splittrip.core.designsystem.R.string.group_error_archived
+                            )
+                        }
+                        is ValidationException -> {
+                            UiText.StringResource(R.string.subunit_error_validation_failed)
+                        }
+                        else -> {
+                            UiText.StringResource(R.string.subunit_error_save_failed)
+                        }
                     }
 
                     _actions.emit(CreateEditSubunitUiAction.ShowError(errorMessage))

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
@@ -16,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -36,6 +38,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -60,7 +63,8 @@ class ExpenseDetailViewModel(
     private val downloadReceiptUseCase: DownloadReceiptUseCase,
     private val updateExpenseUseCase: UpdateExpenseUseCase,
     private val authenticationService: AuthenticationService,
-    private val expenseDetailUiMapper: ExpenseDetailUiMapper
+    private val expenseDetailUiMapper: ExpenseDetailUiMapper,
+    private val observeGroupUseCase: ObserveGroupUseCase
 ) : ViewModel() {
 
     private val downloadJobs = ConcurrentHashMap<String, Job>()
@@ -88,6 +92,8 @@ class ExpenseDetailViewModel(
                             ExpenseDetailUiState(isLoading = false, hasError = true)
                         )
                     }
+
+                    val groupFlow = observeGroupUseCase(expense.groupId)
 
                     val attachment = expense.receiptAttachment
                     if (shouldDownloadPdf(attachment) && !failedDownloads.contains(expense.id)) {
@@ -162,7 +168,13 @@ class ExpenseDetailViewModel(
                         subunitNameLookup = cachedSubunits
                     )
 
-                    flowOf(ExpenseDetailUiState(expense = uiModel, isLoading = false))
+                    groupFlow.map { group ->
+                        ExpenseDetailUiState(
+                            expense = uiModel,
+                            isLoading = false,
+                            isGroupArchived = group?.status == GroupStatus.ARCHIVED
+                        )
+                    }
                 }
         }
         .catch { e ->
