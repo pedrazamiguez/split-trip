@@ -1,12 +1,16 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -57,6 +61,8 @@ class ExpensesViewModelTest {
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var getGroupContributionsFlowUseCase: GetGroupContributionsFlowUseCase
     private lateinit var getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase
+    private lateinit var getExpenseByIdFlowUseCase: GetExpenseByIdFlowUseCase
+    private lateinit var updateExpenseUseCase: UpdateExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var viewModel: ExpensesViewModel
 
@@ -100,6 +106,8 @@ class ExpensesViewModelTest {
         getMemberProfilesUseCase = mockk()
         getGroupContributionsFlowUseCase = mockk()
         getGroupSubunitsFlowUseCase = mockk()
+        getExpenseByIdFlowUseCase = mockk()
+        updateExpenseUseCase = mockk()
         authenticationService = mockk()
 
         // Default mock for group and member profiles
@@ -631,6 +639,150 @@ class ExpensesViewModelTest {
         }
     }
 
+    @Nested
+    inner class CancelExpenseEvent {
+
+        @BeforeEach
+        fun setUpNested() {
+            every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(listOf(testExpense1))
+        }
+
+        @Test
+        fun `CancelExpense event calls updateExpenseUseCase with cancelled status`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase("expense-1") } returns flowOf(testExpense1)
+            coEvery {
+                updateExpenseUseCase(
+                    groupId = testGroupId,
+                    expense = any(),
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                )
+            } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            // When
+            viewModel.onEvent(ExpensesUiEvent.CancelExpense("expense-1"))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                updateExpenseUseCase(
+                    groupId = testGroupId,
+                    expense = match { it.id == "expense-1" && it.paymentStatus == PaymentStatus.CANCELLED },
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                )
+            }
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `CancelExpense event emits success action when update succeeds`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase("expense-1") } returns flowOf(testExpense1)
+            coEvery {
+                updateExpenseUseCase(
+                    groupId = testGroupId,
+                    expense = any(),
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                )
+            } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            // Collect actions in background
+            val actions = mutableListOf<ExpensesUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            // When
+            viewModel.onEvent(ExpensesUiEvent.CancelExpense("expense-1"))
+            advanceUntilIdle()
+
+            // Then
+            assertTrue(
+                actions.any { it is ExpensesUiAction.ShowCancelSuccess },
+                "Expected ShowCancelSuccess action"
+            )
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `CancelExpense event emits error action when update fails`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase("expense-1") } returns flowOf(testExpense1)
+            coEvery {
+                updateExpenseUseCase(
+                    groupId = testGroupId,
+                    expense = any(),
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                )
+            } returns Result.failure(RuntimeException("Database error"))
+
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            // Collect actions in background
+            val actions = mutableListOf<ExpensesUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            // When
+            viewModel.onEvent(ExpensesUiEvent.CancelExpense("expense-1"))
+            advanceUntilIdle()
+
+            // Then
+            assertTrue(
+                actions.any { it is ExpensesUiAction.ShowCancelError },
+                "Expected ShowCancelError action"
+            )
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `CancelExpense event does nothing when expense is not found`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase("expense-1") } returns flowOf(null)
+
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            // When
+            viewModel.onEvent(ExpensesUiEvent.CancelExpense("expense-1"))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 0) { updateExpenseUseCase(any(), any(), any(), any(), any(), any()) }
+            collectJob.cancel()
+        }
+    }
+
     private fun createViewModel() = ExpensesViewModel(
         useCases = ExpensesUseCases(
             getGroupExpensesFlowUseCase = getGroupExpensesFlowUseCase,
@@ -638,7 +790,9 @@ class ExpensesViewModelTest {
             getGroupByIdUseCase = getGroupByIdUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             getGroupContributionsFlowUseCase = getGroupContributionsFlowUseCase,
-            getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase
+            getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
+            getExpenseByIdFlowUseCase = getExpenseByIdFlowUseCase,
+            updateExpenseUseCase = updateExpenseUseCase
         ),
         expenseUiMapper = expenseUiMapper,
         authenticationService = authenticationService

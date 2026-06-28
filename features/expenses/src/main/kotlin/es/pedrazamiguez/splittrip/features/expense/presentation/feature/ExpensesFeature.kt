@@ -53,6 +53,14 @@ fun ExpensesFeature(
                 is ExpensesUiAction.ShowDeleteError -> {
                     pillController.showPill(message = action.message.asString(context))
                 }
+
+                is ExpensesUiAction.ShowCancelSuccess -> {
+                    pillController.showPill(message = action.message.asString(context))
+                }
+
+                is ExpensesUiAction.ShowCancelError -> {
+                    pillController.showPill(message = action.message.asString(context))
+                }
             }
         }
     }
@@ -80,6 +88,9 @@ fun ExpensesFeature(
         },
         onDeleteExpense = { expenseId ->
             expensesViewModel.onEvent(ExpensesUiEvent.DeleteExpense(expenseId))
+        },
+        onCancelExpense = { expenseId ->
+            expensesViewModel.onEvent(ExpensesUiEvent.CancelExpense(expenseId))
         }
     )
 }

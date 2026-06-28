@@ -74,7 +74,8 @@ class ExpenseUiMapper(
                 isSubunitScope = scopeInfo.isSubunit,
                 isGroupScope = scopeInfo.isGroup,
                 syncStatus = syncStatus,
-                isCancelled = expense.paymentStatus == PaymentStatus.CANCELLED
+                isCancelled = expense.paymentStatus == PaymentStatus.CANCELLED,
+                isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE
             )
         }
     }
