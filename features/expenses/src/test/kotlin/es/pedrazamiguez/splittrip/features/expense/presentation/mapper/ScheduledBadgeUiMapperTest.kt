@@ -40,6 +40,11 @@ class ScheduledBadgeUiMapperTest {
             val varargs = it.invocation.args[1] as Array<*>
             "Due on ${varargs[0]}"
         }
+        every { resourceProvider.getString(R.string.expense_status_cancelled_refunded) } returns "Cancelled - Refunded"
+        every { resourceProvider.getString(R.string.expense_refundable_until, *anyVararg()) } answers {
+            val varargs = it.invocation.args[1] as Array<*>
+            "Refundable until ${varargs[0]}"
+        }
 
         mapper = ScheduledBadgeUiMapper(
             formattingHelper = FormattingHelper(localeProvider),
@@ -68,10 +73,10 @@ class ScheduledBadgeUiMapperTest {
         }
 
         @Test
-        fun `returns null badge and isPastDue false for CANCELLED expense`() {
+        fun `returns cancelled badge and isPastDue false for CANCELLED expense`() {
             val expense = Expense(id = "e3", paymentStatus = PaymentStatus.CANCELLED)
             val (badge, isPastDue) = mapper.buildBadge(expense)
-            assertNull(badge)
+            assertEquals("Cancelled - Refunded", badge)
             assertFalse(isPastDue)
         }
     }
@@ -235,6 +240,36 @@ class ScheduledBadgeUiMapperTest {
             )
             val (badge, isPastDue) = mapper.buildBadge(expense)
             assertEquals("Due on 20 Aug", badge)
+            assertFalse(isPastDue)
+        }
+    }
+
+    @Nested
+    @DisplayName("REFUNDABLE status")
+    inner class RefundableStatus {
+
+        @Test
+        fun `returns refundable badge with formatted date`() {
+            val futureDate = LocalDateTime.of(2027, 8, 20, 12, 0)
+            val expense = Expense(
+                id = "e14",
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = futureDate
+            )
+            val (badge, isPastDue) = mapper.buildBadge(expense)
+            assertEquals("Refundable until 20 Aug", badge)
+            assertFalse(isPastDue)
+        }
+
+        @Test
+        fun `returns null badge when dueDate is null`() {
+            val expense = Expense(
+                id = "e15",
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = null
+            )
+            val (badge, isPastDue) = mapper.buildBadge(expense)
+            assertNull(badge)
             assertFalse(isPastDue)
         }
     }

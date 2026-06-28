@@ -35,6 +35,13 @@
     <string name="expense_delete_warning">Are you sure you want to delete \"%1$s\"? This cannot be undone.</string>
     <string name="expense_deleted_successfully">Expense deleted successfully</string>
     <string name="error_deleting_expense">Failed to delete expense. Please try again</string>
+    <string name="expense_detail_cancel_refund">Cancel &amp; Refund</string>
+    <string name="expense_cancel_dialog_title">Cancel Reservation</string>
+    <string name="expense_cancel_dialog_message">Are you sure you want to cancel this reservation and refund the expense? This will neutralize its effect on group and member balances.</string>
+    <string name="expense_cancel_dialog_confirm">Cancel &amp; Refund</string>
+    <string name="expense_cancel_dialog_dismiss">Keep Reservation</string>
+    <string name="expense_cancelled_successfully">Reservation cancelled and refunded successfully</string>
+    <string name="error_cancelling_expense">Failed to cancel reservation</string>
 
     <!-- Add Expense Screen -->
     <string name="add_expense_title">New expense</string>
@@ -93,6 +100,7 @@
     <string name="payment_status_finished">Paid</string>
     <string name="payment_status_scheduled">Scheduled</string>
     <string name="payment_status_cancelled">Cancelled</string>
+    <string name="payment_status_refundable">Paid (Refundable)</string>
 
     <!-- Add Expense Form - New Sections -->
     <string name="add_expense_category_title">Category</string>
@@ -123,6 +131,8 @@
     <string name="expense_scheduled_due_today">Due today</string>
     <string name="expense_scheduled_due_tomorrow">Due tomorrow</string>
     <string name="expense_scheduled_paid">Paid</string>
+    <string name="expense_status_cancelled_refunded">Cancelled - Refunded</string>
+    <string name="expense_refundable_until">Refundable until %1$s</string>
 
     <!-- Split Types -->
     <string name="split_type_equal">Equal</string>

@@ -16,11 +16,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -39,7 +41,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 
-@Suppress("LongMethod", "CognitiveComplexMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod", "CyclomaticComplexMethod")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ExpenseItem(
@@ -62,6 +64,7 @@ fun ExpenseItem(
                         onLongClick()
                     }
                 )
+                .alpha(if (expenseUiModel.isCancelled) CANCELLED_ALPHA else 1f)
         ) {
             Column(
                 modifier = Modifier
@@ -102,7 +105,8 @@ fun ExpenseItem(
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            textDecoration = if (expenseUiModel.isCancelled) TextDecoration.LineThrough else null
                         )
                     }
 
@@ -120,6 +124,7 @@ fun ExpenseItem(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                textDecoration = if (expenseUiModel.isCancelled) TextDecoration.LineThrough else null,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = MaterialTheme.spacing.Small)
                             )
                         }
@@ -240,3 +245,5 @@ fun ExpenseItem(
         SyncStatusBadge(syncStatus = expenseUiModel.syncStatus)
     }
 }
+
+private const val CANCELLED_ALPHA = 0.5f

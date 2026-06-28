@@ -123,7 +123,9 @@ class AddExpenseUiMapper(
             runCatching { PaymentStatus.fromString(it.id) }.getOrDefault(PaymentStatus.FINISHED)
         } ?: PaymentStatus.FINISHED
 
-        val dueDate = if (paymentStatus == PaymentStatus.SCHEDULED && state.dueDateMillis != null) {
+        val dueDate = if ((paymentStatus == PaymentStatus.SCHEDULED || paymentStatus == PaymentStatus.REFUNDABLE) &&
+            state.dueDateMillis != null
+        ) {
             LocalDateTime.ofInstant(Instant.ofEpochMilli(state.dueDateMillis), ZoneOffset.UTC)
         } else {
             null
@@ -265,7 +267,8 @@ class AddExpenseUiMapper(
             isExchangeRateLocked = expense.paymentMethod == PaymentMethod.CASH && isForeign,
             dueDateMillis = dueDateMillis,
             formattedDueDate = formattedDueDate,
-            showDueDateSection = expense.paymentStatus == PaymentStatus.SCHEDULED,
+            showDueDateSection =
+            expense.paymentStatus == PaymentStatus.SCHEDULED || expense.paymentStatus == PaymentStatus.REFUNDABLE,
             receiptUri = expense.receiptAttachment?.let { it.localUri.takeIf { it.isNotBlank() } ?: it.remoteUrl },
             receiptAttachment = expense.receiptAttachment,
             addOns = addOnsMapped.toImmutableList(),

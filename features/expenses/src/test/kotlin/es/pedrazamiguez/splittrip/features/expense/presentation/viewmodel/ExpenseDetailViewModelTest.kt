@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -11,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowU
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
@@ -56,6 +59,7 @@ class ExpenseDetailViewModelTest {
     private lateinit var getGroupSubunitsUseCase: GetGroupSubunitsUseCase
     private lateinit var deleteExpenseUseCase: DeleteExpenseUseCase
     private lateinit var downloadReceiptUseCase: DownloadReceiptUseCase
+    private lateinit var updateExpenseUseCase: UpdateExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var expenseDetailUiMapper: ExpenseDetailUiMapper
     private lateinit var viewModel: ExpenseDetailViewModel
@@ -111,6 +115,7 @@ class ExpenseDetailViewModelTest {
         getGroupSubunitsUseCase = mockk()
         deleteExpenseUseCase = mockk()
         downloadReceiptUseCase = mockk(relaxed = true)
+        updateExpenseUseCase = mockk()
         authenticationService = mockk()
         expenseDetailUiMapper = mockk()
 
@@ -381,6 +386,106 @@ class ExpenseDetailViewModelTest {
     }
 
     @Nested
+    inner class CancelConfirmed {
+
+        @Test
+        fun `CancelConfirmed calls updateExpenseUseCase with cancelled status`() =
+            runTest(testDispatcher) {
+                // Given
+                every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
+                coEvery { updateExpenseUseCase(any(), any(), any(), any()) } returns Result.success(Unit)
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setExpenseId(testExpenseId)
+                advanceUntilIdle()
+
+                // When
+                viewModel.onEvent(ExpenseDetailUiEvent.CancelConfirmed)
+                advanceUntilIdle()
+
+                // Then
+                coVerify(exactly = 1) {
+                    updateExpenseUseCase(
+                        groupId = testGroupId,
+                        expense = match { it.paymentStatus == PaymentStatus.CANCELLED },
+                        pairedContributionScope = PayerType.USER,
+                        pairedSubunitId = null
+                    )
+                }
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `CancelConfirmed emits CancelSuccess action on success`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
+            coEvery { updateExpenseUseCase(any(), any(), any(), any()) } returns Result.success(Unit)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setExpenseId(testExpenseId)
+            advanceUntilIdle()
+
+            val actions = mutableListOf<ExpenseDetailUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            // When
+            viewModel.onEvent(ExpenseDetailUiEvent.CancelConfirmed)
+            advanceUntilIdle()
+
+            // Then
+            assertTrue(
+                actions.any { it is ExpenseDetailUiAction.CancelSuccess },
+                "Expected CancelSuccess action but got: $actions"
+            )
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `CancelConfirmed emits ShowError action when cancellation fails`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
+            coEvery { updateExpenseUseCase(any(), any(), any(), any()) } returns
+                Result.failure(RuntimeException("Cancel failed"))
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setExpenseId(testExpenseId)
+            advanceUntilIdle()
+
+            val actions = mutableListOf<ExpenseDetailUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            // When
+            viewModel.onEvent(ExpenseDetailUiEvent.CancelConfirmed)
+            advanceUntilIdle()
+
+            // Then
+            assertTrue(
+                actions.any { it is ExpenseDetailUiAction.ShowError },
+                "Expected ShowError action but got: $actions"
+            )
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `CancelConfirmed does nothing when expense is not yet loaded`() = runTest(testDispatcher) {
+            // Given — no setExpenseId, so uiState.expense is null
+
+            // When
+            viewModel.onEvent(ExpenseDetailUiEvent.CancelConfirmed)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 0) { updateExpenseUseCase(any(), any(), any(), any()) }
+        }
+    }
+
+    @Nested
     inner class ReceiptDownload {
 
         @Test
@@ -587,6 +692,7 @@ class ExpenseDetailViewModelTest {
         getGroupSubunitsUseCase = getGroupSubunitsUseCase,
         deleteExpenseUseCase = deleteExpenseUseCase,
         downloadReceiptUseCase = downloadReceiptUseCase,
+        updateExpenseUseCase = updateExpenseUseCase,
         authenticationService = authenticationService,
         expenseDetailUiMapper = expenseDetailUiMapper
     )

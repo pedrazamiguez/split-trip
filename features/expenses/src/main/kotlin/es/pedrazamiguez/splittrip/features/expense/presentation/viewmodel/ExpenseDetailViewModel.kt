@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
@@ -14,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowU
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -56,6 +58,7 @@ class ExpenseDetailViewModel(
     private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
     private val downloadReceiptUseCase: DownloadReceiptUseCase,
+    private val updateExpenseUseCase: UpdateExpenseUseCase,
     private val authenticationService: AuthenticationService,
     private val expenseDetailUiMapper: ExpenseDetailUiMapper
 ) : ViewModel() {
@@ -190,6 +193,7 @@ class ExpenseDetailViewModel(
         when (event) {
             ExpenseDetailUiEvent.DeleteConfirmed -> handleDelete()
             ExpenseDetailUiEvent.RetryReceiptDownload -> handleRetryReceiptDownload()
+            ExpenseDetailUiEvent.CancelConfirmed -> handleCancelReservation()
         }
     }
 
@@ -208,6 +212,44 @@ class ExpenseDetailViewModel(
                 _actions.send(
                     ExpenseDetailUiAction.ShowError(
                         UiText.StringResource(R.string.error_deleting_expense)
+                    )
+                )
+            }
+        }
+    }
+
+    private fun handleCancelReservation() {
+        val expenseUi = uiState.value.expense ?: return
+        viewModelScope.launch {
+            try {
+                val domainExpense = getExpenseByIdFlowUseCase(expenseUi.id).first() ?: return@launch
+                val updatedExpense = domainExpense.copy(
+                    paymentStatus = PaymentStatus.CANCELLED
+                )
+                updateExpenseUseCase(
+                    groupId = expenseUi.groupId,
+                    expense = updatedExpense,
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null
+                ).onSuccess {
+                    _actions.send(
+                        ExpenseDetailUiAction.CancelSuccess(
+                            UiText.StringResource(R.string.expense_cancelled_successfully)
+                        )
+                    )
+                }.onFailure { e ->
+                    Timber.e(e, "Failed to cancel reservation expense: ${expenseUi.id}")
+                    _actions.send(
+                        ExpenseDetailUiAction.ShowError(
+                            UiText.StringResource(R.string.error_cancelling_expense)
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error cancelling reservation expense: ${expenseUi.id}")
+                _actions.send(
+                    ExpenseDetailUiAction.ShowError(
+                        UiText.StringResource(R.string.error_cancelling_expense)
                     )
                 )
             }

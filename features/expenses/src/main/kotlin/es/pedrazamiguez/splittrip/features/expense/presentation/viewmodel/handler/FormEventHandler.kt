@@ -176,12 +176,14 @@ class FormEventHandler(
         val selectedStatus = _uiState.value.availablePaymentStatuses
             .find { it.id == statusId } ?: return
         val isScheduled = statusId == PaymentStatus.SCHEDULED.name
+        val isRefundable = statusId == PaymentStatus.REFUNDABLE.name
+        val showDueDate = isScheduled || isRefundable
         _uiState.update {
             it.copy(
                 selectedPaymentStatus = selectedStatus,
-                showDueDateSection = isScheduled,
-                dueDateMillis = if (isScheduled) it.dueDateMillis else null,
-                formattedDueDate = if (isScheduled) it.formattedDueDate else "",
+                showDueDateSection = showDueDate,
+                dueDateMillis = if (showDueDate) it.dueDateMillis else null,
+                formattedDueDate = if (showDueDate) it.formattedDueDate else "",
                 isDueDateValid = true
             )
         }

@@ -340,6 +340,7 @@ val expensesUiModule = module {
             getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),
             deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
             downloadReceiptUseCase = get<DownloadReceiptUseCase>(),
+            updateExpenseUseCase = get<UpdateExpenseUseCase>(),
             authenticationService = get<AuthenticationService>(),
             expenseDetailUiMapper = get<ExpenseDetailUiMapper>()
         )

@@ -58,18 +58,6 @@ class ExpenseDetailUiMapper(
             val youLabel = resourceProvider.getString(R.string.you_label)
             val (soloSplits, splitGroups) = resolveSplits(youLabel)
             val isForeign = expense.sourceCurrency != expense.groupCurrency
-            val sourceAmountFormatted = if (isForeign) {
-                formattingHelper.formatCentsWithCurrency(expense.sourceAmount, expense.sourceCurrency)
-            } else {
-                null
-            }
-            val exchangeRateFormatted = if (isForeign) {
-                formattingHelper.formatRateForDisplay(
-                    expense.exchangeRate.toPlainString()
-                )
-            } else {
-                null
-            }
             val (scheduledBadgeText, isScheduledPastDue) = scheduledBadgeUiMapper.buildBadge(expense)
 
             return ExpenseDetailUiModel(
@@ -80,9 +68,9 @@ class ExpenseDetailUiMapper(
                 categoryText = resourceProvider.getString(expense.category.toStringRes()),
                 formattedGroupAmount = formatGroupAmount(),
                 groupCurrency = expense.groupCurrency,
-                formattedSourceAmount = sourceAmountFormatted,
+                formattedSourceAmount = resolveSourceAmountFormatted(isForeign),
                 sourceCurrency = expense.sourceCurrency,
-                formattedExchangeRate = exchangeRateFormatted,
+                formattedExchangeRate = resolveExchangeRateFormatted(isForeign),
                 isForeignCurrency = isForeign,
                 paymentMethodText = resourceProvider.getString(expense.paymentMethod.toStringRes()),
                 paymentMethodIcon = expense.paymentMethod.toIconVector(),
@@ -111,8 +99,28 @@ class ExpenseDetailUiMapper(
                 receiptMimeType = expense.receiptAttachment?.mimeType,
                 createdByText = getCreatedByText(youLabel),
                 createdAtText = formattingHelper.formatShortDate(expense.createdAt),
-                syncStatus = expense.syncStatus
+                syncStatus = expense.syncStatus,
+                isCancelled = expense.paymentStatus == PaymentStatus.CANCELLED,
+                isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE
             )
+        }
+
+        private fun resolveSourceAmountFormatted(isForeign: Boolean): String? {
+            return if (isForeign) {
+                formattingHelper.formatCentsWithCurrency(expense.sourceAmount, expense.sourceCurrency)
+            } else {
+                null
+            }
+        }
+
+        private fun resolveExchangeRateFormatted(isForeign: Boolean): String? {
+            return if (isForeign) {
+                formattingHelper.formatRateForDisplay(
+                    expense.exchangeRate.toPlainString()
+                )
+            } else {
+                null
+            }
         }
 
         private fun resolveSplits(youLabel: String) = mapSplits(
