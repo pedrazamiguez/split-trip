@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyU
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandlerImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandlerImpl
@@ -33,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -312,23 +314,25 @@ class CreateEditGroupViewModelTest {
         @BeforeEach
         fun initCreate() {
             viewModel.init(null)
-            advanceUntilIdle()
         }
 
         @Test
         fun `CurrencySelected updates selectedCurrency`() = runTest(testDispatcher) {
+            advanceUntilIdle()
             onEvent(CreateEditGroupUiEvent.CurrencySelected(currencyUiModelJPY.code))
             assertEquals(currencyUiModelJPY, viewModel.uiState.value.selectedCurrency)
         }
 
         @Test
         fun `ExtraCurrencyToggled adds a currency to extraCurrencies`() = runTest(testDispatcher) {
+            advanceUntilIdle()
             onEvent(CreateEditGroupUiEvent.ExtraCurrencyToggled(currencyUiModelUSD.code))
             assertTrue(viewModel.uiState.value.extraCurrencies.contains(currencyUiModelUSD))
         }
 
         @Test
         fun `ExtraCurrencyToggled removes already-added currency`() = runTest(testDispatcher) {
+            advanceUntilIdle()
             onEvent(CreateEditGroupUiEvent.ExtraCurrencyToggled(currencyUiModelUSD.code))
             onEvent(CreateEditGroupUiEvent.ExtraCurrencyToggled(currencyUiModelUSD.code))
             assertFalse(viewModel.uiState.value.extraCurrencies.contains(currencyUiModelUSD))
@@ -460,5 +464,175 @@ class CreateEditGroupViewModelTest {
 
             assertTrue(viewModel.uiState.value.memberSearchResults.isEmpty())
         }
+
+        @Test
+        fun `MemberSearchQueryChanged with valid email but no registered users creates pending user`() = runTest(
+            testDispatcher
+        ) {
+            coEvery { searchUsersByEmailUseCase("new@example.com") } returns Result.success(emptyList())
+
+            onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged("new@example.com"))
+            advanceUntilIdle()
+
+            val results = viewModel.uiState.value.memberSearchResults
+            assertEquals(1, results.size)
+            assertTrue(results[0].isPending)
+            assertEquals("new@example.com", results[0].email)
+        }
+
+        @Test
+        fun `MemberSearchQueryChanged with valid email and pending selected returns empty`() =
+            runTest(testDispatcher) {
+                coEvery { searchUsersByEmailUseCase("new@example.com") } returns Result.success(emptyList())
+
+                val normalizedEmail = User.normalizeEmail("new@example.com")
+                val pendingUserId = User.generatePendingUserId(normalizedEmail)
+                val pendingUser = User(userId = pendingUserId, email = normalizedEmail, isPending = true)
+
+                // Select it first
+                onEvent(CreateEditGroupUiEvent.MemberSelected(pendingUser))
+
+                onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged("new@example.com"))
+                advanceUntilIdle()
+
+                val results = viewModel.uiState.value.memberSearchResults
+                assertTrue(results.isEmpty())
+            }
+
+        @Test
+        fun `MemberSearchQueryChanged when search fails clears results`() =
+            runTest(testDispatcher) {
+                coEvery { searchUsersByEmailUseCase("alice@example.com") } returns
+                    Result.failure(Exception("Network error"))
+
+                onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged("alice@example.com"))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertTrue(state.memberSearchResults.isEmpty())
+                assertFalse(state.isSearchingMembers)
+            }
+    }
+
+    @Nested
+    inner class MemberScanning {
+
+        @BeforeEach
+        fun initCreate() {
+            viewModel.init(null)
+        }
+
+        @Test
+        fun `MemberScanned adds partial user immediately`() = runTest(testDispatcher) {
+            onEvent(CreateEditGroupUiEvent.MemberScanned("user-scan", "scan@example.com"))
+
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            assertEquals("user-scan", selected[0].userId)
+            assertEquals("scan@example.com", selected[0].email)
+            assertEquals(null, selected[0].displayName)
+        }
+
+        @Test
+        fun `MemberScanned fetches profile and replaces with full user on success`() =
+            runTest(testDispatcher) {
+                val fullUser = User(userId = "user-scan", email = "scan@example.com", displayName = "Scanned User")
+                coEvery { getMemberProfilesUseCase(listOf("user-scan")) } returns mapOf("user-scan" to fullUser)
+
+                onEvent(CreateEditGroupUiEvent.MemberScanned("user-scan", "scan@example.com"))
+                advanceUntilIdle()
+
+                val selected = viewModel.uiState.value.selectedMembers
+                assertEquals(1, selected.size)
+                assertEquals("user-scan", selected[0].userId)
+                assertEquals("Scanned User", selected[0].displayName)
+            }
+
+        @Test
+        fun `MemberScanned keeps partial user if profile fetch fails`() = runTest(testDispatcher) {
+            coEvery { getMemberProfilesUseCase(listOf("user-scan")) } throws Exception("Failed to fetch")
+
+            onEvent(CreateEditGroupUiEvent.MemberScanned("user-scan", "scan@example.com"))
+            advanceUntilIdle()
+
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            assertEquals("user-scan", selected[0].userId)
+            assertEquals(null, selected[0].displayName)
+        }
+
+        @Test
+        fun `MemberScanned does nothing if user already selected`() = runTest(testDispatcher) {
+            val fullUser = User(userId = "user-scan", email = "scan@example.com", displayName = "Scanned User")
+            onEvent(CreateEditGroupUiEvent.MemberSelected(fullUser))
+
+            onEvent(CreateEditGroupUiEvent.MemberScanned("user-scan", "scan@example.com"))
+            advanceUntilIdle()
+
+            val selected = viewModel.uiState.value.selectedMembers
+            assertEquals(1, selected.size)
+            assertEquals("Scanned User", selected[0].displayName)
+            coVerify(exactly = 0) { getMemberProfilesUseCase(any()) }
+        }
+    }
+
+    @Nested
+    inner class InitErrors {
+
+        @Test
+        fun `init in edit mode when group loading fails shows error and exits`() =
+            runTest(testDispatcher) {
+                coEvery { getGroupByIdUseCase(testGroupId) } returns null
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                viewModel.init(testGroupId)
+                advanceUntilIdle()
+
+                assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+                assertTrue(actionsList.any { it is CreateEditGroupUiAction.NavigateBack })
+                job.cancel()
+            }
+
+        @Test
+        fun `init when currency loading fails shows error`() = runTest(testDispatcher) {
+            coEvery { getSupportedCurrenciesUseCase() } returns Result.failure(Exception("Load error"))
+            val actionsList = mutableListOf<CreateEditGroupUiAction>()
+            val job = launch {
+                viewModel.actions.collect { actionsList.add(it) }
+            }
+
+            viewModel.init(null)
+            advanceUntilIdle()
+
+            assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+            job.cancel()
+        }
+
+        @Test
+        fun `init in edit mode when profile fetch fails uses fallback`() =
+            runTest(testDispatcher) {
+                val groupWithMembers = testGroup.copy(members = listOf("user-1", "user-2"))
+                coEvery { getGroupByIdUseCase(testGroupId) } returns groupWithMembers
+
+                // Group has members "user-1" and "user-2"
+                // Let's return profile only for "user-1"
+                coEvery { getMemberProfilesUseCase(listOf("user-1", "user-2")) } returns mapOf(
+                    "user-1" to testUser1
+                )
+
+                viewModel.init(testGroupId)
+                advanceUntilIdle()
+
+                val selected = viewModel.uiState.value.selectedMembers
+                assertEquals(2, selected.size)
+                val u1 = selected.find { it.userId == "user-1" }
+                val u2 = selected.find { it.userId == "user-2" }
+                assertEquals("Alice", u1?.displayName)
+                assertEquals("", u2?.email) // fallback email is empty
+                assertEquals(null, u2?.displayName) // fallback displayName is null
+            }
     }
 }
