@@ -13,16 +13,16 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 /**
  * Step 1: Group name + optional description.
  */
 @Composable
 fun GroupInfoStep(
-    uiState: CreateGroupUiState,
-    onEvent: (CreateGroupUiEvent) -> Unit,
+    uiState: CreateEditGroupUiState,
+    onEvent: (CreateEditGroupUiEvent) -> Unit,
     onImeNext: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -32,7 +32,7 @@ fun GroupInfoStep(
     WizardStepLayout(modifier = modifier) {
         StyledOutlinedTextField(
             value = uiState.groupName,
-            onValueChange = { onEvent(CreateGroupUiEvent.NameChanged(it)) },
+            onValueChange = { onEvent(CreateEditGroupUiEvent.NameChanged(it)) },
             label = stringResource(R.string.group_field_name),
             isError = !uiState.isNameValid,
             supportingText = if (!uiState.isNameValid) {
@@ -49,7 +49,7 @@ fun GroupInfoStep(
         )
         StyledOutlinedTextField(
             value = uiState.groupDescription,
-            onValueChange = { onEvent(CreateGroupUiEvent.DescriptionChanged(it)) },
+            onValueChange = { onEvent(CreateEditGroupUiEvent.DescriptionChanged(it)) },
             label = stringResource(R.string.group_field_description),
             singleLine = false,
             maxLines = 4,

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -15,53 +14,27 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
 import es.pedrazamiguez.splittrip.features.group.R
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupStep
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 @Composable
-fun CreateGroupForm(
-    uiState: CreateGroupUiState,
-    onEvent: (CreateGroupUiEvent) -> Unit,
+fun CreateEditGroupForm(
+    uiState: CreateEditGroupUiState,
+    onEvent: (CreateEditGroupUiEvent) -> Unit,
     onScannerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val infoLabel = stringResource(R.string.group_wizard_step_info)
-    val currencyLabel = stringResource(R.string.group_wizard_step_currency)
-    val membersLabel = stringResource(R.string.group_wizard_step_members)
-    val unregisteredNamesLabel = stringResource(R.string.group_wizard_step_unregistered_names)
-    val imageLabel = stringResource(R.string.group_wizard_step_image)
-    val reviewLabel = stringResource(R.string.group_wizard_step_review)
-
-    val stepLabels = remember(infoLabel, currencyLabel, membersLabel, unregisteredNamesLabel, imageLabel, reviewLabel) {
-        mapOf(
-            CreateGroupStep.INFO to infoLabel,
-            CreateGroupStep.CURRENCY to currencyLabel,
-            CreateGroupStep.MEMBERS to membersLabel,
-            CreateGroupStep.UNREGISTERED_NAMES to unregisteredNamesLabel,
-            CreateGroupStep.IMAGE to imageLabel,
-            CreateGroupStep.REVIEW to reviewLabel
-        )
-    }
-
-    val orderedLabels = remember(uiState.steps, stepLabels) {
-        uiState.steps.map { stepLabels[it] ?: "" }
-    }
-
+    val orderedLabels = rememberGroupStepLabels(uiState.steps)
     val bottomPadding = LocalBottomPadding.current
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             WizardStepIndicator(
                 stepLabels = orderedLabels,
                 currentStepIndex = uiState.currentStepIndex,
-                onStepClicked = { onEvent(CreateGroupUiEvent.JumpToStep(it)) }
+                onStepClicked = { onEvent(CreateEditGroupUiEvent.JumpToStep(it)) }
             )
-
-            CreateGroupWizardContent(
+            CreateEditGroupWizardContent(
                 uiState = uiState,
                 onEvent = onEvent,
                 onScannerClick = onScannerClick,
@@ -77,11 +50,15 @@ fun CreateGroupForm(
                 isLoading = uiState.isLoading,
                 backLabel = stringResource(R.string.group_wizard_back),
                 nextLabel = stringResource(R.string.group_wizard_next),
-                submitLabel = stringResource(R.string.groups_create)
+                submitLabel = if (uiState.isEditMode) {
+                    stringResource(R.string.group_edit_save)
+                } else {
+                    stringResource(R.string.groups_create)
+                }
             ),
-            onBack = { onEvent(CreateGroupUiEvent.PreviousStep) },
-            onNext = { onEvent(CreateGroupUiEvent.NextStep) },
-            onSubmit = { onEvent(CreateGroupUiEvent.SubmitCreateGroup) },
+            onBack = { onEvent(CreateEditGroupUiEvent.PreviousStep) },
+            onNext = { onEvent(CreateEditGroupUiEvent.NextStep) },
+            onSubmit = { onEvent(CreateEditGroupUiEvent.Submit) },
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)

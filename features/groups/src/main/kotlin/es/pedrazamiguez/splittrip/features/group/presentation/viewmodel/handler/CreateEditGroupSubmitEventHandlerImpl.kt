@@ -9,9 +9,10 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.features.group.R
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,20 +21,22 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class CreateGroupSubmitEventHandlerImpl(
+class CreateEditGroupSubmitEventHandlerImpl(
     private val createGroupUseCase: CreateGroupUseCase,
+    private val updateGroupUseCase: UpdateGroupUseCase,
     private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
     private val featureGateService: FeatureGateService,
     private val telemetryTracker: TelemetryTracker,
     private val appConfigService: AppConfigService
-) : CreateGroupSubmitEventHandler {
-    private lateinit var _uiState: MutableStateFlow<CreateGroupUiState>
-    private lateinit var _actions: MutableSharedFlow<CreateGroupUiAction>
+) : CreateEditGroupSubmitEventHandler {
+    private lateinit var _uiState: MutableStateFlow<CreateEditGroupUiState>
+    private lateinit var _actions: MutableSharedFlow<CreateEditGroupUiAction>
     private lateinit var scope: CoroutineScope
+    private var initialGroup: Group? = null
 
     override fun bind(
-        stateFlow: MutableStateFlow<CreateGroupUiState>,
-        actionsFlow: MutableSharedFlow<CreateGroupUiAction>,
+        stateFlow: MutableStateFlow<CreateEditGroupUiState>,
+        actionsFlow: MutableSharedFlow<CreateEditGroupUiAction>,
         scope: CoroutineScope
     ) {
         _uiState = stateFlow
@@ -41,7 +44,11 @@ class CreateGroupSubmitEventHandlerImpl(
         this.scope = scope
     }
 
-    override fun handleSubmit(onCreateGroupSuccess: () -> Unit) {
+    override fun setInitialGroup(group: Group) {
+        this.initialGroup = group
+    }
+
+    override fun handleSubmit(onSuccess: () -> Unit) {
         if (_uiState.value.groupName.isBlank()) {
             _uiState.update {
                 it.copy(isNameValid = false, error = UiText.StringResource(R.string.group_error_name_empty))
@@ -49,29 +56,73 @@ class CreateGroupSubmitEventHandlerImpl(
             return
         }
 
-        checkLimitsAndCreateGroup(onCreateGroupSuccess)
+        if (_uiState.value.isEditMode) {
+            updateGroup(onSuccess)
+        } else {
+            checkLimitsAndCreateGroup(onSuccess)
+        }
     }
 
-    private fun checkLimitsAndCreateGroup(onCreateGroupSuccess: () -> Unit) {
+    private fun updateGroup(onSuccess: () -> Unit) {
+        val group = initialGroup ?: return
+        val state = _uiState.value
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            val updatedGroup = group.copy(
+                name = state.groupName.trim(),
+                description = state.groupDescription.trim(),
+                currency = state.selectedCurrency?.code ?: "EUR",
+                extraCurrencies = state.extraCurrencies.map { it.code },
+                mainImagePath = state.localGroupImagePath
+            )
+
+            updateGroupUseCase(updatedGroup)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
+                    _actions.emit(
+                        CreateEditGroupUiAction.ShowSuccess(
+                            UiText.StringResource(R.string.group_edit_success_saved)
+                        )
+                    )
+                    onSuccess()
+                }
+                .onFailure { e ->
+                    Timber.e(e, "Failed to save group details")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = UiText.StringResource(R.string.group_error_creation_failed)
+                        )
+                    }
+                    _actions.emit(
+                        CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_error_creation_failed)
+                        )
+                    )
+                }
+        }
+    }
+
+    private fun checkLimitsAndCreateGroup(onSuccess: () -> Unit) {
         scope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             val currentGroups = getUserGroupsFlowUseCase().firstOrNull() ?: emptyList()
             featureGateService.checkLimit(GatedLimit.MAX_GROUPS_COUNT, currentGroups.size)
                 .collect { limitResult ->
                     when (limitResult) {
-                        is LimitResult.Allowed -> checkMemberLimitAndCreateGroup(onCreateGroupSuccess)
+                        is LimitResult.Allowed -> checkMemberLimitAndCreateGroup(onSuccess)
                         is LimitResult.Blocked -> handleGroupsLimitBlocked()
                     }
                 }
         }
     }
 
-    private suspend fun checkMemberLimitAndCreateGroup(onCreateGroupSuccess: () -> Unit) {
+    private suspend fun checkMemberLimitAndCreateGroup(onSuccess: () -> Unit) {
         val membersCount = _uiState.value.selectedMembers.size
         featureGateService.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, membersCount)
             .collect { memberLimitResult ->
                 when (memberLimitResult) {
-                    is LimitResult.Allowed -> createGroup(onCreateGroupSuccess)
+                    is LimitResult.Allowed -> createGroup(onSuccess)
                     is LimitResult.Blocked -> handleMembersLimitBlocked(memberLimitResult)
                 }
             }
@@ -80,7 +131,7 @@ class CreateGroupSubmitEventHandlerImpl(
     private suspend fun handleGroupsLimitBlocked() {
         val errorRes = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
         _uiState.update { it.copy(isLoading = false, error = errorRes) }
-        _actions.emit(CreateGroupUiAction.ShowError(errorRes))
+        _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
     }
 
     private suspend fun handleMembersLimitBlocked(memberLimitResult: LimitResult.Blocked) {
@@ -93,10 +144,10 @@ class CreateGroupSubmitEventHandlerImpl(
             )
         }
         _uiState.update { it.copy(isLoading = false, error = errorRes) }
-        _actions.emit(CreateGroupUiAction.ShowError(errorRes))
+        _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
     }
 
-    private fun createGroup(onCreateGroupSuccess: () -> Unit) {
+    private fun createGroup(onSuccess: () -> Unit) {
         scope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
@@ -120,16 +171,18 @@ class CreateGroupSubmitEventHandlerImpl(
                     mapOf("currency" to (state.selectedCurrency?.code ?: ""))
                 )
                 _actions.emit(
-                    CreateGroupUiAction.ShowSuccess(UiText.StringResource(R.string.group_created_success, groupName))
+                    CreateEditGroupUiAction.ShowSuccess(
+                        UiText.StringResource(R.string.group_created_success, groupName)
+                    )
                 )
-                onCreateGroupSuccess()
+                onSuccess()
             }.onFailure { e ->
                 Timber.e(e, "Failed to create group")
                 _uiState.update {
                     it.copy(isLoading = false, error = UiText.StringResource(R.string.group_error_creation_failed))
                 }
                 _actions.emit(
-                    CreateGroupUiAction.ShowError(UiText.StringResource(R.string.group_error_creation_failed))
+                    CreateEditGroupUiAction.ShowError(UiText.StringResource(R.string.group_error_creation_failed))
                 )
             }
         }

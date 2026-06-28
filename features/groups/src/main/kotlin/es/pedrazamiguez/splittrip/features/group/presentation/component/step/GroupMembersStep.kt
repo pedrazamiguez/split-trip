@@ -6,16 +6,16 @@ import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.AsyncSearchableChipSelector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 /**
  * Step 3: Invite members by searching their email address (optional).
  */
 @Composable
 fun GroupMembersStep(
-    uiState: CreateGroupUiState,
-    onEvent: (CreateGroupUiEvent) -> Unit,
+    uiState: CreateEditGroupUiState,
+    onEvent: (CreateEditGroupUiEvent) -> Unit,
     onScannerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -24,9 +24,9 @@ fun GroupMembersStep(
         AsyncSearchableChipSelector(
             searchResults = uiState.memberSearchResults,
             selectedItems = uiState.selectedMembers,
-            onSearchQueryChanged = { onEvent(CreateGroupUiEvent.MemberSearchQueryChanged(it)) },
-            onItemAdded = { onEvent(CreateGroupUiEvent.MemberSelected(it)) },
-            onItemRemoved = { onEvent(CreateGroupUiEvent.MemberRemoved(it)) },
+            onSearchQueryChanged = { onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged(it)) },
+            onItemAdded = { onEvent(CreateEditGroupUiEvent.MemberSelected(it)) },
+            onItemRemoved = { onEvent(CreateEditGroupUiEvent.MemberRemoved(it)) },
             itemKey = { it.userId },
             itemDisplayText = { it.displayName ?: it.email },
             dropdownItemDisplayText = {

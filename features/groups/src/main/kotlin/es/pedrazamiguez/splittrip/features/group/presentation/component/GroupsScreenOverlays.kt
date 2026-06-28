@@ -14,12 +14,14 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 
+@Suppress("LongParameterList")
 @Composable
 internal fun GroupsScreenOverlays(
     selectedGroup: GroupUiModel?,
     selectedGroupId: String?,
     isSoleGroup: Boolean,
     onSelectGroup: (groupId: String, groupName: String, currency: String) -> Unit,
+    onEditGroup: (String) -> Unit,
     onManageSubunits: (String) -> Unit,
     onMenuDismiss: () -> Unit,
     onDeleteRequested: (GroupUiModel) -> Unit
@@ -54,7 +56,10 @@ internal fun GroupsScreenOverlays(
                 SheetAction(
                     text = stringResource(R.string.action_edit_group),
                     icon = TablerIcons.Outline.Edit,
-                    onClick = { onMenuDismiss() }
+                    onClick = {
+                        onEditGroup(group.id)
+                        onMenuDismiss()
+                    }
                 ),
                 SheetAction(
                     text = stringResource(R.string.action_manage_subunits),

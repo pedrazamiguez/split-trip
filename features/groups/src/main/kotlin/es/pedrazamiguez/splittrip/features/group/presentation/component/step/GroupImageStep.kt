@@ -12,13 +12,13 @@ import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupIma
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupImageHeader
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupImagePreview
 import es.pedrazamiguez.splittrip.features.group.presentation.component.LockedGroupImagePreview
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 @Composable
 fun GroupImageStep(
-    uiState: CreateGroupUiState,
-    onEvent: (CreateGroupUiEvent) -> Unit,
+    uiState: CreateEditGroupUiState,
+    onEvent: (CreateEditGroupUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val hasImage = uiState.localGroupImagePath != null
@@ -39,16 +39,16 @@ fun GroupImageStep(
 
             GroupImageActions(
                 hasImage = hasImage,
-                onSelectClick = { onEvent(CreateGroupUiEvent.ShowImageSourceSheet(true)) },
-                onRemoveClick = { onEvent(CreateGroupUiEvent.GroupImageRemoved) }
+                onSelectClick = { onEvent(CreateEditGroupUiEvent.ShowImageSourceSheet(true)) },
+                onRemoveClick = { onEvent(CreateEditGroupUiEvent.GroupImageRemoved) }
             )
 
             GroupImageAttachmentHandler(
                 showSheet = uiState.showImageSourceSheet,
                 showRemoveOption = hasImage,
-                onDismissSheet = { onEvent(CreateGroupUiEvent.ShowImageSourceSheet(false)) },
-                onImageSelected = { uri -> onEvent(CreateGroupUiEvent.GroupImagePicked(uri)) },
-                onImageRemoved = { onEvent(CreateGroupUiEvent.GroupImageRemoved) }
+                onDismissSheet = { onEvent(CreateEditGroupUiEvent.ShowImageSourceSheet(false)) },
+                onImageSelected = { uri -> onEvent(CreateEditGroupUiEvent.GroupImagePicked(uri)) },
+                onImageRemoved = { onEvent(CreateEditGroupUiEvent.GroupImageRemoved) }
             )
         } else {
             LockedGroupImagePreview()

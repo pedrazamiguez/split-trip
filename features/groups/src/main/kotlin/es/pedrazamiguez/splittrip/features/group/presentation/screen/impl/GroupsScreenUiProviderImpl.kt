@@ -14,7 +14,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicT
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalProfileAvatarUrl
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.ProfileAvatarButton
 import es.pedrazamiguez.splittrip.features.group.R
-import es.pedrazamiguez.splittrip.features.group.presentation.screen.CREATE_GROUP_SHARED_ELEMENT_KEY
+import es.pedrazamiguez.splittrip.features.group.presentation.screen.CREATE_EDIT_GROUP_SHARED_ELEMENT_KEY
 
 class GroupsScreenUiProviderImpl(
     override val route: String = Routes.GROUPS
@@ -45,7 +45,7 @@ class GroupsScreenUiProviderImpl(
                 icon = TablerIcons.Outline.UsersPlus,
                 contentDescription = stringResource(R.string.groups_create),
                 onClick = { tabNavController.navigate(Routes.CREATE_GROUP) },
-                sharedTransitionKey = CREATE_GROUP_SHARED_ELEMENT_KEY
+                sharedTransitionKey = CREATE_EDIT_GROUP_SHARED_ELEMENT_KEY
             )
         }
 }

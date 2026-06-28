@@ -21,7 +21,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 private const val LABEL_WEIGHT = 1f
 private const val VALUE_WEIGHT = 1.5f
@@ -32,7 +32,7 @@ private const val VALUE_WEIGHT = 1.5f
 @Suppress("LongMethod")
 @Composable
 fun GroupReviewStep(
-    uiState: CreateGroupUiState,
+    uiState: CreateEditGroupUiState,
     modifier: Modifier = Modifier
 ) {
     val none = stringResource(R.string.group_review_none)

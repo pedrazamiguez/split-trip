@@ -27,14 +27,14 @@ import es.pedrazamiguez.splittrip.features.group.presentation.component.step.Gro
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupMembersStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupReviewStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupUnregisteredNamesStep
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupStep
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupStep
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 @Composable
-internal fun CreateGroupWizardContent(
-    uiState: CreateGroupUiState,
-    onEvent: (CreateGroupUiEvent) -> Unit,
+internal fun CreateEditGroupWizardContent(
+    uiState: CreateEditGroupUiState,
+    onEvent: (CreateEditGroupUiEvent) -> Unit,
     onScannerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -47,7 +47,7 @@ internal fun CreateGroupWizardContent(
                 .togetherWith(slideOutHorizontally { -it * direction } + fadeOut())
                 .using(SizeTransform(clip = false))
         },
-        label = "createGroupWizardStep"
+        label = "createEditGroupWizardStep"
     ) { step ->
         val bottomPadding = LocalBottomPadding.current
         Column(
@@ -57,28 +57,28 @@ internal fun CreateGroupWizardContent(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = bottomPadding + UiConstants.WIZARD_NAV_BAR_HEIGHT)
         ) {
-            val nextStep = { onEvent(CreateGroupUiEvent.NextStep) }
+            val nextStep = { onEvent(CreateEditGroupUiEvent.NextStep) }
             when (step) {
-                CreateGroupStep.INFO -> GroupInfoStep(
+                CreateEditGroupStep.INFO -> GroupInfoStep(
                     uiState = uiState,
                     onEvent = onEvent,
                     onImeNext = nextStep
                 )
-                CreateGroupStep.CURRENCY -> GroupCurrencyStep(uiState = uiState, onEvent = onEvent)
-                CreateGroupStep.MEMBERS -> GroupMembersStep(
+                CreateEditGroupStep.CURRENCY -> GroupCurrencyStep(uiState = uiState, onEvent = onEvent)
+                CreateEditGroupStep.MEMBERS -> GroupMembersStep(
                     uiState = uiState,
                     onEvent = onEvent,
                     onScannerClick = onScannerClick
                 )
-                CreateGroupStep.UNREGISTERED_NAMES -> GroupUnregisteredNamesStep(
+                CreateEditGroupStep.UNREGISTERED_NAMES -> GroupUnregisteredNamesStep(
                     uiState = uiState,
                     onEvent = onEvent
                 )
-                CreateGroupStep.IMAGE -> GroupImageStep(
+                CreateEditGroupStep.IMAGE -> GroupImageStep(
                     uiState = uiState,
                     onEvent = onEvent
                 )
-                CreateGroupStep.REVIEW -> {
+                CreateEditGroupStep.REVIEW -> {
                     GroupReviewStep(uiState = uiState)
                     FormErrorBanner(
                         error = uiState.error,

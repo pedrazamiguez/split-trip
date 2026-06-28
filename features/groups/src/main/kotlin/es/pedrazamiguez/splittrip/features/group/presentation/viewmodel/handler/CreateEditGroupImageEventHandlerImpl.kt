@@ -5,8 +5,8 @@ import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.features.group.R
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,17 +14,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class CreateGroupImageEventHandlerImpl(
+class CreateEditGroupImageEventHandlerImpl(
     private val groupImageStorageService: GroupImageStorageService,
     private val featureGateService: FeatureGateService
-) : CreateGroupImageEventHandler {
-    private lateinit var _uiState: MutableStateFlow<CreateGroupUiState>
-    private lateinit var _actions: MutableSharedFlow<CreateGroupUiAction>
+) : CreateEditGroupImageEventHandler {
+    private lateinit var _uiState: MutableStateFlow<CreateEditGroupUiState>
+    private lateinit var _actions: MutableSharedFlow<CreateEditGroupUiAction>
     private lateinit var scope: CoroutineScope
 
     override fun bind(
-        stateFlow: MutableStateFlow<CreateGroupUiState>,
-        actionsFlow: MutableSharedFlow<CreateGroupUiAction>,
+        stateFlow: MutableStateFlow<CreateEditGroupUiState>,
+        actionsFlow: MutableSharedFlow<CreateEditGroupUiAction>,
         scope: CoroutineScope
     ) {
         _uiState = stateFlow
@@ -44,7 +44,7 @@ class CreateGroupImageEventHandlerImpl(
                         )
                     }
                     _actions.emit(
-                        CreateGroupUiAction.ShowError(
+                        CreateEditGroupUiAction.ShowError(
                             UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
                         )
                     )
@@ -53,7 +53,7 @@ class CreateGroupImageEventHandlerImpl(
                 runCatching {
                     groupImageStorageService.saveTempGroupImage(uri)
                 }.onSuccess { tempUri ->
-                    _uiState.update { it.copy(localGroupImagePath = tempUri, isLoading = false) }
+                    _uiState.update { it.copy(localGroupImagePath = tempUri, imageUrl = null, isLoading = false) }
                 }.onFailure { e ->
                     Timber.e(e, "Failed to process group image")
                     _uiState.update {
@@ -68,7 +68,7 @@ class CreateGroupImageEventHandlerImpl(
     }
 
     override fun handleGroupImageRemoved() {
-        _uiState.update { it.copy(localGroupImagePath = null) }
+        _uiState.update { it.copy(localGroupImagePath = null, imageUrl = null) }
     }
 
     override fun handleShowImageSourceSheet(show: Boolean) {
