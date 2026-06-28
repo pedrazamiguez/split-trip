@@ -141,7 +141,9 @@ val expensesUiModule = module {
             getGroupByIdUseCase = get<GetGroupByIdUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             getGroupContributionsFlowUseCase = get<GetGroupContributionsFlowUseCase>(),
-            getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>()
+            getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>(),
+            getExpenseByIdFlowUseCase = get<GetExpenseByIdFlowUseCase>(),
+            updateExpenseUseCase = get<UpdateExpenseUseCase>()
         )
 
         ExpensesViewModel(

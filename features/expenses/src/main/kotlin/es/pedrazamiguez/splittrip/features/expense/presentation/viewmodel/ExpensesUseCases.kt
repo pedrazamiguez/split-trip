@@ -2,7 +2,9 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -17,5 +19,7 @@ data class ExpensesUseCases(
     val getGroupByIdUseCase: GetGroupByIdUseCase,
     val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     val getGroupContributionsFlowUseCase: GetGroupContributionsFlowUseCase,
-    val getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase
+    val getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase,
+    val getExpenseByIdFlowUseCase: GetExpenseByIdFlowUseCase,
+    val updateExpenseUseCase: UpdateExpenseUseCase
 )

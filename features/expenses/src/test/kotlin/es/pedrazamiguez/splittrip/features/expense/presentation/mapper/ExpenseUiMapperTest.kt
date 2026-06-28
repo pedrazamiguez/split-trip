@@ -354,6 +354,24 @@ class ExpenseUiMapperTest {
 
             assertEquals("", result.dateText)
         }
+
+        @Test
+        fun `maps isRefundable as true when paymentStatus is REFUNDABLE`() {
+            val expense = Expense(id = "e12", paymentStatus = PaymentStatus.REFUNDABLE)
+
+            val result = mapper.map(expense)
+
+            assertTrue(result.isRefundable)
+        }
+
+        @Test
+        fun `maps isRefundable as false when paymentStatus is not REFUNDABLE`() {
+            val expense = Expense(id = "e13", paymentStatus = PaymentStatus.FINISHED)
+
+            val result = mapper.map(expense)
+
+            assertFalse(result.isRefundable)
+        }
     }
 
     // ---------- mapList ----------

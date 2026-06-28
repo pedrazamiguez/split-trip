@@ -62,5 +62,10 @@ data class ExpenseUiModel(
      * True when the expense status is CANCELLED.
      * Used for strikethrough formatting and background fading.
      */
-    val isCancelled: Boolean = false
+    val isCancelled: Boolean = false,
+    /**
+     * True when the expense is a refundable reservation.
+     * Used to show the "Cancel & Refund" action in the long-press menu.
+     */
+    val isRefundable: Boolean = false
 )

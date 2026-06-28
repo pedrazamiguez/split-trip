@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -154,6 +157,7 @@ class ExpensesViewModel(
             }
 
             is ExpensesUiEvent.DeleteExpense -> handleDeleteExpense(event.expenseId)
+            is ExpensesUiEvent.CancelExpense -> handleCancelExpense(event.expenseId)
         }
     }
 
@@ -178,6 +182,50 @@ class ExpensesViewModel(
                 _actions.emit(
                     ExpensesUiAction.ShowDeleteError(
                         UiText.StringResource(R.string.error_deleting_expense)
+                    )
+                )
+            }
+        }
+    }
+
+    private fun handleCancelExpense(expenseId: String) {
+        val groupId = _selectedGroupId.value ?: return
+        viewModelScope.launch {
+            try {
+                val domainExpense = useCases.getExpenseByIdFlowUseCase(expenseId).first()
+                if (domainExpense == null) {
+                    Timber.w("Expense not found for cancellation: $expenseId")
+                    return@launch
+                }
+                val updatedExpense = domainExpense.copy(
+                    paymentStatus = PaymentStatus.CANCELLED
+                )
+                useCases.updateExpenseUseCase(
+                    groupId = groupId,
+                    expense = updatedExpense,
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                ).onSuccess {
+                    _actions.emit(
+                        ExpensesUiAction.ShowCancelSuccess(
+                            UiText.StringResource(R.string.expense_cancelled_successfully)
+                        )
+                    )
+                }.onFailure { e ->
+                    Timber.e(e, "Failed to cancel reservation expense: $expenseId")
+                    _actions.emit(
+                        ExpensesUiAction.ShowCancelError(
+                            UiText.StringResource(R.string.error_cancelling_expense)
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error cancelling reservation expense: $expenseId")
+                _actions.emit(
+                    ExpensesUiAction.ShowCancelError(
+                        UiText.StringResource(R.string.error_cancelling_expense)
                     )
                 )
             }
