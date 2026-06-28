@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedComposable
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.features.group.presentation.feature.CreateGroupFeature
+import es.pedrazamiguez.splittrip.features.group.presentation.feature.EditGroupFeature
 import es.pedrazamiguez.splittrip.features.group.presentation.feature.GroupDetailFeature
 import es.pedrazamiguez.splittrip.features.group.presentation.feature.GroupsFeature
 
@@ -30,5 +31,14 @@ fun NavGraphBuilder.groupsGraph() {
     ) { backStackEntry ->
         val groupId = backStackEntry.arguments?.getString("groupId") ?: return@sharedComposable
         GroupDetailFeature(groupId = groupId)
+    }
+    sharedComposable(
+        route = Routes.EDIT_GROUP,
+        arguments = listOf(
+            navArgument("groupId") { type = NavType.StringType }
+        )
+    ) { backStackEntry ->
+        val groupId = backStackEntry.arguments?.getString("groupId") ?: return@sharedComposable
+        EditGroupFeature(groupId = groupId)
     }
 }

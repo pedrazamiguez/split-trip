@@ -768,4 +768,84 @@ class GroupRepositoryImplTest {
             coVerify(exactly = 1) { cloudGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId) }
         }
     }
+
+    @Nested
+    inner class UpdateGroup {
+
+        @Test
+        fun `saves group to local storage with PENDING_SYNC status`() = runTest(testDispatcher) {
+            // Given
+            val initialGroup = testGroup.copy(mainImagePath = "old-path")
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns initialGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+
+            // When
+            repository.updateGroup(testGroup)
+
+            // Then
+            coVerify(exactly = 1) {
+                localGroupDataSource.saveGroup(
+                    match {
+                        it.id == testGroupId && it.syncStatus == SyncStatus.PENDING_SYNC
+                    }
+                )
+            }
+        }
+
+        @Test
+        fun `launches background job to sync to cloud`() = runTest(testDispatcher) {
+            // Given
+            val initialGroup = testGroup.copy(mainImagePath = "old-path")
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns initialGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { cloudGroupDataSource.updateGroup(any()) } just Runs
+
+            // When
+            repository.updateGroup(testGroup)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { cloudGroupDataSource.updateGroup(match { it.id == testGroupId }) }
+        }
+
+        @Test
+        fun `deletes local image when cover photo is removed`() = runTest(testDispatcher) {
+            // Given
+            val initialGroup = testGroup.copy(mainImagePath = "old-path")
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns initialGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { groupImageStorageService.deleteLocalGroupImage(testGroupId) } just Runs
+
+            // When
+            repository.updateGroup(testGroup.copy(mainImagePath = null))
+
+            // Then
+            coVerify(exactly = 1) { groupImageStorageService.deleteLocalGroupImage(testGroupId) }
+        }
+
+        @Test
+        fun `uploads new image when cover photo changes`() = runTest(testDispatcher) {
+            // Given
+            val initialGroup = testGroup.copy(mainImagePath = "old-path")
+            val newLocalPath = "new-temp-path"
+            val uploadedUrl = "https://example.com/new.webp"
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns initialGroup
+            coEvery { groupImageStorageService.commitGroupImage(testGroupId, newLocalPath) } returns "new-local-path"
+            coEvery { cloudStorageDataSource.uploadGroupImage(testGroupId, "new-local-path", "image/webp") } returns
+                uploadedUrl
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { cloudGroupDataSource.updateGroup(any()) } just Runs
+
+            // When
+            repository.updateGroup(testGroup.copy(mainImagePath = newLocalPath))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { groupImageStorageService.commitGroupImage(testGroupId, newLocalPath) }
+            coVerify(exactly = 1) {
+                cloudStorageDataSource.uploadGroupImage(testGroupId, "new-local-path", "image/webp")
+            }
+            coVerify { cloudGroupDataSource.updateGroup(match { it.mainImagePath == uploadedUrl }) }
+        }
+    }
 }

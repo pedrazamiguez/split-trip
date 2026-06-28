@@ -102,4 +102,8 @@
     <string name="group_error_limit_members_exceeded">Lô grupô de imbitáô êttán limitáô a 3 miembrô. Bincula tu cuenta en Ahûttê pa eliminâh êtte límite.</string>
     <string name="group_error_limit_members_registered_exceeded">Lô grupô êttán limitáô a %1$d miembrô.</string>
     <string name="group_error_limit_cover_upload_disabled">La çubida de imáhenê de portá êttá deçâttibá pa cuentâ de imbitao. Bincula tu cuenta en Ahûttê pa çubîh imáhenê perçonaliçâh.</string>
+    <string name="group_edit_title">Editâh grupo</string>
+    <string name="group_edit_save">Guardâh cambiô</string>
+    <string name="group_edit_success_saved">Grupo âttualiçao corrêttamente.</string>
+    <string name="group_edit_updating">Âttualiçando grupo…</string>
 </resources>

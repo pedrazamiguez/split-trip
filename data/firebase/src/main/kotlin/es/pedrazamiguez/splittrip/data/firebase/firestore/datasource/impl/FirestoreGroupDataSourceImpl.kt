@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toAdminMemberDo
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toDomain
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toRegularMemberDocument
+import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toTimestampUtc
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -126,6 +127,22 @@ class FirestoreGroupDataSourceImpl(
             Timber.e(e, "Error fetching group $groupId from server")
             null
         }
+    }
+
+    override suspend fun updateGroup(group: Group) {
+        val groupId = group.id
+        val groupDocRef = firestore.collection(GroupDocument.COLLECTION_PATH).document(groupId)
+
+        val updates = mapOf(
+            "name" to group.name,
+            "description" to group.description,
+            "currency" to group.currency,
+            "extraCurrencies" to group.extraCurrencies,
+            "mainImagePath" to (group.mainImagePath ?: ""),
+            "lastUpdatedAt" to group.lastUpdatedAt.toTimestampUtc()
+        )
+
+        groupDocRef.update(updates).await()
     }
 
     override suspend fun deleteGroup(groupId: String) {

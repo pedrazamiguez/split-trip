@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -24,9 +25,11 @@ import es.pedrazamiguez.splittrip.features.group.navigation.impl.GroupsNavigatio
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.impl.GroupUiMapperImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.CreateGroupScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.EditGroupScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.GroupDetailScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.GroupsScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.CreateGroupViewModel
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.EditGroupViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDetailViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupsViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageEventHandler
@@ -145,4 +148,23 @@ val groupsUiModule = module {
     } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { GroupDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { EditGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
+
+    viewModel {
+        val getGroupByIdUseCase = get<GetGroupByIdUseCase>()
+        val updateGroupUseCase = get<UpdateGroupUseCase>()
+        val getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>()
+        val groupImageStorageService = get<GroupImageStorageService>()
+        val groupUiMapper = get<GroupUiMapper>()
+        val featureGateService = get<FeatureGateService>()
+
+        EditGroupViewModel(
+            getGroupByIdUseCase = getGroupByIdUseCase,
+            updateGroupUseCase = updateGroupUseCase,
+            getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
+            groupImageStorageService = groupImageStorageService,
+            groupUiMapper = groupUiMapper,
+            featureGateService = featureGateService
+        )
+    }
 }

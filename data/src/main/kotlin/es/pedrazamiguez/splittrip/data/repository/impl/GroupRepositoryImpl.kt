@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
+import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
@@ -30,6 +31,7 @@ import timber.log.Timber
  * - The repository syncs with the cloud in the background
  * - If sync fails (no internet), the user still sees local data
  */
+@Suppress("TooManyFunctions")
 class GroupRepositoryImpl(
     private val cloudGroupDataSource: CloudGroupDataSource,
     private val localGroupDataSource: LocalGroupDataSource,
@@ -281,6 +283,98 @@ class GroupRepositoryImpl(
                 groupDeletionRetryScheduler.scheduleRetry(groupId)
             }
         }
+    }
+
+    override suspend fun updateGroup(group: Group) {
+        val groupId = group.id
+        val oldGroup = localGroupDataSource.getGroupById(groupId)
+        val imageChanged = oldGroup?.mainImagePath != group.mainImagePath
+        val imageRemoved = group.mainImagePath.isNullOrBlank()
+
+        val finalLocalImagePath = if (imageChanged) {
+            if (imageRemoved) {
+                groupImageStorageService.deleteLocalGroupImage(groupId)
+                null
+            } else {
+                commitTempImage(groupId, group.mainImagePath)
+            }
+        } else {
+            group.mainImagePath
+        }
+
+        val currentTimestamp = LocalDateTime.now()
+        val updatedGroup = group.copy(
+            mainImagePath = finalLocalImagePath,
+            lastUpdatedAt = currentTimestamp,
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
+
+        localGroupDataSource.saveGroup(updatedGroup)
+
+        syncUpdatedGroupToCloud(
+            groupId = groupId,
+            updatedGroup = updatedGroup,
+            imageChanged = imageChanged,
+            imageRemoved = imageRemoved,
+            finalLocalImagePath = finalLocalImagePath
+        )
+    }
+
+    private fun syncUpdatedGroupToCloud(
+        groupId: String,
+        updatedGroup: Group,
+        imageChanged: Boolean,
+        imageRemoved: Boolean,
+        finalLocalImagePath: String?
+    ) {
+        syncCreateToCloud(
+            scope = syncScope,
+            entityId = groupId,
+            cloudWrite = {
+                val remoteUrl = syncGroupImageToCloud(
+                    groupId = groupId,
+                    imageChanged = imageChanged,
+                    imageRemoved = imageRemoved,
+                    localImagePath = finalLocalImagePath,
+                    updatedGroup = updatedGroup
+                )
+                val groupToSync = updatedGroup.copy(mainImagePath = remoteUrl)
+                cloudGroupDataSource.updateGroup(groupToSync)
+            },
+            updateSyncStatus = { id, status ->
+                if (status == SyncStatus.SYNCED) {
+                    verifyGroupSyncOnServer(id)
+                } else {
+                    localGroupDataSource.updateSyncStatus(id, status)
+                }
+            },
+            getCurrentSyncStatus = { id ->
+                localGroupDataSource.getGroupById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
+            },
+            entityLabel = "group update"
+        )
+    }
+
+    private suspend fun syncGroupImageToCloud(
+        groupId: String,
+        imageChanged: Boolean,
+        imageRemoved: Boolean,
+        localImagePath: String?,
+        updatedGroup: Group
+    ): String? {
+        if (!imageChanged) return updatedGroup.mainImagePath
+        if (imageRemoved) {
+            try {
+                cloudStorageDataSource.deleteGroupImage(groupId)
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to delete remote group image for group: $groupId")
+            }
+            return null
+        }
+        if (localImagePath == null) return null
+        val isLocalFile = !localImagePath.startsWith("http://") && !localImagePath.startsWith("https://")
+        if (!isLocalFile) return localImagePath
+        return uploadAndSaveLocalImage(groupId, updatedGroup, localImagePath)
     }
 
     override suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String) {
