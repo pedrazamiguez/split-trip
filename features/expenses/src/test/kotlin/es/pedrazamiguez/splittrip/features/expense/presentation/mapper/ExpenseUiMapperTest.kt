@@ -90,6 +90,11 @@ class ExpenseUiMapperTest {
             val varargs = it.invocation.args[1] as Array<*>
             "Due on ${varargs[0]}"
         }
+        every { resourceProvider.getString(R.string.expense_status_cancelled_refunded) } returns "Cancelled - Refunded"
+        every { resourceProvider.getString(R.string.expense_refundable_until, *anyVararg()) } answers {
+            val varargs = it.invocation.args[1] as Array<*>
+            "Refundable until ${varargs[0]}"
+        }
 
         val formattingHelper = FormattingHelper(localeProvider)
         val scheduledBadgeUiMapper = ScheduledBadgeUiMapper(

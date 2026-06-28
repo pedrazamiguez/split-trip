@@ -33,6 +33,13 @@
     <string name="expense_delete_warning">¿Çeguro que quierê eliminâh \"%1$s\"? Êtta âççión no çe puede deçaçêh.</string>
     <string name="expense_deleted_successfully">Gâtto eliminao corrêttamente</string>
     <string name="error_deleting_expense">No çe pudo eliminâh er gâtto. Inténtalo de nuebo</string>
+    <string name="expense_detail_cancel_refund">Cançelâh y reemborçâh</string>
+    <string name="expense_cancel_dialog_title">Cançelâh reçerba</string>
+    <string name="expense_cancel_dialog_message">¿Êttâh çeguro de que deçeâ cançelâh êtta reçerba y reemborçâh er gâtto? Êtto neutraliçará çu efêtto en lô balançê der grupo y lô miembrô.</string>
+    <string name="expense_cancel_dialog_confirm">Cançelâh y reemborçâh</string>
+    <string name="expense_cancel_dialog_dismiss">Mantenêh reçerba</string>
+    <string name="expense_cancelled_successfully">Reçerba cançelá y reemborçá corrêttamente</string>
+    <string name="error_cancelling_expense">Errôh ar cançelâh la reçerba</string>
     <string name="add_expense_title">Nuebo gâtto</string>
     <string name="add_expense_what_for">¿Pa qué êh?</string>
     <string name="add_expense_amount_paid">¿Cuánto?</string>
@@ -82,6 +89,7 @@
     <string name="payment_status_finished">Pagao</string>
     <string name="payment_status_scheduled">Programao</string>
     <string name="payment_status_cancelled">Cançelao</string>
+    <string name="payment_status_refundable">Pagao (Reemborçable)</string>
     <string name="add_expense_category_title">Categoría</string>
     <string name="add_expense_vendor_label">Empreça / Comerçio (ôççionâh)</string>
     <string name="add_expense_vendor_helper">¿Dónde comprâtte êtto?</string>
@@ -106,6 +114,8 @@
     <string name="expense_scheduled_due_today">Bençe oy</string>
     <string name="expense_scheduled_due_tomorrow">Bençe mañana</string>
     <string name="expense_scheduled_paid">Pagao</string>
+    <string name="expense_status_cancelled_refunded">Cançelao - Reemborçao</string>
+    <string name="expense_refundable_until">Reemborçable âtta %1$s</string>
     <string name="split_type_equal">Partê igualê</string>
     <string name="split_type_exact">Cantidadê</string>
     <string name="split_type_percent">Porçentahe</string>

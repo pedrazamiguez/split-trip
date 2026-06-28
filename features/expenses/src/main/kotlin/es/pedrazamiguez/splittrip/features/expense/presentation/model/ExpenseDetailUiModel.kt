@@ -81,5 +81,7 @@ data class ExpenseDetailUiModel(
     // Provenance
     val createdByText: String = "",
     val createdAtText: String = "",
-    val syncStatus: SyncStatus = SyncStatus.SYNCED
+    val syncStatus: SyncStatus = SyncStatus.SYNCED,
+    val isCancelled: Boolean = false,
+    val isRefundable: Boolean = false
 )

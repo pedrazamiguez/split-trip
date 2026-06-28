@@ -254,13 +254,14 @@ class AddExpenseOptionsUiMapperTest {
     inner class MapPaymentStatuses {
 
         @Test
-        fun `only includes FINISHED and SCHEDULED`() {
+        fun `includes FINISHED, SCHEDULED, and REFUNDABLE`() {
             val result = mapper.mapPaymentStatuses(PaymentStatus.entries)
 
-            assertEquals(2, result.size)
+            assertEquals(3, result.size)
             val ids = result.map { it.id }
             assertTrue("FINISHED" in ids)
             assertTrue("SCHEDULED" in ids)
+            assertTrue("REFUNDABLE" in ids)
         }
 
         @Test

@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 
 /**
@@ -372,7 +373,8 @@ fun AmountText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    maxLines: Int = 1
+    maxLines: Int = 1,
+    textDecoration: TextDecoration? = null
 ) {
     Text(
         text = text,
@@ -381,6 +383,7 @@ fun AmountText(
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         maxLines = maxLines,
-        overflow = overflowFor(maxLines)
+        overflow = overflowFor(maxLines),
+        textDecoration = textDecoration
     )
 }

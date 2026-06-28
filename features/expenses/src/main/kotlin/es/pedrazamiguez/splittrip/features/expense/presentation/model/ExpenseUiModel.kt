@@ -57,5 +57,10 @@ data class ExpenseUiModel(
      * Cloud synchronization status of this expense.
      * Drives the [SyncStatusIndicator] visibility in the list item.
      */
-    val syncStatus: SyncStatus = SyncStatus.SYNCED
+    val syncStatus: SyncStatus = SyncStatus.SYNCED,
+    /**
+     * True when the expense status is CANCELLED.
+     * Used for strikethrough formatting and background fading.
+     */
+    val isCancelled: Boolean = false
 )

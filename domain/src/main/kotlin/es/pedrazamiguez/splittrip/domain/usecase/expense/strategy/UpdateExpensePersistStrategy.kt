@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense.strategy
 
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -63,7 +64,7 @@ class UpdateExpensePersistStrategy(
 
             // Update paired contribution
             contributionRepository.deleteByLinkedExpenseId(groupId, expense.id)
-            if (savedExpense.payerType == PayerType.USER) {
+            if (savedExpense.payerType == PayerType.USER && savedExpense.paymentStatus != PaymentStatus.CANCELLED) {
                 createPairedContribution(
                     groupId,
                     savedExpense,
@@ -108,7 +109,7 @@ class UpdateExpensePersistStrategy(
         preferredWithdrawalScope: PayerType?,
         preferredWithdrawalOwnerId: String?
     ): Expense {
-        return if (expense.paymentMethod == PaymentMethod.CASH) {
+        return if (expense.paymentMethod == PaymentMethod.CASH && expense.paymentStatus != PaymentStatus.CANCELLED) {
             val fifoResult = computeCashFifoResult(
                 groupId,
                 expense,
@@ -133,8 +134,13 @@ class UpdateExpensePersistStrategy(
 
             fifoResult.expense
         } else {
-            expenseRepository.addExpense(groupId, expense)
-            expense
+            val finalExpense = if (expense.paymentStatus == PaymentStatus.CANCELLED) {
+                expense.copy(cashTranches = emptyList())
+            } else {
+                expense
+            }
+            expenseRepository.addExpense(groupId, finalExpense)
+            finalExpense
         }
     }
 
