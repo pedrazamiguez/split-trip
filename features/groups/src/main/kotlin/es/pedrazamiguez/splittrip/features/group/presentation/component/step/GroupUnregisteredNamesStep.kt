@@ -16,16 +16,16 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 /**
  * Step to assign display names to unregistered group members.
  */
 @Composable
 fun GroupUnregisteredNamesStep(
-    uiState: CreateGroupUiState,
-    onEvent: (CreateGroupUiEvent) -> Unit,
+    uiState: CreateEditGroupUiState,
+    onEvent: (CreateEditGroupUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val unregisteredMembers = uiState.selectedMembers.filter { it.isPending }
@@ -61,7 +61,7 @@ fun GroupUnregisteredNamesStep(
                 StyledOutlinedTextField(
                     value = member.displayName ?: "",
                     onValueChange = { name ->
-                        onEvent(CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged(member.userId, name))
+                        onEvent(CreateEditGroupUiEvent.UnregisteredMemberDisplayNameChanged(member.userId, name))
                     },
                     label = stringResource(R.string.group_review_name),
                     keyboardType = KeyboardType.Text,

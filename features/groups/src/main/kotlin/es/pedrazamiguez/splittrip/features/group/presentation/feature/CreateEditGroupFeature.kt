@@ -15,19 +15,20 @@ import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestCa
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.component.QrScannerDialog
-import es.pedrazamiguez.splittrip.features.group.presentation.screen.CreateGroupScreen
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.CreateGroupViewModel
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.screen.CreateEditGroupScreen
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.CreateEditGroupViewModel
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun CreateGroupFeature(
-    createGroupViewModel: CreateGroupViewModel = koinViewModel<CreateGroupViewModel>(),
-    onCreateGroupSuccess: () -> Unit = {}
+fun CreateEditGroupFeature(
+    groupId: String?,
+    createEditGroupViewModel: CreateEditGroupViewModel = koinViewModel<CreateEditGroupViewModel>(),
+    onSuccess: () -> Unit = {}
 ) {
-    val state by createGroupViewModel.uiState.collectAsStateWithLifecycle()
+    val state by createEditGroupViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val pillController = LocalTopPillController.current
     val navController = LocalTabNavController.current
@@ -43,18 +44,22 @@ fun CreateGroupFeature(
         }
     }
 
+    LaunchedEffect(groupId) {
+        createEditGroupViewModel.init(groupId)
+    }
+
     LaunchedEffect(Unit) {
-        createGroupViewModel.actions.collectLatest { action ->
+        createEditGroupViewModel.actions.collectLatest { action ->
             when (action) {
-                is CreateGroupUiAction.ShowSuccess -> {
+                is CreateEditGroupUiAction.ShowSuccess -> {
                     pillController.showPill(message = action.message.asString(context))
                 }
 
-                is CreateGroupUiAction.ShowError -> {
+                is CreateEditGroupUiAction.ShowError -> {
                     pillController.showPill(message = action.message.asString(context))
                 }
 
-                CreateGroupUiAction.NavigateBack -> {
+                CreateEditGroupUiAction.NavigateBack -> {
                     navController.popBackStack()
                 }
             }
@@ -66,21 +71,21 @@ fun CreateGroupFeature(
             onDismissRequest = { showScanner = false },
             onScanned = { payload ->
                 showScanner = false
-                createGroupViewModel.onEvent(
-                    CreateGroupUiEvent.MemberScanned(payload.userId, payload.email),
-                    onCreateGroupSuccess
+                createEditGroupViewModel.onEvent(
+                    CreateEditGroupUiEvent.MemberScanned(payload.userId, payload.email),
+                    onSuccess
                 )
             }
         )
     }
 
-    CreateGroupScreen(
+    CreateEditGroupScreen(
         uiState = state,
         onScannerClick = requestCameraPermission,
         onEvent = { event ->
-            createGroupViewModel.onEvent(
+            createEditGroupViewModel.onEvent(
                 event,
-                onCreateGroupSuccess
+                onSuccess
             )
         }
     )

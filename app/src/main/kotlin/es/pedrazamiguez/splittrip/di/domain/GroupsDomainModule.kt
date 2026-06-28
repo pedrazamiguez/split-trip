@@ -13,10 +13,12 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.CreateGroupUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.DeleteGroupUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetGroupByIdUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetUserGroupsFlowUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.group.impl.UpdateGroupUseCaseImpl
 import org.koin.dsl.module
 
 val groupsDomainModule = module {
@@ -59,6 +61,12 @@ val groupsDomainModule = module {
     factory<GetUserGroupsFlowUseCase> {
         createLoggingProxy<GetUserGroupsFlowUseCase>(
             GetUserGroupsFlowUseCaseImpl(groupRepository = get<GroupRepository>()),
+            LogTag.USE_CASE
+        )
+    }
+    factory<UpdateGroupUseCase> {
+        createLoggingProxy<UpdateGroupUseCase>(
+            UpdateGroupUseCaseImpl(groupRepository = get<GroupRepository>()),
             LogTag.USE_CASE
         )
     }

@@ -1,13 +1,19 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.screen.impl
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
+import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDetailViewModel
 import org.koin.androidx.compose.koinViewModel
 
@@ -28,7 +34,17 @@ class GroupDetailScreenUiProviderImpl(override val route: String = Routes.GROUP_
             DynamicTopAppBar(
                 title = uiState.group?.name ?: "",
                 subtitle = uiState.group?.description?.takeIf { it.isNotEmpty() },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                actions = {
+                    uiState.group?.let { group ->
+                        IconButton(onClick = { navController.navigate(Routes.editGroupRoute(group.id)) }) {
+                            Icon(
+                                imageVector = TablerIcons.Outline.Edit,
+                                contentDescription = stringResource(R.string.action_edit_group)
+                            )
+                        }
+                    }
+                }
             )
         } else {
             DynamicTopAppBar(

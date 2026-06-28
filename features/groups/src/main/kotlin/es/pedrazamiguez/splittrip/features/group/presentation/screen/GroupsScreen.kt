@@ -34,6 +34,7 @@ fun GroupsScreen(
     onGroupClicked: (groupId: String, groupName: String, currency: String) -> Unit = { _, _, _ -> },
     onSelectGroup: (groupId: String, groupName: String, currency: String) -> Unit = { _, _, _ -> },
     onScrollPositionChanged: (Int, Int) -> Unit = { _, _ -> },
+    onEditGroup: (groupId: String) -> Unit = {},
     onDeleteGroup: (groupId: String) -> Unit = {},
     onManageSubunits: (groupId: String) -> Unit = {}
 ) {
@@ -75,6 +76,7 @@ fun GroupsScreen(
         selectedGroupId = selectedGroupId,
         isSoleGroup = uiState.groups.size == 1,
         onSelectGroup = onSelectGroup,
+        onEditGroup = onEditGroup,
         onManageSubunits = onManageSubunits,
         onMenuDismiss = { selectedGroupForMenu = null },
         onDeleteRequested = { group ->

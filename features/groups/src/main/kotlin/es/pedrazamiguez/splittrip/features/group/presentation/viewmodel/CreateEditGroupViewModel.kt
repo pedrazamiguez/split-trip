@@ -3,25 +3,29 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
+import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateGroupUiAction
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateGroupUiEvent
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageEventHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationEventHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitEventHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupSubmitEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
@@ -41,10 +45,11 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 @Suppress("LongParameterList")
-class CreateGroupViewModel(
-    private val createGroupNavigationEventHandler: CreateGroupNavigationEventHandler,
-    private val createGroupImageEventHandler: CreateGroupImageEventHandler,
-    private val createGroupSubmitEventHandler: CreateGroupSubmitEventHandler,
+class CreateEditGroupViewModel(
+    private val navigationEventHandler: CreateEditGroupNavigationEventHandler,
+    private val imageEventHandler: CreateEditGroupImageEventHandler,
+    private val submitEventHandler: CreateEditGroupSubmitEventHandler,
+    private val getGroupByIdUseCase: GetGroupByIdUseCase,
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
     private val getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase,
     private val searchUsersByEmailUseCase: SearchUsersByEmailUseCase,
@@ -56,21 +61,21 @@ class CreateGroupViewModel(
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CreateGroupUiState())
-    val uiState: StateFlow<CreateGroupUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(CreateEditGroupUiState())
+    val uiState: StateFlow<CreateEditGroupUiState> = _uiState.asStateFlow()
 
-    private val _actions = MutableSharedFlow<CreateGroupUiAction>()
-    val actions: SharedFlow<CreateGroupUiAction> = _actions.asSharedFlow()
+    private val _actions = MutableSharedFlow<CreateEditGroupUiAction>()
+    val actions: SharedFlow<CreateEditGroupUiAction> = _actions.asSharedFlow()
 
     private var memberSearchJob: Job? = null
+    private var isInitialized = false
 
     init {
-        createGroupNavigationEventHandler.bind(_uiState, _actions, viewModelScope)
-        createGroupImageEventHandler.bind(_uiState, _actions, viewModelScope)
-        createGroupSubmitEventHandler.bind(_uiState, _actions, viewModelScope)
+        navigationEventHandler.bind(_uiState, _actions, viewModelScope)
+        imageEventHandler.bind(_uiState, _actions, viewModelScope)
+        submitEventHandler.bind(_uiState, _actions, viewModelScope)
 
-        loadCurrencies()
-        createGroupImageEventHandler.cleanTempImages()
+        imageEventHandler.cleanTempImages()
 
         viewModelScope.launch {
             featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).collect { isEnabled ->
@@ -79,23 +84,33 @@ class CreateGroupViewModel(
         }
     }
 
+    fun init(groupId: String?) {
+        if (isInitialized) return
+        isInitialized = true
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            loadCurrencies(groupId)
+        }
+    }
+
     @Suppress("CyclomaticComplexMethod")
-    fun onEvent(event: CreateGroupUiEvent, onCreateGroupSuccess: () -> Unit) {
+    fun onEvent(event: CreateEditGroupUiEvent, onSuccess: () -> Unit) {
         Timber.tag(LogTag.MVI).d("Event: ${formatEventForLogging(event)}")
         when (event) {
-            is CreateGroupUiEvent.NameChanged -> _uiState.update { state ->
+            is CreateEditGroupUiEvent.NameChanged -> _uiState.update { state ->
                 state.copy(groupName = event.name, isNameValid = event.name.isNotBlank())
             }
-            is CreateGroupUiEvent.DescriptionChanged -> _uiState.update { state ->
+            is CreateEditGroupUiEvent.DescriptionChanged -> _uiState.update { state ->
                 state.copy(groupDescription = event.description)
             }
-            is CreateGroupUiEvent.CurrencySelected -> handleCurrencySelected(event.code)
-            is CreateGroupUiEvent.ExtraCurrencyToggled -> handleExtraCurrencyToggled(event.code)
-            is CreateGroupUiEvent.MemberSearchQueryChanged -> searchMembers(event.query)
-            is CreateGroupUiEvent.MemberSelected -> handleMemberSelected(event)
-            is CreateGroupUiEvent.MemberRemoved -> handleMemberRemoved(event)
-            is CreateGroupUiEvent.MemberScanned -> handleMemberScanned(event.userId, event.email)
-            is CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged -> {
+            is CreateEditGroupUiEvent.CurrencySelected -> handleCurrencySelected(event.code)
+            is CreateEditGroupUiEvent.ExtraCurrencyToggled -> handleExtraCurrencyToggled(event.code)
+            is CreateEditGroupUiEvent.MemberSearchQueryChanged -> searchMembers(event.query)
+            is CreateEditGroupUiEvent.MemberSelected -> handleMemberSelected(event)
+            is CreateEditGroupUiEvent.MemberRemoved -> handleMemberRemoved(event)
+            is CreateEditGroupUiEvent.MemberScanned -> handleMemberScanned(event.userId, event.email)
+            is CreateEditGroupUiEvent.UnregisteredMemberDisplayNameChanged -> {
                 _uiState.update { state ->
                     val updated = state.selectedMembers.map { user ->
                         if (user.userId == event.userId) {
@@ -107,13 +122,13 @@ class CreateGroupViewModel(
                     state.copy(selectedMembers = updated)
                 }
             }
-            is CreateGroupUiEvent.SubmitCreateGroup -> createGroupSubmitEventHandler.handleSubmit(onCreateGroupSuccess)
-            is CreateGroupUiEvent.NextStep,
-            is CreateGroupUiEvent.PreviousStep,
-            is CreateGroupUiEvent.JumpToStep -> createGroupNavigationEventHandler.handleNavigation(event)
-            is CreateGroupUiEvent.GroupImagePicked -> createGroupImageEventHandler.handleGroupImagePicked(event.uri)
-            is CreateGroupUiEvent.GroupImageRemoved -> createGroupImageEventHandler.handleGroupImageRemoved()
-            is CreateGroupUiEvent.ShowImageSourceSheet -> createGroupImageEventHandler.handleShowImageSourceSheet(
+            is CreateEditGroupUiEvent.Submit -> submitEventHandler.handleSubmit(onSuccess)
+            is CreateEditGroupUiEvent.NextStep,
+            is CreateEditGroupUiEvent.PreviousStep,
+            is CreateEditGroupUiEvent.JumpToStep -> navigationEventHandler.handleNavigation(event)
+            is CreateEditGroupUiEvent.GroupImagePicked -> imageEventHandler.handleGroupImagePicked(event.uri)
+            is CreateEditGroupUiEvent.GroupImageRemoved -> imageEventHandler.handleGroupImageRemoved()
+            is CreateEditGroupUiEvent.ShowImageSourceSheet -> imageEventHandler.handleShowImageSourceSheet(
                 event.show
             )
         }
@@ -142,7 +157,7 @@ class CreateGroupViewModel(
         }
     }
 
-    private fun handleMemberSelected(event: CreateGroupUiEvent.MemberSelected) {
+    private fun handleMemberSelected(event: CreateEditGroupUiEvent.MemberSelected) {
         _uiState.update { state ->
             if (state.selectedMembers.any { it.userId == event.user.userId }) {
                 state
@@ -155,7 +170,7 @@ class CreateGroupViewModel(
         }
     }
 
-    private fun handleMemberRemoved(event: CreateGroupUiEvent.MemberRemoved) {
+    private fun handleMemberRemoved(event: CreateEditGroupUiEvent.MemberRemoved) {
         _uiState.update { state ->
             state.copy(
                 selectedMembers = state.selectedMembers
@@ -209,40 +224,83 @@ class CreateGroupViewModel(
         }
     }
 
-    private fun loadCurrencies() {
-        if (_uiState.value.availableCurrencies.isNotEmpty()) return
+    private suspend fun loadCurrencies(groupId: String?) {
+        _uiState.update { it.copy(isLoadingCurrencies = true) }
 
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingCurrencies = true) }
+        runCatching {
+            withContext(defaultDispatcher) {
+                val userDefaultCurrency = getUserDefaultCurrencyUseCase().firstOrNull()
+                    ?: appConfigService.defaultCurrencyCode.value
 
-            runCatching {
-                withContext(defaultDispatcher) {
-                    val userDefaultCurrency =
-                        getUserDefaultCurrencyUseCase().firstOrNull()
-                            ?: appConfigService.defaultCurrencyCode.value
+                val sortedCurrencies = getSupportedCurrenciesUseCase().getOrThrow()
+                val mappedCurrencies = groupUiMapper.toCurrencyUiModels(sortedCurrencies)
+                val defaultCurrency = mappedCurrencies.find { it.code == userDefaultCurrency }
+                    ?: mappedCurrencies.firstOrNull()
 
-                    val sortedCurrencies = getSupportedCurrenciesUseCase().getOrThrow()
-                    val mappedCurrencies = groupUiMapper.toCurrencyUiModels(sortedCurrencies)
-                    val defaultCurrency = mappedCurrencies.find { it.code == userDefaultCurrency }
-                        ?: mappedCurrencies.firstOrNull()
+                val group = groupId?.let { getGroupByIdUseCase(it) }
 
-                    Triple(mappedCurrencies, defaultCurrency, userDefaultCurrency)
-                }
-            }.onSuccess { (mappedCurrencies, defaultCurrency, _) ->
+                Triple(mappedCurrencies, defaultCurrency, group)
+            }
+        }.onSuccess { (mappedCurrencies, defaultCurrency, group) ->
+            if (group != null) {
+                applyEditState(group, mappedCurrencies)
+            } else {
                 _uiState.update {
                     it.copy(
+                        isLoading = false,
+                        isEditMode = false,
                         availableCurrencies = mappedCurrencies,
                         selectedCurrency = it.selectedCurrency ?: defaultCurrency,
                         isLoadingCurrencies = false
                     )
                 }
-            }.onFailure { e ->
-                _uiState.update { it.copy(isLoadingCurrencies = false) }
-                _actions.emit(
-                    CreateGroupUiAction.ShowError(UiText.StringResource(R.string.group_error_load_currencies))
-                )
-                Timber.e(e, "Failed to load currencies")
+                if (groupId != null) {
+                    _actions.emit(
+                        CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_detail_error_loading)
+                        )
+                    )
+                    _actions.emit(CreateEditGroupUiAction.NavigateBack)
+                }
             }
+        }.onFailure { e ->
+            _uiState.update { it.copy(isLoadingCurrencies = false, isLoading = false) }
+            _actions.emit(
+                CreateEditGroupUiAction.ShowError(UiText.StringResource(R.string.group_error_load_currencies))
+            )
+            Timber.e(e, "Failed to load currencies or group")
+        }
+    }
+
+    private suspend fun applyEditState(
+        group: Group,
+        mappedCurrencies: ImmutableList<CurrencyUiModel>
+    ) {
+        submitEventHandler.setInitialGroup(group)
+
+        val selectedCurrencyModel = mappedCurrencies.find { it.code == group.currency }
+        val extraCurrencyModels = mappedCurrencies.filter { it.code in group.extraCurrencies }
+
+        val memberProfiles = getMemberProfilesUseCase(group.members)
+        val memberUsers = group.members.map { memberId ->
+            memberProfiles[memberId] ?: User(userId = memberId, email = "")
+        }
+
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                isEditMode = true,
+                groupId = group.id,
+                groupName = group.name,
+                groupDescription = group.description,
+                availableCurrencies = mappedCurrencies,
+                selectedCurrency = selectedCurrencyModel,
+                extraCurrencies = extraCurrencyModels.toImmutableList(),
+                selectedMembers = memberUsers.toImmutableList(),
+                imageUrl = group.mainImagePath,
+                localGroupImagePath = group.mainImagePath,
+                isLoadingCurrencies = false
+            )
         }
     }
 
@@ -282,7 +340,7 @@ class CreateGroupViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        createGroupImageEventHandler.cleanTempImages()
+        imageEventHandler.cleanTempImages()
     }
 
     companion object {
@@ -291,17 +349,17 @@ class CreateGroupViewModel(
     }
 }
 
-private fun formatEventForLogging(event: CreateGroupUiEvent): String {
+private fun formatEventForLogging(event: CreateEditGroupUiEvent): String {
     return when (event) {
-        is CreateGroupUiEvent.MemberSearchQueryChanged ->
+        is CreateEditGroupUiEvent.MemberSearchQueryChanged ->
             "MemberSearchQueryChanged(queryLength=${event.query.length})"
-        is CreateGroupUiEvent.MemberSelected ->
+        is CreateEditGroupUiEvent.MemberSelected ->
             "MemberSelected(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
-        is CreateGroupUiEvent.MemberRemoved ->
+        is CreateEditGroupUiEvent.MemberRemoved ->
             "MemberRemoved(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
-        is CreateGroupUiEvent.MemberScanned ->
+        is CreateEditGroupUiEvent.MemberScanned ->
             "MemberScanned(userId=${event.userId}, email=${event.email.maskEmail()})"
-        is CreateGroupUiEvent.UnregisteredMemberDisplayNameChanged ->
+        is CreateEditGroupUiEvent.UnregisteredMemberDisplayNameChanged ->
             "UnregisteredMemberDisplayNameChanged(userId=${event.userId}, nameLength=${event.displayName.length})"
         else -> event::class.java.simpleName
     }

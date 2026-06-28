@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface CloudGroupDataSource {
     suspend fun createGroup(group: Group): String
     suspend fun getGroupById(groupId: String): Group?
+    suspend fun updateGroup(group: Group)
     suspend fun deleteGroup(groupId: String)
 
     /**
