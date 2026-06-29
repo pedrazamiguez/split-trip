@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
+package es.pedrazamiguez.splittrip.features.balance.presentation.model
 
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper

@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.model
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -20,7 +21,9 @@ data class GroupUiModel(
     /** Up to [MAX_VISIBLE_AVATARS] member profile-image URLs for the hero avatar stack. */
     val memberAvatarUrls: ImmutableList<String> = persistentListOf(),
     /** Number of members beyond [MAX_VISIBLE_AVATARS]; shown as "+N" overflow badge. */
-    val memberOverflowCount: Int = 0
+    val memberOverflowCount: Int = 0,
+    val status: GroupStatus = GroupStatus.ACTIVE,
+    val createdBy: String = ""
 ) {
     companion object {
         /** Maximum number of avatar circles shown in the hero card avatar stack. */

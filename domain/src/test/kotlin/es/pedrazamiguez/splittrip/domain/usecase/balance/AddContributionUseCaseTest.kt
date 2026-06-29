@@ -1,10 +1,13 @@
 package es.pedrazamiguez.splittrip.domain.usecase.balance
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
@@ -18,11 +21,11 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class AddContributionUseCaseTest {
 
@@ -30,6 +33,7 @@ class AddContributionUseCaseTest {
     private lateinit var groupMembershipService: GroupMembershipService
     private lateinit var subunitRepository: SubunitRepository
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var groupRepository: GroupRepository
     private val contributionValidationService = ContributionValidationServiceImpl()
     private lateinit var useCase: AddContributionUseCase
 
@@ -48,16 +52,40 @@ class AddContributionUseCaseTest {
         groupMembershipService = mockk()
         subunitRepository = mockk()
         authenticationService = mockk()
+        groupRepository = mockk()
+
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
         every { authenticationService.requireUserId() } returns currentUserId
         coEvery { subunitRepository.getGroupSubunits(any()) } returns emptyList()
+        coEvery { groupRepository.getGroupById(any()) } returns mockk {
+            every { status } returns GroupStatus.ACTIVE
+        }
+
         useCase = AddContributionUseCaseImpl(
             contributionRepository,
             groupMembershipService,
             contributionValidationService,
             subunitRepository,
-            authenticationService
+            authenticationService,
+            groupRepository
         )
+    }
+
+    // ── Group Archived validation ─────────────────────────────────────────────
+
+    @Nested
+    inner class GroupArchivedValidation {
+
+        @Test
+        fun `fails when group is archived`() = runTest {
+            coEvery { groupRepository.getGroupById(groupId) } returns mockk {
+                every { status } returns GroupStatus.ARCHIVED
+            }
+
+            assertThrows<GroupArchivedException> {
+                useCase(groupId, contribution)
+            }
+        }
     }
 
     // ── Delegation ────────────────────────────────────────────────────────────
@@ -102,12 +130,10 @@ class AddContributionUseCaseTest {
             } throws NotGroupMemberException(groupId = groupId, userId = "user-123")
 
             // When / Then
-            try {
+            val exception = assertThrows<NotGroupMemberException> {
                 useCase(groupId, contribution)
-                fail("Expected NotGroupMemberException to be thrown")
-            } catch (e: NotGroupMemberException) {
-                assertTrue(e.groupId == groupId)
             }
+            assertTrue(exception.groupId == groupId)
         }
 
         @Test
@@ -143,12 +169,10 @@ class AddContributionUseCaseTest {
         fun `throws when amount is zero`() = runTest {
             val zeroContribution = contribution.copy(amount = 0L)
 
-            try {
+            val exception = assertThrows<IllegalArgumentException> {
                 useCase(groupId, zeroContribution)
-                fail("Expected IllegalArgumentException")
-            } catch (e: IllegalArgumentException) {
-                assertTrue(e.message!!.contains("AMOUNT_MUST_BE_POSITIVE"))
             }
+            assertTrue(exception.message!!.contains("AMOUNT_MUST_BE_POSITIVE"))
 
             coVerify(exactly = 0) { contributionRepository.addContribution(any(), any()) }
         }
@@ -157,12 +181,10 @@ class AddContributionUseCaseTest {
         fun `throws when amount is negative`() = runTest {
             val negativeContribution = contribution.copy(amount = -100L)
 
-            try {
+            val exception = assertThrows<IllegalArgumentException> {
                 useCase(groupId, negativeContribution)
-                fail("Expected IllegalArgumentException")
-            } catch (e: IllegalArgumentException) {
-                assertTrue(e.message!!.contains("AMOUNT_MUST_BE_POSITIVE"))
             }
+            assertTrue(exception.message!!.contains("AMOUNT_MUST_BE_POSITIVE"))
 
             coVerify(exactly = 0) { contributionRepository.addContribution(any(), any()) }
         }
@@ -227,12 +249,10 @@ class AddContributionUseCaseTest {
                 subunitId = "nonexistent-sub"
             )
 
-            try {
+            val exception = assertThrows<IllegalArgumentException> {
                 useCase(groupId, invalidContribution)
-                fail("Expected IllegalArgumentException")
-            } catch (e: IllegalArgumentException) {
-                assertTrue(e.message!!.contains("SUBUNIT_NOT_FOUND"))
             }
+            assertTrue(exception.message!!.contains("SUBUNIT_NOT_FOUND"))
 
             coVerify(exactly = 0) { contributionRepository.addContribution(any(), any()) }
         }
@@ -246,12 +266,10 @@ class AddContributionUseCaseTest {
                 subunitId = "sub-1"
             )
 
-            try {
+            val exception = assertThrows<IllegalArgumentException> {
                 useCase(groupId, subunitContribution)
-                fail("Expected IllegalArgumentException")
-            } catch (e: IllegalArgumentException) {
-                assertTrue(e.message!!.contains("USER_NOT_IN_SUBUNIT"))
             }
+            assertTrue(exception.message!!.contains("USER_NOT_IN_SUBUNIT"))
 
             coVerify(exactly = 0) { contributionRepository.addContribution(any(), any()) }
         }
@@ -317,12 +335,10 @@ class AddContributionUseCaseTest {
                 )
 
                 // When / Then
-                try {
+                val exception = assertThrows<IllegalArgumentException> {
                     useCase(groupId, subunitContribution)
-                    fail("Expected IllegalArgumentException")
-                } catch (e: IllegalArgumentException) {
-                    assertTrue(e.message!!.contains("USER_NOT_IN_SUBUNIT"))
                 }
+                assertTrue(exception.message!!.contains("USER_NOT_IN_SUBUNIT"))
 
                 coVerify(exactly = 0) { contributionRepository.addContribution(any(), any()) }
             }
@@ -341,13 +357,11 @@ class AddContributionUseCaseTest {
                 )
 
                 // When / Then
-                try {
+                val exception = assertThrows<NotGroupMemberException> {
                     useCase(groupId, subunitContribution)
-                    fail("Expected NotGroupMemberException")
-                } catch (e: NotGroupMemberException) {
-                    assertTrue(e.groupId == groupId)
-                    assertTrue(e.userId == targetUserId)
                 }
+                assertTrue(exception.groupId == groupId)
+                assertTrue(exception.userId == targetUserId)
 
                 coVerify(exactly = 0) { contributionRepository.addContribution(any(), any()) }
             }

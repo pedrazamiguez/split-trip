@@ -1,27 +1,31 @@
 package es.pedrazamiguez.splittrip.domain.usecase.expense
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.DeleteExpenseUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class DeleteExpenseUseCaseTest {
 
@@ -29,6 +33,7 @@ class DeleteExpenseUseCaseTest {
     private lateinit var cashWithdrawalRepository: CashWithdrawalRepository
     private lateinit var groupMembershipService: GroupMembershipService
     private lateinit var contributionRepository: ContributionRepository
+    private lateinit var groupRepository: GroupRepository
     private lateinit var useCase: DeleteExpenseUseCase
 
     @BeforeEach
@@ -37,13 +42,41 @@ class DeleteExpenseUseCaseTest {
         cashWithdrawalRepository = mockk(relaxed = true)
         groupMembershipService = mockk()
         contributionRepository = mockk(relaxed = true)
+        groupRepository = mockk()
+
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
+        coEvery { groupRepository.getGroupById(any()) } returns mockk {
+            every { status } returns GroupStatus.ACTIVE
+        }
+
         useCase = DeleteExpenseUseCaseImpl(
             expenseRepository,
             cashWithdrawalRepository,
             groupMembershipService,
-            contributionRepository
+            contributionRepository,
+            groupRepository
         )
+    }
+
+    // ── Group Archived validation ─────────────────────────────────────────────
+
+    @Nested
+    inner class GroupArchivedValidation {
+
+        @Test
+        fun `throws GroupArchivedException when group is archived`() = runTest {
+            // Given
+            val groupId = "group-123"
+            val expenseId = "expense-456"
+            coEvery { groupRepository.getGroupById(groupId) } returns mockk {
+                every { status } returns GroupStatus.ARCHIVED
+            }
+
+            // When / Then
+            assertThrows<GroupArchivedException> {
+                useCase(groupId, expenseId)
+            }
+        }
     }
 
     // ── Membership validation ─────────────────────────────────────────────────
@@ -61,12 +94,10 @@ class DeleteExpenseUseCaseTest {
             } throws NotGroupMemberException(groupId = groupId, userId = "user-123")
 
             // When / Then
-            try {
+            val exception = assertThrows<NotGroupMemberException> {
                 useCase(groupId, expenseId)
-                fail("Expected NotGroupMemberException to be thrown")
-            } catch (e: NotGroupMemberException) {
-                assertTrue(e.groupId == groupId)
             }
+            assertTrue(exception.groupId == groupId)
         }
 
         @Test
@@ -145,12 +176,10 @@ class DeleteExpenseUseCaseTest {
             coEvery { expenseRepository.deleteExpense(groupId, expenseId) } throws exception
 
             // When/Then
-            try {
+            val thrownException = assertThrows<RuntimeException> {
                 useCase(groupId, expenseId)
-                fail("Expected exception to be thrown")
-            } catch (e: RuntimeException) {
-                assertTrue(e.message == "Delete failed")
             }
+            assertTrue(thrownException.message == "Delete failed")
         }
     }
 

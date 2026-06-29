@@ -55,34 +55,36 @@ class ExpenseDetailScreenUiProviderImpl(
                 subtitle = expense?.categoryText?.takeIf { it.isNotEmpty() },
                 onBack = { navController.popBackStack() },
                 actions = {
-                    if (expense?.isCancelled == false) {
-                        IconButton(
-                            onClick = {
-                                if (expenseId != null) {
-                                    navController.navigate(Routes.editExpenseRoute(expenseId))
+                    if (!uiState.isGroupArchived) {
+                        if (expense?.isCancelled == false) {
+                            IconButton(
+                                onClick = {
+                                    if (expenseId != null) {
+                                        navController.navigate(Routes.editExpenseRoute(expenseId))
+                                    }
                                 }
+                            ) {
+                                Icon(
+                                    imageVector = TablerIcons.Outline.Edit,
+                                    contentDescription = stringResource(R.string.action_edit_expense)
+                                )
                             }
-                        ) {
+                        }
+                        if (expense?.isRefundable == true) {
+                            IconButton(onClick = { showCancelDialog = true }) {
+                                Icon(
+                                    imageVector = TablerIcons.Outline.ReceiptRefund,
+                                    contentDescription = stringResource(R.string.expense_detail_cancel_refund)
+                                )
+                            }
+                        }
+                        IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
-                                imageVector = TablerIcons.Outline.Edit,
-                                contentDescription = stringResource(R.string.action_edit_expense)
+                                imageVector = TablerIcons.Outline.Trash,
+                                contentDescription = stringResource(R.string.action_delete_expense),
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
-                    }
-                    if (expense?.isRefundable == true) {
-                        IconButton(onClick = { showCancelDialog = true }) {
-                            Icon(
-                                imageVector = TablerIcons.Outline.ReceiptRefund,
-                                contentDescription = stringResource(R.string.expense_detail_cancel_refund)
-                            )
-                        }
-                    }
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(
-                            imageVector = TablerIcons.Outline.Trash,
-                            contentDescription = stringResource(R.string.action_delete_expense),
-                            tint = MaterialTheme.colorScheme.error
-                        )
                     }
                 }
             )

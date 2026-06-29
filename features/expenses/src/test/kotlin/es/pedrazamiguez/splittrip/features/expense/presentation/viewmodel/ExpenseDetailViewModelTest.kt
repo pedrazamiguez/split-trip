@@ -1,11 +1,13 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -14,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
@@ -62,11 +65,20 @@ class ExpenseDetailViewModelTest {
     private lateinit var updateExpenseUseCase: UpdateExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var expenseDetailUiMapper: ExpenseDetailUiMapper
+    private lateinit var observeGroupUseCase: ObserveGroupUseCase
     private lateinit var viewModel: ExpenseDetailViewModel
 
     private val testExpenseId = "expense-123"
     private val testGroupId = "group-456"
     private val testUserId = "user-current"
+
+    private val testGroup = Group(
+        id = testGroupId,
+        name = "Summer Trip",
+        members = listOf(testUserId),
+        createdBy = testUserId,
+        status = GroupStatus.ACTIVE
+    )
 
     private val testExpense = Expense(
         id = testExpenseId,
@@ -118,9 +130,11 @@ class ExpenseDetailViewModelTest {
         updateExpenseUseCase = mockk()
         authenticationService = mockk()
         expenseDetailUiMapper = mockk()
+        observeGroupUseCase = mockk()
 
         every { getCashWithdrawalsFlowUseCase(any()) } returns flowOf(emptyList())
         coEvery { getGroupSubunitsUseCase(any()) } returns emptyList()
+        every { observeGroupUseCase(any()) } returns flowOf(testGroup)
 
         every { authenticationService.currentUserId() } returns testUserId
         coEvery { getMemberProfilesUseCase(any()) } returns mapOf(
@@ -694,6 +708,7 @@ class ExpenseDetailViewModelTest {
         downloadReceiptUseCase = downloadReceiptUseCase,
         updateExpenseUseCase = updateExpenseUseCase,
         authenticationService = authenticationService,
-        expenseDetailUiMapper = expenseDetailUiMapper
+        expenseDetailUiMapper = expenseDetailUiMapper,
+        observeGroupUseCase = observeGroupUseCase
     )
 }

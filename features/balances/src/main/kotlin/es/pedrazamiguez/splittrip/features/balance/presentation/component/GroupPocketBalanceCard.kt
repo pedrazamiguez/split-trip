@@ -23,6 +23,7 @@ fun GroupPocketBalanceCard(
     shouldAnimateBalance: Boolean = false,
     previousBalance: String = "",
     balanceRollingUp: Boolean = true,
+    isGroupArchived: Boolean = false,
     onBalanceAnimationComplete: () -> Unit = {},
     onAddMoney: () -> Unit = {},
     onWithdrawCash: () -> Unit = {},
@@ -56,12 +57,14 @@ fun GroupPocketBalanceCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
+            if (!isGroupArchived) {
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
-            BalanceCardActionButtons(
-                onAddMoney = onAddMoney,
-                onWithdrawCash = onWithdrawCash
-            )
+                BalanceCardActionButtons(
+                    onAddMoney = onAddMoney,
+                    onWithdrawCash = onWithdrawCash
+                )
+            }
         }
     }
 }

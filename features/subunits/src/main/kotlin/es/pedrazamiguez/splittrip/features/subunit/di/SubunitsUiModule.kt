@@ -6,6 +6,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContribut
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.SubunitShareDistributionService
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.CreateSubunitUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.DeleteSubunitUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -37,7 +39,8 @@ val subunitsUiModule = module {
             deleteSubunitUseCase = get<DeleteSubunitUseCase>(),
             getGroupByIdUseCase = get<GetGroupByIdUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
-            subunitUiMapper = get<SubunitUiMapper>()
+            subunitUiMapper = get<SubunitUiMapper>(),
+            observeGroupUseCase = get<ObserveGroupUseCase>()
         )
     }
 
@@ -54,6 +57,10 @@ val subunitsUiModule = module {
     }
 
     factory { SubunitsTabGraphContributorImpl() } bind TabGraphContributor::class
-    single { SubunitManagementScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single {
+        SubunitManagementScreenUiProviderImpl(
+            observeSelectedGroupUseCase = get<ObserveSelectedGroupUseCase>()
+        )
+    } bind ScreenUiProvider::class
     single { CreateEditSubunitScreenUiProviderImpl() } bind ScreenUiProvider::class
 }

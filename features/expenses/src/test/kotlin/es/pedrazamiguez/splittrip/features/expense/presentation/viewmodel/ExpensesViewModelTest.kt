@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -12,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
@@ -64,6 +66,7 @@ class ExpensesViewModelTest {
     private lateinit var getExpenseByIdFlowUseCase: GetExpenseByIdFlowUseCase
     private lateinit var updateExpenseUseCase: UpdateExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var observeGroupUseCase: ObserveGroupUseCase
     private lateinit var viewModel: ExpensesViewModel
 
     private val testGroupId = "group-123"
@@ -109,6 +112,7 @@ class ExpensesViewModelTest {
         getExpenseByIdFlowUseCase = mockk()
         updateExpenseUseCase = mockk()
         authenticationService = mockk()
+        observeGroupUseCase = mockk()
 
         // Default mock for group and member profiles
         coEvery { getGroupByIdUseCase(any()) } returns Group(
@@ -119,6 +123,15 @@ class ExpensesViewModelTest {
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
         every { getGroupContributionsFlowUseCase(any()) } returns flowOf(emptyList())
         every { getGroupSubunitsFlowUseCase(any()) } returns flowOf(emptyList())
+        every { observeGroupUseCase(any()) } returns flowOf(
+            Group(
+                id = testGroupId,
+                name = "Test Group",
+                currency = "EUR",
+                status = GroupStatus.ACTIVE
+            )
+        )
+        every { authenticationService.currentUserId() } returns "current-user-id"
         every { authenticationService.currentUserId() } returns "current-user-id"
 
         // Mock the mapper to return predictable grouped UI models
@@ -795,6 +808,7 @@ class ExpensesViewModelTest {
             updateExpenseUseCase = updateExpenseUseCase
         ),
         expenseUiMapper = expenseUiMapper,
-        authenticationService = authenticationService
+        authenticationService = authenticationService,
+        observeGroupUseCase = observeGroupUseCase
     )
 }

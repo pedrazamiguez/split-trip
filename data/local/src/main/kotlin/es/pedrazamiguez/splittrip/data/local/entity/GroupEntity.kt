@@ -20,5 +20,7 @@ data class GroupEntity(
     val mainImagePath: String?,
     val createdAtMillis: Long?,
     val lastUpdatedAtMillis: Long?,
-    val syncStatus: String = "SYNCED"
+    val syncStatus: String = "SYNCED",
+    val status: String = "ACTIVE",
+    val createdBy: String = ""
 )

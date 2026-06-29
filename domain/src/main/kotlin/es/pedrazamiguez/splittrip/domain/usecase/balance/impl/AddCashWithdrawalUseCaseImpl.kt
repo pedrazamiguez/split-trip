@@ -1,8 +1,11 @@
 package es.pedrazamiguez.splittrip.domain.usecase.balance.impl
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CashWithdrawalValidationService
@@ -14,11 +17,18 @@ class AddCashWithdrawalUseCaseImpl(
     private val validationService: CashWithdrawalValidationService,
     private val groupMembershipService: GroupMembershipService,
     private val subunitRepository: SubunitRepository,
-    private val authenticationService: AuthenticationService
+    private val authenticationService: AuthenticationService,
+    private val groupRepository: GroupRepository
 ) : AddCashWithdrawalUseCase {
 
     override suspend operator fun invoke(groupId: String?, withdrawal: CashWithdrawal): Result<Unit> = runCatching {
         require(!groupId.isNullOrBlank()) { "Group ID cannot be null or blank" }
+
+        val group = groupRepository.getGroupById(groupId)
+            ?: throw IllegalArgumentException("Group not found with id: $groupId")
+        if (group.status == GroupStatus.ARCHIVED) {
+            throw GroupArchivedException(groupId)
+        }
 
         groupMembershipService.requireMembership(groupId)
 

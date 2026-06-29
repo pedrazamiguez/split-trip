@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.di.domain
 
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
@@ -19,7 +20,8 @@ val contributionsDomainModule = module {
             groupMembershipService = get<GroupMembershipService>(),
             contributionValidationService = get<ContributionValidationService>(),
             subunitRepository = get<SubunitRepository>(),
-            authenticationService = get<AuthenticationService>()
+            authenticationService = get<AuthenticationService>(),
+            groupRepository = get<GroupRepository>()
         )
     }
 }

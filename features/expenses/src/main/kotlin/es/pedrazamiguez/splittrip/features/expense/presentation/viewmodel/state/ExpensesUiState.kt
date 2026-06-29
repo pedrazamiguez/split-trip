@@ -9,7 +9,8 @@ data class ExpensesUiState(
     val isLoading: Boolean = true,
     val scrollPosition: Int = 0,
     val scrollOffset: Int = 0,
-    val groupId: String? = null
+    val groupId: String? = null,
+    val isGroupArchived: Boolean = false
 ) {
     /** True when there are no expenses across all date groups. */
     val isEmpty: Boolean

@@ -9,8 +9,10 @@ import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtraItemUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.RawExtraItem
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.ScopeKey
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -201,11 +203,6 @@ private fun buildTypeBreakdown(
     }
     return result.toImmutableList()
 }
-
-private data class ScopeKey(
-    val label: String,
-    val type: PayerType
-)
 
 private fun PayerType.sortWeight(): Int = when (this) {
     PayerType.GROUP -> 0

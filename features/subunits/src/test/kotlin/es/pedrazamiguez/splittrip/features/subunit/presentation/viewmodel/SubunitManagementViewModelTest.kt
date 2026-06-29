@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.DeleteSubunitUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -23,7 +24,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -40,43 +40,44 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class SubunitManagementViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase
     private lateinit var deleteSubunitUseCase: DeleteSubunitUseCase
     private lateinit var getGroupByIdUseCase: GetGroupByIdUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var subunitUiMapper: SubunitUiMapper
+    private lateinit var observeGroupUseCase: ObserveGroupUseCase
     private lateinit var viewModel: SubunitManagementViewModel
 
     private val testGroup = Group(
         id = "group-1",
-        name = "Trip to Paris",
-        members = listOf("user-1", "user-2", "user-3")
+        name = "Group One",
+        members = listOf("user-1", "user-2"),
+        createdBy = "user-1"
+    )
+
+    private val testMemberProfiles = mapOf(
+        "user-1" to User("user-1", "alice@test.com", "Alice"),
+        "user-2" to User("user-2", "bob@test.com", "Bob")
     )
 
     private val testSubunit = Subunit(
         id = "sub-1",
         groupId = "group-1",
-        name = "Couple",
+        name = "Subunit One",
         memberIds = listOf("user-1", "user-2"),
-        memberShares = mapOf("user-1" to BigDecimal("0.5"), "user-2" to BigDecimal("0.5"))
+        memberShares = mapOf("user-1" to BigDecimal("0.6"), "user-2" to BigDecimal("0.4"))
     )
 
     private val testSubunitUiModel = SubunitUiModel(
         id = "sub-1",
-        name = "Couple",
+        name = "Subunit One",
         memberShares = persistentListOf(
-            MemberShareUiModel(displayName = "Alice", shareText = "50%"),
-            MemberShareUiModel(displayName = "Bob", shareText = "50%")
+            MemberShareUiModel("Alice", "60%"),
+            MemberShareUiModel("Bob", "40%")
         ),
         memberCount = "2 members"
-    )
-
-    private val testMemberProfiles = mapOf(
-        "user-1" to User(userId = "user-1", email = "alice@test.com", displayName = "Alice"),
-        "user-2" to User(userId = "user-2", email = "bob@test.com", displayName = "Bob"),
-        "user-3" to User(userId = "user-3", email = "charlie@test.com", displayName = "Charlie")
     )
 
     @BeforeEach
@@ -87,6 +88,7 @@ class SubunitManagementViewModelTest {
         getGroupByIdUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         subunitUiMapper = mockk()
+        observeGroupUseCase = mockk()
     }
 
     @AfterEach
@@ -100,7 +102,8 @@ class SubunitManagementViewModelTest {
             deleteSubunitUseCase = deleteSubunitUseCase,
             getGroupByIdUseCase = getGroupByIdUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
-            subunitUiMapper = subunitUiMapper
+            subunitUiMapper = subunitUiMapper,
+            observeGroupUseCase = observeGroupUseCase
         )
     }
 
@@ -108,6 +111,7 @@ class SubunitManagementViewModelTest {
         coEvery { getGroupByIdUseCase("group-1") } returns testGroup
         coEvery { getMemberProfilesUseCase(testGroup.members) } returns testMemberProfiles
         every { getGroupSubunitsFlowUseCase("group-1") } returns flowOf(subunits)
+        every { observeGroupUseCase("group-1") } returns flowOf(testGroup)
         every {
             subunitUiMapper.toSubunitUiModelList(any(), any())
         } returns listOf(testSubunitUiModel).toImmutableList()
@@ -139,9 +143,9 @@ class SubunitManagementViewModelTest {
             val state = viewModel.uiState.value
             assertFalse(state.isLoading)
             assertEquals("group-1", state.groupId)
-            assertEquals("Trip to Paris", state.groupName)
+            assertEquals("Group One", state.groupName)
             assertEquals(1, state.subunits.size)
-            assertEquals("Couple", state.subunits[0].name)
+            assertEquals("Subunit One", state.subunits[0].name)
 
             collectJob.cancel()
         }

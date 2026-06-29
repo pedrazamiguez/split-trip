@@ -115,6 +115,15 @@
     <string name="receipt_attach_document">Attach document</string>
     <string name="camera_permission_required">Camera permission is required to take photos.</string>
 
+    <!-- Trip Closure -->
+    <string name="group_error_archived">This trip is archived and cannot be modified.</string>
+    <string name="group_detail_end_trip">End Trip</string>
+    <string name="group_detail_end_trip_title">End Trip?</string>
+    <string name="group_detail_end_trip_message">Are you sure you want to end this trip? This will lock all expenses, contributions, and withdrawals, making the group read-only.</string>
+    <string name="group_detail_end_trip_confirm">End Trip</string>
+    <string name="group_detail_archived_label">Archived</string>
+    <string name="group_error_archiving_failed">Failed to archive the trip. Please try again.</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

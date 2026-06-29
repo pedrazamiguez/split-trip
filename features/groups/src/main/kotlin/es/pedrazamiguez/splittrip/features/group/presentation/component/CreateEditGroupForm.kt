@@ -24,7 +24,7 @@ fun CreateEditGroupForm(
     onScannerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val orderedLabels = rememberGroupStepLabels(uiState.steps)
+    val orderedLabels = RememberGroupStepLabels(uiState.steps)
     val bottomPadding = LocalBottomPadding.current
 
     Box(modifier = modifier.fillMaxSize()) {

@@ -1,27 +1,32 @@
 package es.pedrazamiguez.splittrip.domain.usecase.subunit
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.impl.DeleteSubunitUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 @DisplayName("DeleteSubunitUseCase")
 class DeleteSubunitUseCaseTest {
 
     private lateinit var subunitRepository: SubunitRepository
     private lateinit var groupMembershipService: GroupMembershipService
+    private lateinit var groupRepository: GroupRepository
     private lateinit var useCase: DeleteSubunitUseCase
 
     private val groupId = "group-123"
@@ -31,13 +36,36 @@ class DeleteSubunitUseCaseTest {
     fun setUp() {
         subunitRepository = mockk(relaxed = true)
         groupMembershipService = mockk()
+        groupRepository = mockk()
 
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
+        coEvery { groupRepository.getGroupById(any()) } returns mockk {
+            every { status } returns GroupStatus.ACTIVE
+        }
 
         useCase = DeleteSubunitUseCaseImpl(
             subunitRepository = subunitRepository,
-            groupMembershipService = groupMembershipService
+            groupMembershipService = groupMembershipService,
+            groupRepository = groupRepository
         )
+    }
+
+    // ── Group Archived validation ─────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Group Archived validation")
+    inner class GroupArchivedValidation {
+
+        @Test
+        fun `fails when group is archived`() = runTest {
+            coEvery { groupRepository.getGroupById(groupId) } returns mockk {
+                every { status } returns GroupStatus.ARCHIVED
+            }
+
+            assertThrows<GroupArchivedException> {
+                useCase(groupId, subunitId)
+            }
+        }
     }
 
     // ── Membership validation ─────────────────────────────────────────────────
@@ -54,12 +82,10 @@ class DeleteSubunitUseCaseTest {
             } throws NotGroupMemberException(groupId = groupId, userId = "user-123")
 
             // When / Then
-            try {
+            val exception = assertThrows<NotGroupMemberException> {
                 useCase(groupId, subunitId)
-                fail("Expected NotGroupMemberException to be thrown")
-            } catch (e: NotGroupMemberException) {
-                assertTrue(e.groupId == groupId)
             }
+            assertTrue(exception.groupId == groupId)
         }
 
         @Test
@@ -122,12 +148,10 @@ class DeleteSubunitUseCaseTest {
             } throws RuntimeException("DB error")
 
             // When / Then
-            try {
+            val exception = assertThrows<RuntimeException> {
                 useCase(groupId, subunitId)
-                fail("Expected RuntimeException to be thrown")
-            } catch (e: RuntimeException) {
-                assertTrue(e.message == "DB error")
             }
+            assertTrue(exception.message == "DB error")
         }
     }
 }

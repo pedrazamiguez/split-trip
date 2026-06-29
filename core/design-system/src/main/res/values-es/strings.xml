@@ -115,6 +115,15 @@
     <string name="receipt_attach_document">Adjuntar documento</string>
     <string name="camera_permission_required">Se requiere el permiso de cámara para tomar fotos.</string>
 
+    <!-- Trip Closure -->
+    <string name="group_error_archived">Este viaje está archivado y no se puede modificar.</string>
+    <string name="group_detail_end_trip">Finalizar viaje</string>
+    <string name="group_detail_end_trip_title">¿Finalizar viaje?</string>
+    <string name="group_detail_end_trip_message">¿Estás seguro de que quieres finalizar este viaje? Esto bloqueará todos los gastos, aportaciones y retiros, haciendo que el grupo sea de solo lectura.</string>
+    <string name="group_detail_end_trip_confirm">Finalizar viaje</string>
+    <string name="group_detail_archived_label">Archivado</string>
+    <string name="group_error_archiving_failed">Error al archivar el viaje. Por favor, inténtalo de nuevo.</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>
