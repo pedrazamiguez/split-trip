@@ -7,7 +7,7 @@ import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupStep
 
 @Composable
-internal fun rememberGroupStepLabels(steps: List<CreateEditGroupStep>): List<String> {
+internal fun RememberGroupStepLabels(steps: List<CreateEditGroupStep>): List<String> {
     val infoLabel = stringResource(R.string.group_wizard_step_info)
     val currencyLabel = stringResource(R.string.group_wizard_step_currency)
     val membersLabel = stringResource(R.string.group_wizard_step_members)

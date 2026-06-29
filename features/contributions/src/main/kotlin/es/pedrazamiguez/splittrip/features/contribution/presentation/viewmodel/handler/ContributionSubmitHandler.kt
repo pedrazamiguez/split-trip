@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AddContributionUseCase
@@ -111,13 +113,13 @@ class ContributionSubmitHandler(
             onSuccess()
         } catch (e: CancellationException) {
             throw e
-        } catch (e: es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException) {
+        } catch (e: GroupArchivedException) {
             Timber.e(e, "Group is archived, cannot add contribution")
             _uiState.update { it.copy(isLoading = false) }
             _actions.emit(
                 AddContributionUiAction.ShowError(
                     UiText.StringResource(
-                        es.pedrazamiguez.splittrip.core.designsystem.R.string.group_error_archived
+                        DesignSystemR.string.group_error_archived
                     )
                 )
             )

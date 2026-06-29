@@ -1,9 +1,11 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
@@ -86,11 +88,11 @@ class SubmitResultDelegate(
         uiState.update { it.copy(isLoading = false, error = null) }
 
         when (error) {
-            is es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException -> {
+            is GroupArchivedException -> {
                 actionsFlow.emit(
                     AddExpenseUiAction.ShowError(
                         UiText.StringResource(
-                            es.pedrazamiguez.splittrip.core.designsystem.R.string.group_error_archived
+                            DesignSystemR.string.group_error_archived
                         )
                     )
                 )

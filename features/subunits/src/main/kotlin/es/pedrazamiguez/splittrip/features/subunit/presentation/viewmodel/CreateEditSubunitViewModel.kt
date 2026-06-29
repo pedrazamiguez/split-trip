@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.ValidationException
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.SubunitShareDistributionService
@@ -400,9 +402,9 @@ class CreateEditSubunitViewModel(
                     _formState.update { it.copy(isSaving = false) }
 
                     val errorMessage = when (error) {
-                        is es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException -> {
+                        is GroupArchivedException -> {
                             UiText.StringResource(
-                                es.pedrazamiguez.splittrip.core.designsystem.R.string.group_error_archived
+                                DesignSystemR.string.group_error_archived
                             )
                         }
                         is ValidationException -> {

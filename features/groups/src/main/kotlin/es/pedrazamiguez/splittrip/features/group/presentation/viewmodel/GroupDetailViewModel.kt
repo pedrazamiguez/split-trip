@@ -147,7 +147,7 @@ class GroupDetailViewModel(
                         onSuccess = {
                             _localUiState.update { it.copy(isArchiving = false) }
                         },
-                        onFailure = { error ->
+                        onFailure = { _ ->
                             _localUiState.update { it.copy(isArchiving = false) }
                             _actions.send(
                                 GroupDetailUiAction.ShowError(
