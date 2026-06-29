@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.GroupDetailUiAction
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.GroupDetailUiEvent
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -402,5 +403,84 @@ class GroupDetailViewModelTest {
                 actionsJob.cancel()
                 collectJob.cancel()
             }
+    }
+
+    @Nested
+    inner class ArchiveFlow {
+
+        @Test
+        fun `ArchiveClicked event updates state to show archive confirmation`() = runTest(testDispatcher) {
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            viewModel.onEvent(GroupDetailUiEvent.ArchiveClicked)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.showArchiveConfirmation)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ArchiveCancelled event updates state to hide archive confirmation`() = runTest(testDispatcher) {
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            viewModel.onEvent(GroupDetailUiEvent.ArchiveClicked)
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.showArchiveConfirmation)
+
+            viewModel.onEvent(GroupDetailUiEvent.ArchiveCancelled)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.showArchiveConfirmation)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ArchiveConfirmed event success path archives group and updates state`() = runTest(testDispatcher) {
+            coEvery { archiveGroupUseCase(testGroupId) } returns Result.success(Unit)
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            viewModel.onEvent(GroupDetailUiEvent.ArchiveConfirmed)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertFalse(state.showArchiveConfirmation)
+            assertFalse(state.isArchiving)
+            coVerify(exactly = 1) { archiveGroupUseCase(testGroupId) }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ArchiveConfirmed event failure path emits ShowError action and updates state`() = runTest(testDispatcher) {
+            coEvery { archiveGroupUseCase(testGroupId) } returns Result.failure(Exception("Archive failed"))
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupDetailUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            viewModel.onEvent(GroupDetailUiEvent.ArchiveConfirmed)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertFalse(state.showArchiveConfirmation)
+            assertFalse(state.isArchiving)
+            assertTrue(actions.any { it is GroupDetailUiAction.ShowError })
+            coVerify(exactly = 1) { archiveGroupUseCase(testGroupId) }
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
     }
 }

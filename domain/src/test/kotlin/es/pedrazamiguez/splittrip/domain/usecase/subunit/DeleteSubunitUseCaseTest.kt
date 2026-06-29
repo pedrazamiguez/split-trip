@@ -15,11 +15,11 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 @DisplayName("DeleteSubunitUseCase")
 class DeleteSubunitUseCaseTest {
@@ -62,11 +62,8 @@ class DeleteSubunitUseCaseTest {
                 every { status } returns GroupStatus.ARCHIVED
             }
 
-            try {
+            assertThrows<GroupArchivedException> {
                 useCase(groupId, subunitId)
-                fail("Expected GroupArchivedException to be thrown")
-            } catch (e: GroupArchivedException) {
-                // Expected
             }
         }
     }
@@ -85,12 +82,10 @@ class DeleteSubunitUseCaseTest {
             } throws NotGroupMemberException(groupId = groupId, userId = "user-123")
 
             // When / Then
-            try {
+            val exception = assertThrows<NotGroupMemberException> {
                 useCase(groupId, subunitId)
-                fail("Expected NotGroupMemberException to be thrown")
-            } catch (e: NotGroupMemberException) {
-                assertTrue(e.groupId == groupId)
             }
+            assertTrue(exception.groupId == groupId)
         }
 
         @Test
@@ -153,12 +148,10 @@ class DeleteSubunitUseCaseTest {
             } throws RuntimeException("DB error")
 
             // When / Then
-            try {
+            val exception = assertThrows<RuntimeException> {
                 useCase(groupId, subunitId)
-                fail("Expected RuntimeException to be thrown")
-            } catch (e: RuntimeException) {
-                assertTrue(e.message == "DB error")
             }
+            assertTrue(exception.message == "DB error")
         }
     }
 }

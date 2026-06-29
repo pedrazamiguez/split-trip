@@ -22,10 +22,10 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class DeleteExpenseUseCaseTest {
 
@@ -73,11 +73,8 @@ class DeleteExpenseUseCaseTest {
             }
 
             // When / Then
-            try {
+            assertThrows<GroupArchivedException> {
                 useCase(groupId, expenseId)
-                fail("Expected GroupArchivedException to be thrown")
-            } catch (e: GroupArchivedException) {
-                // Expected
             }
         }
     }
@@ -97,12 +94,10 @@ class DeleteExpenseUseCaseTest {
             } throws NotGroupMemberException(groupId = groupId, userId = "user-123")
 
             // When / Then
-            try {
+            val exception = assertThrows<NotGroupMemberException> {
                 useCase(groupId, expenseId)
-                fail("Expected NotGroupMemberException to be thrown")
-            } catch (e: NotGroupMemberException) {
-                assertTrue(e.groupId == groupId)
             }
+            assertTrue(exception.groupId == groupId)
         }
 
         @Test
@@ -181,12 +176,10 @@ class DeleteExpenseUseCaseTest {
             coEvery { expenseRepository.deleteExpense(groupId, expenseId) } throws exception
 
             // When/Then
-            try {
+            val thrownException = assertThrows<RuntimeException> {
                 useCase(groupId, expenseId)
-                fail("Expected exception to be thrown")
-            } catch (e: RuntimeException) {
-                assertTrue(e.message == "Delete failed")
             }
+            assertTrue(thrownException.message == "Delete failed")
         }
     }
 

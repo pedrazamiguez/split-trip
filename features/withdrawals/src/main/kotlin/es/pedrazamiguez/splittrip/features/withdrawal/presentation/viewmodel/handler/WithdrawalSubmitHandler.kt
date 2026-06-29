@@ -90,6 +90,7 @@ class WithdrawalSubmitHandler(
                 addCashWithdrawalUseCase(groupId, withdrawal).getOrThrow()
                 onSuccess()
             } catch (e: es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException) {
+                Timber.e(e, "Group is archived, cannot add cash withdrawal")
                 _uiState.update { it.copy(isLoading = false) }
                 _actions.emit(
                     AddCashWithdrawalUiAction.ShowError(

@@ -54,6 +54,7 @@ import timber.log.Timber
  * Feature can navigate back.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LongParameterList")
 class ExpenseDetailViewModel(
     private val getExpenseByIdFlowUseCase: GetExpenseByIdFlowUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,

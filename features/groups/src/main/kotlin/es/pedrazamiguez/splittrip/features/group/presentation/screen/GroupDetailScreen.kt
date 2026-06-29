@@ -52,7 +52,7 @@ private val CONTENT_HORIZONTAL_PADDING = 16.dp
 private val SECTION_VERTICAL_SPACING = 16.dp
 private val SECTION_LABEL_ICON_SIZE = 16.dp
 
-@Suppress("LongMethod", "CognitiveComplexMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod", "CyclomaticComplexMethod")
 @Composable
 fun GroupDetailScreen(
     uiState: GroupDetailUiState = GroupDetailUiState(),

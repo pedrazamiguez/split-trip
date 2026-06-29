@@ -93,15 +93,12 @@
     <string name="receipt_attach_gallery">Elehîh de galería</string>
     <string name="receipt_attach_document">Âhhuntâh documento</string>
     <string name="camera_permission_required">Çe requiere er permiço de cámara pa tomâh fotô.</string>
-
-    <!-- Trip Closure -->
-    <string name="group_error_archived">Ette biahe ettá arxibao y no çe pue modi-ficâh.</string>
+    <string name="group_error_archived">Êtte biahe êttá arxibao y no çe puede modificâh.</string>
     <string name="group_detail_end_trip">Finaliçâh biahe</string>
     <string name="group_detail_end_trip_title">¿Finaliçâh biahe?</string>
-    <string name="group_detail_end_trip_message">¿Ettâh çeguro de que quiêh finaliçâh ette biahe? Etto bloqueará toôh lôh gattô, aportaçionêh y retirô, haçiendo que el grupo çea de çolo lêt-tura.</string>
+    <string name="group_detail_end_trip_message">¿Êttâh çeguro de que quierê finaliçâh êtte biahe? Êtto bloqueará tôh lô gâttô, aportaçionê y retirô, açiendo que er grupo çea de çolo lêttura.</string>
     <string name="group_detail_end_trip_confirm">Finaliçâh biahe</string>
     <string name="group_detail_archived_label">Arxibao</string>
     <string name="group_error_archiving_failed">Errôh al arxibâh er biahe. Por fabôh, inténtalo de nuebo.</string>
-
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>
