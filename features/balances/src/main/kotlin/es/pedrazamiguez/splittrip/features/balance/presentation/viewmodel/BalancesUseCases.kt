@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowU
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupPocketBalanceFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
@@ -31,5 +32,6 @@ data class BalancesUseCases(
     val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     val deleteContributionUseCase: DeleteContributionUseCase,
     val deleteCashWithdrawalUseCase: DeleteCashWithdrawalUseCase,
-    val observeGroupUseCase: ObserveGroupUseCase
+    val observeGroupUseCase: ObserveGroupUseCase,
+    val getSettlementSuggestionsUseCase: GetSettlementSuggestionsUseCase
 )

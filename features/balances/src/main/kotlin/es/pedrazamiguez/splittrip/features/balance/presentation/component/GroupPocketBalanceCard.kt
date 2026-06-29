@@ -9,9 +9,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BuildingBank
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 
 private val CARD_SHADOW_ELEVATION = 8.dp
@@ -27,7 +32,8 @@ fun GroupPocketBalanceCard(
     onBalanceAnimationComplete: () -> Unit = {},
     onAddMoney: () -> Unit = {},
     onWithdrawCash: () -> Unit = {},
-    onShowExtrasBreakdown: () -> Unit = {}
+    onShowExtrasBreakdown: () -> Unit = {},
+    onSimplifyDebts: () -> Unit = {}
 ) {
     FlatCard(modifier = modifier.fillMaxWidth(), elevation = CARD_SHADOW_ELEVATION) {
         Column(
@@ -63,6 +69,15 @@ fun GroupPocketBalanceCard(
                 BalanceCardActionButtons(
                     onAddMoney = onAddMoney,
                     onWithdrawCash = onWithdrawCash
+                )
+            } else {
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
+
+                GradientButton(
+                    text = stringResource(R.string.balances_simplify_debts),
+                    onClick = onSimplifyDebts,
+                    leadingIcon = TablerIcons.Outline.BuildingBank,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

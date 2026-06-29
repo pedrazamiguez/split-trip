@@ -133,6 +133,14 @@ class BalancesViewModel(
                     }.toList()
                     val memberProfiles = useCases.getMemberProfilesUseCase(allUserIds)
 
+                    val settlements = useCases.getSettlementSuggestionsUseCase(memberBalances)
+                    val mappedSettlements = balancesUiMapper.mapSettlements(
+                        settlements = settlements,
+                        currency = currency,
+                        currentUserId = currentUserId ?: "",
+                        memberProfiles = memberProfiles
+                    )
+
                     val mappedBalance = balancesUiMapper.mapBalance(balance, groupName)
                     val formattedBalance = mappedBalance.formattedBalance
                     val currentCents = balance.virtualBalance
@@ -190,7 +198,8 @@ class BalancesViewModel(
                         shouldAnimateBalance = formattedBalance.isNotBlank() &&
                             formattedBalance != lastSeen,
                         previousBalance = lastSeen ?: "",
-                        balanceRollingUp = previousCents == null || currentCents >= previousCents
+                        balanceRollingUp = previousCents == null || currentCents >= previousCents,
+                        settlements = mappedSettlements
                     )
                 }
                     .catch { e ->

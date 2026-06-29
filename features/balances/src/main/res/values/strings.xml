@@ -111,5 +111,14 @@
     <!-- Main Action -->
     <string name="balances_filter">Filter balances</string>
 
+    <!-- Debt Simplification -->
+    <string name="balances_simplify_debts">Simplify Debts</string>
+    <string name="balances_settlements_title">Suggested Settlements</string>
+    <string name="balances_settlements_subtitle">Recommended peer-to-peer payments to settle the group account.</string>
+    <string name="balances_settlements_empty">All debts are settled! No transactions needed.</string>
+    <string name="balances_settlement_pay">You pay</string>
+    <string name="balances_settlement_receive">You receive</string>
+    <string name="balances_settlements_dismiss">Understood</string>
+
 </resources>
 
