@@ -61,7 +61,8 @@ fun BalancesFeature(
                 isLoading = true,
                 contributions = persistentListOf(),
                 cashWithdrawals = persistentListOf(),
-                memberBalances = persistentListOf()
+                memberBalances = persistentListOf(),
+                settlements = persistentListOf()
             )
         } else {
             uiState

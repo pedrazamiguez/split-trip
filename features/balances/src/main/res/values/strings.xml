@@ -111,5 +111,10 @@
     <!-- Main Action -->
     <string name="balances_filter">Filter balances</string>
 
+    <!-- Debt Simplification -->
+    <string name="balances_simplify_debts">Simplify Debts</string>
+    <string name="balances_settlements_title">Suggested Settlements</string>
+    <string name="balances_settlements_empty">All debts are settled! No transactions needed.</string>
+
 </resources>
 

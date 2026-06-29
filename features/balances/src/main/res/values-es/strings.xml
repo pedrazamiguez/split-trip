@@ -110,5 +110,10 @@
     <!-- Main Action -->
     <string name="balances_filter">Filtrar saldos</string>
 
+    <!-- Simplificación de Deudas -->
+    <string name="balances_simplify_debts">Simplificar deudas</string>
+    <string name="balances_settlements_title">Liquidaciones sugeridas</string>
+    <string name="balances_settlements_empty">¡Todas las deudas están liquidadas! No se necesitan transacciones.</string>
+
 </resources>
 

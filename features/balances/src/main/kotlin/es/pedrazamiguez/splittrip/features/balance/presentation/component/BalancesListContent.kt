@@ -40,7 +40,8 @@ internal fun BalancesListContent(
     onEvent: (BalancesUiEvent) -> Unit,
     onNavigateToContribution: () -> Unit,
     onNavigateToWithdrawal: () -> Unit,
-    onShowExtrasBreakdown: () -> Unit
+    onShowExtrasBreakdown: () -> Unit,
+    onSimplifyDebts: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -90,7 +91,8 @@ internal fun BalancesListContent(
                 onBalanceAnimationComplete = { onEvent(BalancesUiEvent.BalanceAnimationComplete) },
                 onAddMoney = onNavigateToContribution,
                 onWithdrawCash = onNavigateToWithdrawal,
-                onShowExtrasBreakdown = onShowExtrasBreakdown
+                onShowExtrasBreakdown = onShowExtrasBreakdown,
+                onSimplifyDebts = onSimplifyDebts
             )
         }
         memberBalancesSection(uiState.memberBalances)
