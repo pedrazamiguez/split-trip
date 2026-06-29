@@ -2,7 +2,9 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -30,7 +33,7 @@ fun SettlementsBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         dragHandle = null,
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(
             modifier = Modifier
@@ -44,9 +47,17 @@ fun SettlementsBottomSheet(
                 )
         ) {
             SheetTitleText(
-                text = stringResource(R.string.balances_settlements_title),
-                modifier = Modifier.padding(bottom = MaterialTheme.spacing.Default)
+                text = stringResource(R.string.balances_settlements_title)
             )
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+
+            BodyText(
+                text = stringResource(R.string.balances_settlements_subtitle),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Large))
 
             if (settlements.isEmpty()) {
                 BodyText(
@@ -62,6 +73,14 @@ fun SettlementsBottomSheet(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
+
+            GradientButton(
+                text = stringResource(R.string.balances_settlements_dismiss),
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

@@ -88,5 +88,9 @@
     <string name="balances_filter">Firtrâh çardô</string>
     <string name="balances_simplify_debts">Çimplificâh deudâ</string>
     <string name="balances_settlements_title">Liquidaçionê çuheridâ</string>
+    <string name="balances_settlements_subtitle">Pagô recomendáô entre miembrô pa çardâh lâ cuentâ der grupo.</string>
     <string name="balances_settlements_empty">¡Toâ lâ deudâ êttán liquidâh! No çe neçeçitan trançâççionê.</string>
+    <string name="balances_settlement_pay">Pagâ</string>
+    <string name="balances_settlement_receive">Reçibê</string>
+    <string name="balances_settlements_dismiss">Entendío</string>
 </resources>

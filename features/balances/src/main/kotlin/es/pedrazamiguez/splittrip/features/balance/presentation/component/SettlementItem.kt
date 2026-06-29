@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,48 +29,57 @@ fun SettlementItem(
 
     FlatCard(
         modifier = modifier.fillMaxWidth(),
-        color = getCardColor(isInvolved, colorScheme.primaryContainer, colorScheme.surfaceVariant)
+        color = getCardColor(isInvolved, colorScheme.surfaceContainerLowest, colorScheme.surfaceContainer)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(MaterialTheme.spacing.Medium),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
+            if (isInvolved) {
+                SettlementItemBadge(isDebtor = settlement.isCurrentUserDebtor)
+            }
+
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = settlement.debtorName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = getFontWeight(settlement.isCurrentUserDebtor),
-                    color = getDebtorColor(settlement.isCurrentUserDebtor, colorScheme.error, colorScheme.onSurface)
-                )
-                Icon(
-                    imageVector = TablerIcons.Outline.ArrowRight,
-                    contentDescription = null,
-                    tint = colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = settlement.creditorName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = getFontWeight(settlement.isCurrentUserCreditor),
-                    color = getCreditorColor(
-                        settlement.isCurrentUserCreditor,
-                        colorScheme.primary,
-                        colorScheme.onSurface
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = settlement.debtorName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = getFontWeight(settlement.isCurrentUserDebtor),
+                        color = getDebtorColor(settlement.isCurrentUserDebtor, colorScheme.error, colorScheme.onSurface)
                     )
+                    Icon(
+                        imageVector = TablerIcons.Outline.ArrowRight,
+                        contentDescription = null,
+                        tint = colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = settlement.creditorName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = getFontWeight(settlement.isCurrentUserCreditor),
+                        color = getCreditorColor(
+                            settlement.isCurrentUserCreditor,
+                            colorScheme.primary,
+                            colorScheme.onSurface
+                        )
+                    )
+                }
+                Text(
+                    text = settlement.formattedAmount,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = colorScheme.onSurface
                 )
             }
-            Text(
-                text = settlement.formattedAmount,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = colorScheme.onSurface
-            )
         }
     }
 }

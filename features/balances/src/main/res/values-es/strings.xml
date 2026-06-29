@@ -113,7 +113,11 @@
     <!-- Simplificación de Deudas -->
     <string name="balances_simplify_debts">Simplificar deudas</string>
     <string name="balances_settlements_title">Liquidaciones sugeridas</string>
+    <string name="balances_settlements_subtitle">Pagos recomendados entre miembros para saldar las cuentas del grupo.</string>
     <string name="balances_settlements_empty">¡Todas las deudas están liquidadas! No se necesitan transacciones.</string>
+    <string name="balances_settlement_pay">Pagas</string>
+    <string name="balances_settlement_receive">Recibes</string>
+    <string name="balances_settlements_dismiss">Entendido</string>
 
 </resources>
 
