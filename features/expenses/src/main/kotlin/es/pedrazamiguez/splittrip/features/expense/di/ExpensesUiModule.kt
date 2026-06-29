@@ -36,6 +36,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUse
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
@@ -141,13 +143,16 @@ val expensesUiModule = module {
             getGroupByIdUseCase = get<GetGroupByIdUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             getGroupContributionsFlowUseCase = get<GetGroupContributionsFlowUseCase>(),
-            getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>()
+            getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>(),
+            getExpenseByIdFlowUseCase = get<GetExpenseByIdFlowUseCase>(),
+            updateExpenseUseCase = get<UpdateExpenseUseCase>()
         )
 
         ExpensesViewModel(
             useCases = expensesUseCases,
             expenseUiMapper = get<ExpenseUiMapper>(),
-            authenticationService = get<AuthenticationService>()
+            authenticationService = get<AuthenticationService>(),
+            observeGroupUseCase = get<ObserveGroupUseCase>()
         )
     }
 
@@ -312,7 +317,9 @@ val expensesUiModule = module {
     factory { ExpensesNavigationProviderImpl() } bind NavigationProvider::class
 
     single {
-        ExpensesScreenUiProviderImpl()
+        ExpensesScreenUiProviderImpl(
+            observeSelectedGroupUseCase = get<ObserveSelectedGroupUseCase>()
+        )
     } bind ScreenUiProvider::class
     single(named("addExpenseProvider")) { AddExpenseScreenUiProviderImpl(Routes.ADD_EXPENSE) } bind
         ScreenUiProvider::class
@@ -340,8 +347,10 @@ val expensesUiModule = module {
             getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),
             deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
             downloadReceiptUseCase = get<DownloadReceiptUseCase>(),
+            updateExpenseUseCase = get<UpdateExpenseUseCase>(),
             authenticationService = get<AuthenticationService>(),
-            expenseDetailUiMapper = get<ExpenseDetailUiMapper>()
+            expenseDetailUiMapper = get<ExpenseDetailUiMapper>(),
+            observeGroupUseCase = get<ObserveGroupUseCase>()
         )
     }
 }

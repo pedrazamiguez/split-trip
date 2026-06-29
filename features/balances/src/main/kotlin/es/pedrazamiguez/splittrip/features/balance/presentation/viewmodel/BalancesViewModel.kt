@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -70,6 +71,7 @@ class BalancesViewModel(
         _selectedGroupId
             .filterNotNull()
             .flatMapLatest { groupId ->
+                val groupFlow = useCases.observeGroupUseCase(groupId)
                 val group = useCases.getGroupByIdUseCase(groupId)
                 val currency = group?.currency ?: appConfigService.defaultCurrencyCode.value
                 val groupName = group?.name ?: ""
@@ -82,10 +84,6 @@ class BalancesViewModel(
                 // Nested combine: inner combines 5 data flows into DataSnapshot (debounced
                 // to absorb rapid Firestore reconciliation bursts), outer pairs with
                 // lastSeenBalance for balance animation logic.
-                // Expenses are collected here and passed to computeMemberBalances()
-                // to avoid duplicate Firestore snapshot listeners.
-                // Issue #1012: revisit @DatabaseView if EXPLAIN QUERY PLAN shows
-                //  full-scan on expense_splits at 500+ expenses
                 combine(
                     combine(
                         useCases.getGroupPocketBalanceFlowUseCase(groupId, currency),
@@ -101,8 +99,10 @@ class BalancesViewModel(
                         // the CPU-bound computeMemberBalances() runs once per logical batch rather
                         // than once per individual table write.
                         .debounce { appConfigService.balanceComputationDebounceMs.value },
-                    _lastSeenBalance
-                ) { snapshot, lastSeen ->
+                    _lastSeenBalance,
+                    groupFlow
+                ) { snapshot, lastSeen, reactiveGroup ->
+                    val isArchived = reactiveGroup?.status == GroupStatus.ARCHIVED
                     val balance = snapshot.balance
                     val contributions = snapshot.contributions
                     val withdrawals = snapshot.withdrawals
@@ -133,6 +133,14 @@ class BalancesViewModel(
                     }.toList()
                     val memberProfiles = useCases.getMemberProfilesUseCase(allUserIds)
 
+                    val settlements = useCases.getSettlementSuggestionsUseCase(memberBalances)
+                    val mappedSettlements = balancesUiMapper.mapSettlements(
+                        settlements = settlements,
+                        currency = currency,
+                        currentUserId = currentUserId ?: "",
+                        memberProfiles = memberProfiles
+                    )
+
                     val mappedBalance = balancesUiMapper.mapBalance(balance, groupName)
                     val formattedBalance = mappedBalance.formattedBalance
                     val currentCents = balance.virtualBalance
@@ -144,6 +152,7 @@ class BalancesViewModel(
                     BalancesUiState(
                         isLoading = false,
                         groupId = groupId,
+                        isGroupArchived = isArchived,
                         pocketBalance = mappedBalance,
                         contributions = balancesUiMapper.mapContributions(
                             contributions,
@@ -189,7 +198,8 @@ class BalancesViewModel(
                         shouldAnimateBalance = formattedBalance.isNotBlank() &&
                             formattedBalance != lastSeen,
                         previousBalance = lastSeen ?: "",
-                        balanceRollingUp = previousCents == null || currentCents >= previousCents
+                        balanceRollingUp = previousCents == null || currentCents >= previousCents,
+                        settlements = mappedSettlements
                     )
                 }
                     .catch { e ->
@@ -204,7 +214,8 @@ class BalancesViewModel(
                         emit(
                             BalancesUiState(
                                 isLoading = false,
-                                groupId = groupId
+                                groupId = groupId,
+                                isGroupArchived = false
                             )
                         )
                     }

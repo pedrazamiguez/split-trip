@@ -68,17 +68,24 @@ val expensesDomainModule = module {
         )
     }
     factory<AddExpenseUseCase> {
-        AddExpenseUseCaseImpl(strategyFactory = get<PersistExpenseStrategyFactory>())
+        AddExpenseUseCaseImpl(
+            strategyFactory = get<PersistExpenseStrategyFactory>(),
+            groupRepository = get<GroupRepository>()
+        )
     }
     factory<UpdateExpenseUseCase> {
-        UpdateExpenseUseCaseImpl(strategyFactory = get<PersistExpenseStrategyFactory>())
+        UpdateExpenseUseCaseImpl(
+            strategyFactory = get<PersistExpenseStrategyFactory>(),
+            groupRepository = get<GroupRepository>()
+        )
     }
     factory<DeleteExpenseUseCase> {
         DeleteExpenseUseCaseImpl(
             expenseRepository = get<ExpenseRepository>(),
             cashWithdrawalRepository = get<CashWithdrawalRepository>(),
             groupMembershipService = get<GroupMembershipService>(),
-            contributionRepository = get<ContributionRepository>()
+            contributionRepository = get<ContributionRepository>(),
+            groupRepository = get<GroupRepository>()
         )
     }
     factory<GetGroupExpensesFlowUseCase> {

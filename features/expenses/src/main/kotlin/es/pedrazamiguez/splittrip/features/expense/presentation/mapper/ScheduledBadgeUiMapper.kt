@@ -21,8 +21,20 @@ class ScheduledBadgeUiMapper(
 ) {
 
     fun buildBadge(expense: Expense): Pair<String?, Boolean> {
+        if (expense.paymentStatus == PaymentStatus.CANCELLED) {
+            return resourceProvider.getString(R.string.expense_status_cancelled_refunded) to false
+        }
         val dueDate = expense.dueDate
-        if (expense.paymentStatus != PaymentStatus.SCHEDULED || dueDate == null) return null to false
+        if ((expense.paymentStatus != PaymentStatus.SCHEDULED && expense.paymentStatus != PaymentStatus.REFUNDABLE) ||
+            dueDate == null
+        ) {
+            return null to false
+        }
+
+        if (expense.paymentStatus == PaymentStatus.REFUNDABLE) {
+            val formattedDate = formattingHelper.formatShortDate(dueDate)
+            return resourceProvider.getString(R.string.expense_refundable_until, formattedDate) to false
+        }
 
         val today = LocalDate.now()
         val dueDateLocal = dueDate.toLocalDate()

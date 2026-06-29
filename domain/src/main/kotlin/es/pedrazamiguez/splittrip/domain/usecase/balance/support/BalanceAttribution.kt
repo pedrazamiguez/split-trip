@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.balance.support
 
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
@@ -183,6 +184,7 @@ internal fun attributeExpensesByPaymentMethod(
     val nonCashEquivByCurrency = mutableMapOf<String, MutableMap<String, Long>>()
 
     for (expense in expenses) {
+        if (expense.paymentStatus == PaymentStatus.CANCELLED) continue
         val isCash = expense.paymentMethod == PaymentMethod.CASH
         val targetMap = if (isCash) cashResult else nonCashResult
         val targetByCurrency = if (isCash) cashByCurrency else nonCashByCurrency

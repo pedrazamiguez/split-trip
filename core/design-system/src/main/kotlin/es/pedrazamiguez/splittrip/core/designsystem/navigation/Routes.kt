@@ -27,6 +27,7 @@ object Routes {
     const val SETTINGS_THEME = "settings_theme"
     const val SETTINGS_ACCOUNT_STATUS = "settings_account_status"
     const val GROUP_DETAIL = "group_detail/{groupId}"
+    const val EDIT_GROUP = "edit_group/{groupId}"
     const val EXPENSE_DETAIL = "expense_detail/{expenseId}"
     const val EDIT_EXPENSE = "edit_expense/{expenseId}"
     const val MANAGE_SUBUNITS = "manage_subunits/{groupId}"
@@ -34,6 +35,8 @@ object Routes {
     const val RECEIPT_VIEWER = "receipt_viewer/{receiptUri}?mimeType={mimeType}"
 
     fun groupDetailRoute(groupId: String) = "group_detail/$groupId"
+
+    fun editGroupRoute(groupId: String) = "edit_group/$groupId"
 
     fun expenseDetailRoute(expenseId: String) = "expense_detail/$expenseId"
 

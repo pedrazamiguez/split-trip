@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
@@ -8,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.service.CashWithdrawalValidationService
@@ -89,6 +91,16 @@ class WithdrawalSubmitHandler(
                 )
                 addCashWithdrawalUseCase(groupId, withdrawal).getOrThrow()
                 onSuccess()
+            } catch (e: GroupArchivedException) {
+                Timber.e(e, "Group is archived, cannot add cash withdrawal")
+                _uiState.update { it.copy(isLoading = false) }
+                _actions.emit(
+                    AddCashWithdrawalUiAction.ShowError(
+                        UiText.StringResource(
+                            DesignSystemR.string.group_error_archived
+                        )
+                    )
+                )
             } catch (e: Exception) {
                 Timber.e(e, "Failed to add cash withdrawal")
                 _uiState.update { it.copy(isLoading = false) }

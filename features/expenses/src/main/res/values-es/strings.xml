@@ -36,6 +36,13 @@
     <string name="expense_delete_warning">¿Seguro que quieres eliminar \"%1$s\"? Esta acción no se puede deshacer.</string>
     <string name="expense_deleted_successfully">Gasto eliminado correctamente</string>
     <string name="error_deleting_expense">No se pudo eliminar el gasto. Inténtalo de nuevo</string>
+    <string name="expense_detail_cancel_refund">Cancelar y reembolsar</string>
+    <string name="expense_cancel_dialog_title">Cancelar reserva</string>
+    <string name="expense_cancel_dialog_message">¿Estás seguro de que deseas cancelar esta reserva y reembolsar el gasto? Esto neutralizará su efecto en los balances del grupo y los miembros.</string>
+    <string name="expense_cancel_dialog_confirm">Cancelar y reembolsar</string>
+    <string name="expense_cancel_dialog_dismiss">Mantener reserva</string>
+    <string name="expense_cancelled_successfully">Reserva cancelada y reembolsada correctamente</string>
+    <string name="error_cancelling_expense">Error al cancelar la reserva</string>
 
     <!-- Add Expense Screen -->
     <string name="add_expense_title">Nuevo gasto</string>
@@ -94,6 +101,7 @@
     <string name="payment_status_finished">Pagado</string>
     <string name="payment_status_scheduled">Programado</string>
     <string name="payment_status_cancelled">Cancelado</string>
+    <string name="payment_status_refundable">Pagado (Reembolsable)</string>
 
     <!-- Add Expense Form - New Sections -->
     <string name="add_expense_category_title">Categoría</string>
@@ -124,6 +132,8 @@
     <string name="expense_scheduled_due_today">Vence hoy</string>
     <string name="expense_scheduled_due_tomorrow">Vence mañana</string>
     <string name="expense_scheduled_paid">Pagado</string>
+    <string name="expense_status_cancelled_refunded">Cancelado - Reembolsado</string>
+    <string name="expense_refundable_until">Reembolsable hasta %1$s</string>
 
     <!-- Split Types -->
     <string name="split_type_equal">Partes iguales</string>

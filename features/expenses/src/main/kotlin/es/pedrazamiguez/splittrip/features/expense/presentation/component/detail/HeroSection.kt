@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -96,7 +97,8 @@ internal fun HeroSection(
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = HERO_AMOUNT_SIZE,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    textDecoration = if (expense.isCancelled) TextDecoration.LineThrough else null
                 )
                 Text(
                     text = expense.paidByText,
@@ -136,7 +138,8 @@ internal fun HeroSection(
                         Column(horizontalAlignment = Alignment.End) {
                             AmountText(
                                 text = expense.formattedSourceAmount,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textDecoration = if (expense.isCancelled) TextDecoration.LineThrough else null
                             )
                             if (expense.formattedExchangeRate != null) {
                                 CaptionText(

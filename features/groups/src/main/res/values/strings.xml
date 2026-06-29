@@ -120,4 +120,10 @@
     <string name="group_error_limit_members_exceeded">Guest groups are limited to 3 members. Please link your account in Settings to lift this limit.</string>
     <string name="group_error_limit_members_registered_exceeded">Groups are limited to %1$d members.</string>
     <string name="group_error_limit_cover_upload_disabled">Cover image upload is disabled for guest accounts. Please link your account in Settings to upload custom images.</string>
+
+    <!-- Edit Group -->
+    <string name="group_edit_title">Edit group</string>
+    <string name="group_edit_save">Save Changes</string>
+    <string name="group_edit_success_saved">Group updated successfully.</string>
+    <string name="group_edit_updating">Updating group…</string>
 </resources>

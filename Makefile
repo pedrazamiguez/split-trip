@@ -20,7 +20,7 @@ YELLOW := \033[1;33m
 CYAN   := \033[0;36m
 NC     := \033[0m
 
-.PHONY: help setup hooks local-props doctor check ktlint detekt test konsist coverage build clean andaluz andaluz-lenient catalog firebase
+.PHONY: help setup hooks local-props doctor check ktlint detekt test konsist coverage build clean andaluz andaluz-lenient catalog firebase prune-branches
 
 # ─── Default: show help ───────────────────────────────────────────────────────
 help: ## Show this help message
@@ -178,5 +178,9 @@ clean: ## Clean all Gradle build outputs
 catalog: ## Check and update Version Catalog dependencies (on-demand)
 	@printf "$(YELLOW)⏳  Checking and updating Version Catalog...$(NC)\n"
 	@$(GRADLEW) versionCatalogUpdate
+
+prune-branches: ## Fetch remote changes and delete local branches that are gone on the remote
+	@printf "$(YELLOW)⏳  Pruning gone branches...$(NC)\n"
+	@./scripts/prune-branches.sh
 
 

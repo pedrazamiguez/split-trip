@@ -3,8 +3,11 @@ package es.pedrazamiguez.splittrip.di.domain
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
+import es.pedrazamiguez.splittrip.domain.service.DebtSimplificationService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.service.impl.DebtSimplificationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
@@ -12,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpens
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupPocketBalanceFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteCashWithdrawalUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteContributionUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetCashWithdrawalsFlowUseCaseImpl
@@ -19,6 +23,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetContributionByE
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupContributionsFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupPocketBalanceFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetMemberBalancesFlowUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetSettlementSuggestionsUseCaseImpl
 import org.koin.dsl.module
 
 val balancesDomainModule = module {
@@ -53,14 +58,16 @@ val balancesDomainModule = module {
     factory<DeleteContributionUseCase> {
         DeleteContributionUseCaseImpl(
             contributionRepository = get<ContributionRepository>(),
-            groupMembershipService = get<GroupMembershipService>()
+            groupMembershipService = get<GroupMembershipService>(),
+            groupRepository = get<GroupRepository>()
         )
     }
 
     factory<DeleteCashWithdrawalUseCase> {
         DeleteCashWithdrawalUseCaseImpl(
             cashWithdrawalRepository = get<CashWithdrawalRepository>(),
-            groupMembershipService = get<GroupMembershipService>()
+            groupMembershipService = get<GroupMembershipService>(),
+            groupRepository = get<GroupRepository>()
         )
     }
 
@@ -68,6 +75,16 @@ val balancesDomainModule = module {
         GetContributionByExpenseIdUseCaseImpl(
             contributionRepository = get<ContributionRepository>(),
             groupMembershipService = get<GroupMembershipService>()
+        )
+    }
+
+    factory<DebtSimplificationService> {
+        DebtSimplificationServiceImpl()
+    }
+
+    factory<GetSettlementSuggestionsUseCase> {
+        GetSettlementSuggestionsUseCaseImpl(
+            debtSimplificationService = get<DebtSimplificationService>()
         )
     }
 }

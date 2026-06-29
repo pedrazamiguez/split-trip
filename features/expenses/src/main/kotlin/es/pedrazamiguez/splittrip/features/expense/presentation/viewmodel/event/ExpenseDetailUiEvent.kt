@@ -6,4 +6,7 @@ sealed interface ExpenseDetailUiEvent {
 
     /** User requested a retry of the background receipt download. */
     data object RetryReceiptDownload : ExpenseDetailUiEvent
+
+    /** User confirmed the cancel reservation dialog in the TopBar. */
+    data object CancelConfirmed : ExpenseDetailUiEvent
 }

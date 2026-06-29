@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
@@ -14,6 +16,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowU
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -34,6 +38,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -49,6 +54,7 @@ import timber.log.Timber
  * Feature can navigate back.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LongParameterList")
 class ExpenseDetailViewModel(
     private val getExpenseByIdFlowUseCase: GetExpenseByIdFlowUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
@@ -56,8 +62,10 @@ class ExpenseDetailViewModel(
     private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
     private val downloadReceiptUseCase: DownloadReceiptUseCase,
+    private val updateExpenseUseCase: UpdateExpenseUseCase,
     private val authenticationService: AuthenticationService,
-    private val expenseDetailUiMapper: ExpenseDetailUiMapper
+    private val expenseDetailUiMapper: ExpenseDetailUiMapper,
+    private val observeGroupUseCase: ObserveGroupUseCase
 ) : ViewModel() {
 
     private val downloadJobs = ConcurrentHashMap<String, Job>()
@@ -85,6 +93,8 @@ class ExpenseDetailViewModel(
                             ExpenseDetailUiState(isLoading = false, hasError = true)
                         )
                     }
+
+                    val groupFlow = observeGroupUseCase(expense.groupId)
 
                     val attachment = expense.receiptAttachment
                     if (shouldDownloadPdf(attachment) && !failedDownloads.contains(expense.id)) {
@@ -159,7 +169,13 @@ class ExpenseDetailViewModel(
                         subunitNameLookup = cachedSubunits
                     )
 
-                    flowOf(ExpenseDetailUiState(expense = uiModel, isLoading = false))
+                    groupFlow.map { group ->
+                        ExpenseDetailUiState(
+                            expense = uiModel,
+                            isLoading = false,
+                            isGroupArchived = group?.status == GroupStatus.ARCHIVED
+                        )
+                    }
                 }
         }
         .catch { e ->
@@ -190,6 +206,7 @@ class ExpenseDetailViewModel(
         when (event) {
             ExpenseDetailUiEvent.DeleteConfirmed -> handleDelete()
             ExpenseDetailUiEvent.RetryReceiptDownload -> handleRetryReceiptDownload()
+            ExpenseDetailUiEvent.CancelConfirmed -> handleCancelReservation()
         }
     }
 
@@ -208,6 +225,44 @@ class ExpenseDetailViewModel(
                 _actions.send(
                     ExpenseDetailUiAction.ShowError(
                         UiText.StringResource(R.string.error_deleting_expense)
+                    )
+                )
+            }
+        }
+    }
+
+    private fun handleCancelReservation() {
+        val expenseUi = uiState.value.expense ?: return
+        viewModelScope.launch {
+            try {
+                val domainExpense = getExpenseByIdFlowUseCase(expenseUi.id).first() ?: return@launch
+                val updatedExpense = domainExpense.copy(
+                    paymentStatus = PaymentStatus.CANCELLED
+                )
+                updateExpenseUseCase(
+                    groupId = expenseUi.groupId,
+                    expense = updatedExpense,
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null
+                ).onSuccess {
+                    _actions.send(
+                        ExpenseDetailUiAction.CancelSuccess(
+                            UiText.StringResource(R.string.expense_cancelled_successfully)
+                        )
+                    )
+                }.onFailure { e ->
+                    Timber.e(e, "Failed to cancel reservation expense: ${expenseUi.id}")
+                    _actions.send(
+                        ExpenseDetailUiAction.ShowError(
+                            UiText.StringResource(R.string.error_cancelling_expense)
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error cancelling reservation expense: ${expenseUi.id}")
+                _actions.send(
+                    ExpenseDetailUiAction.ShowError(
+                        UiText.StringResource(R.string.error_cancelling_expense)
                     )
                 )
             }

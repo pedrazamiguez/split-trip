@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
@@ -53,13 +54,15 @@ fun ExpensesScreen(
     onExpenseClicked: (String) -> Unit = { _ -> },
     onEditExpenseClick: (String) -> Unit = {},
     onScrollPositionChanged: (Int, Int) -> Unit = { _, _ -> },
-    onDeleteExpense: (expenseId: String) -> Unit = {}
+    onDeleteExpense: (expenseId: String) -> Unit = {},
+    onCancelExpense: (expenseId: String) -> Unit = {}
 ) {
     val bottomPadding = LocalBottomPadding.current
     val scrollBehavior = rememberConnectedScrollBehavior()
 
     var selectedExpenseForMenu by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var expenseToDelete by remember { mutableStateOf<ExpenseUiModel?>(null) }
+    var expenseToCancel by remember { mutableStateOf<ExpenseUiModel?>(null) }
 
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = uiState.scrollPosition,
@@ -127,7 +130,11 @@ fun ExpensesScreen(
                                             animatedVisibilityScope = animatedVisibilityScope
                                         ),
                                     onClick = onExpenseClicked,
-                                    onLongClick = { selectedExpenseForMenu = expense }
+                                    onLongClick = {
+                                        if (!uiState.isGroupArchived) {
+                                            selectedExpenseForMenu = expense
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -138,10 +145,8 @@ fun ExpensesScreen(
     }
 
     selectedExpenseForMenu?.let { expense ->
-        ActionBottomSheet(
-            title = stringResource(R.string.expense_actions_title, expense.title),
-            icon = TablerIcons.Outline.Receipt,
-            actions = listOf(
+        val actions = buildList {
+            add(
                 SheetAction(
                     text = stringResource(R.string.action_edit_expense),
                     icon = TablerIcons.Outline.Edit,
@@ -149,7 +154,21 @@ fun ExpensesScreen(
                         onEditExpenseClick(expense.id)
                         selectedExpenseForMenu = null
                     }
-                ),
+                )
+            )
+            if (expense.isRefundable && !expense.isCancelled) {
+                add(
+                    SheetAction(
+                        text = stringResource(R.string.expense_detail_cancel_refund),
+                        icon = TablerIcons.Outline.ReceiptRefund,
+                        onClick = {
+                            expenseToCancel = expense
+                            selectedExpenseForMenu = null
+                        }
+                    )
+                )
+            }
+            add(
                 SheetAction(
                     text = stringResource(R.string.action_delete_expense),
                     icon = TablerIcons.Outline.Trash,
@@ -159,7 +178,12 @@ fun ExpensesScreen(
                     },
                     isDestructive = true
                 )
-            ),
+            )
+        }
+        ActionBottomSheet(
+            title = stringResource(R.string.expense_actions_title, expense.title),
+            icon = TablerIcons.Outline.Receipt,
+            actions = actions,
             onDismiss = { selectedExpenseForMenu = null }
         )
     }
@@ -172,6 +196,19 @@ fun ExpensesScreen(
             onConfirm = {
                 onDeleteExpense(expense.id)
                 expenseToDelete = null
+            }
+        )
+    }
+
+    expenseToCancel?.let { expense ->
+        DestructiveConfirmationDialog(
+            title = stringResource(R.string.expense_cancel_dialog_title),
+            text = stringResource(R.string.expense_cancel_dialog_message),
+            confirmLabel = stringResource(R.string.expense_cancel_dialog_confirm),
+            onDismiss = { expenseToCancel = null },
+            onConfirm = {
+                onCancelExpense(expense.id)
+                expenseToCancel = null
             }
         )
     }

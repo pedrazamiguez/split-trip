@@ -90,6 +90,11 @@ class ExpenseUiMapperTest {
             val varargs = it.invocation.args[1] as Array<*>
             "Due on ${varargs[0]}"
         }
+        every { resourceProvider.getString(R.string.expense_status_cancelled_refunded) } returns "Cancelled - Refunded"
+        every { resourceProvider.getString(R.string.expense_refundable_until, *anyVararg()) } answers {
+            val varargs = it.invocation.args[1] as Array<*>
+            "Refundable until ${varargs[0]}"
+        }
 
         val formattingHelper = FormattingHelper(localeProvider)
         val scheduledBadgeUiMapper = ScheduledBadgeUiMapper(
@@ -348,6 +353,24 @@ class ExpenseUiMapperTest {
             val result = mapper.map(expense)
 
             assertEquals("", result.dateText)
+        }
+
+        @Test
+        fun `maps isRefundable as true when paymentStatus is REFUNDABLE`() {
+            val expense = Expense(id = "e12", paymentStatus = PaymentStatus.REFUNDABLE)
+
+            val result = mapper.map(expense)
+
+            assertTrue(result.isRefundable)
+        }
+
+        @Test
+        fun `maps isRefundable as false when paymentStatus is not REFUNDABLE`() {
+            val expense = Expense(id = "e13", paymentStatus = PaymentStatus.FINISHED)
+
+            val result = mapper.map(expense)
+
+            assertFalse(result.isRefundable)
         }
     }
 

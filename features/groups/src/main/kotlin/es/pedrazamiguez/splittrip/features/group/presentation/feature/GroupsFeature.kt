@@ -80,6 +80,9 @@ fun GroupsFeature(
             }
             groupsViewModel.onEvent(GroupsUiEvent.DeleteGroup(groupId))
         },
+        onEditGroup = { groupId ->
+            navController.navigate(Routes.editGroupRoute(groupId))
+        },
         onManageSubunits = { groupId ->
             navController.navigate(Routes.manageSubunitsRoute(groupId))
         }

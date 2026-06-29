@@ -1,10 +1,13 @@
 package es.pedrazamiguez.splittrip.domain.usecase.balance
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CashWithdrawalValidationService
@@ -32,6 +35,7 @@ class AddCashWithdrawalUseCaseTest {
     private lateinit var groupMembershipService: GroupMembershipService
     private lateinit var subunitRepository: SubunitRepository
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var groupRepository: GroupRepository
     private lateinit var useCase: AddCashWithdrawalUseCase
 
     private val groupId = "group-123"
@@ -52,18 +56,43 @@ class AddCashWithdrawalUseCaseTest {
         groupMembershipService = mockk()
         subunitRepository = mockk(relaxed = true)
         authenticationService = mockk(relaxed = true)
+        groupRepository = mockk()
+
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
         every { validationService.validateAmountWithdrawn(any()) } returns ValidationResult.Valid
         every { validationService.validateDeductedBaseAmount(any()) } returns ValidationResult.Valid
         every { validationService.validateCurrency(any()) } returns ValidationResult.Valid
         every { validationService.validateExchangeRate(any()) } returns ValidationResult.Valid
+        coEvery { groupRepository.getGroupById(any()) } returns mockk {
+            every { status } returns GroupStatus.ACTIVE
+        }
+
         useCase = AddCashWithdrawalUseCaseImpl(
             cashWithdrawalRepository,
             validationService,
             groupMembershipService,
             subunitRepository,
-            authenticationService
+            authenticationService,
+            groupRepository
         )
+    }
+
+    // ── Group Archived validation ─────────────────────────────────────────────
+
+    @Nested
+    inner class GroupArchivedValidation {
+
+        @Test
+        fun `fails with GroupArchivedException when group is archived`() = runTest {
+            coEvery { groupRepository.getGroupById(groupId) } returns mockk {
+                every { status } returns GroupStatus.ARCHIVED
+            }
+
+            val result = useCase(groupId, withdrawal)
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is GroupArchivedException)
+        }
     }
 
     // ── Membership validation ─────────────────────────────────────────────────

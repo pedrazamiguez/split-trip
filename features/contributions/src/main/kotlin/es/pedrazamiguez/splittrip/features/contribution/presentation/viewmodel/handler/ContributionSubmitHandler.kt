@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AddContributionUseCase
@@ -59,9 +61,27 @@ class ContributionSubmitHandler(
 
         // Validate subunit selection against loaded options (only for SUBUNIT scope)
         val selectedSubunitId = state.selectedSubunitId
-        if (state.contributionScope == PayerType.SUBUNIT &&
-            selectedSubunitId != null
-        ) {
+        if (!validateSubunit(state, selectedSubunitId)) {
+            return
+        }
+
+        _uiState.update { it.copy(isLoading = true) }
+
+        scope.launch {
+            val contribution = Contribution(
+                groupId = groupId,
+                userId = state.selectedMemberId ?: "",
+                contributionScope = state.contributionScope,
+                subunitId = selectedSubunitId,
+                amount = amountInSmallestUnit,
+                currency = groupCurrency
+            )
+            performSubmit(groupId, contribution, onSuccess)
+        }
+    }
+
+    private fun validateSubunit(state: AddContributionUiState, selectedSubunitId: String?): Boolean {
+        if (state.contributionScope == PayerType.SUBUNIT && selectedSubunitId != null) {
             val validSubunitIds = state.subunitOptions.map { it.id }.toSet()
             if (selectedSubunitId !in validSubunitIds) {
                 scope.launch {
@@ -71,41 +91,46 @@ class ContributionSubmitHandler(
                         )
                     )
                 }
-                return
+                return false
             }
         }
+        return true
+    }
 
-        _uiState.update { it.copy(isLoading = true) }
-
-        scope.launch {
-            try {
-                val contribution = Contribution(
-                    groupId = groupId,
-                    userId = state.selectedMemberId ?: "",
-                    contributionScope = state.contributionScope,
-                    subunitId = selectedSubunitId,
-                    amount = amountInSmallestUnit,
-                    currency = groupCurrency
+    private suspend fun performSubmit(
+        groupId: String,
+        contribution: Contribution,
+        onSuccess: () -> Unit
+    ) {
+        try {
+            addContributionUseCase(groupId, contribution)
+            _uiState.update { it.copy(isLoading = false) }
+            _actions.emit(
+                AddContributionUiAction.ShowSuccess(
+                    UiText.StringResource(R.string.contribution_add_money_success)
                 )
-                addContributionUseCase(groupId, contribution)
-                _uiState.update { it.copy(isLoading = false) }
-                _actions.emit(
-                    AddContributionUiAction.ShowSuccess(
-                        UiText.StringResource(R.string.contribution_add_money_success)
+            )
+            onSuccess()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: GroupArchivedException) {
+            Timber.e(e, "Group is archived, cannot add contribution")
+            _uiState.update { it.copy(isLoading = false) }
+            _actions.emit(
+                AddContributionUiAction.ShowError(
+                    UiText.StringResource(
+                        DesignSystemR.string.group_error_archived
                     )
                 )
-                onSuccess()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to add contribution")
-                _uiState.update { it.copy(isLoading = false) }
-                _actions.emit(
-                    AddContributionUiAction.ShowError(
-                        UiText.StringResource(R.string.contribution_add_money_error)
-                    )
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to add contribution")
+            _uiState.update { it.copy(isLoading = false) }
+            _actions.emit(
+                AddContributionUiAction.ShowError(
+                    UiText.StringResource(R.string.contribution_add_money_error)
                 )
-            }
+            )
         }
     }
 }

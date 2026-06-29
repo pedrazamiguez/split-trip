@@ -40,6 +40,9 @@ fun ExpenseDetailFeature(
                     pillController.showPill(message = action.message.asString(context))
                     navController.popBackStack()
                 }
+                is ExpenseDetailUiAction.CancelSuccess -> {
+                    pillController.showPill(message = action.message.asString(context))
+                }
             }
         }
     }

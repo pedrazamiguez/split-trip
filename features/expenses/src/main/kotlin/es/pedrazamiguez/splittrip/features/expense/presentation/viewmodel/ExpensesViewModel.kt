@@ -4,7 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
@@ -25,6 +29,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -39,7 +44,8 @@ import timber.log.Timber
 class ExpensesViewModel(
     private val useCases: ExpensesUseCases,
     private val expenseUiMapper: ExpenseUiMapper,
-    private val authenticationService: AuthenticationService
+    private val authenticationService: AuthenticationService,
+    private val observeGroupUseCase: ObserveGroupUseCase
 ) : ViewModel() {
 
     private val _scrollState = MutableStateFlow(Pair(0, 0))
@@ -53,8 +59,7 @@ class ExpensesViewModel(
     val uiState: StateFlow<ExpensesUiState> = _selectedGroupId
         .filterNotNull()
         .flatMapLatest { groupId ->
-            val group = useCases.getGroupByIdUseCase(groupId)
-            val groupMemberIds = group?.members ?: emptyList()
+            val groupFlow = observeGroupUseCase(groupId)
             val currentUserId = authenticationService.currentUserId()
 
             // Merge: emit once immediately (Unit), plus on every explicit refresh
@@ -65,8 +70,12 @@ class ExpensesViewModel(
                 combine(
                     useCases.getGroupExpensesFlowUseCase(groupId),
                     useCases.getGroupContributionsFlowUseCase(groupId),
-                    useCases.getGroupSubunitsFlowUseCase(groupId)
-                ) { expenses, contributions, subunits ->
+                    useCases.getGroupSubunitsFlowUseCase(groupId),
+                    groupFlow
+                ) { expenses, contributions, subunits, group ->
+                    val isArchived = group?.status == GroupStatus.ARCHIVED
+                    val groupMemberIds = group?.members ?: emptyList()
+
                     // Collect ALL unique user IDs: group members + expense creators + payers
                     val allUserIds = buildSet {
                         addAll(groupMemberIds)
@@ -83,22 +92,23 @@ class ExpensesViewModel(
                         .associateBy { it.linkedExpenseId!! }
                     val subunitsById = subunits.associateBy { it.id }
 
-                    expenseUiMapper.mapGroupedByDate(
+                    val mappedGroups = expenseUiMapper.mapGroupedByDate(
                         expenses,
                         memberProfiles,
                         currentUserId,
                         pairedContributions,
                         subunitsById
                     )
+                    Pair(mappedGroups, isArchived)
                 }
-                    .transformLatest<ImmutableList<ExpenseDateGroupUiModel>, UiStateUpdate> { groups ->
+                    .transformLatest { (groups, isArchived) ->
                         if (groups.any { it.expenses.isNotEmpty() }) {
-                            emit(UiStateUpdate.Success(groups))
+                            emit(UiStateUpdate.Success(groups, isArchived))
                         } else {
                             // Grace period to avoid empty state flicker
-                            emit(UiStateUpdate.LoadingEmpty)
+                            emit(UiStateUpdate.LoadingEmpty(isArchived))
                             delay(EMPTY_STATE_GRACE_PERIOD_MS)
-                            emit(UiStateUpdate.Success(groups))
+                            emit(UiStateUpdate.Success(groups, isArchived))
                         }
                     }
                     .catch { e ->
@@ -110,24 +120,27 @@ class ExpensesViewModel(
                                 )
                             )
                         }
-                        emit(UiStateUpdate.Error)
+                        emit(UiStateUpdate.Error(isGroupArchived = false))
                     }
                     .map { update ->
                         when (update) {
                             is UiStateUpdate.LoadingEmpty -> ExpensesUiState(
                                 isLoading = true,
-                                groupId = groupId
+                                groupId = groupId,
+                                isGroupArchived = update.isGroupArchived
                             )
 
                             is UiStateUpdate.Success -> ExpensesUiState(
                                 expenseGroups = update.data,
                                 isLoading = false,
-                                groupId = groupId
+                                groupId = groupId,
+                                isGroupArchived = update.isGroupArchived
                             )
 
                             is UiStateUpdate.Error -> ExpensesUiState(
                                 isLoading = false,
-                                groupId = groupId
+                                groupId = groupId,
+                                isGroupArchived = update.isGroupArchived
                             )
                         }
                     }
@@ -154,6 +167,7 @@ class ExpensesViewModel(
             }
 
             is ExpensesUiEvent.DeleteExpense -> handleDeleteExpense(event.expenseId)
+            is ExpensesUiEvent.CancelExpense -> handleCancelExpense(event.expenseId)
         }
     }
 
@@ -184,10 +198,58 @@ class ExpensesViewModel(
         }
     }
 
+    private fun handleCancelExpense(expenseId: String) {
+        val groupId = _selectedGroupId.value ?: return
+        viewModelScope.launch {
+            try {
+                val domainExpense = useCases.getExpenseByIdFlowUseCase(expenseId).first()
+                if (domainExpense == null) {
+                    Timber.w("Expense not found for cancellation: $expenseId")
+                    return@launch
+                }
+                val updatedExpense = domainExpense.copy(
+                    paymentStatus = PaymentStatus.CANCELLED
+                )
+                useCases.updateExpenseUseCase(
+                    groupId = groupId,
+                    expense = updatedExpense,
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                ).onSuccess {
+                    _actions.emit(
+                        ExpensesUiAction.ShowCancelSuccess(
+                            UiText.StringResource(R.string.expense_cancelled_successfully)
+                        )
+                    )
+                }.onFailure { e ->
+                    Timber.e(e, "Failed to cancel reservation expense: $expenseId")
+                    _actions.emit(
+                        ExpensesUiAction.ShowCancelError(
+                            UiText.StringResource(R.string.error_cancelling_expense)
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error cancelling reservation expense: $expenseId")
+                _actions.emit(
+                    ExpensesUiAction.ShowCancelError(
+                        UiText.StringResource(R.string.error_cancelling_expense)
+                    )
+                )
+            }
+        }
+    }
+
     private sealed interface UiStateUpdate {
-        data object LoadingEmpty : UiStateUpdate
-        data class Success(val data: ImmutableList<ExpenseDateGroupUiModel>) : UiStateUpdate
-        data object Error : UiStateUpdate
+        val isGroupArchived: Boolean
+        data class LoadingEmpty(override val isGroupArchived: Boolean) : UiStateUpdate
+        data class Success(
+            val data: ImmutableList<ExpenseDateGroupUiModel>,
+            override val isGroupArchived: Boolean
+        ) : UiStateUpdate
+        data class Error(override val isGroupArchived: Boolean) : UiStateUpdate
     }
 
     private fun Flow<ExpensesUiState>.combineWithScroll(scrollFlow: StateFlow<Pair<Int, Int>>): Flow<ExpensesUiState> =

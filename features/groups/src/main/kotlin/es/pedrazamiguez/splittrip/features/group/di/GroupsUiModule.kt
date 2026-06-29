@@ -7,15 +7,19 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContribut
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -24,17 +28,18 @@ import es.pedrazamiguez.splittrip.features.group.navigation.impl.GroupsNavigatio
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.impl.GroupUiMapperImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.CreateGroupScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.EditGroupScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.GroupDetailScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.impl.GroupsScreenUiProviderImpl
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.CreateGroupViewModel
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.CreateEditGroupViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDetailViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupsViewModel
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageEventHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupImageEventHandlerImpl
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationEventHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupNavigationEventHandlerImpl
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitEventHandler
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateGroupSubmitEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupSubmitEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupSubmitEventHandlerImpl
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -48,27 +53,29 @@ val groupsUiModule = module {
         )
     }
 
-    factory<CreateGroupNavigationEventHandler> {
-        CreateGroupNavigationEventHandlerImpl()
+    factory<CreateEditGroupNavigationEventHandler> {
+        CreateEditGroupNavigationEventHandlerImpl()
     }
 
-    factory<CreateGroupImageEventHandler> {
+    factory<CreateEditGroupImageEventHandler> {
         val groupImageStorageService = get<GroupImageStorageService>()
         val featureGateService = get<FeatureGateService>()
-        CreateGroupImageEventHandlerImpl(
+        CreateEditGroupImageEventHandlerImpl(
             groupImageStorageService = groupImageStorageService,
             featureGateService = featureGateService
         )
     }
 
-    factory<CreateGroupSubmitEventHandler> {
+    factory<CreateEditGroupSubmitEventHandler> {
         val createGroupUseCase = get<CreateGroupUseCase>()
+        val updateGroupUseCase = get<UpdateGroupUseCase>()
         val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
         val featureGateService = get<FeatureGateService>()
         val telemetryTracker = get<TelemetryTracker>()
         val appConfigService = get<AppConfigService>()
-        CreateGroupSubmitEventHandlerImpl(
+        CreateEditGroupSubmitEventHandlerImpl(
             createGroupUseCase = createGroupUseCase,
+            updateGroupUseCase = updateGroupUseCase,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             featureGateService = featureGateService,
             telemetryTracker = telemetryTracker,
@@ -77,9 +84,10 @@ val groupsUiModule = module {
     }
 
     viewModel {
-        val createGroupNavigationEventHandler = get<CreateGroupNavigationEventHandler>()
-        val createGroupImageEventHandler = get<CreateGroupImageEventHandler>()
-        val createGroupSubmitEventHandler = get<CreateGroupSubmitEventHandler>()
+        val navigationEventHandler = get<CreateEditGroupNavigationEventHandler>()
+        val imageEventHandler = get<CreateEditGroupImageEventHandler>()
+        val submitEventHandler = get<CreateEditGroupSubmitEventHandler>()
+        val getGroupByIdUseCase = get<GetGroupByIdUseCase>()
         val getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>()
         val getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>()
         val searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>()
@@ -89,10 +97,11 @@ val groupsUiModule = module {
         val featureGateService = get<FeatureGateService>()
         val appConfigService = get<AppConfigService>()
 
-        CreateGroupViewModel(
-            createGroupNavigationEventHandler = createGroupNavigationEventHandler,
-            createGroupImageEventHandler = createGroupImageEventHandler,
-            createGroupSubmitEventHandler = createGroupSubmitEventHandler,
+        CreateEditGroupViewModel(
+            navigationEventHandler = navigationEventHandler,
+            imageEventHandler = imageEventHandler,
+            submitEventHandler = submitEventHandler,
+            getGroupByIdUseCase = getGroupByIdUseCase,
             getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
             searchUsersByEmailUseCase = searchUsersByEmailUseCase,
@@ -120,17 +129,21 @@ val groupsUiModule = module {
     }
 
     viewModel {
-        val getGroupByIdUseCase = get<GetGroupByIdUseCase>()
+        val observeGroupUseCase = get<ObserveGroupUseCase>()
         val getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>()
         val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val groupUiMapper = get<GroupUiMapper>()
+        val authenticationService = get<AuthenticationService>()
+        val archiveGroupUseCase = get<ArchiveGroupUseCase>()
         GroupDetailViewModel(
-            getGroupByIdUseCase = getGroupByIdUseCase,
+            observeGroupUseCase = observeGroupUseCase,
             getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
-            groupUiMapper = groupUiMapper
+            groupUiMapper = groupUiMapper,
+            authenticationService = authenticationService,
+            archiveGroupUseCase = archiveGroupUseCase
         )
     }
 
@@ -145,4 +158,5 @@ val groupsUiModule = module {
     } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { GroupDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { EditGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
 }

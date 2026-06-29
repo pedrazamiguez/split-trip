@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.ValidationException
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.SubunitShareDistributionService
@@ -399,10 +401,18 @@ class CreateEditSubunitViewModel(
                     Timber.e(error, "Failed to save subunit")
                     _formState.update { it.copy(isSaving = false) }
 
-                    val errorMessage = if (error is ValidationException) {
-                        UiText.StringResource(R.string.subunit_error_validation_failed)
-                    } else {
-                        UiText.StringResource(R.string.subunit_error_save_failed)
+                    val errorMessage = when (error) {
+                        is GroupArchivedException -> {
+                            UiText.StringResource(
+                                DesignSystemR.string.group_error_archived
+                            )
+                        }
+                        is ValidationException -> {
+                            UiText.StringResource(R.string.subunit_error_validation_failed)
+                        }
+                        else -> {
+                            UiText.StringResource(R.string.subunit_error_save_failed)
+                        }
                     }
 
                     _actions.emit(CreateEditSubunitUiAction.ShowError(errorMessage))

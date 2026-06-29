@@ -73,7 +73,11 @@ fun SubunitManagementScreen(
                         SubunitItem(
                             subunitUiModel = subunit,
                             modifier = Modifier.animateItem(),
-                            onLongClick = { selectedSubunitForMenu = subunit }
+                            onLongClick = {
+                                if (!uiState.isGroupArchived) {
+                                    selectedSubunitForMenu = subunit
+                                }
+                            }
                         )
                     }
                 }

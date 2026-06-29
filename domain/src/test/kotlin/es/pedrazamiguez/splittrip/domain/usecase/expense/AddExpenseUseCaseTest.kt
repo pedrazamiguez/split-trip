@@ -2,10 +2,12 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.domain.exception.NotGroupMemberException
 import es.pedrazamiguez.splittrip.domain.model.AddOn
@@ -16,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -49,6 +52,7 @@ class AddExpenseUseCaseTest {
     private lateinit var contributionRepository: ContributionRepository
     private lateinit var authenticationService: AuthenticationService
     private lateinit var addOnCalculationService: AddOnCalculationService
+    private lateinit var groupRepository: GroupRepository
     private lateinit var useCase: AddExpenseUseCase
 
     private val groupId = "group-123"
@@ -74,11 +78,15 @@ class AddExpenseUseCaseTest {
         contributionRepository = mockk(relaxed = true)
         authenticationService = mockk()
         addOnCalculationService = mockk()
+        groupRepository = mockk()
 
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
         every { authenticationService.requireUserId() } returns currentUserId
         every { addOnCalculationService.calculateEffectiveGroupAmount(any(), any()) } answers {
             firstArg()
+        }
+        coEvery { groupRepository.getGroupById(any()) } returns mockk {
+            every { status } returns GroupStatus.ACTIVE
         }
 
         val strategyFactory = PersistExpenseStrategyFactory(
@@ -93,7 +101,8 @@ class AddExpenseUseCaseTest {
         )
 
         useCase = AddExpenseUseCaseImpl(
-            strategyFactory = strategyFactory
+            strategyFactory = strategyFactory,
+            groupRepository = groupRepository
         )
     }
 
@@ -101,6 +110,18 @@ class AddExpenseUseCaseTest {
 
     @Nested
     inner class Validation {
+
+        @Test
+        fun `fails when group is archived`() = runTest {
+            coEvery { groupRepository.getGroupById(groupId) } returns mockk {
+                every { status } returns GroupStatus.ARCHIVED
+            }
+
+            val result = useCase(groupId, baseExpense)
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is GroupArchivedException)
+        }
 
         @Test
         fun `fails when groupId is null`() = runTest {

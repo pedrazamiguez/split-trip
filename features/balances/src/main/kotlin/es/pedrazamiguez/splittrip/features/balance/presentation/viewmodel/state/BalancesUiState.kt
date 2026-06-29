@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.Contributi
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.SettlementUiModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -24,5 +25,7 @@ data class BalancesUiState(
     /** Item pending deletion — drives `ActionBottomSheet` and `DestructiveConfirmationDialog` visibility. */
     val contributionToDelete: ContributionUiModel? = null,
     /** Item pending deletion — drives `ActionBottomSheet` and `DestructiveConfirmationDialog` visibility. */
-    val withdrawalToDelete: CashWithdrawalUiModel? = null
+    val withdrawalToDelete: CashWithdrawalUiModel? = null,
+    val isGroupArchived: Boolean = false,
+    val settlements: ImmutableList<SettlementUiModel> = persistentListOf()
 )

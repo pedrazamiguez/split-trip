@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.group.R
@@ -21,33 +24,39 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
  * ViewModel for the Group Detail screen.
  *
- * Loads group info once via [GetGroupByIdUseCase] and reactively observes the
- * subunit count via [GetGroupSubunitsFlowUseCase]. Follows the same
- * `_groupId`-gated `flatMapLatest` + `stateIn` pattern as [SubunitManagementViewModel].
+ * Reactively observes group info via [ObserveGroupUseCase] and subunit count via
+ * [GetGroupSubunitsFlowUseCase]. Follows the same `_groupId`-gated `flatMapLatest` +
+ * `stateIn` pattern.
  *
- * Group selection is handled in [GroupDetailFeature] via [SharedViewModel] — this
- * ViewModel is intentionally unaware of the active-group concept.
+ * Group selection is handled in [GroupDetailFeature] via [SharedViewModel].
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class GroupDetailViewModel(
-    private val getGroupByIdUseCase: GetGroupByIdUseCase,
+    private val observeGroupUseCase: ObserveGroupUseCase,
     private val getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase,
     private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
-    private val groupUiMapper: GroupUiMapper
+    private val groupUiMapper: GroupUiMapper,
+    private val authenticationService: AuthenticationService,
+    private val archiveGroupUseCase: ArchiveGroupUseCase
 ) : ViewModel() {
 
     private val _groupId = MutableStateFlow("")
+
+    private val _localUiState = MutableStateFlow(LocalUiState())
 
     private val _actions = Channel<GroupDetailUiAction>(Channel.BUFFERED)
     val actions = _actions.receiveAsFlow()
@@ -55,48 +64,48 @@ class GroupDetailViewModel(
     val uiState: StateFlow<GroupDetailUiState> = _groupId
         .filter { it.isNotBlank() }
         .flatMapLatest { groupId ->
-            val group = try {
-                getGroupByIdUseCase(groupId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to load group: $groupId")
-                null
-            }
+            observeGroupUseCase(groupId)
+                .distinctUntilChanged()
+                .flatMapLatest { group ->
+                    if (group == null) {
+                        return@flatMapLatest flowOf(GroupDetailUiState(isLoading = false, hasError = true))
+                    }
 
-            val memberProfiles = if (group != null && group.members.isNotEmpty()) {
-                try {
-                    getMemberProfilesUseCase(group.members)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Timber.w(e, "Failed to fetch member profiles for group $groupId")
-                    emptyMap()
-                }
-            } else {
-                emptyMap()
-            }
+                    val memberProfiles = if (group.members.isNotEmpty()) {
+                        try {
+                            getMemberProfilesUseCase(group.members)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to fetch member profiles for group $groupId")
+                            emptyMap()
+                        }
+                    } else {
+                        emptyMap()
+                    }
 
-            if (group == null) {
-                return@flatMapLatest flowOf(GroupDetailUiState(isLoading = false, hasError = true))
-            }
+                    val groupUiModel = groupUiMapper.toGroupUiModel(group, memberProfiles)
 
-            val groupUiModel = groupUiMapper.toGroupUiModel(group, memberProfiles)
-
-            combine(
-                getGroupSubunitsFlowUseCase(groupId),
-                getUserGroupsFlowUseCase()
-            ) { subunits, userGroups ->
-                GroupDetailUiState(
-                    group = groupUiModel,
-                    isLoading = false,
-                    subunitsCount = subunits.size,
-                    isOnlyGroup = userGroups.size == 1
-                )
-            }
-                .catch { e ->
-                    Timber.e(e, "Error loading subunits or groups for group $groupId")
-                    emit(GroupDetailUiState(group = groupUiModel, isLoading = false))
+                    combine(
+                        getGroupSubunitsFlowUseCase(groupId).distinctUntilChanged(),
+                        getUserGroupsFlowUseCase().distinctUntilChanged(),
+                        _localUiState
+                    ) { subunits, userGroups, localState ->
+                        val currentUserId = authenticationService.requireUserId()
+                        GroupDetailUiState(
+                            group = groupUiModel,
+                            isLoading = false,
+                            subunitsCount = subunits.size,
+                            isOnlyGroup = userGroups.size == 1,
+                            showArchiveConfirmation = localState.showArchiveConfirmation,
+                            isUserAdmin = group.createdBy == currentUserId,
+                            isArchiving = localState.isArchiving
+                        )
+                    }
+                        .catch { e ->
+                            Timber.e(e, "Error loading subunits or groups for group $groupId")
+                            emit(GroupDetailUiState(group = groupUiModel, isLoading = false))
+                        }
                 }
         }
         .catch { e ->
@@ -123,8 +132,37 @@ class GroupDetailViewModel(
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
     fun onEvent(event: GroupDetailUiEvent) {
-        // No events handled at this time; included for MVI triad completeness.
+        when (event) {
+            GroupDetailUiEvent.ArchiveClicked -> {
+                _localUiState.update { it.copy(showArchiveConfirmation = true) }
+            }
+            GroupDetailUiEvent.ArchiveCancelled -> {
+                _localUiState.update { it.copy(showArchiveConfirmation = false) }
+            }
+            GroupDetailUiEvent.ArchiveConfirmed -> {
+                _localUiState.update { it.copy(showArchiveConfirmation = false, isArchiving = true) }
+                viewModelScope.launch {
+                    archiveGroupUseCase(_groupId.value).fold(
+                        onSuccess = {
+                            _localUiState.update { it.copy(isArchiving = false) }
+                        },
+                        onFailure = { _ ->
+                            _localUiState.update { it.copy(isArchiving = false) }
+                            _actions.send(
+                                GroupDetailUiAction.ShowError(
+                                    UiText.StringResource(DesignSystemR.string.group_error_archiving_failed)
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+        }
     }
+
+    private data class LocalUiState(
+        val showArchiveConfirmation: Boolean = false,
+        val isArchiving: Boolean = false
+    )
 }

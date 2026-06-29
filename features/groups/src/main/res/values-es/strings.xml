@@ -121,4 +121,10 @@
     <string name="group_error_limit_members_exceeded">Los grupos de invitados están limitados a 3 miembros. Vincula tu cuenta en Ajustes para eliminar este límite.</string>
     <string name="group_error_limit_members_registered_exceeded">Los grupos están limitados a %1$d miembros.</string>
     <string name="group_error_limit_cover_upload_disabled">La subida de imágenes de portada está desactivada para cuentas de invitado. Vincula tu cuenta en Ajustes para subir imágenes personalizadas.</string>
+
+    <!-- Edit Group -->
+    <string name="group_edit_title">Editar grupo</string>
+    <string name="group_edit_save">Guardar cambios</string>
+    <string name="group_edit_success_saved">Grupo actualizado correctamente.</string>
+    <string name="group_edit_updating">Actualizando grupo…</string>
 </resources>

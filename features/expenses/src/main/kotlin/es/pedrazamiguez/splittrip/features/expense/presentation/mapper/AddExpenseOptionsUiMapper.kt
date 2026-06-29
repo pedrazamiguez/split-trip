@@ -97,7 +97,7 @@ class AddExpenseOptionsUiMapper(
      */
     fun mapPaymentStatuses(statuses: List<PaymentStatus>): ImmutableList<PaymentStatusUiModel> =
         statuses
-            .filter { it == PaymentStatus.FINISHED || it == PaymentStatus.SCHEDULED }
+            .filter { it == PaymentStatus.FINISHED || it == PaymentStatus.SCHEDULED || it == PaymentStatus.REFUNDABLE }
             .map { status ->
                 PaymentStatusUiModel(
                     id = status.name,

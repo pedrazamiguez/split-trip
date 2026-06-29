@@ -32,9 +32,11 @@ class GetGroupPocketBalanceFlowUseCaseImpl(
         val today = LocalDate.now()
         val totalContributions = contributions.sumOf { it.amount }
 
+        val activeExpenses = expenses.filter { it.paymentStatus != PaymentStatus.CANCELLED }
+
         // Separate future scheduled expenses (reservations not yet paid).
         // A scheduled expense is "future" when its dueDate is strictly after today.
-        val (futureScheduled, effectiveExpenses) = expenses.partition { expense ->
+        val (futureScheduled, effectiveExpenses) = activeExpenses.partition { expense ->
             expense.paymentStatus == PaymentStatus.SCHEDULED &&
                 expense.dueDate?.toLocalDate()?.isAfter(today) == true
         }

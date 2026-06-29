@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.model.CurrencyAmount
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -25,10 +26,12 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakd
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CurrencyBreakdownUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceCashContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.SettlementUiModel
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
@@ -114,7 +117,7 @@ class BalancesUiMapper(
             )
             ContributionUiModel(
                 id = contribution.id,
-                displayName = resolveDisplayName(contribution.userId, memberProfiles),
+                displayName = userUiMapper.mapToDisplayName(memberProfiles[contribution.userId], contribution.userId),
                 isCurrentUser = contribution.userId == currentUserId,
                 formattedAmount = formatCurrencyAmount(contribution.amount, contribution.currency, locale),
                 dateText = contribution.createdAt?.formatShortDate(locale) ?: "",
@@ -155,7 +158,10 @@ class BalancesUiMapper(
             )
             CashWithdrawalUiModel(
                 id = withdrawal.id,
-                displayName = resolveDisplayName(withdrawal.withdrawnBy, memberProfiles),
+                displayName = userUiMapper.mapToDisplayName(
+                    memberProfiles[withdrawal.withdrawnBy],
+                    withdrawal.withdrawnBy
+                ),
                 isCurrentUser = withdrawal.withdrawnBy == currentUserId,
                 formattedAmount = formatCurrencyAmount(
                     withdrawal.amountWithdrawn,
@@ -326,7 +332,7 @@ class BalancesUiMapper(
 
         return MemberBalanceUiModel(
             userId = balance.userId,
-            displayName = resolveDisplayName(balance.userId, memberProfiles),
+            displayName = userUiMapper.mapToDisplayName(memberProfiles[balance.userId], balance.userId),
             isCurrentUser = balance.userId == currentUserId,
             formattedContributed = formatCurrencyAmount(balance.contributed, currency, locale),
             formattedCashInHand = if (isNegativeCash) {
@@ -455,7 +461,12 @@ class BalancesUiMapper(
             } else {
                 ""
             },
-            scopeLabel = resolveCashBreakdownScopeLabel(withdrawal, subunitsMap),
+            scopeLabel = when (withdrawal.withdrawalScope) {
+                PayerType.GROUP -> resourceProvider.getString(R.string.balances_cash_breakdown_group_scope)
+                PayerType.USER -> resourceProvider.getString(R.string.balances_cash_breakdown_personal_scope)
+                PayerType.SUBUNIT -> withdrawal.subunitId?.let { subunitsMap[it]?.name }
+                    ?: resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit)
+            },
             isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP,
             formattedAddOns = formatWithdrawalAddOns(
                 withdrawal = withdrawal,
@@ -494,16 +505,6 @@ class BalancesUiMapper(
         return formatCurrencyAmount(totalUserAddOnCents, groupCurrency, locale)
     }
 
-    private fun resolveCashBreakdownScopeLabel(
-        withdrawal: CashWithdrawal,
-        subunitsMap: Map<String, Subunit>
-    ): String = when (withdrawal.withdrawalScope) {
-        PayerType.GROUP -> resourceProvider.getString(R.string.balances_cash_breakdown_group_scope)
-        PayerType.USER -> resourceProvider.getString(R.string.balances_cash_breakdown_personal_scope)
-        PayerType.SUBUNIT -> withdrawal.subunitId?.let { subunitsMap[it]?.name }
-            ?: resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit)
-    }
-
     /**
      * Maps a list of [CurrencyAmount] domain models to formatted [CurrencyBreakdownUiModel]s.
      * Equivalents are only shown when the currency differs from the group currency
@@ -529,14 +530,6 @@ class BalancesUiMapper(
     }
 
     /**
-     * Resolves a userId to a human-readable display name using the
-     * fallback hierarchy: displayName → email → raw userId.
-     */
-    private fun resolveDisplayName(userId: String, memberProfiles: Map<String, User>): String {
-        return userUiMapper.mapToDisplayName(memberProfiles[userId], userId)
-    }
-
-    /**
      * Returns the actor's display name when a record was created on behalf of another member.
      * Returns `null` when:
      * - the actor is the same as the target (no impersonation),
@@ -551,5 +544,46 @@ class BalancesUiMapper(
         if (createdBy.isBlank() || createdBy == targetUserId) return null
         val user = memberProfiles[createdBy] ?: return null
         return userUiMapper.mapToDisplayName(user)
+    }
+
+    fun mapSettlements(
+        settlements: List<Settlement>,
+        currency: String,
+        currentUserId: String,
+        memberProfiles: Map<String, User>
+    ): ImmutableList<SettlementUiModel> {
+        val locale = localeProvider.getCurrentLocale()
+        val youStr = resourceProvider.getString(R.string.balances_member_you)
+        return settlements.map { s ->
+            val isDebtor = s.fromUserId == currentUserId
+            val isCreditor = s.toUserId == currentUserId
+            SettlementUiModel(
+                debtorId = s.fromUserId,
+                creditorId = s.toUserId,
+                debtorName = if (isDebtor) {
+                    youStr
+                } else {
+                    memberProfiles[s.fromUserId]?.let { userUiMapper.mapToDisplayName(it) }
+                        ?: ""
+                },
+                creditorName = if (isCreditor) {
+                    youStr
+                } else {
+                    memberProfiles[s.toUserId]?.let { userUiMapper.mapToDisplayName(it) }
+                        ?: ""
+                },
+                formattedAmount = formatCurrencyAmount(s.amount, currency, locale),
+                isCurrentUserDebtor = isDebtor,
+                isCurrentUserCreditor = isCreditor
+            )
+        }.sortedWith { a, b ->
+            val aInvolved = a.isCurrentUserDebtor || a.isCurrentUserCreditor
+            val bInvolved = b.isCurrentUserDebtor || b.isCurrentUserCreditor
+            when {
+                aInvolved && !bInvolved -> -1
+                !aInvolved && bInvolved -> 1
+                else -> a.debtorName.compareTo(b.debtorName, ignoreCase = true)
+            }
+        }.toImmutableList()
     }
 }

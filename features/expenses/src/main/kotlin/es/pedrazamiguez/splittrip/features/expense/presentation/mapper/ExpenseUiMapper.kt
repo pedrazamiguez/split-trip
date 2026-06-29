@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatSourceAmount
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -72,7 +73,9 @@ class ExpenseUiMapper(
                 fundingSourceText = scopeInfo.text,
                 isSubunitScope = scopeInfo.isSubunit,
                 isGroupScope = scopeInfo.isGroup,
-                syncStatus = syncStatus
+                syncStatus = syncStatus,
+                isCancelled = expense.paymentStatus == PaymentStatus.CANCELLED,
+                isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE
             )
         }
     }
@@ -113,7 +116,9 @@ class ExpenseUiMapper(
                         .formatShortDate(appLocale)
                 } ?: ""
 
-                val dayTotalCents = dayExpenses.sumOf { it.groupAmount }
+                val dayTotalCents = dayExpenses
+                    .filter { it.paymentStatus != PaymentStatus.CANCELLED }
+                    .sumOf { it.groupAmount }
                 val formattedDayTotal = formatCurrencyAmount(
                     amount = dayTotalCents,
                     currencyCode = groupCurrencyCode,
