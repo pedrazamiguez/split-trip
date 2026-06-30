@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -52,6 +53,7 @@ class GroupDetailViewModelTest {
     private lateinit var observeGroupUseCase: ObserveGroupUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var archiveGroupUseCase: ArchiveGroupUseCase
+    private lateinit var deleteGroupUseCase: DeleteGroupUseCase
     private lateinit var viewModel: GroupDetailViewModel
 
     private val testGroupId = "group-123"
@@ -80,6 +82,7 @@ class GroupDetailViewModelTest {
         observeGroupUseCase = mockk()
         authenticationService = mockk(relaxed = true)
         archiveGroupUseCase = mockk(relaxed = true)
+        deleteGroupUseCase = mockk(relaxed = true)
 
         // Default stubs
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
@@ -104,7 +107,8 @@ class GroupDetailViewModelTest {
         groupUiMapper = groupUiMapper,
         observeGroupUseCase = observeGroupUseCase,
         authenticationService = authenticationService,
-        archiveGroupUseCase = archiveGroupUseCase
+        archiveGroupUseCase = archiveGroupUseCase,
+        deleteGroupUseCase = deleteGroupUseCase
     )
 
     @Nested
@@ -478,6 +482,94 @@ class GroupDetailViewModelTest {
             assertFalse(state.isArchiving)
             assertTrue(actions.any { it is GroupDetailUiAction.ShowError })
             coVerify(exactly = 1) { archiveGroupUseCase(testGroupId) }
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+    }
+
+    @Nested
+    inner class DeleteFlow {
+
+        @Test
+        fun `DeleteClicked event updates state to show delete confirmation`() = runTest(testDispatcher) {
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            viewModel.onEvent(GroupDetailUiEvent.DeleteClicked)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.showDeleteConfirmation)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `DeleteCancelled event updates state to hide delete confirmation`() = runTest(testDispatcher) {
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            viewModel.onEvent(GroupDetailUiEvent.DeleteClicked)
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.showDeleteConfirmation)
+
+            viewModel.onEvent(GroupDetailUiEvent.DeleteCancelled)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.showDeleteConfirmation)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `DeleteConfirmed event success path deletes group and emits DeleteSuccess action`() = runTest(
+            testDispatcher
+        ) {
+            coEvery { deleteGroupUseCase(testGroupId) } returns Unit
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupDetailUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            viewModel.onEvent(GroupDetailUiEvent.DeleteConfirmed)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertFalse(state.showDeleteConfirmation)
+            assertFalse(state.isDeleting)
+            assertTrue(actions.any { it is GroupDetailUiAction.DeleteSuccess })
+            coVerify(exactly = 1) { deleteGroupUseCase(testGroupId) }
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `DeleteConfirmed event failure path emits ShowError action and updates state`() = runTest(testDispatcher) {
+            coEvery { deleteGroupUseCase(testGroupId) } throws Exception("Delete failed")
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupDetailUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            viewModel.onEvent(GroupDetailUiEvent.DeleteConfirmed)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertFalse(state.showDeleteConfirmation)
+            assertFalse(state.isDeleting)
+            assertTrue(actions.any { it is GroupDetailUiAction.ShowError })
+            coVerify(exactly = 1) { deleteGroupUseCase(testGroupId) }
 
             actionsJob.cancel()
             collectJob.cancel()

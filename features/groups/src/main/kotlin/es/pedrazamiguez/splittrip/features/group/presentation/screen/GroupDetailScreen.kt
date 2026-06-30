@@ -84,6 +84,15 @@ fun GroupDetailScreen(
                 )
             }
 
+            if (uiState.showDeleteConfirmation && group != null) {
+                DestructiveConfirmationDialog(
+                    title = stringResource(R.string.group_delete_title),
+                    text = stringResource(R.string.group_delete_warning, group.name),
+                    onConfirm = { onEvent(GroupDetailUiEvent.DeleteConfirmed) },
+                    onDismiss = { onEvent(GroupDetailUiEvent.DeleteCancelled) }
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()

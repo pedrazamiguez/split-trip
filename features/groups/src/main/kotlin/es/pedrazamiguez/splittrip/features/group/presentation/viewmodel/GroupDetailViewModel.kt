@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -51,7 +52,8 @@ class GroupDetailViewModel(
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
     private val authenticationService: AuthenticationService,
-    private val archiveGroupUseCase: ArchiveGroupUseCase
+    private val archiveGroupUseCase: ArchiveGroupUseCase,
+    private val deleteGroupUseCase: DeleteGroupUseCase
 ) : ViewModel() {
 
     private val _groupId = MutableStateFlow("")
@@ -99,7 +101,9 @@ class GroupDetailViewModel(
                             isOnlyGroup = userGroups.size == 1,
                             showArchiveConfirmation = localState.showArchiveConfirmation,
                             isUserAdmin = group.createdBy == currentUserId,
-                            isArchiving = localState.isArchiving
+                            isArchiving = localState.isArchiving,
+                            showDeleteConfirmation = localState.showDeleteConfirmation,
+                            isDeleting = localState.isDeleting
                         )
                     }
                         .catch { e ->
@@ -158,11 +162,41 @@ class GroupDetailViewModel(
                     )
                 }
             }
+            GroupDetailUiEvent.DeleteClicked -> {
+                _localUiState.update { it.copy(showDeleteConfirmation = true) }
+            }
+            GroupDetailUiEvent.DeleteCancelled -> {
+                _localUiState.update { it.copy(showDeleteConfirmation = false) }
+            }
+            GroupDetailUiEvent.DeleteConfirmed -> {
+                _localUiState.update { it.copy(showDeleteConfirmation = false, isDeleting = true) }
+                viewModelScope.launch {
+                    try {
+                        deleteGroupUseCase(_groupId.value)
+                        _localUiState.update { it.copy(isDeleting = false) }
+                        _actions.send(
+                            GroupDetailUiAction.DeleteSuccess(
+                                UiText.StringResource(R.string.group_deleted_successfully)
+                            )
+                        )
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to delete group: ${_groupId.value}")
+                        _localUiState.update { it.copy(isDeleting = false) }
+                        _actions.send(
+                            GroupDetailUiAction.ShowError(
+                                UiText.StringResource(R.string.error_deleting_group)
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
 
     private data class LocalUiState(
         val showArchiveConfirmation: Boolean = false,
-        val isArchiving: Boolean = false
+        val isArchiving: Boolean = false,
+        val showDeleteConfirmation: Boolean = false,
+        val isDeleting: Boolean = false
     )
 }
