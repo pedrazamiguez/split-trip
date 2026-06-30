@@ -47,22 +47,29 @@ install_codebase_memory() {
   fi
 }
 
-# ─── Step 2: Build codebase-memory-mcp index ─────────────────────────────────
-index_codebase_memory() {
+# ─── Step 2: Install agent hooks + build index ─────────────────────────────────
+setup_codebase_memory() {
   if [ ! -x "$CBM_BIN" ]; then
-    log_err "codebase-memory-mcp not found — cannot index"
+    log_err "codebase-memory-mcp not found — cannot set up"
     return 1
   fi
   local cache_dir="${HOME}/.cache/codebase-memory-mcp"
-  if [ -d "$cache_dir" ]; then
-    log_ok "codebase-memory-mcp index already exists at ${cache_dir}"
+  if [ -d "$cache_dir" ] && [ -f "${HOME}/.gemini/settings.json" ] && grep -q "codebase-memory-mcp" "${HOME}/.gemini/settings.json" 2>/dev/null; then
+    log_ok "codebase-memory-mcp agent hooks + index already set up"
     return 0
   fi
-  log_info "Building codebase-memory-mcp index (this may take a minute)..."
-  if "$CBM_BIN" init && "$CBM_BIN" index; then
-    log_ok "codebase-memory-mcp index built"
+  log_info "Installing codebase-memory-mcp agent hooks (auto-detects OpenCode, Antigravity/Gemini, VS Code)..."
+  if "$CBM_BIN" install -y; then
+    log_ok "codebase-memory-mcp agent hooks installed"
+    log_info "Rebuilding index..."
+    if "$CBM_BIN" index; then
+      log_ok "codebase-memory-mcp index built"
+    else
+      log_err "Failed to build codebase-memory-mcp index"
+      return 1
+    fi
   else
-    log_err "Failed to build codebase-memory-mcp index"
+    log_err "Failed to install codebase-memory-mcp agent hooks"
     return 1
   fi
 }
@@ -126,17 +133,31 @@ index_graphify() {
   fi
 }
 
-# ─── Step 6: Install Graphify platform hooks ────────────────────────────────
+# ─── Step 6: Install Graphify platform hooks (OpenCode) ──────────────────────
 install_graphify_hooks() {
   if ! command -v graphify &>/dev/null; then
     log_err "graphify not found — cannot install hooks"
     return 1
   fi
-  log_info "Installing Graphify platform hooks..."
+  log_info "Installing Graphify platform hooks (OpenCode)..."
   if graphify install --platform opencode --project; then
-    log_ok "Graphify platform hooks installed"
+    log_ok "Graphify OpenCode hooks installed"
   else
-    log_warn "graphify install failed (may already be installed)"
+    log_warn "graphify OpenCode install failed (may already be installed)"
+  fi
+}
+
+# ─── Step 6b: Install Graphify Antigravity hooks ─────────────────────────────
+install_graphify_antigravity_hooks() {
+  if ! command -v graphify &>/dev/null; then
+    log_err "graphify not found — cannot install hooks"
+    return 1
+  fi
+  log_info "Installing Graphify platform hooks (Antigravity)..."
+  if graphify install --platform antigravity --project; then
+    log_ok "Graphify Antigravity hooks installed"
+  else
+    log_warn "graphify Antigravity install failed (may already be installed)"
   fi
 }
 
@@ -264,7 +285,7 @@ main() {
 
   install_codebase_memory || ((errors++))
   echo ""
-  index_codebase_memory || ((errors++))
+  setup_codebase_memory || ((errors++))
   echo ""
   install_uv || ((errors++))
   echo ""
@@ -273,6 +294,8 @@ main() {
   index_graphify || ((errors++))
   echo ""
   install_graphify_hooks || ((errors++))
+  echo ""
+  install_graphify_antigravity_hooks || ((errors++))
   echo ""
   merge_gemini_config || ((errors++))
   echo ""
