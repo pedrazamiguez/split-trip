@@ -107,4 +107,11 @@
     <string name="group_edit_save">Guardâh cambiô</string>
     <string name="group_edit_success_saved">Grupo âttualiçao corrêttamente.</string>
     <string name="group_edit_updating">Âttualiçando grupo…</string>
+    <string name="action_leave_group">Abandonâh grupo</string>
+    <string name="group_leave_title">¿Abandonâh grupo?</string>
+    <string name="group_leave_warning">¿Çeguro que quierê abandonâh \"%1$s\"? Êtta âççión no çe puede deçaçêh.</string>
+    <string name="group_leave_success">Âh abandonao er grupo corrêttamente</string>
+    <string name="group_leave_error_balance">Tu çardo debe çêh çero antê de podêh abandonâh er grupo</string>
+    <string name="group_leave_error_admin">Como creadôh der grupo, no puedê abandonâl-lo. Elimínalo en çu lugâh.</string>
+    <string name="group_leave_error_general">No çe pudo abandonâh er grupo. Inténtalo de nuebo.</string>
 </resources>

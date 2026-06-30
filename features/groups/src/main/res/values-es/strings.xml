@@ -128,4 +128,13 @@
     <string name="group_edit_save">Guardar cambios</string>
     <string name="group_edit_success_saved">Grupo actualizado correctamente.</string>
     <string name="group_edit_updating">Actualizando grupo…</string>
+
+    <!-- Leave Group -->
+    <string name="action_leave_group">Abandonar grupo</string>
+    <string name="group_leave_title">¿Abandonar grupo?</string>
+    <string name="group_leave_warning">¿Seguro que quieres abandonar "%1$s"? Esta acción no se puede deshacer.</string>
+    <string name="group_leave_success">Has abandonado el grupo correctamente</string>
+    <string name="group_leave_error_balance">Tu saldo debe ser cero antes de poder abandonar el grupo</string>
+    <string name="group_leave_error_admin">Como creador del grupo, no puedes abandonarlo. Elimínalo en su lugar.</string>
+    <string name="group_leave_error_general">No se pudo abandonar el grupo. Inténtalo de nuevo.</string>
 </resources>

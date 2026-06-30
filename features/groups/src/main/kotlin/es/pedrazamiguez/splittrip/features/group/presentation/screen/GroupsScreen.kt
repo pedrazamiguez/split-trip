@@ -39,13 +39,15 @@ fun GroupsScreen(
     onEditGroup: (groupId: String) -> Unit = {},
     onDeleteGroup: (groupId: String) -> Unit = {},
     onManageSubunits: (groupId: String) -> Unit = {},
-    onArchiveGroup: (groupId: String) -> Unit = {}
+    onArchiveGroup: (groupId: String) -> Unit = {},
+    onLeaveGroup: (groupId: String) -> Unit = {}
 ) {
     val listState = rememberLazyListState()
     var hasRestoredScroll by remember { mutableStateOf(false) }
     var selectedGroupForMenu by remember { mutableStateOf<GroupUiModel?>(null) }
     var groupToDelete by remember { mutableStateOf<GroupUiModel?>(null) }
     var groupToArchive by remember { mutableStateOf<GroupUiModel?>(null) }
+    var groupToLeave by remember { mutableStateOf<GroupUiModel?>(null) }
     val scrollBehavior = rememberConnectedScrollBehavior()
 
     RestoreScrollEffect(listState, uiState)
@@ -81,12 +83,18 @@ fun GroupsScreen(
         onArchiveRequested = { group ->
             groupToArchive = group
             selectedGroupForMenu = null
+        },
+        onLeaveRequested = { group ->
+            groupToLeave = group
+            selectedGroupForMenu = null
         }
     )
 
     DeleteConfirmationDialog(groupToDelete, onDeleteGroup) { groupToDelete = null }
 
     ArchiveConfirmationDialog(groupToArchive, onArchiveGroup) { groupToArchive = null }
+
+    LeaveConfirmationDialog(groupToLeave, onLeaveGroup) { groupToLeave = null }
 }
 
 @Composable
@@ -148,6 +156,25 @@ private fun ArchiveConfirmationDialog(
             onDismiss = onDismiss,
             onConfirm = {
                 onArchiveGroup(group.id)
+                onDismiss()
+            }
+        )
+    }
+}
+
+@Composable
+private fun LeaveConfirmationDialog(
+    groupToLeave: GroupUiModel?,
+    onLeaveGroup: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    groupToLeave?.let { group ->
+        DestructiveConfirmationDialog(
+            title = stringResource(R.string.group_leave_title),
+            text = stringResource(R.string.group_leave_warning, group.name),
+            onDismiss = onDismiss,
+            onConfirm = {
+                onLeaveGroup(group.id)
                 onDismiss()
             }
         )

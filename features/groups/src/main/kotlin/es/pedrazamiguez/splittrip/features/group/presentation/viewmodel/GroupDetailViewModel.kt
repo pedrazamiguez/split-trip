@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -53,7 +54,8 @@ class GroupDetailViewModel(
     private val groupUiMapper: GroupUiMapper,
     private val authenticationService: AuthenticationService,
     private val archiveGroupUseCase: ArchiveGroupUseCase,
-    private val deleteGroupUseCase: DeleteGroupUseCase
+    private val deleteGroupUseCase: DeleteGroupUseCase,
+    private val leaveGroupUseCase: LeaveGroupUseCase
 ) : ViewModel() {
 
     private val _groupId = MutableStateFlow("")
@@ -103,7 +105,9 @@ class GroupDetailViewModel(
                             isUserAdmin = group.createdBy == currentUserId,
                             isArchiving = localState.isArchiving,
                             showDeleteConfirmation = localState.showDeleteConfirmation,
-                            isDeleting = localState.isDeleting
+                            isDeleting = localState.isDeleting,
+                            showLeaveConfirmation = localState.showLeaveConfirmation,
+                            isLeaving = localState.isLeaving
                         )
                     }
                         .catch { e ->
@@ -138,58 +142,74 @@ class GroupDetailViewModel(
 
     fun onEvent(event: GroupDetailUiEvent) {
         when (event) {
-            GroupDetailUiEvent.ArchiveClicked -> {
-                _localUiState.update { it.copy(showArchiveConfirmation = true) }
-            }
-            GroupDetailUiEvent.ArchiveCancelled -> {
-                _localUiState.update { it.copy(showArchiveConfirmation = false) }
-            }
-            GroupDetailUiEvent.ArchiveConfirmed -> {
-                _localUiState.update { it.copy(showArchiveConfirmation = false, isArchiving = true) }
-                viewModelScope.launch {
-                    archiveGroupUseCase(_groupId.value).fold(
-                        onSuccess = {
-                            _localUiState.update { it.copy(isArchiving = false) }
-                        },
-                        onFailure = { _ ->
-                            _localUiState.update { it.copy(isArchiving = false) }
-                            _actions.send(
-                                GroupDetailUiAction.ShowError(
-                                    UiText.StringResource(DesignSystemR.string.group_error_archiving_failed)
-                                )
-                            )
-                        }
+            GroupDetailUiEvent.ArchiveClicked -> _localUiState.update { it.copy(showArchiveConfirmation = true) }
+            GroupDetailUiEvent.ArchiveCancelled -> _localUiState.update { it.copy(showArchiveConfirmation = false) }
+            GroupDetailUiEvent.ArchiveConfirmed -> handleArchive()
+            GroupDetailUiEvent.DeleteClicked -> _localUiState.update { it.copy(showDeleteConfirmation = true) }
+            GroupDetailUiEvent.DeleteCancelled -> _localUiState.update { it.copy(showDeleteConfirmation = false) }
+            GroupDetailUiEvent.DeleteConfirmed -> handleDelete()
+            GroupDetailUiEvent.LeaveClicked -> _localUiState.update { it.copy(showLeaveConfirmation = true) }
+            GroupDetailUiEvent.LeaveCancelled -> _localUiState.update { it.copy(showLeaveConfirmation = false) }
+            GroupDetailUiEvent.LeaveConfirmed -> handleLeave()
+        }
+    }
+
+    private fun handleArchive() {
+        _localUiState.update { it.copy(showArchiveConfirmation = false, isArchiving = true) }
+        viewModelScope.launch {
+            archiveGroupUseCase(_groupId.value).fold(
+                onSuccess = { _localUiState.update { it.copy(isArchiving = false) } },
+                onFailure = {
+                    _localUiState.update { it.copy(isArchiving = false) }
+                    _actions.send(
+                        GroupDetailUiAction.ShowError(
+                            UiText.StringResource(DesignSystemR.string.group_error_archiving_failed)
+                        )
                     )
                 }
+            )
+        }
+    }
+
+    private fun handleDelete() {
+        _localUiState.update { it.copy(showDeleteConfirmation = false, isDeleting = true) }
+        viewModelScope.launch {
+            try {
+                deleteGroupUseCase(_groupId.value)
+                _localUiState.update { it.copy(isDeleting = false) }
+                _actions.send(
+                    GroupDetailUiAction.DeleteSuccess(UiText.StringResource(R.string.group_deleted_successfully))
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to delete group: ${_groupId.value}")
+                _localUiState.update { it.copy(isDeleting = false) }
+                _actions.send(GroupDetailUiAction.ShowError(UiText.StringResource(R.string.error_deleting_group)))
             }
-            GroupDetailUiEvent.DeleteClicked -> {
-                _localUiState.update { it.copy(showDeleteConfirmation = true) }
-            }
-            GroupDetailUiEvent.DeleteCancelled -> {
-                _localUiState.update { it.copy(showDeleteConfirmation = false) }
-            }
-            GroupDetailUiEvent.DeleteConfirmed -> {
-                _localUiState.update { it.copy(showDeleteConfirmation = false, isDeleting = true) }
-                viewModelScope.launch {
-                    try {
-                        deleteGroupUseCase(_groupId.value)
-                        _localUiState.update { it.copy(isDeleting = false) }
-                        _actions.send(
-                            GroupDetailUiAction.DeleteSuccess(
-                                UiText.StringResource(R.string.group_deleted_successfully)
-                            )
-                        )
-                    } catch (e: Exception) {
-                        Timber.e(e, "Failed to delete group: ${_groupId.value}")
-                        _localUiState.update { it.copy(isDeleting = false) }
-                        _actions.send(
-                            GroupDetailUiAction.ShowError(
-                                UiText.StringResource(R.string.error_deleting_group)
-                            )
-                        )
+        }
+    }
+
+    private fun handleLeave() {
+        _localUiState.update { it.copy(showLeaveConfirmation = false, isLeaving = true) }
+        viewModelScope.launch {
+            leaveGroupUseCase(_groupId.value).fold(
+                onSuccess = {
+                    _localUiState.update { it.copy(isLeaving = false) }
+                    _actions.send(GroupDetailUiAction.LeaveSuccess(UiText.StringResource(R.string.group_leave_success)))
+                },
+                onFailure = { e ->
+                    _localUiState.update { it.copy(isLeaving = false) }
+                    val message = when {
+                        e.message?.contains(
+                            "non_zero_balance"
+                        ) == true -> UiText.StringResource(R.string.group_leave_error_balance)
+                        e.message?.contains(
+                            "is_creator"
+                        ) == true -> UiText.StringResource(R.string.group_leave_error_admin)
+                        else -> UiText.StringResource(R.string.group_leave_error_general)
                     }
+                    _actions.send(GroupDetailUiAction.ShowError(message))
                 }
-            }
+            )
         }
     }
 
@@ -197,6 +217,8 @@ class GroupDetailViewModel(
         val showArchiveConfirmation: Boolean = false,
         val isArchiving: Boolean = false,
         val showDeleteConfirmation: Boolean = false,
-        val isDeleting: Boolean = false
+        val isDeleting: Boolean = false,
+        val showLeaveConfirmation: Boolean = false,
+        val isLeaving: Boolean = false
     )
 }

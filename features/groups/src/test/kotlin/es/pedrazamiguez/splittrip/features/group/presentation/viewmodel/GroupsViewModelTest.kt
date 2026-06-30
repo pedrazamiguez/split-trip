@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
@@ -54,6 +55,7 @@ class GroupsViewModelTest {
     private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var archiveGroupUseCase: ArchiveGroupUseCase
+    private lateinit var leaveGroupUseCase: LeaveGroupUseCase
     private lateinit var viewModel: GroupsViewModel
 
     private val testGroup1 = Group(
@@ -116,6 +118,9 @@ class GroupsViewModelTest {
         archiveGroupUseCase = mockk()
         coEvery { archiveGroupUseCase(any()) } returns Result.success(Unit)
 
+        leaveGroupUseCase = mockk()
+        coEvery { leaveGroupUseCase(any()) } returns Result.success(Unit)
+
         viewModel = createViewModel()
     }
 
@@ -126,7 +131,8 @@ class GroupsViewModelTest {
         groupUiMapper: GroupUiMapper = this.groupUiMapper,
         isUserAnonymousUseCase: IsUserAnonymousUseCase = this.isUserAnonymousUseCase,
         authenticationService: AuthenticationService = this.authenticationService,
-        archiveGroupUseCase: ArchiveGroupUseCase = this.archiveGroupUseCase
+        archiveGroupUseCase: ArchiveGroupUseCase = this.archiveGroupUseCase,
+        leaveGroupUseCase: LeaveGroupUseCase = this.leaveGroupUseCase
     ): GroupsViewModel {
         return GroupsViewModel(
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
@@ -135,7 +141,8 @@ class GroupsViewModelTest {
             groupUiMapper = groupUiMapper,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
             authenticationService = authenticationService,
-            archiveGroupUseCase = archiveGroupUseCase
+            archiveGroupUseCase = archiveGroupUseCase,
+            leaveGroupUseCase = leaveGroupUseCase
         )
     }
 
@@ -579,6 +586,77 @@ class GroupsViewModelTest {
             assertTrue(
                 actions.any { it is GroupsUiAction.ShowArchiveError },
                 "Expected ShowArchiveError action instead of crash"
+            )
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+    }
+
+    @Nested
+    inner class LeaveGroupEvent {
+
+        @Test
+        fun `LeaveGroup event calls use case with correct groupId`() = runTest(testDispatcher) {
+            every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup1, testGroup2))
+            viewModel = createViewModel()
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            viewModel.onEvent(GroupsUiEvent.LeaveGroup("group-1"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { leaveGroupUseCase("group-1") }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `LeaveGroup event emits success action`() = runTest(testDispatcher) {
+            coEvery { leaveGroupUseCase(any()) } returns Result.success(Unit)
+            viewModel = createViewModel()
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupsUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            viewModel.onEvent(GroupsUiEvent.LeaveGroup("group-1"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { leaveGroupUseCase("group-1") }
+            assertTrue(
+                actions.any { it is GroupsUiAction.ShowLeaveSuccess },
+                "Expected ShowLeaveSuccess action"
+            )
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `LeaveGroup event emits error action when leaving fails`() = runTest(testDispatcher) {
+            coEvery { leaveGroupUseCase(any()) } returns Result.failure(Exception("non_zero_balance"))
+            viewModel = createViewModel()
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupsUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            viewModel.onEvent(GroupsUiEvent.LeaveGroup("group-1"))
+            advanceUntilIdle()
+
+            assertTrue(
+                actions.any { it is GroupsUiAction.ShowLeaveError },
+                "Expected ShowLeaveError action"
             )
 
             actionsJob.cancel()

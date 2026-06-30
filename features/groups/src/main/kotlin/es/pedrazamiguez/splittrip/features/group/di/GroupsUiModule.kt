@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
@@ -121,6 +122,7 @@ val groupsUiModule = module {
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         val authenticationService = get<AuthenticationService>()
         val archiveGroupUseCase = get<ArchiveGroupUseCase>()
+        val leaveGroupUseCase = get<LeaveGroupUseCase>()
         GroupsViewModel(
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             deleteGroupUseCase = deleteGroupUseCase,
@@ -128,7 +130,8 @@ val groupsUiModule = module {
             groupUiMapper = groupUiMapper,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
             authenticationService = authenticationService,
-            archiveGroupUseCase = archiveGroupUseCase
+            archiveGroupUseCase = archiveGroupUseCase,
+            leaveGroupUseCase = leaveGroupUseCase
         )
     }
 
@@ -141,6 +144,7 @@ val groupsUiModule = module {
         val authenticationService = get<AuthenticationService>()
         val archiveGroupUseCase = get<ArchiveGroupUseCase>()
         val deleteGroupUseCase = get<DeleteGroupUseCase>()
+        val leaveGroupUseCase = get<LeaveGroupUseCase>()
         GroupDetailViewModel(
             observeGroupUseCase = observeGroupUseCase,
             getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
@@ -149,7 +153,8 @@ val groupsUiModule = module {
             groupUiMapper = groupUiMapper,
             authenticationService = authenticationService,
             archiveGroupUseCase = archiveGroupUseCase,
-            deleteGroupUseCase = deleteGroupUseCase
+            deleteGroupUseCase = deleteGroupUseCase,
+            leaveGroupUseCase = leaveGroupUseCase
         )
     }
 

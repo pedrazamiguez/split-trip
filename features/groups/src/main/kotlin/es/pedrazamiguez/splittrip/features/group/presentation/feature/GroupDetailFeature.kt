@@ -88,5 +88,12 @@ private fun handleAction(
             }
             navController.popBackStack()
         }
+        is GroupDetailUiAction.LeaveSuccess -> {
+            pillController.showPill(message = action.message.asString(context))
+            if (selectedGroupId == groupId) {
+                sharedViewModel.selectGroup(null, null, null)
+            }
+            navController.popBackStack()
+        }
     }
 }

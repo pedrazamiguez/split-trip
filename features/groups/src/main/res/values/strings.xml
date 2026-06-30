@@ -127,4 +127,13 @@
     <string name="group_edit_save">Save Changes</string>
     <string name="group_edit_success_saved">Group updated successfully.</string>
     <string name="group_edit_updating">Updating group…</string>
+
+    <!-- Leave Group -->
+    <string name="action_leave_group">Leave group</string>
+    <string name="group_leave_title">Leave Group?</string>
+    <string name="group_leave_warning">Are you sure you want to leave "%1$s"? This action cannot be undone.</string>
+    <string name="group_leave_success">You left the group successfully</string>
+    <string name="group_leave_error_balance">Your balance must be zero before you can leave the group</string>
+    <string name="group_leave_error_admin">As the group creator, you cannot leave the group. Delete it instead.</string>
+    <string name="group_leave_error_general">Failed to leave the group. Please try again.</string>
 </resources>

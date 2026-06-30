@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -54,6 +55,7 @@ class GroupDetailViewModelTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var archiveGroupUseCase: ArchiveGroupUseCase
     private lateinit var deleteGroupUseCase: DeleteGroupUseCase
+    private lateinit var leaveGroupUseCase: LeaveGroupUseCase
     private lateinit var viewModel: GroupDetailViewModel
 
     private val testGroupId = "group-123"
@@ -83,6 +85,7 @@ class GroupDetailViewModelTest {
         authenticationService = mockk(relaxed = true)
         archiveGroupUseCase = mockk(relaxed = true)
         deleteGroupUseCase = mockk(relaxed = true)
+        leaveGroupUseCase = mockk(relaxed = true)
 
         // Default stubs
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
@@ -108,7 +111,8 @@ class GroupDetailViewModelTest {
         observeGroupUseCase = observeGroupUseCase,
         authenticationService = authenticationService,
         archiveGroupUseCase = archiveGroupUseCase,
-        deleteGroupUseCase = deleteGroupUseCase
+        deleteGroupUseCase = deleteGroupUseCase,
+        leaveGroupUseCase = leaveGroupUseCase
     )
 
     @Nested
@@ -570,6 +574,92 @@ class GroupDetailViewModelTest {
             assertFalse(state.isDeleting)
             assertTrue(actions.any { it is GroupDetailUiAction.ShowError })
             coVerify(exactly = 1) { deleteGroupUseCase(testGroupId) }
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+    }
+
+    @Nested
+    inner class LeaveFlow {
+
+        @Test
+        fun `LeaveClicked event updates state to show leave confirmation`() = runTest(testDispatcher) {
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            viewModel.onEvent(GroupDetailUiEvent.LeaveClicked)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.showLeaveConfirmation)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `LeaveCancelled event updates state to hide leave confirmation`() = runTest(testDispatcher) {
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            viewModel.onEvent(GroupDetailUiEvent.LeaveClicked)
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.showLeaveConfirmation)
+
+            viewModel.onEvent(GroupDetailUiEvent.LeaveCancelled)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.showLeaveConfirmation)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `LeaveConfirmed event success path leaves group and emits LeaveSuccess action`() = runTest(testDispatcher) {
+            coEvery { leaveGroupUseCase(testGroupId) } returns Result.success(Unit)
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupDetailUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            viewModel.onEvent(GroupDetailUiEvent.LeaveConfirmed)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertFalse(state.showLeaveConfirmation)
+            assertFalse(state.isLeaving)
+            assertTrue(actions.any { it is GroupDetailUiAction.LeaveSuccess })
+            coVerify(exactly = 1) { leaveGroupUseCase(testGroupId) }
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `LeaveConfirmed event failure path emits ShowError action and updates state`() = runTest(testDispatcher) {
+            coEvery { leaveGroupUseCase(testGroupId) } returns Result.failure(Exception("non_zero_balance"))
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId(testGroupId)
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupDetailUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            viewModel.onEvent(GroupDetailUiEvent.LeaveConfirmed)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertFalse(state.showLeaveConfirmation)
+            assertFalse(state.isLeaving)
+            assertTrue(actions.any { it is GroupDetailUiAction.ShowError })
+            coVerify(exactly = 1) { leaveGroupUseCase(testGroupId) }
 
             actionsJob.cancel()
             collectJob.cancel()
