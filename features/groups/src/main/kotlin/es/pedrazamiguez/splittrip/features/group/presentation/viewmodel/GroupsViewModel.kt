@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
@@ -54,7 +55,8 @@ class GroupsViewModel(
     private val groupUiMapper: GroupUiMapper,
     private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
     private val authenticationService: AuthenticationService,
-    private val archiveGroupUseCase: ArchiveGroupUseCase
+    private val archiveGroupUseCase: ArchiveGroupUseCase,
+    private val leaveGroupUseCase: LeaveGroupUseCase
 ) : ViewModel() {
 
     // Scroll state is managed separately as it's UI-only state
@@ -174,6 +176,7 @@ class GroupsViewModel(
 
             is GroupsUiEvent.DeleteGroup -> handleDeleteGroup(event.groupId)
             is GroupsUiEvent.ArchiveGroup -> handleArchiveGroup(event.groupId)
+            is GroupsUiEvent.LeaveGroup -> handleLeaveGroup(event.groupId)
         }
     }
 
@@ -214,6 +217,30 @@ class GroupsViewModel(
                             UiText.StringResource(DesignSystemR.string.group_error_archiving_failed)
                         )
                     )
+                }
+            )
+        }
+    }
+
+    private fun handleLeaveGroup(groupId: String) {
+        viewModelScope.launch {
+            leaveGroupUseCase(groupId).fold(
+                onSuccess = {
+                    _actions.emit(
+                        GroupsUiAction.ShowLeaveSuccess(
+                            UiText.StringResource(R.string.group_leave_success)
+                        )
+                    )
+                },
+                onFailure = { e ->
+                    Timber.e(e, "Failed to leave group: $groupId")
+                    val message = when {
+                        e.message?.contains("non_zero_balance") == true ->
+                            UiText.StringResource(R.string.group_leave_error_balance)
+                        else ->
+                            UiText.StringResource(R.string.group_leave_error_general)
+                    }
+                    _actions.emit(GroupsUiAction.ShowLeaveError(message))
                 }
             )
         }

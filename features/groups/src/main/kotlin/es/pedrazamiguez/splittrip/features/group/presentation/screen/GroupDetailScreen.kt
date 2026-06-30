@@ -93,6 +93,15 @@ fun GroupDetailScreen(
                 )
             }
 
+            if (uiState.showLeaveConfirmation && group != null) {
+                DestructiveConfirmationDialog(
+                    title = stringResource(R.string.group_leave_title),
+                    text = stringResource(R.string.group_leave_warning, group.name),
+                    onConfirm = { onEvent(GroupDetailUiEvent.LeaveConfirmed) },
+                    onDismiss = { onEvent(GroupDetailUiEvent.LeaveCancelled) }
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -258,6 +267,15 @@ fun GroupDetailScreen(
                                 leadingIcon = TablerIcons.Outline.Lock,
                                 modifier = Modifier.fillMaxWidth(),
                                 enabled = !uiState.isArchiving
+                            )
+                        }
+                        if (group.status == GroupStatus.ACTIVE && !uiState.isUserAdmin) {
+                            DestructiveButton(
+                                text = stringResource(R.string.action_leave_group),
+                                onClick = { onEvent(GroupDetailUiEvent.LeaveClicked) },
+                                leadingIcon = TablerIcons.Outline.X,
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !uiState.isLeaving
                             )
                         }
                     }
