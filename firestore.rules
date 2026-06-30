@@ -30,6 +30,10 @@ service cloud.firestore {
       );
     }
 
+    function isGroupActive(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId)).data.status != "ARCHIVED";
+    }
+
     // ---------------------------------------------------------------
     // Users
     // ---------------------------------------------------------------
@@ -75,36 +79,36 @@ service cloud.firestore {
       // (membership enforced at app level; rule allows read for now)
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update, delete: if isMemberOrPending(resource.data.memberIds);
+      allow update, delete: if isMemberOrPending(resource.data.memberIds) && resource.data.status != "ARCHIVED";
 
       // Members subcollection
       match /members/{memberId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated();
+        allow write: if isAuthenticated() && isGroupActive(groupId);
       }
 
       // Expenses subcollection
       match /expenses/{expenseId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated();
+        allow write: if isAuthenticated() && isGroupActive(groupId);
       }
 
       // Contributions subcollection
       match /contributions/{contributionId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated();
+        allow write: if isAuthenticated() && isGroupActive(groupId);
       }
 
       // Cash withdrawals subcollection
       match /cash_withdrawals/{withdrawalId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated();
+        allow write: if isAuthenticated() && isGroupActive(groupId);
       }
 
       // Subunits subcollection
       match /subunits/{subunitId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated();
+        allow write: if isAuthenticated() && isGroupActive(groupId);
       }
     }
   }

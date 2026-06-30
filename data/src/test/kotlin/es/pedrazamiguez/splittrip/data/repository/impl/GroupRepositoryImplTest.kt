@@ -848,4 +848,99 @@ class GroupRepositoryImplTest {
             coVerify { cloudGroupDataSource.updateGroup(match { it.mainImagePath == uploadedUrl }) }
         }
     }
+
+    @Nested
+    inner class GetGroupByIdFlow {
+
+        @Test
+        fun `emits group from local data source`() = runTest(testDispatcher) {
+            // Given
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(testGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(null)
+
+            // When
+            val result = repository.getGroupByIdFlow(testGroupId).first()
+
+            // Then
+            assertEquals(testGroup, result)
+        }
+
+        @Test
+        fun `subscribes to single-group cloud flow on start`() = runTest(testDispatcher) {
+            // Given
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(null)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(null)
+
+            // When
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { cloudGroupDataSource.getGroupFlow(testGroupId) }
+        }
+
+        @Test
+        fun `saves cloud group to local when cloud emits an update`() = runTest(testDispatcher) {
+            // Given
+            val updatedGroup = testGroup.copy(status = es.pedrazamiguez.splittrip.domain.enums.GroupStatus.ARCHIVED)
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(testGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(updatedGroup)
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+
+            // When
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { localGroupDataSource.saveGroup(updatedGroup) }
+        }
+
+        @Test
+        fun `handles cloud flow error gracefully`() = runTest(testDispatcher) {
+            // Given
+            val localGroup = testGroup
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(localGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flow {
+                throw java.io.IOException("Network error")
+            }
+
+            // When
+            val result = repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then — local flow emission is unaffected
+            assertEquals(localGroup, result)
+        }
+
+        @Test
+        fun `does not save null group to local when cloud emits null`() = runTest(testDispatcher) {
+            // Given
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(testGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(null)
+
+            // When
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then — saveGroup should not be called
+            coVerify(exactly = 0) { localGroupDataSource.saveGroup(any()) }
+        }
+
+        @Test
+        fun `cancels previous subscription when flow is re-collected for same id`() = runTest(testDispatcher) {
+            // Given
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(testGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(null)
+
+            // When — collect twice, advance between each to let coroutines start
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then — getGroupFlow should be called twice (once per collect,
+            // with old subscription cancelled before new one starts)
+            coVerify(exactly = 2) { cloudGroupDataSource.getGroupFlow(testGroupId) }
+        }
+    }
 }
