@@ -10,7 +10,6 @@ import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
-import java.time.LocalDateTime
 import kotlinx.coroutines.flow.first
 
 class LeaveGroupUseCaseImpl(
@@ -54,12 +53,6 @@ class LeaveGroupUseCaseImpl(
             throw CannotLeaveGroupException("non_zero_balance")
         }
 
-        val updatedMembers = group.members - currentUserId
-        groupRepository.updateGroup(
-            group.copy(
-                members = updatedMembers,
-                lastUpdatedAt = LocalDateTime.now()
-            )
-        )
+        groupRepository.leaveGroup(groupId)
     }
 }

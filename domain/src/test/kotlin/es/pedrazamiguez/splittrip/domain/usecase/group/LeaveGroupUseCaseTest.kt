@@ -88,7 +88,7 @@ class LeaveGroupUseCaseTest {
         coEvery { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(emptyList())
         coEvery { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(emptyList())
         coEvery { subunitRepository.getGroupSubunits(groupId) } returns emptyList()
-        coEvery { groupRepository.updateGroup(any()) } just Runs
+        coEvery { groupRepository.leaveGroup(any()) } just Runs
     }
 
     @Nested
@@ -111,13 +111,7 @@ class LeaveGroupUseCaseTest {
             val result = useCase(groupId)
 
             assertTrue(result.isSuccess)
-            coVerify(exactly = 1) {
-                groupRepository.updateGroup(
-                    match { updatedGroup ->
-                        updatedGroup.members == listOf(anotherUserId)
-                    }
-                )
-            }
+            coVerify(exactly = 1) { groupRepository.leaveGroup(groupId) }
         }
 
         @Test
@@ -139,7 +133,7 @@ class LeaveGroupUseCaseTest {
 
             assertTrue(result.isFailure)
             assertTrue(result.exceptionOrNull() is GroupArchivedException)
-            coVerify(exactly = 0) { groupRepository.updateGroup(any()) }
+            coVerify(exactly = 0) { groupRepository.leaveGroup(any()) }
         }
 
         @Test
@@ -154,7 +148,7 @@ class LeaveGroupUseCaseTest {
             val exception = result.exceptionOrNull()
             assertTrue(exception is CannotLeaveGroupException)
             assertEquals("Cannot leave group: not_a_member", exception?.message)
-            coVerify(exactly = 0) { groupRepository.updateGroup(any()) }
+            coVerify(exactly = 0) { groupRepository.leaveGroup(any()) }
         }
 
         @Test
@@ -168,7 +162,7 @@ class LeaveGroupUseCaseTest {
             val exception = result.exceptionOrNull()
             assertTrue(exception is CannotLeaveGroupException)
             assertEquals("Cannot leave group: is_creator", exception?.message)
-            coVerify(exactly = 0) { groupRepository.updateGroup(any()) }
+            coVerify(exactly = 0) { groupRepository.leaveGroup(any()) }
         }
 
         @Test
@@ -191,7 +185,7 @@ class LeaveGroupUseCaseTest {
             val exception = result.exceptionOrNull()
             assertTrue(exception is CannotLeaveGroupException)
             assertEquals("Cannot leave group: non_zero_balance", exception?.message)
-            coVerify(exactly = 0) { groupRepository.updateGroup(any()) }
+            coVerify(exactly = 0) { groupRepository.leaveGroup(any()) }
         }
     }
 }

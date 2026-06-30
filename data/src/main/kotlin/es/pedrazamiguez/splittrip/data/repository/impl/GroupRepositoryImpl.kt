@@ -399,6 +399,32 @@ class GroupRepositoryImpl(
         return uploadAndSaveLocalImage(groupId, updatedGroup, localImagePath)
     }
 
+    override suspend fun leaveGroup(groupId: String) {
+        val currentUserId = authenticationService.requireUserId()
+        val group = localGroupDataSource.getGroupById(groupId) ?: return
+
+        val updatedMembers = group.members - currentUserId
+        val updatedGroup = group.copy(
+            members = updatedMembers,
+            lastUpdatedAt = LocalDateTime.now(),
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
+
+        localGroupDataSource.saveGroup(updatedGroup)
+
+        syncScope.launch {
+            try {
+                cloudGroupDataSource.leaveGroup(groupId, currentUserId)
+                localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNCED)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to sync leave group $groupId to cloud")
+                localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNC_FAILED)
+            }
+        }
+    }
+
     override suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String) {
         localGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId)
         try {

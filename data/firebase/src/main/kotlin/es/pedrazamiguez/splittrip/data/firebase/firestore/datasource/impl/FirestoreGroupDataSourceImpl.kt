@@ -212,6 +212,27 @@ class FirestoreGroupDataSourceImpl(
             .await()
     }
 
+    override suspend fun leaveGroup(groupId: String, userId: String) {
+        val groupDocRef = firestore
+            .collection(GroupDocument.COLLECTION_PATH)
+            .document(groupId)
+        val memberDocRef = firestore
+            .collection(GroupMemberDocument.collectionPath(groupId))
+            .document(userId)
+
+        firestore.batch()
+            .apply {
+                update(
+                    groupDocRef,
+                    "memberIds",
+                    FieldValue.arrayRemove(userId)
+                )
+                delete(memberDocRef)
+            }
+            .commit()
+            .await()
+    }
+
     override suspend fun verifyGroupOnServer(groupId: String): Boolean {
         val doc = firestore
             .collection(GroupDocument.COLLECTION_PATH)

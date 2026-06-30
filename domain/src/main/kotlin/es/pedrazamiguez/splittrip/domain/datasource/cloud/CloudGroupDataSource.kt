@@ -65,4 +65,21 @@ interface CloudGroupDataSource {
      * Replaces pending user IDs with active user IDs across group memberships, expenses, splits, contributions, and withdrawals in Firestore.
      */
     suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String)
+
+    /**
+     * Removes a user from a group in Firestore.
+     *
+     * Uses a WriteBatch to atomically:
+     * 1. Remove [userId] from the group document's `memberIds` array
+     * 2. Delete the user's member document from `groups/{groupId}/members/{userId}`
+     *
+     * The member-doc deletion is critical: the `getAllGroupsFlow()` snapshot listener
+     * uses `collectionGroup("members")` to determine group membership. Without deleting
+     * the member doc, the listener would continue to push the group to the leaving user,
+     * causing sync delegates to upsert the stale cloud data back into Room.
+     *
+     * @param groupId The ID of the group to leave.
+     * @param userId The ID of the user leaving the group.
+     */
+    suspend fun leaveGroup(groupId: String, userId: String)
 }
