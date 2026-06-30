@@ -53,15 +53,23 @@ internal fun GroupsScreenOverlays(
             )
         }
 
-        val archiveAction = if (group.status == GroupStatus.ACTIVE && group.createdBy == currentUserId) {
-            SheetAction(
-                text = stringResource(DesignSystemR.string.group_detail_end_trip),
-                icon = TablerIcons.Outline.Lock,
-                onClick = { onArchiveRequested(group) },
-                isDestructive = true
+        val ownerActions = if (group.status == GroupStatus.ACTIVE && group.createdBy == currentUserId) {
+            listOf(
+                SheetAction(
+                    text = stringResource(DesignSystemR.string.group_detail_end_trip),
+                    icon = TablerIcons.Outline.Lock,
+                    onClick = { onArchiveRequested(group) },
+                    isDestructive = true
+                ),
+                SheetAction(
+                    text = stringResource(R.string.action_delete_group),
+                    icon = TablerIcons.Outline.Trash,
+                    onClick = { onDeleteRequested(group) },
+                    isDestructive = true
+                )
             )
         } else {
-            null
+            emptyList()
         }
 
         ActionBottomSheet(
@@ -70,10 +78,9 @@ internal fun GroupsScreenOverlays(
             actions = sheetActionsForGroup(
                 group = group,
                 selectAction = selectAction,
-                archiveAction = archiveAction,
+                ownerActions = ownerActions,
                 onEditGroup = onEditGroup,
                 onManageSubunits = onManageSubunits,
-                onDeleteRequested = onDeleteRequested,
                 onMenuDismiss = onMenuDismiss
             ),
             onDismiss = onMenuDismiss
@@ -85,10 +92,9 @@ internal fun GroupsScreenOverlays(
 private fun sheetActionsForGroup(
     group: GroupUiModel,
     selectAction: SheetAction?,
-    archiveAction: SheetAction?,
+    ownerActions: List<SheetAction>,
     onEditGroup: (String) -> Unit,
     onManageSubunits: (String) -> Unit,
-    onDeleteRequested: (GroupUiModel) -> Unit,
     onMenuDismiss: () -> Unit
 ): List<SheetAction> = listOfNotNull(
     selectAction,
@@ -107,12 +113,5 @@ private fun sheetActionsForGroup(
             onManageSubunits(group.id)
             onMenuDismiss()
         }
-    ),
-    archiveAction,
-    SheetAction(
-        text = stringResource(R.string.action_delete_group),
-        icon = TablerIcons.Outline.Trash,
-        onClick = { onDeleteRequested(group) },
-        isDestructive = true
     )
-)
+) + ownerActions
