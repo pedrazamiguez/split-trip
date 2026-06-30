@@ -20,7 +20,7 @@ YELLOW := \033[1;33m
 CYAN   := \033[0;36m
 NC     := \033[0m
 
-.PHONY: help setup hooks local-props doctor check ktlint detekt test konsist coverage build clean andaluz andaluz-lenient catalog firebase prune-branches
+.PHONY: help setup hooks local-props doctor check ktlint detekt test konsist coverage build clean andaluz andaluz-lenient catalog firebase prune-branches ai-setup
 
 # ─── Default: show help ───────────────────────────────────────────────────────
 help: ## Show this help message
@@ -116,6 +116,57 @@ doctor: ## Check that required files and tools are present
 	else \
 		printf "  $(YELLOW)⚠️   Pre-commit hook not installed$(NC) — run 'make hooks'\n"; \
 	fi
+	@# ─── AI Code Intelligence Tools ─────────────────────
+	@# codebase-memory-mcp binary
+	@CBM_BIN=$${HOME}/.local/bin/codebase-memory-mcp; \
+	if [ -x "$$CBM_BIN" ]; then \
+		printf "  $(GREEN)✅  codebase-memory-mcp present$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   codebase-memory-mcp not found$(NC) — run 'make ai-setup'\n"; \
+	fi
+	@# uv
+	@if command -v uv >/dev/null 2>&1 || [ -x "$${HOME}/.local/bin/uv" ]; then \
+		printf "  $(GREEN)✅  uv present$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   uv not found$(NC) — run 'make ai-setup'\n"; \
+	fi
+	@# graphify
+	@if command -v graphify >/dev/null 2>&1; then \
+		printf "  $(GREEN)✅  graphify present$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   graphify not found$(NC) — run 'make ai-setup'\n"; \
+	fi
+	@# codebase-memory-mcp index
+	@if [ -d "$${HOME}/.cache/codebase-memory-mcp" ]; then \
+		printf "  $(GREEN)✅  codebase-memory-mcp index present$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   codebase-memory-mcp index missing$(NC) — run 'make ai-setup'\n"; \
+	fi
+	@# Graphify index
+	@if [ -f "graphify-out/graph.json" ]; then \
+		printf "  $(GREEN)✅  Graphify index present$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   Graphify index missing$(NC) — run 'make ai-setup'\n"; \
+	fi
+	@# opencode.jsonc has codebase-memory-mcp entry
+	@OPENCODE_CFG="$${HOME}/.config/opencode/opencode.jsonc"; \
+	if [ -f "$$OPENCODE_CFG" ] && grep -q "codebase-memory-mcp" "$$OPENCODE_CFG" 2>/dev/null; then \
+		printf "  $(GREEN)✅  opencode.jsonc has codebase-memory-mcp entry$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   opencode.jsonc missing codebase-memory-mcp entry$(NC) — run 'make ai-setup'\n"; \
+	fi
+	@# Gemini MCP config has entries
+	@GEMINI_CFG="$${HOME}/.gemini/config/mcp_config.json"; \
+	if [ -f "$$GEMINI_CFG" ] && grep -q "codebase-memory-mcp" "$$GEMINI_CFG" 2>/dev/null; then \
+		printf "  $(GREEN)✅  Gemini MCP has codebase-memory-mcp entry$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   Gemini MCP missing codebase-memory-mcp entry$(NC) — run 'make ai-setup'\n"; \
+	fi; \
+	if [ -f "$$GEMINI_CFG" ] && grep -q '"graphify"' "$$GEMINI_CFG" 2>/dev/null; then \
+		printf "  $(GREEN)✅  Gemini MCP has graphify entry$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   Gemini MCP missing graphify entry$(NC) — run 'make ai-setup'\n"; \
+	fi
 	@echo ""
 
 # ─── Quality gates (mirrors CI) ───────────────────────────────────────────────
@@ -178,6 +229,10 @@ clean: ## Clean all Gradle build outputs
 catalog: ## Check and update Version Catalog dependencies (on-demand)
 	@printf "$(YELLOW)⏳  Checking and updating Version Catalog...$(NC)\n"
 	@$(GRADLEW) versionCatalogUpdate
+
+ai-setup: ## Install and configure AI code-intelligence tools (codebase-memory-mcp + Graphify)
+	@printf "$(YELLOW)⏳  Setting up AI code-intelligence tools...$(NC)\n"
+	@./scripts/ai-setup.sh
 
 prune-branches: ## Fetch remote changes and delete local branches that are gone on the remote
 	@printf "$(YELLOW)⏳  Pruning gone branches...$(NC)\n"
