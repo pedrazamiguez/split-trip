@@ -119,12 +119,16 @@ val groupsUiModule = module {
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val groupUiMapper = get<GroupUiMapper>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
+        val authenticationService = get<AuthenticationService>()
+        val archiveGroupUseCase = get<ArchiveGroupUseCase>()
         GroupsViewModel(
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             deleteGroupUseCase = deleteGroupUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
-            isUserAnonymousUseCase = isUserAnonymousUseCase
+            isUserAnonymousUseCase = isUserAnonymousUseCase,
+            authenticationService = authenticationService,
+            archiveGroupUseCase = archiveGroupUseCase
         )
     }
 

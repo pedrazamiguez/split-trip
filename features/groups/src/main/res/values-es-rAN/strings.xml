@@ -50,6 +50,7 @@
     <string name="action_delete_group">Eliminâh grupo</string>
     <string name="action_select_active_group">Çelêççionâh como grupo âttibo</string>
     <string name="action_deselect_group">Deçelêççionâh grupo</string>
+    <string name="group_archived_successfully">Biahe finaliçao corrêttamente</string>
     <string name="group_detail_select_as_active">Êttableçêh como grupo âttibo</string>
     <string name="group_detail_currently_active">Âttibo âttuarmente</string>
     <string name="group_detail_section_members">Miembrô</string>

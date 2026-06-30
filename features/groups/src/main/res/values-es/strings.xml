@@ -53,6 +53,7 @@
     <string name="action_delete_group">Eliminar grupo</string>
     <string name="action_select_active_group">Seleccionar como grupo activo</string>
     <string name="action_deselect_group">Deseleccionar grupo</string>
+    <string name="group_archived_successfully">Viaje finalizado correctamente</string>
 
     <!-- Group Detail screen -->
     <string name="group_detail_select_as_active">Establecer como grupo activo</string>
