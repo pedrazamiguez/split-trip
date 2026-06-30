@@ -118,7 +118,7 @@ index_graphify() {
   fi
   log_info "Building Graphify index..."
   mkdir -p "$gdir"
-  if graphify index . --output "$gdir"; then
+  if graphify update .; then
     log_ok "Graphify index built at ${gdir}"
   else
     log_err "Failed to build Graphify index"
@@ -190,43 +190,51 @@ print('  Gemini MCP config updated')
 merge_opencode_config() {
   log_info "Merging MCP entry into ${OPENCODE_CONFIG}..."
   python3 -c "
-import json, os
+import os, re, json
 
 path = os.path.expanduser('${OPENCODE_CONFIG}')
 cbm_bin = os.path.expanduser('${CBM_BIN}')
 
-# opencode.jsonc may have trailing comma — use json5-like tolerance by
-# treating it as plain text merge. We do a structural insert via json then
-# re-serialize (single-line command arrays to keep it compact).
-if os.path.exists(path):
-    with open(path) as f:
-        raw = f.read()
+if not os.path.exists(path):
+    print('  Config file not found — skipping')
+    exit(0)
 
-# Simplified: parse with json, add entry, rewrite
-# We strip comments/commas by using a basic approach
-import re
-# Remove single-line comments
-content = re.sub(r'//.*', '', raw)
-content = re.sub(r',\s*}', '}', content)
-content = re.sub(r',\s*]', ']', content)
+with open(path) as f:
+    raw = f.read()
 
-config = json.loads(content)
-mcp_block = config.setdefault('mcp', {})
-
-if 'codebase-memory-mcp' not in mcp_block:
-    mcp_block['codebase-memory-mcp'] = {
-        'type': 'local',
-        'command': [cbm_bin],
-        'enabled': True
-    }
-    print('  Added codebase-memory-mcp to opencode.jsonc')
-else:
+if 'codebase-memory-mcp' in raw:
     print('  codebase-memory-mcp already in opencode.jsonc')
+    exit(0)
+
+# Find the mcp block boundaries via regex
+m = re.search(r'\"mcp\"\s*:\s*\{', raw)
+if not m:
+    print('  Could not find mcp block in opencode.jsonc')
+    exit(1)
+
+depth = 1
+pos = m.end()  # right after the opening '{'
+while depth > 0 and pos < len(raw):
+    if raw[pos] == '{':
+        depth += 1
+    elif raw[pos] == '}':
+        depth -= 1
+    pos += 1
+mcp_close = pos - 1
+
+# Build the entry with same indentation as existing entries
+entry_indent = '        '
+entry = ',\n' + entry_indent + '\"codebase-memory-mcp\": {\n'
+entry += entry_indent + '    \"type\": \"local\",\n'
+entry += entry_indent + '    \"command\": [\"' + cbm_bin + '\"],\n'
+entry += entry_indent + '    \"enabled\": true\n'
+entry += entry_indent + '}'
+
+new_raw = raw[:mcp_close] + entry + raw[mcp_close:]
 
 with open(path, 'w') as f:
-    json.dump(config, f, indent=2)
-    f.write('\n')
-print('  opencode.jsonc updated')
+    f.write(new_raw)
+print('  Added codebase-memory-mcp to opencode.jsonc')
 "
   log_ok "Opencode config merged"
 }
