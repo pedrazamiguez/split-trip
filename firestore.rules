@@ -30,8 +30,12 @@ service cloud.firestore {
       );
     }
 
-    function isGroupActive(groupId) {
-      return get(/databases/$(database)/documents/groups/$(groupId)).data.status != "ARCHIVED";
+    // exists() guard handles the case where the group doc is being created
+    // in the same WriteBatch — get() would fail because the doc doesn't
+    // exist yet in the committed database state.
+    function isGroupActiveOrNew(groupId) {
+      return !exists(/databases/$(database)/documents/groups/$(groupId))
+             || get(/databases/$(database)/documents/groups/$(groupId)).data.status != "ARCHIVED";
     }
 
     // ---------------------------------------------------------------
@@ -84,31 +88,31 @@ service cloud.firestore {
       // Members subcollection
       match /members/{memberId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated() && isGroupActive(groupId);
+        allow write: if isAuthenticated() && isGroupActiveOrNew(groupId);
       }
 
       // Expenses subcollection
       match /expenses/{expenseId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated() && isGroupActive(groupId);
+        allow write: if isAuthenticated() && isGroupActiveOrNew(groupId);
       }
 
       // Contributions subcollection
       match /contributions/{contributionId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated() && isGroupActive(groupId);
+        allow write: if isAuthenticated() && isGroupActiveOrNew(groupId);
       }
 
       // Cash withdrawals subcollection
       match /cash_withdrawals/{withdrawalId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated() && isGroupActive(groupId);
+        allow write: if isAuthenticated() && isGroupActiveOrNew(groupId);
       }
 
       // Subunits subcollection
       match /subunits/{subunitId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated() && isGroupActive(groupId);
+        allow write: if isAuthenticated() && isGroupActiveOrNew(groupId);
       }
     }
   }
