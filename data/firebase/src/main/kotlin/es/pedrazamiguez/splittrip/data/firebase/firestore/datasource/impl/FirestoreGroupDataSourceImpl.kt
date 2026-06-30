@@ -238,6 +238,22 @@ class FirestoreGroupDataSourceImpl(
             .sortedByDescending { it.lastUpdatedAt }
     }
 
+    override fun getGroupFlow(groupId: String): Flow<Group?> = callbackFlow {
+        val docRef = firestore.collection(GroupDocument.COLLECTION_PATH).document(groupId)
+        val listener = docRef.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
+            if (error != null) {
+                Timber.e(error, "Error listening to group: $groupId")
+                return@addSnapshotListener
+            }
+            if (snapshot == null || !snapshot.exists()) {
+                trySend(null)
+            } else {
+                trySend(snapshot.toObject(GroupDocument::class.java)?.toDomain())
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
     override fun getAllGroupsFlow(): Flow<List<Group>> = callbackFlow {
         val userId = authenticationService.requireUserId()
 

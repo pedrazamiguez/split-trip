@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
+import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
@@ -51,6 +52,7 @@ class GroupRepositoryImpl(
      * WhileSubscribed resubscriptions).
      */
     private var cloudSubscriptionJob: Job? = null
+    private val groupSubscriptionTracker = KeyedSubscriptionTracker()
 
     /**
      * Returns a Flow of groups from local storage.
@@ -99,6 +101,21 @@ class GroupRepositoryImpl(
 
     override fun getGroupByIdFlow(groupId: String): Flow<Group?> {
         return localGroupDataSource.getGroupByIdFlow(groupId)
+            .onStart {
+                groupSubscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
+                    try {
+                        cloudGroupDataSource.getGroupFlow(groupId).collect { remoteGroup ->
+                            if (remoteGroup != null) {
+                                localGroupDataSource.saveGroup(remoteGroup)
+                            }
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error subscribing to cloud group changes for: $groupId")
+                    }
+                }
+            }
     }
 
     /**

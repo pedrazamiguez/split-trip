@@ -38,6 +38,8 @@ interface CloudGroupDataSource {
      * Exceptions propagate to the caller; use this for background sync operations
      * instead of the reactive Flow.
      */
+    fun getGroupFlow(groupId: String): Flow<Group?>
+
     suspend fun fetchAllGroups(): List<Group>
 
     /**
