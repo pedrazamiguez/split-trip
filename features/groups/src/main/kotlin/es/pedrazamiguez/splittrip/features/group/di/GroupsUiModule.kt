@@ -140,6 +140,7 @@ val groupsUiModule = module {
         val groupUiMapper = get<GroupUiMapper>()
         val authenticationService = get<AuthenticationService>()
         val archiveGroupUseCase = get<ArchiveGroupUseCase>()
+        val deleteGroupUseCase = get<DeleteGroupUseCase>()
         GroupDetailViewModel(
             observeGroupUseCase = observeGroupUseCase,
             getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
@@ -147,7 +148,8 @@ val groupsUiModule = module {
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
             authenticationService = authenticationService,
-            archiveGroupUseCase = archiveGroupUseCase
+            archiveGroupUseCase = archiveGroupUseCase,
+            deleteGroupUseCase = deleteGroupUseCase
         )
     }
 
