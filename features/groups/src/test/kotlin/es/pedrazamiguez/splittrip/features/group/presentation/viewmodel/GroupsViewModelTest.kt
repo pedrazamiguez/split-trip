@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -50,6 +52,8 @@ class GroupsViewModelTest {
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var groupUiMapper: GroupUiMapper
     private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
+    private lateinit var authenticationService: AuthenticationService
+    private lateinit var archiveGroupUseCase: ArchiveGroupUseCase
     private lateinit var viewModel: GroupsViewModel
 
     private val testGroup1 = Group(
@@ -106,6 +110,12 @@ class GroupsViewModelTest {
         isUserAnonymousUseCase = mockk()
         every { isUserAnonymousUseCase() } returns flowOf(false)
 
+        authenticationService = mockk()
+        every { authenticationService.currentUserId() } returns "user-1"
+
+        archiveGroupUseCase = mockk()
+        coEvery { archiveGroupUseCase(any()) } returns Result.success(Unit)
+
         viewModel = createViewModel()
     }
 
@@ -114,14 +124,18 @@ class GroupsViewModelTest {
         deleteGroupUseCase: DeleteGroupUseCase = this.deleteGroupUseCase,
         getMemberProfilesUseCase: GetMemberProfilesUseCase = this.getMemberProfilesUseCase,
         groupUiMapper: GroupUiMapper = this.groupUiMapper,
-        isUserAnonymousUseCase: IsUserAnonymousUseCase = this.isUserAnonymousUseCase
+        isUserAnonymousUseCase: IsUserAnonymousUseCase = this.isUserAnonymousUseCase,
+        authenticationService: AuthenticationService = this.authenticationService,
+        archiveGroupUseCase: ArchiveGroupUseCase = this.archiveGroupUseCase
     ): GroupsViewModel {
         return GroupsViewModel(
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             deleteGroupUseCase = deleteGroupUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
-            isUserAnonymousUseCase = isUserAnonymousUseCase
+            isUserAnonymousUseCase = isUserAnonymousUseCase,
+            authenticationService = authenticationService,
+            archiveGroupUseCase = archiveGroupUseCase
         )
     }
 
@@ -460,6 +474,114 @@ class GroupsViewModelTest {
             assertEquals(3, state.scrollPosition)
             assertEquals(50, state.scrollOffset)
 
+            collectJob.cancel()
+        }
+    }
+
+    @Nested
+    inner class ArchiveGroupEvent {
+
+        @Test
+        fun `ArchiveGroup event calls use case with correct groupId`() = runTest(testDispatcher) {
+            // Given
+            every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup1, testGroup2))
+            viewModel = createViewModel()
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            // When
+            viewModel.onEvent(GroupsUiEvent.ArchiveGroup("group-1"))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { archiveGroupUseCase("group-1") }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ArchiveGroup event emits success action`() = runTest(testDispatcher) {
+            // Given
+            coEvery { archiveGroupUseCase(any()) } returns Result.success(Unit)
+            viewModel = createViewModel()
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupsUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            // When
+            viewModel.onEvent(GroupsUiEvent.ArchiveGroup("group-1"))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { archiveGroupUseCase("group-1") }
+            assertTrue(
+                actions.any { it is GroupsUiAction.ShowArchiveSuccess },
+                "Expected ShowArchiveSuccess action"
+            )
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ArchiveGroup event emits error action when archiving fails`() = runTest(testDispatcher) {
+            // Given
+            coEvery { archiveGroupUseCase(any()) } returns Result.failure(Exception("Archive failed"))
+            viewModel = createViewModel()
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupsUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            // When
+            viewModel.onEvent(GroupsUiEvent.ArchiveGroup("group-1"))
+            advanceUntilIdle()
+
+            // Then
+            assertTrue(
+                actions.any { it is GroupsUiAction.ShowArchiveError },
+                "Expected ShowArchiveError action"
+            )
+
+            actionsJob.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ArchiveGroup event handles non-existent group gracefully`() = runTest(testDispatcher) {
+            // Given
+            coEvery { archiveGroupUseCase(any()) } returns Result.failure(IllegalArgumentException("Group not found"))
+            viewModel = createViewModel()
+
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            val actions = mutableListOf<GroupsUiAction>()
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            // When - Should not throw
+            viewModel.onEvent(GroupsUiEvent.ArchiveGroup("non-existent"))
+            advanceUntilIdle()
+
+            // Then - Error is propagated as ShowArchiveError, not thrown
+            assertTrue(
+                actions.any { it is GroupsUiAction.ShowArchiveError },
+                "Expected ShowArchiveError action instead of crash"
+            )
+
+            actionsJob.cancel()
             collectJob.cancel()
         }
     }

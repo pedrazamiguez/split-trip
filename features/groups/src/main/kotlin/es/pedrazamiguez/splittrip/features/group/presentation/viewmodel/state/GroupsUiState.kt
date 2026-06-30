@@ -9,5 +9,6 @@ data class GroupsUiState(
     val isLoading: Boolean = true,
     val scrollPosition: Int = 0,
     val scrollOffset: Int = 0,
-    val isAnonymous: Boolean = false
+    val isAnonymous: Boolean = false,
+    val currentUserId: String? = null
 )

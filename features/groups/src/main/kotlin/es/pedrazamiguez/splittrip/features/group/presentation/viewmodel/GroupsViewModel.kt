@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -27,6 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
@@ -48,7 +52,9 @@ class GroupsViewModel(
     private val deleteGroupUseCase: DeleteGroupUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
-    private val isUserAnonymousUseCase: IsUserAnonymousUseCase
+    private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
+    private val authenticationService: AuthenticationService,
+    private val archiveGroupUseCase: ArchiveGroupUseCase
 ) : ViewModel() {
 
     // Scroll state is managed separately as it's UI-only state
@@ -134,14 +140,16 @@ class GroupsViewModel(
                 )
             },
         _scrollState,
-        isUserAnonymousUseCase()
-    ) { dataState, scrollState, isAnonymous ->
+        isUserAnonymousUseCase(),
+        flowOf(authenticationService.currentUserId())
+    ) { dataState, scrollState, isAnonymous, currentUserId ->
         GroupsUiState(
             isLoading = dataState.isLoading,
             groups = dataState.groups,
             scrollPosition = scrollState.position,
             scrollOffset = scrollState.offset,
-            isAnonymous = isAnonymous
+            isAnonymous = isAnonymous,
+            currentUserId = currentUserId
         )
     }.stateIn(
         scope = viewModelScope,
@@ -165,6 +173,7 @@ class GroupsViewModel(
             )
 
             is GroupsUiEvent.DeleteGroup -> handleDeleteGroup(event.groupId)
+            is GroupsUiEvent.ArchiveGroup -> handleArchiveGroup(event.groupId)
         }
     }
 
@@ -185,6 +194,28 @@ class GroupsViewModel(
                     )
                 )
             }
+        }
+    }
+
+    private fun handleArchiveGroup(groupId: String) {
+        viewModelScope.launch {
+            archiveGroupUseCase(groupId).fold(
+                onSuccess = {
+                    _actions.emit(
+                        GroupsUiAction.ShowArchiveSuccess(
+                            UiText.StringResource(R.string.group_archived_successfully)
+                        )
+                    )
+                },
+                onFailure = { e ->
+                    Timber.e(e, "Failed to archive group: $groupId")
+                    _actions.emit(
+                        GroupsUiAction.ShowArchiveError(
+                            UiText.StringResource(DesignSystemR.string.group_error_archiving_failed)
+                        )
+                    )
+                }
+            )
         }
     }
 

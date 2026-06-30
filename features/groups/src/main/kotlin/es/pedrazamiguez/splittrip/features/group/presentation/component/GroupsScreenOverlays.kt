@@ -2,15 +2,18 @@ package es.pedrazamiguez.splittrip.features.group.presentation.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 
@@ -20,11 +23,13 @@ internal fun GroupsScreenOverlays(
     selectedGroup: GroupUiModel?,
     selectedGroupId: String?,
     isSoleGroup: Boolean,
+    currentUserId: String?,
     onSelectGroup: (groupId: String, groupName: String, currency: String) -> Unit,
     onEditGroup: (String) -> Unit,
     onManageSubunits: (String) -> Unit,
     onMenuDismiss: () -> Unit,
-    onDeleteRequested: (GroupUiModel) -> Unit
+    onDeleteRequested: (GroupUiModel) -> Unit,
+    onArchiveRequested: (GroupUiModel) -> Unit
 ) {
     selectedGroup?.let { group ->
         val isActive = group.id == selectedGroupId
@@ -48,35 +53,66 @@ internal fun GroupsScreenOverlays(
             )
         }
 
+        val archiveAction = if (group.status == GroupStatus.ACTIVE && group.createdBy == currentUserId) {
+            SheetAction(
+                text = stringResource(DesignSystemR.string.group_detail_end_trip),
+                icon = TablerIcons.Outline.Lock,
+                onClick = { onArchiveRequested(group) },
+                isDestructive = true
+            )
+        } else {
+            null
+        }
+
         ActionBottomSheet(
             title = stringResource(R.string.group_actions_title, group.name),
             icon = TablerIcons.Outline.UsersGroup,
-            actions = listOfNotNull(
-                selectAction,
-                SheetAction(
-                    text = stringResource(R.string.action_edit_group),
-                    icon = TablerIcons.Outline.Edit,
-                    onClick = {
-                        onEditGroup(group.id)
-                        onMenuDismiss()
-                    }
-                ),
-                SheetAction(
-                    text = stringResource(R.string.action_manage_subunits),
-                    icon = TablerIcons.Outline.Sitemap,
-                    onClick = {
-                        onManageSubunits(group.id)
-                        onMenuDismiss()
-                    }
-                ),
-                SheetAction(
-                    text = stringResource(R.string.action_delete_group),
-                    icon = TablerIcons.Outline.Trash,
-                    onClick = { onDeleteRequested(group) },
-                    isDestructive = true
-                )
+            actions = sheetActionsForGroup(
+                group = group,
+                selectAction = selectAction,
+                archiveAction = archiveAction,
+                onEditGroup = onEditGroup,
+                onManageSubunits = onManageSubunits,
+                onDeleteRequested = onDeleteRequested,
+                onMenuDismiss = onMenuDismiss
             ),
             onDismiss = onMenuDismiss
         )
     }
 }
+
+@Composable
+private fun sheetActionsForGroup(
+    group: GroupUiModel,
+    selectAction: SheetAction?,
+    archiveAction: SheetAction?,
+    onEditGroup: (String) -> Unit,
+    onManageSubunits: (String) -> Unit,
+    onDeleteRequested: (GroupUiModel) -> Unit,
+    onMenuDismiss: () -> Unit
+): List<SheetAction> = listOfNotNull(
+    selectAction,
+    SheetAction(
+        text = stringResource(R.string.action_edit_group),
+        icon = TablerIcons.Outline.Edit,
+        onClick = {
+            onEditGroup(group.id)
+            onMenuDismiss()
+        }
+    ),
+    SheetAction(
+        text = stringResource(R.string.action_manage_subunits),
+        icon = TablerIcons.Outline.Sitemap,
+        onClick = {
+            onManageSubunits(group.id)
+            onMenuDismiss()
+        }
+    ),
+    archiveAction,
+    SheetAction(
+        text = stringResource(R.string.action_delete_group),
+        icon = TablerIcons.Outline.Trash,
+        onClick = { onDeleteRequested(group) },
+        isDestructive = true
+    )
+)
