@@ -78,6 +78,146 @@ class GroupRepositoryImplTest {
     }
 
     @Nested
+    inner class AddMembers {
+
+        @Test
+        fun `saves group with new members to local storage`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+
+            repository.addMembers(testGroupId, listOf("user-4", "user-5"))
+
+            coVerify(exactly = 1) {
+                localGroupDataSource.saveGroup(match { it.members.containsAll(listOf("user-4", "user-5")) })
+            }
+        }
+
+        @Test
+        fun `does nothing when no new members provided`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+
+            repository.addMembers(testGroupId, testGroup.members)
+
+            coVerify(exactly = 0) { localGroupDataSource.saveGroup(any()) }
+        }
+
+        @Test
+        fun `does nothing when group not found`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns null
+
+            repository.addMembers(testGroupId, listOf("user-4"))
+
+            coVerify(exactly = 0) { localGroupDataSource.saveGroup(any()) }
+        }
+
+        @Test
+        fun `sets sync status to pending sync`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+
+            repository.addMembers(testGroupId, listOf("user-4"))
+
+            coVerify(exactly = 1) { localGroupDataSource.saveGroup(match { it.syncStatus == SyncStatus.PENDING_SYNC }) }
+        }
+
+        @Test
+        fun `syncs to cloud in background`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { cloudGroupDataSource.addMembers(any(), any(), any()) } just Runs
+            coEvery { localGroupDataSource.updateSyncStatus(any(), any()) } just Runs
+
+            repository.addMembers(testGroupId, listOf("user-4"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { cloudGroupDataSource.addMembers(testGroupId, listOf("user-4"), "current-user-id") }
+            coVerify(exactly = 1) { localGroupDataSource.updateSyncStatus(testGroupId, SyncStatus.SYNCED) }
+        }
+
+        @Test
+        fun `marks sync failed when cloud call fails`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { cloudGroupDataSource.addMembers(any(), any(), any()) } throws IOException("Network error")
+            coEvery { localGroupDataSource.updateSyncStatus(any(), any()) } just Runs
+
+            repository.addMembers(testGroupId, listOf("user-4"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { localGroupDataSource.updateSyncStatus(testGroupId, SyncStatus.SYNC_FAILED) }
+        }
+    }
+
+    @Nested
+    inner class RemoveMember {
+
+        @Test
+        fun `removes member from local group`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+
+            repository.removeMember(testGroupId, "user-2")
+
+            coVerify(exactly = 1) { localGroupDataSource.saveGroup(match { "user-2" !in it.members }) }
+        }
+
+        @Test
+        fun `does nothing when member not in group`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+
+            repository.removeMember(testGroupId, "non-member")
+
+            coVerify(exactly = 0) { localGroupDataSource.saveGroup(any()) }
+        }
+
+        @Test
+        fun `does nothing when group not found`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns null
+
+            repository.removeMember(testGroupId, "user-2")
+
+            coVerify(exactly = 0) { localGroupDataSource.saveGroup(any()) }
+        }
+
+        @Test
+        fun `sets sync status to pending sync`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+
+            repository.removeMember(testGroupId, "user-2")
+
+            coVerify(exactly = 1) { localGroupDataSource.saveGroup(match { it.syncStatus == SyncStatus.PENDING_SYNC }) }
+        }
+
+        @Test
+        fun `syncs removal to cloud in background`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { cloudGroupDataSource.removeMember(any(), any()) } just Runs
+            coEvery { localGroupDataSource.updateSyncStatus(any(), any()) } just Runs
+
+            repository.removeMember(testGroupId, "user-2")
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { cloudGroupDataSource.removeMember(testGroupId, "user-2") }
+            coVerify(exactly = 1) { localGroupDataSource.updateSyncStatus(testGroupId, SyncStatus.SYNCED) }
+        }
+
+        @Test
+        fun `marks sync failed when cloud call fails`() = runTest(testDispatcher) {
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns testGroup
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+            coEvery { cloudGroupDataSource.removeMember(any(), any()) } throws IOException("Network error")
+            coEvery { localGroupDataSource.updateSyncStatus(any(), any()) } just Runs
+
+            repository.removeMember(testGroupId, "user-2")
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { localGroupDataSource.updateSyncStatus(testGroupId, SyncStatus.SYNC_FAILED) }
+        }
+    }
+
+    @Nested
     inner class DeleteGroup {
 
         @Test
@@ -846,6 +986,101 @@ class GroupRepositoryImplTest {
                 cloudStorageDataSource.uploadGroupImage(testGroupId, "new-local-path", "image/webp")
             }
             coVerify { cloudGroupDataSource.updateGroup(match { it.mainImagePath == uploadedUrl }) }
+        }
+    }
+
+    @Nested
+    inner class GetGroupByIdFlow {
+
+        @Test
+        fun `emits group from local data source`() = runTest(testDispatcher) {
+            // Given
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(testGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(null)
+
+            // When
+            val result = repository.getGroupByIdFlow(testGroupId).first()
+
+            // Then
+            assertEquals(testGroup, result)
+        }
+
+        @Test
+        fun `subscribes to single-group cloud flow on start`() = runTest(testDispatcher) {
+            // Given
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(null)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(null)
+
+            // When
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { cloudGroupDataSource.getGroupFlow(testGroupId) }
+        }
+
+        @Test
+        fun `saves cloud group to local when cloud emits an update`() = runTest(testDispatcher) {
+            // Given
+            val updatedGroup = testGroup.copy(status = es.pedrazamiguez.splittrip.domain.enums.GroupStatus.ARCHIVED)
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(testGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(updatedGroup)
+            coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+
+            // When
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { localGroupDataSource.saveGroup(updatedGroup) }
+        }
+
+        @Test
+        fun `handles cloud flow error gracefully`() = runTest(testDispatcher) {
+            // Given
+            val localGroup = testGroup
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(localGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flow {
+                throw java.io.IOException("Network error")
+            }
+
+            // When
+            val result = repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then — local flow emission is unaffected
+            assertEquals(localGroup, result)
+        }
+
+        @Test
+        fun `does not save null group to local when cloud emits null`() = runTest(testDispatcher) {
+            // Given
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(testGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(null)
+
+            // When
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then — saveGroup should not be called
+            coVerify(exactly = 0) { localGroupDataSource.saveGroup(any()) }
+        }
+
+        @Test
+        fun `cancels previous subscription when flow is re-collected for same id`() = runTest(testDispatcher) {
+            // Given
+            every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(testGroup)
+            every { cloudGroupDataSource.getGroupFlow(testGroupId) } returns flowOf(null)
+
+            // When — collect twice, advance between each to let coroutines start
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+            repository.getGroupByIdFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            // Then — getGroupFlow should be called twice (once per collect,
+            // with old subscription cancelled before new one starts)
+            coVerify(exactly = 2) { cloudGroupDataSource.getGroupFlow(testGroupId) }
         }
     }
 }

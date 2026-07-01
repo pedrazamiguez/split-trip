@@ -7,4 +7,8 @@ sealed interface GroupsUiAction {
     data class ShowLoadError(override val message: UiText) : GroupsUiAction
     data class ShowDeleteSuccess(override val message: UiText) : GroupsUiAction
     data class ShowDeleteError(override val message: UiText) : GroupsUiAction
+    data class ShowArchiveSuccess(override val message: UiText) : GroupsUiAction
+    data class ShowArchiveError(override val message: UiText) : GroupsUiAction
+    data class ShowLeaveSuccess(override val message: UiText) : GroupsUiAction
+    data class ShowLeaveError(override val message: UiText) : GroupsUiAction
 }

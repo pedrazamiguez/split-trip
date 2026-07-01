@@ -85,6 +85,8 @@ fun GroupsFeature(
         },
         onManageSubunits = { groupId ->
             navController.navigate(Routes.manageSubunitsRoute(groupId))
-        }
+        },
+        onArchiveGroup = { groupsViewModel.onEvent(GroupsUiEvent.ArchiveGroup(it)) },
+        onLeaveGroup = { groupsViewModel.onEvent(GroupsUiEvent.LeaveGroup(it)) }
     )
 }

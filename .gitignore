@@ -42,3 +42,6 @@ google-services.json
 functions/node_modules/
 functions/lib/
 
+# AI Code Intelligence tools — Graphify output artifacts
+graphify-out/
+

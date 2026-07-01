@@ -10,5 +10,9 @@ data class GroupDetailUiState(
     val isOnlyGroup: Boolean = false,
     val showArchiveConfirmation: Boolean = false,
     val isUserAdmin: Boolean = false,
-    val isArchiving: Boolean = false
+    val isArchiving: Boolean = false,
+    val showDeleteConfirmation: Boolean = false,
+    val isDeleting: Boolean = false,
+    val showLeaveConfirmation: Boolean = false,
+    val isLeaving: Boolean = false
 )

@@ -38,6 +38,8 @@ interface CloudGroupDataSource {
      * Exceptions propagate to the caller; use this for background sync operations
      * instead of the reactive Flow.
      */
+    fun getGroupFlow(groupId: String): Flow<Group?>
+
     suspend fun fetchAllGroups(): List<Group>
 
     /**
@@ -63,4 +65,48 @@ interface CloudGroupDataSource {
      * Replaces pending user IDs with active user IDs across group memberships, expenses, splits, contributions, and withdrawals in Firestore.
      */
     suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String)
+
+    /**
+     * Removes a user from a group in Firestore.
+     *
+     * Uses a WriteBatch to atomically:
+     * 1. Remove [userId] from the group document's `memberIds` array
+     * 2. Delete the user's member document from `groups/{groupId}/members/{userId}`
+     *
+     * The member-doc deletion is critical: the `getAllGroupsFlow()` snapshot listener
+     * uses `collectionGroup("members")` to determine group membership. Without deleting
+     * the member doc, the listener would continue to push the group to the leaving user,
+     * causing sync delegates to upsert the stale cloud data back into Room.
+     *
+     * @param groupId The ID of the group to leave.
+     * @param userId The ID of the user leaving the group.
+     */
+    suspend fun leaveGroup(groupId: String, userId: String)
+
+    /**
+     * Adds new members to a group in Firestore.
+     *
+     * Uses a WriteBatch to atomically:
+     * 1. `FieldValue.arrayUnion(...)` on the group document's `memberIds` array
+     * 2. Creates a [GroupMemberDocument] for each new member
+     * 3. Updates `lastUpdatedAt` with a server timestamp
+     *
+     * @param groupId The ID of the group to add members to.
+     * @param newMemberIds The IDs of the new members to add.
+     * @param addedBy The ID of the user who is adding the members.
+     */
+    suspend fun addMembers(groupId: String, newMemberIds: List<String>, addedBy: String)
+
+    /**
+     * Removes a member from a group in Firestore.
+     *
+     * Uses a WriteBatch to atomically:
+     * 1. `FieldValue.arrayRemove(userId)` on the group document's `memberIds` array
+     * 2. Deletes the user's member document from `groups/{groupId}/members/{userId}`
+     * 3. Updates `lastUpdatedAt` with a server timestamp
+     *
+     * @param groupId The ID of the group to remove the member from.
+     * @param userId The ID of the user to remove.
+     */
+    suspend fun removeMember(groupId: String, userId: String)
 }

@@ -6,8 +6,10 @@ import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
+import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
@@ -40,6 +42,8 @@ class CreateEditGroupSubmitEventHandlerImplTest {
 
     private lateinit var createGroupUseCase: CreateGroupUseCase
     private lateinit var updateGroupUseCase: UpdateGroupUseCase
+    private lateinit var addGroupMembersUseCase: AddGroupMembersUseCase
+    private lateinit var removeGroupMemberUseCase: RemoveGroupMemberUseCase
     private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
     private lateinit var featureGateService: FeatureGateService
     private lateinit var telemetryTracker: TelemetryTracker
@@ -62,6 +66,8 @@ class CreateEditGroupSubmitEventHandlerImplTest {
         Dispatchers.setMain(testDispatcher)
         createGroupUseCase = mockk(relaxed = true)
         updateGroupUseCase = mockk(relaxed = true)
+        addGroupMembersUseCase = mockk(relaxed = true)
+        removeGroupMemberUseCase = mockk(relaxed = true)
         getUserGroupsFlowUseCase = mockk(relaxed = true)
         featureGateService = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
@@ -77,7 +83,9 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             featureGateService = featureGateService,
             telemetryTracker = telemetryTracker,
-            appConfigService = appConfigService
+            appConfigService = appConfigService,
+            addGroupMembersUseCase = addGroupMembersUseCase,
+            removeGroupMemberUseCase = removeGroupMemberUseCase
         )
         handler.bind(stateFlow, actionsFlow, kotlinx.coroutines.MainScope())
     }

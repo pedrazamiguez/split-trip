@@ -259,3 +259,31 @@ Before creating any new service, utility, formatter, or UI component, **check th
 - **Compliance checklist before generating code:** (1) ViewModels only inject UseCases/Mappers/Services? (2) Formatting only in Mappers? (3) BigDecimal for all decimal math? (4) Handler delegation for >5 events? (5) `LocalBottomPadding` for tab screens? (6) Feature/Screen split correct? (7) MVI triad complete? (8) Hot flows with `AppConstants.FLOW_RETENTION_TIME` and `AppConstants.FLOW_REPLAY_EXPIRATION`? (9) Offline-first Room-first reads? (10) `ImmutableList` in UiState? (11) Local verification suite (`make check`) executed and passing with 0 failures?
 - **Plan-Only Skill Strict Stop:** Whenever a plan-only/planning-focused skill or command (such as `/sp-plan-issue`, `sp-plan-issue`, or any other planning-only tool workflow) explicitly dictates that the task is completed after writing/posting the plan and that no codebase modifications should be performed, this instruction takes absolute precedence over any default Planning Mode instructions (which might otherwise suggest transitioning to the "Execute" phase). The agent MUST NOT write code, create production files, or execute any modifications under those circumstances.
 
+## Workspace Resolution Protocol
+
+Do not prompt the user for full GitHub URLs if they provide an ID (like an issue or PR number).
+You are bound to a local Git workspace. To resolve the target URL:
+1. Infer the repository by checking `.git/config` or running `git remote -v`.
+2. Construct the required `$PR_URL` or `$ISSUE_URL` argument automatically before executing any skill.
+
+## Code-Intelligence MCP Tools
+
+When performing structural code queries (finding implementations, call graphs, entity definitions, or dependency analysis), prefer using graph-based MCP tools over raw `grep` or file globbing:
+
+- **codebase-memory-mcp** (14 tools) — for structural queries: `get-entity`, `get-call-graph`, `find-implementations`, `impact-analysis`, etc.
+- **Graphify** — for semantic / cross-modal queries and HTML visualization reports.
+
+This dramatically reduces token consumption (80–99% for structural queries vs. grep/read cycles).
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

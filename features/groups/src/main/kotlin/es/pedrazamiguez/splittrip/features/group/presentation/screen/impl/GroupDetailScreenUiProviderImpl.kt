@@ -9,12 +9,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDetailViewModel
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.GroupDetailUiEvent
 import org.koin.androidx.compose.koinViewModel
 
 class GroupDetailScreenUiProviderImpl(override val route: String = Routes.GROUP_DETAIL) :
@@ -37,11 +40,25 @@ class GroupDetailScreenUiProviderImpl(override val route: String = Routes.GROUP_
                 onBack = { navController.popBackStack() },
                 actions = {
                     uiState.group?.let { group ->
-                        IconButton(onClick = { navController.navigate(Routes.editGroupRoute(group.id)) }) {
-                            Icon(
-                                imageVector = TablerIcons.Outline.Edit,
-                                contentDescription = stringResource(R.string.action_edit_group)
-                            )
+                        if (group.status == GroupStatus.ACTIVE) {
+                            IconButton(onClick = { navController.navigate(Routes.editGroupRoute(group.id)) }) {
+                                Icon(
+                                    imageVector = TablerIcons.Outline.Edit,
+                                    contentDescription = stringResource(R.string.action_edit_group)
+                                )
+                            }
+                        }
+                        if (group.status == GroupStatus.ACTIVE) {
+                            IconButton(
+                                onClick = {
+                                    groupDetailViewModel.onEvent(GroupDetailUiEvent.DeleteClicked)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = TablerIcons.Outline.Trash,
+                                    contentDescription = stringResource(R.string.action_delete_group)
+                                )
+                            }
                         }
                     }
                 }

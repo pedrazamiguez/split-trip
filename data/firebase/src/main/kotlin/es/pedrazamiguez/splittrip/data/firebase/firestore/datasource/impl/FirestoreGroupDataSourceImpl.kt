@@ -212,6 +212,86 @@ class FirestoreGroupDataSourceImpl(
             .await()
     }
 
+    override suspend fun addMembers(groupId: String, newMemberIds: List<String>, addedBy: String) {
+        val groupDocRef = firestore
+            .collection(GroupDocument.COLLECTION_PATH)
+            .document(groupId)
+
+        val batch = firestore.batch().apply {
+            @Suppress("SpreadOperator")
+            update(
+                groupDocRef,
+                "memberIds",
+                FieldValue.arrayUnion(*newMemberIds.toTypedArray())
+            )
+            newMemberIds.forEach { memberId ->
+                val memberDocRef = firestore
+                    .collection(GroupMemberDocument.collectionPath(groupId))
+                    .document(memberId)
+                val memberDocument = toRegularMemberDocument(
+                    groupDocRef,
+                    memberId,
+                    addedBy = addedBy
+                )
+                set(memberDocRef, memberDocument)
+            }
+            update(
+                groupDocRef,
+                "lastUpdatedAt",
+                FieldValue.serverTimestamp()
+            )
+        }
+
+        batch.commit().await()
+    }
+
+    override suspend fun removeMember(groupId: String, userId: String) {
+        val groupDocRef = firestore
+            .collection(GroupDocument.COLLECTION_PATH)
+            .document(groupId)
+        val memberDocRef = firestore
+            .collection(GroupMemberDocument.collectionPath(groupId))
+            .document(userId)
+
+        firestore.batch()
+            .apply {
+                update(
+                    groupDocRef,
+                    "memberIds",
+                    FieldValue.arrayRemove(userId)
+                )
+                update(
+                    groupDocRef,
+                    "lastUpdatedAt",
+                    FieldValue.serverTimestamp()
+                )
+                delete(memberDocRef)
+            }
+            .commit()
+            .await()
+    }
+
+    override suspend fun leaveGroup(groupId: String, userId: String) {
+        val groupDocRef = firestore
+            .collection(GroupDocument.COLLECTION_PATH)
+            .document(groupId)
+        val memberDocRef = firestore
+            .collection(GroupMemberDocument.collectionPath(groupId))
+            .document(userId)
+
+        firestore.batch()
+            .apply {
+                update(
+                    groupDocRef,
+                    "memberIds",
+                    FieldValue.arrayRemove(userId)
+                )
+                delete(memberDocRef)
+            }
+            .commit()
+            .await()
+    }
+
     override suspend fun verifyGroupOnServer(groupId: String): Boolean {
         val doc = firestore
             .collection(GroupDocument.COLLECTION_PATH)
@@ -236,6 +316,22 @@ class FirestoreGroupDataSourceImpl(
         val groupIds = groupRefs.map { it.id }
         return groupLoader.loadGroupsFromServer(groupIds)
             .sortedByDescending { it.lastUpdatedAt }
+    }
+
+    override fun getGroupFlow(groupId: String): Flow<Group?> = callbackFlow {
+        val docRef = firestore.collection(GroupDocument.COLLECTION_PATH).document(groupId)
+        val listener = docRef.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
+            if (error != null) {
+                Timber.e(error, "Error listening to group: $groupId")
+                return@addSnapshotListener
+            }
+            if (snapshot == null || !snapshot.exists()) {
+                trySend(null)
+            } else {
+                trySend(snapshot.toObject(GroupDocument::class.java)?.toDomain())
+            }
+        }
+        awaitClose { listener.remove() }
     }
 
     override fun getAllGroupsFlow(): Flow<List<Group>> = callbackFlow {

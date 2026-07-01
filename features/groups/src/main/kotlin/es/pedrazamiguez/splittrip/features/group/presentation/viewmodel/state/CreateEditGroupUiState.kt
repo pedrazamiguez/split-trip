@@ -39,12 +39,24 @@ data class CreateEditGroupUiState(
 ) {
     val steps: List<CreateEditGroupStep>
         get() = if (isEditMode) {
-            listOf(
-                CreateEditGroupStep.INFO,
-                CreateEditGroupStep.CURRENCY,
-                CreateEditGroupStep.IMAGE,
-                CreateEditGroupStep.REVIEW
-            )
+            if (selectedMembers.any { it.isPending }) {
+                listOf(
+                    CreateEditGroupStep.INFO,
+                    CreateEditGroupStep.CURRENCY,
+                    CreateEditGroupStep.MEMBERS,
+                    CreateEditGroupStep.UNREGISTERED_NAMES,
+                    CreateEditGroupStep.IMAGE,
+                    CreateEditGroupStep.REVIEW
+                )
+            } else {
+                listOf(
+                    CreateEditGroupStep.INFO,
+                    CreateEditGroupStep.CURRENCY,
+                    CreateEditGroupStep.MEMBERS,
+                    CreateEditGroupStep.IMAGE,
+                    CreateEditGroupStep.REVIEW
+                )
+            }
         } else if (selectedMembers.any { it.isPending }) {
             CreateEditGroupStep.entries
         } else {
