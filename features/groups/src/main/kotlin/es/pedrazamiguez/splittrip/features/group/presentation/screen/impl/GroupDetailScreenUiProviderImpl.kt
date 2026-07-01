@@ -41,11 +41,13 @@ class GroupDetailScreenUiProviderImpl(override val route: String = Routes.GROUP_
                 onBack = { navController.popBackStack() },
                 actions = {
                     uiState.group?.let { group ->
-                        IconButton(onClick = { navController.navigate(Routes.editGroupRoute(group.id)) }) {
-                            Icon(
-                                imageVector = TablerIcons.Outline.Edit,
-                                contentDescription = stringResource(R.string.action_edit_group)
-                            )
+                        if (group.status == GroupStatus.ACTIVE) {
+                            IconButton(onClick = { navController.navigate(Routes.editGroupRoute(group.id)) }) {
+                                Icon(
+                                    imageVector = TablerIcons.Outline.Edit,
+                                    contentDescription = stringResource(R.string.action_edit_group)
+                                )
+                            }
                         }
                         if (group.status == GroupStatus.ACTIVE) {
                             IconButton(
