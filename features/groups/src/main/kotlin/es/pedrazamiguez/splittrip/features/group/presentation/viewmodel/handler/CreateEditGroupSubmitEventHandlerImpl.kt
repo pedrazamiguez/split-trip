@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -143,16 +145,18 @@ class CreateEditGroupSubmitEventHandlerImpl(
 
     private suspend fun emitGroupUpdateFailure(e: Throwable) {
         Timber.e(e, "Failed to save group details")
+        val errorMessage = when (e) {
+            is GroupArchivedException -> UiText.StringResource(DesignSystemR.string.group_error_archived)
+            else -> UiText.StringResource(R.string.group_error_creation_failed)
+        }
         _uiState.update {
             it.copy(
                 isLoading = false,
-                error = UiText.StringResource(R.string.group_error_creation_failed)
+                error = errorMessage
             )
         }
         _actions.emit(
-            CreateEditGroupUiAction.ShowError(
-                UiText.StringResource(R.string.group_error_creation_failed)
-            )
+            CreateEditGroupUiAction.ShowError(errorMessage)
         )
     }
 
