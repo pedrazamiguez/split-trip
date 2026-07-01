@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
@@ -20,6 +21,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -74,13 +76,17 @@ val groupsUiModule = module {
         val featureGateService = get<FeatureGateService>()
         val telemetryTracker = get<TelemetryTracker>()
         val appConfigService = get<AppConfigService>()
+        val addGroupMembersUseCase = get<AddGroupMembersUseCase>()
+        val removeGroupMemberUseCase = get<RemoveGroupMemberUseCase>()
         CreateEditGroupSubmitEventHandlerImpl(
             createGroupUseCase = createGroupUseCase,
             updateGroupUseCase = updateGroupUseCase,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             featureGateService = featureGateService,
             telemetryTracker = telemetryTracker,
-            appConfigService = appConfigService
+            appConfigService = appConfigService,
+            addGroupMembersUseCase = addGroupMembersUseCase,
+            removeGroupMemberUseCase = removeGroupMemberUseCase
         )
     }
 

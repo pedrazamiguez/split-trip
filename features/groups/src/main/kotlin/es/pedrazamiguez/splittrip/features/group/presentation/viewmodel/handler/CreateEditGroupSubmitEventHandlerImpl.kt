@@ -1,14 +1,19 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
+import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
@@ -27,7 +32,9 @@ class CreateEditGroupSubmitEventHandlerImpl(
     private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
     private val featureGateService: FeatureGateService,
     private val telemetryTracker: TelemetryTracker,
-    private val appConfigService: AppConfigService
+    private val appConfigService: AppConfigService,
+    private val addGroupMembersUseCase: AddGroupMembersUseCase,
+    private val removeGroupMemberUseCase: RemoveGroupMemberUseCase
 ) : CreateEditGroupSubmitEventHandler {
     private lateinit var _uiState: MutableStateFlow<CreateEditGroupUiState>
     private lateinit var _actions: MutableSharedFlow<CreateEditGroupUiAction>
@@ -68,6 +75,11 @@ class CreateEditGroupSubmitEventHandlerImpl(
         val state = _uiState.value
         scope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
+
+            val currentMemberIds = state.selectedMembers.map { it.userId }
+            val membersToAdd = state.selectedMembers.filter { it.userId !in group.members }
+            val membersToRemove = group.members.filter { it !in currentMemberIds }
+
             val updatedGroup = group.copy(
                 name = state.groupName.trim(),
                 description = state.groupDescription.trim(),
@@ -78,29 +90,76 @@ class CreateEditGroupSubmitEventHandlerImpl(
 
             updateGroupUseCase(updatedGroup)
                 .onSuccess {
-                    _uiState.update { it.copy(isLoading = false) }
-                    _actions.emit(
-                        CreateEditGroupUiAction.ShowSuccess(
-                            UiText.StringResource(R.string.group_edit_success_saved)
-                        )
-                    )
+                    val hasError = syncMemberChanges(group, membersToAdd, membersToRemove)
+                    emitGroupUpdateResult(hasError)
                     onSuccess()
                 }
                 .onFailure { e ->
-                    Timber.e(e, "Failed to save group details")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = UiText.StringResource(R.string.group_error_creation_failed)
-                        )
-                    }
-                    _actions.emit(
-                        CreateEditGroupUiAction.ShowError(
-                            UiText.StringResource(R.string.group_error_creation_failed)
-                        )
-                    )
+                    emitGroupUpdateFailure(e)
                 }
         }
+    }
+
+    private suspend fun syncMemberChanges(
+        group: Group,
+        membersToAdd: List<es.pedrazamiguez.splittrip.domain.model.User>,
+        membersToRemove: List<String>
+    ): Boolean {
+        var hasError = false
+        if (membersToAdd.isNotEmpty()) {
+            addGroupMembersUseCase(group.id, membersToAdd)
+                .onFailure { e ->
+                    Timber.e(e, "Failed to add members to group ${group.id}")
+                    hasError = true
+                }
+        }
+        if (membersToRemove.isNotEmpty()) {
+            for (userId in membersToRemove) {
+                removeGroupMemberUseCase(group.id, userId)
+                    .onFailure { e ->
+                        Timber.e(e, "Failed to remove member $userId from group ${group.id}")
+                        hasError = true
+                        val message = when {
+                            e is CannotRemoveMemberException &&
+                                e.reason == CannotRemoveMemberException.Reason.NON_ZERO_BALANCE ->
+                                UiText.StringResource(R.string.group_remove_member_error_balance)
+                            e is CannotRemoveMemberException &&
+                                e.reason == CannotRemoveMemberException.Reason.IS_CREATOR ->
+                                UiText.StringResource(R.string.group_remove_member_error_admin)
+                            else -> UiText.StringResource(R.string.group_error_remove_member_failed)
+                        }
+                        _actions.emit(CreateEditGroupUiAction.ShowError(message))
+                    }
+            }
+        }
+        return hasError
+    }
+
+    private suspend fun emitGroupUpdateResult(hasError: Boolean) {
+        _uiState.update { it.copy(isLoading = false) }
+        val message = if (hasError) {
+            UiText.StringResource(R.string.group_edit_success_saved_with_errors)
+        } else {
+            UiText.StringResource(R.string.group_edit_success_saved)
+        }
+        _actions.emit(CreateEditGroupUiAction.ShowSuccess(message))
+    }
+
+    private suspend fun emitGroupUpdateFailure(e: Throwable) {
+        Timber.e(e, "Failed to save group details")
+        val errorMessage = when (e) {
+            is GroupArchivedException -> UiText.StringResource(DesignSystemR.string.group_error_archived)
+            else -> UiText.StringResource(R.string.group_error_creation_failed)
+        }
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                error = errorMessage
+            )
+        }
+        _actions.emit(
+            CreateEditGroupUiAction.ShowError(errorMessage)
+        )
     }
 
     private fun checkLimitsAndCreateGroup(onSuccess: () -> Unit) {

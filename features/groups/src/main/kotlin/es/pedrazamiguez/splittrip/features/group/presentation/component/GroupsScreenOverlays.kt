@@ -159,7 +159,7 @@ private fun sheetActionsForGroup(
             onEditGroup(group.id)
             onMenuDismiss()
         }
-    ),
+    ).takeIf { group.status == GroupStatus.ACTIVE },
     SheetAction(
         text = stringResource(R.string.action_manage_subunits),
         icon = TablerIcons.Outline.Sitemap,

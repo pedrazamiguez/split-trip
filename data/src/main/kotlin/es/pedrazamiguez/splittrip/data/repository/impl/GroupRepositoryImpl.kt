@@ -425,6 +425,60 @@ class GroupRepositoryImpl(
         }
     }
 
+    override suspend fun addMembers(groupId: String, newMemberIds: List<String>) {
+        val group = localGroupDataSource.getGroupById(groupId) ?: return
+        val trulyNewMemberIds = newMemberIds.filter { it !in group.members }
+        if (trulyNewMemberIds.isEmpty()) return
+
+        val updatedMembers = (group.members + trulyNewMemberIds).distinct()
+
+        val updatedGroup = group.copy(
+            members = updatedMembers,
+            lastUpdatedAt = LocalDateTime.now(),
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
+
+        localGroupDataSource.saveGroup(updatedGroup)
+
+        syncScope.launch {
+            try {
+                cloudGroupDataSource.addMembers(groupId, trulyNewMemberIds, authenticationService.requireUserId())
+                localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNCED)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to sync add members to cloud for group $groupId")
+                localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNC_FAILED)
+            }
+        }
+    }
+
+    override suspend fun removeMember(groupId: String, userId: String) {
+        val group = localGroupDataSource.getGroupById(groupId) ?: return
+        val updatedMembers = group.members - userId
+        if (updatedMembers == group.members) return
+
+        val updatedGroup = group.copy(
+            members = updatedMembers,
+            lastUpdatedAt = LocalDateTime.now(),
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
+
+        localGroupDataSource.saveGroup(updatedGroup)
+
+        syncScope.launch {
+            try {
+                cloudGroupDataSource.removeMember(groupId, userId)
+                localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNCED)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to sync remove member $userId from group $groupId to cloud")
+                localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNC_FAILED)
+            }
+        }
+    }
+
     override suspend fun reconcileUnregisteredUser(pendingUserId: String, activeUserId: String) {
         localGroupDataSource.reconcileUnregisteredUser(pendingUserId, activeUserId)
         try {

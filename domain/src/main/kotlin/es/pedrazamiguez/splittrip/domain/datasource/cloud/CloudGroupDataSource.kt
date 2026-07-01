@@ -82,4 +82,31 @@ interface CloudGroupDataSource {
      * @param userId The ID of the user leaving the group.
      */
     suspend fun leaveGroup(groupId: String, userId: String)
+
+    /**
+     * Adds new members to a group in Firestore.
+     *
+     * Uses a WriteBatch to atomically:
+     * 1. `FieldValue.arrayUnion(...)` on the group document's `memberIds` array
+     * 2. Creates a [GroupMemberDocument] for each new member
+     * 3. Updates `lastUpdatedAt` with a server timestamp
+     *
+     * @param groupId The ID of the group to add members to.
+     * @param newMemberIds The IDs of the new members to add.
+     * @param addedBy The ID of the user who is adding the members.
+     */
+    suspend fun addMembers(groupId: String, newMemberIds: List<String>, addedBy: String)
+
+    /**
+     * Removes a member from a group in Firestore.
+     *
+     * Uses a WriteBatch to atomically:
+     * 1. `FieldValue.arrayRemove(userId)` on the group document's `memberIds` array
+     * 2. Deletes the user's member document from `groups/{groupId}/members/{userId}`
+     * 3. Updates `lastUpdatedAt` with a server timestamp
+     *
+     * @param groupId The ID of the group to remove the member from.
+     * @param userId The ID of the user to remove.
+     */
+    suspend fun removeMember(groupId: String, userId: String)
 }
