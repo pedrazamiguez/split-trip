@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
@@ -81,19 +82,39 @@ private fun handleAction(
         is GroupDetailUiAction.ShowError -> {
             pillController.showPill(message = action.message.asString(context))
         }
-        is GroupDetailUiAction.DeleteSuccess -> {
-            pillController.showPill(message = action.message.asString(context))
-            if (selectedGroupId == groupId) {
-                sharedViewModel.selectGroup(null, null, null)
-            }
-            navController.popBackStack()
-        }
-        is GroupDetailUiAction.LeaveSuccess -> {
-            pillController.showPill(message = action.message.asString(context))
-            if (selectedGroupId == groupId) {
-                sharedViewModel.selectGroup(null, null, null)
-            }
-            navController.popBackStack()
-        }
+        is GroupDetailUiAction.DeleteSuccess -> handleGroupExitAction(
+            action.message,
+            groupId,
+            selectedGroupId,
+            pillController,
+            sharedViewModel,
+            navController,
+            context
+        )
+        is GroupDetailUiAction.LeaveSuccess -> handleGroupExitAction(
+            action.message,
+            groupId,
+            selectedGroupId,
+            pillController,
+            sharedViewModel,
+            navController,
+            context
+        )
     }
+}
+
+private fun handleGroupExitAction(
+    message: UiText,
+    groupId: String,
+    selectedGroupId: String?,
+    pillController: TopPillController,
+    sharedViewModel: SharedViewModel,
+    navController: NavController,
+    context: Context
+) {
+    pillController.showPill(message = message.asString(context))
+    if (selectedGroupId == groupId) {
+        sharedViewModel.selectGroup(null, null, null)
+    }
+    navController.popBackStack()
 }
