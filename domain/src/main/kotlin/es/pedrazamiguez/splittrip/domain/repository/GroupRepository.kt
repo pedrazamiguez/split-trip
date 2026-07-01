@@ -21,4 +21,26 @@ interface GroupRepository {
      * @param groupId The ID of the group to leave.
      */
     suspend fun leaveGroup(groupId: String)
+
+    /**
+     * Adds new members to an existing group.
+     *
+     * Offline-first: saves the updated group (with new members appended) to
+     * Room immediately, then syncs to Firestore in the background.
+     *
+     * @param groupId The ID of the group to add members to.
+     * @param newMemberIds The IDs of the new members to add.
+     */
+    suspend fun addMembers(groupId: String, newMemberIds: List<String>)
+
+    /**
+     * Removes a member from a group.
+     *
+     * Offline-first: saves the updated group (with the user removed from members) to
+     * Room immediately, then syncs to Firestore in the background.
+     *
+     * @param groupId The ID of the group to remove the member from.
+     * @param userId The ID of the user to remove.
+     */
+    suspend fun removeMember(groupId: String, userId: String)
 }

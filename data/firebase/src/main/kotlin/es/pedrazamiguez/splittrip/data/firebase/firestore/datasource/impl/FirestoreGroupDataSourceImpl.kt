@@ -212,6 +212,60 @@ class FirestoreGroupDataSourceImpl(
             .await()
     }
 
+    override suspend fun addMembers(groupId: String, newMemberIds: List<String>, addedBy: String) {
+        val groupDocRef = firestore
+            .collection(GroupDocument.COLLECTION_PATH)
+            .document(groupId)
+
+        val batch = firestore.batch().apply {
+            @Suppress("SpreadOperator")
+            update(
+                groupDocRef,
+                "memberIds",
+                FieldValue.arrayUnion(*newMemberIds.toTypedArray())
+            )
+            newMemberIds.forEach { memberId ->
+                val memberDocRef = firestore
+                    .collection(GroupMemberDocument.collectionPath(groupId))
+                    .document(memberId)
+                val memberDocument = toRegularMemberDocument(
+                    groupDocRef,
+                    memberId,
+                    addedBy = addedBy
+                )
+                set(memberDocRef, memberDocument)
+            }
+            update(
+                groupDocRef,
+                "lastUpdatedAt",
+                FieldValue.serverTimestamp()
+            )
+        }
+
+        batch.commit().await()
+    }
+
+    override suspend fun removeMember(groupId: String, userId: String) {
+        val groupDocRef = firestore
+            .collection(GroupDocument.COLLECTION_PATH)
+            .document(groupId)
+        val memberDocRef = firestore
+            .collection(GroupMemberDocument.collectionPath(groupId))
+            .document(userId)
+
+        firestore.batch()
+            .apply {
+                update(
+                    groupDocRef,
+                    "memberIds",
+                    FieldValue.arrayRemove(userId)
+                )
+                delete(memberDocRef)
+            }
+            .commit()
+            .await()
+    }
+
     override suspend fun leaveGroup(groupId: String, userId: String) {
         val groupDocRef = firestore
             .collection(GroupDocument.COLLECTION_PATH)

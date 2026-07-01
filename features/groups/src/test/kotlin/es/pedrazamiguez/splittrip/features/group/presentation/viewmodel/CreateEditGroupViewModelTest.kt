@@ -11,9 +11,11 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -56,6 +58,8 @@ class CreateEditGroupViewModelTest {
     private lateinit var getGroupByIdUseCase: GetGroupByIdUseCase
     private lateinit var createGroupUseCase: CreateGroupUseCase
     private lateinit var updateGroupUseCase: UpdateGroupUseCase
+    private lateinit var addGroupMembersUseCase: AddGroupMembersUseCase
+    private lateinit var removeGroupMemberUseCase: RemoveGroupMemberUseCase
     private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
     private lateinit var featureGateService: FeatureGateService
     private lateinit var getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase
@@ -90,6 +94,8 @@ class CreateEditGroupViewModelTest {
         getGroupByIdUseCase = mockk(relaxed = true)
         createGroupUseCase = mockk(relaxed = true)
         updateGroupUseCase = mockk(relaxed = true)
+        addGroupMembersUseCase = mockk(relaxed = true)
+        removeGroupMemberUseCase = mockk(relaxed = true)
         getUserGroupsFlowUseCase = mockk(relaxed = true)
         featureGateService = mockk(relaxed = true)
         getSupportedCurrenciesUseCase = mockk(relaxed = true)
@@ -125,7 +131,9 @@ class CreateEditGroupViewModelTest {
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             featureGateService = featureGateService,
             telemetryTracker = telemetryTracker,
-            appConfigService = appConfigService
+            appConfigService = appConfigService,
+            addGroupMembersUseCase = addGroupMembersUseCase,
+            removeGroupMemberUseCase = removeGroupMemberUseCase
         )
         return CreateEditGroupViewModel(
             navigationEventHandler = navigationEventHandler,
@@ -214,7 +222,7 @@ class CreateEditGroupViewModelTest {
             assertTrue(state.isEditMode)
             assertEquals("Japan Trip", state.groupName)
             assertEquals("Trip to Japan", state.groupDescription)
-            assertFalse(
+            assertTrue(
                 state.steps.contains(
                     es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupStep.MEMBERS
                 )

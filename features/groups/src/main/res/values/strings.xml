@@ -128,6 +128,12 @@
     <string name="group_edit_success_saved">Group updated successfully.</string>
     <string name="group_edit_updating">Updating group…</string>
 
+    <!-- Group Membership Management -->
+    <string name="group_remove_member_error_balance">This member has a non-zero balance and cannot be removed</string>
+    <string name="group_remove_member_error_admin">The group creator cannot be removed</string>
+    <string name="group_error_remove_member_failed">Failed to remove member. Please try again</string>
+    <string name="group_edit_success_saved_with_errors">Group updated with some member changes pending</string>
+
     <!-- Leave Group -->
     <string name="action_leave_group">Leave group</string>
     <string name="group_leave_title">Leave Group?</string>

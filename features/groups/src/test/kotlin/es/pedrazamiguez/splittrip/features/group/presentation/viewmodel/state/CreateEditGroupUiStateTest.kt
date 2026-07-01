@@ -40,9 +40,9 @@ class CreateEditGroupUiStateTest {
         }
 
         @Test
-        fun `steps in edit mode exclude members and unregistered names steps`() {
+        fun `steps in edit mode include members but exclude unregistered names`() {
             val state = CreateEditGroupUiState(isEditMode = true)
-            assertFalse(state.steps.contains(CreateEditGroupStep.MEMBERS))
+            assertTrue(state.steps.contains(CreateEditGroupStep.MEMBERS))
             assertFalse(state.steps.contains(CreateEditGroupStep.UNREGISTERED_NAMES))
             assertTrue(state.steps.contains(CreateEditGroupStep.INFO))
             assertTrue(state.steps.contains(CreateEditGroupStep.REVIEW))
@@ -67,9 +67,9 @@ class CreateEditGroupUiStateTest {
         }
 
         @Test
-        fun `edit mode has exactly 4 steps`() {
+        fun `edit mode without pending has exactly 5 steps`() {
             val state = CreateEditGroupUiState(isEditMode = true)
-            assertEquals(4, state.steps.size)
+            assertEquals(5, state.steps.size)
         }
     }
 
@@ -89,8 +89,8 @@ class CreateEditGroupUiStateTest {
         fun `currentStepIndex coerces to 0 when step not in steps list`() {
             val state = CreateEditGroupUiState(
                 isEditMode = true,
-                // MEMBERS is not in edit-mode steps
-                currentStep = CreateEditGroupStep.MEMBERS
+                // UNREGISTERED_NAMES is not in edit-mode steps without pending users
+                currentStep = CreateEditGroupStep.UNREGISTERED_NAMES
             )
             assertEquals(0, state.currentStepIndex)
         }

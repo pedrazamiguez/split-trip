@@ -107,6 +107,10 @@
     <string name="group_edit_save">Guardâh cambiô</string>
     <string name="group_edit_success_saved">Grupo âttualiçao corrêttamente.</string>
     <string name="group_edit_updating">Âttualiçando grupo…</string>
+    <string name="group_remove_member_error_balance">Êtte miembro tiene un çardo dîttinto de çero y no çe puede eliminâh</string>
+    <string name="group_remove_member_error_admin">Er creadôh der grupo no çe puede eliminâh</string>
+    <string name="group_error_remove_member_failed">Errôh al eliminâh er miembro. Inténtalo de nuebo</string>
+    <string name="group_edit_success_saved_with_errors">Grupo âttualiçao con argunô cambiô de miembrô pendientê</string>
     <string name="action_leave_group">Abandonâh grupo</string>
     <string name="group_leave_title">¿Abandonâh grupo?</string>
     <string name="group_leave_warning">¿Çeguro que quierê abandonâh \"%1$s\"? Êtta âççión no çe puede deçaçêh.</string>

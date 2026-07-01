@@ -129,6 +129,12 @@
     <string name="group_edit_success_saved">Grupo actualizado correctamente.</string>
     <string name="group_edit_updating">Actualizando grupo…</string>
 
+    <!-- Group Membership Management -->
+    <string name="group_remove_member_error_balance">Este miembro tiene un saldo distinto de cero y no se puede eliminar</string>
+    <string name="group_remove_member_error_admin">El creador del grupo no se puede eliminar</string>
+    <string name="group_error_remove_member_failed">Error al eliminar el miembro. Inténtalo de nuevo</string>
+    <string name="group_edit_success_saved_with_errors">Grupo actualizado con algunos cambios de miembros pendientes</string>
+
     <!-- Leave Group -->
     <string name="action_leave_group">Abandonar grupo</string>
     <string name="group_leave_title">¿Abandonar grupo?</string>
