@@ -192,8 +192,8 @@ else:
 # Add graphify if not present
 if 'graphify' not in servers:
     servers['graphify'] = {
-        'command': 'graphify',
-        'args': ['serve']
+        'command': 'uv',
+        'args': ['run', '-m', 'graphify.serve', '--project', '${PROJECT_ROOT}']
     }
     print('  Added graphify to Gemini MCP config')
 else:
