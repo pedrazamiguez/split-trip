@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.usecase.group.impl
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
@@ -24,10 +25,10 @@ class RemoveGroupMemberUseCaseImpl(
         val group = groupRepository.getGroupById(groupId)
             ?: throw IllegalArgumentException("Group not found: $groupId")
 
-        if (group.status.name == "ARCHIVED") throw GroupArchivedException(groupId)
-        if (userId !in group.members) throw CannotRemoveMemberException("not_a_member")
-        if (group.createdBy == userId) throw CannotRemoveMemberException("is_creator")
-        if (group.members.size <= 1) throw CannotRemoveMemberException("last_member")
+        if (group.status == GroupStatus.ARCHIVED) throw GroupArchivedException(groupId)
+        if (userId !in group.members) throw CannotRemoveMemberException(CannotRemoveMemberException.Reason.NOT_A_MEMBER)
+        if (group.createdBy == userId) throw CannotRemoveMemberException(CannotRemoveMemberException.Reason.IS_CREATOR)
+        if (group.members.size <= 1) throw CannotRemoveMemberException(CannotRemoveMemberException.Reason.LAST_MEMBER)
 
         val expenses = expenseRepository.getGroupExpensesFlow(groupId).first()
         val contributions = contributionRepository.getGroupContributionsFlow(groupId).first()
@@ -44,10 +45,10 @@ class RemoveGroupMemberUseCaseImpl(
         )
 
         val memberBalance = balances.find { it.userId == userId }
-            ?: throw CannotRemoveMemberException("user_not_in_balances")
+            ?: throw CannotRemoveMemberException(CannotRemoveMemberException.Reason.USER_NOT_IN_BALANCES)
 
         if (memberBalance.totalBalance != 0L) {
-            throw CannotRemoveMemberException("non_zero_balance")
+            throw CannotRemoveMemberException(CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)
         }
 
         groupRepository.removeMember(groupId, userId)

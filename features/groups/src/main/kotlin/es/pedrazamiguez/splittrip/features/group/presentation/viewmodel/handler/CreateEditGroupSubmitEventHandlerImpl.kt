@@ -120,9 +120,11 @@ class CreateEditGroupSubmitEventHandlerImpl(
                         Timber.e(e, "Failed to remove member $userId from group ${group.id}")
                         hasError = true
                         val message = when {
-                            e is CannotRemoveMemberException && e.message?.contains("non_zero_balance") == true ->
+                            e is CannotRemoveMemberException &&
+                                e.reason == CannotRemoveMemberException.Reason.NON_ZERO_BALANCE ->
                                 UiText.StringResource(R.string.group_remove_member_error_balance)
-                            e is CannotRemoveMemberException && e.message?.contains("is_creator") == true ->
+                            e is CannotRemoveMemberException &&
+                                e.reason == CannotRemoveMemberException.Reason.IS_CREATOR ->
                                 UiText.StringResource(R.string.group_remove_member_error_admin)
                             else -> UiText.StringResource(R.string.group_error_remove_member_failed)
                         }

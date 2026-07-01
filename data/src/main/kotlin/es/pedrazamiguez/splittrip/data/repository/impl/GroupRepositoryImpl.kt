@@ -427,8 +427,10 @@ class GroupRepositoryImpl(
 
     override suspend fun addMembers(groupId: String, newMemberIds: List<String>) {
         val group = localGroupDataSource.getGroupById(groupId) ?: return
-        val updatedMembers = (group.members + newMemberIds).distinct()
-        if (updatedMembers == group.members) return
+        val trulyNewMemberIds = newMemberIds.filter { it !in group.members }
+        if (trulyNewMemberIds.isEmpty()) return
+
+        val updatedMembers = (group.members + trulyNewMemberIds).distinct()
 
         val updatedGroup = group.copy(
             members = updatedMembers,
@@ -440,7 +442,7 @@ class GroupRepositoryImpl(
 
         syncScope.launch {
             try {
-                cloudGroupDataSource.addMembers(groupId, newMemberIds, authenticationService.requireUserId())
+                cloudGroupDataSource.addMembers(groupId, trulyNewMemberIds, authenticationService.requireUserId())
                 localGroupDataSource.updateSyncStatus(groupId, SyncStatus.SYNCED)
             } catch (e: CancellationException) {
                 throw e

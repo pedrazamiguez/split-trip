@@ -260,6 +260,11 @@ class FirestoreGroupDataSourceImpl(
                     "memberIds",
                     FieldValue.arrayRemove(userId)
                 )
+                update(
+                    groupDocRef,
+                    "lastUpdatedAt",
+                    FieldValue.serverTimestamp()
+                )
                 delete(memberDocRef)
             }
             .commit()

@@ -94,18 +94,18 @@ class RemoveGroupMemberUseCaseImplTest {
     fun `fails when member is the creator`() = runTest {
         val result = useCase(groupId, creatorId)
 
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is CannotRemoveMemberException)
-        assertTrue(result.exceptionOrNull()?.message?.contains("is_creator") == true)
+        assertTrue(exception.reason == CannotRemoveMemberException.Reason.IS_CREATOR)
     }
 
     @Test
     fun `fails when member is not in group`() = runTest {
         val result = useCase(groupId, "non-member")
 
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is CannotRemoveMemberException)
-        assertTrue(result.exceptionOrNull()?.message?.contains("not_a_member") == true)
+        assertTrue(exception.reason == CannotRemoveMemberException.Reason.NOT_A_MEMBER)
     }
 
     @Test
@@ -115,9 +115,9 @@ class RemoveGroupMemberUseCaseImplTest {
 
         val result = useCase(groupId, memberToRemove)
 
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is CannotRemoveMemberException)
-        assertTrue(result.exceptionOrNull()?.message?.contains("last_member") == true)
+        assertTrue(exception.reason == CannotRemoveMemberException.Reason.LAST_MEMBER)
     }
 
     @Test
@@ -127,9 +127,9 @@ class RemoveGroupMemberUseCaseImplTest {
 
         val result = useCase(groupId, memberToRemove)
 
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is CannotRemoveMemberException)
-        assertTrue(result.exceptionOrNull()?.message?.contains("non_zero_balance") == true)
+        assertTrue(exception.reason == CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)
     }
 
     @Test
@@ -139,8 +139,8 @@ class RemoveGroupMemberUseCaseImplTest {
 
         val result = useCase(groupId, memberToRemove)
 
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is CannotRemoveMemberException)
-        assertTrue(result.exceptionOrNull()?.message?.contains("user_not_in_balances") == true)
+        assertTrue(exception.reason == CannotRemoveMemberException.Reason.USER_NOT_IN_BALANCES)
     }
 }
