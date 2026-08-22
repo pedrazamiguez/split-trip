@@ -157,14 +157,31 @@ class AddExpenseUiMapper(
 
         val subExpenses = if (state.isSubExpensesEnabled && state.subExpenses.isNotEmpty()) {
             state.subExpenses.map { subUi ->
-                val subCents = splitPreviewService.parseAmountToCents(subUi.amountInput, sourceDecimalDigits)
+                val trancheCurrency = subUi.resolvedCurrencyCode
+                val trancheDecimalDigits = subUi.currency?.decimalDigits ?: sourceDecimalDigits
+                val subCents = splitPreviewService.parseAmountToCents(subUi.amountInput, trancheDecimalDigits)
+                val normalizedRate = CurrencyConverter.normalizeAmountString(subUi.displayExchangeRate.trim())
+                val displayRate = normalizedRate.toBigDecimalOrNull() ?: displayRate
+                val trancheInternalRate = if (displayRate.compareTo(BigDecimal.ZERO) != 0) {
+                    BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
+                } else {
+                    BigDecimal.ONE
+                }
+                val groupCents = if (subUi.groupAmountCents > 0) {
+                    subUi.groupAmountCents
+                } else if (trancheCurrency == groupCurrencyCode) {
+                    subCents
+                } else {
+                    BigDecimal(subCents).multiply(trancheInternalRate).setScale(0, RoundingMode.HALF_UP).toLong()
+                }
+
                 SubExpense(
                     id = subUi.id.ifBlank { UUID.randomUUID().toString() },
                     title = subUi.title.trim(),
                     amountCents = subCents,
-                    currency = subUi.currency.ifBlank { sourceCurrencyCode ?: "EUR" },
-                    groupAmountCents = subUi.groupAmountCents,
-                    exchangeRate = internalRate,
+                    currency = trancheCurrency,
+                    groupAmountCents = groupCents,
+                    exchangeRate = trancheInternalRate,
                     paymentMethod = subUi.paymentMethod,
                     paymentStatus = subUi.paymentStatus,
                     payerType = subUi.payerType,
@@ -193,6 +210,20 @@ class AddExpenseUiMapper(
             null
         }
 
+        val resolvedGroupAmount = if (subExpenses.isNotEmpty()) {
+            subExpenses.sumOf { it.groupAmountCents }
+        } else {
+            groupAmount
+        }
+
+        val resolvedSourceAmount = if (subExpenses.isNotEmpty() &&
+            subExpenses.all { it.currency == (sourceCurrencyCode ?: "EUR") }
+        ) {
+            subExpenses.sumOf { it.amountCents }
+        } else {
+            sourceAmount
+        }
+
         val resolvedPaymentStatus = if (subExpenses.isNotEmpty()) {
             if (subExpenses.all {
                     it.paymentStatus == PaymentStatus.FINISHED ||
@@ -200,6 +231,8 @@ class AddExpenseUiMapper(
                 }
             ) {
                 PaymentStatus.FINISHED
+            } else if (subExpenses.all { it.paymentStatus == PaymentStatus.SCHEDULED }) {
+                PaymentStatus.SCHEDULED
             } else {
                 PaymentStatus.PARTIAL
             }
@@ -210,9 +243,9 @@ class AddExpenseUiMapper(
         val expense = Expense(
             groupId = groupId,
             title = state.expenseTitle.trim(),
-            sourceAmount = sourceAmount,
+            sourceAmount = resolvedSourceAmount,
             sourceCurrency = sourceCurrencyCode ?: "EUR",
-            groupAmount = groupAmount,
+            groupAmount = resolvedGroupAmount,
             groupCurrency = groupCurrencyCode ?: "EUR",
             expectedGroupAmount = expectedGroupAmount,
             exchangeRate = internalRate,
@@ -324,13 +357,30 @@ class AddExpenseUiMapper(
         val selectedContributionSubunitId = contribution?.subunitId
 
         val subExpensesMapped = expense.subExpenses.map { sub ->
-            val amountInput = BigDecimal(sub.amountCents).movePointLeft(sourceDecimalDigits)
+            val currencyModel = currentState.availableCurrencies.find { it.code == sub.currency }
+            val trancheDecimalDigits = currencyModel?.decimalDigits ?: sourceDecimalDigits
+            val amountInput = BigDecimal(sub.amountCents).movePointLeft(trancheDecimalDigits)
                 .stripTrailingZeros().toPlainString()
+            val isForeign = sub.currency != expense.groupCurrency
+            val displayExchangeRate = if (isForeign && sub.exchangeRate.compareTo(BigDecimal.ZERO) != 0) {
+                BigDecimal.ONE.divide(sub.exchangeRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
+                    .stripTrailingZeros().toPlainString()
+            } else {
+                "1.0"
+            }
+            val groupAmountDecimalPlaces = currentState.groupCurrency?.decimalDigits ?: 2
+            val calcGroupAmount = BigDecimal(sub.groupAmountCents).movePointLeft(groupAmountDecimalPlaces)
+                .stripTrailingZeros().toPlainString()
+
             SubExpenseUiModel(
                 id = sub.id,
                 title = sub.title,
                 amountInput = amountInput,
-                currency = sub.currency,
+                currency = currencyModel,
+                currencyCode = sub.currency,
+                displayExchangeRate = displayExchangeRate,
+                showExchangeRateSection = isForeign,
+                calculatedGroupAmount = calcGroupAmount,
                 groupAmountCents = sub.groupAmountCents,
                 exchangeRate = sub.exchangeRate,
                 paymentMethod = sub.paymentMethod,

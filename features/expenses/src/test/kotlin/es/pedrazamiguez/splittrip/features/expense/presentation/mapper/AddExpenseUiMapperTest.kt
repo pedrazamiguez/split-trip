@@ -29,6 +29,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSou
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -1444,21 +1445,21 @@ class AddExpenseUiMapperTest {
 
         @Test
         fun `maps state with subExpenses enabled to domain expense`() {
-            val subUi1 = es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel(
+            val subUi1 = SubExpenseUiModel(
                 id = "sub-1",
                 title = "First",
                 amountInput = "20.00",
-                currency = "EUR",
+                currency = eurUi,
                 groupAmountCents = 2000L,
                 exchangeRate = BigDecimal.ONE,
                 paymentMethod = PaymentMethod.CASH,
                 paymentStatus = PaymentStatus.FINISHED
             )
-            val subUi2 = es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel(
+            val subUi2 = SubExpenseUiModel(
                 id = "",
                 title = "Second",
                 amountInput = "30.00",
-                currency = "EUR",
+                currency = eurUi,
                 groupAmountCents = 3000L,
                 exchangeRate = BigDecimal.ONE,
                 paymentMethod = PaymentMethod.CREDIT_CARD,
@@ -1470,7 +1471,7 @@ class AddExpenseUiMapperTest {
                 selectedCurrency = eurUi,
                 selectedPaymentMethod = cashPaymentMethod,
                 isSubExpensesEnabled = true,
-                subExpenses = kotlinx.collections.immutable.persistentListOf(subUi1, subUi2)
+                subExpenses = persistentListOf(subUi1, subUi2)
             )
 
             val domain = mapper.mapToDomain(state, "group-1").getOrThrow()
@@ -1485,21 +1486,21 @@ class AddExpenseUiMapperTest {
 
         @Test
         fun `maps state with all finished subExpenses to FINISHED status`() {
-            val subUi1 = es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel(
+            val subUi1 = SubExpenseUiModel(
                 id = "sub-1",
                 title = "First",
                 amountInput = "25.00",
-                currency = "EUR",
+                currency = eurUi,
                 groupAmountCents = 2500L,
                 exchangeRate = BigDecimal.ONE,
                 paymentMethod = PaymentMethod.CASH,
                 paymentStatus = PaymentStatus.FINISHED
             )
-            val subUi2 = es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel(
+            val subUi2 = SubExpenseUiModel(
                 id = "sub-2",
                 title = "Second",
                 amountInput = "25.00",
-                currency = "EUR",
+                currency = eurUi,
                 groupAmountCents = 2500L,
                 exchangeRate = BigDecimal.ONE,
                 paymentMethod = PaymentMethod.CREDIT_CARD,
@@ -1511,7 +1512,7 @@ class AddExpenseUiMapperTest {
                 selectedCurrency = eurUi,
                 selectedPaymentMethod = cashPaymentMethod,
                 isSubExpensesEnabled = true,
-                subExpenses = kotlinx.collections.immutable.persistentListOf(subUi1, subUi2)
+                subExpenses = persistentListOf(subUi1, subUi2)
             )
 
             val domain = mapper.mapToDomain(state, "group-1").getOrThrow()

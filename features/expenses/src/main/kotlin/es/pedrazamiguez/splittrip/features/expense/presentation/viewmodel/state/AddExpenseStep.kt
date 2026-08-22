@@ -10,17 +10,18 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizar
  *   2. payment method (always — determines exchange-rate lock behaviour)
  *   3. amount + currency (always)
  *   4. exchange rate (conditional: foreign currency selected; optional — defaults to last-used/fetched rate)
- *   5. split among members (conditional: group has >1 member; optional — defaults to equal split)
- *   6. category (always, optional — may be skipped)
- *   7. funding source (always, optional — defaults to "Group Pocket")
- *   8. contribution scope (conditional: funding source = "My Money"; mandatory when shown)
- *   9. vendor + notes (always, optional — may be skipped)
- *  10. payment status / scheduling (always, optional — defaults to "Paid")
- *  11. receipt (always, optional — may be skipped)
- *  12. add-ons: fees, tips, discounts, surcharges (always, optional — may be skipped)
- *  13. review: read-only summary (always)
+ *   5. sub-expenses / payment tranches (always, optional — may be skipped)
+ *   6. split among members (conditional: group has >1 member; optional — defaults to equal split)
+ *   7. category (always, optional — may be skipped)
+ *   8. funding source (always, optional — defaults to "Group Pocket")
+ *   9. contribution scope (conditional: funding source = "My Money"; mandatory when shown)
+ *  10. vendor + notes (always, optional — may be skipped)
+ *  11. payment status / scheduling (conditional: only when sub-expenses disabled; optional — defaults to "Paid")
+ *  12. receipt (always, optional — may be skipped)
+ *  13. add-ons: fees, tips, discounts, surcharges (always, optional — may be skipped)
+ *  14. review: read-only summary (always)
  *
- * Conditional steps (CONTRIBUTION_SCOPE, EXCHANGE_RATE, SPLIT) are dynamically
+ * Conditional steps (CONTRIBUTION_SCOPE, EXCHANGE_RATE, SPLIT, PAYMENT_STATUS) are dynamically
  * included/excluded by [applicableSteps] based on the current form state.
  *
  * The guiding philosophy is: **"As easy or as complicated to log an expense as the user needs."**
@@ -52,6 +53,9 @@ enum class AddExpenseStep(
      */
     EXCHANGE_RATE(isOptional = true),
 
+    /** Sub-expenses / payment tranches — optional, may be skipped. */
+    SUB_EXPENSES(isOptional = true),
+
     /**
      * Split type + per-member allocation + sub-unit mode — only when >1 member.
      * Optional: defaults to equal split among all members when skipped.
@@ -77,7 +81,7 @@ enum class AddExpenseStep(
     VENDOR_NOTES(isOptional = true),
 
     /**
-     * Payment status + conditional due date — always shown.
+     * Payment status + conditional due date — only shown when sub-expenses disabled.
      * Optional: defaults to "Paid" (not scheduled) when skipped.
      */
     PAYMENT_STATUS(isOptional = true),
@@ -87,9 +91,6 @@ enum class AddExpenseStep(
 
     /** Fees, tips, discounts, surcharges — optional, may be skipped. */
     ADD_ONS(isOptional = true),
-
-    /** Sub-expenses / payment tranches — optional, may be skipped. */
-    SUB_EXPENSES(isOptional = true),
 
     /** Read-only summary of all entered data — always shown (final confirmation). */
     REVIEW(isReview = true);
@@ -101,25 +102,27 @@ enum class AddExpenseStep(
          * @param showContributionScopeStep `true` when funding source is "My Money" (USER).
          * @param showExchangeRateSection `true` when a foreign currency is selected.
          * @param hasSplit `true` when the group has more than one member.
+         * @param isSubExpensesEnabled `true` when sub-expenses (payment tranches) mode is active.
          */
         fun applicableSteps(
             showContributionScopeStep: Boolean,
             showExchangeRateSection: Boolean,
-            hasSplit: Boolean
+            hasSplit: Boolean,
+            isSubExpensesEnabled: Boolean = false
         ): List<AddExpenseStep> = buildList {
             add(TITLE)
             add(PAYMENT_METHOD)
             add(AMOUNT)
             if (showExchangeRateSection) add(EXCHANGE_RATE)
+            add(SUB_EXPENSES)
             if (hasSplit) add(SPLIT)
             add(CATEGORY)
             add(FUNDING_SOURCE)
             if (showContributionScopeStep) add(CONTRIBUTION_SCOPE)
             add(VENDOR_NOTES)
-            add(PAYMENT_STATUS)
+            if (!isSubExpensesEnabled) add(PAYMENT_STATUS)
             add(RECEIPT)
             add(ADD_ONS)
-            add(SUB_EXPENSES)
             add(REVIEW)
         }
     }

@@ -278,7 +278,8 @@ data class AddExpenseUiState(
             val baseSteps = AddExpenseStep.applicableSteps(
                 showContributionScopeStep = showContributionScopeStep,
                 showExchangeRateSection = showExchangeRateSection,
-                hasSplit = memberIds.size > 1
+                hasSplit = memberIds.size > 1,
+                isSubExpensesEnabled = isSubExpensesEnabled
             )
             return if (isAiCapable && isAiModeActive) {
                 val withoutReceipt = baseSteps.filter { it != AddExpenseStep.RECEIPT }

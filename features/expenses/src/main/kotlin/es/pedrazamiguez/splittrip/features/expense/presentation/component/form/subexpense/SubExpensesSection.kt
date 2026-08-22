@@ -28,12 +28,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plus
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 
-@Suppress("LongMethod", "CyclomaticComplexMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 fun SubExpensesSection(
     uiState: AddExpenseUiState,
@@ -83,7 +84,8 @@ fun SubExpensesSection(
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = stringResource(
@@ -115,7 +117,9 @@ fun SubExpensesSection(
                     SubExpenseItemEditor(
                         subExpense = subExpense,
                         itemIndex = index,
+                        availableCurrencies = uiState.availableCurrencies,
                         paymentMethods = uiState.paymentMethods,
+                        groupCurrency = uiState.groupCurrency,
                         onEvent = onEvent,
                         onRemove = { onEvent(AddExpenseUiEvent.SubExpenseRemoved(subExpense.id)) }
                     )
@@ -131,24 +135,52 @@ fun SubExpensesSection(
                     )
                 }
 
-                // Add Tranche button
-                TextButton(
-                    onClick = {
-                        focusManager.clearFocus()
-                        onEvent(AddExpenseUiEvent.SubExpenseAdded)
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                // Action buttons: Add Tranche & Auto-fill Remaining
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
                 ) {
-                    Icon(
-                        imageVector = TablerIcons.Outline.Plus,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.size(MaterialTheme.spacing.ExtraSmall))
-                    Text(
-                        text = stringResource(R.string.expense_sub_expense_add),
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    TextButton(
+                        onClick = {
+                            focusManager.clearFocus()
+                            onEvent(AddExpenseUiEvent.SubExpenseAdded)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.Plus,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.size(MaterialTheme.spacing.ExtraSmall))
+                        Text(
+                            text = stringResource(R.string.expense_sub_expense_add),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+
+                    if (uiState.subExpenses.isNotEmpty() && uiState.subExpensesError != null) {
+                        TextButton(
+                            onClick = {
+                                focusManager.clearFocus()
+                                uiState.subExpenses.lastOrNull()?.let {
+                                    onEvent(AddExpenseUiEvent.SubExpenseAutoFillRemaining(it.id))
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = TablerIcons.Outline.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.size(MaterialTheme.spacing.ExtraSmall))
+                            Text(
+                                text = stringResource(R.string.expense_sub_expense_autofill),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
                 }
             }
         }

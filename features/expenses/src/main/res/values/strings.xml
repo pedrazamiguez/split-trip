@@ -383,7 +383,7 @@
 
     <string name="payment_status_partial">Partial</string>
     <string name="expense_sub_expenses_title">Payment tranches</string>
-    <string name="expense_sub_expenses_subtitle">Split this expense into multiple scheduled or completed payments</string>
+    <string name="expense_sub_expenses_subtitle">Split this expense into multiple payments</string>
     <string name="expense_sub_expense_add">Add tranche</string>
     <string name="expense_sub_expense_remove">Remove tranche</string>
     <string name="expense_sub_expense_remaining">Remaining: %1$s</string>
@@ -394,8 +394,11 @@
         <item quantity="one">%1$d payment</item>
         <item quantity="other">%1$d payments</item>
     </plurals>
-    <string name="expense_wizard_step_sub_expenses">Payments</string>
+    <string name="expense_wizard_step_sub_expenses">Tranches</string>
     <string name="expense_detail_section_sub_expenses">Payment Schedule</string>
     <string name="expense_error_sub_expenses_minimum">Add at least 2 payment tranches or turn off sub-expenses</string>
     <string name="expense_error_sub_expenses_sum">The sum of tranches (%1$s) must equal the total expense (%2$s)</string>
+    <string name="expense_sub_expense_autofill">Auto-fill remaining (%1$s)</string>
+    <string name="expense_sub_expense_currency_label">Tranche Currency</string>
+    <string name="expense_sub_expense_exchange_rate_title">Tranche Exchange Rate</string>
 </resources>

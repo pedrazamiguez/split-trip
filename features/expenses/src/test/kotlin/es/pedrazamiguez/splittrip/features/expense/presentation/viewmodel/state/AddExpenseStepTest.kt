@@ -21,13 +21,15 @@ class AddExpenseStepTest {
             val steps = AddExpenseStep.applicableSteps(
                 showContributionScopeStep = true,
                 showExchangeRateSection = true,
-                hasSplit = true
+                hasSplit = true,
+                isSubExpensesEnabled = false
             )
             val expected = listOf(
                 AddExpenseStep.TITLE,
                 AddExpenseStep.PAYMENT_METHOD,
                 AddExpenseStep.AMOUNT,
                 AddExpenseStep.EXCHANGE_RATE,
+                AddExpenseStep.SUB_EXPENSES,
                 AddExpenseStep.SPLIT,
                 AddExpenseStep.CATEGORY,
                 AddExpenseStep.FUNDING_SOURCE,
@@ -36,7 +38,6 @@ class AddExpenseStepTest {
                 AddExpenseStep.PAYMENT_STATUS,
                 AddExpenseStep.RECEIPT,
                 AddExpenseStep.ADD_ONS,
-                AddExpenseStep.SUB_EXPENSES,
                 AddExpenseStep.REVIEW
             )
             assertEquals(expected, steps)
@@ -47,22 +48,35 @@ class AddExpenseStepTest {
             val steps = AddExpenseStep.applicableSteps(
                 showContributionScopeStep = false,
                 showExchangeRateSection = false,
-                hasSplit = false
+                hasSplit = false,
+                isSubExpensesEnabled = false
             )
             val expected = listOf(
                 AddExpenseStep.TITLE,
                 AddExpenseStep.PAYMENT_METHOD,
                 AddExpenseStep.AMOUNT,
+                AddExpenseStep.SUB_EXPENSES,
                 AddExpenseStep.CATEGORY,
                 AddExpenseStep.FUNDING_SOURCE,
                 AddExpenseStep.VENDOR_NOTES,
                 AddExpenseStep.PAYMENT_STATUS,
                 AddExpenseStep.RECEIPT,
                 AddExpenseStep.ADD_ONS,
-                AddExpenseStep.SUB_EXPENSES,
                 AddExpenseStep.REVIEW
             )
             assertEquals(expected, steps)
+        }
+
+        @Test
+        fun `PAYMENT_STATUS is excluded when isSubExpensesEnabled is true`() {
+            val steps = AddExpenseStep.applicableSteps(
+                showContributionScopeStep = true,
+                showExchangeRateSection = true,
+                hasSplit = true,
+                isSubExpensesEnabled = true
+            )
+            assertFalse(steps.contains(AddExpenseStep.PAYMENT_STATUS))
+            assertTrue(steps.contains(AddExpenseStep.SUB_EXPENSES))
         }
 
         @Test

@@ -388,7 +388,27 @@ class AddExpenseViewModel(
                 _uiState.update { subExpenseEventHandler.handleSubExpenseTitleChanged(it, event.id, event.title) }
 
             is AddExpenseUiEvent.SubExpenseAmountChanged ->
-                _uiState.update { subExpenseEventHandler.handleSubExpenseAmountChanged(it, event.id, event.amount) }
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpenseAmountChanged(it, event.id, event.amount)
+                }
+
+            is AddExpenseUiEvent.SubExpenseCurrencySelected ->
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpenseCurrencySelected(it, event.id, event.currencyCode)
+                }
+
+            is AddExpenseUiEvent.SubExpenseExchangeRateChanged ->
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpenseExchangeRateChanged(it, event.id, event.rate)
+                }
+
+            is AddExpenseUiEvent.SubExpenseGroupAmountChanged ->
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpenseGroupAmountChanged(it, event.id, event.amount)
+                }
+
+            is AddExpenseUiEvent.SubExpenseAutoFillRemaining ->
+                _uiState.update { subExpenseEventHandler.handleSubExpenseAutoFillRemaining(it, event.id) }
 
             is AddExpenseUiEvent.SubExpensePaymentMethodSelected ->
                 _uiState.update {

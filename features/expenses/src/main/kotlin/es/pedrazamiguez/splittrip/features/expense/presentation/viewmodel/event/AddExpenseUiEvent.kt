@@ -138,6 +138,9 @@ sealed interface AddExpenseUiEvent {
     data class SubExpenseRemoved(val id: String) : AddExpenseUiEvent
     data class SubExpenseTitleChanged(val id: String, val title: String) : AddExpenseUiEvent
     data class SubExpenseAmountChanged(val id: String, val amount: String) : AddExpenseUiEvent
+    data class SubExpenseCurrencySelected(val id: String, val currencyCode: String) : AddExpenseUiEvent
+    data class SubExpenseExchangeRateChanged(val id: String, val rate: String) : AddExpenseUiEvent
+    data class SubExpenseGroupAmountChanged(val id: String, val amount: String) : AddExpenseUiEvent
     data class SubExpensePaymentMethodSelected(val id: String, val methodId: String) : AddExpenseUiEvent
     data class SubExpensePaymentStatusSelected(val id: String, val statusId: String) : AddExpenseUiEvent
     data class SubExpenseDueDateSelected(val id: String, val dateMillis: Long) : AddExpenseUiEvent
@@ -148,6 +151,7 @@ sealed interface AddExpenseUiEvent {
         val payerId: String?
     ) : AddExpenseUiEvent
     data class SubExpenseNotesChanged(val id: String, val notes: String) : AddExpenseUiEvent
+    data class SubExpenseAutoFillRemaining(val id: String) : AddExpenseUiEvent
 
     // ── Wizard Navigation ───────────────────────────────────────────────
     data object NextStep : AddExpenseUiEvent

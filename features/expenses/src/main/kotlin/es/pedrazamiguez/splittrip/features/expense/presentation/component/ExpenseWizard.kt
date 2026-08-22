@@ -39,12 +39,14 @@ fun ExpenseWizard(
     val paymentStatusLabel = stringResource(R.string.expense_wizard_step_payment_status)
     val receiptLabel = stringResource(R.string.expense_wizard_step_receipt)
     val addOnsLabel = stringResource(R.string.expense_wizard_step_add_ons)
+    val subExpensesLabel = stringResource(R.string.expense_wizard_step_sub_expenses)
     val reviewLabel = stringResource(R.string.expense_wizard_step_review)
 
     val stepLabelMap = remember(
         titleLabel, paymentMethodLabel, fundingSourceLabel, contributionScopeLabel,
         amountLabel, rateLabel, splitLabel,
-        categoryLabel, vendorNotesLabel, paymentStatusLabel, receiptLabel, addOnsLabel, reviewLabel
+        categoryLabel, vendorNotesLabel, paymentStatusLabel, receiptLabel, addOnsLabel,
+        subExpensesLabel, reviewLabel
     ) {
         mapOf(
             AddExpenseStep.TITLE to titleLabel,
@@ -59,6 +61,7 @@ fun ExpenseWizard(
             AddExpenseStep.PAYMENT_STATUS to paymentStatusLabel,
             AddExpenseStep.RECEIPT to receiptLabel,
             AddExpenseStep.ADD_ONS to addOnsLabel,
+            AddExpenseStep.SUB_EXPENSES to subExpensesLabel,
             AddExpenseStep.REVIEW to reviewLabel
         )
     }
