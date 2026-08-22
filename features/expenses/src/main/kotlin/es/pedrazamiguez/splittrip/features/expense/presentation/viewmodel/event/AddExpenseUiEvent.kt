@@ -132,6 +132,23 @@ sealed interface AddExpenseUiEvent {
     /** Toggles the add-ons section expansion. */
     data object AddOnsSectionToggled : AddExpenseUiEvent
 
+    // ── Sub-expenses (Payment tranches) ─────────────────────────────────
+    data object SubExpensesToggled : AddExpenseUiEvent
+    data object SubExpenseAdded : AddExpenseUiEvent
+    data class SubExpenseRemoved(val id: String) : AddExpenseUiEvent
+    data class SubExpenseTitleChanged(val id: String, val title: String) : AddExpenseUiEvent
+    data class SubExpenseAmountChanged(val id: String, val amount: String) : AddExpenseUiEvent
+    data class SubExpensePaymentMethodSelected(val id: String, val methodId: String) : AddExpenseUiEvent
+    data class SubExpensePaymentStatusSelected(val id: String, val statusId: String) : AddExpenseUiEvent
+    data class SubExpenseDueDateSelected(val id: String, val dateMillis: Long) : AddExpenseUiEvent
+    data class SubExpenseOperationDateSelected(val id: String, val dateMillis: Long) : AddExpenseUiEvent
+    data class SubExpensePayerSelected(
+        val id: String,
+        val payerType: PayerType,
+        val payerId: String?
+    ) : AddExpenseUiEvent
+    data class SubExpenseNotesChanged(val id: String, val notes: String) : AddExpenseUiEvent
+
     // ── Wizard Navigation ───────────────────────────────────────────────
     data object NextStep : AddExpenseUiEvent
     data object PreviousStep : AddExpenseUiEvent

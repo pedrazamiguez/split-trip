@@ -380,4 +380,22 @@
     <string name="confirm_payment_expected_charge_label">Cargo estimado en grupo: %1$s</string>
     <string name="confirm_payment_actual_amount_field_label">Cargo real en %1$s</string>
     <string name="expense_detail_expected_with_shift">Estimado: %1$s (desviación: %2$s)</string>
+
+    <string name="payment_status_partial">Parcial</string>
+    <string name="expense_sub_expenses_title">Tramos de pago</string>
+    <string name="expense_sub_expenses_subtitle">Divide este gasto en múltiples pagos programados o realizados</string>
+    <string name="expense_sub_expense_add">Añadir tramo</string>
+    <string name="expense_sub_expense_remove">Eliminar tramo</string>
+    <string name="expense_sub_expense_remaining">Pendiente: %1$s</string>
+    <string name="expense_sub_expense_allocated">Asignado: %1$s</string>
+    <string name="expense_sub_expense_number">Tramo %1$d</string>
+    <string name="expense_badge_partial">%1$d%% pagado</string>
+    <plurals name="expense_badge_payments">
+        <item quantity="one">%1$d pago</item>
+        <item quantity="other">%1$d pagos</item>
+    </plurals>
+    <string name="expense_wizard_step_sub_expenses">Pagos</string>
+    <string name="expense_detail_section_sub_expenses">Calendario de pagos</string>
+    <string name="expense_error_sub_expenses_minimum">Añade al menos 2 tramos de pago o desactiva los subgastos</string>
+    <string name="expense_error_sub_expenses_sum">La suma de los tramos (%1$s) debe ser igual al total del gasto (%2$s)</string>
 </resources>

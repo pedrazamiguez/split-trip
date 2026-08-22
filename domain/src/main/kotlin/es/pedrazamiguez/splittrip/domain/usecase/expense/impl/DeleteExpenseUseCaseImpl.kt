@@ -44,7 +44,9 @@ class DeleteExpenseUseCaseImpl(
         val expense = expenseRepository.getExpenseById(expenseId)
 
         // Refund cash tranches if this was a cash expense
-        expense?.cashTranches?.forEach { tranche ->
+        val allTranches = (expense?.cashTranches ?: emptyList()) +
+            (expense?.subExpenses?.flatMap { it.cashTranches } ?: emptyList())
+        allTranches.forEach { tranche ->
             cashWithdrawalRepository.refundTranche(
                 withdrawalId = tranche.withdrawalId,
                 amountToRefund = tranche.amountConsumed

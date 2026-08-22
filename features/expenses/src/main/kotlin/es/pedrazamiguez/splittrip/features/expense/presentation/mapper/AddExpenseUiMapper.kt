@@ -20,12 +20,14 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.SubExpense
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import java.math.BigDecimal
@@ -36,6 +38,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.UUID
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -152,6 +155,29 @@ class AddExpenseUiMapper(
             sourceCurrencyCode ?: groupCurrencyCode ?: "EUR"
         )
 
+        val subExpenses = if (state.isSubExpensesEnabled && state.subExpenses.isNotEmpty()) {
+            state.subExpenses.map { subUi ->
+                val subCents = splitPreviewService.parseAmountToCents(subUi.amountInput, sourceDecimalDigits)
+                SubExpense(
+                    id = subUi.id.ifBlank { UUID.randomUUID().toString() },
+                    title = subUi.title.trim(),
+                    amountCents = subCents,
+                    currency = subUi.currency.ifBlank { sourceCurrencyCode ?: "EUR" },
+                    groupAmountCents = subUi.groupAmountCents,
+                    exchangeRate = internalRate,
+                    paymentMethod = subUi.paymentMethod,
+                    paymentStatus = subUi.paymentStatus,
+                    payerType = subUi.payerType,
+                    payerId = subUi.payerId,
+                    dueDate = subUi.dueDate,
+                    operationDate = subUi.operationDate,
+                    notes = subUi.notes?.trim()?.ifBlank { null }
+                )
+            }
+        } else {
+            emptyList()
+        }
+
         val payerType = state.selectedFundingSource?.id?.let {
             runCatching { PayerType.fromString(it) }.getOrDefault(PayerType.GROUP)
         } ?: PayerType.GROUP
@@ -167,6 +193,20 @@ class AddExpenseUiMapper(
             null
         }
 
+        val resolvedPaymentStatus = if (subExpenses.isNotEmpty()) {
+            if (subExpenses.all {
+                    it.paymentStatus == PaymentStatus.FINISHED ||
+                        it.paymentStatus == PaymentStatus.RECEIVED
+                }
+            ) {
+                PaymentStatus.FINISHED
+            } else {
+                PaymentStatus.PARTIAL
+            }
+        } else {
+            paymentStatus
+        }
+
         val expense = Expense(
             groupId = groupId,
             title = state.expenseTitle.trim(),
@@ -177,12 +217,13 @@ class AddExpenseUiMapper(
             expectedGroupAmount = expectedGroupAmount,
             exchangeRate = internalRate,
             addOns = addOns,
+            subExpenses = subExpenses,
             category = category,
             subcategory = subcategory,
             vendor = state.vendor.trim().ifBlank { null },
             notes = state.notes.trim().ifBlank { null },
             paymentMethod = paymentMethod,
-            paymentStatus = paymentStatus,
+            paymentStatus = resolvedPaymentStatus,
             dueDate = dueDate,
             receiptAttachment = state.receiptAttachment,
             splitType = splitType,
@@ -282,6 +323,27 @@ class AddExpenseUiMapper(
         val contributionScope = contribution?.contributionScope ?: PayerType.USER
         val selectedContributionSubunitId = contribution?.subunitId
 
+        val subExpensesMapped = expense.subExpenses.map { sub ->
+            val amountInput = BigDecimal(sub.amountCents).movePointLeft(sourceDecimalDigits)
+                .stripTrailingZeros().toPlainString()
+            SubExpenseUiModel(
+                id = sub.id,
+                title = sub.title,
+                amountInput = amountInput,
+                currency = sub.currency,
+                groupAmountCents = sub.groupAmountCents,
+                exchangeRate = sub.exchangeRate,
+                paymentMethod = sub.paymentMethod,
+                paymentStatus = sub.paymentStatus,
+                payerType = sub.payerType,
+                payerId = sub.payerId,
+                dueDate = sub.dueDate,
+                operationDate = sub.operationDate,
+                notes = sub.notes,
+                addOns = sub.addOns
+            )
+        }.toImmutableList()
+
         return currentState.copy(
             expenseTitle = expense.title,
             sourceAmount = sourceAmountString,
@@ -306,6 +368,8 @@ class AddExpenseUiMapper(
             receiptUri = expense.receiptAttachment?.let { it.localUri.takeIf { it.isNotBlank() } ?: it.remoteUrl },
             receiptAttachment = expense.receiptAttachment,
             addOns = addOnsMapped.toImmutableList(),
+            subExpenses = subExpensesMapped,
+            isSubExpensesEnabled = expense.isComposite,
             isSubunitMode = expense.splits.any { it.subunitId != null },
             splits = mappedSplits,
             entitySplits = mappedEntitySplits,

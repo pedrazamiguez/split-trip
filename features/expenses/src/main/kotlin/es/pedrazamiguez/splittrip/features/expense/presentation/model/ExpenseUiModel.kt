@@ -76,5 +76,17 @@ data class ExpenseUiModel(
      * True when the expense is a refundable reservation.
      * Used to show the "Cancel & Refund" action in the long-press menu.
      */
-    val isRefundable: Boolean = false
+    val isRefundable: Boolean = false,
+    /**
+     * True when the expense is composed of multiple payment tranches.
+     */
+    val isComposite: Boolean = false,
+    /**
+     * Number of sub-expenses / tranches in this composite expense.
+     */
+    val subExpenseCount: Int = 0,
+    /**
+     * Percentage of the total group amount that has been paid (0-100).
+     */
+    val paidPercentage: Int = 100
 )

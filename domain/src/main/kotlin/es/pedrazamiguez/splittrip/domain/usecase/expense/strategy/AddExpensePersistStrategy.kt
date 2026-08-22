@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.usecase.expense.strategy
 
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
-import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
@@ -52,34 +51,16 @@ class AddExpensePersistStrategy(
             expense
         }
 
-        val expenseToSave: Expense
-        if (expenseWithId.paymentMethod == PaymentMethod.CASH) {
-            val fifoResult = computeCashFifoResult(
-                groupId,
-                expenseWithId,
-                preferredWithdrawalScope,
-                preferredWithdrawalOwnerId
-            )
+        val expenseToSave = saveExpense(
+            groupId = groupId,
+            expense = expenseWithId,
+            preferredWithdrawalScope = preferredWithdrawalScope,
+            preferredWithdrawalOwnerId = preferredWithdrawalOwnerId
+        )
 
-            val transactionCommitted = expenseRepository.addCashExpense(
-                groupId,
-                fifoResult.expense,
-                fifoResult.expectedRemainingAmounts
-            )
-
-            if (transactionCommitted) {
-                cashWithdrawalRepository.updateRemainingAmounts(groupId, fifoResult.updatedWithdrawals)
-            }
-
-            expenseToSave = fifoResult.expense
-        } else {
-            expenseRepository.addExpense(groupId, expenseWithId)
-            expenseToSave = expenseWithId
-        }
-
-        if (expenseToSave.payerType == PayerType.USER) {
+        if (hasActiveUserPayer(expenseToSave)) {
             try {
-                createPairedContribution(
+                createPairedContributions(
                     groupId,
                     expenseToSave,
                     pairedContributionScope,
@@ -94,5 +75,32 @@ class AddExpensePersistStrategy(
                 throw exception
             }
         }
+    }
+
+    private suspend fun saveExpense(
+        groupId: String,
+        expense: Expense,
+        preferredWithdrawalScope: PayerType?,
+        preferredWithdrawalOwnerId: String?
+    ): Expense {
+        if (!hasActiveCashPayment(expense)) {
+            expenseRepository.addExpense(groupId, expense)
+            return expense
+        }
+        val fifoResult = computeFifoResult(
+            groupId = groupId,
+            expense = expense,
+            preferredWithdrawalScope = preferredWithdrawalScope,
+            preferredWithdrawalOwnerId = preferredWithdrawalOwnerId
+        )
+        val transactionCommitted = expenseRepository.addCashExpense(
+            groupId,
+            fifoResult.expense,
+            fifoResult.expectedRemainingAmounts
+        )
+        if (transactionCommitted) {
+            cashWithdrawalRepository.updateRemainingAmounts(groupId, fifoResult.updatedWithdrawals)
+        }
+        return fifoResult.expense
     }
 }

@@ -5,6 +5,7 @@ import com.google.firebase.firestore.DocumentReference
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AddOnDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.AttachmentDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocument
+import es.pedrazamiguez.splittrip.data.firebase.firestore.document.SubExpenseDocument
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
@@ -18,6 +19,7 @@ import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.model.SubExpense
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.Date
@@ -48,6 +50,7 @@ fun Expense.toDocument(expenseId: String, groupId: String, groupDocRef: Document
             )
         },
         addOns = addOns.map { it.toAddOnDocument() },
+        subExpenses = subExpenses.map { it.toSubExpenseDocument() },
         splits = splits.toSplitDocuments(),
         splitType = splitType.name,
         notes = notes,
@@ -84,6 +87,7 @@ fun ExpenseDocument.toDomain(): Expense {
         expectedGroupAmount = expectedGroupAmountCents,
         exchangeRate = exchangeRate?.toBigDecimalOrNull() ?: BigDecimal.ONE,
         addOns = addOns.map { it.toDomainAddOn() },
+        subExpenses = subExpenses.map { it.toDomainSubExpense() },
         paymentMethod = runCatching { PaymentMethod.fromString(paymentMethod) }.getOrDefault(
             PaymentMethod.OTHER
         ),
@@ -114,6 +118,61 @@ fun ExpenseDocument.toDomain(): Expense {
                 capturedAtMillis = doc.uploadedAt?.toDate()?.time ?: 0L,
                 remoteUrl = remoteUrl
             )
+        }
+    )
+}
+
+// ── SubExpense ↔ SubExpenseDocument mappers ──────────────────────────
+
+private fun SubExpense.toSubExpenseDocument() = SubExpenseDocument(
+    id = id,
+    title = title,
+    amountCents = amountCents,
+    currency = currency,
+    groupAmountCents = groupAmountCents,
+    exchangeRate = exchangeRate.toPlainString(),
+    paymentMethod = paymentMethod.name,
+    paymentStatus = paymentStatus.name,
+    payerType = payerType.name,
+    payerId = payerId,
+    dueDate = dueDate.toTimestampUtc(),
+    operationDate = operationDate.toTimestampUtc(),
+    notes = notes,
+    addOns = addOns.map { it.toAddOnDocument() },
+    cashTranches = cashTranches.map { tranche ->
+        mapOf(
+            "withdrawalId" to tranche.withdrawalId,
+            "amountConsumed" to tranche.amountConsumed
+        )
+    }
+)
+
+private fun SubExpenseDocument.toDomainSubExpense(): SubExpense {
+    val resolvedPayerType = runCatching { PayerType.fromString(payerType) }.getOrDefault(PayerType.GROUP)
+
+    return SubExpense(
+        id = id,
+        title = title,
+        amountCents = amountCents,
+        currency = currency,
+        groupAmountCents = groupAmountCents,
+        exchangeRate = exchangeRate?.toBigDecimalOrNull() ?: BigDecimal.ONE,
+        paymentMethod = runCatching { PaymentMethod.fromString(paymentMethod) }.getOrDefault(
+            PaymentMethod.OTHER
+        ),
+        paymentStatus = runCatching { PaymentStatus.fromString(paymentStatus) }.getOrDefault(
+            PaymentStatus.FINISHED
+        ),
+        payerType = resolvedPayerType,
+        payerId = payerId.takeUnless { resolvedPayerType == PayerType.GROUP },
+        dueDate = dueDate.toLocalDateTimeUtc(),
+        operationDate = operationDate.toLocalDateTimeUtc(),
+        notes = notes,
+        addOns = addOns.map { it.toDomainAddOn() },
+        cashTranches = cashTranches.mapNotNull { map ->
+            val withdrawalId = map["withdrawalId"] as? String ?: return@mapNotNull null
+            val amountConsumed = (map["amountConsumed"] as? Number)?.toLong() ?: return@mapNotNull null
+            CashTranche(withdrawalId = withdrawalId, amountConsumed = amountConsumed)
         }
     )
 }

@@ -13,7 +13,11 @@ class ExpenseSearchServiceImpl : ExpenseSearchService {
         return expenses.filter { expense ->
             expense.title.normalizeForSearch().contains(normalizedQuery) ||
                 (expense.vendor?.normalizeForSearch()?.contains(normalizedQuery) == true) ||
-                (expense.notes?.normalizeForSearch()?.contains(normalizedQuery) == true)
+                (expense.notes?.normalizeForSearch()?.contains(normalizedQuery) == true) ||
+                expense.subExpenses.any { sub ->
+                    sub.title.normalizeForSearch().contains(normalizedQuery) ||
+                        (sub.notes?.normalizeForSearch()?.contains(normalizedQuery) == true)
+                }
         }
     }
 

@@ -33,6 +33,7 @@ data class ExpenseDocument(
     val splitType: String = "EQUAL",
     val attachments: List<AttachmentDocument> = emptyList(),
     val cashTranches: List<Map<String, Any>> = emptyList(),
+    val subExpenses: List<SubExpenseDocument> = emptyList(),
     val notes: String? = null,
     val createdBy: String = "",
     val createdByRef: DocumentReference? = null,

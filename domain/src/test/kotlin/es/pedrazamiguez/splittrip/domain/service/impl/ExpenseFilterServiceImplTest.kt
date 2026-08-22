@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
+import es.pedrazamiguez.splittrip.domain.model.SubExpense
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseSearchService
 import java.time.LocalDate
@@ -274,6 +275,25 @@ class ExpenseFilterServiceImplTest {
             val result = filterService.filter(allExpenses, criteria)
 
             assertEquals(listOf(expense1, expense2, expense4), result)
+        }
+
+        @Test
+        fun `matches when member is sub-expense payer`() {
+            val compositeExpense = Expense(
+                id = "exp-composite",
+                title = "Composite",
+                subExpenses = listOf(
+                    SubExpense(id = "sub-1", payerId = "user-99"),
+                    SubExpense(id = "sub-2", payerId = "user-100")
+                )
+            )
+            val criteria = ExpenseFilterCriteria(
+                selectedMemberIds = setOf("user-99")
+            )
+
+            val result = filterService.filter(listOf(compositeExpense), criteria)
+
+            assertEquals(listOf(compositeExpense), result)
         }
     }
 

@@ -96,5 +96,10 @@ data class ExpenseDetailUiModel(
     val createdAtText: String = "",
     val syncStatus: SyncStatus = SyncStatus.SYNCED,
     val isCancelled: Boolean = false,
-    val isRefundable: Boolean = false
+    val isRefundable: Boolean = false,
+
+    // Sub-expenses
+    val isComposite: Boolean = false,
+    val subExpenses: ImmutableList<SubExpenseDetailUiModel> = persistentListOf(),
+    val paidPercentage: Int = 100
 )

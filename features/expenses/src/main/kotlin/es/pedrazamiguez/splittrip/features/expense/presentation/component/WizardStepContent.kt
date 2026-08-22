@@ -28,6 +28,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.e
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.ReceiptStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.ReviewStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.SplitStep
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.SubExpensesStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.TitleStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.VendorNotesStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -117,6 +118,7 @@ fun WizardStepContent(
                 AddExpenseStep.PAYMENT_STATUS -> PaymentStatusStep(uiState = uiState, onEvent = onEvent)
                 AddExpenseStep.RECEIPT -> ReceiptStep(uiState = uiState, onEvent = onEvent)
                 AddExpenseStep.ADD_ONS -> AddOnsStep(uiState = uiState, onEvent = onEvent)
+                AddExpenseStep.SUB_EXPENSES -> SubExpensesStep(uiState = uiState, onEvent = onEvent)
                 AddExpenseStep.REVIEW -> ReviewStep(uiState = uiState)
             }
         }

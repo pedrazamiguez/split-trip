@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.service
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
+import es.pedrazamiguez.splittrip.domain.model.SubExpense
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
 
 interface ExpenseValidationService {
@@ -20,5 +21,10 @@ interface ExpenseValidationService {
     fun validateAddOns(
         addOns: List<AddOn>,
         sourceAmountCents: Long
+    ): ValidationResult
+    fun validateSubExpense(subExpense: SubExpense): ValidationResult
+    fun validateSubExpenses(
+        subExpenses: List<SubExpense>,
+        expectedTotalGroupAmount: Long
     ): ValidationResult
 }

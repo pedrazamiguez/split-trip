@@ -6,7 +6,8 @@ enum class PaymentStatus {
     FINISHED,
     SCHEDULED,
     CANCELLED,
-    REFUNDABLE;
+    REFUNDABLE,
+    PARTIAL;
 
     companion object {
         fun fromString(status: String): PaymentStatus = entries.find {

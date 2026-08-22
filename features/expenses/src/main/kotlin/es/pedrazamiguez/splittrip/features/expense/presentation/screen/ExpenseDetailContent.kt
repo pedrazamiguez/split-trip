@@ -23,6 +23,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.NotesSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.ProvenanceSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.SplitBreakdownSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.SubExpensesDetailSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 
 @Composable
@@ -47,6 +48,10 @@ internal fun ExpenseDetailContent(
 
         if (expense.notesText != null) {
             NotesSection(notesText = expense.notesText)
+        }
+
+        if (expense.isComposite && expense.subExpenses.isNotEmpty()) {
+            SubExpensesDetailSection(subExpenses = expense.subExpenses)
         }
 
         if (expense.hasAddOns || expense.formattedIncludedBaseCost != null) {

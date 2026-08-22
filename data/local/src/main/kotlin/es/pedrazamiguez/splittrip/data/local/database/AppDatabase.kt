@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.data.local.converter.BigDecimalConverter
 import es.pedrazamiguez.splittrip.data.local.converter.CashTrancheListConverter
 import es.pedrazamiguez.splittrip.data.local.converter.StringBigDecimalMapConverter
 import es.pedrazamiguez.splittrip.data.local.converter.StringListConverter
+import es.pedrazamiguez.splittrip.data.local.converter.SubExpenseListConverter
 import es.pedrazamiguez.splittrip.data.local.dao.CashTransferDao
 import es.pedrazamiguez.splittrip.data.local.dao.CashWithdrawalDao
 import es.pedrazamiguez.splittrip.data.local.dao.ContributionDao
@@ -49,7 +50,7 @@ import es.pedrazamiguez.splittrip.data.local.entity.UserEntity
         SettlementRecordEntity::class,
         MembershipRemovalEventEntity::class
     ],
-    version = 43,
+    version = 44,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 33, to = 34),
@@ -60,7 +61,8 @@ import es.pedrazamiguez.splittrip.data.local.entity.UserEntity
         AutoMigration(from = 39, to = 40),
         AutoMigration(from = 40, to = 41),
         AutoMigration(from = 41, to = 42),
-        AutoMigration(from = 42, to = 43)
+        AutoMigration(from = 42, to = 43),
+        AutoMigration(from = 43, to = 44)
     ]
 )
 @TypeConverters(
@@ -68,7 +70,8 @@ import es.pedrazamiguez.splittrip.data.local.entity.UserEntity
     StringListConverter::class,
     CashTrancheListConverter::class,
     StringBigDecimalMapConverter::class,
-    AddOnListConverter::class
+    AddOnListConverter::class,
+    SubExpenseListConverter::class
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun currencyDao(): CurrencyDao

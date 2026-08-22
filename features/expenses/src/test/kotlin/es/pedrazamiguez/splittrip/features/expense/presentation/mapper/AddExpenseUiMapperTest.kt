@@ -1390,5 +1390,134 @@ class AddExpenseUiMapperTest {
             assertEquals("", result.vendor)
             assertEquals("", result.notes)
         }
+
+        @Test
+        fun `maps composite expense with subExpenses to edit state`() {
+            val sub1 = es.pedrazamiguez.splittrip.domain.model.SubExpense(
+                id = "sub-1",
+                title = "Deposit",
+                amountCents = 2000L,
+                currency = "EUR",
+                groupAmountCents = 2000L,
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED
+            )
+            val sub2 = es.pedrazamiguez.splittrip.domain.model.SubExpense(
+                id = "sub-2",
+                title = "Final",
+                amountCents = 3000L,
+                currency = "EUR",
+                groupAmountCents = 3000L,
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.SCHEDULED
+            )
+            val expense = Expense(
+                id = "exp-comp",
+                groupId = "group-1",
+                title = "Tour",
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                subExpenses = listOf(sub1, sub2),
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.PARTIAL,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertTrue(result.isSubExpensesEnabled)
+            assertEquals(2, result.subExpenses.size)
+            assertEquals("Deposit", result.subExpenses[0].title)
+            assertEquals("20", result.subExpenses[0].amountInput)
+            assertEquals("Final", result.subExpenses[1].title)
+            assertEquals("30", result.subExpenses[1].amountInput)
+        }
+    }
+
+    @Nested
+    inner class SubExpenseDomainMapping {
+
+        @Test
+        fun `maps state with subExpenses enabled to domain expense`() {
+            val subUi1 = es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel(
+                id = "sub-1",
+                title = "First",
+                amountInput = "20.00",
+                currency = "EUR",
+                groupAmountCents = 2000L,
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED
+            )
+            val subUi2 = es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel(
+                id = "",
+                title = "Second",
+                amountInput = "30.00",
+                currency = "EUR",
+                groupAmountCents = 3000L,
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.SCHEDULED
+            )
+            val state = AddExpenseUiState(
+                expenseTitle = "Hotel",
+                sourceAmount = "50.00",
+                selectedCurrency = eurUi,
+                selectedPaymentMethod = cashPaymentMethod,
+                isSubExpensesEnabled = true,
+                subExpenses = kotlinx.collections.immutable.persistentListOf(subUi1, subUi2)
+            )
+
+            val domain = mapper.mapToDomain(state, "group-1").getOrThrow()
+
+            assertTrue(domain.isComposite)
+            assertEquals(2, domain.subExpenses.size)
+            assertEquals(PaymentStatus.PARTIAL, domain.paymentStatus)
+            assertEquals("First", domain.subExpenses[0].title)
+            assertEquals(2000L, domain.subExpenses[0].amountCents)
+            assertTrue(domain.subExpenses[1].id.isNotBlank())
+        }
+
+        @Test
+        fun `maps state with all finished subExpenses to FINISHED status`() {
+            val subUi1 = es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel(
+                id = "sub-1",
+                title = "First",
+                amountInput = "25.00",
+                currency = "EUR",
+                groupAmountCents = 2500L,
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED
+            )
+            val subUi2 = es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel(
+                id = "sub-2",
+                title = "Second",
+                amountInput = "25.00",
+                currency = "EUR",
+                groupAmountCents = 2500L,
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED
+            )
+            val state = AddExpenseUiState(
+                expenseTitle = "Hotel",
+                sourceAmount = "50.00",
+                selectedCurrency = eurUi,
+                selectedPaymentMethod = cashPaymentMethod,
+                isSubExpensesEnabled = true,
+                subExpenses = kotlinx.collections.immutable.persistentListOf(subUi1, subUi2)
+            )
+
+            val domain = mapper.mapToDomain(state, "group-1").getOrThrow()
+
+            assertTrue(domain.isComposite)
+            assertEquals(PaymentStatus.FINISHED, domain.paymentStatus)
+        }
     }
 }

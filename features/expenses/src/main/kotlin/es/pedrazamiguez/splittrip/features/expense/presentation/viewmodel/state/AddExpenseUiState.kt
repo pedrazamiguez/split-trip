@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMet
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.WithdrawalPoolOptionUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -166,6 +167,13 @@ data class AddExpenseUiState(
     /** Formatted base cost when INCLUDED add-ons are present. Empty otherwise. */
     val includedBaseCost: String = "",
 
+    // Sub-expenses (Payment tranches)
+    val subExpenses: ImmutableList<SubExpenseUiModel> = persistentListOf(),
+    val isSubExpensesEnabled: Boolean = false,
+    val subExpensesError: UiText? = null,
+    val subExpensesAllocatedFormatted: String = "",
+    val subExpensesRemainingFormatted: String = "",
+
     // Subunit split mode
     /** True when the group has subunits available (controls toggle visibility). */
     val hasSubunits: Boolean = false,
@@ -222,6 +230,7 @@ data class AddExpenseUiState(
             isAmountValid &&
             isDueDateValid &&
             addOns.all { it.isAmountValid } &&
+            (!isSubExpensesEnabled || (subExpenses.size >= 2 && subExpensesError == null)) &&
             expenseTitle.isNotBlank() &&
             sourceAmount.isNotBlank()
 
@@ -240,6 +249,8 @@ data class AddExpenseUiState(
         notes = notes,
         receiptUri = receiptUri,
         addOns = addOns,
+        subExpenses = subExpenses,
+        isSubExpensesEnabled = isSubExpensesEnabled,
         dueDateMillis = dueDateMillis,
         isAiModeActive = isAiModeActive,
         selectedCategory = selectedCategory,
@@ -363,6 +374,9 @@ data class AddExpenseUiState(
 
             AddExpenseStep.ADD_ONS -> addOns.all { it.isAmountValid } && addOnError == null
 
+            AddExpenseStep.SUB_EXPENSES ->
+                !isSubExpensesEnabled || (subExpenses.size >= 2 && subExpensesError == null)
+
             AddExpenseStep.REVIEW -> isFormValid
         }
 }
@@ -382,6 +396,8 @@ data class AddExpenseFormSnapshot(
     val notes: String,
     val receiptUri: String?,
     val addOns: ImmutableList<AddOnUiModel>,
+    val subExpenses: ImmutableList<SubExpenseUiModel> = persistentListOf(),
+    val isSubExpensesEnabled: Boolean = false,
     val dueDateMillis: Long?,
     val isAiModeActive: Boolean,
     val selectedCategory: CategoryUiModel?,

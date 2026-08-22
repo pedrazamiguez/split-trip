@@ -411,6 +411,28 @@ fun ReviewStep(
                     }
                 }
             }
+
+            // ── Sub-Expenses Section ──────────────────────────────────────────────
+            if (uiState.isSubExpensesEnabled && uiState.subExpenses.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    BodyText(
+                        text = stringResource(R.string.expense_sub_expenses_title),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(LABEL_WEIGHT)
+                    )
+                    Text(
+                        text = uiState.subExpenses.size.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(VALUE_WEIGHT),
+                        textAlign = TextAlign.End
+                    )
+                }
+            }
         }
     }
 }

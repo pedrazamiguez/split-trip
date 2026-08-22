@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.PostConfigAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ReceiptAutoFillEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitEventHandler
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubExpenseEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+@Suppress("LongParameterList")
 class AddExpenseViewModel(
     private val expenseId: String? = null,
     private val configEventHandler: ConfigEventHandler,
@@ -35,6 +37,7 @@ class AddExpenseViewModel(
     private val splitEventHandler: SplitEventHandler,
     private val subunitSplitEventHandler: SubunitSplitEventHandler,
     private val addOnEventHandler: AddOnEventHandler,
+    private val subExpenseEventHandler: SubExpenseEventHandler,
     private val submitEventHandler: SubmitEventHandler,
     private val formEventHandler: FormEventHandler,
     private val receiptAutoFillEventHandler: ReceiptAutoFillEventHandler,
@@ -176,6 +179,7 @@ class AddExpenseViewModel(
                     splitEventHandler.recalculateSplits()
                     subunitSplitEventHandler.recalculateEntitySplits()
                     addOnEventHandler.recalculateEffectiveTotal()
+                    _uiState.update { subExpenseEventHandler.recalculateSubExpenses(it) }
                 }
 
             is AddExpenseUiEvent.ExchangeRateChanged ->
@@ -370,6 +374,50 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.AddOnsSectionToggled ->
                 addOnEventHandler.handleSectionToggled()
 
+            // ── Sub-expenses (Payment tranches) ─────────────────────────
+            is AddExpenseUiEvent.SubExpensesToggled ->
+                _uiState.update { subExpenseEventHandler.handleSubExpensesToggled(it) }
+
+            is AddExpenseUiEvent.SubExpenseAdded ->
+                _uiState.update { subExpenseEventHandler.handleSubExpenseAdded(it) }
+
+            is AddExpenseUiEvent.SubExpenseRemoved ->
+                _uiState.update { subExpenseEventHandler.handleSubExpenseRemoved(it, event.id) }
+
+            is AddExpenseUiEvent.SubExpenseTitleChanged ->
+                _uiState.update { subExpenseEventHandler.handleSubExpenseTitleChanged(it, event.id, event.title) }
+
+            is AddExpenseUiEvent.SubExpenseAmountChanged ->
+                _uiState.update { subExpenseEventHandler.handleSubExpenseAmountChanged(it, event.id, event.amount) }
+
+            is AddExpenseUiEvent.SubExpensePaymentMethodSelected ->
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpensePaymentMethodSelected(it, event.id, event.methodId)
+                }
+
+            is AddExpenseUiEvent.SubExpensePaymentStatusSelected ->
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpensePaymentStatusSelected(it, event.id, event.statusId)
+                }
+
+            is AddExpenseUiEvent.SubExpenseDueDateSelected ->
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpenseDueDateSelected(it, event.id, event.dateMillis)
+                }
+
+            is AddExpenseUiEvent.SubExpenseOperationDateSelected ->
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpenseOperationDateSelected(it, event.id, event.dateMillis)
+                }
+
+            is AddExpenseUiEvent.SubExpensePayerSelected ->
+                _uiState.update {
+                    subExpenseEventHandler.handleSubExpensePayerSelected(it, event.id, event.payerType, event.payerId)
+                }
+
+            is AddExpenseUiEvent.SubExpenseNotesChanged ->
+                _uiState.update { subExpenseEventHandler.handleSubExpenseNotesChanged(it, event.id, event.notes) }
+
             // ── Conflict Resolution ──────────────────────────────────────
             is AddExpenseUiEvent.ResolutionAmountSelected ->
                 formEventHandler.handleSourceAmountChanged(event.amount)
@@ -423,6 +471,7 @@ class AddExpenseViewModel(
         splitEventHandler.recalculateSplits()
         subunitSplitEventHandler.recalculateEntitySplits()
         addOnEventHandler.recalculateEffectiveTotal()
+        _uiState.update { subExpenseEventHandler.recalculateSubExpenses(it) }
     }
 
     /**

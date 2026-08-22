@@ -67,6 +67,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SaveLastUsedPreferencesBundle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitRowMappingDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubExpenseEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitResultDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
@@ -370,12 +371,18 @@ class AddExpenseViewModelTest {
             getGroupSubunitsUseCase = getGroupSubunitsUseCase
         )
 
+        val subExpenseEventHandler = SubExpenseEventHandler(
+            formattingHelper = formattingHelper,
+            exchangeRateCalculationService = ExchangeRateCalculationServiceImpl()
+        )
+
         viewModel = AddExpenseViewModel(
             configEventHandler = configHandler,
             currencyEventHandler = currencyHandler,
             splitEventHandler = splitHandler,
             subunitSplitEventHandler = subunitSplitHandler,
             addOnEventHandler = addOnHandler,
+            subExpenseEventHandler = subExpenseEventHandler,
             submitEventHandler = submitHandler,
             formEventHandler = formHandler,
             receiptAutoFillEventHandler = receiptAutoFillEventHandler,

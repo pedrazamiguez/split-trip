@@ -321,4 +321,21 @@
     <string name="confirm_payment_expected_charge_label">Cargo êttimao en grupo: %1$s</string>
     <string name="confirm_payment_actual_amount_field_label">Cargo reâh en %1$s</string>
     <string name="expense_detail_expected_with_shift">Êttimao: %1$s (dêbbiaçión: %2$s)</string>
+    <string name="payment_status_partial">Parçiâh</string>
+    <string name="expense_sub_expenses_title">Tramô de pago</string>
+    <string name="expense_sub_expenses_subtitle">Dibide êtte gâtto en múrtiplê pagô programáô o realiçáô</string>
+    <string name="expense_sub_expense_add">Añadîh tramo</string>
+    <string name="expense_sub_expense_remove">Eliminâh tramo</string>
+    <string name="expense_sub_expense_remaining">Pendiente: %1$s</string>
+    <string name="expense_sub_expense_allocated">Açînnao: %1$s</string>
+    <string name="expense_sub_expense_number">Tramo %1$d</string>
+    <string name="expense_badge_partial">%1$d%% pagao</string>
+    <plurals name="expense_badge_payments">
+        <item quantity="one">%1$d pago</item>
+        <item quantity="other">%1$d pagô</item>
+    </plurals>
+    <string name="expense_wizard_step_sub_expenses">Pagô</string>
+    <string name="expense_detail_section_sub_expenses">Calendario de pagô</string>
+    <string name="expense_error_sub_expenses_minimum">Añade ar menô 2 tramô de pago o deçâttiba lô çûggâttô</string>
+    <string name="expense_error_sub_expenses_sum">La çuma de lô tramô (%1$s) debe çêh iguâh ar totâh der gâtto (%2$s)</string>
 </resources>

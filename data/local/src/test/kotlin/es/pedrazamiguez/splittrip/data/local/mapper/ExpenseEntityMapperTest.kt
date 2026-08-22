@@ -180,6 +180,23 @@ class ExpenseEntityMapperTest {
             val expense = fullEntity.toDomain()
             assertTrue(expense.cashTranches.isEmpty())
             assertTrue(expense.addOns.isEmpty())
+            assertTrue(expense.subExpenses.isEmpty())
+        }
+
+        @Test
+        fun `maps subExpenses from entity to domain`() {
+            val subJson = "[" +
+                "{\"id\":\"sub-1\",\"title\":\"Deposit\",\"amountCents\":3000,\"currency\":\"EUR\"," +
+                "\"groupAmountCents\":3000,\"exchangeRate\":\"1\",\"paymentMethod\":\"CASH\"," +
+                "\"paymentStatus\":\"FINISHED\",\"payerType\":\"USER\",\"payerId\":\"u1\"}" +
+                "]"
+            val entity = fullEntity.copy(subExpensesJson = subJson)
+            val expense = entity.toDomain()
+
+            assertEquals(1, expense.subExpenses.size)
+            assertEquals("sub-1", expense.subExpenses[0].id)
+            assertEquals("Deposit", expense.subExpenses[0].title)
+            assertEquals(3000L, expense.subExpenses[0].amountCents)
         }
 
         @Test

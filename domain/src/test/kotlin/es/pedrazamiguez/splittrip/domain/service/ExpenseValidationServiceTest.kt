@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
+import es.pedrazamiguez.splittrip.domain.model.SubExpense
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseValidationServiceImpl
@@ -413,6 +414,91 @@ class ExpenseValidationServiceTest {
             val result = service.validateExpenseDate(futureBeyondGrace)
             assertTrue(result is ValidationResult.Invalid)
             assertEquals("Expense date and time cannot be in the future", (result as ValidationResult.Invalid).message)
+        }
+    }
+
+    @Nested
+    inner class ValidateSubExpense {
+
+        @Test
+        fun `valid sub-expense returns Valid`() {
+            val subExpense = SubExpense(
+                id = "sub-1",
+                title = "Deposit",
+                amountCents = 5000L,
+                currency = "EUR",
+                groupAmountCents = 5000L,
+                exchangeRate = BigDecimal.ONE
+            )
+            val result = service.validateSubExpense(subExpense)
+            assertEquals(ValidationResult.Valid, result)
+        }
+
+        @Test
+        fun `zero or negative amount returns Invalid`() {
+            val subExpense = SubExpense(
+                id = "sub-1",
+                amountCents = 0L,
+                currency = "EUR"
+            )
+            val result = service.validateSubExpense(subExpense)
+            assertTrue(result is ValidationResult.Invalid)
+        }
+
+        @Test
+        fun `blank currency returns Invalid`() {
+            val subExpense = SubExpense(
+                id = "sub-1",
+                amountCents = 5000L,
+                currency = "  "
+            )
+            val result = service.validateSubExpense(subExpense)
+            assertTrue(result is ValidationResult.Invalid)
+        }
+
+        @Test
+        fun `zero or negative exchange rate returns Invalid`() {
+            val subExpense = SubExpense(
+                id = "sub-1",
+                amountCents = 5000L,
+                currency = "EUR",
+                exchangeRate = BigDecimal.ZERO
+            )
+            val result = service.validateSubExpense(subExpense)
+            assertTrue(result is ValidationResult.Invalid)
+        }
+    }
+
+    @Nested
+    inner class ValidateSubExpenses {
+
+        @Test
+        fun `fewer than 2 sub-expenses returns Invalid`() {
+            val subExpenses = listOf(
+                SubExpense(id = "sub-1", amountCents = 5000L, currency = "EUR", groupAmountCents = 5000L)
+            )
+            val result = service.validateSubExpenses(subExpenses, 5000L)
+            assertTrue(result is ValidationResult.Invalid)
+        }
+
+        @Test
+        fun `sum mismatch returns Invalid`() {
+            val subExpenses = listOf(
+                SubExpense(id = "sub-1", amountCents = 4000L, currency = "EUR", groupAmountCents = 4000L),
+                SubExpense(id = "sub-2", amountCents = 4000L, currency = "EUR", groupAmountCents = 4000L)
+            )
+            val result = service.validateSubExpenses(subExpenses, 10000L)
+            assertTrue(result is ValidationResult.Invalid)
+        }
+
+        @Test
+        fun `valid sub-expenses matching total returns Valid`() {
+            val subExpenses = listOf(
+                SubExpense(id = "sub-1", amountCents = 5000L, currency = "EUR", groupAmountCents = 5000L),
+                SubExpense(id = "sub-2", amountCents = 5000L, currency = "EUR", groupAmountCents = 5000L)
+            )
+            val result = service.validateSubExpenses(subExpenses, 10000L)
+            assertEquals(ValidationResult.Valid, result)
         }
     }
 

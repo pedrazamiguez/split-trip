@@ -66,7 +66,7 @@ class SubmitEventHandler(
 
     // Sequential validation → map → submit → error-handling pipeline;
     // each branch is a distinct validation/error case
-    @Suppress("CognitiveComplexMethod", "LongMethod", "ReturnCount")
+    @Suppress("CognitiveComplexMethod", "LongMethod", "ReturnCount", "CyclomaticComplexMethod")
     fun submitExpense(groupId: String?, onSuccess: () -> Unit) {
         Timber.d(
             "submitExpense: entry groupId=%s isEditMode=%s currentStep=%s",
@@ -179,6 +179,20 @@ class SubmitEventHandler(
                 _actions.emit(AddExpenseUiAction.ShowError(errorText))
             }
             return
+        }
+
+        if (currentState.isSubExpensesEnabled) {
+            val subError = currentState.subExpensesError ?: if (currentState.subExpenses.size < 2) {
+                UiText.StringResource(R.string.expense_error_sub_expenses_minimum)
+            } else {
+                null
+            }
+            if (subError != null) {
+                Timber.w("submitExpense: sub-expenses validation failed")
+                _uiState.update { it.copy(subExpensesError = subError, error = subError) }
+                scope.launch { _actions.emit(AddExpenseUiAction.ShowError(subError)) }
+                return
+            }
         }
 
         Timber.d("submitExpense: validations passed, mapping to domain")

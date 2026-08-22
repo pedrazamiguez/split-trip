@@ -57,6 +57,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDe
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpensesFilterUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.PaymentStatusBadgeUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.SubExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.AddExpenseScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpenseDetailScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpensesFilterScreenUiProviderImpl
@@ -80,6 +81,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SaveLastUsedPreferencesBundle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitRowMappingDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubExpenseEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitResultDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
@@ -290,6 +292,11 @@ val expensesUiModule = module {
             attachReceiptUseCase = get<AttachReceiptUseCase>()
         )
 
+        val subExpenseEventHandler = SubExpenseEventHandler(
+            formattingHelper = formattingHelper,
+            exchangeRateCalculationService = get<ExchangeRateCalculationService>()
+        )
+
         val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = get<ExtractReceiptFieldsUseCase>(),
             receiptExtractionService = get<ReceiptExtractionService>(),
@@ -315,6 +322,7 @@ val expensesUiModule = module {
             splitEventHandler = splitEventHandler,
             subunitSplitEventHandler = subunitSplitEventHandler,
             addOnEventHandler = addOnEventHandler,
+            subExpenseEventHandler = subExpenseEventHandler,
             submitEventHandler = submitEventHandler,
             formEventHandler = formEventHandler,
             receiptAutoFillEventHandler = receiptAutoFillEventHandler,
@@ -338,13 +346,22 @@ val expensesUiModule = module {
     single { ReceiptViewerScreenUiProviderImpl() } bind ScreenUiProvider::class
 
     single {
+        SubExpenseDetailUiMapper(
+            localeProvider = get<LocaleProvider>(),
+            resourceProvider = get<ResourceProvider>(),
+            userUiMapper = get<UserUiMapper>()
+        )
+    }
+
+    single {
         ExpenseDetailUiMapper(
             formattingHelper = get<FormattingHelper>(),
             resourceProvider = get<ResourceProvider>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             addOnCalculationService = get<AddOnCalculationService>(),
             paymentStatusBadgeUiMapper = get<PaymentStatusBadgeUiMapper>(),
-            userUiMapper = get<UserUiMapper>()
+            userUiMapper = get<UserUiMapper>(),
+            subExpenseDetailUiMapper = get<SubExpenseDetailUiMapper>()
         )
     }
 

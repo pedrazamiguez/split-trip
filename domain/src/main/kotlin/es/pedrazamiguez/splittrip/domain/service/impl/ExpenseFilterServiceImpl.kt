@@ -74,7 +74,8 @@ class ExpenseFilterServiceImpl(
     private fun matchesMember(expense: Expense, selectedMemberIds: Set<String>): Boolean {
         val isPayer = expense.payerId != null && expense.payerId in selectedMemberIds
         val isInvolvedInSplit = expense.splits.any { it.userId in selectedMemberIds && !it.isExcluded }
-        return isPayer || isInvolvedInSplit
+        val isSubExpensePayer = expense.subExpenses.any { it.payerId != null && it.payerId in selectedMemberIds }
+        return isPayer || isInvolvedInSplit || isSubExpensePayer
     }
 
     private fun matchesDateRange(
@@ -82,9 +83,16 @@ class ExpenseFilterServiceImpl(
         startDate: LocalDate?,
         endDate: LocalDate?
     ): Boolean {
-        val expenseDate = expense.effectiveDate?.toLocalDate() ?: return false
-        if (startDate != null && expenseDate.isBefore(startDate)) return false
-        if (endDate != null && expenseDate.isAfter(endDate)) return false
-        return true
+        val expenseDates = buildList {
+            expense.effectiveDate?.toLocalDate()?.let { add(it) }
+            expense.subExpenses.forEach { sub ->
+                (sub.operationDate ?: sub.dueDate)?.toLocalDate()?.let { add(it) }
+            }
+        }
+        if (expenseDates.isEmpty()) return false
+        return expenseDates.any { date ->
+            (startDate == null || !date.isBefore(startDate)) &&
+                (endDate == null || !date.isAfter(endDate))
+        }
     }
 }

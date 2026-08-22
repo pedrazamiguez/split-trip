@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.usecase.expense.strategy
 
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
-import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
@@ -49,7 +48,9 @@ class UpdateExpensePersistStrategy(
         val originalState = getOriginalState(groupId, expense.id)
 
         // Refund original tranches locally (updates Room DB)
-        originalState.expense.cashTranches.forEach { tranche ->
+        val allOriginalTranches = originalState.expense.cashTranches +
+            originalState.expense.subExpenses.flatMap { it.cashTranches }
+        allOriginalTranches.forEach { tranche ->
             cashWithdrawalRepository.refundTranche(tranche.withdrawalId, tranche.amountConsumed)
         }
 
@@ -64,14 +65,12 @@ class UpdateExpensePersistStrategy(
 
             // Update paired contribution
             contributionRepository.deleteByLinkedExpenseId(groupId, expense.id)
-            if (savedExpense.payerType == PayerType.USER && savedExpense.paymentStatus != PaymentStatus.CANCELLED) {
-                createPairedContribution(
-                    groupId,
-                    savedExpense,
-                    pairedContributionScope,
-                    pairedSubunitId
-                )
-            }
+            createPairedContributions(
+                groupId,
+                savedExpense,
+                pairedContributionScope,
+                pairedSubunitId
+            )
         } catch (exception: Exception) {
             rollback(
                 groupId = groupId,
@@ -94,7 +93,7 @@ class UpdateExpensePersistStrategy(
 
         val originalContribution = contributionRepository.findByLinkedExpenseId(groupId, expenseId)
 
-        val originalTranches = originalExpense.cashTranches
+        val originalTranches = originalExpense.cashTranches + originalExpense.subExpenses.flatMap { it.cashTranches }
         val originalWithdrawals = originalTranches.mapNotNull { tranche ->
             cashWithdrawalRepository.getWithdrawalById(tranche.withdrawalId)
         }
@@ -109,39 +108,37 @@ class UpdateExpensePersistStrategy(
         preferredWithdrawalScope: PayerType?,
         preferredWithdrawalOwnerId: String?
     ): Expense {
-        return if (expense.paymentMethod == PaymentMethod.CASH && expense.paymentStatus != PaymentStatus.CANCELLED) {
-            val fifoResult = computeCashFifoResult(
-                groupId,
-                expense,
-                preferredWithdrawalScope,
-                preferredWithdrawalOwnerId
-            )
-
-            val transactionCommitted = expenseRepository.addCashExpense(
-                groupId,
-                fifoResult.expense,
-                fifoResult.expectedRemainingAmounts
-            )
-
-            if (transactionCommitted) {
-                cashWithdrawalRepository.updateRemainingAmounts(groupId, fifoResult.updatedWithdrawals)
-            } else {
-                // Offline fallback: do not apply new deductions, and restore original withdrawals
-                if (originalWithdrawals.isNotEmpty()) {
-                    cashWithdrawalRepository.updateRemainingAmounts(groupId, originalWithdrawals)
-                }
-            }
-
-            fifoResult.expense
-        } else {
+        if (!hasActiveCashPayment(expense)) {
             val finalExpense = if (expense.paymentStatus == PaymentStatus.CANCELLED) {
                 expense.copy(cashTranches = emptyList())
             } else {
                 expense
             }
             expenseRepository.addExpense(groupId, finalExpense)
-            finalExpense
+            return finalExpense
         }
+
+        val fifoResult = computeFifoResult(
+            groupId = groupId,
+            expense = expense,
+            preferredWithdrawalScope = preferredWithdrawalScope,
+            preferredWithdrawalOwnerId = preferredWithdrawalOwnerId
+        )
+
+        val transactionCommitted = expenseRepository.addCashExpense(
+            groupId,
+            fifoResult.expense,
+            fifoResult.expectedRemainingAmounts
+        )
+
+        if (transactionCommitted) {
+            cashWithdrawalRepository.updateRemainingAmounts(groupId, fifoResult.updatedWithdrawals)
+        } else if (originalWithdrawals.isNotEmpty()) {
+            // Offline fallback: do not apply new deductions, and restore original withdrawals
+            cashWithdrawalRepository.updateRemainingAmounts(groupId, originalWithdrawals)
+        }
+
+        return fifoResult.expense
     }
 
     private suspend fun rollback(

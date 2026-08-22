@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 
 data class Expense(
@@ -39,6 +40,7 @@ data class Expense(
     val dueDate: LocalDateTime? = null,
     val receiptAttachment: ReceiptAttachment? = null,
     val cashTranches: List<CashTranche> = emptyList(),
+    val subExpenses: List<SubExpense> = emptyList(),
     val splitType: SplitType = SplitType.EQUAL,
     val splits: List<ExpenseSplit> = emptyList(),
     val createdBy: String = "",
@@ -51,4 +53,27 @@ data class Expense(
 ) {
     val effectiveDate: LocalDateTime?
         get() = operationDate ?: createdAt
+
+    val isComposite: Boolean
+        get() = subExpenses.isNotEmpty()
+
+    val paidGroupAmountCents: Long
+        get() = if (isComposite) {
+            subExpenses
+                .filter { it.paymentStatus == PaymentStatus.FINISHED || it.paymentStatus == PaymentStatus.RECEIVED }
+                .sumOf { it.groupAmountCents }
+        } else if (paymentStatus == PaymentStatus.FINISHED || paymentStatus == PaymentStatus.RECEIVED) {
+            groupAmount
+        } else {
+            0L
+        }
+
+    val paidPercentage: BigDecimal
+        get() = if (groupAmount > 0) {
+            BigDecimal(paidGroupAmountCents)
+                .divide(BigDecimal(groupAmount), 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal(100))
+        } else {
+            BigDecimal.ZERO
+        }
 }

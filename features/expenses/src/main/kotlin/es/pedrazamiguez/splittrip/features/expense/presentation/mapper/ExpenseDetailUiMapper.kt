@@ -42,7 +42,8 @@ class ExpenseDetailUiMapper(
     private val expenseCalculatorService: ExpenseCalculatorService,
     private val addOnCalculationService: AddOnCalculationService,
     private val paymentStatusBadgeUiMapper: PaymentStatusBadgeUiMapper,
-    private val userUiMapper: UserUiMapper
+    private val userUiMapper: UserUiMapper,
+    private val subExpenseDetailUiMapper: SubExpenseDetailUiMapper
 ) {
 
     fun map(
@@ -191,7 +192,15 @@ class ExpenseDetailUiMapper(
                 createdAtText = formattingHelper.formatShortDate(expense.createdAt),
                 syncStatus = expense.syncStatus,
                 isCancelled = expense.paymentStatus == PaymentStatus.CANCELLED,
-                isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE && badgeData?.isPassed != true
+                isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE && badgeData?.isPassed != true,
+                isComposite = expense.isComposite,
+                subExpenses = subExpenseDetailUiMapper.mapList(
+                    expense.subExpenses,
+                    expense.groupCurrency,
+                    memberProfiles,
+                    currentUserId
+                ),
+                paidPercentage = expense.paidPercentage.toInt()
             )
         }
 

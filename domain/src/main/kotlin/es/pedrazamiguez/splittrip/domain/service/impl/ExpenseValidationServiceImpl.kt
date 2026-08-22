@@ -5,9 +5,11 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
+import es.pedrazamiguez.splittrip.domain.model.SubExpense
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -88,7 +90,44 @@ class ExpenseValidationServiceImpl(
         return ValidationResult.Valid
     }
 
+    override fun validateSubExpense(subExpense: SubExpense): ValidationResult {
+        if (subExpense.amountCents <= 0) {
+            return ValidationResult.Invalid("Payment tranche amount must be greater than zero")
+        }
+        if (subExpense.currency.isBlank()) {
+            return ValidationResult.Invalid("Payment tranche currency is required")
+        }
+        if (subExpense.exchangeRate <= BigDecimal.ZERO) {
+            return ValidationResult.Invalid("Payment tranche exchange rate must be greater than zero")
+        }
+        val addOnsResult = validateAddOns(subExpense.addOns, subExpense.amountCents)
+        if (addOnsResult is ValidationResult.Invalid) return addOnsResult
+        return ValidationResult.Valid
+    }
+
+    override fun validateSubExpenses(
+        subExpenses: List<SubExpense>,
+        expectedTotalGroupAmount: Long
+    ): ValidationResult {
+        if (subExpenses.size < MIN_SUB_EXPENSES) {
+            return ValidationResult.Invalid("Composite expense must have at least 2 payment tranches")
+        }
+        for (subExpense in subExpenses) {
+            val result = validateSubExpense(subExpense)
+            if (result is ValidationResult.Invalid) return result
+        }
+        val totalGroupAmount = subExpenses.sumOf { it.groupAmountCents }
+        if (totalGroupAmount != expectedTotalGroupAmount) {
+            return ValidationResult.Invalid(
+                "Sum of payment tranches ($totalGroupAmount) does not match total " +
+                    "expense amount ($expectedTotalGroupAmount)"
+            )
+        }
+        return ValidationResult.Valid
+    }
+
     companion object {
+        private const val MIN_SUB_EXPENSES = 2
         private const val GRACE_PERIOD_HOURS = 36L
         private const val MILLIS_IN_HOUR = 60L * 60L * 1000L
         const val GRACE_PERIOD_MILLIS = GRACE_PERIOD_HOURS * MILLIS_IN_HOUR

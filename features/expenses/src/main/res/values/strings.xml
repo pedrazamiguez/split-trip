@@ -380,4 +380,22 @@
     <string name="confirm_payment_expected_charge_label">Estimated group charge: %1$s</string>
     <string name="confirm_payment_actual_amount_field_label">Actual charge in %1$s</string>
     <string name="expense_detail_expected_with_shift">Estimated: %1$s (%2$s shift)</string>
+
+    <string name="payment_status_partial">Partial</string>
+    <string name="expense_sub_expenses_title">Payment tranches</string>
+    <string name="expense_sub_expenses_subtitle">Split this expense into multiple scheduled or completed payments</string>
+    <string name="expense_sub_expense_add">Add tranche</string>
+    <string name="expense_sub_expense_remove">Remove tranche</string>
+    <string name="expense_sub_expense_remaining">Remaining: %1$s</string>
+    <string name="expense_sub_expense_allocated">Allocated: %1$s</string>
+    <string name="expense_sub_expense_number">Tranche %1$d</string>
+    <string name="expense_badge_partial">%1$d%% paid</string>
+    <plurals name="expense_badge_payments">
+        <item quantity="one">%1$d payment</item>
+        <item quantity="other">%1$d payments</item>
+    </plurals>
+    <string name="expense_wizard_step_sub_expenses">Payments</string>
+    <string name="expense_detail_section_sub_expenses">Payment Schedule</string>
+    <string name="expense_error_sub_expenses_minimum">Add at least 2 payment tranches or turn off sub-expenses</string>
+    <string name="expense_error_sub_expenses_sum">The sum of tranches (%1$s) must equal the total expense (%2$s)</string>
 </resources>

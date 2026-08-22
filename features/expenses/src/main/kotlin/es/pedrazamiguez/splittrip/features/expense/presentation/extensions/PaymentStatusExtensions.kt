@@ -19,6 +19,7 @@ fun PaymentStatus.toStringRes(): Int = when (this) {
     PaymentStatus.SCHEDULED -> R.string.payment_status_scheduled
     PaymentStatus.CANCELLED -> R.string.payment_status_cancelled
     PaymentStatus.REFUNDABLE -> R.string.payment_status_refundable
+    PaymentStatus.PARTIAL -> R.string.payment_status_partial
 }
 
 fun PaymentStatus.toIconVector(): ImageVector = when (this) {
@@ -28,4 +29,5 @@ fun PaymentStatus.toIconVector(): ImageVector = when (this) {
     PaymentStatus.SCHEDULED -> TablerIcons.Outline.Calendar
     PaymentStatus.CANCELLED -> TablerIcons.Outline.X
     PaymentStatus.REFUNDABLE -> TablerIcons.Outline.ReceiptRefund
+    PaymentStatus.PARTIAL -> TablerIcons.Outline.Clock
 }

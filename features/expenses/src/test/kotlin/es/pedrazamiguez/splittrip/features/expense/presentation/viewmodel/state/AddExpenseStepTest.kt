@@ -17,7 +17,7 @@ class AddExpenseStepTest {
     inner class ApplicableSteps {
 
         @Test
-        fun `returns full 13-step sequence when all conditionals are true`() {
+        fun `returns full 14-step sequence when all conditionals are true`() {
             val steps = AddExpenseStep.applicableSteps(
                 showContributionScopeStep = true,
                 showExchangeRateSection = true,
@@ -36,13 +36,14 @@ class AddExpenseStepTest {
                 AddExpenseStep.PAYMENT_STATUS,
                 AddExpenseStep.RECEIPT,
                 AddExpenseStep.ADD_ONS,
+                AddExpenseStep.SUB_EXPENSES,
                 AddExpenseStep.REVIEW
             )
             assertEquals(expected, steps)
         }
 
         @Test
-        fun `returns 10-step sequence when no conditionals apply`() {
+        fun `returns 11-step sequence when no conditionals apply`() {
             val steps = AddExpenseStep.applicableSteps(
                 showContributionScopeStep = false,
                 showExchangeRateSection = false,
@@ -58,6 +59,7 @@ class AddExpenseStepTest {
                 AddExpenseStep.PAYMENT_STATUS,
                 AddExpenseStep.RECEIPT,
                 AddExpenseStep.ADD_ONS,
+                AddExpenseStep.SUB_EXPENSES,
                 AddExpenseStep.REVIEW
             )
             assertEquals(expected, steps)
@@ -264,6 +266,11 @@ class AddExpenseStepTest {
         @Test
         fun `ADD_ONS is optional`() {
             assertTrue(AddExpenseStep.ADD_ONS.isOptional)
+        }
+
+        @Test
+        fun `SUB_EXPENSES is optional`() {
+            assertTrue(AddExpenseStep.SUB_EXPENSES.isOptional)
         }
 
         @Test

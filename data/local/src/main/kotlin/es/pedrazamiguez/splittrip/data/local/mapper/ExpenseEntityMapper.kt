@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.extensions.toEpochMillisUtc
 import es.pedrazamiguez.splittrip.core.common.extensions.toLocalDateTimeUtc
 import es.pedrazamiguez.splittrip.data.local.converter.AddOnListConverter
 import es.pedrazamiguez.splittrip.data.local.converter.CashTrancheListConverter
+import es.pedrazamiguez.splittrip.data.local.converter.SubExpenseListConverter
 import es.pedrazamiguez.splittrip.data.local.entity.ExpenseEntity
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
@@ -18,6 +19,7 @@ import java.math.BigDecimal
 
 private val cashTrancheConverter = CashTrancheListConverter()
 private val addOnConverter = AddOnListConverter()
+private val subExpenseConverter = SubExpenseListConverter()
 
 fun ExpenseEntity.toDomain(): Expense {
     val resolvedPayerType = runCatching { PayerType.fromString(payerType) }.getOrDefault(PayerType.GROUP)
@@ -53,6 +55,7 @@ fun ExpenseEntity.toDomain(): Expense {
         ),
         cashTranches = cashTrancheConverter.toCashTrancheList(cashTranchesJson) ?: emptyList(),
         addOns = addOnConverter.toAddOnList(addOnsJson) ?: emptyList(),
+        subExpenses = subExpenseConverter.toSubExpenseList(subExpensesJson) ?: emptyList(),
         splitType = runCatching { SplitType.fromString(splitType) }.getOrDefault(SplitType.EQUAL),
         createdBy = createdBy,
         payerType = resolvedPayerType,
@@ -98,6 +101,7 @@ fun Expense.toEntity(): ExpenseEntity {
         lastUpdatedAtMillis = effectiveLastUpdatedAtMillis,
         cashTranchesJson = cashTrancheConverter.fromCashTrancheList(cashTranches.ifEmpty { null }),
         addOnsJson = addOnConverter.fromAddOnList(addOns.ifEmpty { null }),
+        subExpensesJson = subExpenseConverter.fromSubExpenseList(subExpenses.ifEmpty { null }),
         syncStatus = syncStatus.name
     )
 }

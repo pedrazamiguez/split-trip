@@ -87,13 +87,21 @@ class ExpenseDetailUiMapperTest {
             resourceProvider = resourceProvider
         )
 
+        val userUiMapper = UserUiMapper(resourceProvider)
+        val subExpenseDetailUiMapper = SubExpenseDetailUiMapper(
+            localeProvider = localeProvider,
+            resourceProvider = resourceProvider,
+            userUiMapper = userUiMapper
+        )
+
         mapper = ExpenseDetailUiMapper(
             formattingHelper = formattingHelper,
             resourceProvider = resourceProvider,
             expenseCalculatorService = expenseCalculatorService,
             addOnCalculationService = addOnCalculationService,
             paymentStatusBadgeUiMapper = paymentStatusBadgeUiMapper,
-            userUiMapper = UserUiMapper(resourceProvider)
+            userUiMapper = userUiMapper,
+            subExpenseDetailUiMapper = subExpenseDetailUiMapper
         )
     }
 

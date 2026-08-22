@@ -22,6 +22,7 @@ import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImp
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.PaymentStatusBadgeUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.SubExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -254,6 +255,12 @@ fun ExpenseDetailPreviewHelper(
             // Mapper is stateless — both domain services have empty constructors and
             // safe defaults, so we can instantiate them inline for previews.
             val formattingHelper = FormattingHelper(localeProvider)
+            val userUiMapper = UserUiMapper(resourceProvider)
+            val subExpenseDetailUiMapper = SubExpenseDetailUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = userUiMapper
+            )
             ExpenseDetailUiMapper(
                 formattingHelper = formattingHelper,
                 resourceProvider = resourceProvider,
@@ -263,7 +270,8 @@ fun ExpenseDetailPreviewHelper(
                     formattingHelper = formattingHelper,
                     resourceProvider = resourceProvider
                 ),
-                userUiMapper = UserUiMapper(resourceProvider)
+                userUiMapper = userUiMapper,
+                subExpenseDetailUiMapper = subExpenseDetailUiMapper
             )
         },
         transform = { mapper, domain ->

@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Clock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
@@ -50,8 +51,7 @@ class ExpenseUiMapper(
         groupMemberIds: List<String> = emptyList()
     ): ExpenseUiModel {
         val appLocale = localeProvider.getCurrentLocale()
-        val badgeData = paymentStatusBadgeUiMapper.buildBadge(expense)
-        val badgeIcon = resolveBadgeIcon(expense.paymentStatus, badgeData)
+        val badge = resolveBadge(expense)
         val outOfPocket = expense.payerType == PayerType.USER
         val pairedContribution = pairedContributions[expense.id]
         val effectivePayerId = expense.payerId ?: expense.createdBy.takeIf { it.isNotBlank() }
@@ -66,37 +66,25 @@ class ExpenseUiMapper(
 
         return with(expense) {
             val resolvedName = resolveDisplayName(createdBy, memberProfiles, currentUserId)
-            val creatorDisplay = if (createdBy !in groupMemberIds) {
-                MemberDisplay.Former(createdBy, resolvedName)
-            } else {
-                MemberDisplay.Active(createdBy, resolvedName)
-            }
+            val creatorDisplay = resolveCreatorDisplay(createdBy, resolvedName, groupMemberIds)
             ExpenseUiModel(
                 id = id,
                 title = title,
                 formattedAmount = formatAmount(appLocale),
-                formattedOriginalAmount = if (sourceCurrency != groupCurrency) {
-                    formatSourceAmount(appLocale)
-                } else {
-                    null
-                },
+                formattedOriginalAmount = if (sourceCurrency != groupCurrency) formatSourceAmount(appLocale) else null,
                 category = category,
                 categoryText = resourceProvider.getString(category.toStringRes()),
                 subcategory = subcategory,
-                subcategoryText = if (subcategory != ExpenseSubcategory.UNSPECIFIED) {
-                    resourceProvider.getString(subcategory.toStringRes())
-                } else {
-                    null
-                },
+                subcategoryText = resolveSubcategoryText(subcategory),
                 vendorText = vendor,
                 paymentMethodText = resourceProvider.getString(paymentMethod.toStringRes()),
                 paymentStatusText = resourceProvider.getString(paymentStatus.toStringRes()),
                 paidByText = resourceProvider.getString(R.string.paid_by, resolvedName),
                 creatorDisplay = creatorDisplay,
                 dateText = effectiveDate?.formatShortDate(appLocale) ?: "",
-                badgeText = badgeData?.text,
-                badgeIcon = badgeIcon,
-                isBadgeUrgent = badgeData?.isPassed == true,
+                badgeText = badge.text,
+                badgeIcon = badge.icon,
+                isBadgeUrgent = badge.isUrgent,
                 hasAddOns = addOns.isNotEmpty(),
                 isOutOfPocket = outOfPocket,
                 fundingSourceText = scopeInfo.text,
@@ -104,7 +92,10 @@ class ExpenseUiMapper(
                 isGroupScope = scopeInfo.isGroup,
                 syncStatus = syncStatus,
                 isCancelled = expense.paymentStatus == PaymentStatus.CANCELLED,
-                isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE && badgeData?.isPassed != true
+                isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE && !badge.isUrgent,
+                isComposite = isComposite,
+                subExpenseCount = subExpenses.size,
+                paidPercentage = paidPercentage.toInt()
             )
         }
     }
@@ -318,6 +309,46 @@ class ExpenseUiMapper(
         )
     }
 
+    private fun resolveBadge(expense: Expense): BadgeResult {
+        return when {
+            expense.paymentStatus == PaymentStatus.PARTIAL -> {
+                BadgeResult(
+                    text = resourceProvider.getString(
+                        R.string.expense_badge_partial,
+                        expense.paidPercentage.toInt()
+                    ),
+                    icon = TablerIcons.Outline.Clock,
+                    isUrgent = false
+                )
+            }
+            expense.paymentStatus == PaymentStatus.FINISHED && expense.subExpenses.size >= 2 -> {
+                BadgeResult(
+                    text = resourceProvider.getQuantityString(
+                        R.plurals.expense_badge_payments,
+                        expense.subExpenses.size,
+                        expense.subExpenses.size
+                    ),
+                    icon = TablerIcons.Outline.CircleCheck,
+                    isUrgent = false
+                )
+            }
+            else -> {
+                val badgeData = paymentStatusBadgeUiMapper.buildBadge(expense)
+                BadgeResult(
+                    text = badgeData?.text,
+                    icon = resolveBadgeIcon(expense.paymentStatus, badgeData),
+                    isUrgent = badgeData?.isPassed == true
+                )
+            }
+        }
+    }
+
+    private data class BadgeResult(
+        val text: String?,
+        val icon: ImageVector?,
+        val isUrgent: Boolean
+    )
+
     private fun resolveBadgeIcon(paymentStatus: PaymentStatus, badgeData: PaymentBadgeData?): ImageVector? {
         if (badgeData == null) return null
         return when (paymentStatus) {
@@ -334,6 +365,23 @@ class ExpenseUiMapper(
             else -> null
         }
     }
+
+    private fun resolveCreatorDisplay(
+        createdBy: String,
+        resolvedName: String,
+        groupMemberIds: List<String>
+    ): MemberDisplay = if (createdBy !in groupMemberIds) {
+        MemberDisplay.Former(createdBy, resolvedName)
+    } else {
+        MemberDisplay.Active(createdBy, resolvedName)
+    }
+
+    private fun resolveSubcategoryText(subcategory: ExpenseSubcategory): String? =
+        if (subcategory != ExpenseSubcategory.UNSPECIFIED) {
+            resourceProvider.getString(subcategory.toStringRes())
+        } else {
+            null
+        }
 
     /**
      * Internal data holder for scope-aware funding source info.

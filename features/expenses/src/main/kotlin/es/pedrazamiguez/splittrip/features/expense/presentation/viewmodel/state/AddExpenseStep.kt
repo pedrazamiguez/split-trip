@@ -88,6 +88,9 @@ enum class AddExpenseStep(
     /** Fees, tips, discounts, surcharges — optional, may be skipped. */
     ADD_ONS(isOptional = true),
 
+    /** Sub-expenses / payment tranches — optional, may be skipped. */
+    SUB_EXPENSES(isOptional = true),
+
     /** Read-only summary of all entered data — always shown (final confirmation). */
     REVIEW(isReview = true);
 
@@ -116,6 +119,7 @@ enum class AddExpenseStep(
             add(PAYMENT_STATUS)
             add(RECEIPT)
             add(ADD_ONS)
+            add(SUB_EXPENSES)
             add(REVIEW)
         }
     }

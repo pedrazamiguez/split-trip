@@ -51,5 +51,6 @@ data class ExpenseEntity(
     val lastUpdatedAtMillis: Long?,
     val cashTranchesJson: String? = null,
     val addOnsJson: String? = null,
+    val subExpensesJson: String? = null,
     val syncStatus: String = "SYNCED"
 )

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.SubExpense
 import es.pedrazamiguez.splittrip.domain.service.ExpenseSearchService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -358,6 +359,47 @@ class ExpenseSearchServiceImplTest {
             val result = service.search(expenses, "coffee")
 
             assertEquals(listOf(e1, e3), result)
+        }
+    }
+
+    @Nested
+    @DisplayName("Matching by Sub-Expenses")
+    inner class MatchSubExpenses {
+
+        @Test
+        fun `matches query against sub-expense title`() {
+            val boatExpense = Expense(
+                id = "1",
+                title = "Bacalar Activity",
+                subExpenses = listOf(
+                    SubExpense(id = "sub-1", title = "Deposit Reservation"),
+                    SubExpense(id = "sub-2", title = "Final Cash Payment")
+                )
+            )
+            val taxi = Expense(id = "2", title = "Taxi")
+            val expenses = listOf(boatExpense, taxi)
+
+            val result = service.search(expenses, "deposit")
+
+            assertEquals(listOf(boatExpense), result)
+        }
+
+        @Test
+        fun `matches query against sub-expense notes`() {
+            val boatExpense = Expense(
+                id = "1",
+                title = "Bacalar Activity",
+                subExpenses = listOf(
+                    SubExpense(id = "sub-1", title = "Tranche 1", notes = "Wire transfer fee"),
+                    SubExpense(id = "sub-2", title = "Tranche 2")
+                )
+            )
+            val taxi = Expense(id = "2", title = "Taxi")
+            val expenses = listOf(boatExpense, taxi)
+
+            val result = service.search(expenses, "wire transfer")
+
+            assertEquals(listOf(boatExpense), result)
         }
     }
 }

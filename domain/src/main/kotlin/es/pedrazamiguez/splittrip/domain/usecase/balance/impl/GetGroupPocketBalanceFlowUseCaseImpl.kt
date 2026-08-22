@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.balance.impl
 
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
@@ -11,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupPocketBalanceFl
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
@@ -34,29 +36,63 @@ class GetGroupPocketBalanceFlowUseCaseImpl(
 
         val activeExpenses = expenses.filter { it.paymentStatus != PaymentStatus.CANCELLED }
 
+        data class FlatPaymentItem(
+            val groupAmount: Long,
+            val paymentMethod: PaymentMethod,
+            val paymentStatus: PaymentStatus,
+            val dueDate: LocalDateTime?,
+            val addOns: List<AddOn>
+        )
+
+        val flatItems: List<FlatPaymentItem> = activeExpenses.flatMap { expense ->
+            if (expense.subExpenses.isEmpty()) {
+                listOf(
+                    FlatPaymentItem(
+                        groupAmount = expense.groupAmount,
+                        paymentMethod = expense.paymentMethod,
+                        paymentStatus = expense.paymentStatus,
+                        dueDate = expense.dueDate,
+                        addOns = expense.addOns
+                    )
+                )
+            } else {
+                expense.subExpenses
+                    .filter { it.paymentStatus != PaymentStatus.CANCELLED }
+                    .map { sub ->
+                        FlatPaymentItem(
+                            groupAmount = sub.groupAmountCents,
+                            paymentMethod = sub.paymentMethod,
+                            paymentStatus = sub.paymentStatus,
+                            dueDate = sub.dueDate,
+                            addOns = sub.addOns
+                        )
+                    }
+            }
+        }
+
         // Separate future scheduled expenses (reservations not yet paid).
         // A scheduled expense is "future" when its dueDate is strictly after today.
-        val (futureScheduled, nonScheduled) = activeExpenses.partition { expense ->
-            expense.paymentStatus == PaymentStatus.SCHEDULED &&
-                expense.dueDate?.toLocalDate()?.isAfter(today) == true
+        val (futureScheduled, nonScheduled) = flatItems.partition { item ->
+            item.paymentStatus == PaymentStatus.SCHEDULED &&
+                item.dueDate?.toLocalDate()?.isAfter(today) == true
         }
 
         // Filter refundable expenses to calculate refundable hold amount
-        val refundable = nonScheduled.filter { expense ->
-            expense.paymentStatus == PaymentStatus.REFUNDABLE
+        val refundable = nonScheduled.filter { item ->
+            item.paymentStatus == PaymentStatus.REFUNDABLE
         }
 
-        val scheduledHoldAmount = futureScheduled.sumOf { expense ->
+        val scheduledHoldAmount = futureScheduled.sumOf { item ->
             addOnCalculationService.calculateEffectiveGroupAmount(
-                expense.groupAmount,
-                expense.addOns
+                item.groupAmount,
+                item.addOns
             )
         }
 
-        val refundableHoldAmount = refundable.sumOf { expense ->
+        val refundableHoldAmount = refundable.sumOf { item ->
             addOnCalculationService.calculateEffectiveGroupAmount(
-                expense.groupAmount,
-                expense.addOns
+                item.groupAmount,
+                item.addOns
             )
         }
 
@@ -64,15 +100,15 @@ class GetGroupPocketBalanceFlowUseCaseImpl(
         // repeated calculateEffectiveGroupAmount() calls across aggregates.
         data class ExpenseAmounts(val base: Long, val effective: Long, val isCash: Boolean, val allExtras: Long)
 
-        val expenseAmounts = nonScheduled.map { expense ->
+        val expenseAmounts = nonScheduled.map { item ->
             ExpenseAmounts(
-                base = expense.groupAmount,
+                base = item.groupAmount,
                 effective = addOnCalculationService.calculateEffectiveGroupAmount(
-                    expense.groupAmount,
-                    expense.addOns
+                    item.groupAmount,
+                    item.addOns
                 ),
-                isCash = expense.paymentMethod == PaymentMethod.CASH,
-                allExtras = addOnCalculationService.calculateTotalAddOnExtras(expense.addOns)
+                isCash = item.paymentMethod == PaymentMethod.CASH,
+                allExtras = addOnCalculationService.calculateTotalAddOnExtras(item.addOns)
             )
         }
 
