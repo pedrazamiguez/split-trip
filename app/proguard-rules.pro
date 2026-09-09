@@ -37,6 +37,13 @@
 -keep class com.google.firebase.appcheck.** { *; }
 -dontwarn com.google.firebase.appcheck.**
 
+############################################################################
+# 🛡️ PLAY INTEGRITY / PLAY CORE
+############################################################################
+-keep class com.google.android.play.core.integrity.** { *; }
+-dontwarn com.google.android.play.core.integrity.**
+-keep class com.google.firebase.appcheck.playintegrity.** { *; }
+
 # Keep Google Play Services (used by Firebase)
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
@@ -47,6 +54,28 @@
     <methods>;
     <init>();
 }
+
+############################################################################
+# 🗄️ ROOM DATABASE / DAOS / ENTITIES / MIGRATIONS
+############################################################################
+-keep class androidx.room.RoomDatabase
+-dontwarn androidx.room.paging.**
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep @androidx.room.Entity class * { *; }
+-keep @androidx.room.Dao interface * { *; }
+-keep class * implements androidx.room.migration.Migration
+-keep class es.pedrazamiguez.splittrip.data.local.entity.** { *; }
+-keep class es.pedrazamiguez.splittrip.data.local.dao.** { *; }
+-keep class es.pedrazamiguez.splittrip.data.local.database.** { *; }
+-keep class es.pedrazamiguez.splittrip.data.local.converter.** { *; }
+
+############################################################################
+# 📷 ML KIT (OCR & BARCODE SCANNING)
+############################################################################
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.mlkit.**
+-keep class com.google.android.gms.vision.** { *; }
+-dontwarn com.google.android.gms.vision.**
 
 ############################################################################
 # 🔐 GOOGLE SIGN-IN / CREDENTIAL MANAGER
@@ -61,11 +90,25 @@
 -dontwarn com.google.android.libraries.identity.googleid.**
 
 ############################################################################
-# 🧱 DOMAIN LAYER (Models, UseCases, Repositories)
+# 🧱 DOMAIN & DATA LAYER (Models, Services, UseCases, Repositories)
 ############################################################################
 
 # Keep domain models (used by serialization, mapping, or tests)
 -keep class es.pedrazamiguez.splittrip.domain.model.** { *; }
+
+# Keep domain services and validators
+-keep class es.pedrazamiguez.splittrip.domain.service.** { *; }
+-keepclassmembers class es.pedrazamiguez.splittrip.domain.service.** {
+    <init>(...);
+    *;
+}
+
+# Keep data service implementations (OCR engines, local cleaner, etc.)
+-keep class es.pedrazamiguez.splittrip.data.service.** { *; }
+-keepclassmembers class es.pedrazamiguez.splittrip.data.service.** {
+    <init>(...);
+    *;
+}
 
 # Keep use cases (for Koin reflection / constructor injection)
 -keep class es.pedrazamiguez.splittrip.domain.usecase.** { *; }

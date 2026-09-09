@@ -54,7 +54,7 @@ android {
             val keyPasswordEnv = providers.environmentVariable("SIGNING_KEY_PASSWORD").orNull
             val storePasswordEnv = providers.environmentVariable("SIGNING_STORE_PASSWORD").orNull
 
-            storeFile = if (storeFileEnv != null) {
+            val resolvedFile = if (storeFileEnv != null) {
                 file(storeFileEnv)
             } else {
                 val storeFileProp = providers.gradleProperty("SPLTRP_RELEASE_STORE_FILE").orNull
@@ -65,9 +65,34 @@ android {
                 }
             }
 
-            keyAlias = keyAliasEnv ?: providers.gradleProperty("SPLTRP_RELEASE_KEY_ALIAS").orNull ?: ""
-            keyPassword = keyPasswordEnv ?: providers.gradleProperty("SPLTRP_RELEASE_KEY_PASSWORD").orNull ?: ""
-            storePassword = storePasswordEnv ?: providers.gradleProperty("SPLTRP_RELEASE_STORE_PASSWORD").orNull ?: ""
+            if (resolvedFile.exists()) {
+                val relAlias = providers.gradleProperty("SPLTRP_RELEASE_KEY_ALIAS").orNull ?: ""
+                val relKeyPass = providers.gradleProperty("SPLTRP_RELEASE_KEY_PASSWORD").orNull ?: ""
+                val relStorePass = providers.gradleProperty("SPLTRP_RELEASE_STORE_PASSWORD").orNull ?: ""
+                storeFile = resolvedFile
+                keyAlias = keyAliasEnv ?: relAlias
+                keyPassword = keyPasswordEnv ?: relKeyPass
+                storePassword = storePasswordEnv ?: relStorePass
+            } else {
+                // Graceful fallback for local development / CI verification of minified builds
+                val debugSigning = getByName("debug")
+                storeFile = debugSigning.storeFile
+                keyAlias = debugSigning.keyAlias
+                keyPassword = debugSigning.keyPassword
+                storePassword = debugSigning.storePassword
+            }
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += listOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "META-INF/io.coil-kt.coil3:coil-network-core.kotlin_module",
+                "META-INF/*.kotlin_module",
+                "META-INF/INDEX.LIST",
+                "META-INF/DEPENDENCIES"
+            )
         }
     }
 
@@ -139,4 +164,17 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
     implementation(project(":features"))
+}
+
+// R8 re-emits .kotlin_module files with unescaped module names containing colons (e.g. Coil 3, SplitTrip:domain),
+// which bundletool / PerModuleBundleTask strictly forbids as invalid ZIP entry characters.
+// Sanitize merged Java resources after R8 and before PreBundle packaging using a configuration-cache-safe Action.
+val sanitizeJavaResourcesAction = objects.newInstance<SanitizeJavaResourcesAction>(layout.buildDirectory)
+
+tasks.matching { it.name.startsWith("minify") && it.name.endsWith("WithR8") }.configureEach {
+    doLast(sanitizeJavaResourcesAction)
+}
+
+tasks.matching { it.name.startsWith("build") && it.name.endsWith("PreBundle") }.configureEach {
+    doFirst(sanitizeJavaResourcesAction)
 }
