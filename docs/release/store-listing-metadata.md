@@ -34,7 +34,7 @@ SplitTrip: Group Expenses
 Split travel expenses offline & multi-currency. Fair debts, zero stress.
 ```
 
-### Full Description (2,336 / 4,000 characters)
+### Full Description (2,486 / 4,000 characters)
 ```text
 Traveling with friends, family, or your partner should be about making memories—not doing accounting gymnastics in messy spreadsheets. SplitTrip is the modern, offline-first group expense manager crafted specifically for travelers who cross borders, share expenses, and value fairness.
 
@@ -59,7 +59,7 @@ Traveling as a couple or family within a larger group? Create subunits to aggreg
 Snap a photo of your dining or taxi receipt. SplitTrip extracts the total, tax, currency, and line items automatically, letting you assign specific dishes or add-on items to companions in seconds.
 
 🔒 ZERO ADS & PRIVACY-FIRST
-Your financial data belongs to you. SplitTrip contains zero third-party ads, zero tracking scripts, and never sells your transaction history to data brokers.
+Your financial data belongs to you. No bank linking or credit cards required. SplitTrip is a dedicated travel expense ledger—we never access your personal bank accounts or process money transfers. SplitTrip contains zero third-party ads, zero tracking scripts, and never sells your transaction history to data brokers.
 ```
 
 ---
@@ -79,7 +79,7 @@ SplitTrip: Gastos de viaje
 Divide gastos de viaje sin conexión y multidivisa. Cuentas claras sin estrés.
 ```
 
-### Full Description (2,434 / 4,000 characters)
+### Full Description (2,667 / 4,000 characters)
 ```text
 Viajar con amigos, en pareja o en familia consiste en coleccionar experiencias inolvidables, no en pelear con hojas de cálculo ni acumular recibos arrugados. SplitTrip es el gestor inteligente de gastos compartidos diseñado específicamente para viajeros que cruzan fronteras, comparten aventuras y buscan cuentas transparentes.
 
@@ -104,7 +104,7 @@ Gestiona el fondo virtual compartido separado del dinero físico. Registra aport
 Fotografía el tique de una cena o transporte. SplitTrip detecta automáticamente importes, impuestos y conceptos para que puedas asignar extras o consumiciones individuales en segundos.
 
 🔒 CERO PUBLICIDAD Y MÁXIMA PRIVACIDAD
-Tus datos financieros son únicamente tuyos. SplitTrip no contiene publicidad, no incluye rastreadores de terceros y jamás comercializa tus registros de viaje.
+Tus datos financieros son únicamente tuyos. Sin necesidad de vincular cuentas bancarias ni tarjetas de crédito. SplitTrip es un registro de viaje independiente: nunca accedemos a tus cuentas bancarias personales ni gestionamos transferencias monetarias. SplitTrip no contiene publicidad, no incluye rastreadores de terceros y jamás comercializa tus registros de viaje.
 ```
 
 ---
@@ -118,6 +118,7 @@ Every declaration below directly maps to Google Play Console's Data Safety quest
 | **Personal Info** | Name | **Yes** | **No** | No | Required | App functionality, Account management | Encrypted in transit (TLS 1.3). Deletion supported in-app & via email. |
 | **Personal Info** | Email address | **Yes** | **No** | No | Required | App functionality, Account management | Encrypted in transit (TLS 1.3). Deletion supported in-app & via email. |
 | **Personal Info** | User IDs | **Yes** | **No** | No | Required | App functionality (Firebase Auth UID) | Encrypted in transit (TLS 1.3). Deletion supported in-app & via email. |
+| **Financial Info** | User payment info (Credit cards, bank accounts) | **No** | **No** | N/A | N/A | Not collected (SplitTrip does not process payments or request banking credentials) | N/A |
 | **Financial Info** | Other financial info | **Yes** | **No** | No | Required | App functionality (Shared expense tracking, balances, settlements) | Encrypted in transit (TLS 1.3). Deletion supported in-app & via email. |
 | **Photos & Videos** | Photos | **Yes** | **No** | No | Optional | App functionality (Receipt images, group avatars) | Encrypted in transit (TLS 1.3). Deletion supported in-app & via email. |
 | **App Info & Performance** | Crash logs | **Yes** | **No** | No | Required | Analytics & Performance (Firebase Crashlytics) | Encrypted in transit (TLS 1.3). Automatically purged after 90 days. |
@@ -125,6 +126,7 @@ Every declaration below directly maps to Google Play Console's Data Safety quest
 
 ### Data Safety Form Summary Answers
 - **Does your app collect or share any of the required user data types?** -> **Yes**
+- **Does your app collect financial info like credit cards or bank account details?** -> **No** (SplitTrip only collects user-entered expense amounts, category names, and friend-to-friend settlement calculations under "Other financial info"; no banking credentials, payment processing, or Open Banking integrations exist)
 - **Is all of the user data collected by your app encrypted in transit?** -> **Yes** (HTTPS / TLS 1.3 enforced)
 - **Do you provide a way for users to request that their data be deleted?** -> **Yes** (Direct self-service account deletion in-app at `Settings > Account Status` and via `support@splittrip.com`)
 - **Is personal data sold to any third party?** -> **No** (Zero monetization or third-party sharing)

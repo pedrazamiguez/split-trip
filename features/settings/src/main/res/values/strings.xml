@@ -204,7 +204,7 @@
     <!-- Privacy Policy Screen -->
     <string name="privacy_title">Privacy Policy</string>
     <string name="privacy_section_1_title">1. Information We Collect</string>
-    <string name="privacy_section_1_body">We collect authentication information when you sign up (email, profile name, profile image) and financial sharing details (trips, expense descriptions, amounts, and member lists) to facilitate debt calculations. Guest accounts store this data only on your device.</string>
+    <string name="privacy_section_1_body">We collect authentication information when you sign up (email, profile name, profile image) and financial sharing details (trips, expense descriptions, amounts, and member lists) to facilitate debt calculations. We do not collect credit card details, bank credentials, or connect to banking APIs. Debt settlements are informational calculations and no money is transferred within the app. Guest accounts store this data only on your device.</string>
     <string name="privacy_section_2_title">2. How We Use Data</string>
     <string name="privacy_section_2_body">Your data is processed on-device and synchronized to the cloud for real-time group collaboration. We do not sell or monetize your transaction logs, payment methods, or personal information.</string>
     <string name="privacy_section_3_title">3. Data Security</string>
