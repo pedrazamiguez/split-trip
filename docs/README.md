@@ -14,6 +14,8 @@ docs/
 │   └── patterns/           → Structural patterns, Clean Arch, Offline-First & MVI
 ├── design-system/          → Horizon Narrative tokens, glassmorphism & Compose guides
 ├── engineering/            → Code quality, static analysis, validation & releases
+├── release/                → Google Play Store compliance, metadata & assets
+├── privacy-policy.html     → Public web-hosted Privacy Policy (bilingual)
 └── ai/                     → Multi-agent architecture, MCP integrations & SDD taxonomy
 ```
 
@@ -82,3 +84,10 @@ docs/
 * [Specialized Agent Personas & Phased SDD Pipeline](ai/agent-roles-and-taxonomy.md)
 * [Code Intelligence Tools (Codebase Memory & Graphify)](ai/code-intelligence-tools.md)
 * [Headroom Proxy Context Compression Evaluation](ai/headroom-evaluation.md)
+
+---
+
+## 🚀 6. Release & Store Distribution
+
+* [Google Play Store Listing Metadata, Data Safety & Asset Specs](release/store-listing-metadata.md)
+* [Public Web Privacy Policy Page](privacy-policy.html)
