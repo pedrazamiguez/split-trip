@@ -32,7 +32,7 @@
     <string name="notification_channel_expenses_description">Gâttô añadíô, âttualiçáô o elimináô</string>
     <string name="notification_channel_financial_name">Âttibidá finançiera</string>
     <string name="notification_channel_financial_description">Retirâh de efêttibo y aportaçionê</string>
-    <string name="notification_default_title">Êppençe Çare Âpp</string>
+    <string name="notification_default_title" translatable="false">SplitTrip</string>
     <string name="notification_default_body">Tienê una nueba notificaçión</string>
     <string name="notification_fallback_actor_name">Argien</string>
     <string name="notification_group_summary">%1$d nuebâ notificaçionê</string>

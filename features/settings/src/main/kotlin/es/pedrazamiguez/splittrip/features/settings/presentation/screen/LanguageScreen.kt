@@ -14,6 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -49,14 +54,21 @@ fun LanguageScreen(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = TablerIcons.Outline.Check,
-                                        contentDescription = null,
+                                        contentDescription = stringResource(
+                                            DesignSystemR.string.content_description_selected
+                                        ),
                                         tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             },
-                            modifier = Modifier.debouncedClickable {
-                                onLanguageSelected(language.code)
-                            }
+                            modifier = Modifier
+                                .semantics {
+                                    role = Role.RadioButton
+                                    selected = isSelected
+                                }
+                                .debouncedClickable {
+                                    onLanguageSelected(language.code)
+                                }
                         ) {
                             Text(text = displayName)
                         }

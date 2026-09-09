@@ -83,8 +83,7 @@ fun SubunitSharesStep(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(
-                            onClick = { onEvent(CreateEditSubunitUiEvent.ToggleShareLock(member.userId)) },
-                            modifier = Modifier.size(36.dp)
+                            onClick = { onEvent(CreateEditSubunitUiEvent.ToggleShareLock(member.userId)) }
                         ) {
                             Icon(
                                 imageVector = if (isLocked) {

@@ -126,7 +126,7 @@ private fun DynamicTopAppBarBackButton(
     ) {
         Icon(
             imageVector = TablerIcons.Outline.ArrowLeft,
-            contentDescription = null,
+            contentDescription = onClickLabel,
             tint = iconColor
         )
     }

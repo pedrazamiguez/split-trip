@@ -89,8 +89,7 @@ fun AddOnItemEditor(
             )
 
             IconButton(
-                onClick = onRemove,
-                modifier = Modifier.size(32.dp)
+                onClick = onRemove
             ) {
                 Icon(
                     imageVector = TablerIcons.Outline.X,

@@ -16,13 +16,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowBigLeftLines
@@ -78,22 +81,47 @@ fun ArithmeticOperatorBar(
             ) {
                 val containerColor = MaterialTheme.colorScheme.surface
                 val contentColor = MaterialTheme.colorScheme.onSurface
-                OperatorButton(icon = TablerIcons.Outline.MathPlus, onClick = {
-                    state.onOperatorClick("+")
-                }, containerColor = containerColor, contentColor = contentColor)
-                OperatorButton(icon = TablerIcons.Outline.MathMinus, onClick = {
-                    state.onOperatorClick("−")
-                }, containerColor = containerColor, contentColor = contentColor)
-                OperatorButton(icon = TablerIcons.Outline.MathMultiply, onClick = {
-                    state.onOperatorClick("×")
-                }, containerColor = containerColor, contentColor = contentColor)
-                OperatorButton(icon = TablerIcons.Outline.MathDivide, onClick = {
-                    state.onOperatorClick("÷")
-                }, containerColor = containerColor, contentColor = contentColor)
+                OperatorButton(
+                    icon = TablerIcons.Outline.MathPlus,
+                    contentDescription = stringResource(R.string.content_description_operator_add),
+                    onClick = {
+                        state.onOperatorClick("+")
+                    },
+                    containerColor = containerColor,
+                    contentColor = contentColor
+                )
+                OperatorButton(
+                    icon = TablerIcons.Outline.MathMinus,
+                    contentDescription = stringResource(R.string.content_description_operator_subtract),
+                    onClick = {
+                        state.onOperatorClick("−")
+                    },
+                    containerColor = containerColor,
+                    contentColor = contentColor
+                )
+                OperatorButton(
+                    icon = TablerIcons.Outline.MathMultiply,
+                    contentDescription = stringResource(R.string.content_description_operator_multiply),
+                    onClick = {
+                        state.onOperatorClick("×")
+                    },
+                    containerColor = containerColor,
+                    contentColor = contentColor
+                )
+                OperatorButton(
+                    icon = TablerIcons.Outline.MathDivide,
+                    contentDescription = stringResource(R.string.content_description_operator_divide),
+                    onClick = {
+                        state.onOperatorClick("÷")
+                    },
+                    containerColor = containerColor,
+                    contentColor = contentColor
+                )
 
                 if (state.expressionBuffer.isNotEmpty()) {
                     OperatorButton(
                         icon = TablerIcons.Outline.ArrowBigLeftLines,
+                        contentDescription = stringResource(R.string.content_description_operator_clear),
                         onClick = state.onClear,
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError
@@ -107,12 +135,14 @@ fun ArithmeticOperatorBar(
 @Composable
 private fun OperatorButton(
     icon: ImageVector,
+    contentDescription: String,
     onClick: () -> Unit,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     Box(
         modifier = Modifier
+            .minimumInteractiveComponentSize()
             .size(40.dp)
             .clip(CircleShape)
             .background(containerColor)
@@ -121,7 +151,7 @@ private fun OperatorButton(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = contentDescription,
             tint = contentColor,
             modifier = Modifier.size(20.dp)
         )

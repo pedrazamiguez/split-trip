@@ -17,6 +17,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuBoxScope
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -30,13 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
@@ -236,11 +238,13 @@ private fun SearchableTextField(
             leadingIcon = { Icon(searchIcon, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
-                    Icon(
-                        imageVector = TablerIcons.Outline.X,
-                        contentDescription = clearSearchContentDescription,
-                        modifier = Modifier.debouncedClickable { onClearSearch() }
-                    )
+                    IconButton(onClick = onClearSearch) {
+                        Icon(
+                            imageVector = TablerIcons.Outline.X,
+                            contentDescription = clearSearchContentDescription
+                                ?: stringResource(R.string.content_description_clear_search)
+                        )
+                    }
                 }
             },
             singleLine = true,

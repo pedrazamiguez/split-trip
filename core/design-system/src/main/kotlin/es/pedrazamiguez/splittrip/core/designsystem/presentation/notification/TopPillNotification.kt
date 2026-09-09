@@ -27,8 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
@@ -156,12 +158,11 @@ fun TopPillNotification(controller: TopPillController) {
                     )
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.ExtraSmall))
                     IconButton(
-                        onClick = { controller.dismiss() },
-                        modifier = Modifier.size(32.dp)
+                        onClick = { controller.dismiss() }
                     ) {
                         Icon(
                             imageVector = TablerIcons.Outline.X,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.content_description_dismiss),
                             tint = MaterialTheme.colorScheme.inverseOnSurface,
                             modifier = Modifier.size(16.dp)
                         )

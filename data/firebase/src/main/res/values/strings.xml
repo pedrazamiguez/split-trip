@@ -35,7 +35,7 @@
     <string name="notification_channel_financial_description">Cash withdrawals and contributions</string>
 
     <!-- Default handler -->
-    <string name="notification_default_title">Expense Share App</string>
+    <string name="notification_default_title" translatable="false">SplitTrip</string>
     <string name="notification_default_body">You have a new notification.</string>
     <string name="notification_fallback_actor_name">Someone</string>
 
