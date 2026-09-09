@@ -21,7 +21,7 @@ internal fun ShareLockIcon(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(32.dp)
+        modifier = modifier
     ) {
         Icon(
             imageVector = if (isLocked) TablerIcons.Filled.LockFilled else TablerIcons.Outline.LockOpen,

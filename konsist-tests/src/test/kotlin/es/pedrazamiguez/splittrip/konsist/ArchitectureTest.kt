@@ -476,6 +476,23 @@ class ArchitectureTest {
                     isCompliant
                 }
         }
+
+        @Test
+        @DisplayName(
+            "Presentation code outside design-system must not import androidx.compose.foundation.clickable directly"
+        )
+        fun `presentation code must use debounced clickable`() {
+            projectProductionScope
+                .files
+                .filter { it.hasPackage("..presentation..") }
+                .filter { !it.projectPath.contains("core/design-system") }
+                .assertTrue { file ->
+                    file.imports.none { import ->
+                        import.name == "androidx.compose.foundation.clickable" ||
+                            import.name == "androidx.compose.foundation.combinedClickable"
+                    }
+                }
+        }
     }
 
     @Nested

@@ -307,4 +307,13 @@ class BiometricPromptHelperTest {
             BiometricPromptHelper.purgeLegacyKey()
         }
     }
+
+    @Test
+    @DisplayName("key alias and transformation constants match AES-GCM specification")
+    fun `key alias and transformation constants match AES-GCM specification`() {
+        assertEquals("split_trip_biometric_key_v3", BiometricPromptHelper.KEY_ALIAS)
+        assertEquals("split_trip_biometric_key_v2", BiometricPromptHelper.LEGACY_KEY_ALIAS_V2)
+        assertEquals("split_trip_biometric_auth_key", BiometricPromptHelper.LEGACY_KEY_ALIAS_V1)
+        assertEquals("AES/GCM/NoPadding", BiometricPromptHelper.CIPHER_TRANSFORMATION)
+    }
 }

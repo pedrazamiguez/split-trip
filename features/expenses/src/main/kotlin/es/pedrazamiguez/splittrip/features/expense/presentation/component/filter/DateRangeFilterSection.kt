@@ -87,8 +87,7 @@ fun DateRangeFilterSection(
                     trailingIcon = {
                         if (criteria.startDate != null) {
                             IconButton(
-                                onClick = { onCriteriaChange(criteria.copy(startDate = null)) },
-                                modifier = Modifier.size(24.dp)
+                                onClick = { onCriteriaChange(criteria.copy(startDate = null)) }
                             ) {
                                 Icon(
                                     imageVector = TablerIcons.Outline.X,
@@ -128,8 +127,7 @@ fun DateRangeFilterSection(
                     trailingIcon = {
                         if (criteria.endDate != null) {
                             IconButton(
-                                onClick = { onCriteriaChange(criteria.copy(endDate = null)) },
-                                modifier = Modifier.size(24.dp)
+                                onClick = { onCriteriaChange(criteria.copy(endDate = null)) }
                             ) {
                                 Icon(
                                     imageVector = TablerIcons.Outline.X,

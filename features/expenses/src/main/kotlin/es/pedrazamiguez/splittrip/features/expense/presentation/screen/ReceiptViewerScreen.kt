@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.screen
 
 import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -34,6 +33,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
@@ -77,7 +77,7 @@ fun ReceiptViewerScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable(
+                .debouncedClickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClose
@@ -127,7 +127,7 @@ fun ReceiptViewerScreen(
                                 translationX = offset.x,
                                 translationY = offset.y
                             )
-                            .clickable(
+                            .debouncedClickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
                                 onClick = {

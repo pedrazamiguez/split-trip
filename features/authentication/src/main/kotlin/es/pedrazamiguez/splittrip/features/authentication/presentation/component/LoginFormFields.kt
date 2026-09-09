@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.features.authentication.R
@@ -68,7 +68,7 @@ internal fun LoginFormFields(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .clip(CircleShape)
-                    .clickable(
+                    .debouncedClickable(
                         enabled = !anyLoading,
                         role = Role.Button,
                         onClick = onForgotPasswordClick

@@ -4,7 +4,6 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.DotsVertical
@@ -144,7 +144,7 @@ fun ActionBottomSheet(
                     colors = ListItemDefaults.colors(
                         containerColor = Color.Transparent
                     ),
-                    modifier = Modifier.clickable(enabled = action.enabled) {
+                    modifier = Modifier.debouncedClickable(enabled = action.enabled) {
                         scope.launch {
                             sheetState.hide()
                             action.onClick()

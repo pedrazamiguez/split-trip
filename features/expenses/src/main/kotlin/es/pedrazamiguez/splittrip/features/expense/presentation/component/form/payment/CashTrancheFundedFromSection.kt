@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +24,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
@@ -75,7 +75,7 @@ fun CashTrancheFundedFromSection(
                                 role = Role.Button
                                 stateDescription = stateDesc
                             }
-                            .clickable(
+                            .debouncedClickable(
                                 onClick = { isExpanded = !isExpanded },
                                 onClickLabel = if (isExpanded) expandedLabel else collapsedLabel
                             ),

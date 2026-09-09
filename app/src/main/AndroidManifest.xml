@@ -27,7 +27,7 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
-            android:theme="@style/Theme.SplitTrip">
+            android:theme="@style/Theme.App.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

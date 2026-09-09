@@ -76,6 +76,28 @@ fun Modifier.debouncedClickable(
 }
 
 /**
+ * A debounced version of [Modifier.clickable] with no ripple or click indication.
+ */
+fun Modifier.debouncedClickableNoRipple(
+    debounceInterval: Long = UiConstants.DEFAULT_DEBOUNCE_MS,
+    enabled: Boolean = true,
+    onClickLabel: String? = null,
+    role: Role? = null,
+    onClick: () -> Unit
+): Modifier = composed {
+    val interactionSource = remember { MutableInteractionSource() }
+    debouncedClickable(
+        interactionSource = interactionSource,
+        indication = null,
+        debounceInterval = debounceInterval,
+        enabled = enabled,
+        onClickLabel = onClickLabel,
+        role = role,
+        onClick = onClick
+    )
+}
+
+/**
  * A debounced version of [Modifier.combinedClickable] that prevents rapid double clicks on its primary onClick event.
  */
 @Suppress("LongParameterList", "kotlin:S107")

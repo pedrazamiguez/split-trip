@@ -71,6 +71,7 @@
     <string name="notification_prefs_reminder_title">Preferencias de recordatorios</string>
     <string name="notification_prefs_select_timezone">Seleccionar zona horaria</string>
     <string name="notification_prefs_timezone">Zona horaria</string>
+    <string name="notification_prefs_no_timezones_found">No se encontraron zonas horarias</string>
     <string name="notification_prefs_reminder_time">Hora del recordatorio (HH:MM)</string>
 
     <!-- Developer Services Playground -->
@@ -203,7 +204,7 @@
     <!-- Privacy Policy Screen -->
     <string name="privacy_title">Política de privacidad</string>
     <string name="privacy_section_1_title">1. Información que recopilamos</string>
-    <string name="privacy_section_1_body">Recopilamos información de autenticación cuando te registras (correo electrónico, nombre de perfil, imagen de perfil) y detalles financieros compartidos (viajes, descripciones de gastos, importes y listas de miembros) para facilitar los cálculos de deudas. Las cuentas de invitado almacenan estos datos solo en tu dispositivo.</string>
+    <string name="privacy_section_1_body">Recopilamos información de autenticación cuando te registras (correo electrónico, nombre de perfil, imagen de perfil) y detalles financieros compartidos (viajes, descripciones de gastos, importes y listas de miembros) para facilitar los cálculos de deudas. No recopilamos datos de tarjetas de crédito, credenciales bancarias ni nos conectamos a APIs de bancos. Los acuerdos de pago son cálculos informativos y la aplicación no ejecuta transferencias monetarias. Las cuentas de invitado almacenan estos datos solo en tu dispositivo.</string>
     <string name="privacy_section_2_title">2. Cómo utilizamos los datos</string>
     <string name="privacy_section_2_body">Tus datos se procesan en el dispositivo y se sincronizan con la nube para la colaboración en grupo en tiempo real. No vendemos ni monetizamos tus registros de transacciones, métodos de pago o información personal.</string>
     <string name="privacy_section_3_title">3. Seguridad de los datos</string>

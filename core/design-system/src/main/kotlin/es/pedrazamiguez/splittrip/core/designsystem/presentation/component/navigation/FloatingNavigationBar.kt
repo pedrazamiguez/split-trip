@@ -8,7 +8,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -45,6 +44,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.badge.ProBadge
@@ -319,7 +319,7 @@ private fun MainActionButton(
                     .fillMaxSize()
                     .clip(buttonShape)
                     .then(getActionButtonBackground(enabled))
-                    .clickable(
+                    .debouncedClickable(
                         interactionSource = interactionSource,
                         indication = ripple(color = contentColor),
                         enabled = enabled,

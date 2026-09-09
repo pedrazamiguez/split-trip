@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.
 
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Camera
@@ -111,7 +111,7 @@ fun ReceiptImagePicker(
                             .matchParentSize()
                             .then(receiptSharedElementModifier(SharedElementKeys.RECEIPT_VIEWER_SHARED_ELEMENT_KEY))
                             .clip(MaterialTheme.shapes.large)
-                            .clickable(enabled = onViewImage != null) { onViewImage?.invoke() }
+                            .debouncedClickable(enabled = onViewImage != null) { onViewImage?.invoke() }
                     )
                     IconButton(
                         onClick = onRemoveImage,
@@ -134,7 +134,7 @@ fun ReceiptImagePicker(
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                    .clickable(onClick = onPickerRequested)
+                    .debouncedClickable(onClick = onPickerRequested)
                     .padding(vertical = MaterialTheme.spacing.ExtraLarge),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically

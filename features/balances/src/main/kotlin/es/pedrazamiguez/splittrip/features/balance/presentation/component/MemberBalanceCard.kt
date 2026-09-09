@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,6 +12,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 
@@ -33,7 +33,7 @@ internal fun MemberBalanceCard(
                 stateDescription = expandedStateDesc
                 contentDescription = toggleContentDesc
             }
-            .clickable(onClick = onToggle)
+            .debouncedClickable(onClick = onToggle)
     ) {
         Column(
             modifier = Modifier

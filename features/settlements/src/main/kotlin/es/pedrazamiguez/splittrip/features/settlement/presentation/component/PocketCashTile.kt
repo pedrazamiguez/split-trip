@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickableNoRipple
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
@@ -37,11 +38,24 @@ internal fun RowScope.PocketCashTile(
     modifier: Modifier = Modifier,
     content: (@Composable () -> Unit)? = null
 ) {
+    val isClickable = showInfoIcon && onInfoClick != null
+    val cardModifier = if (isClickable) {
+        Modifier
+            .fillMaxWidth()
+            .debouncedClickableNoRipple(
+                role = Role.Button,
+                onClickLabel = stringResource(R.string.your_balance_cash_breakdown_view_cd),
+                onClick = onInfoClick
+            )
+    } else {
+        Modifier.fillMaxWidth()
+    }
+
     Box(
         modifier = modifier.weight(1f)
     ) {
         FlatCard(
-            modifier = Modifier.fillMaxWidth()
+            modifier = cardModifier
         ) {
             Column(
                 modifier = Modifier
@@ -67,14 +81,12 @@ internal fun RowScope.PocketCashTile(
                         CaptionText(text = label)
                     }
 
-                    if (showInfoIcon && onInfoClick != null) {
+                    if (showInfoIcon) {
                         Icon(
                             imageVector = TablerIcons.Outline.InfoCircle,
-                            contentDescription = stringResource(R.string.your_balance_cash_breakdown_view_cd),
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            modifier = Modifier
-                                .size(16.dp)
-                                .clickable(onClick = onInfoClick)
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }

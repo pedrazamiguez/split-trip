@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
@@ -44,7 +44,7 @@ internal fun GroupsScreenContent(
                     horizontal = MaterialTheme.spacing.Default,
                     vertical = MaterialTheme.spacing.Small
                 )
-                .clickable { onUpgradeClicked() }
+                .debouncedClickable { onUpgradeClicked() }
         )
         Box(modifier = Modifier.weight(1f)) {
             DeferredLoadingContainer(

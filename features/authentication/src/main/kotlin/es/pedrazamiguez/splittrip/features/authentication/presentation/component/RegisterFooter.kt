@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.authentication.R
 
@@ -42,7 +42,7 @@ internal fun RegisterFooter(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .clip(CircleShape)
-                .clickable(
+                .debouncedClickable(
                     role = Role.Button,
                     onClick = onLoginClick
                 )

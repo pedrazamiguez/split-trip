@@ -57,6 +57,15 @@
     <string name="content_description_close">Çerrâh</string>
     <string name="content_description_menu">Abrîh menú</string>
     <string name="content_description_profile">Perfîh de uçuario</string>
+    <string name="content_description_dismiss">Dêccartâh</string>
+    <string name="content_description_selected">Çelêççionao</string>
+    <string name="content_description_not_selected">No çelêççionao</string>
+    <string name="content_description_clear_search">Borrâh búqqueda</string>
+    <string name="content_description_operator_add">Çumâh</string>
+    <string name="content_description_operator_subtract">Rêttâh</string>
+    <string name="content_description_operator_multiply">Murtiplicâh</string>
+    <string name="content_description_operator_divide">Dibidîh</string>
+    <string name="content_description_operator_clear">Borrâh cárculo</string>
     <string name="self_identification_nominative">Tú</string>
     <string name="self_identification_beneficiary">Pa ti</string>
     <string name="self_identification_agent">Por ti</string>

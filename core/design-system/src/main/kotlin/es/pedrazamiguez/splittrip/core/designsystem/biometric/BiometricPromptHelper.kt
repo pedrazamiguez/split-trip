@@ -20,10 +20,11 @@ import javax.crypto.SecretKey
 object BiometricPromptHelper {
 
     private const val ANDROID_KEYSTORE_PROVIDER = "AndroidKeyStore"
-    private const val KEY_ALIAS = "split_trip_biometric_key_v2"
-    private const val LEGACY_KEY_ALIAS = "split_trip_biometric_auth_key"
-    private const val CIPHER_TRANSFORMATION =
-        "${KeyProperties.KEY_ALGORITHM_AES}/${KeyProperties.BLOCK_MODE_CBC}/${KeyProperties.ENCRYPTION_PADDING_PKCS7}"
+    internal const val KEY_ALIAS = "split_trip_biometric_key_v3"
+    internal const val LEGACY_KEY_ALIAS_V2 = "split_trip_biometric_key_v2"
+    internal const val LEGACY_KEY_ALIAS_V1 = "split_trip_biometric_auth_key"
+    internal const val CIPHER_TRANSFORMATION =
+        "${KeyProperties.KEY_ALGORITHM_AES}/${KeyProperties.BLOCK_MODE_GCM}/${KeyProperties.ENCRYPTION_PADDING_NONE}"
     private val AUTH_CHALLENGE = "split_trip_auth_challenge".toByteArray(StandardCharsets.UTF_8)
 
     internal var promptFactory: (
@@ -135,7 +136,8 @@ object BiometricPromptHelper {
 
     fun purgeLegacyKey() {
         deleteKey(KEY_ALIAS)
-        deleteKey(LEGACY_KEY_ALIAS)
+        deleteKey(LEGACY_KEY_ALIAS_V2)
+        deleteKey(LEGACY_KEY_ALIAS_V1)
     }
 
     internal fun resetDefaults() {
@@ -172,8 +174,8 @@ object BiometricPromptHelper {
             KEY_ALIAS,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
         )
-            .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
-            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setUserAuthenticationRequired(true)
             .setInvalidatedByBiometricEnrollment(true)
 

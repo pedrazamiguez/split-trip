@@ -29,7 +29,8 @@ fun EmptyStateView(
     title: String,
     modifier: Modifier = Modifier,
     description: String? = null,
-    icon: ImageVector = TablerIcons.Outline.Inbox
+    icon: ImageVector = TablerIcons.Outline.Inbox,
+    action: (@Composable () -> Unit)? = null
 ) {
     Column(
         modifier = modifier
@@ -63,6 +64,11 @@ fun EmptyStateView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+        }
+
+        if (action != null) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
+            action()
         }
     }
 }

@@ -315,6 +315,12 @@ private fun TabContent(
                         },
                         popExitTransition = {
                             NavTransitionDefaults.contentPopExitTransition
+                        },
+                        predictivePopEnterTransition = {
+                            NavTransitionDefaults.contentPopEnterTransition
+                        },
+                        predictivePopExitTransition = {
+                            NavTransitionDefaults.contentPopExitTransition
                         }
                     ) {
                         provider.buildGraph(this)

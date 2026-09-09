@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.features.profile.presentation.component
 
 import android.content.Context
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.UserFilled
@@ -48,7 +48,7 @@ internal fun AvatarEditor(
             modifier = Modifier
                 .size(120.dp)
                 .clip(CircleShape)
-                .clickable(onClick = onClick),
+                .debouncedClickable(onClick = onClick),
             contentAlignment = Alignment.Center
         ) {
             if (imageSource != null) {
@@ -82,7 +82,7 @@ internal fun AvatarEditor(
                 .size(36.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primary)
-                .clickable(onClick = onClick)
+                .debouncedClickable(onClick = onClick)
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {

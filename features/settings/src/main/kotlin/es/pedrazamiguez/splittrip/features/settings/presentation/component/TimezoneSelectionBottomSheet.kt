@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
@@ -23,9 +23,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.features.settings.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,14 +77,22 @@ fun TimezoneSelectionBottomSheet(
                     )
             )
 
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(filteredZones, key = { it }) { zone ->
-                    ListItem(
-                        modifier = Modifier.clickable {
-                            onTimezoneSelected(zone)
+            if (filteredZones.isEmpty()) {
+                EmptyStateView(
+                    title = stringResource(R.string.notification_prefs_no_timezones_found),
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(filteredZones, key = { it }) { zone ->
+                        ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier.debouncedClickable {
+                                onTimezoneSelected(zone)
+                            }
+                        ) {
+                            Text(zone)
                         }
-                    ) {
-                        Text(zone)
                     }
                 }
             }

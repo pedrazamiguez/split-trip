@@ -9,10 +9,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickableNoRipple
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.AnimatedAmount
+import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.BalanceMetricType
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 
@@ -46,18 +50,27 @@ internal fun PocketBalanceMainSection(
                 )
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
             }
-            PocketRemainingLabelRow(onShowMetricInfo = onShowMetricInfo)
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
-            AnimatedAmount(
-                formattedAmount = balance.formattedBalance,
-                shouldAnimate = shouldAnimateBalance,
-                previousAmount = previousBalance,
-                rollingUp = balanceRollingUp,
-                style = amountStyle,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                onAnimationComplete = onBalanceAnimationComplete
-            )
+            Column(
+                modifier = Modifier.debouncedClickableNoRipple(
+                    role = Role.Button,
+                    onClickLabel = stringResource(R.string.balances_metric_info_cd),
+                    onClick = { onShowMetricInfo(BalanceMetricType.REMAINING) }
+                ),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                PocketRemainingLabelRow()
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
+                AnimatedAmount(
+                    formattedAmount = balance.formattedBalance,
+                    shouldAnimate = shouldAnimateBalance,
+                    previousAmount = previousBalance,
+                    rollingUp = balanceRollingUp,
+                    style = amountStyle,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    onAnimationComplete = onBalanceAnimationComplete
+                )
+            }
             if (balance.formattedAvailableBalance != null ||
                 balance.formattedScheduledHoldAmount != null ||
                 balance.formattedRefundableHoldAmount != null

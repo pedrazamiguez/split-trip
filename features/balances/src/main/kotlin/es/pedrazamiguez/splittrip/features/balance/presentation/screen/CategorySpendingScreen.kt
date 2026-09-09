@@ -9,11 +9,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.CategorySpendingItemRow
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.CategorySpendingUiState
 
@@ -42,22 +47,30 @@ fun CategorySpendingScreen(
             }
 
             item {
-                FlatCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.Medium)
-                ) {
-                    Column {
-                        uiState.items.forEach { item ->
-                            CategorySpendingItemRow(
-                                item = item,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        horizontal = MaterialTheme.spacing.Default,
-                                        vertical = MaterialTheme.spacing.Medium
-                                    )
-                            )
+                if (uiState.items.isEmpty()) {
+                    EmptyStateView(
+                        title = stringResource(R.string.balances_empty_title),
+                        description = stringResource(R.string.balances_empty_description),
+                        icon = TablerIcons.Outline.Receipt
+                    )
+                } else {
+                    FlatCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(MaterialTheme.spacing.Medium)
+                    ) {
+                        Column {
+                            uiState.items.forEach { item ->
+                                CategorySpendingItemRow(
+                                    item = item,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(
+                                            horizontal = MaterialTheme.spacing.Default,
+                                            vertical = MaterialTheme.spacing.Medium
+                                        )
+                                )
+                            }
                         }
                     }
                 }

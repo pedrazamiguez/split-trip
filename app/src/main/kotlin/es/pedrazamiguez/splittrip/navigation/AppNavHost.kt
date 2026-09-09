@@ -297,6 +297,12 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                             },
                             popExitTransition = {
                                 getPopExitTransition(initialState.destination.route, targetState.destination.route)
+                            },
+                            predictivePopEnterTransition = {
+                                getPopEnterTransition(initialState.destination.route, targetState.destination.route)
+                            },
+                            predictivePopExitTransition = {
+                                getPopExitTransition(initialState.destination.route, targetState.destination.route)
                             }
                         ) {
                             loginGraph(

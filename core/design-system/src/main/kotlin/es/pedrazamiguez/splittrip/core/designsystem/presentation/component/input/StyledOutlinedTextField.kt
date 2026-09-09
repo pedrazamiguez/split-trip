@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 /**
@@ -238,7 +238,7 @@ private fun ReadOnlyClickableTextField(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .clickable(
+                .debouncedClickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
                     onClick = onClick

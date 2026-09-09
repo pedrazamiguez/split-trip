@@ -15,7 +15,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -51,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 private const val STEP_CIRCLE_SIZE = 28
@@ -182,7 +182,7 @@ fun WizardStepIndicator(
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(
+                            .debouncedClickable(
                                 role = Role.Button,
                                 onClick = onSkipToReview
                             )
@@ -321,7 +321,7 @@ private fun WizardStepItem(
             if (onClick != null) {
                 Modifier
                     .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    .clickable(
+                    .debouncedClickable(
                         interactionSource = interactionSource,
                         indication = null,
                         role = Role.Button,

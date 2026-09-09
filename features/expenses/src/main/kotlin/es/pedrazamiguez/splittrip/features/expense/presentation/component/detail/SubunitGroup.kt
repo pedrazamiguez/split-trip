@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
@@ -44,7 +44,7 @@ internal fun SubunitGroup(group: SubunitSplitGroupUiModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(
+                .debouncedClickable(
                     onClick = { expanded = !expanded },
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }

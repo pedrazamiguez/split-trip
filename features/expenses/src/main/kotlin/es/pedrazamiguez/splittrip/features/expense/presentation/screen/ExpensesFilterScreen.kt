@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlignJustified
@@ -57,6 +59,7 @@ fun ExpensesFilterScreen(
 ) {
     val bottomPadding = LocalBottomPadding.current
     var showResetFiltersDialog by remember { mutableStateOf(false) }
+    val hazeState = remember { HazeState() }
 
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
@@ -64,7 +67,9 @@ fun ExpensesFilterScreen(
     ) {
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .hazeSource(state = hazeState),
                 contentPadding = PaddingValues(
                     start = MaterialTheme.spacing.Default,
                     top = MaterialTheme.spacing.Default,
@@ -105,12 +110,11 @@ fun ExpensesFilterScreen(
                 }
             }
 
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = MaterialTheme.spacing.Large,
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+                    .horizonGlassEffect(hazeState = hazeState)
             ) {
                 Column(
                     modifier = Modifier

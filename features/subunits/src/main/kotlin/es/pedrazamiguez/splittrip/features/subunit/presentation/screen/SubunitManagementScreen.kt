@@ -22,6 +22,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
@@ -44,41 +45,44 @@ fun SubunitManagementScreen(
     val listState = rememberLazyListState()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            uiState.isLoading -> ShimmerLoadingList()
+        DeferredLoadingContainer(
+            isLoading = uiState.isLoading,
+            loadingContent = { ShimmerLoadingList() }
+        ) {
+            when {
+                uiState.subunits.isEmpty() -> {
+                    EmptyStateView(
+                        title = stringResource(R.string.subunit_empty_state),
+                        icon = TablerIcons.Outline.Sitemap
+                    )
+                }
 
-            uiState.subunits.isEmpty() -> {
-                EmptyStateView(
-                    title = stringResource(R.string.subunit_empty_state),
-                    icon = TablerIcons.Outline.Sitemap
-                )
-            }
-
-            else -> {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = MaterialTheme.spacing.Default,
-                        top = MaterialTheme.spacing.Default,
-                        end = MaterialTheme.spacing.Default,
-                        bottom = MaterialTheme.spacing.Default + bottomPadding
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-                ) {
-                    items(
-                        items = uiState.subunits,
-                        key = { it.id }
-                    ) { subunit ->
-                        SubunitItem(
-                            subunitUiModel = subunit,
-                            modifier = Modifier.animateItem(),
-                            onLongClick = {
-                                if (!uiState.isGroupArchived) {
-                                    selectedSubunitForMenu = subunit
+                else -> {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = MaterialTheme.spacing.Default,
+                            top = MaterialTheme.spacing.Default,
+                            end = MaterialTheme.spacing.Default,
+                            bottom = MaterialTheme.spacing.Default + bottomPadding
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+                    ) {
+                        items(
+                            items = uiState.subunits,
+                            key = { it.id }
+                        ) { subunit ->
+                            SubunitItem(
+                                subunitUiModel = subunit,
+                                modifier = Modifier.animateItem(),
+                                onLongClick = {
+                                    if (!uiState.isGroupArchived) {
+                                        selectedSubunitForMenu = subunit
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }

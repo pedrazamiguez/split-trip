@@ -14,6 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.extension.getNameRes
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -49,14 +54,21 @@ fun DefaultCurrencyScreen(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = TablerIcons.Outline.Check,
-                                        contentDescription = "Selected",
+                                        contentDescription = stringResource(
+                                            DesignSystemR.string.content_description_selected
+                                        ),
                                         tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             },
-                            modifier = Modifier.debouncedClickable {
-                                onCurrencySelected(currency.name)
-                            }
+                            modifier = Modifier
+                                .semantics {
+                                    role = Role.RadioButton
+                                    selected = isSelected
+                                }
+                                .debouncedClickable {
+                                    onCurrencySelected(currency.name)
+                                }
                         ) {
                             Text(text = "$currencyName (${currency.symbol})")
                         }

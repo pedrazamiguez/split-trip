@@ -68,6 +68,15 @@
     <string name="content_description_close">Close</string>
     <string name="content_description_menu">Open menu</string>
     <string name="content_description_profile">User profile</string>
+    <string name="content_description_dismiss">Dismiss</string>
+    <string name="content_description_selected">Selected</string>
+    <string name="content_description_not_selected">Not selected</string>
+    <string name="content_description_clear_search">Clear search</string>
+    <string name="content_description_operator_add">Add</string>
+    <string name="content_description_operator_subtract">Subtract</string>
+    <string name="content_description_operator_multiply">Multiply</string>
+    <string name="content_description_operator_divide">Divide</string>
+    <string name="content_description_operator_clear">Clear operator expression</string>
 
     <!-- Self-Identification Pronouns -->
     <string name="self_identification_nominative">You</string>

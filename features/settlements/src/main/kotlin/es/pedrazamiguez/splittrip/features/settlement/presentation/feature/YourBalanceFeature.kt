@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
@@ -50,18 +51,22 @@ fun YourBalanceFeature(
     }
 
     SharedTransitionSurface(sharedElementKey = SharedElementKeys.YOUR_BALANCE, modifier = modifier) {
-        when {
-            uiState.isLoading -> ShimmerLoadingList(modifier = Modifier.fillMaxSize())
-            uiState.personalPosition != null -> YourBalanceFeatureBody(
-                uiState = uiState,
-                onEvent = yourBalanceViewModel::onEvent
-            )
-            else -> EmptyStateView(
-                icon = TablerIcons.Outline.Wallet,
-                title = stringResource(R.string.your_balance_empty_title),
-                description = stringResource(R.string.your_balance_empty_description),
-                modifier = Modifier.fillMaxSize()
-            )
+        DeferredLoadingContainer(
+            isLoading = uiState.isLoading,
+            loadingContent = { ShimmerLoadingList(modifier = Modifier.fillMaxSize()) }
+        ) {
+            when {
+                uiState.personalPosition != null -> YourBalanceFeatureBody(
+                    uiState = uiState,
+                    onEvent = yourBalanceViewModel::onEvent
+                )
+                else -> EmptyStateView(
+                    icon = TablerIcons.Outline.Wallet,
+                    title = stringResource(R.string.your_balance_empty_title),
+                    description = stringResource(R.string.your_balance_empty_description),
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }

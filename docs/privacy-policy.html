@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>SplitTrip — Privacy Policy / Política de Privacidad</title>
+  <meta name="description" content="Privacy Policy for SplitTrip: Group Expenses. Transparent, offline-first travel expense tracking with zero data selling and secure cloud replication.">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg-canvas: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --accent-primary: #0ea5e9;
+      --accent-secondary: #14b8a6;
+      --accent-surface: #f0f9ff;
+      --badge-bg: #e0f2fe;
+      --badge-text: #0369a1;
+      --code-bg: #f1f5f9;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-canvas: #0b1120;
+        --bg-surface: #1e293b;
+        --bg-surface-elevated: #334155;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
+        --accent-primary: #38bdf8;
+        --accent-secondary: #2dd4bf;
+        --accent-surface: #13273e;
+        --badge-bg: #0c4a6e;
+        --badge-text: #7dd3fc;
+        --code-bg: #0f172a;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+      }
+    }
+
+    /* Explicit manual theme overrides if needed */
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg-canvas: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --accent-primary: #0ea5e9;
+      --accent-secondary: #14b8a6;
+      --accent-surface: #f0f9ff;
+      --badge-bg: #e0f2fe;
+      --badge-text: #0369a1;
+      --code-bg: #f1f5f9;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-canvas: #0b1120;
+      --bg-surface: #1e293b;
+      --bg-surface-elevated: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --accent-primary: #38bdf8;
+      --accent-secondary: #2dd4bf;
+      --accent-surface: #13273e;
+      --badge-bg: #0c4a6e;
+      --badge-text: #7dd3fc;
+      --code-bg: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      line-height: 1.65;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      padding: 24px 16px 64px 16px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .container {
+      max-width: 840px;
+      margin: 0 auto;
+    }
+
+    header {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-text .app-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--badge-text);
+      background-color: var(--badge-bg);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      margin-top: 2px;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lang-switcher {
+      display: inline-flex;
+      background-color: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .lang-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .lang-btn[aria-pressed="true"] {
+      background-color: var(--bg-surface);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      text-wrap: balance;
+    }
+
+    .effective-date {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .summary-box {
+      margin-top: 20px;
+      background-color: var(--accent-surface);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-primary);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .summary-box strong {
+      color: var(--text-primary);
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: var(--accent-primary);
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-wrap: balance;
+    }
+
+    .section-number {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-primary);
+      background-color: var(--accent-surface);
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+      line-height: 1;
+    }
+
+    p {
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      text-wrap: pretty;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul {
+      margin: 12px 0 16px 20px;
+      color: var(--text-secondary);
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    li strong {
+      color: var(--text-primary);
+    }
+
+    .highlight-pill {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      margin: 2px 4px 2px 0;
+    }
+
+    a {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9em;
+      background-color: var(--code-bg);
+      color: var(--text-primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    footer {
+      margin-top: 36px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-muted);
+      padding: 16px;
+    }
+
+    /* Language visibility handling */
+    [data-lang] {
+      display: none;
+    }
+
+    html[lang="en"] [data-lang="en"],
+    html:not([lang="es"]) [data-lang="en"] {
+      display: block;
+    }
+
+    html[lang="es"] [data-lang="es"] {
+      display: block;
+    }
+
+    /* Inline flex variant for badges/buttons */
+    html[lang="en"] span[data-lang="en"],
+    html[lang="en"] strong[data-lang="en"],
+    html[lang="en"] a[data-lang="en"] {
+      display: inline;
+    }
+
+    html[lang="es"] span[data-lang="es"],
+    html[lang="es"] strong[data-lang="es"],
+    html[lang="es"] a[data-lang="es"] {
+      display: inline;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 16px 12px 48px 12px;
+      }
+      header {
+        padding: 20px 18px;
+      }
+      .card {
+        padding: 20px 18px;
+      }
+      .page-title {
+        font-size: 24px;
+      }
+    }
+  </style>
+  <script>
+    // Initialize language preference immediately to prevent flicker
+    (function() {
+      try {
+        var savedLang = localStorage.getItem('splittrip-privacy-lang');
+        var lang = savedLang || (navigator.language && navigator.language.startsWith('es') ? 'es' : 'en');
+        document.documentElement.lang = lang;
+      } catch (e) {
+        document.documentElement.lang = 'en';
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-top">
+        <div class="brand-group">
+          <div class="brand-icon" aria-hidden="true">S</div>
+          <div class="brand-text">
+            <h1>SplitTrip</h1>
+            <span class="app-badge" data-lang="en">Offline-First Travel Expenses</span>
+            <span class="app-badge" data-lang="es">Gastos de viaje sin conexión</span>
+          </div>
+        </div>
+        <div class="controls-group">
+          <div class="lang-switcher" role="group" aria-label="Select Language / Seleccionar idioma">
+            <button type="button" class="lang-btn" id="btn-en" aria-pressed="true" onclick="setLanguage('en')">EN</button>
+            <button type="button" class="lang-btn" id="btn-es" aria-pressed="false" onclick="setLanguage('es')">ES</button>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="page-title" data-lang="en">Privacy Policy</h2>
+      <h2 class="page-title" data-lang="es">Política de Privacidad</h2>
+
+      <div class="effective-date">
+        <span data-lang="en">Last updated: September 2026 &bull; Developed by Pedro Pedraza M&iacute;guez</span>
+        <span data-lang="es">&Uacute;ltima actualizaci&oacute;n: Septiembre de 2026 &bull; Desarrollado por Pedro Pedraza M&iacute;guez</span>
+      </div>
+
+      <div class="summary-box" data-lang="en">
+        <strong>Privacy at a Glance:</strong> SplitTrip is designed with a strict offline-first, privacy-first philosophy. Your expense data is processed locally on your device and synchronized securely to Google Cloud Firestore only with group companions you explicitly invite. We <strong>never</strong> sell your personal data or transaction records to third parties, data brokers, or advertisers.
+      </div>
+
+      <div class="summary-box" data-lang="es">
+        <strong>Privacidad de un vistazo:</strong> SplitTrip est&aacute; dise&ntilde;ado bajo una estricta filosof&iacute;a de privacidad y funcionamiento sin conexi&oacute;n (&ldquo;offline-first&rdquo;). Tus gastos se procesan localmente en tu dispositivo y se sincronizan de forma segura con Google Cloud Firestore &uacute;nicamente con los compa&ntilde;eros de viaje que invites. <strong>Nunca</strong> vendemos tus datos personales ni tus registros financieros a terceros, anunciantes o intermediarios de datos.
+      </div>
+    </header>
+
+    <main>
+      <!-- Section 1: Information We Collect -->
+      <section class="card" id="section-1">
+        <div data-lang="en">
+          <h3 class="section-title">
+            <span class="section-number">1</span>
+            Information We Collect
+          </h3>
+          <p>
+            We collect only the minimum necessary information required to facilitate group travel expense tracking, multi-currency conversions, and fair debt settlements:
+          </p>
+          <ul>
+            <li>
+              <strong>Authentication Information:</strong> When signing in via Google Sign-In or email credentials, we collect your email address, display name, and optional profile photo URL to identify you to your travel companions.
+            </li>
+            <li>
+              <strong>Travel &amp; Financial Sharing Details:</strong> Trip names, expense titles, amounts, payment timestamps, currency codes, exchange rate snapshots, split shares, contributions to the group pocket, cash withdrawals, and settlement proposals.
+            </li>
+            <li>
+              <strong>Guest / Offline Accounts:</strong> If you use SplitTrip as a guest or before signing in, all your expense and trip records remain strictly stored on your physical device in local SQLite Room databases and DataStore preferences. Nothing is uploaded to any cloud server until you explicitly sign in.
+            </li>
+            <li>
+              <strong>Camera &amp; Media Storage (Optional):</strong> If you choose to attach receipt images or customize group cover avatars, SplitTrip requests camera or photo picker access. Images are compressed locally and uploaded solely to Google Firebase Cloud Storage for access by group members.
+            </li>
+          </ul>
+          <div class="summary-box" style="margin-top: 16px;">
+            <strong>What We Do NOT Collect or Process:</strong>
+            <ul style="margin: 8px 0 0 18px;">
+              <li><strong>No Bank Credentials or Payment Cards:</strong> We do not collect, request, or store credit card numbers, debit card details, or bank account credentials. SplitTrip does not connect to third-party banking APIs or Open Banking providers.</li>
+              <li><strong>Informational Calculations Only:</strong> Debt settlement proposals and group pocket balances are purely collaborative ledgers. SplitTrip does not execute financial transactions, hold customer funds, or transfer money between bank accounts. Users settle debts independently using their own preferred offline or peer-to-peer payment methods (e.g., cash, bank transfer, Bizum, Revolut).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div data-lang="es">
+          <h3 class="section-title">
+            <span class="section-number">1</span>
+            Informaci&oacute;n que recopilamos
+          </h3>
+          <p>
+            Recopilamos &uacute;nicamente la informaci&oacute;n estrictamente necesaria para facilitar el seguimiento de gastos de viaje en grupo, conversiones multidivisa y acuerdos de pago justos:
+          </p>
+          <ul>
+            <li>
+              <strong>Informaci&oacute;n de autenticaci&oacute;n:</strong> Al iniciar sesi&oacute;n con Google Sign-In o credenciales de correo electr&oacute;nico, recogemos tu direcci&oacute;n de correo, nombre de perfil y foto de perfil opcional para identificarte ante tus compa&ntilde;eros de viaje.
+            </li>
+            <li>
+              <strong>Detalles de viaje y financieros compartidos:</strong> Nombres de viaje, descripciones de gastos, importes, marcas temporales de pago, c&oacute;digos de moneda, instant&aacute;neas de tipos de cambio, cuotas de reparto, aportaciones al pocket del grupo, retiradas de efectivo y propuestas de acuerdos de pago.
+            </li>
+            <li>
+              <strong>Cuentas de invitado / Modo sin conexi&oacute;n:</strong> Si utilizas SplitTrip en modo invitado o antes de iniciar sesi&oacute;n, todos tus registros financieros y de viaje se almacenan exclusivamente en tu dispositivo en bases de datos locales Room y preferencias DataStore. No se sube ning&uacute;n dato a la nube hasta que decidas iniciar sesi&oacute;n expl&iacute;citamente.
+            </li>
+            <li>
+              <strong>C&aacute;mara y fotograf&iacute;as (Opcional):</strong> Si decides adjuntar fotos de tiques/facturas o personalizar la portada de un grupo, solicitamos acceso a la c&aacute;mara o galer&iacute;a. Las im&aacute;genes se comprimen localmente y se transfieren &uacute;nicamente a Google Firebase Cloud Storage para consulta de los miembros del viaje.
+            </li>
+          </ul>
+          <div class="summary-box" style="margin-top: 16px;">
+            <strong>Lo que NO recopilamos ni procesamos:</strong>
+            <ul style="margin: 8px 0 0 18px;">
+              <li><strong>Sin credenciales bancarias ni tarjetas de pago:</strong> No recopilamos, solicitamos ni almacenamos números de tarjeta de crédito, tarjetas de débito ni credenciales de banca electrónica. SplitTrip no se conecta a APIs bancarias de terceros ni a servicios de Open Banking.</li>
+              <li><strong>Cálculos exclusivamente informativos:</strong> Las propuestas de acuerdos de pago y los saldos del pocket del grupo son meros registros contables compartidos. SplitTrip no ejecuta transferencias bancarias, no custodia fondos ni transfiere dinero. Los usuarios saldan sus deudas de forma independiente a través de sus métodos preferidos (efectivo, transferencia bancaria, Bizum, Revolut, etc.).</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: How We Use Data -->
+      <section class="card" id="section-2">
+        <div data-lang="en">
+          <h3 class="section-title">
+            <span class="section-number">2</span>
+            How We Use Data
+          </h3>
+          <p>
+            Your information is processed on-device and synchronized to the cloud solely for collaboration and core app functionality:
+          </p>
+          <ul>
+            <li>
+              <strong>Collaborative Expense Logging &amp; Debt Simplification:</strong> Reconciling who paid for what, calculating fair balances, allocating add-ons and proportional subunit shares, and coordinating debt settlement consensus.
+            </li>
+            <li>
+              <strong>Real-Time Replication:</strong> Providing seamless offline-first synchronization across all group members via Cloud Firestore listeners.
+            </li>
+            <li>
+              <strong>Zero Data Monetization:</strong> We do <strong>not</strong> sell, rent, license, or monetize your transaction logs, payment methods, or personal information to any third parties, advertising networks, or data brokers.
+            </li>
+            <li>
+              <strong>No Third-Party Advertising:</strong> SplitTrip does not integrate ad networks, behavioral tracking software, or advertising identifiers.
+            </li>
+          </ul>
+        </div>
+
+        <div data-lang="es">
+          <h3 class="section-title">
+            <span class="section-number">2</span>
+            C&oacute;mo utilizamos los datos
+          </h3>
+          <p>
+            Tus datos se procesan en el dispositivo y se sincronizan con la nube &uacute;nicamente para la colaboraci&oacute;n y el funcionamiento esencial de la aplicaci&oacute;n:
+          </p>
+          <ul>
+            <li>
+              <strong>Registro colaborativo y simplificaci&oacute;n de deudas:</strong> Reconciliaci&oacute;n de pagos compartidos, c&aacute;lculo de saldos justos, reparto de extras y cuotas de subunidades, y coordinaci&oacute;n de acuerdos de pago por consenso.
+            </li>
+            <li>
+              <strong>Sincronizaci&oacute;n en tiempo real:</strong> Garantizar la replicaci&oacute;n sin fisuras y sin conexi&oacute;n (&ldquo;offline-first&rdquo;) entre los miembros del grupo mediante escuchas de Cloud Firestore.
+            </li>
+            <li>
+              <strong>Cero monetizaci&oacute;n de datos:</strong> <strong>No</strong> vendemos, alquilamos ni comercializamos tus registros de transacciones, m&eacute;todos de pago o informaci&oacute;n personal a terceras partes, redes publicitarias ni intermediarios de datos.
+            </li>
+            <li>
+              <strong>Sin publicidad de terceros:</strong> SplitTrip no incluye redes de anuncios, rastreadores de comportamiento ni identificadores publicitarios.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 3: Data Security & Storage -->
+      <section class="card" id="section-3">
+        <div data-lang="en">
+          <h3 class="section-title">
+            <span class="section-number">3</span>
+            Data Security &amp; Storage
+          </h3>
+          <p>
+            We implement strict defense-in-depth measures to protect your travel data:
+          </p>
+          <ul>
+            <li>
+              <strong>Encryption in Transit:</strong> All data transmitted between your device and our cloud servers is encrypted using Transport Layer Security (TLS 1.3 / HTTPS).
+            </li>
+            <li>
+              <strong>Local Security:</strong> On-device data is secured in private application sandboxes using SQLite Room databases and encrypted Android DataStore preferences.
+            </li>
+            <li>
+              <strong>Granular Cloud Access Control:</strong> Cloud Firestore synchronization is enforced by strict security rules verifying group membership, ensuring that only registered members of a trip can read or write its financial data.
+            </li>
+            <li>
+              <strong>Ephemeral Diagnostics:</strong> Performance metrics and crash diagnostics (handled via Firebase Crashlytics) collect non-identifiable technical data to improve stability and are automatically purged after 90 days.
+            </li>
+          </ul>
+        </div>
+
+        <div data-lang="es">
+          <h3 class="section-title">
+            <span class="section-number">3</span>
+            Seguridad y almacenamiento de datos
+          </h3>
+          <p>
+            Aplicamos rigurosas medidas de seguridad multicapa para proteger la informaci&oacute;n de tus viajes:
+          </p>
+          <ul>
+            <li>
+              <strong>Cifrado en tr&aacute;nsito:</strong> Toda la comunicaci&oacute;n entre tu dispositivo y nuestros servidores en la nube est&aacute; cifrada mediante Transport Layer Security (TLS 1.3 / HTTPS).
+            </li>
+            <li>
+              <strong>Seguridad en el dispositivo:</strong> Los datos locales est&aacute;n aislados en el entorno protegido de la aplicaci&oacute;n utilizando bases de datos SQLite Room y preferencias protegidas con DataStore.
+            </li>
+            <li>
+              <strong>Control de acceso granular en la nube:</strong> La sincronizaci&oacute;n en Cloud Firestore est&aacute; regulada por reglas de seguridad estrictas que comprueban la pertenencia al grupo, impidiendo que usuarios no autorizados lean o modifiquen transacciones.
+            </li>
+            <li>
+              <strong>Diagn&oacute;sticos de estabilidad:</strong> Las m&eacute;tricas de rendimiento e informes de fallos t&eacute;cnicos (gestionados mediante Firebase Crashlytics) recogen datos t&eacute;cnicos desprovistos de identidad y se eliminan autom&aacute;ticamente tras 90 d&iacute;as.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 4: User Rights & Account Deletion -->
+      <section class="card" id="section-4">
+        <div data-lang="en">
+          <h3 class="section-title">
+            <span class="section-number">4</span>
+            Your Rights &amp; Account Deletion
+          </h3>
+          <p>
+            You retain complete ownership and sovereignty over your personal data under global privacy standards (including GDPR and CCPA):
+          </p>
+          <ul>
+            <li>
+              <strong>In-App Self-Service Deletion:</strong> You can initiate complete, irreversible account and data deletion directly from the mobile app at any time by navigating to <code>Settings &gt; Account Status &gt; Delete Account</code>.
+            </li>
+            <li>
+              <strong>Immediate Cloud Purge:</strong> When an account is deleted, your authentication records, personal profile, and associated storage assets are immediately deleted from Firebase Authentication and Cloud Storage.
+            </li>
+            <li>
+              <strong>Email Requests:</strong> You may also request manual account deletion, data extraction, or inquiries by contacting us at <a href="mailto:support@splittrip.com">support@splittrip.com</a>. Manual requests are processed and verified within 30 calendar days.
+            </li>
+            <li>
+              <strong>Data Portability:</strong> You can export trip summaries and expense histories directly to open formats from within your trips.
+            </li>
+          </ul>
+        </div>
+
+        <div data-lang="es">
+          <h3 class="section-title">
+            <span class="section-number">4</span>
+            Tus derechos y eliminaci&oacute;n de cuenta
+          </h3>
+          <p>
+            Conservas el control total y la titularidad sobre tus datos personales conforme a los est&aacute;ndares internacionales de protecci&oacute;n de datos (incluidos RGPD y CCPA):
+          </p>
+          <ul>
+            <li>
+              <strong>Eliminaci&oacute;n directa desde la aplicaci&oacute;n:</strong> Puedes solicitar la eliminaci&oacute;n permanente e irreversible de tu cuenta y datos en cualquier momento desde <code>Ajustes &gt; Estado de la cuenta &gt; Eliminar cuenta</code>.
+            </li>
+            <li>
+              <strong>Borrado en la nube:</strong> Al eliminar tu cuenta, tus credenciales de autenticaci&oacute;n, perfil y archivos adjuntos se borran de inmediato de Firebase Authentication y Cloud Storage.
+            </li>
+            <li>
+              <strong>Solicitud por correo electr&oacute;nico:</strong> Tambi&eacute;n puedes solicitar el borrado manual de tus datos o ejercer tus derechos de acceso contactando con <a href="mailto:support@splittrip.com">support@splittrip.com</a>. Las peticiones se verifican y resuelven en un plazo m&aacute;ximo de 30 d&iacute;as naturales.
+            </li>
+            <li>
+              <strong>Portabilidad:</strong> Puedes exportar res&uacute;menes de viajes y gastos a formatos abiertos directamente desde tus grupos de viaje.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 5: Third-Party Service Providers -->
+      <section class="card" id="section-5">
+        <div data-lang="en">
+          <h3 class="section-title">
+            <span class="section-number">5</span>
+            Third-Party Service Providers
+          </h3>
+          <p>
+            SplitTrip integrates a minimal set of industry-standard infrastructure providers to deliver cloud replication, authentication, and live currency conversions:
+          </p>
+          <ul>
+            <li>
+              <strong>Google Firebase (Google LLC):</strong> Cloud Firestore (database replication), Firebase Authentication (identity), Firebase Cloud Storage (receipt images), and Firebase Crashlytics / Performance (crash diagnostics). Governed by the <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.
+            </li>
+            <li>
+              <strong>Google Play Services:</strong> App distribution, app integrity verification, and optional in-app subscription billing via Google Play Billing.
+            </li>
+            <li>
+              <strong>Open Exchange Rates:</strong> Real-time and historical currency exchange rates. Rate queries are strictly anonymous; zero user data or transaction identifiers are transmitted to exchange rate providers.
+            </li>
+          </ul>
+        </div>
+
+        <div data-lang="es">
+          <h3 class="section-title">
+            <span class="section-number">5</span>
+            Proveedores de servicios de terceros
+          </h3>
+          <p>
+            SplitTrip se apoya en un conjunto m&iacute;nimo de proveedores de infraestructura de referencia para posibilitar la sincronizaci&oacute;n en la nube, autenticaci&oacute;n y conversi&oacute;n de divisas:
+          </p>
+          <ul>
+            <li>
+              <strong>Google Firebase (Google LLC):</strong> Cloud Firestore (base de datos en la nube), Firebase Authentication (identidad), Firebase Cloud Storage (im&aacute;genes de tiques) y Firebase Crashlytics / Performance (diagn&oacute;stico de fallos). Sujeto a la <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer">Pol&iacute;tica de Privacidad de Google</a>.
+            </li>
+            <li>
+              <strong>Servicios de Google Play:</strong> Distribuci&oacute;n de la aplicaci&oacute;n, verificaci&oacute;n de integridad y gesti&oacute;n de suscripciones mediante Google Play Billing.
+            </li>
+            <li>
+              <strong>Open Exchange Rates:</strong> Obtenci&oacute;n de tipos de cambio de divisas oficiales. Las consultas son completamente an&oacute;nimas; ning&uacute;n dato de usuario o transacci&oacute;n se env&iacute;a al proveedor de divisas.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 6: Children's Privacy -->
+      <section class="card" id="section-6">
+        <div data-lang="en">
+          <h3 class="section-title">
+            <span class="section-number">6</span>
+            Children's Privacy
+          </h3>
+          <p>
+            SplitTrip is intended for general audiences and group travelers. We do not knowingly collect, solicit, or maintain personal information from children under the age of 13 (or under 16 in the European Economic Area). If we learn that personal data of a minor has been collected without verifiable parental consent, we take immediate steps to delete that data from our servers.
+          </p>
+        </div>
+
+        <div data-lang="es">
+          <h3 class="section-title">
+            <span class="section-number">6</span>
+            Privacidad de menores
+          </h3>
+          <p>
+            SplitTrip est&aacute; dirigida al p&uacute;blico general y viajeros en grupo. No recopilamos conscientemente ni solicitamos informaci&oacute;n personal de menores de 13 a&ntilde;os (o menores de 16 a&ntilde;os en el Espacio Econ&oacute;mico Europeo). Si tenemos constancia de que se han almacenado datos personales de un menor sin consentimiento parental demostrable, tomaremos las medidas necesarias para eliminar dicha informaci&oacute;n de inmediato de nuestros servidores.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 7: Policy Changes & Contact Information -->
+      <section class="card" id="section-7">
+        <div data-lang="en">
+          <h3 class="section-title">
+            <span class="section-number">7</span>
+            Policy Updates &amp; Contact Information
+          </h3>
+          <p>
+            We may occasionally update this Privacy Policy to reflect app enhancements or regulatory requirements. Any updates will be published to this page with a revised &ldquo;Last updated&rdquo; date. Significant changes will also be notified through in-app release notes.
+          </p>
+          <p>
+            If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact:
+          </p>
+          <ul>
+            <li><strong>Developer:</strong> Pedro Pedraza M&iacute;guez</li>
+            <li><strong>Email:</strong> <a href="mailto:support@splittrip.com">support@splittrip.com</a></li>
+            <li><strong>Repository:</strong> <a href="https://github.com/pedrazamiguez/split-trip" target="_blank" rel="noopener noreferrer">github.com/pedrazamiguez/split-trip</a></li>
+          </ul>
+        </div>
+
+        <div data-lang="es">
+          <h3 class="section-title">
+            <span class="section-number">7</span>
+            Actualizaciones de la pol&iacute;tica y contacto
+          </h3>
+          <p>
+            Es posible que actualicemos peri&oacute;dicamente esta Pol&iacute;tica de Privacidad para reflejar mejoras en la aplicaci&oacute;n o novedades normativas. Cualquier modificaci&oacute;n se publicar&aacute; en esta p&aacute;gina con la fecha de &ldquo;&Uacute;ltima actualizaci&oacute;n&rdquo; revisada. Los cambios sustanciales se comunicar&aacute;n adem&aacute;s mediante notas de versi&oacute;n en la aplicaci&oacute;n.
+          </p>
+          <p>
+            Si tienes dudas, consultas o solicitudes en relaci&oacute;n con esta Pol&iacute;tica de Privacidad o el tratamiento de tus datos, puedes ponerte en contacto con:
+          </p>
+          <ul>
+            <li><strong>Desarrollador:</strong> Pedro Pedraza M&iacute;guez</li>
+            <li><strong>Correo de soporte:</strong> <a href="mailto:support@splittrip.com">support@splittrip.com</a></li>
+            <li><strong>Repositorio del proyecto:</strong> <a href="https://github.com/pedrazamiguez/split-trip" target="_blank" rel="noopener noreferrer">github.com/pedrazamiguez/split-trip</a></li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 SplitTrip &bull; Pedro Pedraza M&iacute;guez &bull; All rights reserved / Todos los derechos reservados</p>
+    </footer>
+  </div>
+
+  <script>
+    function setLanguage(lang) {
+      if (lang !== 'en' && lang !== 'es') lang = 'en';
+      document.documentElement.lang = lang;
+      
+      var btnEn = document.getElementById('btn-en');
+      var btnEs = document.getElementById('btn-es');
+      
+      if (btnEn && btnEs) {
+        btnEn.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
+        btnEs.setAttribute('aria-pressed', lang === 'es' ? 'true' : 'false');
+      }
+
+      try {
+        localStorage.setItem('splittrip-privacy-lang', lang);
+      } catch (e) {
+        // LocalStorage access might be restricted in some iframe or privacy contexts
+      }
+    }
+
+    // Sync button state with current document lang on DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+      var currentLang = document.documentElement.lang || 'en';
+      setLanguage(currentLang);
+    });
+  </script>
+</body>
+</html>
