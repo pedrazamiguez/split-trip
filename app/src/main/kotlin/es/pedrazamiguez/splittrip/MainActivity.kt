@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         // Save pending deep link before NavHost consumes the intent.
@@ -41,7 +42,6 @@ class MainActivity : AppCompatActivity() {
             deepLinkHolder.pendingDeepLink = intent.data
         }
 
-        enableEdgeToEdge()
         setContent {
             val koin = getKoin()
             val getAppThemeUseCase = remember(koin) { koin.get<GetAppThemeUseCase>() }
