@@ -22,7 +22,7 @@ import {
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
-import { buildDeepLink } from "../utils/format";
+import { buildDeepLink, formatAmount } from "../utils/format";
 
 export const onContributionAdded = onDocumentCreated(
   "groups/{groupId}/contributions/{contributionId}",
@@ -75,25 +75,39 @@ export const onContributionAdded = onDocumentCreated(
     const tokens = await getRecipientTokens(groupId, actorId, groupData.memberIds);
     if (tokens.length === 0) return;
 
+    const formattedAmount = formatAmount(contribution.amountCents, contribution.currency);
+
     const payload: FcmDataPayload = {
       type: NotificationType.CONTRIBUTION_ADDED,
       groupId,
       groupName: groupData.name,
       memberName: targetName,
+      actorName,
       deepLink: buildDeepLink(groupId, `contributions/${contributionId}`),
       entityId: contributionId,
+      formattedAmount,
       amountCents: String(contribution.amountCents),
       currencyCode: contribution.currency,
-      ...(isImpersonation && { actorName }),
     };
+
+    let bodyLocKey: string;
+    let bodyLocArgs: string[];
+    if (isImpersonation) {
+      bodyLocKey = "notification_contribution_added_body_on_behalf";
+      bodyLocArgs = [actorName, targetName];
+    } else if (formattedAmount) {
+      bodyLocKey = "notification_contribution_added_body";
+      bodyLocArgs = [actorName, formattedAmount];
+    } else {
+      bodyLocKey = "notification_contribution_added_body_brief";
+      bodyLocArgs = [actorName];
+    }
 
     const display: NotificationDisplay = {
       title: groupData.name,
       titleLocKey: "notification_contribution_added_title",
-      bodyLocKey: isImpersonation
-        ? "notification_contribution_added_body_on_behalf"
-        : "notification_contribution_added_body_brief",
-      bodyLocArgs: isImpersonation ? [actorName, targetName] : [actorName],
+      bodyLocKey,
+      bodyLocArgs,
       channelId: NotificationChannelId.FINANCIAL,
     };
 

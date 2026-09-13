@@ -82,9 +82,10 @@ export const onMemberRemoved = onDocumentDeleted(
       groupId,
       groupName: groupData.name,
       memberName: memberDisplayName,
-      deepLink: buildDeepLink(groupId),
+      actorName: actorDisplayName,
+      formattedAmount: "",
+      deepLink: buildDeepLink(groupId, "members"),
       entityId: memberId,
-      ...(isAdminAction && { actorName: actorDisplayName }),
     };
 
     const display: NotificationDisplay = {

@@ -12,19 +12,28 @@ import es.pedrazamiguez.splittrip.domain.model.NotificationContent
 class ExpenseUpdatedHandler(private val context: Context, private val localeProvider: LocaleProvider) :
     NotificationHandler {
     override fun handle(data: Map<String, String>): NotificationContent {
-        val memberName = data["memberName"] ?: "Someone"
+        val fallbackName = context.getString(R.string.notification_fallback_actor_name)
+        val actorName = data["actorName"] ?: data["memberName"] ?: fallbackName
         val amount = formatNotificationAmount(data, localeProvider)
         val groupName = data["groupName"] ?: ""
         val groupId = data["groupId"]
+        val body = if (amount.isNotBlank()) {
+            context.getString(
+                R.string.notification_expense_updated_body,
+                actorName,
+                amount
+            )
+        } else {
+            context.getString(
+                R.string.notification_expense_updated_body_brief,
+                actorName
+            )
+        }
         return NotificationContent(
             title = groupName.ifBlank {
                 context.getString(R.string.notification_expense_updated_title)
             },
-            body = context.getString(
-                R.string.notification_expense_updated_body,
-                memberName,
-                amount
-            ),
+            body = body,
             deepLink = data["deepLink"],
             channelId = NotificationChannelId.EXPENSES,
             groupId = groupId,

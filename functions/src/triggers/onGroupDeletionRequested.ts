@@ -107,16 +107,23 @@ export const onGroupDeletionRequested = onDocumentUpdated(
       // 2. Delete all other subcollections in parallel.
       // These deletions won't cause notification spam because the existing triggers
       // check groupData.deletionRequested and skip notifications when true.
-      const [expensesDeleted, contributionsDeleted, withdrawalsDeleted, subunitsDeleted, settlementsDeleted, nudgesDeleted, cashTransfersDeleted] =
-        await Promise.all([
-          deleteSubcollection(`groups/${groupId}/expenses`),
-          deleteSubcollection(`groups/${groupId}/contributions`),
-          deleteSubcollection(`groups/${groupId}/cash_withdrawals`),
-          deleteSubcollection(`groups/${groupId}/subunits`),
-          deleteSubcollection(`groups/${groupId}/settlements`),
-          deleteSubcollection(`groups/${groupId}/nudges`),
-          deleteSubcollection(`groups/${groupId}/cash_transfers`),
-        ]);
+      const [
+        expensesDeleted,
+        contributionsDeleted,
+        withdrawalsDeleted,
+        subunitsDeleted,
+        settlementsDeleted,
+        nudgesDeleted,
+        cashTransfersDeleted,
+      ] = await Promise.all([
+        deleteSubcollection(`groups/${groupId}/expenses`),
+        deleteSubcollection(`groups/${groupId}/contributions`),
+        deleteSubcollection(`groups/${groupId}/cash_withdrawals`),
+        deleteSubcollection(`groups/${groupId}/subunits`),
+        deleteSubcollection(`groups/${groupId}/settlements`),
+        deleteSubcollection(`groups/${groupId}/nudges`),
+        deleteSubcollection(`groups/${groupId}/cash_transfers`),
+      ]);
 
       logger.info("Deleted all subcollections", {
         groupId,
@@ -152,6 +159,9 @@ export const onGroupDeletionRequested = onDocumentUpdated(
                 groupId,
                 groupName,
                 memberName: actorName,
+                actorName,
+                formattedAmount: "",
+                entityId: groupId,
                 deepLink: GROUPS_LIST_DEEP_LINK,
               };
 
