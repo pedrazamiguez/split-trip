@@ -3,6 +3,17 @@
     <string name="onboarding_welcome_title">Ready to travel smart?</string>
     <string name="onboarding_welcome_subtitle">Split expenses with your crew without the awkward money talks</string>
     <string name="onboarding_complete_button">Let\'s start!</string>
+    <string name="onboarding_next_button">Next</string>
+    <string name="onboarding_back_button">Back</string>
+    <string name="onboarding_skip_button">Skip</string>
+    <string name="onboarding_step_trips_title">Trips &amp; Groups</string>
+    <string name="onboarding_step_trips_description">Organize travel expenses with your friends, manage multiple currencies, and keep everyone on the same page from takeoff to touchdown.</string>
+    <string name="onboarding_step_split_title">Smart Splitting</string>
+    <string name="onboarding_step_split_description">Split expenses your way: equally, by exact amounts, percentages, or subunits for couples and families. Attach receipts to keep a clear paper trail.</string>
+    <string name="onboarding_step_cash_title">Cash in Hand &amp; Pocket</string>
+    <string name="onboarding_step_cash_description">Track shared physical cash alongside card expenses. Log cash withdrawals and pocket contributions with automatic multi-currency conversion.</string>
+    <string name="onboarding_step_settle_title">Consensus &amp; Settlements</string>
+    <string name="onboarding_step_settle_description">Know your exact balance at any moment. Settle up seamlessly with peer confirmation so everyone agrees before a debt is marked paid.</string>
 
     <!-- Reconciliation Screen -->
     <string name="reconciliation_title">We were waiting for you!</string>
