@@ -11,6 +11,8 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -135,11 +137,26 @@ class SignInWithEmailUseCaseTest {
                         assertEquals(userId, it.userId)
                         assertEquals(email, it.email)
                         assertEquals("user", it.displayName)
-                        org.junit.jupiter.api.Assertions.assertNull(it.profileImagePath)
-                        org.junit.jupiter.api.Assertions.assertNotNull(it.createdAt)
+                        assertNull(it.profileImagePath)
+                        assertNotNull(it.createdAt)
                     }
                 )
             }
+        }
+
+        @Test
+        fun `signing in with dotted email passes dotted email to auth service`() = runTest {
+            // Given
+            val dottedEmail = "pedraza.miguez@gmail.com"
+            coEvery { authenticationService.signIn(dottedEmail, password) } returns Result.success(userId)
+            coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
+
+            // When
+            val result = useCase(dottedEmail, password)
+
+            // Then
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { authenticationService.signIn(dottedEmail, password) }
         }
     }
 

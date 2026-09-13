@@ -1,15 +1,22 @@
 package es.pedrazamiguez.splittrip.data.firebase.auth.service.impl
 
+import android.util.Base64
 import com.google.android.gms.tasks.Tasks
+import com.google.firebase.auth.AdditionalUserInfo
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.SignInMethodQueryResult
+import com.google.firebase.auth.UserInfo
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
+import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.exception.AdminRestrictedOperationException
+import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
 import es.pedrazamiguez.splittrip.domain.model.User
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -17,6 +24,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import java.util.Base64 as JavaBase64
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -38,6 +46,12 @@ class AuthenticationServiceImplTest {
     private val testEmail = "user@example.com"
     private val testDisplayName = "Test User"
 
+    private fun createTestIdToken(email: String): String {
+        val payload = "{\"email\":\"$email\"}"
+        val encoded = JavaBase64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray(Charsets.UTF_8))
+        return "header.$encoded.signature"
+    }
+
     @BeforeEach
     fun setUp() {
         firebaseAuth = mockk(relaxed = true)
@@ -49,6 +63,16 @@ class AuthenticationServiceImplTest {
 
         mockkStatic(GoogleAuthProvider::class)
         mockkStatic(EmailAuthProvider::class)
+        mockkStatic(Base64::class)
+        every { Base64.decode(any<String>(), any<Int>()) } answers {
+            val input = firstArg<String>()
+            JavaBase64.getUrlDecoder().decode(input)
+        }
+
+        val defaultSignInResult = mockk<SignInMethodQueryResult> {
+            every { signInMethods } returns null
+        }
+        every { firebaseAuth.fetchSignInMethodsForEmail(any()) } returns Tasks.forResult(defaultSignInResult)
 
         service = AuthenticationServiceImpl(
             firebaseAuth = firebaseAuth,
@@ -61,13 +85,14 @@ class AuthenticationServiceImplTest {
     fun tearDown() {
         unmockkStatic(GoogleAuthProvider::class)
         unmockkStatic(EmailAuthProvider::class)
+        unmockkStatic(Base64::class)
     }
 
     @Nested
     inner class SignInWithGoogle {
 
         private fun mockSuccessfulGoogleSignIn(): FirebaseUser {
-            val credential = mockk<com.google.firebase.auth.AuthCredential>()
+            val credential = mockk<AuthCredential>()
             every { GoogleAuthProvider.getCredential(testIdToken, null) } returns credential
 
             val firebaseUser = mockk<FirebaseUser>()
@@ -79,7 +104,7 @@ class AuthenticationServiceImplTest {
             every { firebaseUser.photoUrl } returns null
             every { firebaseUser.metadata } returns null
 
-            val authResult = mockk<AuthResult>()
+            val authResult = mockk<AuthResult>(relaxed = true)
             every { authResult.user } returns firebaseUser
             every { firebaseAuth.signInWithCredential(credential) } returns Tasks.forResult(authResult)
 
@@ -143,7 +168,7 @@ class AuthenticationServiceImplTest {
         @Test
         fun `fails when Firebase user is null`() = runTest {
             // Given
-            val credential = mockk<com.google.firebase.auth.AuthCredential>()
+            val credential = mockk<AuthCredential>()
             every { GoogleAuthProvider.getCredential(testIdToken, null) } returns credential
 
             val authResult = mockk<AuthResult>()
@@ -165,7 +190,7 @@ class AuthenticationServiceImplTest {
         @Test
         fun `fails when signInWithCredential fails`() = runTest {
             // Given
-            val credential = mockk<com.google.firebase.auth.AuthCredential>()
+            val credential = mockk<AuthCredential>()
             every { GoogleAuthProvider.getCredential(testIdToken, null) } returns credential
             every {
                 firebaseAuth.signInWithCredential(credential)
@@ -177,6 +202,153 @@ class AuthenticationServiceImplTest {
             // Then
             assertTrue(result.isFailure)
             coVerify(exactly = 0) { cloudUserDataSource.saveUser(any()) }
+        }
+
+        @Test
+        fun `signInWithGoogle throws collision when canonical email has password provider`() = runTest {
+            // Given
+            val token = createTestIdToken("pedraza.miguez@gmail.com")
+            val canonicalEmail = "pedrazamiguez@gmail.com"
+            val queryResult = mockk<SignInMethodQueryResult>()
+            every { queryResult.signInMethods } returns listOf(EmailAuthProvider.PROVIDER_ID)
+            every { firebaseAuth.fetchSignInMethodsForEmail(canonicalEmail) } returns Tasks.forResult(queryResult)
+
+            // When
+            val result = service.signInWithGoogle(token)
+
+            // Then
+            assertTrue(result.isFailure)
+            val exception = result.exceptionOrNull()
+            assertTrue(exception is GoogleCollisionWithEmailPasswordException)
+            assertEquals(canonicalEmail, (exception as GoogleCollisionWithEmailPasswordException).email)
+            assertEquals(token, exception.idToken)
+            coVerify(exactly = 0) { firebaseAuth.signInWithCredential(any()) }
+        }
+
+        @Test
+        fun `signInWithGoogle deletes duplicate user when Firestore has canonical account`() = runTest {
+            // Given
+            val token = createTestIdToken("pedraza.miguez@gmail.com")
+            val canonicalEmail = "pedrazamiguez@gmail.com"
+
+            val credential = mockk<AuthCredential>()
+            every { GoogleAuthProvider.getCredential(token, null) } returns credential
+
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            every { firebaseUser.uid } returns "new-duplicate-uid"
+            every { firebaseUser.delete() } returns Tasks.forResult(null)
+
+            val additionalUserInfo = mockk<AdditionalUserInfo>()
+            every { additionalUserInfo.isNewUser } returns true
+
+            val authResult = mockk<AuthResult>()
+            every { authResult.user } returns firebaseUser
+            every { authResult.additionalUserInfo } returns additionalUserInfo
+            every { firebaseAuth.signInWithCredential(credential) } returns Tasks.forResult(authResult)
+
+            val existingUser = User(userId = "original-uid", email = canonicalEmail)
+            coEvery {
+                cloudUserDataSource.searchUsersByEmail(canonicalEmail, excludeUserId = "new-duplicate-uid")
+            } returns listOf(existingUser)
+
+            // When
+            val result = service.signInWithGoogle(token)
+
+            // Then
+            assertTrue(result.isFailure)
+            val exception = result.exceptionOrNull()
+            assertTrue(exception is GoogleCollisionWithEmailPasswordException)
+            assertEquals(canonicalEmail, (exception as GoogleCollisionWithEmailPasswordException).email)
+            assertEquals(token, exception.idToken)
+            coVerify(exactly = 1) { firebaseUser.delete() }
+            coVerify(exactly = 0) { cloudUserDataSource.saveUser(any()) }
+        }
+
+        @Test
+        fun `signInWithGoogle recovers orphaned duplicate user and routes to collision`() = runTest {
+            // Given
+            val token = createTestIdToken("pedraza.miguez@gmail.com")
+            val canonicalEmail = "pedrazamiguez@gmail.com"
+
+            val credential = mockk<AuthCredential>()
+            every { GoogleAuthProvider.getCredential(token, null) } returns credential
+
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            every { firebaseUser.uid } returns "orphaned-duplicate-uid"
+            every { firebaseUser.delete() } returns Tasks.forResult(null)
+
+            val additionalUserInfo = mockk<AdditionalUserInfo>()
+            every { additionalUserInfo.isNewUser } returns false
+
+            val authResult = mockk<AuthResult>()
+            every { authResult.user } returns firebaseUser
+            every { authResult.additionalUserInfo } returns additionalUserInfo
+            every { firebaseAuth.signInWithCredential(credential) } returns Tasks.forResult(authResult)
+
+            val existingUser = User(userId = "original-uid", email = canonicalEmail)
+            coEvery {
+                cloudUserDataSource.searchUsersByEmail(canonicalEmail, excludeUserId = "orphaned-duplicate-uid")
+            } returns listOf(existingUser)
+            coEvery { cloudUserDataSource.deleteUser("orphaned-duplicate-uid") } returns Unit
+
+            // When
+            val result = service.signInWithGoogle(token)
+
+            // Then
+            assertTrue(result.isFailure)
+            val exception = result.exceptionOrNull()
+            assertTrue(exception is GoogleCollisionWithEmailPasswordException)
+            assertEquals(canonicalEmail, (exception as GoogleCollisionWithEmailPasswordException).email)
+            assertEquals(token, exception.idToken)
+            coVerify(exactly = 1) { cloudUserDataSource.deleteUser("orphaned-duplicate-uid") }
+            coVerify(exactly = 1) { firebaseUser.delete() }
+            coVerify(exactly = 0) { cloudUserDataSource.saveUser(any()) }
+        }
+    }
+
+    @Nested
+    inner class SignIn {
+
+        @Test
+        fun `signIn succeeds with original email without fallback`() = runTest {
+            val email = "user@example.com"
+            val password = "password123"
+            val authResult = mockk<AuthResult>()
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.uid } returns testUserId
+            every { authResult.user } returns firebaseUser
+            every { firebaseAuth.signInWithEmailAndPassword(email, password) } returns Tasks.forResult(authResult)
+
+            val result = service.signIn(email, password)
+
+            assertTrue(result.isSuccess)
+            assertEquals(testUserId, result.getOrNull())
+            coVerify(exactly = 1) { firebaseAuth.signInWithEmailAndPassword(email, password) }
+        }
+
+        @Test
+        fun `signIn falls back to canonical email when dotted email fails`() = runTest {
+            val dottedEmail = "pedraza.miguez@gmail.com"
+            val canonicalEmail = "pedrazamiguez@gmail.com"
+            val password = "password123"
+            val authResult = mockk<AuthResult>()
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.uid } returns testUserId
+            every { authResult.user } returns firebaseUser
+
+            every {
+                firebaseAuth.signInWithEmailAndPassword(dottedEmail, password)
+            } returns Tasks.forException(RuntimeException("User not found"))
+            every {
+                firebaseAuth.signInWithEmailAndPassword(canonicalEmail, password)
+            } returns Tasks.forResult(authResult)
+
+            val result = service.signIn(dottedEmail, password)
+
+            assertTrue(result.isSuccess)
+            assertEquals(testUserId, result.getOrNull())
+            coVerify(exactly = 1) { firebaseAuth.signInWithEmailAndPassword(dottedEmail, password) }
+            coVerify(exactly = 1) { firebaseAuth.signInWithEmailAndPassword(canonicalEmail, password) }
         }
     }
 
@@ -314,6 +486,25 @@ class AuthenticationServiceImplTest {
             assertEquals("Firebase error", result.exceptionOrNull()?.message)
             coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(email) }
         }
+
+        @Test
+        fun `sendPasswordResetEmail falls back to canonical email when dotted email fails`() = runTest {
+            val dottedEmail = "pedraza.miguez@gmail.com"
+            val canonicalEmail = "pedrazamiguez@gmail.com"
+
+            every {
+                firebaseAuth.sendPasswordResetEmail(dottedEmail)
+            } returns Tasks.forException(RuntimeException("User not found"))
+            every {
+                firebaseAuth.sendPasswordResetEmail(canonicalEmail)
+            } returns Tasks.forResult(null)
+
+            val result = service.sendPasswordResetEmail(dottedEmail)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(dottedEmail) }
+            coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(canonicalEmail) }
+        }
     }
 
     @Nested
@@ -342,7 +533,7 @@ class AuthenticationServiceImplTest {
         fun `linkEmailPassword calls linkWithCredential on firebaseAuth currentUser`() = runTest {
             // Given
             val firebaseUser = mockk<FirebaseUser>(relaxed = true)
-            val credential = mockk<com.google.firebase.auth.AuthCredential>()
+            val credential = mockk<AuthCredential>()
             every { EmailAuthProvider.getCredential("email@test.com", "password123") } returns credential
             every { firebaseAuth.currentUser } returns firebaseUser
             every { firebaseUser.linkWithCredential(credential) } returns Tasks.forResult(mockk())
@@ -354,6 +545,23 @@ class AuthenticationServiceImplTest {
             assertTrue(result.isSuccess)
             coVerify(exactly = 1) { firebaseUser.linkWithCredential(credential) }
         }
+
+        @Test
+        fun `linkEmailPassword preserves dots in credential`() = runTest {
+            val dottedEmail = "pedraza.miguez@gmail.com"
+            val password = "password123"
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            val credential = mockk<AuthCredential>()
+            every { EmailAuthProvider.getCredential(dottedEmail, password) } returns credential
+            every { firebaseAuth.currentUser } returns firebaseUser
+            every { firebaseUser.linkWithCredential(credential) } returns Tasks.forResult(mockk())
+
+            val result = service.linkEmailPassword(dottedEmail, password)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { EmailAuthProvider.getCredential(dottedEmail, password) }
+            coVerify(exactly = 1) { firebaseUser.linkWithCredential(credential) }
+        }
     }
 
     @Nested
@@ -363,8 +571,8 @@ class AuthenticationServiceImplTest {
         fun `unlinkProvider unlinks when multiple providers exist`() = runTest {
             // Given
             val firebaseUser = mockk<FirebaseUser>(relaxed = true)
-            val providerInfo1 = mockk<com.google.firebase.auth.UserInfo>()
-            val providerInfo2 = mockk<com.google.firebase.auth.UserInfo>()
+            val providerInfo1 = mockk<UserInfo>()
+            val providerInfo2 = mockk<UserInfo>()
             every { providerInfo1.providerId } returns "password"
             every { providerInfo2.providerId } returns "google.com"
 
@@ -373,7 +581,7 @@ class AuthenticationServiceImplTest {
             every { firebaseUser.unlink("google.com") } returns Tasks.forResult(mockk())
 
             // When
-            val result = service.unlinkProvider(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.GOOGLE)
+            val result = service.unlinkProvider(AuthProviderType.GOOGLE)
 
             // Then
             assertTrue(result.isSuccess)
@@ -384,14 +592,14 @@ class AuthenticationServiceImplTest {
         fun `unlinkProvider fails when it is the last remaining provider`() = runTest {
             // Given
             val firebaseUser = mockk<FirebaseUser>(relaxed = true)
-            val providerInfo = mockk<com.google.firebase.auth.UserInfo>()
+            val providerInfo = mockk<UserInfo>()
             every { providerInfo.providerId } returns "password"
 
             every { firebaseAuth.currentUser } returns firebaseUser
             every { firebaseUser.providerData } returns listOf(providerInfo)
 
             // When
-            val result = service.unlinkProvider(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.EMAIL_PASSWORD)
+            val result = service.unlinkProvider(AuthProviderType.EMAIL_PASSWORD)
 
             // Then
             assertTrue(result.isFailure)
@@ -407,8 +615,8 @@ class AuthenticationServiceImplTest {
         fun `getLinkedProviders returns mapped AuthProviderType list`() = runTest {
             // Given
             val firebaseUser = mockk<FirebaseUser>(relaxed = true)
-            val providerInfo1 = mockk<com.google.firebase.auth.UserInfo>()
-            val providerInfo2 = mockk<com.google.firebase.auth.UserInfo>()
+            val providerInfo1 = mockk<UserInfo>()
+            val providerInfo2 = mockk<UserInfo>()
             every { providerInfo1.providerId } returns "password"
             every { providerInfo2.providerId } returns "google.com"
 
@@ -422,8 +630,8 @@ class AuthenticationServiceImplTest {
             assertTrue(result.isSuccess)
             val providers = result.getOrNull()!!
             assertEquals(2, providers.size)
-            assertTrue(providers.contains(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.EMAIL_PASSWORD))
-            assertTrue(providers.contains(es.pedrazamiguez.splittrip.domain.enums.AuthProviderType.GOOGLE))
+            assertTrue(providers.contains(AuthProviderType.EMAIL_PASSWORD))
+            assertTrue(providers.contains(AuthProviderType.GOOGLE))
         }
     }
 

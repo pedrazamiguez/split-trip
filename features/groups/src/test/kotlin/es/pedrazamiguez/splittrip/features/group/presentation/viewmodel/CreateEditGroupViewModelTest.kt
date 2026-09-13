@@ -512,6 +512,24 @@ class CreateEditGroupViewModelTest {
         }
 
         @Test
+        fun `MemberSearchQueryChanged with equivalent Gmail address of current user returns empty list`() = runTest(
+            testDispatcher
+        ) {
+            every { authenticationService.currentUserEmail() } returns "pedraza.miguez@gmail.com"
+            viewModel = createViewModel()
+            viewModel.init(null)
+            advanceUntilIdle()
+
+            coEvery { searchUsersByEmailUseCase("pedrazamiguez@gmail.com") } returns Result.success(emptyList())
+
+            onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged("pedrazamiguez@gmail.com"))
+            advanceUntilIdle()
+
+            val results = viewModel.uiState.value.memberSearchResults
+            assertTrue(results.isEmpty())
+        }
+
+        @Test
         fun `MemberSearchQueryChanged with valid email but no registered users creates pending user`() = runTest(
             testDispatcher
         ) {

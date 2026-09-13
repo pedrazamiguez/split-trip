@@ -365,9 +365,9 @@ class CreateEditGroupViewModel(
 
     private fun getPendingUserResults(query: String, selectedIds: Set<String>): List<User> {
         val normalizedEmail = User.normalizeEmail(query)
-        val normalizedCurrentUserEmail = _uiState.value.currentUserEmail?.let { User.normalizeEmail(it) }
+        val currentUserEmail = _uiState.value.currentUserEmail
 
-        if (normalizedEmail == normalizedCurrentUserEmail) return emptyList()
+        if (currentUserEmail != null && User.areEmailsEquivalent(query, currentUserEmail)) return emptyList()
 
         val pendingUserId = User.generatePendingUserId(normalizedEmail)
         return if (pendingUserId !in selectedIds) {

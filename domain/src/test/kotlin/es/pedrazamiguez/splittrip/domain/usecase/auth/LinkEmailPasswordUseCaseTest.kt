@@ -40,6 +40,8 @@ class LinkEmailPasswordUseCaseTest {
         )
 
         coEvery { authenticationService.requireUserId() } returns userId
+        coEvery { authenticationService.isAnonymous() } returns true
+        coEvery { authenticationService.currentUserEmail() } returns null
         coEvery { userRepository.getCurrentUserProfile() } returns User(userId, "", "user", null, null)
         coEvery { userRepository.saveUser(any()) } returns Result.success(Unit)
         coEvery { reconcileUnregisteredUserUseCase(any(), any()) } returns Result.success(Unit)
@@ -119,5 +121,49 @@ class LinkEmailPasswordUseCaseTest {
         assertEquals("email", savedUser.displayName)
         assertNull(savedUser.profileImagePath)
         assertNotNull(savedUser.createdAt)
+    }
+
+    @Test
+    fun `linking email matching current profile email succeeds and preserves dots`() = runTest {
+        val currentProfileEmail = "pedraza.miguez@gmail.com"
+        val inputEmail = "pedrazamiguez@gmail.com"
+        coEvery { authenticationService.isAnonymous() } returns false
+        coEvery { authenticationService.currentUserEmail() } returns currentProfileEmail
+        coEvery { authenticationService.linkEmailPassword(currentProfileEmail, password) } returns Result.success(Unit)
+
+        val result = useCase(inputEmail, password)
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) { authenticationService.linkEmailPassword(currentProfileEmail, password) }
+        coVerify(exactly = 1) { reconcileUnregisteredUserUseCase(currentProfileEmail, userId) }
+    }
+
+    @Test
+    fun `linking email differing from current profile email fails with IllegalArgumentException`() = runTest {
+        val currentProfileEmail = "pedraza.miguez@gmail.com"
+        val inputEmail = "completely.different@example.com"
+        coEvery { authenticationService.isAnonymous() } returns false
+        coEvery { authenticationService.currentUserEmail() } returns currentProfileEmail
+
+        val result = useCase(inputEmail, password)
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+        coVerify(exactly = 0) { authenticationService.linkEmailPassword(any(), any()) }
+        coVerify(exactly = 0) { reconcileUnregisteredUserUseCase(any(), any()) }
+    }
+
+    @Test
+    fun `linking email for anonymous user succeeds with provided email`() = runTest {
+        val inputEmail = "new.user@gmail.com"
+        coEvery { authenticationService.isAnonymous() } returns true
+        coEvery { authenticationService.currentUserEmail() } returns null
+        coEvery { authenticationService.linkEmailPassword(inputEmail, password) } returns Result.success(Unit)
+
+        val result = useCase(inputEmail, password)
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) { authenticationService.linkEmailPassword(inputEmail, password) }
+        coVerify(exactly = 1) { reconcileUnregisteredUserUseCase(inputEmail, userId) }
     }
 }
