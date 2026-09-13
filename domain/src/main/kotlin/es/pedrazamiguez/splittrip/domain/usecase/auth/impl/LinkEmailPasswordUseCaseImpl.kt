@@ -16,12 +16,19 @@ class LinkEmailPasswordUseCaseImpl(
 ) : LinkEmailPasswordUseCase {
 
     override suspend operator fun invoke(email: String, password: String): Result<Unit> = runCatching {
-        val normalizedEmail = User.normalizeEmail(email)
-        authenticationService.linkEmailPassword(normalizedEmail, password).getOrThrow()
+        val currentEmail = authenticationService.currentUserEmail()
+        val isAnon = authenticationService.isAnonymous()
+        if (!isAnon && !currentEmail.isNullOrBlank()) {
+            require(User.areEmailsEquivalent(email, currentEmail)) {
+                "Email must match the existing account's email"
+            }
+        }
+        val targetEmail = if (!isAnon && !currentEmail.isNullOrBlank()) currentEmail else User.normalizeEmail(email)
+        authenticationService.linkEmailPassword(targetEmail, password).getOrThrow()
         val userId = authenticationService.requireUserId()
 
         val existingProfile = userRepository.getCurrentUserProfile()
-        val profileToSave = existingProfile?.copy(email = normalizedEmail) ?: run {
+        val profileToSave = existingProfile?.copy(email = targetEmail) ?: run {
             val creationTimestamp = authenticationService.getCurrentUserCreationTimestamp()
             val createdAt = if (creationTimestamp != null) {
                 LocalDateTime.ofInstant(Instant.ofEpochMilli(creationTimestamp), ZoneOffset.UTC)
@@ -30,14 +37,14 @@ class LinkEmailPasswordUseCaseImpl(
             }
             User(
                 userId = userId,
-                email = normalizedEmail,
-                displayName = normalizedEmail.substringBefore("@"),
+                email = targetEmail,
+                displayName = targetEmail.substringBefore("@"),
                 profileImagePath = null,
                 createdAt = createdAt
             )
         }
         userRepository.saveUser(profileToSave).getOrThrow()
 
-        reconcileUnregisteredUserUseCase(normalizedEmail, userId)
+        reconcileUnregisteredUserUseCase(targetEmail, userId)
     }
 }

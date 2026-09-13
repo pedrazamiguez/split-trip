@@ -303,6 +303,25 @@ class AccountStatusEventHandlerImplTest {
             assertTrue(emittedActions.any { it is AccountStatusUiAction.ShowSuccess })
             collectJob.cancel()
         }
+
+        @Test
+        fun `submitting email password link with IllegalArgumentException sets error`() = runTest(testDispatcher) {
+            stateFlow.value = stateFlow.value.copy(email = "test@example.com")
+            coEvery { linkEmailPasswordUseCase("test@example.com", "password123") } returns
+                Result.failure(IllegalArgumentException("Email must match the existing account's email"))
+
+            handler.handleLinkPasswordChanged("password123")
+            handler.handleLinkConfirmPasswordChanged("password123")
+            handler.handleSubmitLinkEmailPassword()
+            advanceUntilIdle()
+
+            assertFalse(stateFlow.value.isLinking)
+            assertNotNull(stateFlow.value.linkPasswordError)
+            assertTrue(stateFlow.value.linkPasswordError is UiText.StringResource)
+            val errorRes = stateFlow.value.linkPasswordError as UiText.StringResource
+            assertEquals(R.string.account_status_error_prefix, errorRes.resId)
+            assertEquals("Email must match the existing account's email", errorRes.args.firstOrNull())
+        }
     }
 
     @Nested

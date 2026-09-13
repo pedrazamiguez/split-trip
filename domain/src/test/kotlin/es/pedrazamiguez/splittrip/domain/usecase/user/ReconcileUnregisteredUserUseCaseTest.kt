@@ -60,6 +60,31 @@ class ReconcileUnregisteredUserUseCaseTest {
         }
 
         @Test
+        fun `reconciles both exact and canonical pending user IDs when they differ`() = runTest {
+            // Given
+            val email = "pedraza.miguez@gmail.com"
+            val activeUserId = "active-user-123"
+            val exactPendingId = User.generatePendingUserId(email)
+            val canonicalPendingId = User.generatePendingUserId(User.canonicalizeEmail(email))
+
+            coEvery { groupRepository.reconcileUnregisteredUser(exactPendingId, activeUserId) } returns Unit
+            coEvery { userRepository.deletePendingUser(exactPendingId) } returns Result.success(Unit)
+            coEvery { groupRepository.reconcileUnregisteredUser(canonicalPendingId, activeUserId) } returns Unit
+            coEvery { userRepository.deletePendingUser(canonicalPendingId) } returns Result.success(Unit)
+
+            // When
+            val result = useCase(email, activeUserId)
+
+            // Then
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { groupRepository.reconcileUnregisteredUser(exactPendingId, activeUserId) }
+            coVerify(exactly = 1) { userRepository.deletePendingUser(exactPendingId) }
+            coVerify(exactly = 1) { groupRepository.reconcileUnregisteredUser(canonicalPendingId, activeUserId) }
+            coVerify(exactly = 1) { userRepository.deletePendingUser(canonicalPendingId) }
+            coVerify(exactly = 1) { userPreferenceRepository.setIsReconciled(true) }
+        }
+
+        @Test
         fun `returns early and does nothing if already reconciled`() = runTest {
             // Given
             val email = "pending@example.com"
