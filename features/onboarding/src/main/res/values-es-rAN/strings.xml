@@ -4,6 +4,17 @@
     <string name="onboarding_welcome_title">¿Lîtto pa biahâh çin líô?</string>
     <string name="onboarding_welcome_subtitle">Comparte gâttô con tu grupo çin comberçaçionê incómodâ çobre dinero</string>
     <string name="onboarding_complete_button">¡Empeçamô!</string>
+    <string name="onboarding_next_button">Çigiente</string>
+    <string name="onboarding_back_button">Atrâh</string>
+    <string name="onboarding_skip_button">Çartâh</string>
+    <string name="onboarding_step_trips_title">Biahê y grupô</string>
+    <string name="onboarding_step_trips_description">Organiça lô gâttô der biahe con tû amigô, hêttiona múrtiplê dibiçâ y mantén lâ cuentâ clarâ de prinçipio a fin.</string>
+    <string name="onboarding_step_split_title">Reparto intelihente</string>
+    <string name="onboarding_step_split_description">Dibide lô gâttô a tu manera: a partê igualê, importê êççâttô, porçentahê o çubunidadê pa parehâ y familiâ. Âhhunta tickets pa un rehîttro trâpparente.</string>
+    <string name="onboarding_step_cash_title">Efêttibo y Pockêh</string>
+    <string name="onboarding_step_cash_description">Controla el efêttibo fíçico compartío hunto con lô pagô con tarheta. Rehîttra retirâh y aportaçionê ar pockêh con comberçión de dibiçâ automática.</string>
+    <string name="onboarding_step_settle_title">Conçenço y acuerdô de pago</string>
+    <string name="onboarding_step_settle_description">Conoçe tu çardo êççâtto en cuarquiêh momento. Çarda cuentâ fáçirmente con confirmaçión mutua pa que tôh êttén de acuerdo.</string>
     <string name="reconciliation_title">¡Te êttábamô êpperando!</string>
     <string name="reconciliation_message">Tû amigô ya te an añadío a grupô y rehîttrao gâttô baho %1$s. Toca abaho pa recuperâh tôh tû datô.</string>
     <string name="reconciliation_migrate_button">Migrâh mî datô</string>
