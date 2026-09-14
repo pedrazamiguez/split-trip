@@ -89,8 +89,12 @@ export const onExpenseUpdated = onDocumentUpdated(
     const tokens = await getRecipientTokens(groupId, actorId, groupData.memberIds);
     if (tokens.length === 0) return;
 
-    const currency = after.currency || groupData.currency;
-    const amountCents = after.groupAmountCents ?? after.amountCents;
+    const hasGroupAmount =
+      after.groupAmountCents !== undefined && after.groupAmountCents !== null;
+    const amountCents = hasGroupAmount ? after.groupAmountCents! : after.amountCents;
+    const currency = hasGroupAmount
+      ? after.groupCurrency || groupData.currency
+      : after.currency || groupData.currency;
     const formattedAmount = formatAmount(amountCents, currency);
 
     const payload: FcmDataPayload = {

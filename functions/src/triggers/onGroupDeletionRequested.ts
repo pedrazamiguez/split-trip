@@ -168,8 +168,10 @@ export const onGroupDeletionRequested = onDocumentUpdated(
               const display: NotificationDisplay = {
                 title: groupName,
                 titleLocKey: "notification_group_deleted_title",
-                bodyLocKey: "notification_group_deleted_body",
-                bodyLocArgs: [actorName, groupName],
+                bodyLocKey: groupName
+                  ? "notification_group_deleted_body"
+                  : "notification_group_deleted_body_brief",
+                bodyLocArgs: groupName ? [actorName, groupName] : [actorName],
                 channelId: NotificationChannelId.MEMBERSHIP,
               };
 
