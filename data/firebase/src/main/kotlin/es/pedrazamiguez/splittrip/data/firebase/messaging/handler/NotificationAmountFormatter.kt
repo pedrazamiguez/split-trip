@@ -18,12 +18,22 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
  * Falls back to an empty string if the required fields are missing.
  */
 fun formatNotificationAmount(data: Map<String, String>, localeProvider: LocaleProvider): String {
-    val amountCents = data["amountCents"]?.toLongOrNull() ?: return ""
-    val currencyCode = data["currencyCode"] ?: return ""
+    val amountCents = data["amountCents"]?.toLongOrNull()
+    val currencyCode = data["currencyCode"]
 
-    return formatCurrencyAmount(
-        amount = amountCents,
-        currencyCode = currencyCode,
-        locale = localeProvider.getCurrentLocale()
-    ).replace("\u00A0", "\u2800")
+    if (amountCents != null && !currencyCode.isNullOrBlank()) {
+        val formatted = runCatching {
+            formatCurrencyAmount(
+                amount = amountCents,
+                currencyCode = currencyCode,
+                locale = localeProvider.getCurrentLocale()
+            )
+        }.getOrNull()
+
+        if (formatted != null) {
+            return formatted.replace("\u00A0", "\u2800")
+        }
+    }
+
+    return data["formattedAmount"]?.replace("\u00A0", "\u2800") ?: ""
 }

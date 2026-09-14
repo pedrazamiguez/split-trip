@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notification_expense_added_title">Expense added</string>
-    <string name="notification_expense_added_body">%1$s added an expense of %2$s</string>
+    <string name="notification_expense_added_body">%1$s added an expense: %2$s</string>
     <string name="notification_expense_added_body_brief">%1$s added a new expense</string>
     <string name="notification_expense_updated_title">Expense updated</string>
     <string name="notification_expense_updated_body">%1$s updated an expense to %2$s</string>
@@ -42,9 +42,14 @@
     <!-- Notification group summary -->
     <string name="notification_group_summary">%1$d new notifications</string>
     <string name="notification_settlement_request_title">Settlement request</string>
-    <string name="notification_settlement_request_body">%1$s requested a settlement of %2$s</string>
-    <string name="notification_settlement_confirmed_body">%1$s confirmed receiving %2$s from you</string>
-    <string name="notification_settlement_disputed_body">%1$s disputed a settlement of %2$s</string>
+    <string name="notification_settlement_request_body">%1$s requested a payment of %2$s</string>
+    <string name="notification_settlement_confirmed_title">Payment confirmed</string>
+    <string name="notification_settlement_confirmed_body">%1$s confirmed receipt of %2$s</string>
+    <string name="notification_settlement_disputed_title">Payment disputed</string>
+    <string name="notification_settlement_disputed_body">%1$s disputed a payment of %2$s</string>
+    <string name="notification_group_deleted_title">Group deleted</string>
+    <string name="notification_group_deleted_body">%1$s deleted the group %2$s</string>
+    <string name="notification_group_deleted_body_brief">%1$s deleted the group</string>
     
     <!-- Reminders -->
     <string name="notification_scheduled_reminder_title">Upcoming Scheduled Expense</string>

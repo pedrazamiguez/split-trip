@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notification_expense_added_title">Gasto añadido</string>
-    <string name="notification_expense_added_body">%1$s añadió un gasto de %2$s</string>
+    <string name="notification_expense_added_body">%1$s añadió un gasto: %2$s</string>
     <string name="notification_expense_added_body_brief">%1$s añadió un nuevo gasto</string>
     <string name="notification_expense_updated_title">Gasto actualizado</string>
     <string name="notification_expense_updated_body">%1$s actualizó un gasto a %2$s</string>
@@ -43,8 +43,13 @@
     <string name="notification_group_summary">%1$d nuevas notificaciones</string>
     <string name="notification_settlement_request_title">Solicitud de pago</string>
     <string name="notification_settlement_request_body">%1$s solicitó un pago de %2$s</string>
-    <string name="notification_settlement_confirmed_body">%1$s confirmó haber recibido %2$s de tu parte</string>
+    <string name="notification_settlement_confirmed_title">Pago confirmado</string>
+    <string name="notification_settlement_confirmed_body">%1$s confirmó la recepción de %2$s</string>
+    <string name="notification_settlement_disputed_title">Pago disputado</string>
     <string name="notification_settlement_disputed_body">%1$s disputó un pago de %2$s</string>
+    <string name="notification_group_deleted_title">Grupo eliminado</string>
+    <string name="notification_group_deleted_body">%1$s eliminó el grupo %2$s</string>
+    <string name="notification_group_deleted_body_brief">%1$s eliminó el grupo</string>
     
     <!-- Reminders -->
     <string name="notification_scheduled_reminder_title">Próximo gasto programado</string>

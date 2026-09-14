@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.DefaultHa
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.ExpenseAddedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.ExpenseDeletedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.ExpenseUpdatedHandler
+import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.GroupDeletedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.MemberAddedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.MemberRemovedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.RefundableExpenseReminderHandler
@@ -95,8 +96,8 @@ class NotificationHandlerFactoryTest {
     }
 
     @Test
-    fun `GROUP_DELETED falls through to DefaultHandler`() {
-        assertTrue(factory.getHandler(NotificationType.GROUP_DELETED) is DefaultHandler)
+    fun `GROUP_DELETED returns GroupDeletedHandler`() {
+        assertTrue(factory.getHandler(NotificationType.GROUP_DELETED) is GroupDeletedHandler)
     }
 
     @Test

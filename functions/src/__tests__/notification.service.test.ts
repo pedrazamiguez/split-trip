@@ -49,6 +49,7 @@ describe("notification.service", () => {
     groupId: "group123",
     groupName: "Trip to Japan",
     memberName: "Alice",
+    actorName: "Alice",
     deepLink: "splittrip://groups/group123/expenses/exp456",
     entityId: "exp456",
     amountCents: "4500",
@@ -186,6 +187,7 @@ describe("notification.service", () => {
       groupId: "group123",
       groupName: "My Group",
       memberName: "Bob",
+      actorName: "Bob",
       deepLink: "splittrip://groups/group123",
     };
 

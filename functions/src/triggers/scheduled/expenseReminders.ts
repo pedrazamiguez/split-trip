@@ -36,7 +36,7 @@ export const expenseReminders = functions.scheduler.onSchedule(
       // Get group members
       const groupDoc = await db.collection("groups").doc(groupId).get();
       if (!groupDoc.exists) continue;
-      
+
       const memberIds = groupDoc.data()?.members || [];
       if (memberIds.length === 0) continue;
 
@@ -47,32 +47,36 @@ export const expenseReminders = functions.scheduler.onSchedule(
         const user = userDoc.data()!;
         const timezone = user.timezone || "UTC";
         const preferredReminderTime = user.preferredReminderTime || "12:00";
-        
+
         // Parse the preferred reminder time
         const [prefHour] = preferredReminderTime.split(":").map(Number);
-        
+
         // Check if the current time in the user's timezone matches the preferred hour
         const userNow = toZonedTime(now, timezone);
-        
+
         // We run hourly, so we just check if the hour matches
         if (userNow.getHours() === prefHour) {
-            
           const userDueDate = toZonedTime(dueDate, timezone);
           const userTomorrow = addDays(userNow, 1);
 
-          const isToday = userDueDate.getFullYear() === userNow.getFullYear() &&
-                userDueDate.getMonth() === userNow.getMonth() &&
-                userDueDate.getDate() === userNow.getDate();
+          const isToday =
+            userDueDate.getFullYear() === userNow.getFullYear() &&
+            userDueDate.getMonth() === userNow.getMonth() &&
+            userDueDate.getDate() === userNow.getDate();
 
-          const isTomorrow = userDueDate.getFullYear() === userTomorrow.getFullYear() &&
-                userDueDate.getMonth() === userTomorrow.getMonth() &&
-                userDueDate.getDate() === userTomorrow.getDate();
+          const isTomorrow =
+            userDueDate.getFullYear() === userTomorrow.getFullYear() &&
+            userDueDate.getMonth() === userTomorrow.getMonth() &&
+            userDueDate.getDate() === userTomorrow.getDate();
 
           let type: string | null = null;
           if (isToday && paymentStatus === "SCHEDULED") {
             type = "EXPENSE_SCHEDULED_EFFECTIVE";
           } else if (isTomorrow) {
-            type = paymentStatus === "SCHEDULED" ? "EXPENSE_SCHEDULED_REMINDER" : "EXPENSE_REFUNDABLE_REMINDER";
+            type =
+              paymentStatus === "SCHEDULED"
+                ? "EXPENSE_SCHEDULED_REMINDER"
+                : "EXPENSE_REFUNDABLE_REMINDER";
           }
 
           if (type) {
@@ -89,15 +93,17 @@ export const expenseReminders = functions.scheduler.onSchedule(
                 data: {
                   type,
                   expenseId,
-                  groupId
+                  groupId,
                 },
-                tokens: tokens
+                tokens: tokens,
               };
 
               try {
                 const response = await messaging.sendEachForMulticast(payload);
                 if (response.failureCount > 0) {
-                  console.warn(`Failed to send ${response.failureCount} notifications for user ${memberId}`);
+                  console.warn(
+                    `Failed to send ${response.failureCount} notifications for user ${memberId}`
+                  );
                 }
               } catch (e) {
                 console.error(`Error sending notification to user ${memberId}`, e);

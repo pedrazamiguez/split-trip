@@ -12,23 +12,33 @@ import es.pedrazamiguez.splittrip.domain.model.NotificationContent
 class CashWithdrawalHandler(private val context: Context, private val localeProvider: LocaleProvider) :
     NotificationHandler {
     override fun handle(data: Map<String, String>): NotificationContent {
-        val memberName = data["memberName"] ?: "Someone"
-        val actorName = data["actorName"]
+        val fallbackName = context.getString(R.string.notification_fallback_actor_name)
+        val rawActorName = data["actorName"]
+        val rawMemberName = data["memberName"]
+        val isImpersonation = rawActorName != null && rawMemberName != null && rawActorName != rawMemberName
+
+        val actorName = rawActorName ?: fallbackName
+        val memberName = rawMemberName ?: fallbackName
         val amount = formatNotificationAmount(data, localeProvider)
         val groupName = data["groupName"] ?: ""
         val groupId = data["groupId"]
 
-        val body = if (actorName != null) {
+        val body = if (isImpersonation) {
             context.getString(
                 R.string.notification_cash_withdrawal_body_on_behalf,
                 actorName,
                 memberName
             )
-        } else {
+        } else if (amount.isNotBlank()) {
             context.getString(
                 R.string.notification_cash_withdrawal_body,
                 memberName,
                 amount
+            )
+        } else {
+            context.getString(
+                R.string.notification_cash_withdrawal_body_brief,
+                memberName
             )
         }
 
