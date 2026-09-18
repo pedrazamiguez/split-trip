@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -38,8 +39,11 @@ class MainActivity : AppCompatActivity() {
         // dropped. We preserve it here for replay after the gate completes.
         // When the user IS authenticated, NavHost natively processes the intent's
         // deep link on first composition (startDestination = Routes.MAIN).
-        if (intent?.action == Intent.ACTION_VIEW && intent?.data != null) {
-            deepLinkHolder.pendingDeepLink = intent.data
+        val deepLinkUri = extractDeepLinkUri(intent)
+        if (deepLinkUri != null) {
+            deepLinkHolder.pendingDeepLink = deepLinkUri
+            intent?.data = deepLinkUri
+            intent?.action = Intent.ACTION_VIEW
         }
 
         setContent {
@@ -63,14 +67,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
+        setIntent(intent)
+        val deepLinkUri = extractDeepLinkUri(intent)
+        if (deepLinkUri != null) {
+            intent.data = deepLinkUri
+            intent.action = Intent.ACTION_VIEW
             // Deep link intent — check if we're past the auth gate before forwarding.
             // If the user is on login/onboarding, forwarding the deep link would
             // navigate directly to Routes.MAIN, bypassing authentication.
             val currentRoute = navHostController?.currentDestination?.route
             if (currentRoute == Routes.LOGIN || currentRoute == Routes.ONBOARDING) {
                 // Buffer for later replay after auth/onboarding completes
-                deepLinkHolder.pendingDeepLink = intent.data
+                deepLinkHolder.pendingDeepLink = deepLinkUri
             } else {
                 navHostController?.handleDeepLink(intent)
             }
@@ -78,4 +86,13 @@ class MainActivity : AppCompatActivity() {
             navHostController?.handleDeepLink(intent)
         }
     }
+
+    private fun extractDeepLinkUri(intent: Intent?): Uri? {
+        if (intent == null) return null
+        return intent.data ?: intent.extras?.getString(EXTRA_DEEP_LINK)?.takeIf { it.isNotBlank() }?.let {
+            Uri.parse(it)
+        }
+    }
 }
+
+private const val EXTRA_DEEP_LINK = "deepLink"

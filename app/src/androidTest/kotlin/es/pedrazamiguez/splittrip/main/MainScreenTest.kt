@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
@@ -205,5 +206,80 @@ class MainScreenTest {
 
         // Profile content should now be visible
         composeRule.onNodeWithText("Content: Profile").assertIsDisplayed()
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  Deep Link & In-Tab Navigation
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun deepLinkWithInTabDestination_navigatesToInTabDestination() {
+        val balancesProviderWithSub = FakeNavigationProvider(
+            route = "balances",
+            order = 20,
+            requiresSelectedGroup = true,
+            label = "Balances",
+            subRoutes = listOf(Routes.YOUR_POSITION)
+        )
+        val providers = listOf(
+            groupsProvider,
+            balancesProviderWithSub,
+            expensesProvider,
+            profileProvider
+        )
+
+        composeRule.setContent {
+            SplitTripTheme {
+                MainScreen(
+                    navigationProviders = providers,
+                    screenUiProviders = emptyList(),
+                    deepLinkGroupId = "group-123",
+                    deepLinkTargetTab = "balances",
+                    deepLinkInTabDestination = Routes.YOUR_POSITION,
+                    mainViewModel = createMainViewModel(),
+                    sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Content: Balances - ${Routes.YOUR_POSITION}").assertIsDisplayed()
+    }
+
+    @Test
+    fun deepLinkWithExpenseDetail_navigatesToExpenseDetail() {
+        val expenseDetailRoute = Routes.expenseDetailRoute("expense-999")
+        val expensesProviderWithSub = FakeNavigationProvider(
+            route = "expenses",
+            order = 30,
+            requiresSelectedGroup = true,
+            label = "Expenses",
+            subRoutes = listOf(expenseDetailRoute)
+        )
+        val providers = listOf(
+            groupsProvider,
+            balancesProvider,
+            expensesProviderWithSub,
+            profileProvider
+        )
+
+        composeRule.setContent {
+            SplitTripTheme {
+                MainScreen(
+                    navigationProviders = providers,
+                    screenUiProviders = emptyList(),
+                    deepLinkGroupId = "group-123",
+                    deepLinkTargetTab = "expenses",
+                    deepLinkInTabDestination = expenseDetailRoute,
+                    mainViewModel = createMainViewModel(),
+                    sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Content: Expenses - $expenseDetailRoute").assertIsDisplayed()
     }
 }
