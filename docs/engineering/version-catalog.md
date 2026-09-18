@@ -36,6 +36,10 @@ The plugin configuration is located in the root [build.gradle.kts](../build.grad
 ```kotlin
 versionCatalogUpdate {
     sortByKey.set(true)
+    pin {
+        versions.add("kotlin")
+        versions.add("ksp")
+    }
     keep {
         // Prevent deleting versions only referenced programmatically in build-logic scripts
         keepUnusedVersions.set(true)
@@ -45,7 +49,34 @@ versionCatalogUpdate {
 
 ### Key Configurations:
 1. **`sortByKey.set(true)`**: Tells the plugin to keep entries in `libs.versions.toml` sorted alphabetically under `[versions]`, `[libraries]`, and `[plugins]`.
-2. **`keep { keepUnusedVersions.set(true) }`**: **Critical.** By default, the plugin removes any version in the `[versions]` block that isn't directly referenced in the `[libraries]` or `[plugins]` blocks of the TOML file. Because some versions (e.g. `jacoco`, `ktlint`) are referenced programmatically in custom Gradle precompiled script plugins inside `:build-logic` rather than the TOML itself, this setting prevents them from being deleted as "unused".
+2. **`pin { versions.add(...) }`**: Pins specific dependencies so that automated update tasks will not bump them even when newer stable releases exist on Maven repositories.
+3. **`keep { keepUnusedVersions.set(true) }`**: **Critical.** By default, the plugin removes any version in the `[versions]` block that isn't directly referenced in the `[libraries]` or `[plugins]` blocks of the TOML file. Because some versions (e.g. `jacoco`, `ktlint`) are referenced programmatically in custom Gradle precompiled script plugins inside `:build-logic` rather than the TOML itself, this setting prevents them from being deleted as "unused".
+
+### 📌 Pinned Versions & Constraints
+
+Certain dependencies are intentionally pinned in `versionCatalogUpdate` to maintain compatibility with external CI analysis tools and strict compiler integrations:
+
+#### 1. Kotlin & CodeQL Compatibility Constraint
+GitHub's automated security analysis workflow ([codeql.yml](../../.github/workflows/codeql.yml)) uses the CodeQL CLI action (`github/codeql-action/analyze`). CodeQL's Java/Kotlin extractor lags behind bleeding-edge Kotlin compiler releases.
+- When Kotlin was upgraded to `2.4.20` in PR #1651 (and previously in #1637), the CodeQL workflow failed with:
+  ```text
+  Kotlin version 2.4.20 is too recent. CodeQL currently supports versions below 2.4.20
+  ```
+- Because CodeQL is a mandatory security gate on `develop` and pull requests, `kotlin` is pinned to `2.4.10` until CodeQL releases a bundle with official support for Kotlin `2.4.20+`.
+
+#### 2. KSP Coupling
+Kotlin Symbol Processing (`ksp`) has strict compiler plugin coupling and must match the exact Kotlin version in lockstep (e.g. Kotlin `2.4.10` pairs with KSP `2.3.11`).
+- Allowing `ksp` to auto-bump to `2.3.12` (built against Kotlin `2.4.20`) while Kotlin is held back causes compiler plugin mismatches during annotation processing (Room DAOs, etc.).
+- Therefore, `ksp` is pinned alongside `kotlin` until both can be safely upgraded together.
+
+#### 3. Future Upgrade Protocol
+Before unpinning or bumping `kotlin` and `ksp`:
+1. **Check CodeQL Release Notes**: Verify that the latest GitHub CodeQL Action bundle includes support for the target Kotlin version (e.g., CodeQL CLI release notes or official Kotlin support matrix).
+2. **Local Verification**:
+   - Temporarily remove the `pin` entries in `build.gradle.kts` (or manually bump `kotlin` and `ksp` in `gradle/libs.versions.toml`).
+   - Run `make fast-check` and full compilation (`./gradlew assembleDebug test`).
+3. **CI Security Verification**:
+   - Push to a branch and ensure the `CodeQL` workflow passes green before removing the version pin on `develop`.
 
 ---
 
