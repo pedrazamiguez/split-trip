@@ -67,6 +67,7 @@ fun MainScreen(
     screenUiProviders: List<ScreenUiProvider>,
     deepLinkGroupId: String? = null,
     deepLinkTargetTab: String? = null,
+    deepLinkInTabDestination: String? = null,
     mainViewModel: MainViewModel = koinViewModel<MainViewModel>(),
     sharedViewModel: SharedViewModel = koinViewModel(
         viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
@@ -114,9 +115,9 @@ fun MainScreen(
     // ── Deep link handling ─────────────────────────────────────────────
     // When a deep link is received, resolve the group name and currency from Room
     // (offline-first), auto-select the group, and switch to the target tab.
-    // Keyed on both groupId AND targetTab so that a new deep link for the same group
-    // but a different tab (e.g., via onNewIntent) still triggers the effect.
-    LaunchedEffect(deepLinkGroupId, deepLinkTargetTab) {
+    // Keyed on groupId, targetTab, AND inTabDestination so that a new deep link
+    // for the same group but a different tab or sub-destination still triggers the effect.
+    LaunchedEffect(deepLinkGroupId, deepLinkTargetTab, deepLinkInTabDestination) {
         if (deepLinkGroupId != null) {
             val groupName = mainViewModel.resolveGroupName(deepLinkGroupId)
             val groupCurrency = mainViewModel.resolveGroupCurrency(deepLinkGroupId)
@@ -125,6 +126,18 @@ fun MainScreen(
             if (deepLinkTargetTab != null) {
                 selectedRoute = deepLinkTargetTab
             }
+
+            if (deepLinkInTabDestination != null) {
+                val targetProvider = navigationProviders.firstOrNull {
+                    it.route == (deepLinkTargetTab ?: selectedRoute)
+                }
+                val targetNavController = targetProvider?.let { navControllers[it] }
+                targetNavController?.navigate(deepLinkInTabDestination) {
+                    launchSingleTop = true
+                }
+            }
+        } else if (deepLinkTargetTab != null) {
+            selectedRoute = deepLinkTargetTab
         }
     }
 

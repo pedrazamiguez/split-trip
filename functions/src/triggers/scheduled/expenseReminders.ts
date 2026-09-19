@@ -2,6 +2,7 @@ import * as functions from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import { toZonedTime } from "date-fns-tz";
 import { addDays } from "date-fns";
+import { buildDeepLink } from "../../utils/format";
 
 export const expenseReminders = functions.scheduler.onSchedule(
   {
@@ -94,6 +95,7 @@ export const expenseReminders = functions.scheduler.onSchedule(
                   type,
                   expenseId,
                   groupId,
+                  deepLink: buildDeepLink(groupId, `expenses/${expenseId}`),
                 },
                 tokens: tokens,
               };

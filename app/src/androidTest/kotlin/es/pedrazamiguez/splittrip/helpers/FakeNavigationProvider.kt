@@ -17,7 +17,8 @@ class FakeNavigationProvider(
     override val route: String,
     override val order: Int,
     override val requiresSelectedGroup: Boolean = false,
-    private val label: String = route
+    private val label: String = route,
+    private val subRoutes: List<String> = emptyList()
 ) : NavigationProvider {
 
     @Composable
@@ -31,6 +32,11 @@ class FakeNavigationProvider(
     override fun buildGraph(builder: NavGraphBuilder) {
         builder.composable(route) {
             Text("Content: $label")
+        }
+        for (subRoute in subRoutes) {
+            builder.composable(subRoute) {
+                Text("Content: $label - $subRoute")
+            }
         }
     }
 }

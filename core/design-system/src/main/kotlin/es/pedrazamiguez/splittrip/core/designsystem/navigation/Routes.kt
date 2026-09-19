@@ -18,6 +18,7 @@ object Routes {
     const val ADD_EXPENSE = "add_expense"
     const val BALANCES = "balances"
     const val YOUR_BALANCE = "your_balance"
+    const val YOUR_POSITION = YOUR_BALANCE
     const val CATEGORY_SPENDING = "category_spending"
     const val CONTRIBUTION_WIZARD_ARG_GROUP_ID = "groupId"
     const val CONTRIBUTION_WIZARD_ARG_CONTRIBUTION_ID = "contributionId"
