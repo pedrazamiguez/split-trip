@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -57,9 +60,11 @@ internal fun BreakdownCardSection(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SecondaryBodyText(
+                        Text(
                             text = stringResource(R.string.expense_detail_breakdown_base_cost),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         AmountText(text = formattedIncludedBaseCost)
                     }
@@ -70,7 +75,11 @@ internal fun BreakdownCardSection(
                     } else {
                         MaterialTheme.colorScheme.onSurface
                     }
-                    val signedAmount = if (addOn.isDiscount) "− ${addOn.formattedAmount}" else addOn.formattedAmount
+                    val signedAmount = if (addOn.isDiscount) {
+                        "− ${addOn.formattedAmount}"
+                    } else {
+                        "+ ${addOn.formattedAmount}"
+                    }
                     val modeLabelRes = if (addOn.isIncluded) {
                         R.string.expense_detail_addon_mode_included
                     } else {
@@ -79,14 +88,26 @@ internal fun BreakdownCardSection(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             SecondaryBodyText(text = addOn.labelText)
-                            CaptionText(
-                                text = stringResource(modeLabelRes),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Surface(
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ) {
+                                Text(
+                                    text = stringResource(modeLabelRes),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             AmountText(text = signedAmount, color = valueColor)
@@ -116,8 +137,10 @@ internal fun BreakdownCardSection(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SecondaryBodyText(
+                        Text(
                             text = stringResource(summaryLabelRes),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         AmountText(

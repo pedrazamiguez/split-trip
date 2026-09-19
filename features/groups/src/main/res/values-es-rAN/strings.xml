@@ -66,6 +66,11 @@
         <item quantity="one">1 çubunidá</item>
         <item quantity="other">%d çubunidadê</item>
     </plurals>
+    <string name="group_member_role_creator">Creadôh</string>
+    <string name="group_member_role_member">Miembro</string>
+    <string name="group_detail_section_details">Detayê</string>
+    <string name="group_detail_currency_label">Moneda prinçipâh</string>
+    <string name="group_detail_description_label">Dêccrîççión</string>
     <string name="group_field_members">Miembrô</string>
     <string name="group_member_search">Bûccâh por emaîh</string>
     <string name="group_member_search_hint">Êccribe el emaîh de un miembro</string>

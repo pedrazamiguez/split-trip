@@ -159,25 +159,35 @@ internal fun HeroSection(
                     )
                 }
                 if (expense.isForeignCurrency && expense.formattedSourceAmount != null) {
-                    Spacer(Modifier.height(MaterialTheme.spacing.Small))
-                    Row(
+                    Spacer(Modifier.height(MaterialTheme.spacing.Medium))
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
                     ) {
-                        CaptionText(
-                            text = stringResource(
-                                R.string.expense_detail_amount_in_currency,
-                                expense.sourceCurrency
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Column(horizontalAlignment = Alignment.End) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CaptionText(
+                                text = stringResource(
+                                    R.string.expense_detail_amount_in_currency,
+                                    expense.sourceCurrency
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                             AmountText(
                                 text = expense.formattedSourceAmount,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 textDecoration = if (expense.isCancelled) TextDecoration.LineThrough else null
                             )
-                            if (expense.formattedExchangeRate != null) {
+                        }
+                        if (expense.formattedExchangeRate != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 CaptionText(
                                     text = stringResource(
                                         R.string.expense_detail_rate_label,
@@ -186,8 +196,13 @@ internal fun HeroSection(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            if (expense.formattedExpectedGroupAmount != null &&
-                                expense.formattedGroupAmountDifference != null
+                        }
+                        if (expense.formattedExpectedGroupAmount != null &&
+                            expense.formattedGroupAmountDifference != null
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
                             ) {
                                 CaptionText(
                                     text = stringResource(

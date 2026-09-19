@@ -5,12 +5,14 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.extension.resolveLocalizedName
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupMemberUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_VISIBLE_AVATARS
 import kotlinx.collections.immutable.ImmutableList
@@ -18,7 +20,8 @@ import kotlinx.collections.immutable.toImmutableList
 
 class GroupUiMapperImpl(
     private val localeProvider: LocaleProvider,
-    private val resourceProvider: ResourceProvider
+    private val resourceProvider: ResourceProvider,
+    private val userUiMapper: UserUiMapper
 ) : GroupUiMapper {
 
     override fun toGroupUiModel(group: Group, memberProfiles: Map<String, User>): GroupUiModel =
@@ -33,6 +36,21 @@ class GroupUiMapperImpl(
             // When no avatars are shown at all (nobody has a profile image),
             // overflow stays 0 — the member-count text already conveys the number.
             val overflowCount = if (avatarUrls.isEmpty()) 0 else maxOf(0, memberCount - avatarUrls.size)
+
+            val memberUiModels = members.map { userId ->
+                val profile = memberProfiles[userId]
+                val isCreator = userId == createdBy
+                val roleBadgeText = resourceProvider.getString(
+                    if (isCreator) R.string.group_member_role_creator else R.string.group_member_role_member
+                )
+                GroupMemberUiModel(
+                    userId = userId,
+                    displayName = userUiMapper.mapToDisplayName(user = profile, fallbackUserId = userId),
+                    avatarUrl = profile?.profileImagePath,
+                    isCreator = isCreator,
+                    roleBadgeText = roleBadgeText
+                )
+            }.toImmutableList()
 
             GroupUiModel(
                 id = id,
@@ -50,6 +68,7 @@ class GroupUiMapperImpl(
                 imageUrl = mainImagePath?.takeIf { it.isNotBlank() },
                 memberAvatarUrls = avatarUrls.toImmutableList(),
                 memberOverflowCount = overflowCount,
+                members = memberUiModels,
                 status = status,
                 createdBy = createdBy
             )

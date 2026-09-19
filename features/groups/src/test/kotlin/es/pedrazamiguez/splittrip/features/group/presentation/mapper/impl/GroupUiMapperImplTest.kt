@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.mapper.impl
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -15,6 +16,7 @@ import io.mockk.verify
 import java.time.LocalDateTime
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -25,6 +27,7 @@ class GroupUiMapperImplTest {
 
     private lateinit var localeProvider: LocaleProvider
     private lateinit var resourceProvider: ResourceProvider
+    private lateinit var userUiMapper: UserUiMapper
     private lateinit var mapper: GroupUiMapperImpl
 
     private val testLocale = Locale.US
@@ -35,7 +38,10 @@ class GroupUiMapperImplTest {
             every { getCurrentLocale() } returns testLocale
         }
         resourceProvider = mockk()
-        mapper = GroupUiMapperImpl(localeProvider, resourceProvider)
+        every { resourceProvider.getString(R.string.group_member_role_creator) } returns "Creator"
+        every { resourceProvider.getString(R.string.group_member_role_member) } returns "Member"
+        userUiMapper = UserUiMapper(mockk(relaxed = true))
+        mapper = GroupUiMapperImpl(localeProvider, resourceProvider, userUiMapper)
     }
 
     @Nested
@@ -534,6 +540,49 @@ class GroupUiMapperImplTest {
             // Then
             assertTrue(result.memberAvatarUrls.isEmpty())
             assertEquals(0, result.memberOverflowCount)
+        }
+    }
+
+    @Nested
+    inner class GroupMembersMapping {
+
+        @Test
+        fun `maps group members to GroupMemberUiModel with roles and avatars`() {
+            // Given
+            val members = listOf("creator-id", "member-id")
+            val group = createGroup(
+                id = "group-1",
+                members = members
+            ).copy(createdBy = "creator-id")
+            val profiles = mapOf(
+                "creator-id" to createUser(
+                    userId = "creator-id",
+                    profileImagePath = "https://example.com/creator.jpg"
+                ).copy(displayName = "Creator"),
+                "member-id" to createUser("member-id", null).copy(displayName = "Member")
+            )
+            every {
+                resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2)
+            } returns "2 travelers"
+
+            // When
+            val result = mapper.toGroupUiModel(group, profiles)
+
+            // Then
+            assertEquals(2, result.members.size)
+            val creatorMember = result.members[0]
+            assertEquals("creator-id", creatorMember.userId)
+            assertEquals("Creator", creatorMember.displayName)
+            assertEquals("https://example.com/creator.jpg", creatorMember.avatarUrl)
+            assertTrue(creatorMember.isCreator)
+            assertEquals("Creator", creatorMember.roleBadgeText)
+
+            val regularMember = result.members[1]
+            assertEquals("member-id", regularMember.userId)
+            assertEquals("Member", regularMember.displayName)
+            assertNull(regularMember.avatarUrl)
+            assertFalse(regularMember.isCreator)
+            assertEquals("Member", regularMember.roleBadgeText)
         }
     }
 }

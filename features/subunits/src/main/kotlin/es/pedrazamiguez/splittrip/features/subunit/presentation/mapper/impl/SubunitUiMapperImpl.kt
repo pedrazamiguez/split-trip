@@ -146,7 +146,8 @@ class SubunitUiMapperImpl(
 
             MemberShareUiModel(
                 displayName = displayName,
-                shareText = percentFormat.format(share)
+                shareText = percentFormat.format(share),
+                avatarUrl = memberProfiles[userId]?.profileImagePath
             )
         }.sortedWith(
             localeAwareComparator(localeProvider.getCurrentLocale()) { it.displayName }
