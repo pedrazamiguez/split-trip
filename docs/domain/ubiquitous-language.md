@@ -12,7 +12,8 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 | **Expense** | Gasto | A financial cost incurred by one or more members on behalf of others in the group. |
 | **Contribution** | Aportación | Funds added to a group's collective virtual pool to cover future shared expenses. |
 | **Cash Withdrawal** | Retirada de efectivo | Physical cash withdrawn from an ATM or bank account to be used for group expenses. |
-| **Settlement** | Acuerdo de pago | An agreement or transaction to resolve a debt between users. (Replaces "Liquidación") |
+| **Your Position** | Tu posición / Tu balance | The personal financial standing view for the current user, summarizing net position, cash in hand, and settlement consensus actions. (Replaces "My Position" / "Mi posición"). |
+| **Settlement / Settlement Consensus** | Acuerdo de pago / Consenso de pagos | A collaborative agreement and mutual consensus process to resolve a debt between two group members (propose, confirm receipt, or dispute). Replaces unilateral "Liquidación". |
 | **Settlement Record** | Registro de pago | A historical record of a completed or disputed settlement. |
 | **Balance** | Balance | The net financial position of a member or the group (how much is owed or owed to them). |
 | **Member Balance** | Balance de miembro | The specific breakdown of a single member's financial position, including cash in hand and total spent. |
@@ -47,7 +48,10 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 | **SyncStatus** | Estado de sincronización | The state of local data synchronization with the backend (e.g., `Pending`, `Synced`, `Failed`). |
 
 ## Translation Guidelines
-- **Always use "Acuerdo de pago"**. Never use "Liquidación", which can imply a shop clearance sale.
+- **Always use "Acuerdo de pago" or "Consenso de pagos"**.
+  - **Never use "Liquidación"**. In traditional financial tools, "liquidación" implies an aggressive unilateral clearance, debt foreclosure, or clearance sale. In SplitTrip, debt resolution is a collaborative consensus agreement between peers (proposing a payment, payer marking it as sent, payee confirming receipt, or disputing).
+- **Always use "Your Position" / "Tu posición" (or "Tu balance")**.
+  - **Never use "My Position" / "Mi posición"**. The application addresses the traveler in a natural, respectful second person ("Tu posición", "Tus preferencias"), avoiding first-person self-labeling.
 - **Always use "Balance"**. Never use "Saldo" or "Posición neta" to keep the terminology approachable and less aggressively financial.
 - **Always use "Pocket" / "Pocket del grupo" / "Pocket virtual"**. Never use "Bote", "Bolsa", or "Cuenta" to ensure a consistent, branded, and modern concept for the group's collective pool.
 - Maintain consistency across all UI text, push notifications, error messages, and API responses.

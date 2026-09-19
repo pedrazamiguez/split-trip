@@ -16,9 +16,9 @@
 | **Additional Languages** | Spanish (`es-ES`) | European Castilian Spanish (Tone of Voice compliant) |
 | **Content Rating** | PEGI 3 / ESRB Everyone | No offensive content, violence, gambling, or ads |
 | **Target Audience** | 18+ (General Audience) | Group travelers, roommates, couples, families |
-| **Privacy Policy URL** | `https://pedrazamiguez.github.io/split-trip/privacy-policy.html` | Public web-accessible URL |
-| **Developer Contact** | `support@splittrip.com` | Official support inbox |
-| **Website** | `https://github.com/pedrazamiguez/split-trip` | Public repository & issue tracker |
+| **Privacy Policy URL** | `https://splittrip.eu/privacy-policy.html` | Public web-accessible URL |
+| **Developer Contact** | `support@splittrip.eu` | Official support inbox |
+| **Website** | `https://splittrip.eu` | Official developer website & web presence |
 
 ---
 
