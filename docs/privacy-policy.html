@@ -204,6 +204,27 @@
       box-shadow: var(--shadow-sm);
     }
 
+    .home-nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      background-color: var(--bg-surface-elevated);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .home-nav-link:hover {
+      color: var(--accent-primary);
+      border-color: var(--accent-primary);
+      text-decoration: none;
+    }
+
     .page-title {
       font-size: 28px;
       font-weight: 800;
@@ -406,6 +427,10 @@
           </div>
         </div>
         <div class="controls-group">
+          <a href="index.html" class="home-nav-link">
+            <span data-lang="en">&larr; Home</span>
+            <span data-lang="es">&larr; Inicio</span>
+          </a>
           <div class="lang-switcher" role="group" aria-label="Select Language / Seleccionar idioma">
             <button type="button" class="lang-btn" id="btn-en" aria-pressed="true" onclick="setLanguage('en')">EN</button>
             <button type="button" class="lang-btn" id="btn-es" aria-pressed="false" onclick="setLanguage('es')">ES</button>
@@ -732,7 +757,7 @@
           </p>
           <ul>
             <li><strong>Developer:</strong> Pedro Pedraza M&iacute;guez</li>
-            <li><strong>Email:</strong> <a href="mailto:support@splittrip.com">support@splittrip.com</a></li>
+            <li><strong>Email:</strong> <a href="mailto:support@splittrip.eu">support@splittrip.eu</a></li>
             <li><strong>Repository:</strong> <a href="https://github.com/pedrazamiguez/split-trip" target="_blank" rel="noopener noreferrer">github.com/pedrazamiguez/split-trip</a></li>
           </ul>
         </div>
@@ -750,7 +775,7 @@
           </p>
           <ul>
             <li><strong>Desarrollador:</strong> Pedro Pedraza M&iacute;guez</li>
-            <li><strong>Correo de soporte:</strong> <a href="mailto:support@splittrip.com">support@splittrip.com</a></li>
+            <li><strong>Correo de soporte:</strong> <a href="mailto:support@splittrip.eu">support@splittrip.eu</a></li>
             <li><strong>Repositorio del proyecto:</strong> <a href="https://github.com/pedrazamiguez/split-trip" target="_blank" rel="noopener noreferrer">github.com/pedrazamiguez/split-trip</a></li>
           </ul>
         </div>

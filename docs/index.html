@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>SplitTrip — Travel Together. Split Fairly. Zero Stress.</title>
+  <meta name="description" content="SplitTrip is the modern, offline-first group travel expense manager with real-time multi-currency conversion, settlement consensus, and zero ads.">
+  <meta property="og:title" content="SplitTrip — Travel Together. Split Fairly. Zero Stress.">
+  <meta property="og:description" content="Modern, offline-first group travel expense manager with real-time multi-currency conversion, settlement consensus, and zero ads.">
+  <meta property="og:url" content="https://splittrip.eu/">
+  <meta property="og:type" content="website">
+  <style>
+    :root {
+      color-scheme: light dark;
+      /* The Horizon Narrative Design Tokens */
+      --horizon-blue: #00478D;
+      --horizon-blue-container: #005EB8;
+      --horizon-teal: #006874;
+      --horizon-teal-container: #97F0FF;
+      --horizon-amber: #795900;
+      --horizon-amber-container: #FFDEA0;
+      
+      --bg-canvas: #F9F9FF;
+      --bg-surface-low: #F2F3FB;
+      --bg-surface: #ECEDF6;
+      --bg-surface-elevated: #FFFFFF;
+      --bg-glass: rgba(255, 255, 255, 0.82);
+      
+      --text-primary: #191C21;
+      --text-secondary: #41484F;
+      --text-muted: #71787E;
+      --border-color: #E2E8F0;
+      --border-subtle: #C2C6D4;
+      
+      --accent-primary: #00478D;
+      --accent-secondary: #006874;
+      --badge-bg: #E0F2FE;
+      --badge-text: #0369A1;
+      --success-bg: #E6F4EA;
+      --success-text: #137333;
+      
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 8px 24px rgba(0, 71, 141, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 16px 36px rgba(0, 71, 141, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --radius-full: 9999px;
+      
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --horizon-blue: #9ECAFF;
+        --horizon-blue-container: #00478D;
+        --horizon-teal: #4FD8EB;
+        --horizon-teal-container: #004F58;
+        --horizon-amber: #F2BF48;
+        --horizon-amber-container: #5C4000;
+
+        --bg-canvas: #111318;
+        --bg-surface-low: #191C21;
+        --bg-surface: #1D2025;
+        --bg-surface-elevated: #282A2F;
+        --bg-glass: rgba(29, 32, 37, 0.82);
+
+        --text-primary: #E2E2E9;
+        --text-secondary: #C5C6D0;
+        --text-muted: #8B9198;
+        --border-color: #334155;
+        --border-subtle: #44464F;
+
+        --accent-primary: #9ECAFF;
+        --accent-secondary: #4FD8EB;
+        --badge-bg: #0C4A6E;
+        --badge-text: #7DD3FC;
+        --success-bg: #0D381E;
+        --success-text: #81C995;
+
+        --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    html[data-theme="light"] {
+      color-scheme: light;
+      --horizon-blue: #00478D;
+      --horizon-teal: #006874;
+      --horizon-amber: #795900;
+      --bg-canvas: #F9F9FF;
+      --bg-surface-low: #F2F3FB;
+      --bg-surface: #ECEDF6;
+      --bg-surface-elevated: #FFFFFF;
+      --bg-glass: rgba(255, 255, 255, 0.82);
+      --text-primary: #191C21;
+      --text-secondary: #41484F;
+      --text-muted: #71787E;
+      --border-color: #E2E8F0;
+      --border-subtle: #C2C6D4;
+      --accent-primary: #00478D;
+      --accent-secondary: #006874;
+      --badge-bg: #E0F2FE;
+      --badge-text: #0369A1;
+      --success-bg: #E6F4EA;
+      --success-text: #137333;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 8px 24px rgba(0, 71, 141, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 16px 36px rgba(0, 71, 141, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --horizon-blue: #9ECAFF;
+      --horizon-teal: #4FD8EB;
+      --horizon-amber: #F2BF48;
+      --bg-canvas: #111318;
+      --bg-surface-low: #191C21;
+      --bg-surface: #1D2025;
+      --bg-surface-elevated: #282A2F;
+      --bg-glass: rgba(29, 32, 37, 0.82);
+      --text-primary: #E2E2E9;
+      --text-secondary: #C5C6D0;
+      --text-muted: #8B9198;
+      --border-color: #334155;
+      --border-subtle: #44464F;
+      --accent-primary: #9ECAFF;
+      --accent-secondary: #4FD8EB;
+      --badge-bg: #0C4A6E;
+      --badge-text: #7DD3FC;
+      --success-bg: #0D381E;
+      --success-text: #81C995;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      line-height: 1.6;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Bilingual Toggle Support */
+    [data-lang] {
+      display: none;
+    }
+
+    html[lang="en"] [data-lang="en"],
+    html:not([lang="es"]) [data-lang="en"] {
+      display: block;
+    }
+
+    html[lang="es"] [data-lang="es"] {
+      display: block;
+    }
+
+    html[lang="en"] span[data-lang="en"],
+    html[lang="en"] strong[data-lang="en"],
+    html[lang="en"] a[data-lang="en"] {
+      display: inline;
+    }
+
+    html[lang="es"] span[data-lang="es"],
+    html[lang="es"] strong[data-lang="es"],
+    html[lang="es"] a[data-lang="es"] {
+      display: inline;
+    }
+
+    .container {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Top Navigation Bar */
+    header.site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background-color: var(--bg-glass);
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #00478D 0%, #006874 100%);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 22px;
+      box-shadow: 0 4px 14px rgba(0, 71, 141, 0.28);
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lang-switcher, .theme-switcher {
+      display: inline-flex;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .lang-btn, .theme-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .lang-btn:hover, .theme-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .lang-btn[aria-pressed="true"], .theme-btn[aria-pressed="true"] {
+      background-color: var(--bg-surface-elevated);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-cta-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      background: linear-gradient(135deg, var(--horizon-blue) 0%, var(--horizon-teal) 100%);
+      color: #FFFFFF !important;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .header-cta-link:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 80px 0 60px 0;
+      position: relative;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background-color: var(--badge-bg);
+      color: var(--badge-text);
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: var(--radius-full);
+      margin-bottom: 24px;
+      letter-spacing: 0.02em;
+    }
+
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent-secondary);
+      border-radius: 50%;
+    }
+
+    .hero-title {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      text-wrap: balance;
+    }
+
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, var(--horizon-blue) 0%, var(--horizon-teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 19px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 32px;
+      text-wrap: pretty;
+    }
+
+    .hero-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .btn-playstore {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      background-color: var(--text-primary);
+      color: var(--bg-canvas) !important;
+      text-decoration: none;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: var(--shadow-md);
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn-playstore:hover {
+      transform: translateY(-2px);
+      opacity: 0.92;
+    }
+
+    .btn-playstore svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 22px;
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+
+    .hero-trust-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .trust-item svg {
+      width: 16px;
+      height: 16px;
+      color: var(--accent-secondary);
+    }
+
+    /* Hero App Card Mockup */
+    .app-preview-card {
+      background-color: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    .app-preview-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .card-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .trip-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .trip-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .trip-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 8px;
+      background-color: var(--badge-bg);
+      color: var(--badge-text);
+      border-radius: var(--radius-full);
+    }
+
+    .pocket-card {
+      background: linear-gradient(135deg, rgba(0, 71, 141, 0.08) 0%, rgba(0, 104, 116, 0.08) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .pocket-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .pocket-balance {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .pocket-subtext {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .card-ledger-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .ledger-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background-color: var(--bg-surface-low);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .ledger-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ledger-item-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .ledger-item-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .ledger-item-amount {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .consensus-pill-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background-color: var(--success-bg);
+      color: var(--success-text);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .consensus-pill-badge .pill-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Core Pillars / Feature Showcase */
+    .features-section {
+      padding: 80px 0;
+      background-color: var(--bg-surface-low);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 56px auto;
+    }
+
+    .section-eyebrow {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-secondary);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      line-height: 1.2;
+      text-wrap: balance;
+    }
+
+    .section-subtitle {
+      font-size: 17px;
+      color: var(--text-secondary);
+      text-wrap: pretty;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    .feature-card {
+      background-color: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 32px 28px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .feature-icon-wrapper {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      background-color: var(--bg-surface-low);
+      border: 1px solid var(--border-color);
+      margin-bottom: 4px;
+    }
+
+    .feature-card h3 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      color: var(--text-primary);
+    }
+
+    .feature-card p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Architecture / Philosophy Section */
+    .philosophy-section {
+      padding: 80px 0;
+    }
+
+    .philosophy-card {
+      background: linear-gradient(135deg, var(--bg-surface-elevated) 0%, var(--bg-surface-low) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 48px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      box-shadow: var(--shadow-md);
+    }
+
+    .philosophy-text h2 {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .philosophy-text p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      margin-bottom: 24px;
+    }
+
+    .stat-boxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .stat-box {
+      background-color: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--accent-primary);
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    /* CTA Banner Section */
+    .cta-banner {
+      padding: 70px 0;
+      background: linear-gradient(135deg, #00478D 0%, #006874 100%);
+      color: #FFFFFF;
+      text-align: center;
+    }
+
+    .cta-banner h2 {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+      color: #FFFFFF;
+    }
+
+    .cta-banner p {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.9);
+      max-width: 600px;
+      margin: 0 auto 32px auto;
+      text-wrap: pretty;
+    }
+
+    .cta-banner .btn-playstore {
+      background-color: #FFFFFF;
+      color: #00478D !important;
+    }
+
+    /* Footer */
+    footer.site-footer {
+      padding: 48px 0;
+      background-color: var(--bg-canvas);
+      border-top: 1px solid var(--border-color);
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-primary);
+      text-decoration: underline;
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 960px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .philosophy-card {
+        grid-template-columns: 1fr;
+        padding: 32px;
+      }
+      .hero-title {
+        font-size: 38px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-title {
+        font-size: 32px;
+      }
+      .hero {
+        padding: 40px 0;
+      }
+      .header-actions .header-cta-link {
+        display: none;
+      }
+      .stat-boxes {
+        grid-template-columns: 1fr;
+      }
+      .footer-grid {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+  <script>
+    // Initialize language & theme preference immediately to prevent flicker
+    (function() {
+      try {
+        var savedLang = localStorage.getItem('splittrip-lang');
+        var lang = savedLang || (navigator.language && navigator.language.startsWith('es') ? 'es' : 'en');
+        document.documentElement.lang = lang;
+
+        var savedTheme = localStorage.getItem('splittrip-theme') || 'auto';
+        if (savedTheme !== 'auto') {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+      } catch (e) {
+        document.documentElement.lang = 'en';
+      }
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="index.html" class="brand-link" aria-label="SplitTrip Homepage">
+        <div class="brand-icon" aria-hidden="true">S</div>
+        <span class="brand-title">SplitTrip</span>
+      </a>
+
+      <div class="header-actions">
+        <!-- Language Switcher -->
+        <div class="lang-switcher" role="group" aria-label="Select Language / Seleccionar idioma">
+          <button type="button" class="lang-btn" id="btn-en" aria-pressed="true" onclick="setLanguage('en')">EN</button>
+          <button type="button" class="lang-btn" id="btn-es" aria-pressed="false" onclick="setLanguage('es')">ES</button>
+        </div>
+
+        <!-- Theme Switcher -->
+        <div class="theme-switcher" role="group" aria-label="Color theme">
+          <button type="button" class="theme-btn" id="theme-light" title="Light Mode" onclick="setTheme('light')">☀️</button>
+          <button type="button" class="theme-btn" id="theme-auto" title="System Theme" onclick="setTheme('auto')">💻</button>
+          <button type="button" class="theme-btn" id="theme-dark" title="Dark Mode" onclick="setTheme('dark')">🌙</button>
+        </div>
+
+        <a href="#download" class="header-cta-link">
+          <span data-lang="en">Get App</span>
+          <span data-lang="es">Descargar</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <span data-lang="en">Horizon Narrative &bull; Offline-First</span>
+          <span data-lang="es">The Horizon Narrative &bull; Sin conexión</span>
+        </div>
+
+        <h1 class="hero-title">
+          <span data-lang="en">Travel Together.<br><span class="gradient-text">Split Fairly.</span> Zero Stress.</span>
+          <span data-lang="es">Viajad juntos.<br><span class="gradient-text">Dividid con justicia.</span> Cero estrés.</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          <span data-lang="en">The modern travel expense manager engineered for adventures across borders. Instant offline logging, 150+ live currencies, shared cash pockets, and seamless debt settlements.</span>
+          <span data-lang="es">El gestor de gastos de viaje inteligente diseñado para cruzar fronteras. Registro instantáneo sin cobertura, más de 150 divisas en tiempo real, botes de efectivo y acuerdos de pago sin fricción.</span>
+        </p>
+
+        <div class="hero-buttons" id="download">
+          <a href="https://play.google.com/store/apps/details?id=es.pedrazamiguez.splittrip" class="btn-playstore" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3.609 1.814L13.792 12 3.61 22.186c-.367-.34-.61-.83-.61-1.396V3.21c0-.566.243-1.056.609-1.396zm11.242 11.245l2.428 2.429-11.83 6.83 9.402-9.259zm0-2.118L5.449 1.682l11.83 6.83-2.428 2.429zm3.504 2.118l3.195-1.845c.87-.502.87-1.326 0-1.828l-3.195-1.845-2.38 2.38 2.38 2.38z"/>
+            </svg>
+            <div>
+              <span style="display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;">Get it on</span>
+              <span style="display:block;font-size:16px;font-weight:800;line-height:1.1;">Google Play</span>
+            </div>
+          </a>
+
+          <a href="#features" class="btn-secondary">
+            <span data-lang="en">Explore Features &darr;</span>
+            <span data-lang="es">Explorar funciones &darr;</span>
+          </a>
+        </div>
+
+        <div class="hero-trust-row">
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span data-lang="en">Zero ads or tracking</span>
+            <span data-lang="es">Sin anuncios ni rastreadores</span>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span data-lang="en">100% Offline-Ready</span>
+            <span data-lang="es">100% operativo sin red</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Visual Mockup Card -->
+      <div class="hero-visual">
+        <div class="app-preview-card">
+          <div class="card-top-bar">
+            <div class="trip-title-group">
+              <span style="font-size:20px;">🇯🇵</span>
+              <div>
+                <div class="trip-name">Kyoto Autumn Roadtrip</div>
+                <div style="font-size:12px;color:var(--text-muted);">4 companions &bull; Active</div>
+              </div>
+            </div>
+            <span class="trip-badge">EUR / JPY</span>
+          </div>
+
+          <div class="pocket-card">
+            <div class="pocket-label" data-lang="en">Group Cash Pocket</div>
+            <div class="pocket-label" data-lang="es">Pocket de Efectivo del Grupo</div>
+            <div class="pocket-balance">&yen;42,800</div>
+            <div class="pocket-subtext">&asymp; &euro;265.50 &bull; FIFO Tranche Tracking</div>
+          </div>
+
+          <div class="card-ledger-list">
+            <div class="ledger-item">
+              <div class="ledger-item-info">
+                <span class="ledger-item-title">Shinkansen Nozomi Express</span>
+                <span class="ledger-item-meta">Paid by Alex &bull; Equal split (4)</span>
+              </div>
+              <span class="ledger-item-amount">&yen;28,000</span>
+            </div>
+
+            <div class="ledger-item">
+              <div class="ledger-item-info">
+                <span class="ledger-item-title">Gion Traditional Kaiseki</span>
+                <span class="ledger-item-meta">Paid by Sofia &bull; Subunit: Elena &amp; Marco</span>
+              </div>
+              <span class="ledger-item-amount">&yen;14,800</span>
+            </div>
+          </div>
+
+          <div class="consensus-pill-badge">
+            <div class="pill-label">
+              <span>🤝</span>
+              <span data-lang="en">Consensus Reached</span>
+              <span data-lang="es">Consenso alcanzado</span>
+            </div>
+            <div style="font-weight:800;">
+              <span data-lang="en">+&euro;34.20 (To Receive)</span>
+              <span data-lang="es">+&euro;34,20 (A recibir)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Showcase (6 Core Pillars) -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow" data-lang="en">Engineered for Perfection</div>
+        <div class="section-eyebrow" data-lang="es">Diseñado para la excelencia</div>
+        <h2 class="section-title">
+          <span data-lang="en">Everything you need for seamless group travel.</span>
+          <span data-lang="es">Todo lo necesario para viajar en grupo sin fricción.</span>
+        </h2>
+        <p class="section-subtitle">
+          <span data-lang="en">No messy spreadsheets. No awkward math at the end of the trip. Just crystal-clear balances and fair settlements.</span>
+          <span data-lang="es">Sin hojas de cálculo enredadas. Sin conversaciones incómodas al final del viaje. Cuentas transparentes y liquidaciones justas.</span>
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Pillar 1 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">⚡</div>
+          <h3 data-lang="en">True Offline-First</h3>
+          <h3 data-lang="es">Funcionamiento sin conexión</h3>
+          <p data-lang="en">
+            Log expenses atop mountain peaks, in subways, or mid-flight. Instant Room local writes guarantee zero UI lag. Everything syncs smoothly via Firestore once you're back online.
+          </p>
+          <p data-lang="es">
+            Apunta gastos en picos de montaña, metros o en mitad de un vuelo. Escritura local instantánea en Room sin esperas. Se sincroniza de fondo con Firestore en cuanto recuperas cobertura.
+          </p>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">🌍</div>
+          <h3 data-lang="en">Multi-Currency &amp; Live Rates</h3>
+          <h3 data-lang="es">Multidivisa y tipos de cambio</h3>
+          <p data-lang="en">
+            Support for 150+ global currencies with real-time conversion rates. SplitTrip records an immutable rate snapshot for every single expense, so historical balances never drift.
+          </p>
+          <p data-lang="es">
+            Compatible con más de 150 monedas del mundo y tipos de cambio oficiales. Registra una instantánea inmutable del cambio en cada gasto para que el balance nunca se altere.
+          </p>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">🤝</div>
+          <h3 data-lang="en">Settlement Consensus</h3>
+          <h3 data-lang="es">Acuerdos y consenso de pago</h3>
+          <p data-lang="en">
+            "My Position" simplifies tangled web-of-debt balances into the minimum required transfers. Propose settlements, verify payments, and reach transparent consensus with one tap.
+          </p>
+          <p data-lang="es">
+            "Mi posición" reduce las deudas cruzadas al mínimo número de transferencias. Propón acuerdos de pago, confirma recepciones y alcanza consenso de mutuo acuerdo con un toque.
+          </p>
+        </div>
+
+        <!-- Pillar 4 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">💰</div>
+          <h3 data-lang="en">Group Pockets &amp; Cash</h3>
+          <h3 data-lang="es">Pockets y efectivo compartido</h3>
+          <p data-lang="en">
+            Manage shared virtual pots alongside physical cash withdrawals. Rigorous First-In, First-Out (FIFO) currency tranche evaluation preserves precision down to the exact cent.
+          </p>
+          <p data-lang="es">
+            Gestiona botes comunes virtuales y retiradas de dinero en metálico. Trazabilidad FIFO por tramos de divisa que garantiza precisión matemática hasta el último céntimo.
+          </p>
+        </div>
+
+        <!-- Pillar 5 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">👥</div>
+          <h3 data-lang="en">Subunits for Couples</h3>
+          <h3 data-lang="es">Subunidades para parejas</h3>
+          <p data-lang="en">
+            Traveling with couples or families in a larger group? Bundle members into subunits to split bills proportionally or as a single unit without tedious manual spreadsheets.
+          </p>
+          <p data-lang="es">
+            ¿Viajáis con parejas o familias dentro del grupo? Agrupa miembros en subunidades para repartir gastos de forma unificada o proporcional sin cálculos manuales tediosos.
+          </p>
+        </div>
+
+        <!-- Pillar 6 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">🔒</div>
+          <h3 data-lang="en">Zero Ads &amp; Privacy-First</h3>
+          <h3 data-lang="es">Sin anuncios y máxima privacidad</h3>
+          <p data-lang="en">
+            No bank credentials or credit cards required. SplitTrip is a pure expense ledger. We never sell your personal data or transaction history to advertisers or data brokers.
+          </p>
+          <p data-lang="es">
+            Sin vincular cuentas bancarias ni tarjetas. SplitTrip es un libro de gastos limpio. Jamás vendemos tus datos personales ni tus registros a anunciantes o intermediarios.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Philosophy & Architecture Section -->
+  <section class="philosophy-section">
+    <div class="container">
+      <div class="philosophy-card">
+        <div class="philosophy-text">
+          <div class="section-eyebrow" data-lang="en">The Horizon Narrative</div>
+          <div class="section-eyebrow" data-lang="es">The Horizon Narrative</div>
+          <h2 data-lang="en">Built like an editorial travel journal, not an accounting tool.</h2>
+          <h2 data-lang="es">Diseñado como un diario de viaje editorial, no como una hoja contable.</h2>
+          <p data-lang="en">
+            SplitTrip blends the aesthetic of a premium travel journal with rock-solid Clean Architecture. Every screen is engineered with Material 3, Jetpack Compose, and offline resilience, ensuring your trip stays about making memories, not doing math.
+          </p>
+          <p data-lang="es">
+            SplitTrip combina la estética de un diario de viaje exclusivo con una sólida Clean Architecture en Kotlin. Cada pantalla está construida con Material 3 y Jetpack Compose para que tu viaje se centre en disfrutar, no en cuadrar números.
+          </p>
+          <a href="privacy-policy.html" class="btn-secondary">
+            <span data-lang="en">Read Privacy Policy &rarr;</span>
+            <span data-lang="es">Leer Política de Privacidad &rarr;</span>
+          </a>
+        </div>
+
+        <div class="stat-boxes">
+          <div class="stat-box">
+            <div class="stat-number">150+</div>
+            <div class="stat-label" data-lang="en">Supported Currencies</div>
+            <div class="stat-label" data-lang="es">Divisas soportadas</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">0 ms</div>
+            <div class="stat-label" data-lang="en">Offline Write Latency</div>
+            <div class="stat-label" data-lang="es">Latencia local sin red</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">100%</div>
+            <div class="stat-label" data-lang="en">Free &amp; Ad-Free</div>
+            <div class="stat-label" data-lang="es">Gratis y sin anuncios</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">Zero</div>
+            <div class="stat-label" data-lang="en">Bank Access Required</div>
+            <div class="stat-label" data-lang="es">Sin acceso bancario</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="cta-banner">
+    <div class="container">
+      <h2 data-lang="en">Ready for your next expedition?</h2>
+      <h2 data-lang="es">¿Listos para vuestra próxima expedición?</h2>
+      <p data-lang="en">Download SplitTrip for Android today and start sharing group travel expenses fairly and effortlessly.</p>
+      <p data-lang="es">Descarga SplitTrip para Android hoy y empieza a compartir los gastos de viaje de forma justa y sin complicaciones.</p>
+      <a href="https://play.google.com/store/apps/details?id=es.pedrazamiguez.splittrip" class="btn-playstore" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.609 1.814L13.792 12 3.61 22.186c-.367-.34-.61-.83-.61-1.396V3.21c0-.566.243-1.056.609-1.396zm11.242 11.245l2.428 2.429-11.83 6.83 9.402-9.259zm0-2.118L5.449 1.682l11.83 6.83-2.428 2.429zm3.504 2.118l3.195-1.845c.87-.502.87-1.326 0-1.828l-3.195-1.845-2.38 2.38 2.38 2.38z"/>
+        </svg>
+        <div>
+          <span style="display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;">Get it on</span>
+          <span style="display:block;font-size:16px;font-weight:800;line-height:1.1;">Google Play</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <div class="brand-icon" style="width:28px;height:28px;font-size:14px;border-radius:6px;">S</div>
+        <span>SplitTrip &bull; Pedro Pedraza M&iacute;guez</span>
+      </div>
+
+      <ul class="footer-links">
+        <li><a href="privacy-policy.html"><span data-lang="en">Privacy Policy</span><span data-lang="es">Política de Privacidad</span></a></li>
+        <li><a href="https://github.com/pedrazamiguez/split-trip" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a href="mailto:support@splittrip.eu">support@splittrip.eu</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    function setLanguage(lang) {
+      if (lang !== 'en' && lang !== 'es') lang = 'en';
+      document.documentElement.lang = lang;
+      
+      var btnEn = document.getElementById('btn-en');
+      var btnEs = document.getElementById('btn-es');
+      
+      if (btnEn && btnEs) {
+        btnEn.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
+        btnEs.setAttribute('aria-pressed', lang === 'es' ? 'true' : 'false');
+      }
+
+      try {
+        localStorage.setItem('splittrip-lang', lang);
+      } catch (e) {}
+    }
+
+    function setTheme(theme) {
+      var btnLight = document.getElementById('theme-light');
+      var btnAuto = document.getElementById('theme-auto');
+      var btnDark = document.getElementById('theme-dark');
+
+      if (theme === 'light' || theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', theme);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        theme = 'auto';
+      }
+
+      if (btnLight && btnAuto && btnDark) {
+        btnLight.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
+        btnAuto.setAttribute('aria-pressed', theme === 'auto' ? 'true' : 'false');
+        btnDark.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      }
+
+      try {
+        localStorage.setItem('splittrip-theme', theme);
+      } catch (e) {}
+    }
+
+    // Sync button state on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      var lang = document.documentElement.lang || 'en';
+      setLanguage(lang);
+
+      var savedTheme = localStorage.getItem('splittrip-theme') || 'auto';
+      setTheme(savedTheme);
+    });
+  </script>
+</body>
+</html>
