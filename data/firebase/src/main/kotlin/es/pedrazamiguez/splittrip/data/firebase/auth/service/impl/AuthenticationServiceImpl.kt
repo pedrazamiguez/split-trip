@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import es.pedrazamiguez.splittrip.core.common.extensions.toLocalDateTimeUtc
+import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
@@ -31,7 +32,8 @@ import kotlinx.coroutines.withContext
 class AuthenticationServiceImpl(
     private val firebaseAuth: FirebaseAuth,
     private val cloudUserDataSource: CloudUserDataSource,
-    private val performanceMonitor: PerformanceMonitor
+    private val performanceMonitor: PerformanceMonitor,
+    private val localeProvider: LocaleProvider
 ) : AuthenticationService {
 
     companion object {
@@ -163,6 +165,7 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun sendPasswordResetEmail(email: String): Result<Unit> = runCatching {
+        firebaseAuth.setLanguageCode(localeProvider.getCurrentLocale().language)
         val cleanEmail = email.trim().lowercase()
         try {
             firebaseAuth.sendPasswordResetEmail(cleanEmail).await()

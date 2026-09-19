@@ -66,7 +66,8 @@ val dataFirebaseModule = module {
         AuthenticationServiceImpl(
             firebaseAuth = get<FirebaseAuth>(),
             cloudUserDataSource = get<CloudUserDataSource>(),
-            performanceMonitor = get<PerformanceMonitor>()
+            performanceMonitor = get<PerformanceMonitor>(),
+            localeProvider = get<LocaleProvider>()
         )
     }
 
