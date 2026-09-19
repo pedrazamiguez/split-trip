@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.core.designsystem.transition
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -30,45 +29,49 @@ object NavTransitionDefaults {
 
     val contentEnterTransition: EnterTransition =
         slideInHorizontally(
-            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS)
-        ) { it } + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
+            animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+        ) { it } + fadeIn(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     val contentExitTransition: ExitTransition =
         slideOutHorizontally(
-            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS)
-        ) { -it / 3 } + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
+            animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+        ) { -it / 3 } +
+            fadeOut(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     val contentPopEnterTransition: EnterTransition =
         slideInHorizontally(
-            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS)
-        ) { -it / 3 } + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
+            animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+        ) { -it / 3 } +
+            fadeIn(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     val contentPopExitTransition: ExitTransition =
         slideOutHorizontally(
-            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS)
-        ) { it } + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
+            animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+        ) { it } + fadeOut(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     // ── Profile / Edit Profile vertical transitions (Modal-like) ──────
 
     val modalEnterTransition: EnterTransition =
         slideInVertically(
-            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS)
-        ) { it } + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
+            animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+        ) { it } + fadeIn(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     val modalExitTransition: ExitTransition =
         slideOutVertically(
-            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS)
-        ) { -it / 3 } + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
+            animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+        ) { -it / 3 } +
+            fadeOut(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     val modalPopEnterTransition: EnterTransition =
         slideInVertically(
-            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS)
-        ) { -it / 3 } + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
+            animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+        ) { -it / 3 } +
+            fadeIn(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     val modalPopExitTransition: ExitTransition =
         slideOutVertically(
-            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS)
-        ) { it } + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
+            animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
+        ) { it } + fadeOut(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     // ── Top bar AnimatedContent transitions ─────────────────────────────
 
@@ -76,10 +79,10 @@ object NavTransitionDefaults {
     private const val TOP_BAR_CROSSFADE_DURATION_MS = 250
 
     val topBarEnterTransition: EnterTransition =
-        fadeIn(animationSpec = tween(durationMillis = TOP_BAR_CROSSFADE_DURATION_MS))
+        fadeIn(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     val topBarExitTransition: ExitTransition =
-        fadeOut(animationSpec = tween(durationMillis = TOP_BAR_CROSSFADE_DURATION_MS))
+        fadeOut(animationSpec = spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS))
 
     /**
      * Size transform for the top bar [AnimatedContent].
@@ -91,6 +94,6 @@ object NavTransitionDefaults {
      */
     val topBarSizeTransform: SizeTransform =
         SizeTransform(clip = false) { _, _ ->
-            tween(durationMillis = TOP_BAR_CROSSFADE_DURATION_MS)
+            spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
         }
 }

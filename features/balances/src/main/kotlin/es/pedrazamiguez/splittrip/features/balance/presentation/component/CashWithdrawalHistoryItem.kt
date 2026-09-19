@@ -43,6 +43,7 @@ fun CashWithdrawalHistoryItem(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .debouncedCombinedClickable(
+                enableSpringPress = true,
                 onClick = {},
                 onLongClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)

@@ -12,4 +12,7 @@ object SharedElementKeys {
     const val ADD_CASH_WITHDRAWAL = "add_cash_withdrawal_container"
     const val RECEIPT_VIEWER_SHARED_ELEMENT_KEY = "receipt_viewer_container"
     const val YOUR_BALANCE = "your_balance_container"
+
+    fun groupCard(groupId: String): String = "group-$groupId"
+    fun expenseCard(expenseId: String): String = "expense-$expenseId"
 }

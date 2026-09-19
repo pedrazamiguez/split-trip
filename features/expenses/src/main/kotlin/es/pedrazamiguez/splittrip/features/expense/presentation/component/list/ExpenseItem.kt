@@ -66,6 +66,7 @@ fun ExpenseItem(
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.large)
                 .debouncedCombinedClickable(
+                    enableSpringPress = true,
                     onClick = { onClick(expenseUiModel.id) },
                     onLongClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)

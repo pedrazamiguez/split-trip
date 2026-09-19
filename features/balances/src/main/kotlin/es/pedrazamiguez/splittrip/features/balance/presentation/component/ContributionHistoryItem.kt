@@ -50,6 +50,7 @@ fun ContributionHistoryItem(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .debouncedCombinedClickable(
+                enableSpringPress = true,
                 onClick = { onClick?.invoke() },
                 onLongClick = onLongClick?.let { action ->
                     {

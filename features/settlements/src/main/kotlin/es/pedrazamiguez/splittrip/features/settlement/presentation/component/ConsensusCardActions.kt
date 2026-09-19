@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
@@ -13,6 +15,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
 
+@Suppress("LongMethod")
 @Composable
 internal fun ConsensusCardActions(
     item: SettlementConsensusItemUiModel,
@@ -22,6 +25,7 @@ internal fun ConsensusCardActions(
     modifier: Modifier = Modifier,
     isOffline: Boolean = false
 ) {
+    val haptics = LocalHapticFeedback.current
     val disputeLabel = stringResource(R.string.your_balance_settlement_dispute)
     val actions = buildList {
         if (item.canConfirm) {
@@ -30,7 +34,10 @@ internal fun ConsensusCardActions(
                     label = item.confirmLabel,
                     isPrimary = true,
                     isEnabled = !isOffline,
-                    onClick = onConfirm
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onConfirm()
+                    }
                 )
             )
         }
@@ -40,7 +47,10 @@ internal fun ConsensusCardActions(
                     label = disputeLabel,
                     isPrimary = false,
                     isEnabled = !isOffline,
-                    onClick = onDispute
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onDispute()
+                    }
                 )
             )
         }

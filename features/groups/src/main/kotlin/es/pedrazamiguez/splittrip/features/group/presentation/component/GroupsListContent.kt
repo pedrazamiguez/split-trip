@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
@@ -54,7 +55,7 @@ internal fun GroupsListContent(
                     modifier = Modifier
                         .animateItem(fadeInSpec = null, fadeOutSpec = null)
                         .sharedElementAnimation(
-                            key = "group-${selectedGroup.id}",
+                            key = SharedElementKeys.groupCard(selectedGroup.id),
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope
                         ),
@@ -69,7 +70,7 @@ internal fun GroupsListContent(
                 modifier = Modifier
                     .animateItem()
                     .sharedElementAnimation(
-                        key = "group-${group.id}",
+                        key = SharedElementKeys.groupCard(group.id),
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope
                     ),

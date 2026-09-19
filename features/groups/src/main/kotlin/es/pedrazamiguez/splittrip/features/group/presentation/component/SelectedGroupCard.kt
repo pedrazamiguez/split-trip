@@ -52,6 +52,7 @@ fun SelectedGroupCard(
                 .fillMaxWidth()
                 .clip(cardShape)
                 .debouncedCombinedClickable(
+                    enableSpringPress = true,
                     onClick = { onClick(groupUiModel.id, groupUiModel.name, groupUiModel.currency) },
                     onLongClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)

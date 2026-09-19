@@ -63,12 +63,16 @@ fun GroupItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.large)
-                .debouncedCombinedClickable(onClick = {
-                    onClick(groupUiModel.id, groupUiModel.name, groupUiModel.currency)
-                }, onLongClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onLongClick()
-                })
+                .debouncedCombinedClickable(
+                    enableSpringPress = true,
+                    onClick = {
+                        onClick(groupUiModel.id, groupUiModel.name, groupUiModel.currency)
+                    },
+                    onLongClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongClick()
+                    }
+                )
         ) {
             Row(
                 modifier = Modifier

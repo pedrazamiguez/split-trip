@@ -11,7 +11,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.ConfirmPaymentBottomSheet
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpenseDetailScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpenseDetailViewModel
@@ -57,15 +59,17 @@ fun ExpenseDetailFeature(
     }
 
     val expense = uiState.expense
-    ExpenseDetailScreen(
-        uiState = uiState,
-        onReceiptTap = expense?.receiptUri?.let { uri ->
-            { navController.navigate(Routes.receiptViewerRoute(uri, expense.receiptMimeType)) }
-        },
-        onConfirmPaymentTap = {
-            showConfirmBottomSheet = true
-        }
-    )
+    SharedTransitionSurface(sharedElementKey = SharedElementKeys.expenseCard(expenseId)) {
+        ExpenseDetailScreen(
+            uiState = uiState,
+            onReceiptTap = expense?.receiptUri?.let { uri ->
+                { navController.navigate(Routes.receiptViewerRoute(uri, expense.receiptMimeType)) }
+            },
+            onConfirmPaymentTap = {
+                showConfirmBottomSheet = true
+            }
+        )
+    }
 
     if (showConfirmBottomSheet && expense != null) {
         ConfirmPaymentBottomSheet(
