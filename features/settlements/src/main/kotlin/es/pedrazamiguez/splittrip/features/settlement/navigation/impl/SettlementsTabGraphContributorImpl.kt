@@ -5,7 +5,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContribut
 import es.pedrazamiguez.splittrip.features.settlement.navigation.settlementsGraph
 
 /**
- * Contributes the My Position route into the host tab's [NavHost].
+ * Contributes the Your Position route into the host tab's [NavHost].
  *
  * Registered via Koin as a [TabGraphContributor] so the balances tab can
  * discover and include this graph at runtime without a compile-time dependency

@@ -20,6 +20,10 @@ plugins {
 
 versionCatalogUpdate {
     sortByKey.set(true)
+    pin {
+        versions.add("kotlin")
+        versions.add("ksp")
+    }
     keep {
         keepUnusedVersions.set(true)
     }

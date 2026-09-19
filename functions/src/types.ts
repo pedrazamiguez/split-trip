@@ -148,12 +148,13 @@ export interface FcmDataPayload {
   groupId: string;
   groupName: string;
   memberName: string;
+  actorName: string;
   deepLink: string;
   entityId?: string;
+  formattedAmount?: string;
   amountCents?: string;
   currencyCode?: string;
   expenseTitle?: string;
-  actorName?: string;
   payerName?: string;
 }
 

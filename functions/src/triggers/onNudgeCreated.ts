@@ -18,8 +18,12 @@ import {
 } from "../types";
 import { getUserDeviceTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
-import { getGroupData, getActorDisplayName, getSettlementData } from "../services/firestore.service";
-import { buildDeepLink } from "../utils/format";
+import {
+  getGroupData,
+  getActorDisplayName,
+  getSettlementData,
+} from "../services/firestore.service";
+import { buildDeepLink, formatAmount } from "../utils/format";
 
 export const onNudgeCreated = onDocumentCreated(
   "groups/{groupId}/nudges/{nudgeId}",
@@ -66,17 +70,11 @@ export const onNudgeCreated = onDocumentCreated(
     }
 
     const rawAmountCents = nudge.amountCents ?? settlementData?.amountCents;
-    const amountCents = rawAmountCents !== undefined && rawAmountCents !== null ? String(rawAmountCents) : undefined;
-    const currencyCode = nudge.currencyCode || nudge.currency || settlementData?.currency || groupData.currency;
-
-    let formattedAmount = "";
-    if (amountCents && currencyCode) {
-      const numericAmount = Number(amountCents);
-      if (!isNaN(numericAmount)) {
-        const units = (numericAmount / 100).toFixed(2);
-        formattedAmount = `${units} ${currencyCode}`;
-      }
-    }
+    const amountCents =
+      rawAmountCents !== undefined && rawAmountCents !== null ? String(rawAmountCents) : undefined;
+    const currencyCode =
+      nudge.currencyCode || nudge.currency || settlementData?.currency || groupData.currency;
+    const formattedAmount = formatAmount(amountCents, currencyCode);
 
     const payload: FcmDataPayload = {
       type: NotificationType.SETTLEMENT_REQUEST,
@@ -87,6 +85,7 @@ export const onNudgeCreated = onDocumentCreated(
       entityId: nudge.settlementId,
       actorName: creditorName,
       payerName: creditorName,
+      formattedAmount,
       ...(amountCents && { amountCents }),
       ...(currencyCode && { currencyCode }),
     };

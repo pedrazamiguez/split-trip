@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.DefaultHa
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.ExpenseAddedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.ExpenseDeletedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.ExpenseUpdatedHandler
+import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.GroupDeletedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.MemberAddedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.MemberRemovedHandler
 import es.pedrazamiguez.splittrip.data.firebase.messaging.handler.impl.RefundableExpenseReminderHandler
@@ -48,6 +49,7 @@ class NotificationHandlerFactory(private val context: Context, private val local
     private fun getMembershipHandler(type: NotificationType): NotificationHandler? = when (type) {
         NotificationType.MEMBER_ADDED -> MemberAddedHandler(context)
         NotificationType.MEMBER_REMOVED -> MemberRemovedHandler(context)
+        NotificationType.GROUP_DELETED -> GroupDeletedHandler(context)
         else -> null
     }
 

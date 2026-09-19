@@ -55,12 +55,27 @@ class AuthenticationServiceImpl(
 
     override suspend fun signIn(email: String, password: String): Result<String> = runCatching {
         performanceMonitor.traceAsync(PerformanceTraces.AUTH_SIGN_IN_EMAIL) {
-            firebaseAuth
-                .signInWithEmailAndPassword(
-                    email,
-                    password
-                )
-                .await().user?.uid ?: ""
+            val cleanEmail = email.trim().lowercase()
+            try {
+                firebaseAuth
+                    .signInWithEmailAndPassword(
+                        cleanEmail,
+                        password
+                    )
+                    .await().user?.uid ?: ""
+            } catch (e: Exception) {
+                val canonicalEmail = User.canonicalizeEmail(cleanEmail)
+                if (cleanEmail != canonicalEmail) {
+                    firebaseAuth
+                        .signInWithEmailAndPassword(
+                            canonicalEmail,
+                            password
+                        )
+                        .await().user?.uid ?: ""
+                } else {
+                    throw e
+                }
+            }
         }
     }
 
@@ -104,10 +119,20 @@ class AuthenticationServiceImpl(
 
     override suspend fun signInWithGoogle(idToken: String): Result<User> = runCatching {
         performanceMonitor.traceAsync(PerformanceTraces.AUTH_SIGN_IN_GOOGLE) {
+            val googleEmail = extractEmailFromIdToken(idToken)?.trim()?.lowercase()
+            val canonicalEmail = googleEmail?.let { User.canonicalizeEmail(it) }
+
+            checkPreSignInGoogleCollision(canonicalEmail, googleEmail, idToken)
+
             try {
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
-                val firebaseUser = firebaseAuth.signInWithCredential(credential).await().user
+                val authResult = firebaseAuth.signInWithCredential(credential).await()
+                val firebaseUser = authResult.user
                     ?: error("Google sign-in succeeded but Firebase user is null")
+
+                val isNewUser = authResult.additionalUserInfo?.isNewUser == true
+                checkPostSignInGoogleCollision(canonicalEmail, firebaseUser, isNewUser, idToken)
+
                 val user = User(
                     userId = firebaseUser.uid,
                     email = firebaseUser.email ?: "",
@@ -138,7 +163,17 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun sendPasswordResetEmail(email: String): Result<Unit> = runCatching {
-        firebaseAuth.sendPasswordResetEmail(email).await()
+        val cleanEmail = email.trim().lowercase()
+        try {
+            firebaseAuth.sendPasswordResetEmail(cleanEmail).await()
+        } catch (e: Exception) {
+            val canonicalEmail = User.canonicalizeEmail(cleanEmail)
+            if (cleanEmail != canonicalEmail) {
+                firebaseAuth.sendPasswordResetEmail(canonicalEmail).await()
+            } else {
+                throw e
+            }
+        }
     }
 
     override suspend fun linkGoogleAccount(idToken: String): Result<Unit> = runCatching {
@@ -149,7 +184,7 @@ class AuthenticationServiceImpl(
 
     override suspend fun linkEmailPassword(email: String, password: String): Result<Unit> = runCatching {
         val user = requireCurrentUser()
-        val credential = EmailAuthProvider.getCredential(email, password)
+        val credential = EmailAuthProvider.getCredential(email.trim().lowercase(), password)
         user.linkWithCredential(credential).await()
     }
 
@@ -216,5 +251,40 @@ class AuthenticationServiceImpl(
                 null
             }
         }.getOrNull()
+    }
+
+    private suspend fun checkPreSignInGoogleCollision(
+        canonicalEmail: String?,
+        googleEmail: String?,
+        idToken: String
+    ) {
+        if (canonicalEmail == null || canonicalEmail == googleEmail) return
+        val signInMethods = runCatching {
+            firebaseAuth.fetchSignInMethodsForEmail(canonicalEmail).await().signInMethods
+        }.getOrNull()
+        if (signInMethods?.contains(EmailAuthProvider.PROVIDER_ID) == true) {
+            throw GoogleCollisionWithEmailPasswordException(canonicalEmail, idToken)
+        }
+    }
+
+    private suspend fun checkPostSignInGoogleCollision(
+        canonicalEmail: String?,
+        firebaseUser: FirebaseUser,
+        isNewUser: Boolean,
+        idToken: String
+    ) {
+        if (canonicalEmail == null) return
+        val existingUsers = cloudUserDataSource.searchUsersByEmail(
+            canonicalEmail,
+            excludeUserId = firebaseUser.uid
+        )
+        if (existingUsers.isEmpty()) return
+
+        val collisionUser = existingUsers.first()
+        if (!isNewUser) {
+            runCatching { cloudUserDataSource.deleteUser(firebaseUser.uid) }
+        }
+        firebaseUser.delete().await()
+        throw GoogleCollisionWithEmailPasswordException(collisionUser.email, idToken)
     }
 }

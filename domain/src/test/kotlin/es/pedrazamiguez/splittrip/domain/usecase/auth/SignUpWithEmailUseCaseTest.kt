@@ -95,6 +95,21 @@ class SignUpWithEmailUseCaseTest {
             assertTrue(result.isSuccess)
             assertEquals(userId, result.getOrNull())
         }
+
+        @Test
+        fun `signing up with dotted email passes dotted email to auth service`() = runTest {
+            // Given
+            val dottedEmail = "pedraza.miguez@gmail.com"
+            coEvery { authenticationService.signUp(dottedEmail, displayName, password) } returns Result.success(userId)
+            coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
+
+            // When
+            val result = useCase(dottedEmail, displayName, password)
+
+            // Then
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { authenticationService.signUp(dottedEmail, displayName, password) }
+        }
     }
 
     @Nested

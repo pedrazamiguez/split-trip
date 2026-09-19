@@ -21,7 +21,7 @@ import {
 import { getUserDeviceTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
-import { buildDeepLink } from "../utils/format";
+import { buildDeepLink, formatAmount } from "../utils/format";
 
 export const onSettlementUpdated = onDocumentUpdated(
   "groups/{groupId}/settlements/{settlementId}",
@@ -56,6 +56,7 @@ export const onSettlementUpdated = onDocumentUpdated(
     let targetUserId: string | undefined;
     let notificationType: NotificationType | undefined;
     let bodyLocKey: string | undefined;
+    let titleLocKey: string | undefined;
 
     const beforeStatus = before.status;
     const afterStatus = after.status;
@@ -65,6 +66,7 @@ export const onSettlementUpdated = onDocumentUpdated(
       targetUserId = after.toUserId;
       notificationType = NotificationType.SETTLEMENT_REQUEST;
       bodyLocKey = "notification_settlement_request_body";
+      titleLocKey = "notification_settlement_request_title";
     } else if (
       beforeStatus === "CONFIRMED_BY_PAYER" &&
       (afterStatus === "RESOLVED" || afterStatus === "SETTLED")
@@ -73,11 +75,13 @@ export const onSettlementUpdated = onDocumentUpdated(
       targetUserId = after.fromUserId;
       notificationType = NotificationType.SETTLEMENT_CONFIRMED;
       bodyLocKey = "notification_settlement_confirmed_body";
+      titleLocKey = "notification_settlement_confirmed_title";
     } else if (afterStatus === "DISPUTED") {
       actorId = after.disputedBy || after.toUserId;
       targetUserId = actorId === after.fromUserId ? after.toUserId : after.fromUserId;
       notificationType = NotificationType.SETTLEMENT_DISPUTED;
       bodyLocKey = "notification_settlement_disputed_body";
+      titleLocKey = "notification_settlement_disputed_title";
     }
 
     if (!actorId || !targetUserId || !notificationType || !bodyLocKey) {
@@ -99,15 +103,7 @@ export const onSettlementUpdated = onDocumentUpdated(
     const amountCents =
       rawAmountCents !== undefined && rawAmountCents !== null ? String(rawAmountCents) : undefined;
     const currencyCode = after.currency || groupData.currency;
-
-    let formattedAmount = "";
-    if (amountCents && currencyCode) {
-      const numericAmount = Number(amountCents);
-      if (!isNaN(numericAmount)) {
-        const units = (numericAmount / 100).toFixed(2);
-        formattedAmount = `${units} ${currencyCode}`;
-      }
-    }
+    const formattedAmount = formatAmount(amountCents, currencyCode);
 
     const payload: FcmDataPayload = {
       type: notificationType,
@@ -118,12 +114,14 @@ export const onSettlementUpdated = onDocumentUpdated(
       entityId: settlementId,
       actorName,
       payerName: actorName,
+      formattedAmount,
       ...(amountCents && { amountCents }),
       ...(currencyCode && { currencyCode }),
     };
 
     const display: NotificationDisplay = {
       title: groupData.name,
+      titleLocKey,
       bodyLocKey,
       bodyLocArgs: [actorName, formattedAmount],
       channelId: NotificationChannelId.FINANCIAL,
