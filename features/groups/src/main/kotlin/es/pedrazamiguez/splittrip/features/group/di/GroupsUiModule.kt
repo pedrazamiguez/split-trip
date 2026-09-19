@@ -67,7 +67,8 @@ val groupsUiModule = module {
     single<GroupUiMapper> {
         GroupUiMapperImpl(
             localeProvider = get<LocaleProvider>(),
-            resourceProvider = get<ResourceProvider>()
+            resourceProvider = get<ResourceProvider>(),
+            userUiMapper = get<UserUiMapper>()
         )
     }
 

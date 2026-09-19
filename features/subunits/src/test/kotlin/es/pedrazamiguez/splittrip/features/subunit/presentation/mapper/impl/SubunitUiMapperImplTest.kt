@@ -12,6 +12,7 @@ import java.math.BigDecimal
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -36,8 +37,12 @@ class SubunitUiMapperImplTest {
         mapper = SubunitUiMapperImpl(localeProvider, resourceProvider, userUiMapper)
     }
 
-    private fun createUser(id: String, displayName: String? = null, email: String = "$id@test.com") =
-        User(userId = id, email = email, displayName = displayName)
+    private fun createUser(
+        id: String,
+        displayName: String? = null,
+        email: String = "$id@test.com",
+        profileImagePath: String? = null
+    ) = User(userId = id, email = email, displayName = displayName, profileImagePath = profileImagePath)
 
     private fun createSubunit(
         id: String = "sub-1",
@@ -74,6 +79,28 @@ class SubunitUiMapperImplTest {
             assertEquals("Alice", result.memberShares[0].displayName)
             assertEquals("Bob", result.memberShares[1].displayName)
             assertEquals("2 members", result.memberCount)
+        }
+
+        @Test
+        fun `maps member avatar URLs from member profiles`() {
+            val profiles = mapOf(
+                "user-1" to createUser(
+                    id = "user-1",
+                    displayName = "Alice",
+                    profileImagePath = "https://example.com/alice.jpg"
+                ),
+                "user-2" to createUser("user-2", displayName = "Bob", profileImagePath = null)
+            )
+            val subunit = createSubunit()
+            every {
+                resourceProvider.getQuantityString(R.plurals.subunit_member_count, 2, 2)
+            } returns "2 members"
+
+            val result = mapper.toSubunitUiModel(subunit, profiles)
+
+            assertEquals(2, result.memberShares.size)
+            assertEquals("https://example.com/alice.jpg", result.memberShares[0].avatarUrl)
+            assertNull(result.memberShares[1].avatarUrl)
         }
 
         @Test

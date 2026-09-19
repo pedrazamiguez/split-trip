@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.preview
 
 import androidx.compose.runtime.Composable
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.MappedPreview
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -17,7 +18,7 @@ fun GroupUiPreviewHelper(
     MappedPreview(
         domain = domainGroup,
         mapper = { localeProvider, resourceProvider ->
-            GroupUiMapperImpl(localeProvider, resourceProvider)
+            GroupUiMapperImpl(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
         },
         transform = { mapper, domain ->
             mapper.toGroupUiModel(domain, memberProfiles)
@@ -35,7 +36,7 @@ fun GroupsScreenPreviewHelper(
     MappedPreview(
         domain = domainGroups,
         mapper = { localeProvider, resourceProvider ->
-            GroupUiMapperImpl(localeProvider, resourceProvider)
+            GroupUiMapperImpl(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
         },
         transform = { mapper, domain ->
             mapper.toGroupUiModelList(domain, memberProfiles)

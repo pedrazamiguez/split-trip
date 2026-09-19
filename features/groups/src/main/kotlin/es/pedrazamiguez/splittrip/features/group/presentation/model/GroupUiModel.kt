@@ -22,6 +22,7 @@ data class GroupUiModel(
     val memberAvatarUrls: ImmutableList<String> = persistentListOf(),
     /** Number of members beyond [MAX_VISIBLE_AVATARS]; shown as "+N" overflow badge. */
     val memberOverflowCount: Int = 0,
+    val members: ImmutableList<GroupMemberUiModel> = persistentListOf(),
     val status: GroupStatus = GroupStatus.ACTIVE,
     val createdBy: String = ""
 ) {
