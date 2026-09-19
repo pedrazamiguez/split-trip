@@ -282,4 +282,40 @@ class MainScreenTest {
 
         composeRule.onNodeWithText("Content: Expenses - $expenseDetailRoute").assertIsDisplayed()
     }
+
+    @Test
+    fun deepLinkWithContributionDetail_navigatesToContributionDetail() {
+        val contributionDetailRoute = Routes.contributionDetailRoute("group-123", "contrib-456")
+        val balancesProviderWithSub = FakeNavigationProvider(
+            route = "balances",
+            order = 20,
+            requiresSelectedGroup = true,
+            label = "Balances",
+            subRoutes = listOf(contributionDetailRoute)
+        )
+        val providers = listOf(
+            groupsProvider,
+            balancesProviderWithSub,
+            expensesProvider,
+            profileProvider
+        )
+
+        composeRule.setContent {
+            SplitTripTheme {
+                MainScreen(
+                    navigationProviders = providers,
+                    screenUiProviders = emptyList(),
+                    deepLinkGroupId = "group-123",
+                    deepLinkTargetTab = "balances",
+                    deepLinkInTabDestination = contributionDetailRoute,
+                    mainViewModel = createMainViewModel(),
+                    sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Content: Balances - $contributionDetailRoute").assertIsDisplayed()
+    }
 }

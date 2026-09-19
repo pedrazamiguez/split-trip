@@ -136,6 +136,8 @@ fun MainScreen(
                     launchSingleTop = true
                 }
             }
+        } else if (deepLinkTargetTab != null) {
+            selectedRoute = deepLinkTargetTab
         }
     }
 

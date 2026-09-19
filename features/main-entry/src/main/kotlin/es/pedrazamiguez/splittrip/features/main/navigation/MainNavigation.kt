@@ -19,13 +19,15 @@ fun NavGraphBuilder.mainGraph(
     composable(
         route = Routes.MAIN,
         deepLinks = listOf(
+            navDeepLink { uriPattern = DeepLinkUtils.PATTERN_GROUPS },
             navDeepLink { uriPattern = DeepLinkUtils.PATTERN_GROUP },
             navDeepLink { uriPattern = DeepLinkUtils.PATTERN_EXPENSES },
             navDeepLink { uriPattern = DeepLinkUtils.PATTERN_EXPENSE_DETAIL },
             navDeepLink { uriPattern = DeepLinkUtils.PATTERN_CONTRIBUTION },
             navDeepLink { uriPattern = DeepLinkUtils.PATTERN_CASH_WITHDRAWAL },
             navDeepLink { uriPattern = DeepLinkUtils.PATTERN_SETTLEMENT },
-            navDeepLink { uriPattern = DeepLinkUtils.PATTERN_YOUR_POSITION }
+            navDeepLink { uriPattern = DeepLinkUtils.PATTERN_YOUR_POSITION },
+            navDeepLink { uriPattern = DeepLinkUtils.PATTERN_MEMBERS }
         ),
         arguments = listOf(
             navArgument(DeepLinkUtils.ARG_GROUP_ID) {
@@ -61,34 +63,42 @@ fun NavGraphBuilder.mainGraph(
         val deepLinkSettlementId = backStackEntry.arguments
             ?.getString(DeepLinkUtils.ARG_SETTLEMENT_ID)?.ifBlank { null }
 
-        // Detect the expenses-list deep link (groups/{groupId}/expenses) and
-        // your-position deep link (groups/{groupId}/your-position) by inspecting
-        // the Activity intent URI. Arguments alone can't distinguish these from the
+        // Detect non-entity deep links (groups, expenses-list, your-position, members)
+        // by inspecting the Activity intent URI. Arguments alone can't distinguish these from the
         // group-only deep link (groups/{groupId}) because they produce the same state.
         val intentUri = LocalActivity.current?.intent?.data
-        val isExpensesListPath = deepLinkGroupId != null &&
-            deepLinkExpenseId == null &&
+        val lastPathSegment = intentUri?.pathSegments?.lastOrNull()
+        val isNoEntityDeepLink = deepLinkExpenseId == null &&
             deepLinkContributionId == null &&
             deepLinkWithdrawalId == null &&
-            deepLinkSettlementId == null &&
-            intentUri?.pathSegments?.lastOrNull() == "expenses"
+            deepLinkSettlementId == null
+
+        val isExpensesListPath = deepLinkGroupId != null &&
+            isNoEntityDeepLink &&
+            lastPathSegment == "expenses"
 
         val isYourPositionPath = deepLinkGroupId != null &&
-            deepLinkExpenseId == null &&
-            deepLinkContributionId == null &&
-            deepLinkWithdrawalId == null &&
-            deepLinkSettlementId == null &&
-            intentUri?.pathSegments?.lastOrNull() == "your-position"
+            isNoEntityDeepLink &&
+            lastPathSegment == "your-position"
 
-        // Resolve target tab only when a deep link group is present
-        val deepLinkTargetTab = if (deepLinkGroupId != null) {
+        val isMembersPath = deepLinkGroupId != null &&
+            isNoEntityDeepLink &&
+            lastPathSegment == "members"
+
+        val isGroupsListPath = deepLinkGroupId == null &&
+            lastPathSegment == "groups"
+
+        // Resolve target tab when a deep link group is present or targeting the groups list
+        val deepLinkTargetTab = if (deepLinkGroupId != null || isGroupsListPath) {
             DeepLinkUtils.resolveTargetTab(
                 expenseId = deepLinkExpenseId,
                 isExpensesListPath = isExpensesListPath,
                 contributionId = deepLinkContributionId,
                 withdrawalId = deepLinkWithdrawalId,
                 settlementId = deepLinkSettlementId,
-                isYourPositionPath = isYourPositionPath
+                isYourPositionPath = isYourPositionPath,
+                isGroupsListPath = isGroupsListPath,
+                isMembersPath = isMembersPath
             )
         } else {
             null
@@ -96,9 +106,12 @@ fun NavGraphBuilder.mainGraph(
 
         val deepLinkInTabDestination = if (deepLinkGroupId != null) {
             DeepLinkUtils.resolveInTabDestination(
+                groupId = deepLinkGroupId,
                 expenseId = deepLinkExpenseId,
+                contributionId = deepLinkContributionId,
                 settlementId = deepLinkSettlementId,
-                isYourPositionPath = isYourPositionPath
+                isYourPositionPath = isYourPositionPath,
+                isMembersPath = isMembersPath
             )
         } else {
             null

@@ -161,6 +161,22 @@ class DeepLinkUtilsTest {
             )
             assertEquals(Routes.EXPENSES, result)
         }
+
+        @Test
+        fun `returns GROUPS when isGroupsListPath is true`() {
+            val result = DeepLinkUtils.resolveTargetTab(
+                isGroupsListPath = true
+            )
+            assertEquals(Routes.GROUPS, result)
+        }
+
+        @Test
+        fun `returns GROUPS when isMembersPath is true`() {
+            val result = DeepLinkUtils.resolveTargetTab(
+                isMembersPath = true
+            )
+            assertEquals(Routes.GROUPS, result)
+        }
     }
 
     @Nested
@@ -173,6 +189,40 @@ class DeepLinkUtilsTest {
                 expenseId = "expense-123"
             )
             assertEquals(Routes.expenseDetailRoute("expense-123"), result)
+        }
+
+        @Test
+        fun `returns contributionDetailRoute when contributionId and groupId are present`() {
+            val result = DeepLinkUtils.resolveInTabDestination(
+                groupId = "group-123",
+                contributionId = "contribution-456"
+            )
+            assertEquals(Routes.contributionDetailRoute("group-123", "contribution-456"), result)
+        }
+
+        @Test
+        fun `returns null when contributionId is present but groupId is null`() {
+            val result = DeepLinkUtils.resolveInTabDestination(
+                contributionId = "contribution-456"
+            )
+            assertNull(result)
+        }
+
+        @Test
+        fun `returns groupDetailRoute when isMembersPath is true and groupId is present`() {
+            val result = DeepLinkUtils.resolveInTabDestination(
+                groupId = "group-123",
+                isMembersPath = true
+            )
+            assertEquals(Routes.groupDetailRoute("group-123"), result)
+        }
+
+        @Test
+        fun `returns null when isMembersPath is true but groupId is null`() {
+            val result = DeepLinkUtils.resolveInTabDestination(
+                isMembersPath = true
+            )
+            assertNull(result)
         }
 
         @Test
@@ -215,6 +265,26 @@ class DeepLinkUtilsTest {
             )
             assertEquals(Routes.expenseDetailRoute("expense-123"), result)
         }
+
+        @Test
+        fun `prioritizes expenseId when both expenseId and contributionId are present`() {
+            val result = DeepLinkUtils.resolveInTabDestination(
+                groupId = "group-123",
+                expenseId = "expense-123",
+                contributionId = "contribution-456"
+            )
+            assertEquals(Routes.expenseDetailRoute("expense-123"), result)
+        }
+
+        @Test
+        fun `prioritizes contributionId when both contributionId and settlementId are present`() {
+            val result = DeepLinkUtils.resolveInTabDestination(
+                groupId = "group-123",
+                contributionId = "contribution-456",
+                settlementId = "settlement-456"
+            )
+            assertEquals(Routes.contributionDetailRoute("group-123", "contribution-456"), result)
+        }
     }
 
     @Nested
@@ -231,6 +301,14 @@ class DeepLinkUtilsTest {
             assertEquals(
                 "splittrip://groups/{groupId}",
                 DeepLinkUtils.PATTERN_GROUP
+            )
+        }
+
+        @Test
+        fun `PATTERN_GROUPS is splittrip groups`() {
+            assertEquals(
+                "splittrip://groups",
+                DeepLinkUtils.PATTERN_GROUPS
             )
         }
 
@@ -279,6 +357,14 @@ class DeepLinkUtilsTest {
             assertEquals(
                 "splittrip://groups/{groupId}/your-position",
                 DeepLinkUtils.PATTERN_YOUR_POSITION
+            )
+        }
+
+        @Test
+        fun `PATTERN_MEMBERS contains groupId placeholder`() {
+            assertEquals(
+                "splittrip://groups/{groupId}/members",
+                DeepLinkUtils.PATTERN_MEMBERS
             )
         }
 
