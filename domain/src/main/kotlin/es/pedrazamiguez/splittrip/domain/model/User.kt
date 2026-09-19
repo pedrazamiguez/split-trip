@@ -19,7 +19,9 @@ data class User(
     val tier: SubscriptionTier = SubscriptionTier.FREE
 ) {
     companion object {
-        fun normalizeEmail(email: String): String {
+        fun normalizeEmail(email: String): String = email.trim().lowercase()
+
+        fun canonicalizeEmail(email: String): String {
             val cleanEmail = email.trim().lowercase()
             val parts = cleanEmail.split("@")
             if (parts.size != 2) return cleanEmail
@@ -27,11 +29,14 @@ data class User(
             val domain = parts[1]
 
             if (domain == "gmail.com" || domain == "googlemail.com") {
-                val baseLocal = localPart.substringBefore("+")
-                val normalizedLocal = baseLocal.replace(".", "")
-                return "$normalizedLocal@$domain"
+                val baseLocal = localPart.substringBefore("+").replace(".", "")
+                return "$baseLocal@gmail.com"
             }
             return cleanEmail
+        }
+
+        fun areEmailsEquivalent(first: String, second: String): Boolean {
+            return canonicalizeEmail(first) == canonicalizeEmail(second)
         }
 
         fun generatePendingUserId(email: String): String {

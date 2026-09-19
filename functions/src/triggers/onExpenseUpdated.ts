@@ -21,7 +21,7 @@ import {
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
-import { buildDeepLink } from "../utils/format";
+import { buildDeepLink, formatAmount } from "../utils/format";
 
 /** Fields that constitute a "meaningful" change worth notifying about. */
 const SUBSTANTIVE_FIELDS: (keyof ExpenseDoc)[] = [
@@ -89,16 +89,23 @@ export const onExpenseUpdated = onDocumentUpdated(
     const tokens = await getRecipientTokens(groupId, actorId, groupData.memberIds);
     if (tokens.length === 0) return;
 
-    const currency = after.currency || groupData.currency;
-    const amountCents = after.groupAmountCents ?? after.amountCents;
+    const hasGroupAmount =
+      after.groupAmountCents !== undefined && after.groupAmountCents !== null;
+    const amountCents = hasGroupAmount ? after.groupAmountCents! : after.amountCents;
+    const currency = hasGroupAmount
+      ? after.groupCurrency || groupData.currency
+      : after.currency || groupData.currency;
+    const formattedAmount = formatAmount(amountCents, currency);
 
     const payload: FcmDataPayload = {
       type: NotificationType.EXPENSE_UPDATED,
       groupId,
       groupName: groupData.name,
       memberName: actorName,
+      actorName,
       deepLink: buildDeepLink(groupId, `expenses/${expenseId}`),
       entityId: expenseId,
+      formattedAmount,
       amountCents: String(amountCents),
       currencyCode: currency,
       expenseTitle: after.title,
@@ -107,8 +114,10 @@ export const onExpenseUpdated = onDocumentUpdated(
     const display: NotificationDisplay = {
       title: groupData.name,
       titleLocKey: "notification_expense_updated_title",
-      bodyLocKey: "notification_expense_updated_body_brief",
-      bodyLocArgs: [actorName],
+      bodyLocKey: formattedAmount
+        ? "notification_expense_updated_body"
+        : "notification_expense_updated_body_brief",
+      bodyLocArgs: formattedAmount ? [actorName, formattedAmount] : [actorName],
       channelId: NotificationChannelId.EXPENSES,
     };
 

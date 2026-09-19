@@ -23,7 +23,7 @@ class SettlementConfirmedHandler(
 
         return NotificationContent(
             title = groupName.ifBlank {
-                context.getString(R.string.notification_settlement_request_title)
+                context.getString(R.string.notification_settlement_confirmed_title)
             },
             body = context.getString(
                 R.string.notification_settlement_confirmed_body,

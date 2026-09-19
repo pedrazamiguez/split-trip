@@ -27,7 +27,7 @@ Kotlin Android app (Jetpack Compose, Material 3) for shared travel expenses. Mul
 :features:onboarding    → Onboarding wizard
 :features:profile       → User profile display + edit
 :features:settings      → App settings
-:features:settlements   → "Mi posición" / "My position" screen & settlement consensus sub-flow (standalone, non-tab)
+:features:settlements   → "Tu posición" / "Your position" screen & settlement consensus sub-flow (standalone, non-tab)
 :features:subunits      → Subunit management lifecycle — CRUD (standalone, non-tab)
 :features:withdrawals   → Add cash withdrawal write-flow (standalone, non-tab)
 ```
@@ -158,7 +158,7 @@ groupsDomainModule + groupsDataModule + groupsUiModule → groupsFeatureModules
 subunitsDomainModule + subunitsDataModule + subunitsUiModule → subunitsFeatureModules
 contributionsDomainModule + contributionsUiModule → contributionsFeatureModules  (no dedicated contributions data module — relies on `ContributionRepository` impl from `balancesDataModule` in :data)
 withdrawalsDomainModule + withdrawalsUiModule → withdrawalsFeatureModules  (no dedicated withdrawals data module — relies on `CashWithdrawalRepository` impl from `balancesDataModule` in :data)
-settlementsUiModule → settlementsFeatureModules  (contributes `SettlementsTabGraphContributorImpl` for the "Mi posición" / "My position" sub-flow inside Balances tab)
+settlementsUiModule → settlementsFeatureModules  (contributes `SettlementsTabGraphContributorImpl` for the "Tu posición" / "Your position" sub-flow inside Balances tab)
 ```
 - **Tab features** UI modules declare: ViewModel, Mapper, `NavigationProvider` (factory + bind), `ScreenUiProvider` (single + bind).
 - **Non-tab features** UI modules declare: ViewModel, Mapper, `TabGraphContributor` (factory + bind). They typically do **not** implement `NavigationProvider` but still register a `ScreenUiProvider` when they need a top bar (e.g. write-flow screens).

@@ -14,11 +14,16 @@ class ScheduledExpenseEffectiveHandler(
     override fun handle(data: Map<String, String>): NotificationContent {
         val groupId = data["groupId"]
         val expenseId = data["expenseId"]
+        val deepLink = data["deepLink"] ?: if (!groupId.isNullOrBlank() && !expenseId.isNullOrBlank()) {
+            "splittrip://groups/$groupId/expenses/$expenseId"
+        } else {
+            null
+        }
 
         return NotificationContent(
             title = context.getString(R.string.notification_scheduled_effective_title),
             body = context.getString(R.string.notification_scheduled_effective_body),
-            deepLink = data["deepLink"],
+            deepLink = deepLink,
             channelId = NotificationChannelId.EXPENSES,
             groupId = groupId,
             notificationId = stableNotificationId("EXPENSE_EFFECTIVE", groupId, expenseId)

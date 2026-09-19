@@ -4,6 +4,17 @@
     <string name="onboarding_welcome_title">¿Listo para viajar sin líos?</string>
     <string name="onboarding_welcome_subtitle">Comparte gastos con tu grupo sin conversaciones incómodas sobre dinero</string>
     <string name="onboarding_complete_button">¡Empezamos!</string>
+    <string name="onboarding_next_button">Siguiente</string>
+    <string name="onboarding_back_button">Atrás</string>
+    <string name="onboarding_skip_button">Saltar</string>
+    <string name="onboarding_step_trips_title">Viajes y grupos</string>
+    <string name="onboarding_step_trips_description">Organiza los gastos del viaje con tus amigos, gestiona múltiples divisas y mantén las cuentas claras de principio a fin.</string>
+    <string name="onboarding_step_split_title">Reparto inteligente</string>
+    <string name="onboarding_step_split_description">Divide los gastos a tu manera: a partes iguales, importes exactos, porcentajes o subunidades para parejas y familias. Adjunta tickets para un registro transparente.</string>
+    <string name="onboarding_step_cash_title">Efectivo y Pocket</string>
+    <string name="onboarding_step_cash_description">Controla el efectivo físico compartido junto con los pagos con tarjeta. Registra retiradas y aportaciones al pocket con conversión de divisas automática.</string>
+    <string name="onboarding_step_settle_title">Consenso y acuerdos de pago</string>
+    <string name="onboarding_step_settle_description">Conoce tu saldo exacto en cualquier momento. Salda cuentas fácilmente con confirmación mutua para que todos estén de acuerdo.</string>
 
     <!-- Reconciliation Screen -->
     <string name="reconciliation_title">¡Te estábamos esperando!</string>

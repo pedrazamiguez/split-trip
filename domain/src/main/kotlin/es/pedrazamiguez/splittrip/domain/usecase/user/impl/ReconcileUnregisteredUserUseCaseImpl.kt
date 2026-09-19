@@ -20,6 +20,14 @@ class ReconcileUnregisteredUserUseCaseImpl(
         val pendingUserId = User.generatePendingUserId(email)
         groupRepository.reconcileUnregisteredUser(pendingUserId, activeUserId)
         userRepository.deletePendingUser(pendingUserId).getOrThrow()
+
+        val canonicalEmail = User.canonicalizeEmail(email)
+        val canonicalPendingUserId = User.generatePendingUserId(canonicalEmail)
+        if (canonicalPendingUserId != pendingUserId) {
+            groupRepository.reconcileUnregisteredUser(canonicalPendingUserId, activeUserId)
+            userRepository.deletePendingUser(canonicalPendingUserId).getOrThrow()
+        }
+
         userPreferenceRepository.setIsReconciled(true)
     }
 }

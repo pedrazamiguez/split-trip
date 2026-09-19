@@ -109,12 +109,15 @@ describe("onSettlementUpdated trigger", () => {
         groupId: "group1",
         groupName: "Trip to Paris",
         memberName: "Alice",
+        actorName: "Alice",
         entityId: "settle1",
+        formattedAmount: "20,00\u00A0€",
       }),
       expect.objectContaining({
         title: "Trip to Paris",
+        titleLocKey: "notification_settlement_request_title",
         bodyLocKey: "notification_settlement_request_body",
-        bodyLocArgs: ["Alice", "20.00 EUR"],
+        bodyLocArgs: ["Alice", "20,00\u00A0€"],
         channelId: NotificationChannelId.FINANCIAL,
       })
     );
@@ -136,12 +139,15 @@ describe("onSettlementUpdated trigger", () => {
         groupId: "group1",
         groupName: "Trip to Paris",
         memberName: "Bob",
+        actorName: "Bob",
         entityId: "settle1",
+        formattedAmount: "20,00\u00A0€",
       }),
       expect.objectContaining({
         title: "Trip to Paris",
+        titleLocKey: "notification_settlement_confirmed_title",
         bodyLocKey: "notification_settlement_confirmed_body",
-        bodyLocArgs: ["Bob", "20.00 EUR"],
+        bodyLocArgs: ["Bob", "20,00\u00A0€"],
         channelId: NotificationChannelId.FINANCIAL,
       })
     );
@@ -163,12 +169,15 @@ describe("onSettlementUpdated trigger", () => {
         groupId: "group1",
         groupName: "Trip to Paris",
         memberName: "Bob",
+        actorName: "Bob",
         entityId: "settle1",
+        formattedAmount: "20,00\u00A0€",
       }),
       expect.objectContaining({
         title: "Trip to Paris",
+        titleLocKey: "notification_settlement_disputed_title",
         bodyLocKey: "notification_settlement_disputed_body",
-        bodyLocArgs: ["Bob", "20.00 EUR"],
+        bodyLocArgs: ["Bob", "20,00\u00A0€"],
         channelId: NotificationChannelId.FINANCIAL,
       })
     );

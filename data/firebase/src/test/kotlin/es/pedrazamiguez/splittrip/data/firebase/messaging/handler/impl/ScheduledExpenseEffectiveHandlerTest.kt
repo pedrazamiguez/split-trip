@@ -55,12 +55,25 @@ class ScheduledExpenseEffectiveHandlerTest {
     }
 
     @Test
-    @DisplayName("handle uses null deepLink when not provided")
-    fun `handle uses null deepLink when not provided`() {
+    @DisplayName("handle falls back to generated deep link when not provided")
+    fun `handle falls back to generated deep link when not provided`() {
         every { context.getString(R.string.notification_scheduled_effective_title) } returns "title"
         every { context.getString(R.string.notification_scheduled_effective_body) } returns "body"
 
         val data = mapOf("groupId" to "group1", "expenseId" to "exp1")
+
+        val result = handler.handle(data)
+
+        assertEquals("splittrip://groups/group1/expenses/exp1", result.deepLink)
+    }
+
+    @Test
+    @DisplayName("handle uses null deepLink when groupId or expenseId is missing")
+    fun `handle uses null deepLink when groupId or expenseId is missing`() {
+        every { context.getString(R.string.notification_scheduled_effective_title) } returns "title"
+        every { context.getString(R.string.notification_scheduled_effective_body) } returns "body"
+
+        val data = mapOf("groupId" to "group1")
 
         val result = handler.handle(data)
 

@@ -20,7 +20,7 @@ import {
 import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
-import { buildDeepLink } from "../utils/format";
+import { buildDeepLink, formatAmount } from "../utils/format";
 
 export const onExpenseDeleted = onDocumentDeleted(
   "groups/{groupId}/expenses/{expenseId}",
@@ -61,16 +61,23 @@ export const onExpenseDeleted = onDocumentDeleted(
     const tokens = await getRecipientTokens(groupId, actorId, groupData.memberIds);
     if (tokens.length === 0) return;
 
-    const currency = expense.currency || groupData.currency;
-    const amountCents = expense.groupAmountCents ?? expense.amountCents;
+    const hasGroupAmount =
+      expense.groupAmountCents !== undefined && expense.groupAmountCents !== null;
+    const amountCents = hasGroupAmount ? expense.groupAmountCents! : expense.amountCents;
+    const currency = hasGroupAmount
+      ? expense.groupCurrency || groupData.currency
+      : expense.currency || groupData.currency;
+    const formattedAmount = formatAmount(amountCents, currency);
 
     const payload: FcmDataPayload = {
       type: NotificationType.EXPENSE_DELETED,
       groupId,
       groupName: groupData.name,
       memberName: actorName,
-      deepLink: buildDeepLink(groupId),
+      actorName,
+      deepLink: buildDeepLink(groupId, "expenses"),
       entityId: expenseId,
+      formattedAmount,
       amountCents: String(amountCents),
       currencyCode: currency,
       expenseTitle: expense.title,
@@ -79,8 +86,10 @@ export const onExpenseDeleted = onDocumentDeleted(
     const display: NotificationDisplay = {
       title: groupData.name,
       titleLocKey: "notification_expense_deleted_title",
-      bodyLocKey: "notification_expense_deleted_body_brief",
-      bodyLocArgs: [actorName],
+      bodyLocKey: formattedAmount
+        ? "notification_expense_deleted_body"
+        : "notification_expense_deleted_body_brief",
+      bodyLocArgs: formattedAmount ? [actorName, formattedAmount] : [actorName],
       channelId: NotificationChannelId.EXPENSES,
     };
 
