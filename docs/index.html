@@ -10,6 +10,7 @@
   <meta property="og:description" content="Modern, offline-first group travel expense manager with real-time multi-currency conversion, settlement consensus, and zero ads.">
   <meta property="og:url" content="https://splittrip.eu/">
   <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" href="assets/app-icon.png">
   <style>
     :root {
       color-scheme: light dark;
@@ -217,14 +218,8 @@
     .brand-icon {
       width: 42px;
       height: 42px;
-      background: linear-gradient(135deg, #00478D 0%, #006874 100%);
       border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #FFFFFF;
-      font-weight: 800;
-      font-size: 22px;
+      object-fit: cover;
       box-shadow: 0 4px 14px rgba(0, 71, 141, 0.28);
     }
 
@@ -424,138 +419,358 @@
       color: var(--accent-secondary);
     }
 
-    /* Hero App Card Mockup */
-    .app-preview-card {
-      background-color: var(--bg-surface-elevated);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl);
-      padding: 24px;
-      box-shadow: var(--shadow-lg);
-      position: relative;
-      overflow: hidden;
+    /* Hero Authentic App Phone Mockup */
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+    }
+
+    .phone-mockup {
+      width: 100%;
+      max-width: 370px;
+      border-radius: 38px;
+      padding: 10px;
+      background: #002244;
+      box-shadow: 0 24px 64px rgba(0, 71, 141, 0.25), 0 4px 16px rgba(0, 0, 0, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.12);
       transition: transform 0.3s ease;
     }
 
-    .app-preview-card:hover {
+    .phone-mockup:hover {
       transform: translateY(-4px);
     }
 
-    .card-top-bar {
+    @media (prefers-color-scheme: dark) {
+      .phone-mockup {
+        background: #0D121D;
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    html[data-theme="dark"] .phone-mockup {
+      background: #0D121D;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    html[data-theme="light"] .phone-mockup {
+      background: #002244;
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .phone-screen {
+      border-radius: 28px;
+      overflow: hidden;
+      background-color: var(--bg-surface-low);
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+    }
+
+    .phone-status-bar {
+      height: 24px;
+      background-color: var(--horizon-blue);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .phone-app-header {
+      background-color: var(--horizon-blue);
+      padding: 4px 16px 14px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border-color);
+      color: #FFFFFF;
     }
 
-    .trip-title-group {
+    .top-app-bar-titles {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .app-bar-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .app-bar-subtitle {
+      font-size: 12px;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+
+    .top-app-bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-app-bar-actions svg {
+      opacity: 0.9;
+    }
+
+    .phone-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.8);
+      background: linear-gradient(135deg, #FFB74D, #FF7043);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .phone-body {
+      padding: 12px 14px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mockup-balance-card {
+      background: var(--bg-surface-elevated);
+      border-radius: 18px;
+      padding: 14px 14px 12px 14px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+    }
+
+    .mockup-balance-card .trip-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--horizon-blue);
+      letter-spacing: -0.01em;
+    }
+
+    .mockup-balance-card .remaining-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .mockup-balance-card .remaining-amount {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin: 2px 0 8px 0;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .metric-item {
+      text-align: center;
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+      font-size: 10px;
+      display: block;
+      white-space: nowrap;
+    }
+
+    .metric-value {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 11px;
+      display: block;
+      margin-top: 1px;
+    }
+
+    .metric-value.spent {
+      color: #BA1A1A;
+    }
+
+    .metrics-totals {
+      display: flex;
+      justify-content: space-around;
+      border-top: 1px solid var(--border-color);
+      padding-top: 6px;
+      margin-bottom: 10px;
+      font-size: 10px;
+    }
+
+    .mockup-actions-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-aportar {
+      flex: 1;
+      background: var(--horizon-blue);
+      color: #FFFFFF;
+      border-radius: 20px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: 0 2px 6px rgba(0, 71, 141, 0.2);
+    }
+
+    .btn-retirar {
+      flex: 1;
+      background: var(--horizon-teal);
+      color: #FFFFFF;
+      border-radius: 20px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: 0 2px 6px rgba(0, 104, 116, 0.2);
+    }
+
+    .mockup-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 1px;
+    }
+
+    .mockup-member-card {
+      background: var(--bg-surface-elevated);
+      border-radius: 14px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .member-left {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .trip-name {
-      font-size: 17px;
-      font-weight: 800;
-      color: var(--text-primary);
-    }
-
-    .trip-badge {
+    .member-avatar-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(186, 26, 26, 0.1);
+      color: #BA1A1A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 12px;
-      font-weight: 600;
-      padding: 3px 8px;
-      background-color: var(--badge-bg);
-      color: var(--badge-text);
-      border-radius: var(--radius-full);
     }
 
-    .pocket-card {
-      background: linear-gradient(135deg, rgba(0, 71, 141, 0.08) 0%, rgba(0, 104, 116, 0.08) 100%);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 16px;
-      margin-bottom: 18px;
+    .member-info {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
     }
 
-    .pocket-label {
-      font-size: 12px;
+    .member-name {
       font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 4px;
-    }
-
-    .pocket-balance {
-      font-size: 24px;
-      font-weight: 900;
+      font-size: 12px;
       color: var(--text-primary);
-      letter-spacing: -0.02em;
     }
 
-    .pocket-subtext {
-      font-size: 13px;
-      color: var(--text-secondary);
+    .member-sub {
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .member-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 800;
+      font-size: 12px;
+      color: #BA1A1A;
+    }
+
+    .mockup-consensus-banner {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border-radius: 12px;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .mockup-bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       margin-top: 2px;
     }
 
-    .card-ledger-list {
+    .mockup-nav-dock {
+      flex: 1;
+      background: var(--bg-surface-elevated);
+      border-radius: 24px;
+      padding: 3px 8px;
       display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .ledger-item {
-      display: flex;
-      justify-content: space-between;
+      justify-content: space-around;
       align-items: center;
-      padding: 12px 14px;
-      background-color: var(--bg-surface-low);
-      border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
     }
 
-    .ledger-item-info {
+    .mockup-nav-dock .nav-item {
       display: flex;
       flex-direction: column;
-      gap: 2px;
-    }
-
-    .ledger-item-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .ledger-item-meta {
-      font-size: 12px;
+      align-items: center;
+      gap: 1px;
       color: var(--text-muted);
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 6px;
     }
 
-    .ledger-item-amount {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--text-primary);
-    }
-
-    .consensus-pill-badge {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
-      background-color: var(--success-bg);
-      color: var(--success-text);
-      border-radius: var(--radius-md);
-      font-size: 13px;
+    .mockup-nav-dock .nav-item.active {
+      background: var(--horizon-blue);
+      color: #FFFFFF;
+      border-radius: 16px;
+      padding: 4px 10px;
+      flex-direction: row;
+      gap: 4px;
+      font-size: 10px;
       font-weight: 700;
     }
 
-    .consensus-pill-badge .pill-label {
+    .mockup-fab {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--horizon-blue);
+      color: #FFFFFF;
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 71, 141, 0.35);
+      flex-shrink: 0;
     }
 
     /* Core Pillars / Feature Showcase */
@@ -843,7 +1058,7 @@
   <header class="site-header">
     <div class="container nav-container">
       <a href="index.html" class="brand-link" aria-label="SplitTrip Homepage">
-        <div class="brand-icon" aria-hidden="true">S</div>
+        <img src="assets/app-icon.png" alt="SplitTrip" class="brand-icon">
         <span class="brand-title">SplitTrip</span>
       </a>
 
@@ -920,54 +1135,157 @@
         </div>
       </div>
 
-      <!-- Hero Visual Mockup Card -->
+      <!-- Hero Visual Mockup Phone -->
       <div class="hero-visual">
-        <div class="app-preview-card">
-          <div class="card-top-bar">
-            <div class="trip-title-group">
-              <span style="font-size:20px;">🇯🇵</span>
-              <div>
-                <div class="trip-name">Kyoto Autumn Roadtrip</div>
-                <div style="font-size:12px;color:var(--text-muted);">4 companions &bull; Active</div>
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <!-- Status Bar -->
+            <div class="phone-status-bar">
+              <span>12:31</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span>5G</span>
+                <span>📶</span>
+                <span>🔋</span>
               </div>
             </div>
-            <span class="trip-badge">EUR / JPY</span>
-          </div>
 
-          <div class="pocket-card">
-            <div class="pocket-label" data-lang="en">Group Cash Pocket</div>
-            <div class="pocket-label" data-lang="es">Pocket de Efectivo del Grupo</div>
-            <div class="pocket-balance">&yen;42,800</div>
-            <div class="pocket-subtext">&asymp; &euro;265.50 &bull; FIFO Tranche Tracking</div>
-          </div>
-
-          <div class="card-ledger-list">
-            <div class="ledger-item">
-              <div class="ledger-item-info">
-                <span class="ledger-item-title">Shinkansen Nozomi Express</span>
-                <span class="ledger-item-meta">Paid by Alex &bull; Equal split (4)</span>
+            <!-- Horizon Top App Bar -->
+            <div class="phone-app-header">
+              <div class="top-app-bar-titles">
+                <div class="app-bar-title" data-lang="en">Balances</div>
+                <div class="app-bar-title" data-lang="es">Balances</div>
+                <div class="app-bar-subtitle" data-lang="en">Trip summary</div>
+                <div class="app-bar-subtitle" data-lang="es">Resumen del viaje</div>
               </div>
-              <span class="ledger-item-amount">&yen;28,000</span>
-            </div>
-
-            <div class="ledger-item">
-              <div class="ledger-item-info">
-                <span class="ledger-item-title">Gion Traditional Kaiseki</span>
-                <span class="ledger-item-meta">Paid by Sofia &bull; Subunit: Elena &amp; Marco</span>
+              <div class="top-app-bar-actions">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                  <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                </svg>
+                <div class="phone-avatar" title="Andrés">🐱</div>
               </div>
-              <span class="ledger-item-amount">&yen;14,800</span>
             </div>
-          </div>
 
-          <div class="consensus-pill-badge">
-            <div class="pill-label">
-              <span>🤝</span>
-              <span data-lang="en">Consensus Reached</span>
-              <span data-lang="es">Consenso alcanzado</span>
-            </div>
-            <div style="font-weight:800;">
-              <span data-lang="en">+&euro;34.20 (To Receive)</span>
-              <span data-lang="es">+&euro;34,20 (A recibir)</span>
+            <!-- Body -->
+            <div class="phone-body">
+              <!-- Main Trip Balance Card -->
+              <div class="mockup-balance-card">
+                <div class="trip-name">China</div>
+                <div class="remaining-label">
+                  <span data-lang="en">Remaining</span>
+                  <span data-lang="es">Restante</span>
+                  <span style="font-size:10px;opacity:0.7;">ⓘ</span>
+                </div>
+                <div class="remaining-amount">598,79 &euro;</div>
+
+                <div class="metrics-grid">
+                  <div class="metric-item">
+                    <span class="metric-label" data-lang="en">Available</span>
+                    <span class="metric-label" data-lang="es">Disponible</span>
+                    <span class="metric-value">-67,55 &euro;</span>
+                  </div>
+                  <div class="metric-item">
+                    <span class="metric-label" data-lang="en">Scheduled</span>
+                    <span class="metric-label" data-lang="es">Programado</span>
+                    <span class="metric-value">666,34 &euro;</span>
+                  </div>
+                  <div class="metric-item">
+                    <span class="metric-label" data-lang="en">Refundable</span>
+                    <span class="metric-label" data-lang="es">Reembolsable</span>
+                    <span class="metric-value">194,75 &euro;</span>
+                  </div>
+                </div>
+
+                <div class="metrics-totals">
+                  <div>
+                    <span class="metric-label" data-lang="en">Total Contributed</span>
+                    <span class="metric-label" data-lang="es">Total aportado</span>
+                    <span class="metric-value">3.808,93 &euro;</span>
+                  </div>
+                  <div>
+                    <span class="metric-label" data-lang="en">Total Spent</span>
+                    <span class="metric-label" data-lang="es">Total gastado</span>
+                    <span class="metric-value spent">3.210,14 &euro;</span>
+                  </div>
+                </div>
+
+                <div class="mockup-actions-row">
+                  <div class="btn-aportar">
+                    <span>+</span>
+                    <span data-lang="en">Contribute</span>
+                    <span data-lang="es">Aportar</span>
+                  </div>
+                  <div class="btn-retirar">
+                    <span>💳</span>
+                    <span data-lang="en">Withdraw</span>
+                    <span data-lang="es">Retirar</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Member Balances -->
+              <div class="mockup-section-title">
+                <span data-lang="en">Member Balances</span>
+                <span data-lang="es">Balances por miembro</span>
+              </div>
+
+              <div class="mockup-member-card">
+                <div class="member-left">
+                  <div class="member-avatar-icon">👤</div>
+                  <div class="member-info">
+                    <span class="member-name" data-lang="en">You</span>
+                    <span class="member-name" data-lang="es">Tú</span>
+                    <span class="member-sub" data-lang="en">Contributed 1,904.47 &euro; &bull; Spent 1,938.26 &euro;</span>
+                    <span class="member-sub" data-lang="es">Aportado 1.904,47 &euro; &bull; Gastado 1.938,26 &euro;</span>
+                  </div>
+                </div>
+                <div class="member-right">
+                  <span>-33,79 &euro;</span>
+                  <span style="font-size:10px;">▼</span>
+                </div>
+              </div>
+
+              <!-- Settlement Consensus Banner -->
+              <div class="mockup-consensus-banner">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span>🤝</span>
+                  <span data-lang="en">Consensus reached</span>
+                  <span data-lang="es">Consenso alcanzado</span>
+                </div>
+                <div>
+                  <span data-lang="en">+&euro;34.20 (To receive)</span>
+                  <span data-lang="es">+34,20 &euro; (A recibir)</span>
+                </div>
+              </div>
+
+              <!-- Floating Bottom Nav & FAB -->
+              <div class="mockup-bottom-nav">
+                <div class="mockup-nav-dock">
+                  <div class="nav-item">
+                    <span>👥</span>
+                    <span data-lang="en">Groups</span>
+                    <span data-lang="es">Grupos</span>
+                  </div>
+                  <div class="nav-item active">
+                    <span>⚖️</span>
+                    <span data-lang="en">Balances</span>
+                    <span data-lang="es">Balances</span>
+                  </div>
+                  <div class="nav-item">
+                    <span>👜</span>
+                    <span data-lang="en">Expenses</span>
+                    <span data-lang="es">Gastos</span>
+                  </div>
+                </div>
+                <div class="mockup-fab" title="Settlements">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -987,7 +1305,7 @@
         </h2>
         <p class="section-subtitle">
           <span data-lang="en">No messy spreadsheets. No awkward math at the end of the trip. Just crystal-clear balances and fair settlements.</span>
-          <span data-lang="es">Sin hojas de cálculo enredadas. Sin conversaciones incómodas al final del viaje. Cuentas transparentes y liquidaciones justas.</span>
+          <span data-lang="es">Sin hojas de cálculo enredadas. Sin conversaciones incómodas al final del viaje. Cuentas transparentes y consensos de pago justos.</span>
         </p>
       </div>
 
@@ -1024,10 +1342,10 @@
           <h3 data-lang="en">Settlement Consensus</h3>
           <h3 data-lang="es">Acuerdos y consenso de pago</h3>
           <p data-lang="en">
-            "My Position" simplifies tangled web-of-debt balances into the minimum required transfers. Propose settlements, verify payments, and reach transparent consensus with one tap.
+            "Your Position" simplifies tangled web-of-debt balances into the minimum required transfers. Propose settlements, verify payments, and reach transparent consensus with one tap.
           </p>
           <p data-lang="es">
-            "Mi posición" reduce las deudas cruzadas al mínimo número de transferencias. Propón acuerdos de pago, confirma recepciones y alcanza consenso de mutuo acuerdo con un toque.
+            "Tu posición" reduce las deudas cruzadas al mínimo número de transferencias. Propón acuerdos de pago, confirma recepciones y alcanza consenso de mutuo acuerdo con un toque.
           </p>
         </div>
 
@@ -1143,8 +1461,8 @@
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-brand">
-        <div class="brand-icon" style="width:28px;height:28px;font-size:14px;border-radius:6px;">S</div>
-        <span>SplitTrip &bull; Pedro Pedraza M&iacute;guez</span>
+        <img src="assets/app-icon.png" alt="SplitTrip" class="brand-icon" style="width:28px;height:28px;border-radius:6px;box-shadow:none;">
+        <span>SplitTrip &bull; Andr&eacute;s Pedraza M&iacute;guez</span>
       </div>
 
       <ul class="footer-links">
