@@ -1,13 +1,11 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.preview
 
 import androidx.compose.runtime.Composable
-import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewLocales
-import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
-import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemes
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.ContributionHistoryItem
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.GroupPocketBalanceCard
 
-@PreviewThemes
+@PreviewComplete
 @Composable
 private fun GroupPocketBalanceCardPreview() {
     BalanceCardPreviewHelper {
@@ -15,7 +13,7 @@ private fun GroupPocketBalanceCardPreview() {
     }
 }
 
-@PreviewNarrowThemes
+@PreviewComplete
 @Composable
 private fun GroupPocketBalanceCardNarrowPreview() {
     BalanceCardPreviewHelper {
@@ -23,7 +21,7 @@ private fun GroupPocketBalanceCardNarrowPreview() {
     }
 }
 
-@PreviewThemes
+@PreviewComplete
 @Composable
 private fun GroupPocketBalanceCardEmptyPreview() {
     BalanceCardPreviewHelper(domainBalance = PREVIEW_POCKET_BALANCE_EMPTY) {
@@ -31,7 +29,7 @@ private fun GroupPocketBalanceCardEmptyPreview() {
     }
 }
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun ContributionHistoryItemPreview() {
     ContributionItemPreviewHelper {
@@ -39,7 +37,7 @@ private fun ContributionHistoryItemPreview() {
     }
 }
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun LinkedContributionHistoryItemPreview() {
     ContributionItemPreviewHelper(domainContribution = PREVIEW_CONTRIBUTION_LINKED) {

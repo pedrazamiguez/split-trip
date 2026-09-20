@@ -6,11 +6,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewLocales
-import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemes
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseItem
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun ExpenseItemBasicPreview() {
     ExpenseItemPreviewHelper(domainExpense = PREVIEW_EXPENSE_BASIC) {
@@ -21,7 +20,7 @@ private fun ExpenseItemBasicPreview() {
     }
 }
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun ExpenseItemForeignCurrencyPreview() {
     ExpenseItemPreviewHelper(domainExpense = PREVIEW_EXPENSE_FOREIGN_CURRENCY) {
@@ -32,7 +31,7 @@ private fun ExpenseItemForeignCurrencyPreview() {
     }
 }
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun ExpenseItemScheduledPreview() {
     ExpenseItemPreviewHelper(domainExpense = PREVIEW_EXPENSE_SCHEDULED) {
@@ -43,7 +42,7 @@ private fun ExpenseItemScheduledPreview() {
     }
 }
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun ExpenseItemWithVendorPreview() {
     ExpenseItemPreviewHelper(domainExpense = PREVIEW_EXPENSE_WITH_VENDOR) {
@@ -54,7 +53,7 @@ private fun ExpenseItemWithVendorPreview() {
     }
 }
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun ExpenseItemOutOfPocketPreview() {
     ExpenseItemPreviewHelper(
@@ -69,7 +68,7 @@ private fun ExpenseItemOutOfPocketPreview() {
     }
 }
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun ExpenseItemOutOfPocketCurrentUserPreview() {
     ExpenseItemPreviewHelper(
@@ -86,7 +85,7 @@ private fun ExpenseItemOutOfPocketCurrentUserPreview() {
     }
 }
 
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun ExpenseItemOutOfPocketGroupScopePreview() {
     ExpenseItemPreviewHelper(
@@ -101,7 +100,7 @@ private fun ExpenseItemOutOfPocketGroupScopePreview() {
     }
 }
 
-@PreviewThemes
+@PreviewComplete
 @Composable
 private fun ExpenseItemAllCategoriesPreview() {
     Column(
