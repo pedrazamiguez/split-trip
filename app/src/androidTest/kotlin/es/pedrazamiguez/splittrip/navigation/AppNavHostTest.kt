@@ -33,11 +33,14 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.compose.KoinApplication
+import org.koin.core.context.stopKoin
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -58,6 +61,16 @@ class AppNavHostTest {
 
     @get:Rule(order = 2)
     val screenshotRule = ScreenshotRule()
+
+    @Before
+    fun setUp() {
+        stopKoin()
+    }
+
+    @After
+    fun tearDown() {
+        stopKoin()
+    }
 
     // ── Helpers ──────────────────────────────────────────────────────────
 

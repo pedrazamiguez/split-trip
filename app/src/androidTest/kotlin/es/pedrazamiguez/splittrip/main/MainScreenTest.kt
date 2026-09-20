@@ -29,10 +29,13 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.compose.KoinApplication
+import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 
 private class FakeRegisterDeviceTokenUseCase : RegisterDeviceTokenUseCase {
@@ -53,6 +56,16 @@ class MainScreenTest {
 
     @get:Rule(order = 2)
     val screenshotRule = ScreenshotRule()
+
+    @Before
+    fun setUp() {
+        stopKoin()
+    }
+
+    @After
+    fun tearDown() {
+        stopKoin()
+    }
 
     private val testModule = module {
         single<TelemetryTracker> { mockk(relaxed = true) }
