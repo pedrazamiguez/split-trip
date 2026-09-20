@@ -27,7 +27,7 @@ class GroupUnregisteredNamesStepTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun `given single unregistered member, then imeAction is Done`() {
+    fun givenSingleUnregisteredMember_thenImeActionIsDone() {
         val state = CreateEditGroupUiState(
             selectedMembers = persistentListOf(
                 User(userId = "1", email = "user1@test.com", isPending = true)
@@ -51,7 +51,7 @@ class GroupUnregisteredNamesStepTest {
     }
 
     @Test
-    fun `given multiple unregistered members, then last field is Done and others are Next`() {
+    fun givenMultipleUnregisteredMembers_thenLastFieldIsDoneAndOthersAreNext() {
         val state = CreateEditGroupUiState(
             selectedMembers = persistentListOf(
                 User(userId = "1", email = "user1@test.com", isPending = true),
