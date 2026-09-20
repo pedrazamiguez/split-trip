@@ -52,13 +52,12 @@ internal fun GroupsListContent(
             item(key = "selected-${selectedGroup.id}") {
                 SelectedGroupCard(
                     groupUiModel = selectedGroup,
-                    modifier = Modifier
-                        .animateItem(fadeInSpec = null, fadeOutSpec = null)
-                        .sharedElementAnimation(
-                            key = SharedElementKeys.groupCard(selectedGroup.id),
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
+                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+                    innerModifier = Modifier.sharedElementAnimation(
+                        key = SharedElementKeys.groupCard(selectedGroup.id),
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope
+                    ),
                     onClick = onGroupClicked,
                     onLongClick = { onGroupLongClicked(selectedGroup) }
                 )
@@ -67,13 +66,12 @@ internal fun GroupsListContent(
 
         items(items = unselectedGroups, key = { it.id }) { group ->
             GroupItem(
-                modifier = Modifier
-                    .animateItem()
-                    .sharedElementAnimation(
-                        key = SharedElementKeys.groupCard(group.id),
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope
-                    ),
+                modifier = Modifier.animateItem(),
+                innerModifier = Modifier.sharedElementAnimation(
+                    key = SharedElementKeys.groupCard(group.id),
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope
+                ),
                 groupUiModel = group,
                 onClick = onGroupClicked,
                 onLongClick = { onGroupLongClicked(group) }

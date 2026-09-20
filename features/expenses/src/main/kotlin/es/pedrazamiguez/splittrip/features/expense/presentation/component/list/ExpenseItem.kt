@@ -53,6 +53,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiM
 @Composable
 fun ExpenseItem(
     modifier: Modifier = Modifier,
+    innerModifier: Modifier = Modifier,
     expenseUiModel: ExpenseUiModel,
     onClick: (String) -> Unit = { _ -> },
     onLongClick: () -> Unit = {}
@@ -72,6 +73,7 @@ fun ExpenseItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.large)
+                .then(innerModifier)
                 .debouncedCombinedClickable(
                     enableSpringPress = true,
                     onClick = { onClick(expenseUiModel.id) },

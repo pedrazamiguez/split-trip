@@ -185,13 +185,12 @@ fun ExpensesScreen(
                                         items(items = dateGroup.expenses, key = { it.id }) { expense ->
                                             ExpenseItem(
                                                 expenseUiModel = expense,
-                                                modifier = Modifier
-                                                    .animateItem()
-                                                    .sharedElementAnimation(
-                                                        key = SharedElementKeys.expenseCard(expense.id),
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                        animatedVisibilityScope = animatedVisibilityScope
-                                                    ),
+                                                modifier = Modifier.animateItem(),
+                                                innerModifier = Modifier.sharedElementAnimation(
+                                                    key = SharedElementKeys.expenseCard(expense.id),
+                                                    sharedTransitionScope = sharedTransitionScope,
+                                                    animatedVisibilityScope = animatedVisibilityScope
+                                                ),
                                                 onClick = onExpenseClicked,
                                                 onLongClick = {
                                                     if (!uiState.isGroupArchived) {
