@@ -13,17 +13,18 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.BRANDED_LOADING_SCREEN_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.security.APP_LOCK_GATE_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
+import es.pedrazamiguez.splittrip.di.FakeRegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.di.createAppNavHostTestModule
 import es.pedrazamiguez.splittrip.domain.enums.BiometricCapability
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.AuthenticationViewModel
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
+import es.pedrazamiguez.splittrip.features.onboarding.presentation.viewmodel.OnboardingViewModel
 import es.pedrazamiguez.splittrip.helpers.FakeNavigationProvider
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
 import es.pedrazamiguez.splittrip.navigation.AppNavHost
@@ -32,11 +33,14 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.compose.KoinApplication
+import org.koin.core.context.stopKoin
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -44,8 +48,9 @@ import org.koin.dsl.module
 /**
  * Instrumentation tests for [AppNavHost] navigation flow.
  *
- * These tests verify that the correct start destination is resolved based on
- * authentication and onboarding state, using a lightweight Koin context with
+ * Verifies that the start destination and screen transitions correctly reflect
+ * the combination of authentication state, onboarding state, and deep links.
+ * Each test runs in isolation with its own [ComposeNavigator] and minimal
  * mock dependencies injected via [KoinApplication].
  */
 @RunWith(AndroidJUnit4::class)
@@ -56,6 +61,16 @@ class AppNavHostTest {
 
     @get:Rule(order = 2)
     val screenshotRule = ScreenshotRule()
+
+    @Before
+    fun setUp() {
+        stopKoin()
+    }
+
+    @After
+    fun tearDown() {
+        stopKoin()
+    }
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -74,13 +89,15 @@ class AppNavHostTest {
             )
         }
 
+        viewModel { OnboardingViewModel() }
+
         // Main screen needs MainViewModel
         viewModel {
             val observeCurrentUserProfile = mockk<ObserveCurrentUserProfileUseCase>().apply {
                 every { this@apply.invoke() } returns flowOf(null)
             }
             MainViewModel(
-                registerDeviceTokenUseCase = mockk<RegisterDeviceTokenUseCase>(relaxed = true),
+                registerDeviceTokenUseCase = FakeRegisterDeviceTokenUseCase(),
                 getGroupByIdUseCase = mockk(relaxed = true),
                 warmCurrencyCacheUseCase = mockk(relaxed = true),
                 observeCurrentUserProfileUseCase = observeCurrentUserProfile

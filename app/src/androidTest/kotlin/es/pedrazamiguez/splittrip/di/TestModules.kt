@@ -1,12 +1,17 @@
 package es.pedrazamiguez.splittrip.di
 
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.domain.enums.BiometricCapability
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricLockEnabledUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliationUseCase
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import io.mockk.coEvery
 import io.mockk.every
@@ -15,6 +20,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import org.koin.dsl.module
+
+class FakeRegisterDeviceTokenUseCase : RegisterDeviceTokenUseCase {
+    override suspend fun invoke(): Result<Unit> = Result.success(Unit)
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 //  Reusable Koin test modules for instrumentation tests.
@@ -48,6 +57,17 @@ fun createAppNavHostTestModule(
         }
     }
 
+    // ── Logging & Performance ─────────────────────────────────────────
+    single<TelemetryTracker> { mockk(relaxed = true) }
+    single<PerformanceMonitor> { mockk(relaxed = true) }
+
+    // ── User preferences ──────────────────────────────────────────────
+    single<UserPreferenceRepository> {
+        mockk<UserPreferenceRepository>(relaxed = true).apply {
+            every { getIsReconciled() } returns flowOf(true)
+        }
+    }
+
     // ── Use cases consumed directly by AppNavHost ─────────────────────
     factory<IsOnboardingCompleteUseCase> {
         mockk<IsOnboardingCompleteUseCase>().apply {
@@ -72,6 +92,8 @@ fun createAppNavHostTestModule(
             every { this@apply.invoke() } returns biometricCapability
         }
     }
+
+    factory<CheckPendingReconciliationUseCase> { mockk(relaxed = true) }
 
     // ── Currency cache warm-up (fire-and-forget, no-op in tests) ────
     factory<WarmCurrencyCacheUseCase> { mockk(relaxed = true) }
