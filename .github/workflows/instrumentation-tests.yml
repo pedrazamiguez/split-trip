@@ -11,10 +11,9 @@ on:
       api-level:
         description: 'Android API level for the emulator'
         required: false
-        default: '30'
+        default: '34'
         type: choice
         options:
-          - '30'
           - '31'
           - '33'
           - '34'
@@ -25,7 +24,7 @@ concurrency:
 
 jobs:
   instrumentation_tests:
-    name: Instrumentation Tests (API ${{ inputs.api-level || '30' }})
+    name: Instrumentation Tests (API ${{ inputs.api-level || '34' }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -71,7 +70,7 @@ jobs:
       - name: Run instrumentation tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ inputs.api-level || '30' }}
+          api-level: ${{ inputs.api-level || '34' }}
           arch: x86_64
           profile: pixel_6
           heap-size: 512M

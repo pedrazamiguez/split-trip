@@ -188,7 +188,7 @@ When testing classes that launch background coroutines (e.g., Repositories with 
 - **Reusable test modules:** `TestModules.kt` in `app/src/androidTest/.../di/` provides `createAppNavHostTestModule()` with configurable auth/onboarding flows.
 - Run unit tests: `./gradlew test`
 - Run instrumentation tests: `./gradlew connectedAndroidTest`
-- **CI:** Instrumentation tests run via `.github/workflows/instrumentation-tests.yml` — triggers on `main` push and `workflow_dispatch` (manual). Uses `reactivecircus/android-emulator-runner@v2` with API 30 (configurable).
+- **CI:** Instrumentation tests run via `.github/workflows/instrumentation-tests.yml` — triggers on `main` push and `workflow_dispatch` (manual). Uses `reactivecircus/android-emulator-runner@v2` with API 34 (configurable, API 31+).
 
 ## Compose Previews
 
