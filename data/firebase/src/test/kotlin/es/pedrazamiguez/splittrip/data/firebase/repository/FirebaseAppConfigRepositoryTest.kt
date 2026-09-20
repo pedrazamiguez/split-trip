@@ -205,6 +205,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("max_members_per_group_pro") } returns -1L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns -1L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 0L
+        every { firebaseRemoteConfig.getString("support_email_address") } returns ""
 
         val fallbackRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
 
@@ -215,5 +216,6 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(20, fallbackRepo.maxMembersPerGroupPro.value)
         assertEquals(0, fallbackRepo.aiReceiptMonthlyLimitFree.value)
         assertEquals(100, fallbackRepo.aiReceiptMonthlyLimitPro.value)
+        assertEquals("support@splittrip.eu", fallbackRepo.supportEmailAddress.value)
     }
 }

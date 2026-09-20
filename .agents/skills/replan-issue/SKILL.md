@@ -71,7 +71,10 @@ Draft a revised proposed solution or plan:
 ## Step 5 — Update the GitHub Issue
 
 Once (and only after) the user explicitly approves/accepts the proposed plan:
-1. Post the revised plan/proposal as a comment or update the issue description on the GitHub issue.
+1. Post the revised plan/proposal as a comment or update the issue description on the GitHub issue using `add_issue_comment`.
+   - **CRITICAL:** You MUST post the **entire, unabridged content** of the approved plan verbatim.
+   - **DO NOT summarize, condense, truncate, or omit** any sections, file lists, `[NEW]`/`[MODIFY]`/`[DELETE]` tags, exact file paths, line numbers, signatures, or test case specifications.
+   - The comment posted to GitHub is the single source of truth that `sp-start-issue` will parse and validate; if it is summarized or abbreviated, `sp-start-issue` will fail validation and reject the plan.
 2. Confirm the update to the user.
 3. **STOP immediately and do not request any further tasks or modify any code.**
 

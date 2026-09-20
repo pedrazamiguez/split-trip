@@ -117,7 +117,7 @@
       "parameters": {
         "support_email_address": {
           "defaultValue": {
-            "value": "support@splittrip.com"
+            "value": "support@splittrip.eu"
           },
           "description": "Support email address displayed in-app for user inquiries.",
           "valueType": "STRING"
