@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.contribution.presentation.screen.ContributionDetailScreen
@@ -46,7 +47,7 @@ fun ContributionDetailFeature(
     }
 
     SharedTransitionSurface(
-        sharedElementKey = es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys.contributionCard(
+        sharedElementKey = SharedElementKeys.contributionCard(
             contributionId
         )
     ) {
