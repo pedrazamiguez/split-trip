@@ -1,0 +1,6 @@
+@@ -12,4 +12,5 @@
+     const val YOUR_BALANCE = "your_balance_container"
+     fun groupCard(id: String) = "groupCard_$id"
+     fun expenseCard(id: String) = "expenseCard_$id"
++    fun contributionCard(id: String) = "contributionCard_$id"
+ }

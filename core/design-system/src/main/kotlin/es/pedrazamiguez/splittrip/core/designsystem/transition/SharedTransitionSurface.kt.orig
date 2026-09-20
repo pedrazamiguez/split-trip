@@ -3,18 +3,16 @@ package es.pedrazamiguez.splittrip.core.designsystem.transition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * Default animation parameters for FAB → Screen container-transform transitions.
@@ -86,26 +84,15 @@ fun containerSharedTransitionModifier(
 
     return if (sharedTransitionScope != null && animatedVisibilityScope != null) {
         with(sharedTransitionScope) {
-            val noClip = remember {
-                object : SharedTransitionScope.OverlayClip {
-                    override fun getClipPath(
-                        sharedContentState: SharedTransitionScope.SharedContentState,
-                        bounds: Rect,
-                        layoutDirection: LayoutDirection,
-                        density: Density
-                    ): Path? = null
-                }
-            }
             Modifier.sharedBounds(
                 sharedContentState = rememberSharedContentState(key = key),
                 animatedVisibilityScope = animatedVisibilityScope,
                 resizeMode = resizeMode,
-                clipInOverlayDuringTransition = noClip,
                 boundsTransform = { _, _ ->
                     spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
                 },
-                enter = androidx.compose.animation.EnterTransition.None,
-                exit = androidx.compose.animation.ExitTransition.None
+                enter = fadeIn(tween(durationMillis = TRANSITION_DURATION_MS)),
+                exit = fadeOut(tween(durationMillis = TRANSITION_DURATION_MS))
             )
         }
     } else {
@@ -149,20 +136,9 @@ fun receiptSharedElementModifier(key: String): Modifier {
 
     return if (sharedTransitionScope != null && animatedVisibilityScope != null) {
         with(sharedTransitionScope) {
-            val noClip = remember {
-                object : SharedTransitionScope.OverlayClip {
-                    override fun getClipPath(
-                        sharedContentState: SharedTransitionScope.SharedContentState,
-                        bounds: Rect,
-                        layoutDirection: LayoutDirection,
-                        density: Density
-                    ): Path? = null
-                }
-            }
             Modifier.sharedElement(
                 sharedContentState = rememberSharedContentState(key = key),
                 animatedVisibilityScope = animatedVisibilityScope,
-                clipInOverlayDuringTransition = noClip,
                 boundsTransform = { _, _ ->
                     spring(dampingRatio = SPRING_DAMPING_RATIO, stiffness = SPRING_STIFFNESS)
                 }

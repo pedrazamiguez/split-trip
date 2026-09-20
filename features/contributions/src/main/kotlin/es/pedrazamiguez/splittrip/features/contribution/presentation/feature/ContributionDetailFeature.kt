@@ -8,6 +8,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.contribution.presentation.screen.ContributionDetailScreen
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.ContributionDetailViewModel
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.action.ContributionDetailUiAction
@@ -44,7 +45,13 @@ fun ContributionDetailFeature(
         }
     }
 
-    ContributionDetailScreen(
-        uiState = uiState
-    )
+    SharedTransitionSurface(
+        sharedElementKey = es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys.contributionCard(
+            contributionId
+        )
+    ) {
+        ContributionDetailScreen(
+            uiState = uiState
+        )
+    }
 }
