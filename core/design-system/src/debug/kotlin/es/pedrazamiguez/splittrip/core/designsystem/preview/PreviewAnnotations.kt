@@ -49,7 +49,7 @@ annotation class PreviewThemes
 
 /**
  * Preview annotation that shows the component in all combinations of locales and themes.
- * This will generate 4 previews: EN Light, EN Dark, ES Light, ES Dark.
+ * This will generate 6 previews: EN Light, EN Dark, ES Light, ES Dark, AN Light, AN Dark.
  *
  * **Note:** Wrap your component in `PreviewThemeWrapper` to apply theme colors.
  *
@@ -85,6 +85,18 @@ annotation class PreviewThemes
 @Preview(
     name = "ES - Dark",
     locale = "es",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true
+)
+@Preview(
+    name = "AN - Light",
+    locale = "es-rAN",
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+    showBackground = true
+)
+@Preview(
+    name = "AN - Dark",
+    locale = "es-rAN",
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     showBackground = true
 )
