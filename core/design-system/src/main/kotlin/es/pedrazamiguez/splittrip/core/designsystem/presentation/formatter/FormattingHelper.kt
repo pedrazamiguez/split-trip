@@ -20,7 +20,7 @@ private object DefaultAppConfigService : AppConfigService {
     override val aiReceiptMonthlyLimitFree: StateFlow<Int> = MutableStateFlow(0)
     override val aiReceiptMonthlyLimitPro: StateFlow<Int> = MutableStateFlow(100)
     override val extractedDateMaxFutureDays: StateFlow<Int> = MutableStateFlow(30)
-    override val supportEmailAddress: StateFlow<String> = MutableStateFlow("support@splittrip.com")
+    override val supportEmailAddress: StateFlow<String> = MutableStateFlow("support@splittrip.eu")
     override val settlementNudgeRateLimitHours: StateFlow<Long> = MutableStateFlow(24L)
 }
 
