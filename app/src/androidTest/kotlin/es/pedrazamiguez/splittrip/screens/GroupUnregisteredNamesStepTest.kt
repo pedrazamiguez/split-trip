@@ -3,7 +3,7 @@ package es.pedrazamiguez.splittrip.screens
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasImeAction
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.text.input.ImeAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -45,7 +45,7 @@ class GroupUnregisteredNamesStepTest {
 
         val nameLabel = context.getString(R.string.group_review_name)
 
-        composeRule.onAllNodesWithText(nameLabel)
+        composeRule.onAllNodesWithContentDescription(nameLabel)
             .onFirst()
             .assert(hasImeAction(ImeAction.Done))
     }
@@ -71,7 +71,7 @@ class GroupUnregisteredNamesStepTest {
 
         val nameLabel = context.getString(R.string.group_review_name)
 
-        val nodes = composeRule.onAllNodesWithText(nameLabel)
+        val nodes = composeRule.onAllNodesWithContentDescription(nameLabel)
 
         nodes[0].assert(hasImeAction(ImeAction.Next))
         nodes[1].assert(hasImeAction(ImeAction.Next))

@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -91,7 +93,7 @@ class CollaborationJourneyTest {
 
         composeRule.onNodeWithText("Alice").assertIsDisplayed()
         composeRule.onNodeWithText("bob@example.com").assertIsDisplayed()
-        composeRule.onNodeWithText(membersStepLabel, substring = true).assertIsDisplayed()
+        composeRule.onAllNodesWithText(membersStepLabel).onFirst().assertIsDisplayed()
     }
 
     @Test
