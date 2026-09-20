@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
@@ -51,13 +52,12 @@ internal fun GroupsListContent(
             item(key = "selected-${selectedGroup.id}") {
                 SelectedGroupCard(
                     groupUiModel = selectedGroup,
-                    modifier = Modifier
-                        .animateItem(fadeInSpec = null, fadeOutSpec = null)
-                        .sharedElementAnimation(
-                            key = "group-${selectedGroup.id}",
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
+                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+                    innerModifier = Modifier.sharedElementAnimation(
+                        key = SharedElementKeys.groupCard(selectedGroup.id),
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope
+                    ),
                     onClick = onGroupClicked,
                     onLongClick = { onGroupLongClicked(selectedGroup) }
                 )
@@ -66,13 +66,12 @@ internal fun GroupsListContent(
 
         items(items = unselectedGroups, key = { it.id }) { group ->
             GroupItem(
-                modifier = Modifier
-                    .animateItem()
-                    .sharedElementAnimation(
-                        key = "group-${group.id}",
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope
-                    ),
+                modifier = Modifier.animateItem(),
+                innerModifier = Modifier.sharedElementAnimation(
+                    key = SharedElementKeys.groupCard(group.id),
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope
+                ),
                 groupUiModel = group,
                 onClick = onGroupClicked,
                 onLongClick = { onGroupLongClicked(group) }

@@ -40,6 +40,7 @@ private val CARD_SHADOW_ELEVATION = 8.dp
 fun SelectedGroupCard(
     groupUiModel: GroupUiModel,
     modifier: Modifier = Modifier,
+    innerModifier: Modifier = Modifier,
     onClick: (groupId: String, groupName: String, currency: String) -> Unit = { _, _, _ -> },
     onLongClick: () -> Unit = {}
 ) {
@@ -51,7 +52,9 @@ fun SelectedGroupCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(cardShape)
+                .then(innerModifier)
                 .debouncedCombinedClickable(
+                    enableSpringPress = true,
                     onClick = { onClick(groupUiModel.id, groupUiModel.name, groupUiModel.currency) },
                     onLongClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)

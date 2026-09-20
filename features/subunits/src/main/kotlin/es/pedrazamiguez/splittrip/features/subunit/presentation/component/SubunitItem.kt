@@ -59,6 +59,7 @@ fun SubunitItem(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .debouncedCombinedClickable(
+                enableSpringPress = true,
                 onClick = onMenuClick,
                 onLongClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)

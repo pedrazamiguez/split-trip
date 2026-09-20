@@ -6,10 +6,8 @@ import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 
 /**
  * Centralised transition specs for within-tab navigation.
@@ -29,46 +27,54 @@ object NavTransitionDefaults {
     private const val CONTENT_EXIT_DURATION_MS = 150
 
     val contentEnterTransition: EnterTransition =
-        slideInHorizontally(
-            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS)
-        ) { it } + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
+        scaleIn(
+            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS),
+            initialScale = 0.9f
+        ) + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
 
     val contentExitTransition: ExitTransition =
-        slideOutHorizontally(
-            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS)
-        ) { -it / 3 } + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
+        scaleOut(
+            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS),
+            targetScale = 1.1f
+        ) + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
 
     val contentPopEnterTransition: EnterTransition =
-        slideInHorizontally(
-            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS)
-        ) { -it / 3 } + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
+        scaleIn(
+            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS),
+            initialScale = 1.1f
+        ) + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
 
     val contentPopExitTransition: ExitTransition =
-        slideOutHorizontally(
-            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS)
-        ) { it } + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
+        scaleOut(
+            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS),
+            targetScale = 0.9f
+        ) + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
 
     // ── Profile / Edit Profile vertical transitions (Modal-like) ──────
 
     val modalEnterTransition: EnterTransition =
-        slideInVertically(
-            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS)
-        ) { it } + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
+        scaleIn(
+            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS),
+            initialScale = 0.9f
+        ) + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
 
     val modalExitTransition: ExitTransition =
-        slideOutVertically(
-            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS)
-        ) { -it / 3 } + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
+        scaleOut(
+            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS),
+            targetScale = 1.1f
+        ) + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
 
     val modalPopEnterTransition: EnterTransition =
-        slideInVertically(
-            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS)
-        ) { -it / 3 } + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
+        scaleIn(
+            animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS),
+            initialScale = 1.1f
+        ) + fadeIn(animationSpec = tween(durationMillis = CONTENT_ENTER_DURATION_MS))
 
     val modalPopExitTransition: ExitTransition =
-        slideOutVertically(
-            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS)
-        ) { it } + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
+        scaleOut(
+            animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS),
+            targetScale = 0.9f
+        ) + fadeOut(animationSpec = tween(durationMillis = CONTENT_EXIT_DURATION_MS))
 
     // ── Top bar AnimatedContent transitions ─────────────────────────────
 

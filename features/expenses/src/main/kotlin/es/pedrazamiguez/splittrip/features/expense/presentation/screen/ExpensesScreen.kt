@@ -30,6 +30,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -184,13 +185,12 @@ fun ExpensesScreen(
                                         items(items = dateGroup.expenses, key = { it.id }) { expense ->
                                             ExpenseItem(
                                                 expenseUiModel = expense,
-                                                modifier = Modifier
-                                                    .animateItem()
-                                                    .sharedElementAnimation(
-                                                        key = "expense-${expense.id}",
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                        animatedVisibilityScope = animatedVisibilityScope
-                                                    ),
+                                                modifier = Modifier.animateItem(),
+                                                innerModifier = Modifier.sharedElementAnimation(
+                                                    key = SharedElementKeys.expenseCard(expense.id),
+                                                    sharedTransitionScope = sharedTransitionScope,
+                                                    animatedVisibilityScope = animatedVisibilityScope
+                                                ),
                                                 onClick = onExpenseClicked,
                                                 onLongClick = {
                                                     if (!uiState.isGroupArchived) {

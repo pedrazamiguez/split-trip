@@ -15,7 +15,4 @@ object SharedElementKeys {
 
     fun groupCard(groupId: String): String = "group-$groupId"
     fun expenseCard(expenseId: String): String = "expense-$expenseId"
-    fun contributionCard(contributionId: String): String = "contribution-$contributionId"
-    fun contributionAmount(contributionId: String): String = "contribution-amount-$contributionId"
-    fun expenseAmount(expenseId: String): String = "expense-amount-$expenseId"
 }
