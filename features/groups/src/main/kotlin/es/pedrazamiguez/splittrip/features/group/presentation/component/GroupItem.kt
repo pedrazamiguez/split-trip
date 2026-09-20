@@ -53,6 +53,7 @@ private val CURRENCY_VERTICAL_PADDING = 5.dp
 fun GroupItem(
     groupUiModel: GroupUiModel,
     modifier: Modifier = Modifier,
+    innerModifier: Modifier = Modifier,
     onClick: (groupId: String, groupName: String, currency: String) -> Unit = { _, _, _ -> },
     onLongClick: () -> Unit = {}
 ) {
@@ -63,12 +64,17 @@ fun GroupItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.large)
-                .debouncedCombinedClickable(onClick = {
-                    onClick(groupUiModel.id, groupUiModel.name, groupUiModel.currency)
-                }, onLongClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onLongClick()
-                })
+                .then(innerModifier)
+                .debouncedCombinedClickable(
+                    enableSpringPress = true,
+                    onClick = {
+                        onClick(groupUiModel.id, groupUiModel.name, groupUiModel.currency)
+                    },
+                    onLongClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongClick()
+                    }
+                )
         ) {
             Row(
                 modifier = Modifier

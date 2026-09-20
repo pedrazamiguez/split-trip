@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.list
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,31 +29,38 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CirclePlus
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.icon.CategorySatelliteIcon
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
+import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
+import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 
 @Suppress("LongMethod", "CognitiveComplexMethod", "CyclomaticComplexMethod")
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ExpenseItem(
     modifier: Modifier = Modifier,
+    innerModifier: Modifier = Modifier,
     expenseUiModel: ExpenseUiModel,
     onClick: (String) -> Unit = { _ -> },
     onLongClick: () -> Unit = {}
 ) {
     val haptics = LocalHapticFeedback.current
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
     val isFormer = expenseUiModel.creatorDisplay is MemberDisplay.Former
     val alphaVal = when {
         expenseUiModel.isCancelled -> CANCELLED_ALPHA
@@ -65,7 +73,9 @@ fun ExpenseItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.large)
+                .then(innerModifier)
                 .debouncedCombinedClickable(
+                    enableSpringPress = true,
                     onClick = { onClick(expenseUiModel.id) },
                     onLongClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -119,11 +129,17 @@ fun ExpenseItem(
                         ) {
                             Text(
                                 text = expenseUiModel.formattedAmount,
+                                modifier = Modifier
+                                    .padding(horizontal = 14.dp, vertical = MaterialTheme.spacing.Small)
+                                    .sharedElementAnimation(
+                                        key = SharedElementKeys.expenseAmount(expenseUiModel.id),
+                                        sharedTransitionScope = sharedTransitionScope,
+                                        animatedVisibilityScope = animatedVisibilityScope
+                                    ),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                textDecoration = if (expenseUiModel.isCancelled) TextDecoration.LineThrough else null,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = MaterialTheme.spacing.Small)
+                                textDecoration = if (expenseUiModel.isCancelled) TextDecoration.LineThrough else null
                             )
                         }
                         if (expenseUiModel.formattedOriginalAmount != null) {

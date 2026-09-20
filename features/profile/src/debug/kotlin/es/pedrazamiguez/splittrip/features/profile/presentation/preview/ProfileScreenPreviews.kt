@@ -41,3 +41,16 @@ private fun ProfileScreenNoDisplayNamePreview() {
         )
     }
 }
+
+@PreviewComplete
+@Composable
+private fun ProfileScreenGuestPreview() {
+    PreviewThemeWrapper {
+        ProfileScreen(
+            uiState = ProfileUiState(
+                isLoading = false,
+                isAnonymous = true
+            )
+        )
+    }
+}

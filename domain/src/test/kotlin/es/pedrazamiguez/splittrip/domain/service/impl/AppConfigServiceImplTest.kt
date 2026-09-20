@@ -24,7 +24,7 @@ class AppConfigServiceImplTest {
         val aiReceiptMonthlyLimitFreeFlow = MutableStateFlow(0)
         val aiReceiptMonthlyLimitProFlow = MutableStateFlow(100)
         val extractedDateMaxFutureDaysFlow = MutableStateFlow(30)
-        val supportEmailAddressFlow = MutableStateFlow("support@splittrip.com")
+        val supportEmailAddressFlow = MutableStateFlow("support@splittrip.eu")
         val settlementNudgeRateLimitHoursFlow = MutableStateFlow(24L)
         every { repository.defaultCurrencyCode } returns defaultCurrencyFlow
         every { repository.balanceComputationDebounceMs } returns debounceFlow
@@ -68,7 +68,7 @@ class AppConfigServiceImplTest {
         assertEquals(0, service.aiReceiptMonthlyLimitFree.value)
         assertEquals(100, service.aiReceiptMonthlyLimitPro.value)
         assertEquals(30, service.extractedDateMaxFutureDays.value)
-        assertEquals("support@splittrip.com", service.supportEmailAddress.value)
+        assertEquals("support@splittrip.eu", service.supportEmailAddress.value)
         assertEquals(24L, service.settlementNudgeRateLimitHours.value)
     }
 }

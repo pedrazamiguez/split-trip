@@ -6,10 +6,16 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
@@ -19,12 +25,22 @@ import es.pedrazamiguez.splittrip.features.main.presentation.screen.MainScreen
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
 import es.pedrazamiguez.splittrip.helpers.FakeNavigationProvider
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.compose.KoinApplication
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
+
+private class FakeRegisterDeviceTokenUseCase : RegisterDeviceTokenUseCase {
+    override suspend fun invoke(): Result<Unit> = Result.success(Unit)
+}
 
 /**
  * Instrumentation tests for [MainScreen] tab visibility and interaction.
@@ -40,6 +56,20 @@ class MainScreenTest {
 
     @get:Rule(order = 2)
     val screenshotRule = ScreenshotRule()
+
+    @Before
+    fun setUp() {
+        stopKoin()
+    }
+
+    @After
+    fun tearDown() {
+        stopKoin()
+    }
+
+    private val testModule = module {
+        single<TelemetryTracker> { mockk(relaxed = true) }
+    }
 
     // ── Provider instances ────────────────────────────────────────────
 
@@ -84,33 +114,41 @@ class MainScreenTest {
         val observeCurrentUserProfile = mockk<ObserveCurrentUserProfileUseCase>().apply {
             every { this@apply.invoke() } returns flowOf(null)
         }
+        val getGroupById = mockk<GetGroupByIdUseCase>().apply {
+            coEvery { this@apply.invoke(any()) } returns Group(
+                id = "group-123",
+                name = "Test Group",
+                currency = "EUR"
+            )
+        }
         return MainViewModel(
-            registerDeviceTokenUseCase = mockk(relaxed = true),
-            getGroupByIdUseCase = mockk(relaxed = true),
+            registerDeviceTokenUseCase = FakeRegisterDeviceTokenUseCase(),
+            getGroupByIdUseCase = getGroupById,
             warmCurrencyCacheUseCase = mockk(relaxed = true),
             observeCurrentUserProfileUseCase = observeCurrentUserProfile
         )
     }
 
     private fun createSharedViewModel(selectedGroupId: String? = null): SharedViewModel {
+        val group = if (selectedGroupId != null) {
+            Group(id = selectedGroupId, name = "Test Group", currency = "EUR")
+        } else {
+            null
+        }
         val getGroupId = mockk<GetSelectedGroupIdUseCase>().apply {
             every { this@apply.invoke() } returns flowOf(selectedGroupId)
         }
         val getGroupName = mockk<GetSelectedGroupNameUseCase>().apply {
-            every { this@apply.invoke() } returns flowOf(
-                if (selectedGroupId != null) "Test Group" else null
-            )
+            every { this@apply.invoke() } returns flowOf(group?.name)
         }
         val getGroupCurrency = mockk<GetSelectedGroupCurrencyUseCase>().apply {
-            every { this@apply.invoke() } returns flowOf(
-                if (selectedGroupId != null) "EUR" else null
-            )
+            every { this@apply.invoke() } returns flowOf(group?.currency)
         }
         val observeSelectedGroup = mockk<ObserveSelectedGroupUseCase>().apply {
-            every { this@apply.invoke() } returns flowOf(null)
+            every { this@apply.invoke() } returns flowOf(group)
         }
         val observeGroup = mockk<ObserveGroupUseCase>().apply {
-            every { this@apply.invoke(any()) } returns flowOf(null)
+            every { this@apply.invoke(any()) } returns flowOf(group)
         }
         val setGroup = mockk<SetSelectedGroupUseCase>(relaxed = true)
 
@@ -124,22 +162,41 @@ class MainScreenTest {
         )
     }
 
+    private fun setContent(
+        navigationProviders: List<NavigationProvider> = allProviders,
+        screenUiProviders: List<ScreenUiProvider> = emptyList(),
+        deepLinkGroupId: String? = null,
+        deepLinkTargetTab: String? = null,
+        deepLinkInTabDestination: String? = null,
+        mainViewModel: MainViewModel = createMainViewModel(),
+        sharedViewModel: SharedViewModel = createSharedViewModel()
+    ) {
+        composeRule.setContent {
+            KoinApplication(application = { modules(testModule) }) {
+                SplitTripTheme {
+                    MainScreen(
+                        navigationProviders = navigationProviders,
+                        screenUiProviders = screenUiProviders,
+                        deepLinkGroupId = deepLinkGroupId,
+                        deepLinkTargetTab = deepLinkTargetTab,
+                        deepLinkInTabDestination = deepLinkInTabDestination,
+                        mainViewModel = mainViewModel,
+                        sharedViewModel = sharedViewModel
+                    )
+                }
+            }
+        }
+    }
+
     // ═════════════════════════════════════════════════════════════════════
     //  Tab visibility: No group selected
     // ═════════════════════════════════════════════════════════════════════
 
     @Test
     fun showsOnlyNonGroupDependentTabs_whenNoGroupIsSelected() {
-        composeRule.setContent {
-            SplitTripTheme {
-                MainScreen(
-                    navigationProviders = allProviders,
-                    screenUiProviders = emptyList(),
-                    mainViewModel = createMainViewModel(),
-                    sharedViewModel = createSharedViewModel(selectedGroupId = null)
-                )
-            }
-        }
+        setContent(
+            sharedViewModel = createSharedViewModel(selectedGroupId = null)
+        )
 
         composeRule.waitForIdle()
 
@@ -158,16 +215,9 @@ class MainScreenTest {
 
     @Test
     fun showsAllTabs_whenGroupIsSelected() {
-        composeRule.setContent {
-            SplitTripTheme {
-                MainScreen(
-                    navigationProviders = allProviders,
-                    screenUiProviders = emptyList(),
-                    mainViewModel = createMainViewModel(),
-                    sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
-                )
-            }
-        }
+        setContent(
+            sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+        )
 
         composeRule.waitForIdle()
 
@@ -184,16 +234,9 @@ class MainScreenTest {
 
     @Test
     fun tappingTab_changesSelectedContent() {
-        composeRule.setContent {
-            SplitTripTheme {
-                MainScreen(
-                    navigationProviders = allProviders,
-                    screenUiProviders = emptyList(),
-                    mainViewModel = createMainViewModel(),
-                    sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
-                )
-            }
-        }
+        setContent(
+            sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+        )
 
         composeRule.waitForIdle()
 
@@ -228,19 +271,13 @@ class MainScreenTest {
             profileProvider
         )
 
-        composeRule.setContent {
-            SplitTripTheme {
-                MainScreen(
-                    navigationProviders = providers,
-                    screenUiProviders = emptyList(),
-                    deepLinkGroupId = "group-123",
-                    deepLinkTargetTab = "balances",
-                    deepLinkInTabDestination = Routes.YOUR_POSITION,
-                    mainViewModel = createMainViewModel(),
-                    sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
-                )
-            }
-        }
+        setContent(
+            navigationProviders = providers,
+            deepLinkGroupId = "group-123",
+            deepLinkTargetTab = "balances",
+            deepLinkInTabDestination = Routes.YOUR_POSITION,
+            sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+        )
 
         composeRule.waitForIdle()
 
@@ -264,19 +301,13 @@ class MainScreenTest {
             profileProvider
         )
 
-        composeRule.setContent {
-            SplitTripTheme {
-                MainScreen(
-                    navigationProviders = providers,
-                    screenUiProviders = emptyList(),
-                    deepLinkGroupId = "group-123",
-                    deepLinkTargetTab = "expenses",
-                    deepLinkInTabDestination = expenseDetailRoute,
-                    mainViewModel = createMainViewModel(),
-                    sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
-                )
-            }
-        }
+        setContent(
+            navigationProviders = providers,
+            deepLinkGroupId = "group-123",
+            deepLinkTargetTab = "expenses",
+            deepLinkInTabDestination = expenseDetailRoute,
+            sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+        )
 
         composeRule.waitForIdle()
 
@@ -300,19 +331,13 @@ class MainScreenTest {
             profileProvider
         )
 
-        composeRule.setContent {
-            SplitTripTheme {
-                MainScreen(
-                    navigationProviders = providers,
-                    screenUiProviders = emptyList(),
-                    deepLinkGroupId = "group-123",
-                    deepLinkTargetTab = "balances",
-                    deepLinkInTabDestination = contributionDetailRoute,
-                    mainViewModel = createMainViewModel(),
-                    sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
-                )
-            }
-        }
+        setContent(
+            navigationProviders = providers,
+            deepLinkGroupId = "group-123",
+            deepLinkTargetTab = "balances",
+            deepLinkInTabDestination = contributionDetailRoute,
+            sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+        )
 
         composeRule.waitForIdle()
 

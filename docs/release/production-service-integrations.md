@@ -117,11 +117,11 @@ SplitTrip does not require a paid email inbox provider. Free inbound email forwa
 3. Under **Policy and programs → App content → Privacy policy**:
    - **Privacy policy URL:** `https://splittrip.eu/privacy-policy.html`
    - Click **Save**.
-4. Under **Release → Setup → App Signing**:
+4. Under **Release → Setup → App Signing** (or **App integrity**):
    - Locate the **App signing key certificate** card.
-   - Copy the **SHA-256 certificate fingerprint** (format: `XX:XX:XX:...`).
-   - Open `docs/.well-known/assetlinks.json` in the repository and replace `<RELEASE_SHA256_FINGERPRINT_PLACEHOLDER>` with the copied fingerprint.
-   - Commit and push to ensure Android App Links auto-verification succeeds in production builds.
+   - Copy both the **SHA-1** and **SHA-256** certificate fingerprints (`0D:E0:AE:D1:74:2A:59:FF:A5:2B:20:0F:EF:65:E9:C5:57:6B:79:2F:6D:35:CB:36:6C:20:14:08:5A:DA:EA:DB`).
+   - In `docs/.well-known/assetlinks.json`, both the Play App Signing SHA-256 and the local upload key SHA-256 (`01:2A:B7:5D:86:66:1D:95:C0:A2:E5:09:23:66:25:F7:C8:14:2A:EB:6F:CB:DD:CE:B0:46:6E:DC:26:20:86:0E`) are configured.
+   - Add both the **Play App Signing SHA-1** and **SHA-256** fingerprints to **Firebase Console → Project settings → Your apps → SplitTrip (Android)** so that Google Sign-In and App Check work in production Play Store builds.
 
 ---
 

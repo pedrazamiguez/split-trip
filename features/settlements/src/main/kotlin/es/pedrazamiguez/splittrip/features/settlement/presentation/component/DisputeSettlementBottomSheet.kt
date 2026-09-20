@@ -21,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -42,6 +44,7 @@ internal fun DisputeSettlementBottomSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = LocalHapticFeedback.current
     val sheetState =
         rememberBottomSheetState(
             initialValue = SheetValue.Hidden,
@@ -100,7 +103,10 @@ internal fun DisputeSettlementBottomSheet(
                 )
                 GradientButton(
                     text = stringResource(R.string.settlement_overview_dispute_submit),
-                    onClick = onSubmit,
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSubmit()
+                    },
                     enabled = reason.isNotBlank(),
                     modifier = Modifier.weight(1f)
                 )

@@ -128,7 +128,7 @@ Every declaration below directly maps to Google Play Console's Data Safety quest
 - **Does your app collect or share any of the required user data types?** -> **Yes**
 - **Does your app collect financial info like credit cards or bank account details?** -> **No** (SplitTrip only collects user-entered expense amounts, category names, and friend-to-friend settlement calculations under "Other financial info"; no banking credentials, payment processing, or Open Banking integrations exist)
 - **Is all of the user data collected by your app encrypted in transit?** -> **Yes** (HTTPS / TLS 1.3 enforced)
-- **Do you provide a way for users to request that their data be deleted?** -> **Yes** (Direct self-service account deletion in-app at `Settings > Account Status` and via `support@splittrip.com`)
+- **Do you provide a way for users to request that their data be deleted?** -> **Yes** (Direct self-service account deletion in-app at `Settings > Account Status` and via `support@splittrip.eu`)
 - **Is personal data sold to any third party?** -> **No** (Zero monetization or third-party sharing)
 - **Is personal data used for advertising or marketing?** -> **No** (No advertising networks present)
 

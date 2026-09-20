@@ -66,5 +66,8 @@ Draft a plan that functions as a **complete, unambiguous, and actionable technic
 
 Once (and only after) the user has explicitly approved the plan (e.g. by clicking "Proceed"):
 1. Post the final approved implementation plan as a comment on the GitHub issue using `add_issue_comment`.
+   - **CRITICAL:** You MUST post the **entire, unabridged content** of the approved `implementation_plan.md` artifact verbatim.
+   - **DO NOT summarize, condense, truncate, or omit** any sections, file lists, `[NEW]`/`[MODIFY]`/`[DELETE]` tags, exact file paths, line numbers, signatures, or test case specifications.
+   - The comment posted to GitHub is the single source of truth that `sp-start-issue` will parse and validate; if it is summarized or abbreviated, `sp-start-issue` will fail validation and reject the plan.
 2. Notify the user that the plan has been posted.
 3. **STOP immediately.** The user clicking "Proceed" means "post the plan and stop." It does NOT mean you should begin execution. You have achieved your goal for this skill. Do not start implementing or executing code.

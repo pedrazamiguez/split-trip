@@ -83,7 +83,7 @@ SplitTrip parameters are organized into 5 functional groups:
 
 | Parameter Key | Value Type | Default Value | Description |
 |---|---|---|---|
-| `support_email_address` | `STRING` | `support@splittrip.com` | Support email address displayed in-app for user inquiries. |
+| `support_email_address` | `STRING` | `support@splittrip.eu` | Support email address displayed in-app for user inquiries. |
 | `developer_info_json` | `JSON` | `{"name":"Andrés Pedraza Míguez",...}` | Serialized JSON containing developer profile, localized roles, bios, credits, and links. |
 
 ---

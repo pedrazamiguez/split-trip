@@ -70,6 +70,11 @@
         <item quantity="one">1 subunit</item>
         <item quantity="other">%d subunits</item>
     </plurals>
+    <string name="group_member_role_creator">Creator</string>
+    <string name="group_member_role_member">Member</string>
+    <string name="group_detail_section_details">Details</string>
+    <string name="group_detail_currency_label">Main currency</string>
+    <string name="group_detail_description_label">Description</string>
 
     <!-- Member search -->
     <string name="group_field_members">Members</string>

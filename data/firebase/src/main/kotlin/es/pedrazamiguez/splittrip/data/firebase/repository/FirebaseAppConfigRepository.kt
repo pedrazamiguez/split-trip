@@ -188,7 +188,7 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 0
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = 100
         private const val DEFAULT_EXTRACTED_DATE_MAX_FUTURE_DAYS = 30
-        private const val DEFAULT_SUPPORT_EMAIL = "support@splittrip.com"
+        private const val DEFAULT_SUPPORT_EMAIL = "support@splittrip.eu"
         private const val DEFAULT_SETTLEMENT_NUDGE_RATE_LIMIT_HOURS = 24L
         private val DEFAULT_OCR_SAFETY_FALSE_POSITIVES_BLACKLIST = listOf("razor", "private", "toothbrushes")
 

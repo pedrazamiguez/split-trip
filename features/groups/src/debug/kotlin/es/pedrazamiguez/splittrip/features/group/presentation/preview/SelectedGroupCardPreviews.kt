@@ -4,12 +4,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewLocales
-import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemes
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.features.group.presentation.component.SelectedGroupCard
 
 /** Hero card with a cover image and multiple member avatars. */
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun SelectedGroupCardWithImagePreview() {
     GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_1) {
@@ -21,7 +20,7 @@ private fun SelectedGroupCardWithImagePreview() {
 }
 
 /** Hero card without a cover image — shows the gradient placeholder. */
-@PreviewLocales
+@PreviewComplete
 @Composable
 private fun SelectedGroupCardNoImagePreview() {
     GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_NO_IMAGE) {
@@ -32,8 +31,8 @@ private fun SelectedGroupCardNoImagePreview() {
     }
 }
 
-/** Hero card in both light and dark themes. */
-@PreviewThemes
+/** Hero card in all themes and locales. */
+@PreviewComplete
 @Composable
 private fun SelectedGroupCardThemesPreview() {
     GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_NO_IMAGE) {

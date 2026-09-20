@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,12 +23,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
+import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
+import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
@@ -35,11 +40,14 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDet
 private val HERO_AMOUNT_SIZE = 40.sp
 
 @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun HeroSection(
     expense: ExpenseDetailUiModel,
     onReceiptTap: (() -> Unit)? = null
 ) {
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
         // Tag Row (previously HeroTagRow)
         Row(
@@ -106,7 +114,11 @@ internal fun HeroSection(
                 )
                 Text(
                     text = expense.formattedGroupAmount,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().sharedElementAnimation(
+                        key = SharedElementKeys.expenseAmount(expense.id),
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope
+                    ),
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -159,25 +171,35 @@ internal fun HeroSection(
                     )
                 }
                 if (expense.isForeignCurrency && expense.formattedSourceAmount != null) {
-                    Spacer(Modifier.height(MaterialTheme.spacing.Small))
-                    Row(
+                    Spacer(Modifier.height(MaterialTheme.spacing.Medium))
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
                     ) {
-                        CaptionText(
-                            text = stringResource(
-                                R.string.expense_detail_amount_in_currency,
-                                expense.sourceCurrency
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Column(horizontalAlignment = Alignment.End) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CaptionText(
+                                text = stringResource(
+                                    R.string.expense_detail_amount_in_currency,
+                                    expense.sourceCurrency
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                             AmountText(
                                 text = expense.formattedSourceAmount,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 textDecoration = if (expense.isCancelled) TextDecoration.LineThrough else null
                             )
-                            if (expense.formattedExchangeRate != null) {
+                        }
+                        if (expense.formattedExchangeRate != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 CaptionText(
                                     text = stringResource(
                                         R.string.expense_detail_rate_label,
@@ -186,8 +208,13 @@ internal fun HeroSection(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            if (expense.formattedExpectedGroupAmount != null &&
-                                expense.formattedGroupAmountDifference != null
+                        }
+                        if (expense.formattedExpectedGroupAmount != null &&
+                            expense.formattedGroupAmountDifference != null
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
                             ) {
                                 CaptionText(
                                     text = stringResource(

@@ -58,7 +58,6 @@ internal fun CashTranchesDetailSection(
                             }
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            // tnum-aligned monetary value (Horizon Narrative §3.4)
                             AmountText(text = tranche.formattedAmountConsumed)
                             if (tranche.formattedRate != null) {
                                 CaptionText(

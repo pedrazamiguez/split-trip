@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.component
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,19 +21,23 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BasketUp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCardPay
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
+import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
+import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 
 @Suppress("LongMethod")
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ContributionHistoryItem(
     contribution: ContributionUiModel,
@@ -42,6 +47,8 @@ fun ContributionHistoryItem(
     onLongClick: (() -> Unit)? = null
 ) {
     val haptics = LocalHapticFeedback.current
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
     val isFormer = contribution.memberDisplay is MemberDisplay.Former
     val itemModifier = if (isFormer) modifier.alpha(0.6f) else modifier
 
@@ -49,7 +56,13 @@ fun ContributionHistoryItem(
         Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
+            .sharedElementAnimation(
+                key = SharedElementKeys.contributionCard(contribution.id),
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope
+            )
             .debouncedCombinedClickable(
+                enableSpringPress = true,
                 onClick = { onClick?.invoke() },
                 onLongClick = onLongClick?.let { action ->
                     {
@@ -86,6 +99,11 @@ fun ContributionHistoryItem(
                 ) {
                     Text(
                         text = "+${contribution.formattedAmount}",
+                        modifier = Modifier.sharedElementAnimation(
+                            key = SharedElementKeys.contributionAmount(contribution.id),
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary

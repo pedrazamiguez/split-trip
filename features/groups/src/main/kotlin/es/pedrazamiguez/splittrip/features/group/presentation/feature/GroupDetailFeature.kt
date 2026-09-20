@@ -12,9 +12,11 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
+import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.GroupDetailScreen
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDetailViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.GroupDetailUiAction
@@ -46,27 +48,29 @@ fun GroupDetailFeature(
         }
     }
 
-    GroupDetailScreen(
-        uiState = uiState,
-        isActiveGroup = selectedGroupId == groupId,
-        onSelectGroup = {
-            val group = uiState.group
-            if (group != null) {
-                if (selectedGroupId == groupId) {
-                    if (!uiState.isOnlyGroup) {
-                        sharedViewModel.selectGroup(null, null, null)
+    SharedTransitionSurface(sharedElementKey = SharedElementKeys.groupCard(groupId)) {
+        GroupDetailScreen(
+            uiState = uiState,
+            isActiveGroup = selectedGroupId == groupId,
+            onSelectGroup = {
+                val group = uiState.group
+                if (group != null) {
+                    if (selectedGroupId == groupId) {
+                        if (!uiState.isOnlyGroup) {
+                            sharedViewModel.selectGroup(null, null, null)
+                        }
+                    } else {
+                        sharedViewModel.selectGroup(group.id, group.name, group.currency)
                     }
-                } else {
-                    sharedViewModel.selectGroup(group.id, group.name, group.currency)
+                    navController.popBackStack()
                 }
-                navController.popBackStack()
-            }
-        },
-        onManageSubunits = {
-            navController.navigate(Routes.manageSubunitsRoute(groupId))
-        },
-        onEvent = groupDetailViewModel::onEvent
-    )
+            },
+            onManageSubunits = {
+                navController.navigate(Routes.manageSubunitsRoute(groupId))
+            },
+            onEvent = groupDetailViewModel::onEvent
+        )
+    }
 }
 
 private fun handleAction(

@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.SignInMethodQueryResult
 import com.google.firebase.auth.UserInfo
+import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
@@ -25,6 +26,7 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import java.util.Base64 as JavaBase64
+import java.util.Locale
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -39,6 +41,7 @@ class AuthenticationServiceImplTest {
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var cloudUserDataSource: CloudUserDataSource
     private lateinit var performanceMonitor: PerformanceMonitor
+    private lateinit var localeProvider: LocaleProvider
     private lateinit var service: AuthenticationServiceImpl
 
     private val testIdToken = "google-id-token"
@@ -60,6 +63,9 @@ class AuthenticationServiceImplTest {
             every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
             coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
         }
+        localeProvider = mockk(relaxed = true) {
+            every { getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
+        }
 
         mockkStatic(GoogleAuthProvider::class)
         mockkStatic(EmailAuthProvider::class)
@@ -77,7 +83,8 @@ class AuthenticationServiceImplTest {
         service = AuthenticationServiceImpl(
             firebaseAuth = firebaseAuth,
             cloudUserDataSource = cloudUserDataSource,
-            performanceMonitor = performanceMonitor
+            performanceMonitor = performanceMonitor,
+            localeProvider = localeProvider
         )
     }
 
@@ -458,6 +465,40 @@ class AuthenticationServiceImplTest {
     inner class SendPasswordResetEmail {
 
         @Test
+        fun `sendPasswordResetEmail sets languageCode on firebaseAuth from localeProvider before sending email`() =
+            runTest {
+                // Given
+                val email = "user@example.com"
+                every { localeProvider.getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
+                every { firebaseAuth.sendPasswordResetEmail(email) } returns Tasks.forResult(null)
+
+                // When
+                val result = service.sendPasswordResetEmail(email)
+
+                // Then
+                assertTrue(result.isSuccess)
+                coVerify(exactly = 1) { firebaseAuth.setLanguageCode("es") }
+                coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(email) }
+            }
+
+        @Test
+        fun `sendPasswordResetEmail sets English language code when localeProvider returns English`() =
+            runTest {
+                // Given
+                val email = "user@example.com"
+                every { localeProvider.getCurrentLocale() } returns Locale.ENGLISH
+                every { firebaseAuth.sendPasswordResetEmail(email) } returns Tasks.forResult(null)
+
+                // When
+                val result = service.sendPasswordResetEmail(email)
+
+                // Then
+                assertTrue(result.isSuccess)
+                coVerify(exactly = 1) { firebaseAuth.setLanguageCode("en") }
+                coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(email) }
+            }
+
+        @Test
         fun `sendPasswordResetEmail success calls firebaseAuth and returns success`() = runTest {
             // Given
             val email = "user@example.com"
@@ -468,6 +509,7 @@ class AuthenticationServiceImplTest {
 
             // Then
             assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { firebaseAuth.setLanguageCode("es") }
             coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(email) }
         }
 
@@ -484,6 +526,7 @@ class AuthenticationServiceImplTest {
             // Then
             assertTrue(result.isFailure)
             assertEquals("Firebase error", result.exceptionOrNull()?.message)
+            coVerify(exactly = 1) { firebaseAuth.setLanguageCode("es") }
             coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(email) }
         }
 
@@ -502,6 +545,7 @@ class AuthenticationServiceImplTest {
             val result = service.sendPasswordResetEmail(dottedEmail)
 
             assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { firebaseAuth.setLanguageCode("es") }
             coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(dottedEmail) }
             coVerify(exactly = 1) { firebaseAuth.sendPasswordResetEmail(canonicalEmail) }
         }

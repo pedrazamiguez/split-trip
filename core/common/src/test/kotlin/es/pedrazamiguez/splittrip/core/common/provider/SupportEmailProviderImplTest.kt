@@ -32,7 +32,7 @@ class SupportEmailProviderImplTest {
         every { resourceProvider.getString(R.string.support_email_device, "Google Pixel 8") } returns
             "Device: Google Pixel 8"
 
-        every { supportEmailAddressProvider.getSupportEmailAddress() } returns "test-support@splittrip.com"
+        every { supportEmailAddressProvider.getSupportEmailAddress() } returns "test-support@splittrip.eu"
 
         provider = SupportEmailProviderImpl(
             appMetadataProvider = appMetadataProvider,
@@ -50,7 +50,7 @@ class SupportEmailProviderImplTest {
         val email = provider.buildBugReportEmail()
 
         // Assert
-        assertEquals("test-support@splittrip.com", email.recipient)
+        assertEquals("test-support@splittrip.eu", email.recipient)
         assertEquals("SplitTrip Bug Report", email.subject)
 
         // Verify body content format
@@ -75,7 +75,7 @@ class SupportEmailProviderImplTest {
         val email = provider.buildFeatureSuggestionEmail()
 
         // Assert
-        assertEquals("test-support@splittrip.com", email.recipient)
+        assertEquals("test-support@splittrip.eu", email.recipient)
         assertEquals("SplitTrip Feature Request", email.subject)
 
         val expectedTemplatePart = "What feature would you like to see?"
@@ -101,7 +101,7 @@ class SupportEmailProviderImplTest {
         val email = provider.buildContactSupportEmail()
 
         // Assert
-        assertEquals("test-support@splittrip.com", email.recipient)
+        assertEquals("test-support@splittrip.eu", email.recipient)
         assertEquals("SplitTrip Support Request", email.subject)
 
         val expectedTemplatePart = "How can we help you?"

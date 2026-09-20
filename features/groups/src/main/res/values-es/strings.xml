@@ -71,6 +71,11 @@
         <item quantity="one">1 subunidad</item>
         <item quantity="other">%d subunidades</item>
     </plurals>
+    <string name="group_member_role_creator">Creador</string>
+    <string name="group_member_role_member">Miembro</string>
+    <string name="group_detail_section_details">Detalles</string>
+    <string name="group_detail_currency_label">Moneda principal</string>
+    <string name="group_detail_description_label">Descripción</string>
 
     <!-- Member search -->
     <string name="group_field_members">Miembros</string>

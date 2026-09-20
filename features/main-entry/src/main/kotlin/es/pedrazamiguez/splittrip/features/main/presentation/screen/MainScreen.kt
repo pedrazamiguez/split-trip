@@ -56,11 +56,15 @@ import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefa
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.features.main.presentation.component.BottomNavigationBar
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
+import kotlinx.coroutines.flow.first
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.getKoin
 
 @OptIn(ExperimentalSharedTransitionApi::class)
-@Suppress("LongMethod") // Orchestration composable: coordinates nav state, deep links and lifecycle effects
+@Suppress(
+    "LongMethod",
+    "CognitiveComplexMethod"
+)
 @Composable
 fun MainScreen(
     navigationProviders: List<NavigationProvider>,
@@ -118,27 +122,19 @@ fun MainScreen(
     // Keyed on groupId, targetTab, AND inTabDestination so that a new deep link
     // for the same group but a different tab or sub-destination still triggers the effect.
     LaunchedEffect(deepLinkGroupId, deepLinkTargetTab, deepLinkInTabDestination) {
-        if (deepLinkGroupId != null) {
-            val groupName = mainViewModel.resolveGroupName(deepLinkGroupId)
-            val groupCurrency = mainViewModel.resolveGroupCurrency(deepLinkGroupId)
-            sharedViewModel.selectGroup(deepLinkGroupId, groupName, groupCurrency)
-
-            if (deepLinkTargetTab != null) {
-                selectedRoute = deepLinkTargetTab
-            }
-
-            if (deepLinkInTabDestination != null) {
-                val targetProvider = navigationProviders.firstOrNull {
-                    it.route == (deepLinkTargetTab ?: selectedRoute)
-                }
-                val targetNavController = targetProvider?.let { navControllers[it] }
-                targetNavController?.navigate(deepLinkInTabDestination) {
-                    launchSingleTop = true
-                }
-            }
-        } else if (deepLinkTargetTab != null) {
-            selectedRoute = deepLinkTargetTab
-        }
+        handleDeepLink(
+            payload = DeepLinkPayload(
+                groupId = deepLinkGroupId,
+                targetTab = deepLinkTargetTab,
+                inTabDestination = deepLinkInTabDestination
+            ),
+            mainViewModel = mainViewModel,
+            sharedViewModel = sharedViewModel,
+            navigationProviders = navigationProviders,
+            navControllers = navControllers,
+            onSelectRoute = { selectedRoute = it },
+            currentSelectedRoute = { selectedRoute }
+        )
     }
 
     val selectedProvider = navigationProviders.first { it.route == selectedRoute }
@@ -365,3 +361,47 @@ private fun Modifier.tabVisibilityModifier(isSelected: Boolean): Modifier = this
             Modifier
         }
     )
+
+private data class DeepLinkPayload(
+    val groupId: String?,
+    val targetTab: String?,
+    val inTabDestination: String?
+)
+
+private suspend fun handleDeepLink(
+    payload: DeepLinkPayload,
+    mainViewModel: MainViewModel,
+    sharedViewModel: SharedViewModel,
+    navigationProviders: List<NavigationProvider>,
+    navControllers: Map<NavigationProvider, NavHostController>,
+    onSelectRoute: (String) -> Unit,
+    currentSelectedRoute: () -> String
+) {
+    val (groupId, targetTab, inTabDestination) = payload
+    if (groupId == null) {
+        if (targetTab != null) {
+            onSelectRoute(targetTab)
+        }
+        return
+    }
+
+    val groupName = mainViewModel.resolveGroupName(groupId)
+    val groupCurrency = mainViewModel.resolveGroupCurrency(groupId)
+    sharedViewModel.selectGroup(groupId, groupName, groupCurrency)
+
+    if (targetTab != null) {
+        onSelectRoute(targetTab)
+    }
+
+    if (inTabDestination != null) {
+        val targetRoute = targetTab ?: currentSelectedRoute()
+        val targetProvider = navigationProviders.firstOrNull { it.route == targetRoute }
+        val targetNavController = targetProvider?.let { navControllers[it] } ?: return
+        if (targetNavController.currentDestination == null) {
+            targetNavController.currentBackStackEntryFlow.first()
+        }
+        targetNavController.navigate(inTabDestination) {
+            launchSingleTop = true
+        }
+    }
+}
