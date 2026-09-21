@@ -97,6 +97,7 @@ class ContributionConfigHandlerTest {
         coEvery { getMemberProfilesUseCase(any()) } returns testMemberProfiles
         every { authenticationService.currentUserId() } returns "user-1"
         every { addContributionUiMapper.resolveCurrencySymbol(any()) } returns "€"
+        every { addContributionUiMapper.resolveCurrencyDecimalDigits(any()) } returns 2
         every {
             addContributionUiMapper.toMemberOptions(any(), any(), any())
         } returns testMemberOptions
@@ -130,6 +131,16 @@ class ContributionConfigHandlerTest {
             handler.setGroupCurrency("JPY")
 
             assertEquals("¥", uiState.value.groupCurrencySymbol)
+        }
+
+        @Test
+        fun `resolves currency decimal places via mapper`() = runTest {
+            every { addContributionUiMapper.resolveCurrencyDecimalDigits("JPY") } returns 0
+            handler.bind(uiState, actions, this)
+
+            handler.setGroupCurrency("JPY")
+
+            assertEquals(0, uiState.value.groupCurrencyDecimalPlaces)
         }
 
         @Test
@@ -172,6 +183,7 @@ class ContributionConfigHandlerTest {
 
         @Test
         fun `updates groupCurrency from loaded group`() = runTest {
+            every { addContributionUiMapper.resolveCurrencyDecimalDigits("EUR") } returns 2
             coEvery { getGroupByIdUseCase("group-1") } returns testGroup
 
             handler.bind(uiState, actions, this)
@@ -180,6 +192,7 @@ class ContributionConfigHandlerTest {
 
             assertEquals("EUR", handler.groupCurrency)
             assertEquals("EUR", uiState.value.groupCurrencyCode)
+            assertEquals(2, uiState.value.groupCurrencyDecimalPlaces)
         }
 
         @Test

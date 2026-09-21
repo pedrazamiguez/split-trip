@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.state
 
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -161,6 +162,18 @@ class AddContributionUiStateTest {
                 amountError = true
             )
             assertFalse(state.isCurrentStepValid)
+        }
+    }
+
+    // ── defaults ──────────────────────────────────────────────────────────
+
+    @Nested
+    inner class Defaults {
+
+        @Test
+        fun `groupCurrencyDecimalPlaces defaults to DEFAULT_MAX_DECIMAL_PLACES`() {
+            val state = AddContributionUiState()
+            assertEquals(UiConstants.DEFAULT_MAX_DECIMAL_PLACES, state.groupCurrencyDecimalPlaces)
         }
     }
 }

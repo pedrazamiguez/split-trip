@@ -76,10 +76,12 @@ class ContributionConfigHandler(
         val resolvedCurrency = currency ?: appConfigService.defaultCurrencyCode.value
         groupCurrency = resolvedCurrency
         val symbol = addContributionUiMapper.resolveCurrencySymbol(resolvedCurrency)
+        val decimalPlaces = addContributionUiMapper.resolveCurrencyDecimalDigits(resolvedCurrency)
         _uiState.update {
             it.copy(
                 groupCurrencyCode = resolvedCurrency,
-                groupCurrencySymbol = symbol
+                groupCurrencySymbol = symbol,
+                groupCurrencyDecimalPlaces = decimalPlaces
             )
         }
     }
@@ -188,6 +190,7 @@ class ContributionConfigHandler(
         subunitOptions: ImmutableList<SubunitOptionUiModel>,
         currency: String
     ) {
+        val decimalPlaces = addContributionUiMapper.resolveCurrencyDecimalDigits(currency)
         _uiState.update { state ->
             state.copy(
                 isLoading = false,
@@ -210,7 +213,8 @@ class ContributionConfigHandler(
                     ?: System.currentTimeMillis(),
                 amountError = false,
                 groupCurrencyCode = currency,
-                groupCurrencySymbol = addContributionUiMapper.resolveCurrencySymbol(currency)
+                groupCurrencySymbol = addContributionUiMapper.resolveCurrencySymbol(currency),
+                groupCurrencyDecimalPlaces = decimalPlaces
             ).let { updatedState ->
                 updatedState.copy(
                     initialFormSnapshot = updatedState.toFormSnapshot(),

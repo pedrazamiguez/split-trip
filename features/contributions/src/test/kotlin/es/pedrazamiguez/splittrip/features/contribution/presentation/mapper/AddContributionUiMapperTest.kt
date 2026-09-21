@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -117,6 +118,42 @@ class AddContributionUiMapperTest {
         fun `returns empty string for unknown currency code`() {
             val result = mapper.resolveCurrencySymbol("XYZ")
             assertEquals("", result)
+        }
+    }
+
+    // ── resolveCurrencyDecimalDigits ──────────────────────────────────────────
+
+    @Nested
+    inner class ResolveCurrencyDecimalDigits {
+
+        @Test
+        fun `returns 2 for EUR`() {
+            assertEquals(2, mapper.resolveCurrencyDecimalDigits("EUR"))
+        }
+
+        @Test
+        fun `returns 2 for USD`() {
+            assertEquals(2, mapper.resolveCurrencyDecimalDigits("USD"))
+        }
+
+        @Test
+        fun `returns 0 for JPY`() {
+            assertEquals(0, mapper.resolveCurrencyDecimalDigits("JPY"))
+        }
+
+        @Test
+        fun `returns 3 for BHD`() {
+            assertEquals(3, mapper.resolveCurrencyDecimalDigits("BHD"))
+        }
+
+        @Test
+        fun `returns default max decimal places for blank currency code`() {
+            assertEquals(UiConstants.DEFAULT_MAX_DECIMAL_PLACES, mapper.resolveCurrencyDecimalDigits(""))
+        }
+
+        @Test
+        fun `returns default max decimal places for unknown currency code`() {
+            assertEquals(UiConstants.DEFAULT_MAX_DECIMAL_PLACES, mapper.resolveCurrencyDecimalDigits("XYZ"))
         }
     }
 

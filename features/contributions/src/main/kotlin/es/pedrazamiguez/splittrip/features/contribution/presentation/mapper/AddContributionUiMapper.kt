@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.contribution.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.util.DisplayNameResolver
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatAmountWithCurrency
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.resolveCurrencySymbol
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
@@ -11,6 +12,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Currency
 import kotlinx.collections.immutable.ImmutableList
 
 /**
@@ -44,6 +46,22 @@ class AddContributionUiMapper(
      */
     fun resolveCurrencySymbol(currencyCode: String): String =
         resolveCurrencySymbol(currencyCode, localeProvider.getCurrentLocale())
+
+    /**
+     * Resolves the number of decimal digits for a given ISO 4217 currency code.
+     *
+     * Falls back to [UiConstants.DEFAULT_MAX_DECIMAL_PLACES] when the currency code
+     * is blank, invalid, or has non-standard fraction digits.
+     *
+     * @param currencyCode ISO 4217 code (e.g. "EUR", "USD", "JPY").
+     * @return The number of decimal digits (e.g. 2 for EUR, 0 for JPY, 3 for TND).
+     */
+    fun resolveCurrencyDecimalDigits(currencyCode: String): Int {
+        if (currencyCode.isBlank()) return UiConstants.DEFAULT_MAX_DECIMAL_PLACES
+        return runCatching {
+            Currency.getInstance(currencyCode).defaultFractionDigits.takeIf { it >= 0 }
+        }.getOrNull() ?: UiConstants.DEFAULT_MAX_DECIMAL_PLACES
+    }
 
     /**
      * Maps a list of member user IDs and their profiles to [MemberOptionUiModel] items
