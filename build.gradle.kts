@@ -215,6 +215,7 @@ sonarqube {
                 "**/domain/datasource/cloud/CloudSettlementDataSource*.kt",
                 "**/domain/usecase/user/impl/UpdateUserReminderPreferencesUseCaseImpl.kt",
                 "**/data/datasource/GroupDashboardDataSourceImpl*.kt",
+                "**/designsystem/ad/AdConsentManager*.kt",
             ).joinToString(","),
         )
 
