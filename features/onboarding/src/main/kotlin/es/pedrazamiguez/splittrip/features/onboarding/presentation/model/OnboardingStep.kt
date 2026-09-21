@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.onboarding.presentation.model
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bell
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Cash
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PlaneTilt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
@@ -28,6 +29,11 @@ enum class OnboardingStep(
         titleRes = R.string.onboarding_step_cash_title,
         descriptionRes = R.string.onboarding_step_cash_description,
         icon = TablerIcons.Outline.Cash
+    ),
+    REAL_TIME_NOTIFICATIONS(
+        titleRes = R.string.onboarding_step_notifications_title,
+        descriptionRes = R.string.onboarding_step_notifications_description,
+        icon = TablerIcons.Outline.Bell
     ),
     CONSENSUS_AND_SETTLEMENT(
         titleRes = R.string.onboarding_step_settle_title,

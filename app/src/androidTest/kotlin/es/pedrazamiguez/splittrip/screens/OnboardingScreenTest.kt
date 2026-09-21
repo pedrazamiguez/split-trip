@@ -126,4 +126,74 @@ class OnboardingScreenTest {
 
         assertTrue("Expected onSkipClick callback to fire", wasSkipped)
     }
+
+    @Test
+    fun rendersOnboardingScreen_notificationStep_permissionNotGranted_showsEnableButton() {
+        val stepTitle = context.getString(R.string.onboarding_step_notifications_title)
+        val enableButtonText = context.getString(R.string.onboarding_enable_notifications_button)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                OnboardingScreen(
+                    uiState = OnboardingUiState(
+                        currentStep = OnboardingStep.REAL_TIME_NOTIFICATIONS,
+                        hasNotificationPermission = false
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(stepTitle).assertIsDisplayed()
+        composeRule.onNodeWithText(enableButtonText).assertIsDisplayed()
+    }
+
+    @Test
+    fun rendersOnboardingScreen_notificationStep_permissionGranted_showsEnabledIndicator() {
+        val stepTitle = context.getString(R.string.onboarding_step_notifications_title)
+        val enabledIndicatorText = context.getString(R.string.onboarding_notifications_enabled)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                OnboardingScreen(
+                    uiState = OnboardingUiState(
+                        currentStep = OnboardingStep.REAL_TIME_NOTIFICATIONS,
+                        hasNotificationPermission = true
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(stepTitle).assertIsDisplayed()
+        composeRule.onNodeWithText(enabledIndicatorText).assertIsDisplayed()
+    }
+
+    @Test
+    fun enableNotificationsButton_isClickable() {
+        val enableButtonText = context.getString(R.string.onboarding_enable_notifications_button)
+        var wasClicked = false
+
+        composeRule.setContent {
+            SplitTripTheme {
+                OnboardingScreen(
+                    uiState = OnboardingUiState(
+                        currentStep = OnboardingStep.REAL_TIME_NOTIFICATIONS,
+                        hasNotificationPermission = false
+                    ),
+                    onRequestNotificationPermissionClick = { wasClicked = true }
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(enableButtonText).assertIsDisplayed()
+        composeRule.onNodeWithText(enableButtonText).performClick()
+        composeRule.waitForIdle()
+
+        assertTrue("Expected onRequestNotificationPermissionClick callback to fire", wasClicked)
+    }
 }

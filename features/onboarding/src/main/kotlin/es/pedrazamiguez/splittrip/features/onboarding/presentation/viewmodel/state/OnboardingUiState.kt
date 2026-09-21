@@ -8,10 +8,12 @@ import kotlinx.collections.immutable.persistentListOf
 @Immutable
 data class OnboardingUiState(
     val currentStep: OnboardingStep = OnboardingStep.TRIPS_AND_GROUPS,
+    val hasNotificationPermission: Boolean = false,
     val steps: ImmutableList<OnboardingStep> = persistentListOf(
         OnboardingStep.TRIPS_AND_GROUPS,
         OnboardingStep.SMART_SPLITTING,
         OnboardingStep.CASH_AND_POCKET,
+        OnboardingStep.REAL_TIME_NOTIFICATIONS,
         OnboardingStep.CONSENSUS_AND_SETTLEMENT
     )
 ) {
