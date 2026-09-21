@@ -46,7 +46,7 @@ class InterstitialAdManagerTest {
         override fun invoke(): Flow<Boolean> = shouldShowAdsFlow
     }
     private val interstitialAdUnitIdFlow = MutableStateFlow("test-interstitial-id")
-    private val frequencyFlow = MutableStateFlow(5)
+    private val frequencyFlow = MutableStateFlow(3)
     private val minIntervalFlow = MutableStateFlow(180L)
     private var currentTime = 1000000L
 
@@ -85,7 +85,7 @@ class InterstitialAdManagerTest {
         val mockActivity = mockk<Activity>()
         val mockAd = mockk<InterstitialAd>(relaxed = true)
         manager.setCachedAd(mockAd)
-        manager.setActionCounter(4) // will increment to 5
+        manager.setActionCounter(2) // will increment to 3
 
         var completed = false
         manager.onActionCompleted(mockActivity) { completed = true }
@@ -102,7 +102,7 @@ class InterstitialAdManagerTest {
 
         val mockActivity = mockk<Activity>()
         manager.setCachedAd(null)
-        manager.setActionCounter(4)
+        manager.setActionCounter(2)
 
         var completed = false
         manager.onActionCompleted(mockActivity) { completed = true }
@@ -119,14 +119,14 @@ class InterstitialAdManagerTest {
         val mockActivity = mockk<Activity>()
         val mockAd = mockk<InterstitialAd>(relaxed = true)
         manager.setCachedAd(mockAd)
-        manager.setActionCounter(2) // will increment to 3, threshold is 5
+        manager.setActionCounter(1) // will increment to 2, threshold is 3
 
         var completed = false
         manager.onActionCompleted(mockActivity) { completed = true }
 
         assertTrue(completed)
         verify(exactly = 0) { mockAd.show(any()) }
-        assertEquals(3, manager.getActionCounter())
+        assertEquals(2, manager.getActionCounter())
     }
 
     @Test
@@ -138,7 +138,7 @@ class InterstitialAdManagerTest {
         val mockActivity = mockk<Activity>()
         val mockAd = mockk<InterstitialAd>(relaxed = true)
         manager.setCachedAd(mockAd)
-        manager.setActionCounter(4) // will increment to 5
+        manager.setActionCounter(2) // will increment to 3
         manager.setLastShownTimestamp(currentTime - 60_000L) // Only 60s elapsed, needs 180s
 
         var completed = false
@@ -146,7 +146,7 @@ class InterstitialAdManagerTest {
 
         assertTrue(completed)
         verify(exactly = 0) { mockAd.show(any()) }
-        assertEquals(5, manager.getActionCounter())
+        assertEquals(3, manager.getActionCounter())
     }
 
     @Test
@@ -160,7 +160,7 @@ class InterstitialAdManagerTest {
         every { mockAd.fullScreenContentCallback = capture(callbackSlot) } answers { }
 
         manager.setCachedAd(mockAd)
-        manager.setActionCounter(4) // will increment to 5
+        manager.setActionCounter(2) // will increment to 3
         manager.setLastShownTimestamp(currentTime - 200_000L) // 200s elapsed >= 180s
 
         var completed = false
@@ -186,7 +186,7 @@ class InterstitialAdManagerTest {
         every { mockAd.fullScreenContentCallback = capture(callbackSlot) } answers { }
 
         manager.setCachedAd(mockAd)
-        manager.setActionCounter(4) // will increment to 5
+        manager.setActionCounter(2) // will increment to 3
         manager.setLastShownTimestamp(currentTime - 200_000L) // 200s elapsed >= 180s
 
         var completed = false

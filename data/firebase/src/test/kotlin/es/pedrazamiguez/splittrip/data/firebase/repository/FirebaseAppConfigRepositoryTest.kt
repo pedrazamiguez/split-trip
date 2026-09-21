@@ -55,7 +55,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getBoolean("ads_enabled") } returns true
         every { firebaseRemoteConfig.getString("admob_banner_ad_unit_id") } returns "banner-123"
         every { firebaseRemoteConfig.getString("admob_interstitial_ad_unit_id") } returns "interstitial-456"
-        every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 5L
+        every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 3L
         every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 180L
 
         repository = FirebaseAppConfigRepository(firebaseRemoteConfig)
@@ -92,7 +92,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(true, repository.adsEnabled.value)
         assertEquals("banner-123", repository.admobBannerAdUnitId.value)
         assertEquals("interstitial-456", repository.admobInterstitialAdUnitId.value)
-        assertEquals(5, repository.adInterstitialActionFrequency.value)
+        assertEquals(3, repository.adInterstitialActionFrequency.value)
         assertEquals(180L, repository.adInterstitialMinIntervalSeconds.value)
     }
 

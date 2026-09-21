@@ -157,7 +157,7 @@
         },
         "ad_interstitial_action_frequency": {
           "defaultValue": {
-            "value": "5"
+            "value": "3"
           },
           "description": "Number of completed transactional actions before displaying an interstitial ad.",
           "valueType": "NUMBER"

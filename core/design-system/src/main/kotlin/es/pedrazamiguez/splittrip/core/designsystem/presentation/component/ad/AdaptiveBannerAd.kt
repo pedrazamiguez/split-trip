@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.ad
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +43,36 @@ fun AdaptiveBannerAd(
     var isAdLoaded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    val adView = remember(adUnitId) {
+        AdView(context).apply {
+            setAdUnitId(adUnitId)
+            setAdSize(calculateAdaptiveBannerSize(context))
+            adListener = object : AdListener() {
+                override fun onAdLoaded() {
+                    isAdLoaded = true
+                    Timber.d("AdaptiveBannerAd: Ad loaded successfully for adUnitId=%s", adUnitId)
+                }
+
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    isAdLoaded = false
+                    Timber.w(
+                        "AdaptiveBannerAd: Failed to load ad (%s: %s) for adUnitId=%s",
+                        error.code,
+                        error.message,
+                        adUnitId
+                    )
+                }
+            }
+            loadAd(AdRequest.Builder().build())
+        }
+    }
+
+    DisposableEffect(adView) {
+        onDispose {
+            adView.destroy()
+        }
+    }
+
     AnimatedVisibility(
         visible = isAdLoaded,
         enter = expandVertically() + fadeIn(),
@@ -48,28 +80,9 @@ fun AdaptiveBannerAd(
     ) {
         AndroidView(
             modifier = modifier.fillMaxWidth(),
-            factory = { ctx ->
-                AdView(ctx).apply {
-                    setAdUnitId(adUnitId)
-                    setAdSize(calculateAdaptiveBannerSize(ctx))
-                    adListener = object : AdListener() {
-                        override fun onAdLoaded() {
-                            isAdLoaded = true
-                            Timber.d("AdaptiveBannerAd: Ad loaded successfully for adUnitId=%s", adUnitId)
-                        }
-
-                        override fun onAdFailedToLoad(error: LoadAdError) {
-                            isAdLoaded = false
-                            Timber.w(
-                                "AdaptiveBannerAd: Failed to load ad (%s: %s) for adUnitId=%s",
-                                error.code,
-                                error.message,
-                                adUnitId
-                            )
-                        }
-                    }
-                    loadAd(AdRequest.Builder().build())
-                }
+            factory = {
+                (adView.parent as? ViewGroup)?.removeView(adView)
+                adView
             }
         )
     }

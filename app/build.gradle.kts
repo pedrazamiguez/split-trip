@@ -47,9 +47,9 @@ android {
         buildConfigField("Boolean", "USE_DEBUG_APP_CHECK", "false")
 
         val admobAppId =
-            providers
-                .gradleProperty("SPLTRP_ADMOB_APP_ID")
-                .orNull ?: "ca-app-pub-3940256099942544~3347511713"
+            providers.environmentVariable("SPLTRP_ADMOB_APP_ID").orNull
+                ?: providers.gradleProperty("SPLTRP_ADMOB_APP_ID").orNull
+                ?: "ca-app-pub-3940256099942544~3347511713"
         manifestPlaceholders["admobAppId"] = admobAppId
     }
 
