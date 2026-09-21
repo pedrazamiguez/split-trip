@@ -30,6 +30,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import es.pedrazamiguez.splittrip.R
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.biometric.BiometricPromptConfig
 import es.pedrazamiguez.splittrip.core.designsystem.biometric.BiometricPromptHelper
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
@@ -237,9 +238,11 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                                 if (activity != null) {
                                     BiometricPromptHelper.authenticate(
                                         activity = activity,
-                                        title = promptTitle,
-                                        subtitle = promptSubtitle,
-                                        negativeButtonText = promptNegative,
+                                        config = BiometricPromptConfig(
+                                            title = promptTitle,
+                                            subtitle = promptSubtitle,
+                                            negativeButtonText = promptNegative
+                                        ),
                                         onSuccess = {
                                             isAppUnlocked = true
                                         },

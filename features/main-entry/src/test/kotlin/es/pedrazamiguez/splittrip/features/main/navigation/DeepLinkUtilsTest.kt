@@ -17,10 +17,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns EXPENSES when expenseId is present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = "expense-123",
-                isExpensesListPath = false,
-                contributionId = null,
-                withdrawalId = null
+                DeepLinkResolutionParams(
+                    expenseId = "expense-123",
+                    isExpensesListPath = false,
+                    contributionId = null,
+                    withdrawalId = null
+                )
             )
             assertEquals(Routes.EXPENSES, result)
         }
@@ -28,10 +30,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns EXPENSES when isExpensesListPath is true`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = null,
-                isExpensesListPath = true,
-                contributionId = null,
-                withdrawalId = null
+                DeepLinkResolutionParams(
+                    expenseId = null,
+                    isExpensesListPath = true,
+                    contributionId = null,
+                    withdrawalId = null
+                )
             )
             assertEquals(Routes.EXPENSES, result)
         }
@@ -39,10 +43,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns BALANCES when contributionId is present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = null,
-                isExpensesListPath = false,
-                contributionId = "contribution-456",
-                withdrawalId = null
+                DeepLinkResolutionParams(
+                    expenseId = null,
+                    isExpensesListPath = false,
+                    contributionId = "contribution-456",
+                    withdrawalId = null
+                )
             )
             assertEquals(Routes.BALANCES, result)
         }
@@ -50,10 +56,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns BALANCES when withdrawalId is present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = null,
-                isExpensesListPath = false,
-                contributionId = null,
-                withdrawalId = "withdrawal-789"
+                DeepLinkResolutionParams(
+                    expenseId = null,
+                    isExpensesListPath = false,
+                    contributionId = null,
+                    withdrawalId = "withdrawal-789"
+                )
             )
             assertEquals(Routes.BALANCES, result)
         }
@@ -61,11 +69,13 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns BALANCES when settlementId is present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = null,
-                isExpensesListPath = false,
-                contributionId = null,
-                withdrawalId = null,
-                settlementId = "settlement-101"
+                DeepLinkResolutionParams(
+                    expenseId = null,
+                    isExpensesListPath = false,
+                    contributionId = null,
+                    withdrawalId = null,
+                    settlementId = "settlement-101"
+                )
             )
             assertEquals(Routes.BALANCES, result)
         }
@@ -73,12 +83,14 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns BALANCES when isYourPositionPath is true`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = null,
-                isExpensesListPath = false,
-                contributionId = null,
-                withdrawalId = null,
-                settlementId = null,
-                isYourPositionPath = true
+                DeepLinkResolutionParams(
+                    expenseId = null,
+                    isExpensesListPath = false,
+                    contributionId = null,
+                    withdrawalId = null,
+                    settlementId = null,
+                    isYourPositionPath = true
+                )
             )
             assertEquals(Routes.BALANCES, result)
         }
@@ -86,10 +98,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns GROUPS when no specific ID is present and not expenses path`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = null,
-                isExpensesListPath = false,
-                contributionId = null,
-                withdrawalId = null
+                DeepLinkResolutionParams(
+                    expenseId = null,
+                    isExpensesListPath = false,
+                    contributionId = null,
+                    withdrawalId = null
+                )
             )
             assertEquals(Routes.GROUPS, result)
         }
@@ -97,10 +111,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `prioritizes EXPENSES when both expenseId and contributionId are present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = "expense-123",
-                isExpensesListPath = false,
-                contributionId = "contribution-456",
-                withdrawalId = null
+                DeepLinkResolutionParams(
+                    expenseId = "expense-123",
+                    isExpensesListPath = false,
+                    contributionId = "contribution-456",
+                    withdrawalId = null
+                )
             )
             assertEquals(Routes.EXPENSES, result)
         }
@@ -108,10 +124,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `prioritizes EXPENSES when both expenseId and withdrawalId are present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = "expense-123",
-                isExpensesListPath = false,
-                contributionId = null,
-                withdrawalId = "withdrawal-789"
+                DeepLinkResolutionParams(
+                    expenseId = "expense-123",
+                    isExpensesListPath = false,
+                    contributionId = null,
+                    withdrawalId = "withdrawal-789"
+                )
             )
             assertEquals(Routes.EXPENSES, result)
         }
@@ -119,11 +137,13 @@ class DeepLinkUtilsTest {
         @Test
         fun `prioritizes EXPENSES when both expenseId and settlementId are present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = "expense-123",
-                isExpensesListPath = false,
-                contributionId = null,
-                withdrawalId = null,
-                settlementId = "settlement-101"
+                DeepLinkResolutionParams(
+                    expenseId = "expense-123",
+                    isExpensesListPath = false,
+                    contributionId = null,
+                    withdrawalId = null,
+                    settlementId = "settlement-101"
+                )
             )
             assertEquals(Routes.EXPENSES, result)
         }
@@ -131,10 +151,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns BALANCES when both contributionId and withdrawalId are present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = null,
-                isExpensesListPath = false,
-                contributionId = "contribution-456",
-                withdrawalId = "withdrawal-789"
+                DeepLinkResolutionParams(
+                    expenseId = null,
+                    isExpensesListPath = false,
+                    contributionId = "contribution-456",
+                    withdrawalId = "withdrawal-789"
+                )
             )
             assertEquals(Routes.BALANCES, result)
         }
@@ -142,11 +164,13 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns BALANCES when both settlementId and contributionId are present`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = null,
-                isExpensesListPath = false,
-                contributionId = "contribution-456",
-                withdrawalId = null,
-                settlementId = "settlement-101"
+                DeepLinkResolutionParams(
+                    expenseId = null,
+                    isExpensesListPath = false,
+                    contributionId = "contribution-456",
+                    withdrawalId = null,
+                    settlementId = "settlement-101"
+                )
             )
             assertEquals(Routes.BALANCES, result)
         }
@@ -154,10 +178,12 @@ class DeepLinkUtilsTest {
         @Test
         fun `isExpensesListPath is overridden by expenseId`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                expenseId = "expense-123",
-                isExpensesListPath = true,
-                contributionId = null,
-                withdrawalId = null
+                DeepLinkResolutionParams(
+                    expenseId = "expense-123",
+                    isExpensesListPath = true,
+                    contributionId = null,
+                    withdrawalId = null
+                )
             )
             assertEquals(Routes.EXPENSES, result)
         }
@@ -165,7 +191,9 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns GROUPS when isGroupsListPath is true`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                isGroupsListPath = true
+                DeepLinkResolutionParams(
+                    isGroupsListPath = true
+                )
             )
             assertEquals(Routes.GROUPS, result)
         }
@@ -173,7 +201,9 @@ class DeepLinkUtilsTest {
         @Test
         fun `returns GROUPS when isMembersPath is true`() {
             val result = DeepLinkUtils.resolveTargetTab(
-                isMembersPath = true
+                DeepLinkResolutionParams(
+                    isMembersPath = true
+                )
             )
             assertEquals(Routes.GROUPS, result)
         }

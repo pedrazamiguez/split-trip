@@ -10,6 +10,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.biometric.BiometricPromptConfig
 import es.pedrazamiguez.splittrip.core.designsystem.biometric.BiometricPromptHelper
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
@@ -57,9 +58,11 @@ fun AccountSecurityFeature(
                     if (activity != null) {
                         BiometricPromptHelper.authenticate(
                             activity = activity,
-                            title = confirmTitle,
-                            subtitle = confirmSubtitle,
-                            negativeButtonText = confirmNegative,
+                            config = BiometricPromptConfig(
+                                title = confirmTitle,
+                                subtitle = confirmSubtitle,
+                                negativeButtonText = confirmNegative
+                            ),
                             onSuccess = {
                                 viewModel.onEvent(AccountSecurityUiEvent.BiometricConfirmationSuccess)
                             },
