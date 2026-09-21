@@ -300,6 +300,7 @@
     <string name="subscriptions_feature_pro_unlimited_groups">Unlimited groups</string>
     <string name="subscriptions_feature_pro_members">Up to 20 members per group</string>
     <string name="subscriptions_feature_pro_ai_ocr">AI Receipt scanning &amp; OCR</string>
+    <string name="subscriptions_feature_pro_ad_free">100%% Ad-free experience</string>
     <string name="subscriptions_feature_pro_blended_fx">Blended FX &amp; real-time conversion</string>
     <string name="subscriptions_feature_pro_priority_support">Priority customer support</string>
     <string name="subscriptions_cta_current_plan">Current Plan</string>

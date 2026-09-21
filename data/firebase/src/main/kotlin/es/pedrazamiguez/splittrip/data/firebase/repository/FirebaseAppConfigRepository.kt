@@ -67,6 +67,21 @@ class FirebaseAppConfigRepository(
     private val _developerInfo = MutableStateFlow(DEFAULT_DEVELOPER_INFO)
     override val developerInfo: StateFlow<DeveloperInfo> = _developerInfo.asStateFlow()
 
+    private val _adsEnabled = MutableStateFlow(DEFAULT_ADS_ENABLED)
+    override val adsEnabled: StateFlow<Boolean> = _adsEnabled.asStateFlow()
+
+    private val _admobBannerAdUnitId = MutableStateFlow(DEFAULT_BANNER_AD_UNIT_ID)
+    override val admobBannerAdUnitId: StateFlow<String> = _admobBannerAdUnitId.asStateFlow()
+
+    private val _admobInterstitialAdUnitId = MutableStateFlow(DEFAULT_INTERSTITIAL_AD_UNIT_ID)
+    override val admobInterstitialAdUnitId: StateFlow<String> = _admobInterstitialAdUnitId.asStateFlow()
+
+    private val _adInterstitialActionFrequency = MutableStateFlow(DEFAULT_INTERSTITIAL_ACTION_FREQUENCY)
+    override val adInterstitialActionFrequency: StateFlow<Int> = _adInterstitialActionFrequency.asStateFlow()
+
+    private val _adInterstitialMinIntervalSeconds = MutableStateFlow(DEFAULT_INTERSTITIAL_MIN_INTERVAL_SECONDS)
+    override val adInterstitialMinIntervalSeconds: StateFlow<Long> = _adInterstitialMinIntervalSeconds.asStateFlow()
+
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         updateFlowsFromConfig()
@@ -125,6 +140,23 @@ class FirebaseAppConfigRepository(
         val nudgeLimitHours = remoteConfig.getLong("settlement_nudge_rate_limit_hours")
         _settlementNudgeRateLimitHours.value =
             if (nudgeLimitHours > 0) nudgeLimitHours else DEFAULT_SETTLEMENT_NUDGE_RATE_LIMIT_HOURS
+        val adsEnabledStr = remoteConfig.getString("ads_enabled").trim()
+        _adsEnabled.value = if (adsEnabledStr.isNotBlank()) {
+            remoteConfig.getBoolean("ads_enabled")
+        } else {
+            DEFAULT_ADS_ENABLED
+        }
+        _admobBannerAdUnitId.value =
+            remoteConfig.getString("admob_banner_ad_unit_id").takeIf { it.isNotBlank() } ?: DEFAULT_BANNER_AD_UNIT_ID
+        _admobInterstitialAdUnitId.value =
+            remoteConfig.getString("admob_interstitial_ad_unit_id").takeIf { it.isNotBlank() }
+                ?: DEFAULT_INTERSTITIAL_AD_UNIT_ID
+        val actionFrequency = remoteConfig.getLong("ad_interstitial_action_frequency").toInt()
+        _adInterstitialActionFrequency.value =
+            if (actionFrequency > 0) actionFrequency else DEFAULT_INTERSTITIAL_ACTION_FREQUENCY
+        val minIntervalSeconds = remoteConfig.getLong("ad_interstitial_min_interval_seconds")
+        _adInterstitialMinIntervalSeconds.value =
+            if (minIntervalSeconds > 0) minIntervalSeconds else DEFAULT_INTERSTITIAL_MIN_INTERVAL_SECONDS
     }
 
     private fun updateTierLimitFlows() {
@@ -191,6 +223,11 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_SUPPORT_EMAIL = "support@splittrip.eu"
         private const val DEFAULT_SETTLEMENT_NUDGE_RATE_LIMIT_HOURS = 24L
         private val DEFAULT_OCR_SAFETY_FALSE_POSITIVES_BLACKLIST = listOf("razor", "private", "toothbrushes")
+        private const val DEFAULT_ADS_ENABLED = true
+        private const val DEFAULT_BANNER_AD_UNIT_ID = "ca-app-pub-9638507020441461/2775424807"
+        private const val DEFAULT_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-9638507020441461/6643262487"
+        private const val DEFAULT_INTERSTITIAL_ACTION_FREQUENCY = 5
+        private const val DEFAULT_INTERSTITIAL_MIN_INTERVAL_SECONDS = 180L
 
         private const val LANG_EN = "en"
         private const val LANG_ES = "es"

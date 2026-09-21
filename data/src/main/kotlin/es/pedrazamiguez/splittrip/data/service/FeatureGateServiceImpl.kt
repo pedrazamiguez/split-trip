@@ -26,7 +26,8 @@ internal class FeatureGateServiceImpl(
         }
 
         val effectiveTier = when (feature) {
-            GatedFeature.AI_RECEIPT_SCANNING -> resolveActingUserTier()
+            GatedFeature.AI_RECEIPT_SCANNING,
+            GatedFeature.AD_FREE -> resolveActingUserTier()
             GatedFeature.GROUP_COVER_UPLOAD -> resolveEffectiveTier(groupId)
             GatedFeature.SUBUNIT_CREATION -> resolveSubunitCreationTier(groupId)
         }

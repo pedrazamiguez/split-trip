@@ -47,6 +47,10 @@ dependencies {
     // QR Code generation
     implementation(libs.zxing)
 
+    // Google Mobile Ads & UMP
+    api(libs.play.services.ads)
+    api(libs.user.messaging.platform)
+
     // Unit Testing (extras — common test deps provided by convention plugin)
     testImplementation(libs.koin.test)
 }

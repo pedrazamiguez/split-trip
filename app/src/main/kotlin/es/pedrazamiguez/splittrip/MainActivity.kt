@@ -13,6 +13,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import es.pedrazamiguez.splittrip.core.designsystem.ad.AdConsentManager
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.domain.enums.AppTheme
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        AdConsentManager.gatherConsentAndInitialize(this)
 
         // Save pending deep link before NavHost consumes the intent.
         // On cold start, if the user is not authenticated, the NavHost graph starts

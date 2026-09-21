@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.main.presentation.viewmodel
 
 import android.os.Bundle
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.usecase.ad.GetBannerAdUnitIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
@@ -12,7 +14,9 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -37,6 +41,8 @@ class MainViewModelTest {
     private lateinit var getGroupByIdUseCase: GetGroupByIdUseCase
     private lateinit var warmCurrencyCacheUseCase: WarmCurrencyCacheUseCase
     private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
+    private lateinit var shouldShowAdsUseCase: ShouldShowAdsUseCase
+    private lateinit var getBannerAdUnitIdUseCase: GetBannerAdUnitIdUseCase
 
     @BeforeEach
     fun setUp() {
@@ -45,8 +51,12 @@ class MainViewModelTest {
         getGroupByIdUseCase = mockk(relaxed = true)
         warmCurrencyCacheUseCase = mockk(relaxed = true)
         observeCurrentUserProfileUseCase = mockk(relaxed = true)
+        shouldShowAdsUseCase = mockk(relaxed = true)
+        getBannerAdUnitIdUseCase = mockk(relaxed = true)
         coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
         every { observeCurrentUserProfileUseCase() } returns flowOf(null)
+        every { shouldShowAdsUseCase() } returns flowOf(false)
+        every { getBannerAdUnitIdUseCase() } returns MutableStateFlow("test-banner-id")
     }
 
     @AfterEach
@@ -58,7 +68,9 @@ class MainViewModelTest {
         registerDeviceTokenUseCase = registerDeviceTokenUseCase,
         getGroupByIdUseCase = getGroupByIdUseCase,
         warmCurrencyCacheUseCase = warmCurrencyCacheUseCase,
-        observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
+        observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+        shouldShowAdsUseCase = shouldShowAdsUseCase,
+        getBannerAdUnitIdUseCase = getBannerAdUnitIdUseCase
     )
 
     @Nested
@@ -421,6 +433,39 @@ class MainViewModelTest {
 
             // Then
             coVerify(exactly = 1) { getGroupByIdUseCase(groupId) }
+        }
+    }
+
+    @Nested
+    @DisplayName("advertising")
+    inner class Advertising {
+
+        @Test
+        fun `exposes shouldShowAds from use case`() = runTest(testDispatcher) {
+            // Given
+            every { shouldShowAdsUseCase() } returns flowOf(true)
+
+            // When
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.shouldShowAds.collect {} }
+            advanceUntilIdle()
+
+            // Then
+            assertEquals(true, viewModel.shouldShowAds.value)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `exposes bannerAdUnitId from use case`() = runTest(testDispatcher) {
+            // Given
+            val bannerIdFlow = MutableStateFlow("custom-banner-id")
+            every { getBannerAdUnitIdUseCase() } returns bannerIdFlow
+
+            // When
+            val viewModel = createViewModel()
+
+            // Then
+            assertEquals("custom-banner-id", viewModel.bannerAdUnitId.value)
         }
     }
 }
