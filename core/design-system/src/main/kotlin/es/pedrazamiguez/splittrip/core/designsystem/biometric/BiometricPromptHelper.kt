@@ -43,15 +43,12 @@ object BiometricPromptHelper {
 
     fun authenticate(
         activity: FragmentActivity,
-        title: String,
-        subtitle: String? = null,
-        negativeButtonText: String,
-        cryptoObject: BiometricPrompt.CryptoObject? = null,
+        config: BiometricPromptConfig,
         onSuccess: () -> Unit,
         onError: (errorCode: Int, errString: CharSequence) -> Unit = { _, _ -> },
         onFailed: () -> Unit = {}
     ) {
-        val resolvedCryptoObject = cryptoObject ?: cryptoObjectProvider()
+        val resolvedCryptoObject = config.cryptoObject ?: cryptoObjectProvider()
         if (resolvedCryptoObject == null) {
             onError(
                 BiometricPrompt.ERROR_UNABLE_TO_PROCESS,
@@ -99,12 +96,12 @@ object BiometricPromptHelper {
         )
 
         val promptInfoBuilder = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(title)
-            .setNegativeButtonText(negativeButtonText)
+            .setTitle(config.title)
+            .setNegativeButtonText(config.negativeButtonText)
             .setAllowedAuthenticators(BIOMETRIC_STRONG)
 
-        if (!subtitle.isNullOrBlank()) {
-            promptInfoBuilder.setSubtitle(subtitle)
+        if (!config.subtitle.isNullOrBlank()) {
+            promptInfoBuilder.setSubtitle(config.subtitle)
         }
 
         val promptInfo = promptInfoBuilder.build()

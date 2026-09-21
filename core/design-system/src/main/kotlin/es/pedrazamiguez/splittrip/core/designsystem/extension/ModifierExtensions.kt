@@ -96,6 +96,29 @@ fun Modifier.debouncedClickable(
 }
 
 /**
+ * A debounced version of [Modifier.clickable] with custom interaction configuration.
+ */
+fun Modifier.debouncedClickable(
+    interaction: ClickableInteraction,
+    debounceInterval: Long = UiConstants.DEFAULT_DEBOUNCE_MS,
+    enabled: Boolean = true,
+    onClickLabel: String? = null,
+    role: Role? = null,
+    onClick: () -> Unit
+): Modifier = composed {
+    val debouncedOnClick = debounced(debounceInterval, onClick)
+    val modifier = if (interaction.enableSpringPress) springPressFeedback(interaction.interactionSource) else this
+    modifier.clickable(
+        interactionSource = interaction.interactionSource,
+        indication = interaction.indication,
+        enabled = enabled,
+        onClickLabel = onClickLabel,
+        role = role,
+        onClick = debouncedOnClick
+    )
+}
+
+/**
  * A debounced version of [Modifier.clickable] with custom interaction source and indication.
  */
 fun Modifier.debouncedClickable(
@@ -105,20 +128,19 @@ fun Modifier.debouncedClickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
-    enableSpringPress: Boolean = false,
     onClick: () -> Unit
-): Modifier = composed {
-    val debouncedOnClick = debounced(debounceInterval, onClick)
-    val modifier = if (enableSpringPress) springPressFeedback(interactionSource) else this
-    modifier.clickable(
+): Modifier = debouncedClickable(
+    interaction = ClickableInteraction(
         interactionSource = interactionSource,
         indication = indication,
-        enabled = enabled,
-        onClickLabel = onClickLabel,
-        role = role,
-        onClick = debouncedOnClick
-    )
-}
+        enableSpringPress = false
+    ),
+    debounceInterval = debounceInterval,
+    enabled = enabled,
+    onClickLabel = onClickLabel,
+    role = role,
+    onClick = onClick
+)
 
 /**
  * A debounced version of [Modifier.clickable] with no ripple or click indication.

@@ -57,16 +57,31 @@ class BiometricPromptHelperTest {
     }
 
     @Test
+    @DisplayName("BiometricPromptConfig default values are set correctly")
+    fun `BiometricPromptConfig default values are set correctly`() {
+        val config = BiometricPromptConfig(
+            title = "Title",
+            negativeButtonText = "Cancel"
+        )
+        assertEquals("Title", config.title)
+        assertNull(config.subtitle)
+        assertEquals("Cancel", config.negativeButtonText)
+        assertNull(config.cryptoObject)
+    }
+
+    @Test
     @DisplayName("authenticate launches prompt with crypto object when cryptoObject is provided explicitly")
     fun `authenticate launches prompt with crypto object when cryptoObject is provided explicitly`() {
         val explicitCryptoObject = mockk<BiometricPrompt.CryptoObject>(relaxed = true)
 
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            subtitle = "Verify Identity",
-            negativeButtonText = "Cancel",
-            cryptoObject = explicitCryptoObject,
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                subtitle = "Verify Identity",
+                negativeButtonText = "Cancel",
+                cryptoObject = explicitCryptoObject
+            ),
             onSuccess = {}
         )
 
@@ -84,10 +99,12 @@ class BiometricPromptHelperTest {
     fun `authenticate launches prompt with resolved crypto object when cryptoObject is null`() {
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            subtitle = "Verify Identity",
-            negativeButtonText = "Cancel",
-            cryptoObject = null,
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                subtitle = "Verify Identity",
+                negativeButtonText = "Cancel",
+                cryptoObject = null
+            ),
             onSuccess = {}
         )
 
@@ -109,9 +126,11 @@ class BiometricPromptHelperTest {
 
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            negativeButtonText = "Cancel",
-            cryptoObject = null,
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                negativeButtonText = "Cancel",
+                cryptoObject = null
+            ),
             onSuccess = {},
             onError = { code, msg ->
                 capturedErrorCode = code
@@ -139,8 +158,10 @@ class BiometricPromptHelperTest {
 
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            negativeButtonText = "Cancel",
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                negativeButtonText = "Cancel"
+            ),
             onSuccess = { successCalled = true }
         )
 
@@ -170,8 +191,10 @@ class BiometricPromptHelperTest {
 
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            negativeButtonText = "Cancel",
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                negativeButtonText = "Cancel"
+            ),
             onSuccess = { successCalled = true },
             onError = { code, msg ->
                 capturedErrorCode = code
@@ -200,8 +223,10 @@ class BiometricPromptHelperTest {
 
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            negativeButtonText = "Cancel",
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                negativeButtonText = "Cancel"
+            ),
             onSuccess = { successCalled = true },
             onError = { code, msg ->
                 capturedErrorCode = code
@@ -233,8 +258,10 @@ class BiometricPromptHelperTest {
 
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            negativeButtonText = "Cancel",
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                negativeButtonText = "Cancel"
+            ),
             onSuccess = { successCalled = true },
             onError = { code, msg ->
                 capturedErrorCode = code
@@ -258,8 +285,10 @@ class BiometricPromptHelperTest {
 
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            negativeButtonText = "Cancel",
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                negativeButtonText = "Cancel"
+            ),
             onSuccess = {},
             onError = { code, msg ->
                 capturedErrorCode = code
@@ -281,8 +310,10 @@ class BiometricPromptHelperTest {
 
         BiometricPromptHelper.authenticate(
             activity = activity,
-            title = "Unlock App",
-            negativeButtonText = "Cancel",
+            config = BiometricPromptConfig(
+                title = "Unlock App",
+                negativeButtonText = "Cancel"
+            ),
             onSuccess = {},
             onFailed = { failedCalled = true }
         )
