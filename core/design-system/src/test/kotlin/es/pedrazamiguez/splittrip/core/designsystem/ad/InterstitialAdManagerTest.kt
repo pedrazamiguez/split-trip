@@ -203,23 +203,21 @@ class InterstitialAdManagerTest {
     }
 
     @Test
-    fun `shouldShowAdsUseCase emitting false clears cached ad and sets isAdEnabled to false`() = runTest(
-        testDispatcher
-    ) {
-        val manager = createManager(backgroundScope)
-        shouldShowAdsFlow.value = true
-        advanceUntilIdle()
+    fun `shouldShowAdsUseCase emitting false clears cached ad and sets isAdEnabled to false`() =
+        runTest(testDispatcher) {
+            val manager = createManager(CoroutineScope(testDispatcher))
+            advanceUntilIdle()
 
-        val mockAd = mockk<InterstitialAd>(relaxed = true)
-        manager.setCachedAd(mockAd)
-        assertTrue(manager.isAdEnabled())
+            val mockAd = mockk<InterstitialAd>(relaxed = true)
+            manager.setCachedAd(mockAd)
+            assertTrue(manager.isAdEnabled())
 
-        shouldShowAdsFlow.value = false
-        advanceUntilIdle()
+            shouldShowAdsFlow.value = false
+            advanceUntilIdle()
 
-        assertFalse(manager.isAdEnabled())
-        assertNull(manager.getCachedAd())
-    }
+            assertFalse(manager.isAdEnabled())
+            assertNull(manager.getCachedAd())
+        }
 
     @Test
     fun `preloadAd does nothing when ads are disabled`() = runTest(testDispatcher) {
