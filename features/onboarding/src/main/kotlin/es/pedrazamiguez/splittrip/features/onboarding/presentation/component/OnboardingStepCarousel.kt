@@ -17,6 +17,8 @@ import es.pedrazamiguez.splittrip.features.onboarding.presentation.model.Onboard
 @Composable
 fun OnboardingStepCarousel(
     currentStep: OnboardingStep,
+    hasNotificationPermission: Boolean = false,
+    onRequestNotificationPermissionClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     AnimatedContent(
@@ -39,7 +41,11 @@ fun OnboardingStepCarousel(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            OnboardingStepCard(step = step)
+            OnboardingStepCard(
+                step = step,
+                hasNotificationPermission = hasNotificationPermission,
+                onRequestNotificationPermissionClick = onRequestNotificationPermissionClick
+            )
         }
     }
 }

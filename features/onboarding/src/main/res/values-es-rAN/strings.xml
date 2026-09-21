@@ -13,6 +13,10 @@
     <string name="onboarding_step_split_description">Dibide lô gâttô a tu manera: a partê igualê, importê êççâttô, porçentahê o çubunidadê pa parehâ y familiâ. Âhhunta tickets pa un rehîttro trâpparente.</string>
     <string name="onboarding_step_cash_title">Efêttibo y Pockêh</string>
     <string name="onboarding_step_cash_description">Controla el efêttibo fíçico compartío hunto con lô pagô con tarheta. Rehîttra retirâh y aportaçionê ar pockêh con comberçión de dibiçâ automática.</string>
+    <string name="onboarding_step_notifications_title">Notificaçionê en tiempo reâh</string>
+    <string name="onboarding_step_notifications_description">Entérate al îttante de nuebô gâttô compartíô, deudâ por conçenço y confirmaçionê de pago.</string>
+    <string name="onboarding_enable_notifications_button">Âttibâh notificaçionê</string>
+    <string name="onboarding_notifications_enabled">Notificaçionê âttibâh</string>
     <string name="onboarding_step_settle_title">Conçenço y acuerdô de pago</string>
     <string name="onboarding_step_settle_description">Conoçe tu çardo êççâtto en cuarquiêh momento. Çarda cuentâ fáçirmente con confirmaçión mutua pa que tôh êttén de acuerdo.</string>
     <string name="reconciliation_title">¡Te êttábamô êpperando!</string>

@@ -13,6 +13,10 @@
     <string name="onboarding_step_split_description">Divide los gastos a tu manera: a partes iguales, importes exactos, porcentajes o subunidades para parejas y familias. Adjunta tickets para un registro transparente.</string>
     <string name="onboarding_step_cash_title">Efectivo y Pocket</string>
     <string name="onboarding_step_cash_description">Controla el efectivo físico compartido junto con los pagos con tarjeta. Registra retiradas y aportaciones al pocket con conversión de divisas automática.</string>
+    <string name="onboarding_step_notifications_title">Notificaciones en tiempo real</string>
+    <string name="onboarding_step_notifications_description">Entérate al instante de nuevos gastos compartidos, deudas por consenso y confirmaciones de pago.</string>
+    <string name="onboarding_enable_notifications_button">Activar notificaciones</string>
+    <string name="onboarding_notifications_enabled">Notificaciones activadas</string>
     <string name="onboarding_step_settle_title">Consenso y acuerdos de pago</string>
     <string name="onboarding_step_settle_description">Conoce tu saldo exacto en cualquier momento. Salda cuentas fácilmente con confirmación mutua para que todos estén de acuerdo.</string>
 

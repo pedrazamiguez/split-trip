@@ -41,9 +41,10 @@ class OnboardingViewModelTest {
 
         assertEquals(OnboardingStep.TRIPS_AND_GROUPS, state.currentStep)
         assertEquals(0, state.currentStepIndex)
-        assertEquals(4, state.totalSteps)
+        assertEquals(5, state.totalSteps)
         assertTrue(state.isFirstStep)
         assertFalse(state.isLastStep)
+        assertFalse(state.hasNotificationPermission)
     }
 
     @Test
@@ -67,8 +68,16 @@ class OnboardingViewModelTest {
         // Step 2 -> Step 3
         viewModel.onEvent(OnboardingUiEvent.NextStep)
         state = viewModel.uiState.value
-        assertEquals(OnboardingStep.CONSENSUS_AND_SETTLEMENT, state.currentStep)
+        assertEquals(OnboardingStep.REAL_TIME_NOTIFICATIONS, state.currentStep)
         assertEquals(3, state.currentStepIndex)
+        assertFalse(state.isFirstStep)
+        assertFalse(state.isLastStep)
+
+        // Step 3 -> Step 4
+        viewModel.onEvent(OnboardingUiEvent.NextStep)
+        state = viewModel.uiState.value
+        assertEquals(OnboardingStep.CONSENSUS_AND_SETTLEMENT, state.currentStep)
+        assertEquals(4, state.currentStepIndex)
         assertFalse(state.isFirstStep)
         assertTrue(state.isLastStep)
     }
@@ -76,6 +85,7 @@ class OnboardingViewModelTest {
     @Test
     fun `nextStepEvent_onLastStep_doesNotExceedBounds`() = runTest(testDispatcher) {
         // Advance to last step
+        viewModel.onEvent(OnboardingUiEvent.NextStep)
         viewModel.onEvent(OnboardingUiEvent.NextStep)
         viewModel.onEvent(OnboardingUiEvent.NextStep)
         viewModel.onEvent(OnboardingUiEvent.NextStep)
@@ -89,7 +99,7 @@ class OnboardingViewModelTest {
 
         val stateAfterExtraNext = viewModel.uiState.value
         assertEquals(OnboardingStep.CONSENSUS_AND_SETTLEMENT, stateAfterExtraNext.currentStep)
-        assertEquals(3, stateAfterExtraNext.currentStepIndex)
+        assertEquals(4, stateAfterExtraNext.currentStepIndex)
         assertTrue(stateAfterExtraNext.isLastStep)
     }
 
@@ -158,5 +168,30 @@ class OnboardingViewModelTest {
         assertTrue(emittedActions.first() is OnboardingUiAction.CompleteOnboarding)
 
         collectJob.cancel()
+    }
+
+    @Test
+    fun `requestNotificationPermissionEvent_emitsRequestNotificationPermissionAction`() = runTest(testDispatcher) {
+        val emittedActions = mutableListOf<OnboardingUiAction>()
+        val collectJob = launch {
+            viewModel.actions.collect { emittedActions.add(it) }
+        }
+
+        viewModel.onEvent(OnboardingUiEvent.RequestNotificationPermission)
+        advanceUntilIdle()
+
+        assertEquals(1, emittedActions.size)
+        assertTrue(emittedActions.first() is OnboardingUiAction.RequestNotificationPermission)
+
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `updateNotificationPermissionEvent_updatesUiState`() = runTest(testDispatcher) {
+        viewModel.onEvent(OnboardingUiEvent.UpdateNotificationPermission(true))
+        assertTrue(viewModel.uiState.value.hasNotificationPermission)
+
+        viewModel.onEvent(OnboardingUiEvent.UpdateNotificationPermission(false))
+        assertFalse(viewModel.uiState.value.hasNotificationPermission)
     }
 }

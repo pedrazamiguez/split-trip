@@ -20,6 +20,7 @@ fun OnboardingScreen(
     onPreviousClick: () -> Unit = {},
     onSkipClick: () -> Unit = {},
     onCompleteClick: () -> Unit = {},
+    onRequestNotificationPermissionClick: () -> Unit = {},
     doubleTapBackHandler: DoubleTapBackToExitHandler = remember { DoubleTapBackToExitHandler() },
     modifier: Modifier = Modifier
 ) {
@@ -35,6 +36,7 @@ fun OnboardingScreen(
             onPreviousClick = onPreviousClick,
             onSkipClick = onSkipClick,
             onCompleteClick = onCompleteClick,
+            onRequestNotificationPermissionClick = onRequestNotificationPermissionClick,
             modifier = Modifier.padding(innerPadding)
         )
     }
