@@ -95,8 +95,8 @@ SplitTrip parameters are organized into 5 functional groups:
 | `admob_test_mode_enabled` | `BOOLEAN` | `false` | When true, overrides ad unit IDs with Google's official sample test ad unit IDs for banners and interstitials. |
 | `admob_banner_ad_unit_id` | `STRING` | `ca-app-pub-9638507020441461/2775424807` | Production AdMob banner ad unit ID for anchored adaptive banners. |
 | `admob_interstitial_ad_unit_id` | `STRING` | `ca-app-pub-9638507020441461/6643262487` | Production AdMob interstitial ad unit ID for full-screen interstitial ads. |
-| `ad_interstitial_action_frequency` | `NUMBER` | `3` | Number of completed transactional actions before displaying an interstitial ad. |
-| `ad_interstitial_min_interval_seconds` | `NUMBER` | `180` | Minimum cooldown duration in seconds between interstitial ad impressions. |
+| `ad_interstitial_action_frequency` | `NUMBER` | `2` | Number of completed transactional actions before displaying an interstitial ad. |
+| `ad_interstitial_min_interval_seconds` | `NUMBER` | `90` | Minimum cooldown duration in seconds between interstitial ad impressions. |
 
 ---
 

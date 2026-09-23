@@ -79,10 +79,10 @@
     </entry>
     <entry>
         <key>ad_interstitial_action_frequency</key>
-        <value>3</value>
+        <value>2</value>
     </entry>
     <entry>
         <key>ad_interstitial_min_interval_seconds</key>
-        <value>180</value>
+        <value>90</value>
     </entry>
 </defaultsMap>

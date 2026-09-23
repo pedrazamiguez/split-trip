@@ -164,14 +164,14 @@
         },
         "ad_interstitial_action_frequency": {
           "defaultValue": {
-            "value": "3"
+            "value": "2"
           },
           "description": "Number of completed transactional actions before displaying an interstitial ad.",
           "valueType": "NUMBER"
         },
         "ad_interstitial_min_interval_seconds": {
           "defaultValue": {
-            "value": "180"
+            "value": "90"
           },
           "description": "Minimum cooldown duration in seconds between interstitial ad impressions.",
           "valueType": "NUMBER"

@@ -249,8 +249,8 @@ class FirebaseAppConfigRepository(
         private const val SAMPLE_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
         private const val DEFAULT_BANNER_AD_UNIT_ID = "ca-app-pub-9638507020441461/2775424807"
         private const val DEFAULT_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-9638507020441461/6643262487"
-        private const val DEFAULT_INTERSTITIAL_ACTION_FREQUENCY = 3
-        private const val DEFAULT_INTERSTITIAL_MIN_INTERVAL_SECONDS = 180L
+        private const val DEFAULT_INTERSTITIAL_ACTION_FREQUENCY = 2
+        private const val DEFAULT_INTERSTITIAL_MIN_INTERVAL_SECONDS = 90L
 
         private const val LANG_EN = "en"
         private const val LANG_ES = "es"

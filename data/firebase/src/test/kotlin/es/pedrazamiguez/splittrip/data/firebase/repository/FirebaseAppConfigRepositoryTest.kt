@@ -196,6 +196,8 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns -1L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 0L
         every { firebaseRemoteConfig.getString("support_email_address") } returns ""
+        every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 0L
+        every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 0L
 
         val fallbackRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
 
@@ -207,6 +209,8 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(0, fallbackRepo.aiReceiptMonthlyLimitFree.value)
         assertEquals(100, fallbackRepo.aiReceiptMonthlyLimitPro.value)
         assertEquals("support@splittrip.eu", fallbackRepo.supportEmailAddress.value)
+        assertEquals(2, fallbackRepo.adInterstitialActionFrequency.value)
+        assertEquals(90L, fallbackRepo.adInterstitialMinIntervalSeconds.value)
     }
 
     @Test

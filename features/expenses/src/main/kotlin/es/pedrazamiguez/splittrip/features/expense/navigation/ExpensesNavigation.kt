@@ -70,10 +70,20 @@ fun NavGraphBuilder.expensesGraph() {
     ) { backStackEntry ->
         val expenseId = backStackEntry.arguments?.getString("expenseId") ?: return@sharedComposable
         val navController = LocalTabNavController.current
+        val context = LocalContext.current
+        val koin = getKoin()
+        val interstitialAdManager = remember(koin) { koin.get<InterstitialAdManager>() }
         AddExpenseFeature(
             expenseId = expenseId,
             onAddExpenseSuccess = {
-                navController.popBackStack()
+                val activity = context as? Activity
+                if (activity != null) {
+                    interstitialAdManager.onActionCompleted(activity) {
+                        navController.popBackStack()
+                    }
+                } else {
+                    navController.popBackStack()
+                }
             }
         )
     }
