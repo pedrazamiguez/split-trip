@@ -70,6 +70,9 @@ class FirebaseAppConfigRepository(
     private val _adsEnabled = MutableStateFlow(DEFAULT_ADS_ENABLED)
     override val adsEnabled: StateFlow<Boolean> = _adsEnabled.asStateFlow()
 
+    private val _admobTestModeEnabled = MutableStateFlow(DEFAULT_ADMOB_TEST_MODE_ENABLED)
+    override val admobTestModeEnabled: StateFlow<Boolean> = _admobTestModeEnabled.asStateFlow()
+
     private val _admobBannerAdUnitId = MutableStateFlow(DEFAULT_BANNER_AD_UNIT_ID)
     override val admobBannerAdUnitId: StateFlow<String> = _admobBannerAdUnitId.asStateFlow()
 
@@ -121,6 +124,7 @@ class FirebaseAppConfigRepository(
 
     private fun updateFlowsFromConfig() {
         updateGeneralConfigFlows()
+        updateAdvertisingFlows()
         updateTierLimitFlows()
         updateOcrAndDeveloperFlows()
     }
@@ -140,17 +144,33 @@ class FirebaseAppConfigRepository(
         val nudgeLimitHours = remoteConfig.getLong("settlement_nudge_rate_limit_hours")
         _settlementNudgeRateLimitHours.value =
             if (nudgeLimitHours > 0) nudgeLimitHours else DEFAULT_SETTLEMENT_NUDGE_RATE_LIMIT_HOURS
+    }
+
+    private fun updateAdvertisingFlows() {
         val adsEnabledStr = remoteConfig.getString("ads_enabled").trim()
         _adsEnabled.value = if (adsEnabledStr.isNotBlank()) {
             remoteConfig.getBoolean("ads_enabled")
         } else {
             DEFAULT_ADS_ENABLED
         }
-        _admobBannerAdUnitId.value =
+
+        val testModeStr = remoteConfig.getString("admob_test_mode_enabled").trim()
+        val isTestMode = if (testModeStr.isNotBlank()) {
+            remoteConfig.getBoolean("admob_test_mode_enabled")
+        } else {
+            DEFAULT_ADMOB_TEST_MODE_ENABLED
+        }
+        _admobTestModeEnabled.value = isTestMode
+
+        val configuredBannerId =
             remoteConfig.getString("admob_banner_ad_unit_id").takeIf { it.isNotBlank() } ?: DEFAULT_BANNER_AD_UNIT_ID
-        _admobInterstitialAdUnitId.value =
+        val configuredInterstitialId =
             remoteConfig.getString("admob_interstitial_ad_unit_id").takeIf { it.isNotBlank() }
                 ?: DEFAULT_INTERSTITIAL_AD_UNIT_ID
+
+        _admobBannerAdUnitId.value = if (isTestMode) SAMPLE_BANNER_AD_UNIT_ID else configuredBannerId
+        _admobInterstitialAdUnitId.value = if (isTestMode) SAMPLE_INTERSTITIAL_AD_UNIT_ID else configuredInterstitialId
+
         val actionFrequency = remoteConfig.getLong("ad_interstitial_action_frequency").toInt()
         _adInterstitialActionFrequency.value =
             if (actionFrequency > 0) actionFrequency else DEFAULT_INTERSTITIAL_ACTION_FREQUENCY
@@ -224,6 +244,9 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_SETTLEMENT_NUDGE_RATE_LIMIT_HOURS = 24L
         private val DEFAULT_OCR_SAFETY_FALSE_POSITIVES_BLACKLIST = listOf("razor", "private", "toothbrushes")
         private const val DEFAULT_ADS_ENABLED = true
+        private const val DEFAULT_ADMOB_TEST_MODE_ENABLED = false
+        private const val SAMPLE_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
+        private const val SAMPLE_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
         private const val DEFAULT_BANNER_AD_UNIT_ID = "ca-app-pub-9638507020441461/2775424807"
         private const val DEFAULT_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-9638507020441461/6643262487"
         private const val DEFAULT_INTERSTITIAL_ACTION_FREQUENCY = 3

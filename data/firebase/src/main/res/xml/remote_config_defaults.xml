@@ -66,6 +66,10 @@
         <value>true</value>
     </entry>
     <entry>
+        <key>admob_test_mode_enabled</key>
+        <value>false</value>
+    </entry>
+    <entry>
         <key>admob_banner_ad_unit_id</key>
         <value>ca-app-pub-9638507020441461/2775424807</value>
     </entry>

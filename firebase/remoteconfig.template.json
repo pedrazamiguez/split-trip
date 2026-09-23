@@ -141,6 +141,13 @@
           "description": "Master operational killswitch to enable or disable ads across the app.",
           "valueType": "BOOLEAN"
         },
+        "admob_test_mode_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "When true, overrides ad unit IDs with Google's official sample test ad unit IDs for banners and interstitials.",
+          "valueType": "BOOLEAN"
+        },
         "admob_banner_ad_unit_id": {
           "defaultValue": {
             "value": "ca-app-pub-9638507020441461/2775424807"

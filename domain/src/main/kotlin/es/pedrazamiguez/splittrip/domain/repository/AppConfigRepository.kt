@@ -20,6 +20,7 @@ interface AppConfigRepository {
     val ocrSafetyFalsePositivesBlacklist: StateFlow<List<String>>
     val developerInfo: StateFlow<DeveloperInfo>
     val adsEnabled: StateFlow<Boolean>
+    val admobTestModeEnabled: StateFlow<Boolean>
     val admobBannerAdUnitId: StateFlow<String>
     val admobInterstitialAdUnitId: StateFlow<String>
     val adInterstitialActionFrequency: StateFlow<Int>
