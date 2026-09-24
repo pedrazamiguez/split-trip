@@ -51,6 +51,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.ad.AdaptiveBannerAd
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalIsProUser
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalProfileAvatarUrl
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
@@ -177,7 +178,8 @@ fun MainScreen(
     // Provide LocalProfileAvatarUrl to prevent profile avatar blinking
     CompositionLocalProvider(
         LocalTabNavController provides selectedNavController,
-        LocalProfileAvatarUrl provides profile?.profileImagePath
+        LocalProfileAvatarUrl provides profile?.profileImagePath,
+        LocalIsProUser provides (profile?.isPro == true)
     ) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
