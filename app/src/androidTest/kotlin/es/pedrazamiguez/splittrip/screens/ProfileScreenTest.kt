@@ -2,9 +2,11 @@ package es.pedrazamiguez.splittrip.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.PROFILE_AVATAR_PRO_BADGE_TEST_TAG
 import es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
 import es.pedrazamiguez.splittrip.features.profile.presentation.screen.ProfileScreen
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.state.ProfileUiState
@@ -56,6 +58,33 @@ class ProfileScreenTest {
         composeRule.onNodeWithText("Jane Doe").assertIsDisplayed()
         composeRule.onNodeWithText("jane@example.com").assertIsDisplayed()
         composeRule.onNodeWithText("This is Jane Doe's bio.", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithTag(PROFILE_AVATAR_PRO_BADGE_TEST_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun rendersProfileInfo_withProBadge_whenUserIsPro() {
+        composeRule.setContent {
+            SplitTripTheme {
+                ProfileScreen(
+                    uiState = ProfileUiState(
+                        isLoading = false,
+                        profile = ProfileUiModel(
+                            displayName = "Jane Doe",
+                            email = "jane@example.com",
+                            profileImageUrl = null,
+                            bio = "This is Jane Doe's bio.",
+                            isPro = true
+                        )
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Jane Doe").assertIsDisplayed()
+        composeRule.onNodeWithTag(PROFILE_AVATAR_PRO_BADGE_TEST_TAG).assertIsDisplayed()
+        composeRule.onNodeWithText("PRO").assertIsDisplayed()
     }
 
     // ═════════════════════════════════════════════════════════════════════

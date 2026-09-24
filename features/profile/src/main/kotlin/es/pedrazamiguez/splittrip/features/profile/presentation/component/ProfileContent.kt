@@ -49,7 +49,8 @@ internal fun ProfileContent(
         ProfileHeader(
             displayName = profile.displayName,
             email = profile.email,
-            profileImageUrl = profile.profileImageUrl
+            profileImageUrl = profile.profileImageUrl,
+            isPro = profile.isPro
         )
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
