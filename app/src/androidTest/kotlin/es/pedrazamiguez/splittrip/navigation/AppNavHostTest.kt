@@ -100,7 +100,9 @@ class AppNavHostTest {
                 registerDeviceTokenUseCase = FakeRegisterDeviceTokenUseCase(),
                 getGroupByIdUseCase = mockk(relaxed = true),
                 warmCurrencyCacheUseCase = mockk(relaxed = true),
-                observeCurrentUserProfileUseCase = observeCurrentUserProfile
+                observeCurrentUserProfileUseCase = observeCurrentUserProfile,
+                shouldShowAdsUseCase = mockk(relaxed = true),
+                getBannerAdUnitIdUseCase = mockk(relaxed = true)
             )
         }
 

@@ -41,6 +41,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -483,7 +484,6 @@ class ExpensesFilterViewModelTest {
                 )
                 viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(filterCriteria))
                 advanceUntilIdle()
-
                 viewModel.onEvent(ExpensesFilterUiEvent.ApplyFilters)
                 advanceUntilIdle()
 
@@ -503,7 +503,6 @@ class ExpensesFilterViewModelTest {
                 val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                     viewModel.actions.collect { actions.add(it) }
                 }
-
                 viewModel.setSelectedGroup(testGroupId)
                 advanceUntilIdle()
 
@@ -511,11 +510,12 @@ class ExpensesFilterViewModelTest {
                     searchQuery = "Din",
                     selectedCategories = setOf(ExpenseCategory.FOOD),
                     selectedSubcategories = setOf(ExpenseSubcategory.RESTAURANT),
-                    selectedMemberIds = setOf("user-1")
+                    selectedMemberIds = setOf("user-1"),
+                    startDate = LocalDate.of(2024, 1, 15),
+                    endDate = LocalDate.of(2024, 1, 17)
                 )
                 viewModel.onEvent(ExpensesFilterUiEvent.Initialize(initialCriteria))
                 advanceUntilIdle()
-
                 viewModel.onEvent(ExpensesFilterUiEvent.ResetDraft)
                 advanceUntilIdle()
 
@@ -525,7 +525,9 @@ class ExpensesFilterViewModelTest {
                 assertTrue(action.clearedCriteria.selectedCategories.isEmpty())
                 assertTrue(action.clearedCriteria.selectedSubcategories.isEmpty())
                 assertTrue(action.clearedCriteria.selectedMemberIds.isEmpty())
-
+                assertNull(action.clearedCriteria.startDate)
+                assertNull(action.clearedCriteria.endDate)
+                assertFalse(viewModel.uiState.value.canReset)
                 actionsJob.cancel()
                 collectJob.cancel()
             }
@@ -534,7 +536,6 @@ class ExpensesFilterViewModelTest {
     @Nested
     @DisplayName("SavedStateHandle Integration")
     inner class SavedStateHandleIntegration {
-
         @Test
         fun `expenseFilterCriteria can be stored and retrieved from SavedStateHandle without error`() {
             val criteria = ExpenseFilterCriteria(
@@ -544,7 +545,6 @@ class ExpensesFilterViewModelTest {
             )
             val handle = SavedStateHandle()
             handle["initialFilterCriteria"] = criteria
-
             val retrieved = handle.get<ExpenseFilterCriteria>("initialFilterCriteria")
             assertEquals(criteria, retrieved)
         }
