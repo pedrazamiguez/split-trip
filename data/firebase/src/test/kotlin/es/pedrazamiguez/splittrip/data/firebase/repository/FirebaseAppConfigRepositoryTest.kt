@@ -51,6 +51,14 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("settlement_nudge_rate_limit_hours") } returns 48L
         every { firebaseRemoteConfig.getString("ocr_safety_false_positives_blacklist") } returns "blade,secret"
         every { firebaseRemoteConfig.getString("developer_info_json") } returns ""
+        every { firebaseRemoteConfig.getString("ads_enabled") } returns "true"
+        every { firebaseRemoteConfig.getBoolean("ads_enabled") } returns true
+        every { firebaseRemoteConfig.getString("admob_test_mode_enabled") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("admob_test_mode_enabled") } returns false
+        every { firebaseRemoteConfig.getString("admob_banner_ad_unit_id") } returns "banner-123"
+        every { firebaseRemoteConfig.getString("admob_interstitial_ad_unit_id") } returns "interstitial-456"
+        every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 3L
+        every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 180L
 
         repository = FirebaseAppConfigRepository(firebaseRemoteConfig)
     }
@@ -83,6 +91,12 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(48L, repository.settlementNudgeRateLimitHours.value)
         assertEquals(listOf("blade", "secret"), repository.ocrSafetyFalsePositivesBlacklist.value)
         assertEquals(FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO, repository.developerInfo.value)
+        assertEquals(true, repository.adsEnabled.value)
+        assertEquals(false, repository.admobTestModeEnabled.value)
+        assertEquals("banner-123", repository.admobBannerAdUnitId.value)
+        assertEquals("interstitial-456", repository.admobInterstitialAdUnitId.value)
+        assertEquals(3, repository.adInterstitialActionFrequency.value)
+        assertEquals(180L, repository.adInterstitialMinIntervalSeconds.value)
     }
 
     @Test
@@ -92,37 +106,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.fetchAndActivate() } returns mockTaskA
         coEvery { mockTaskA.await() } returns true
 
-        every { firebaseRemoteConfig.getString("default_currency_code") } returns "GBP"
-        every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 100L
-        every { firebaseRemoteConfig.getLong("max_members_per_group") } returns 25L
-        every { firebaseRemoteConfig.getString("subscription_gating_enabled") } returns "false"
-        every { firebaseRemoteConfig.getBoolean("subscription_gating_enabled") } returns false
-        every { firebaseRemoteConfig.getLong("max_owned_groups_free") } returns 3L
-        every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns 200L
-        every { firebaseRemoteConfig.getLong("max_members_per_group_free") } returns 8L
-        every { firebaseRemoteConfig.getLong("max_members_per_group_pro") } returns 50L
-        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns 10L
-        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 250L
-        every { firebaseRemoteConfig.getLong("extracted_date_max_future_days") } returns 60L
-        every { firebaseRemoteConfig.getString("support_email_address") } returns "fetch-support@splittrip.com"
-        every { firebaseRemoteConfig.getLong("settlement_nudge_rate_limit_hours") } returns 12L
-        every { firebaseRemoteConfig.getString("ocr_safety_false_positives_blacklist") } returns "fuck,dick,pussy,cunt"
-        every {
-            firebaseRemoteConfig.getString("developer_info_json")
-        } returns """
-            {
-              "name": "Custom Dev",
-              "avatar_url": "https://example.com/custom.png",
-              "github_url": "https://github.com/custom",
-              "splittrip_repo_url": "https://github.com/custom/split-trip",
-              "linkedin_url": "https://linkedin.com/in/custom",
-              "portfolio_url": "https://custom.me",
-              "role_map": { "en": "Custom Lead" },
-              "bio_map": { "en": "Custom Bio" },
-              "credits_map": { "en": "Custom Credits" },
-              "copyright_map": { "en": "© 2026 Custom" }
-            }
-        """.trimIndent()
+        setupMockRemoteConfigValues()
 
         val result = repository.fetchConfiguration()
 
@@ -142,6 +126,12 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals("fetch-support@splittrip.com", repository.supportEmailAddress.value)
         assertEquals(12L, repository.settlementNudgeRateLimitHours.value)
         assertEquals(listOf("fuck", "dick", "pussy", "cunt"), repository.ocrSafetyFalsePositivesBlacklist.value)
+        assertEquals(false, repository.adsEnabled.value)
+        assertEquals(false, repository.admobTestModeEnabled.value)
+        assertEquals("banner-new", repository.admobBannerAdUnitId.value)
+        assertEquals("interstitial-new", repository.admobInterstitialAdUnitId.value)
+        assertEquals(3, repository.adInterstitialActionFrequency.value)
+        assertEquals(60L, repository.adInterstitialMinIntervalSeconds.value)
         assertEquals("Custom Dev", repository.developerInfo.value.name)
         assertEquals("https://example.com/custom.png", repository.developerInfo.value.avatarUrl)
         assertEquals("Custom Lead", repository.developerInfo.value.roleMap["en"])
@@ -206,6 +196,8 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns -1L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 0L
         every { firebaseRemoteConfig.getString("support_email_address") } returns ""
+        every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 0L
+        every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 0L
 
         val fallbackRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
 
@@ -217,5 +209,76 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(0, fallbackRepo.aiReceiptMonthlyLimitFree.value)
         assertEquals(100, fallbackRepo.aiReceiptMonthlyLimitPro.value)
         assertEquals("support@splittrip.eu", fallbackRepo.supportEmailAddress.value)
+        assertEquals(2, fallbackRepo.adInterstitialActionFrequency.value)
+        assertEquals(90L, fallbackRepo.adInterstitialMinIntervalSeconds.value)
+    }
+
+    @Test
+    fun `admobTestModeEnabled when true overrides ad unit IDs with sample IDs`() {
+        every { firebaseRemoteConfig.getString("admob_test_mode_enabled") } returns "true"
+        every { firebaseRemoteConfig.getBoolean("admob_test_mode_enabled") } returns true
+        every { firebaseRemoteConfig.getString("admob_banner_ad_unit_id") } returns "production-banner"
+        every { firebaseRemoteConfig.getString("admob_interstitial_ad_unit_id") } returns "production-interstitial"
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertTrue(repo.admobTestModeEnabled.value)
+        assertEquals("ca-app-pub-3940256099942544/6300978111", repo.admobBannerAdUnitId.value)
+        assertEquals("ca-app-pub-3940256099942544/1033173712", repo.admobInterstitialAdUnitId.value)
+    }
+
+    @Test
+    fun `admobTestModeEnabled falls back to default false when empty in RemoteConfig`() {
+        every { firebaseRemoteConfig.getString("admob_test_mode_enabled") } returns ""
+        every { firebaseRemoteConfig.getString("admob_banner_ad_unit_id") } returns ""
+        every { firebaseRemoteConfig.getString("admob_interstitial_ad_unit_id") } returns ""
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertFalse(repo.admobTestModeEnabled.value)
+        assertEquals("ca-app-pub-9638507020441461/2775424807", repo.admobBannerAdUnitId.value)
+        assertEquals("ca-app-pub-9638507020441461/6643262487", repo.admobInterstitialAdUnitId.value)
+    }
+
+    private fun setupMockRemoteConfigValues() {
+        every { firebaseRemoteConfig.getString("default_currency_code") } returns "GBP"
+        every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 100L
+        every { firebaseRemoteConfig.getLong("max_members_per_group") } returns 25L
+        every { firebaseRemoteConfig.getString("subscription_gating_enabled") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("subscription_gating_enabled") } returns false
+        every { firebaseRemoteConfig.getLong("max_owned_groups_free") } returns 3L
+        every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns 200L
+        every { firebaseRemoteConfig.getLong("max_members_per_group_free") } returns 8L
+        every { firebaseRemoteConfig.getLong("max_members_per_group_pro") } returns 50L
+        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns 10L
+        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 250L
+        every { firebaseRemoteConfig.getLong("extracted_date_max_future_days") } returns 60L
+        every { firebaseRemoteConfig.getString("support_email_address") } returns "fetch-support@splittrip.com"
+        every { firebaseRemoteConfig.getLong("settlement_nudge_rate_limit_hours") } returns 12L
+        every { firebaseRemoteConfig.getString("ocr_safety_false_positives_blacklist") } returns "fuck,dick,pussy,cunt"
+        every { firebaseRemoteConfig.getString("ads_enabled") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("ads_enabled") } returns false
+        every { firebaseRemoteConfig.getString("admob_test_mode_enabled") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("admob_test_mode_enabled") } returns false
+        every { firebaseRemoteConfig.getString("admob_banner_ad_unit_id") } returns "banner-new"
+        every { firebaseRemoteConfig.getString("admob_interstitial_ad_unit_id") } returns "interstitial-new"
+        every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 3L
+        every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 60L
+        every {
+            firebaseRemoteConfig.getString("developer_info_json")
+        } returns """
+            {
+              "name": "Custom Dev",
+              "avatar_url": "https://example.com/custom.png",
+              "github_url": "https://github.com/custom",
+              "splittrip_repo_url": "https://github.com/custom/split-trip",
+              "linkedin_url": "https://linkedin.com/in/custom",
+              "portfolio_url": "https://custom.me",
+              "role_map": { "en": "Custom Lead" },
+              "bio_map": { "en": "Custom Bio" },
+              "credits_map": { "en": "Custom Credits" },
+              "copyright_map": { "en": "© 2026 Custom" }
+            }
+        """.trimIndent()
     }
 }

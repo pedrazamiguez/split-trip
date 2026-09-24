@@ -52,35 +52,18 @@ object DeepLinkUtils {
      * | `groups/{groupId}/settlements/{settlementId}`          | `Routes.BALANCES`|
      * | `groups/{groupId}/your-position`                       | `Routes.BALANCES`|
      *
-     * @param expenseId The expense ID from the deep link, or `null`.
-     * @param isExpensesListPath `true` when the deep link matched the `/expenses` path
-     *   without an expense ID.
-     * @param contributionId The contribution ID from the deep link, or `null`.
-     * @param withdrawalId The cash withdrawal ID from the deep link, or `null`.
-     * @param settlementId The settlement ID from the deep link, or `null`.
-     * @param isYourPositionPath `true` when the deep link matched the `/your-position` path.
-     * @param isGroupsListPath `true` when the deep link matched the `/groups` path without a group ID.
-     * @param isMembersPath `true` when the deep link matched the `/members` path.
+     * @param params The extracted deep link parameters [DeepLinkResolutionParams].
      * @return The route of the tab to switch to, defaulting to [Routes.GROUPS].
      */
-    fun resolveTargetTab(
-        expenseId: String? = null,
-        isExpensesListPath: Boolean = false,
-        contributionId: String? = null,
-        withdrawalId: String? = null,
-        settlementId: String? = null,
-        isYourPositionPath: Boolean = false,
-        isGroupsListPath: Boolean = false,
-        isMembersPath: Boolean = false
-    ): String = when {
-        expenseId != null -> Routes.EXPENSES
-        isExpensesListPath -> Routes.EXPENSES
-        contributionId != null -> Routes.BALANCES
-        withdrawalId != null -> Routes.BALANCES
-        settlementId != null -> Routes.BALANCES
-        isYourPositionPath -> Routes.BALANCES
-        isMembersPath -> Routes.GROUPS
-        isGroupsListPath -> Routes.GROUPS
+    fun resolveTargetTab(params: DeepLinkResolutionParams = DeepLinkResolutionParams()): String = when {
+        params.expenseId != null -> Routes.EXPENSES
+        params.isExpensesListPath -> Routes.EXPENSES
+        params.contributionId != null -> Routes.BALANCES
+        params.withdrawalId != null -> Routes.BALANCES
+        params.settlementId != null -> Routes.BALANCES
+        params.isYourPositionPath -> Routes.BALANCES
+        params.isMembersPath -> Routes.GROUPS
+        params.isGroupsListPath -> Routes.GROUPS
         else -> Routes.GROUPS
     }
 

@@ -61,4 +61,28 @@
         <value>{"name":"Andrés Pedraza Míguez","avatar_url":"","github_url":"https://github.com/pedrazamiguez","splittrip_repo_url":"https://github.com/pedrazamiguez/split-trip","linkedin_url":"https://www.linkedin.com/in/pedrazamiguez","portfolio_url":"https://pedrazamiguez.github.io","role_map":{"en":"Senior Java &amp; Kotlin Engineer","es":"Ingeniero Senior de Java y Kotlin","es-rAN":"Inheniero Senior de Java y Kotlin"},"bio_map":{"en":"Senior Backend Engineer with over 14 years of experience designing scalable systems, now leveraging a strong hybrid skill set in Java (Backend) and Kotlin (Mobile/Android). Proven track record working as a Remote Contractor for UK-based companies, delivering high-quality solutions in English-speaking environments.\n\nSpecialises in Java 21, Spring Boot, and Hexagonal Architecture, with recent hands-on leadership in Android Native (Jetpack Compose) projects. Known for stepping into complex, legacy environments to refactor code, mentor senior peers, and drive delivery. Passionate about software craftsmanship, automated testing, and solving critical business problems across the full stack.","es":"Ingeniero Backend Senior con más de 14 años de experiencia diseñando sistemas escalables, aprovechando un sólido conjunto de habilidades híbridas en Java (Backend) y Kotlin (Móvil/Android). Trayectoria contrastada trabajando como contratista remoto para empresas del Reino Unido, ofreciendo soluciones de alta calidad en entornos angloparlantes.\n\nEspecializado en Java 21, Spring Boot y Arquitectura Hexagonal, con liderazgo práctico reciente en proyectos de Android Nativo (Jetpack Compose). Reconocido por incorporarse a entornos heredados y complejos para refactorizar código, mentorizar a compañeros y acelerar entregas. Apasionado por la excelencia en el desarrollo de software, los tests automatizados y la resolución de problemas de negocio críticos en todo el stack.","es-rAN":"Inheniero Backend Senior con mâh de 14 añô de êpperiençia diçeñando çîttemâ êccalablê, aprobexando un çólido conhunto de abilidadê íbridâ en Java (Backend) y Kotlin (Móbî/Androîh). Trayêttoria contrâttá trabahando como contratîtta remoto pa empreçâ del Reino Unío, ofreçiendo çoluçionê de arta calidá en entônnô anglopâl-lantê.\n\nÊppeçialiçao en Java 21, Spring Boot y Arquitêttura Êççagonâh, con liderâggo práttico reçiente en proyêttô de Android Natibo (Jetpack Compose). Reconoçío por incorporarçe a entônnô eredáô y complehô pa refâttoriçâh código, mentoriçâh a compañerô y açelerâh entregâ. Apaçionao por la êççelençia en er deçarroyo de çôttware, lô têtts automatiçáô y la reçoluçión de problemâ de negoçio críticô en tó er stack."},"credits_map":{"en":"SplitTrip is a modular Android application designed for travelers to manage shared expenses efficiently. It allows users to create expense groups, track spending in multiple currencies, calculate debts, and sync data across devices.\n\nBuilt with modern Android practices—including Jetpack Compose, Clean Architecture, and Offline-First principles—the app serves as a reference for scalable, multi-module Android development.","es":"SplitTrip es una aplicación modular de Android diseñada para que los viajeros gestionen gastos compartidos de forma eficiente. Permite crear grupos de gastos, registrar pagos en múltiples monedas, calcular deudas y sincronizar datos entre dispositivos.\n\nConstruida con las prácticas modernas de Android —incluyendo Jetpack Compose, Clean Architecture y principios Offline-First—, la aplicación sirve como referencia para el desarrollo escalable y multimódulo en Android.","es-rAN":"SplîTTrîh êh una aplicaçión modulâh de Androîh diçeñá pa que lô biaherô hêttionen gâttô compartíô de forma efiçiente. Permite creâh grupô de gâttô, rehîttrâh pagô en múrtiplê monedâ, carculâh deudâ y çincroniçâh datô entre dîppoçitibô.\n\nCôttruida con lâ prátticâ modênnâ de Androîh —incluyendo Jetpack Compose, Clean Architecture y prinçipiô Ôffline-Firtt—, la aplicaçión çirbe como referençia pa er deçarroyo êccalable y murtimódulo en Androîh."},"copyright_map":{"en":"© 2026 Andrés Pedraza Míguez.\nAll rights reserved.","es":"© 2026 Andrés Pedraza Míguez.\nTodos los derechos reservados.",
         "es-rAN":"© 2026 Andrés Pedraza Míguez.\nTôh lô derexô reçerbáô."}}</value>
     </entry>
+    <entry>
+        <key>ads_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>admob_test_mode_enabled</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>admob_banner_ad_unit_id</key>
+        <value>ca-app-pub-9638507020441461/2775424807</value>
+    </entry>
+    <entry>
+        <key>admob_interstitial_ad_unit_id</key>
+        <value>ca-app-pub-9638507020441461/6643262487</value>
+    </entry>
+    <entry>
+        <key>ad_interstitial_action_frequency</key>
+        <value>2</value>
+    </entry>
+    <entry>
+        <key>ad_interstitial_min_interval_seconds</key>
+        <value>90</value>
+    </entry>
 </defaultsMap>

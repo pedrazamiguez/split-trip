@@ -199,14 +199,20 @@ class CreateEditSubunitViewModel(
 
     fun onEvent(event: CreateEditSubunitUiEvent) {
         when (event) {
-            is CreateEditSubunitUiEvent.UpdateName -> updateName(event.name)
+            is CreateEditSubunitUiEvent.UpdateName -> _formState.update { it.copy(name = event.name, nameError = null) }
             is CreateEditSubunitUiEvent.ToggleMember -> toggleMember(event.userId)
             is CreateEditSubunitUiEvent.UpdateMemberShare -> updateMemberShare(event.userId, event.share)
             is CreateEditSubunitUiEvent.ToggleShareLock -> toggleShareLock(event.userId)
             CreateEditSubunitUiEvent.Save -> save()
             CreateEditSubunitUiEvent.NextStep -> handleNextStep()
             CreateEditSubunitUiEvent.PreviousStep -> handlePreviousStep()
-            CreateEditSubunitUiEvent.CloseWizard -> handleCloseWizard()
+            CreateEditSubunitUiEvent.CloseWizard -> {
+                if (uiState.value.isDirty) {
+                    viewModelScope.launch { _actions.emit(CreateEditSubunitUiAction.RequestExitConfirmation) }
+                } else {
+                    viewModelScope.launch { _actions.emit(CreateEditSubunitUiAction.NavigateBack) }
+                }
+            }
             is CreateEditSubunitUiEvent.JumpToStep -> handleJumpToStep(event.stepIndex)
         }
     }
@@ -214,22 +220,16 @@ class CreateEditSubunitViewModel(
     private fun handleNextStep() {
         _formState.update { form ->
             // Validate current step before advancing
-            val stepError = validateCurrentStep(form)
+            val stepError = when (form.currentStep) {
+                CreateEditSubunitStep.SHARES -> validateSharesStep(form)
+                else -> null
+            }
             if (stepError != null) return@update stepError
 
             val nextStep = wizardNavigator.navigateNext(form.currentStep, CreateEditSubunitStep.entries)
                 ?: return@update form
             form.copy(currentStep = nextStep, nameError = null, membersError = null, sharesError = null)
         }
-    }
-
-    /**
-     * Validates the current step and returns the updated [FormState] with an error
-     * if validation fails, or `null` if the step is valid and can advance.
-     */
-    private fun validateCurrentStep(form: FormState): FormState? = when (form.currentStep) {
-        CreateEditSubunitStep.SHARES -> validateSharesStep(form)
-        else -> null
     }
 
     /**
@@ -282,10 +282,6 @@ class CreateEditSubunitViewModel(
         _formState.update {
             it.copy(currentStep = target, nameError = null, membersError = null, sharesError = null)
         }
-    }
-
-    private fun updateName(name: String) {
-        _formState.update { it.copy(name = name, nameError = null) }
     }
 
     private fun toggleMember(userId: String) {
@@ -373,65 +369,20 @@ class CreateEditSubunitViewModel(
     }
 
     // Sequential save flow: validate → build domain object → persist → handle result
-    @Suppress("LongMethod", "CognitiveComplexMethod")
     private fun save() {
         val form = _formState.value
         val params = _initParams.value ?: return
 
-        // Client-side validation for immediate feedback
-        if (form.name.isBlank()) {
-            _formState.update {
-                it.copy(nameError = UiText.StringResource(R.string.subunit_error_name_empty))
-            }
-            return
-        }
-        if (form.selectedMemberIds.isEmpty()) {
-            _formState.update {
-                it.copy(membersError = UiText.StringResource(R.string.subunit_error_no_members))
-            }
-            return
-        }
+        if (!validateFormForSave(form)) return
 
         _formState.update { it.copy(isSaving = true) }
 
         viewModelScope.launch {
-            if (params.subunitId == null) {
-                val isEnabled = featureGateService.isFeatureEnabled(
-                    feature = GatedFeature.SUBUNIT_CREATION,
-                    groupId = params.groupId
-                ).first()
-                if (!isEnabled) {
-                    _formState.update { it.copy(isSaving = false) }
-                    _actions.emit(
-                        CreateEditSubunitUiAction.ShowError(
-                            UiText.StringResource(R.string.subunit_error_pro_required)
-                        )
-                    )
-                    val isPro = featureGateService.isActingUserPro().first()
-                    if (!isPro) {
-                        _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
-                    }
-                    return@launch
-                }
-            }
-
-            val memberShares = shareDistributionService.parseShareTexts(
-                selectedMemberIds = form.selectedMemberIds,
-                memberShareTexts = form.memberShares
-            )
-
-            // If the form has non-blank share entries but parsing returned empty,
-            // the input was unparseable — surface an error instead of auto-normalizing.
-            val hasNonBlankShares = form.memberShares.values.any { it.isNotBlank() }
-            if (memberShares.isEmpty() && hasNonBlankShares) {
-                _formState.update {
-                    it.copy(
-                        isSaving = false,
-                        sharesError = UiText.StringResource(R.string.subunit_error_validation_failed)
-                    )
-                }
+            if (params.subunitId == null && !checkFeatureGate(params.groupId)) {
                 return@launch
             }
+
+            val memberShares = parseAndValidateShares(form) ?: return@launch
 
             val subunit = Subunit(
                 id = params.subunitId ?: "",
@@ -455,34 +406,86 @@ class CreateEditSubunitViewModel(
                     _actions.emit(CreateEditSubunitUiAction.NavigateBack)
                 }
                 .onFailure { error ->
-                    Timber.e(error, "Failed to save subunit")
-                    _formState.update { it.copy(isSaving = false) }
-
-                    val errorMessage = when (error) {
-                        is GroupArchivedException -> {
-                            UiText.StringResource(
-                                DesignSystemR.string.group_error_archived
-                            )
-                        }
-                        is ValidationException -> {
-                            UiText.StringResource(R.string.subunit_error_validation_failed)
-                        }
-                        else -> {
-                            UiText.StringResource(R.string.subunit_error_save_failed)
-                        }
-                    }
-
-                    _actions.emit(CreateEditSubunitUiAction.ShowError(errorMessage))
+                    handleSaveFailure(error)
                 }
         }
     }
 
-    private fun handleCloseWizard() {
-        if (uiState.value.isDirty) {
-            viewModelScope.launch { _actions.emit(CreateEditSubunitUiAction.RequestExitConfirmation) }
-        } else {
-            viewModelScope.launch { _actions.emit(CreateEditSubunitUiAction.NavigateBack) }
+    private fun validateFormForSave(form: FormState): Boolean {
+        if (form.name.isBlank()) {
+            _formState.update {
+                it.copy(nameError = UiText.StringResource(R.string.subunit_error_name_empty))
+            }
+            return false
         }
+        if (form.selectedMemberIds.isEmpty()) {
+            _formState.update {
+                it.copy(membersError = UiText.StringResource(R.string.subunit_error_no_members))
+            }
+            return false
+        }
+        return true
+    }
+
+    private suspend fun checkFeatureGate(groupId: String): Boolean {
+        val isEnabled = featureGateService.isFeatureEnabled(
+            feature = GatedFeature.SUBUNIT_CREATION,
+            groupId = groupId
+        ).first()
+        if (!isEnabled) {
+            _formState.update { it.copy(isSaving = false) }
+            _actions.emit(
+                CreateEditSubunitUiAction.ShowError(
+                    UiText.StringResource(R.string.subunit_error_pro_required)
+                )
+            )
+            val isPro = featureGateService.isActingUserPro().first()
+            if (!isPro) {
+                _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
+            }
+            return false
+        }
+        return true
+    }
+
+    private fun parseAndValidateShares(form: FormState): Map<String, BigDecimal>? {
+        val memberShares = shareDistributionService.parseShareTexts(
+            selectedMemberIds = form.selectedMemberIds,
+            memberShareTexts = form.memberShares
+        )
+
+        val hasNonBlankShares = form.memberShares.values.any { it.isNotBlank() }
+        if (memberShares.isEmpty() && hasNonBlankShares) {
+            _formState.update {
+                it.copy(
+                    isSaving = false,
+                    sharesError = UiText.StringResource(R.string.subunit_error_validation_failed)
+                )
+            }
+            return null
+        }
+        return memberShares
+    }
+
+    private suspend fun handleSaveFailure(error: Throwable) {
+        Timber.e(error, "Failed to save subunit")
+        _formState.update { it.copy(isSaving = false) }
+
+        val errorMessage = when (error) {
+            is GroupArchivedException -> {
+                UiText.StringResource(
+                    DesignSystemR.string.group_error_archived
+                )
+            }
+            is ValidationException -> {
+                UiText.StringResource(R.string.subunit_error_validation_failed)
+            }
+            else -> {
+                UiText.StringResource(R.string.subunit_error_save_failed)
+            }
+        }
+
+        _actions.emit(CreateEditSubunitUiAction.ShowError(errorMessage))
     }
 
     private data class FormState(

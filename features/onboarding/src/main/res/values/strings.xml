@@ -12,6 +12,10 @@
     <string name="onboarding_step_split_description">Split expenses your way: equally, by exact amounts, percentages, or subunits for couples and families. Attach receipts to keep a clear paper trail.</string>
     <string name="onboarding_step_cash_title">Cash in Hand &amp; Pocket</string>
     <string name="onboarding_step_cash_description">Track shared physical cash alongside card expenses. Log cash withdrawals and pocket contributions with automatic multi-currency conversion.</string>
+    <string name="onboarding_step_notifications_title">Real-Time Notifications</string>
+    <string name="onboarding_step_notifications_description">Stay up to date on shared expenses, consensus debts, and settlement confirmations in real time.</string>
+    <string name="onboarding_enable_notifications_button">Enable Notifications</string>
+    <string name="onboarding_notifications_enabled">Notifications enabled</string>
     <string name="onboarding_step_settle_title">Consensus &amp; Settlements</string>
     <string name="onboarding_step_settle_description">Know your exact balance at any moment. Settle up seamlessly with peer confirmation so everyone agrees before a debt is marked paid.</string>
 

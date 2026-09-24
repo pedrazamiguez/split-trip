@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.state
 
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
@@ -15,6 +16,7 @@ data class AddContributionUiState(
     val amountError: Boolean = false,
     val groupCurrencyCode: String = "",
     val groupCurrencySymbol: String = "",
+    val groupCurrencyDecimalPlaces: Int = UiConstants.DEFAULT_MAX_DECIMAL_PLACES,
     val formattedAmountWithCurrency: String = "",
     val subunitOptions: ImmutableList<SubunitOptionUiModel> = persistentListOf(),
     val contributionScope: PayerType = PayerType.USER,

@@ -130,6 +130,53 @@
           "valueType": "JSON"
         }
       }
+    },
+    "Advertising": {
+      "description": "AdMob configuration, ad unit IDs, and interstitial display pacing for Free tier users.",
+      "parameters": {
+        "ads_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Master operational killswitch to enable or disable ads across the app.",
+          "valueType": "BOOLEAN"
+        },
+        "admob_test_mode_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "When true, overrides ad unit IDs with Google's official sample test ad unit IDs for banners and interstitials.",
+          "valueType": "BOOLEAN"
+        },
+        "admob_banner_ad_unit_id": {
+          "defaultValue": {
+            "value": "ca-app-pub-9638507020441461/2775424807"
+          },
+          "description": "Production AdMob banner ad unit ID for anchored adaptive banners.",
+          "valueType": "STRING"
+        },
+        "admob_interstitial_ad_unit_id": {
+          "defaultValue": {
+            "value": "ca-app-pub-9638507020441461/6643262487"
+          },
+          "description": "Production AdMob interstitial ad unit ID for full-screen interstitial ads.",
+          "valueType": "STRING"
+        },
+        "ad_interstitial_action_frequency": {
+          "defaultValue": {
+            "value": "2"
+          },
+          "description": "Number of completed transactional actions before displaying an interstitial ad.",
+          "valueType": "NUMBER"
+        },
+        "ad_interstitial_min_interval_seconds": {
+          "defaultValue": {
+            "value": "90"
+          },
+          "description": "Minimum cooldown duration in seconds between interstitial ad impressions.",
+          "valueType": "NUMBER"
+        }
+      }
     }
   }
 }

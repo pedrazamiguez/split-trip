@@ -13,6 +13,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,7 +49,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPaddin
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.ad.AdaptiveBannerAd
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalIsProUser
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalProfileAvatarUrl
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
@@ -107,6 +110,9 @@ fun MainScreen(
 
     // Observe current user profile at root level to prevent avatar blinking on tab switches
     val profile by mainViewModel.currentUserProfile.collectAsStateWithLifecycle()
+
+    val shouldShowAds by mainViewModel.shouldShowAds.collectAsStateWithLifecycle()
+    val bannerAdUnitId by mainViewModel.bannerAdUnitId.collectAsStateWithLifecycle()
 
     // Use the properly ordered visible providers directly (preserves tab order)
     // No need to re-filter since visibleProviders is already correctly ordered from AppNavHost
@@ -172,7 +178,8 @@ fun MainScreen(
     // Provide LocalProfileAvatarUrl to prevent profile avatar blinking
     CompositionLocalProvider(
         LocalTabNavController provides selectedNavController,
-        LocalProfileAvatarUrl provides profile?.profileImagePath
+        LocalProfileAvatarUrl provides profile?.profileImagePath,
+        LocalIsProUser provides (profile?.isPro == true)
     ) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -183,29 +190,35 @@ fun MainScreen(
                 )
             },
             bottomBar = {
-                AnimatedVisibility(
-                    visible = isInitialLoadComplete,
-                    enter = slideInVertically(
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        initialOffsetY = { it }
-                    ) + fadeIn(),
-                    exit = slideOutVertically(
-                        animationSpec = spring(
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        targetOffsetY = { it }
-                    ) + fadeOut()
-                ) {
-                    BottomNavigationBar(
-                        selectedRoute = selectedRoute,
-                        onTabSelected = { route -> selectedRoute = route },
-                        items = visibleProviders,
-                        mainAction = currentUiProvider?.mainAction,
-                        hazeState = hazeState
+                Column {
+                    AdaptiveBannerAd(
+                        adUnitId = bannerAdUnitId,
+                        isAdEnabled = shouldShowAds
                     )
+                    AnimatedVisibility(
+                        visible = isInitialLoadComplete,
+                        enter = slideInVertically(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            ),
+                            initialOffsetY = { it }
+                        ) + fadeIn(),
+                        exit = slideOutVertically(
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessMedium
+                            ),
+                            targetOffsetY = { it }
+                        ) + fadeOut()
+                    ) {
+                        BottomNavigationBar(
+                            selectedRoute = selectedRoute,
+                            onTabSelected = { route -> selectedRoute = route },
+                            items = visibleProviders,
+                            mainAction = currentUiProvider?.mainAction,
+                            hazeState = hazeState
+                        )
+                    }
                 }
             },
             // Remove default content window insets since we're handling padding manually

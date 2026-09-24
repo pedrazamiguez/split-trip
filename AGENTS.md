@@ -323,6 +323,9 @@ Before creating any new service, utility, formatter, or UI component, **check th
 
 ## AI Agent Behavior Rules (CRITICAL)
 
+### 🛑 Language Preference (STRICT)
+ALWAYS communicate and write chat responses in **English** when interacting with the user on SplitTrip, regardless of the language used in user prompts, issue descriptions, UI screenshots, or localized app resources.
+
 ### 🛑 No Git Operations (STRICT)
 NEVER stage, commit, push, or create PRs autonomously. NEVER execute, propose, suggest, or ask for permission to run `git add`, `git commit`, or `git push`. Git operations are strictly under the user's manual control. `git fetch`, `git checkout`, and `git pull` are allowed for setup/automation (e.g., when running `start-issue`).
 

@@ -91,14 +91,16 @@ fun NavGraphBuilder.mainGraph(
         // Resolve target tab when a deep link group is present or targeting the groups list
         val deepLinkTargetTab = if (deepLinkGroupId != null || isGroupsListPath) {
             DeepLinkUtils.resolveTargetTab(
-                expenseId = deepLinkExpenseId,
-                isExpensesListPath = isExpensesListPath,
-                contributionId = deepLinkContributionId,
-                withdrawalId = deepLinkWithdrawalId,
-                settlementId = deepLinkSettlementId,
-                isYourPositionPath = isYourPositionPath,
-                isGroupsListPath = isGroupsListPath,
-                isMembersPath = isMembersPath
+                DeepLinkResolutionParams(
+                    expenseId = deepLinkExpenseId,
+                    isExpensesListPath = isExpensesListPath,
+                    contributionId = deepLinkContributionId,
+                    withdrawalId = deepLinkWithdrawalId,
+                    settlementId = deepLinkSettlementId,
+                    isYourPositionPath = isYourPositionPath,
+                    isGroupsListPath = isGroupsListPath,
+                    isMembersPath = isMembersPath
+                )
             )
         } else {
             null

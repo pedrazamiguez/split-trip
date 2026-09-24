@@ -1,15 +1,18 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.feature
 
+import android.app.Activity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
+import es.pedrazamiguez.splittrip.core.designsystem.ad.InterstitialAdManager
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
@@ -24,6 +27,7 @@ import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.You
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.action.YourBalanceUiAction
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.getKoin
 
 @Composable
 fun YourBalanceFeature(
@@ -37,6 +41,8 @@ fun YourBalanceFeature(
     val selectedGroupId by sharedViewModel.selectedGroupId.collectAsStateWithLifecycle()
     val pillController = LocalTopPillController.current
     val context = LocalContext.current
+    val koin = getKoin()
+    val interstitialAdManager = remember(koin) { koin.get<InterstitialAdManager>() }
 
     LaunchedEffect(selectedGroupId) { yourBalanceViewModel.setSelectedGroup(selectedGroupId) }
 
@@ -44,7 +50,13 @@ fun YourBalanceFeature(
         yourBalanceViewModel.actions.collectLatest { action ->
             val message = when (action) {
                 is YourBalanceUiAction.ShowError -> action.message.asString(context)
-                is YourBalanceUiAction.ShowSuccess -> action.message.asString(context)
+                is YourBalanceUiAction.ShowSuccess -> {
+                    val activity = context as? Activity
+                    if (activity != null) {
+                        interstitialAdManager.onActionCompleted(activity) {}
+                    }
+                    action.message.asString(context)
+                }
             }
             pillController.showPill(message = message)
         }

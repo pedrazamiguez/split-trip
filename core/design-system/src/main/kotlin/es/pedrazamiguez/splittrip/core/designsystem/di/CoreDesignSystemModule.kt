@@ -2,10 +2,13 @@ package es.pedrazamiguez.splittrip.core.designsystem.di
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.ad.InterstitialAdManager
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrencyUseCase
@@ -23,6 +26,13 @@ val coreDesignSystemModule = module {
         FormattingHelper(
             localeProvider = get<LocaleProvider>(),
             appConfigService = get<AppConfigService>()
+        )
+    }
+
+    single {
+        InterstitialAdManager(
+            appConfigRepository = get<AppConfigRepository>(),
+            shouldShowAdsUseCase = get<ShouldShowAdsUseCase>()
         )
     }
 

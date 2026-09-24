@@ -20,6 +20,7 @@ fun OnboardingContent(
     onPreviousClick: () -> Unit,
     onSkipClick: () -> Unit,
     onCompleteClick: () -> Unit,
+    onRequestNotificationPermissionClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -35,6 +36,8 @@ fun OnboardingContent(
 
         OnboardingStepCarousel(
             currentStep = uiState.currentStep,
+            hasNotificationPermission = uiState.hasNotificationPermission,
+            onRequestNotificationPermissionClick = onRequestNotificationPermissionClick,
             modifier = Modifier.weight(1f)
         )
 

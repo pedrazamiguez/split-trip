@@ -9,13 +9,15 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.ArithmeticTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LargeBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
+import es.pedrazamiguez.splittrip.domain.service.calculator.ExpressionCalculatorService
 import es.pedrazamiguez.splittrip.features.contribution.R
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.event.AddContributionUiEvent
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.state.AddContributionUiState
+import org.koin.compose.koinInject
 
 /**
  * Step 1: Amount input.
@@ -26,15 +28,18 @@ fun ContributionAmountStep(
     uiState: AddContributionUiState,
     onEvent: (AddContributionUiEvent) -> Unit,
     onSubmitKeyboard: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    evaluator: ExpressionCalculatorService = koinInject()
 ) {
     val focusRequester = rememberAutoFocusRequester()
     val focusManager = LocalFocusManager.current
 
     WizardStepLayout(modifier = modifier) {
-        StyledOutlinedTextField(
+        ArithmeticTextField(
             value = uiState.amountInput,
             onValueChange = { onEvent(AddContributionUiEvent.UpdateAmount(it)) },
+            evaluator = evaluator,
+            maxDecimalPlaces = uiState.groupCurrencyDecimalPlaces,
             label = stringResource(R.string.contribution_add_money_amount_hint),
             modifier = Modifier.fillMaxWidth(),
             keyboardType = KeyboardType.Decimal,

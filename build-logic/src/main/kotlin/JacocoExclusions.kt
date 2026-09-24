@@ -207,7 +207,10 @@ object JacocoExclusions {
         "**/SafeCollector*.*",
 
         // ── Flow-combining orchestration (not unit-testable directly, tested via integration)
-        "**/data/datasource/GroupDashboardDataSourceImpl*.*"
+        "**/data/datasource/GroupDashboardDataSourceImpl*.*",
+
+        // ── AdMob & UMP SDK integration wrappers — require Activity & Google Play Services ─
+        "**/designsystem/ad/AdConsentManager*.*"
     )
 }
 

@@ -31,6 +31,19 @@ private fun ProfileScreenWithDataPreview() {
 
 @PreviewComplete
 @Composable
+private fun ProfileScreenProPreview() {
+    ProfileUiPreviewHelper(domainUser = PREVIEW_USER_PRO) { profileUiModel ->
+        ProfileScreen(
+            uiState = ProfileUiState(
+                isLoading = false,
+                profile = profileUiModel
+            )
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
 private fun ProfileScreenNoDisplayNamePreview() {
     ProfileUiPreviewHelper(domainUser = PREVIEW_USER_NO_NAME) { profileUiModel ->
         ProfileScreen(

@@ -26,12 +26,26 @@ class ModifierExtensionsTest {
     }
 
     @Test
-    fun `debouncedClickable with interactionSource and enableSpringPress creates a valid modifier`() {
+    fun `debouncedClickable with ClickableInteraction and enableSpringPress creates a valid modifier`() {
+        val interactionSource = MutableInteractionSource()
+        val modifier = Modifier.debouncedClickable(
+            interaction = ClickableInteraction(
+                interactionSource = interactionSource,
+                indication = null,
+                enableSpringPress = true
+            ),
+            onClick = {}
+        )
+
+        assertNotNull(modifier)
+    }
+
+    @Test
+    fun `debouncedClickable compatibility overload with interactionSource creates a valid modifier`() {
         val interactionSource = MutableInteractionSource()
         val modifier = Modifier.debouncedClickable(
             interactionSource = interactionSource,
             indication = null,
-            enableSpringPress = true,
             onClick = {}
         )
 

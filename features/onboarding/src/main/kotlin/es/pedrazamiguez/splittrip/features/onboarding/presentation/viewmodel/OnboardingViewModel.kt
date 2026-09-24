@@ -26,6 +26,8 @@ class OnboardingViewModel : ViewModel() {
             OnboardingUiEvent.PreviousStep -> onPreviousStep()
             OnboardingUiEvent.Skip -> completeOnboarding()
             OnboardingUiEvent.Complete -> completeOnboarding()
+            OnboardingUiEvent.RequestNotificationPermission -> requestNotificationPermission()
+            is OnboardingUiEvent.UpdateNotificationPermission -> updateNotificationPermission(event.hasPermission)
         }
     }
 
@@ -51,5 +53,15 @@ class OnboardingViewModel : ViewModel() {
         viewModelScope.launch {
             _actions.send(OnboardingUiAction.CompleteOnboarding)
         }
+    }
+
+    private fun requestNotificationPermission() {
+        viewModelScope.launch {
+            _actions.send(OnboardingUiAction.RequestNotificationPermission)
+        }
+    }
+
+    private fun updateNotificationPermission(hasPermission: Boolean) {
+        _uiState.value = _uiState.value.copy(hasNotificationPermission = hasPermission)
     }
 }

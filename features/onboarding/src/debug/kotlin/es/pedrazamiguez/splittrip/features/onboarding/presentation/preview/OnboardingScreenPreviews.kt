@@ -35,6 +35,32 @@ private fun OnboardingScreenIntermediateStepPreview() {
 
 @PreviewThemes
 @Composable
+private fun OnboardingScreenNotificationStepPermissionNotGrantedPreview() {
+    PreviewThemeWrapper {
+        OnboardingScreen(
+            uiState = OnboardingUiState(
+                currentStep = OnboardingStep.REAL_TIME_NOTIFICATIONS,
+                hasNotificationPermission = false
+            )
+        )
+    }
+}
+
+@PreviewThemes
+@Composable
+private fun OnboardingScreenNotificationStepPermissionGrantedPreview() {
+    PreviewThemeWrapper {
+        OnboardingScreen(
+            uiState = OnboardingUiState(
+                currentStep = OnboardingStep.REAL_TIME_NOTIFICATIONS,
+                hasNotificationPermission = true
+            )
+        )
+    }
+}
+
+@PreviewThemes
+@Composable
 private fun OnboardingScreenFinalStepPreview() {
     PreviewThemeWrapper {
         OnboardingScreen(

@@ -5,4 +5,6 @@ sealed interface OnboardingUiEvent {
     data object PreviousStep : OnboardingUiEvent
     data object Skip : OnboardingUiEvent
     data object Complete : OnboardingUiEvent
+    data object RequestNotificationPermission : OnboardingUiEvent
+    data class UpdateNotificationPermission(val hasPermission: Boolean) : OnboardingUiEvent
 }

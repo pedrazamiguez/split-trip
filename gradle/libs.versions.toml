@@ -55,9 +55,11 @@ sonarqube = "7.5.0.8588"
 targetSdk = "37"
 timber = "5.0.1"
 uiautomator = "2.4.0"
+userMessagingPlatform = "3.1.0"
 versionCatalogUpdate = "1.1.1"
 workRuntime = "2.11.2"
 zxing = "3.5.4"
+playServicesAds = "23.6.0"
 
 [libraries]
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
@@ -134,6 +136,8 @@ mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 okhttp-logging-interceptor = "com.squareup.okhttp3:logging-interceptor:5.5.0"
 play-services-mlkit-barcode-scanning = { module = "com.google.android.gms:play-services-mlkit-barcode-scanning", version.ref = "mlkitBarcodeScanning" }
 play-services-mlkit-text-recognition = { module = "com.google.android.gms:play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
+user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
 retrofit-converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }

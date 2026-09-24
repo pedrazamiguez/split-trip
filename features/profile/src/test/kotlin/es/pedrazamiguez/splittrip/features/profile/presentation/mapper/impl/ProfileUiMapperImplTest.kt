@@ -1,9 +1,12 @@
 package es.pedrazamiguez.splittrip.features.profile.presentation.mapper.impl
 
+import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.User
 import java.time.LocalDateTime
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -36,6 +39,7 @@ class ProfileUiMapperImplTest {
             assertEquals("john@example.com", result.email)
             assertEquals("https://example.com/photo.jpg", result.profileImageUrl)
             assertEquals("", result.bio)
+            assertFalse(result.isPro)
         }
 
         @Test
@@ -49,6 +53,7 @@ class ProfileUiMapperImplTest {
             val result = mapper.toProfileUiModel(user)
 
             assertEquals("jane@example.com", result.displayName)
+            assertFalse(result.isPro)
         }
 
         @Test
@@ -62,6 +67,33 @@ class ProfileUiMapperImplTest {
             val result = mapper.toProfileUiModel(user)
 
             assertNull(result.profileImageUrl)
+            assertFalse(result.isPro)
+        }
+
+        @Test
+        fun `maps isPro to true when user tier is PRO`() {
+            val user = User(
+                userId = "user-pro",
+                email = "pro@example.com",
+                tier = SubscriptionTier.PRO
+            )
+
+            val result = mapper.toProfileUiModel(user)
+
+            assertTrue(result.isPro)
+        }
+
+        @Test
+        fun `maps isPro to false when user tier is FREE`() {
+            val user = User(
+                userId = "user-free",
+                email = "free@example.com",
+                tier = SubscriptionTier.FREE
+            )
+
+            val result = mapper.toProfileUiModel(user)
+
+            assertFalse(result.isPro)
         }
     }
 }

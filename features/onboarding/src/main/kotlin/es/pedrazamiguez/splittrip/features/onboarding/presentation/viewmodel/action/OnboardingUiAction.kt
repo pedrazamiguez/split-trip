@@ -2,4 +2,5 @@ package es.pedrazamiguez.splittrip.features.onboarding.presentation.viewmodel.ac
 
 sealed interface OnboardingUiAction {
     data object CompleteOnboarding : OnboardingUiAction
+    data object RequestNotificationPermission : OnboardingUiAction
 }

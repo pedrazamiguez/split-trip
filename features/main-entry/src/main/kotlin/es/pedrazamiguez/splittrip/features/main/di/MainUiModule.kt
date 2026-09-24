@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.features.main.di
 
+import es.pedrazamiguez.splittrip.domain.usecase.ad.GetBannerAdUnitIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
@@ -17,11 +19,15 @@ val mainUiModule = module {
         val getGroupByIdUseCase = get<GetGroupByIdUseCase>()
         val warmCurrencyCacheUseCase = get<WarmCurrencyCacheUseCase>()
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        val shouldShowAdsUseCase = get<ShouldShowAdsUseCase>()
+        val getBannerAdUnitIdUseCase = get<GetBannerAdUnitIdUseCase>()
         MainViewModel(
             registerDeviceTokenUseCase = registerDeviceTokenUseCase,
             getGroupByIdUseCase = getGroupByIdUseCase,
             warmCurrencyCacheUseCase = warmCurrencyCacheUseCase,
-            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase
+            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            shouldShowAdsUseCase = shouldShowAdsUseCase,
+            getBannerAdUnitIdUseCase = getBannerAdUnitIdUseCase
         )
     }
 }

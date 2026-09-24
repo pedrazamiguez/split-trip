@@ -71,6 +71,7 @@ class FeatureGateServiceImplTest {
         assertTrue(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
         assertTrue(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).first())
         assertTrue(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION).first())
+        assertTrue(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
         assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 50).first())
         assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, 50).first())
     }
@@ -82,6 +83,29 @@ class FeatureGateServiceImplTest {
         assertFalse(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).first())
         assertFalse(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION).first())
         assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
+        assertFalse(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
+    }
+
+    @Test
+    fun `isFeatureEnabled with GatedFeature AD_FREE returns true for PRO user and false for FREE user`() = runTest {
+        coEvery { authenticationService.isAnonymous() } returns false
+        coEvery { userRepository.getCurrentUserProfile() } returns User(
+            userId = "user-1",
+            displayName = "Pro User",
+            email = "pro@example.com",
+            tier = SubscriptionTier.PRO
+        )
+
+        assertTrue(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
+
+        coEvery { userRepository.getCurrentUserProfile() } returns User(
+            userId = "user-2",
+            displayName = "Free User",
+            email = "free@example.com",
+            tier = SubscriptionTier.FREE
+        )
+
+        assertFalse(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
     }
 
     @Test

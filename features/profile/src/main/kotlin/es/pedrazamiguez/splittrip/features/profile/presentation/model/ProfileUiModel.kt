@@ -5,5 +5,6 @@ data class ProfileUiModel(
     val displayName: String = "",
     val email: String = "",
     val profileImageUrl: String? = null,
-    val bio: String = ""
+    val bio: String = "",
+    val isPro: Boolean = false
 )
