@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.model
 
+import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -65,5 +66,17 @@ class UserTest {
         val dotted = User.generatePendingUserId("pedraza.miguez@gmail.com")
         val dotless = User.generatePendingUserId("pedrazamiguez@gmail.com")
         assertNotEquals(dotted, dotless)
+    }
+
+    @Test
+    fun `isPro returns true when tier is PRO`() {
+        val user = User(userId = "1", email = "test@example.com", tier = SubscriptionTier.PRO)
+        assertTrue(user.isPro)
+    }
+
+    @Test
+    fun `isPro returns false when tier is FREE`() {
+        val user = User(userId = "1", email = "test@example.com", tier = SubscriptionTier.FREE)
+        assertFalse(user.isPro)
     }
 }

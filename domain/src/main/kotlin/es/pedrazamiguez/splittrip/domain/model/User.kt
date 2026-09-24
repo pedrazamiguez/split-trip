@@ -18,6 +18,8 @@ data class User(
     val preferredReminderTime: String? = null,
     val tier: SubscriptionTier = SubscriptionTier.FREE
 ) {
+    val isPro: Boolean get() = tier == SubscriptionTier.PRO
+
     companion object {
         fun normalizeEmail(email: String): String = email.trim().lowercase()
 
