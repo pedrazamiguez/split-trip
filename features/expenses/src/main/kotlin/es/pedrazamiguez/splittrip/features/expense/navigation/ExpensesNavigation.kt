@@ -37,6 +37,7 @@ fun NavGraphBuilder.expensesGraph() {
             },
             onFiltersReset = { clearedCriteria ->
                 navController.previousBackStackEntry?.savedStateHandle?.set("appliedFilterCriteria", clearedCriteria)
+                navController.popBackStack()
             },
             onNavigateBack = {
                 navController.popBackStack()
