@@ -45,6 +45,12 @@ android {
         testInstrumentationRunner = "es.pedrazamiguez.splittrip.TestRunner"
         // Default: production builds use Play Integrity (no debug App Check logging).
         buildConfigField("Boolean", "USE_DEBUG_APP_CHECK", "false")
+
+        val admobAppId =
+            providers.environmentVariable("SPLTRP_ADMOB_APP_ID").orNull
+                ?: providers.gradleProperty("SPLTRP_ADMOB_APP_ID").orNull
+                ?: "ca-app-pub-3940256099942544~3347511713"
+        manifestPlaceholders["admobAppId"] = admobAppId
     }
 
     signingConfigs {

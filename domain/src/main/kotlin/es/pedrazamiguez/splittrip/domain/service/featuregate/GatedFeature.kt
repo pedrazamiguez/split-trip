@@ -6,5 +6,6 @@ package es.pedrazamiguez.splittrip.domain.service.featuregate
 enum class GatedFeature {
     GROUP_COVER_UPLOAD,
     SUBUNIT_CREATION,
-    AI_RECEIPT_SCANNING
+    AI_RECEIPT_SCANNING,
+    AD_FREE
 }

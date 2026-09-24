@@ -57,7 +57,7 @@ class SubscriptionsUiMapperImplTest {
         assertTrue(freePlan.isCurrentPlan)
         assertFalse(freePlan.isCtaButtonEnabled)
         assertFalse(freePlan.isHighlightedCard)
-        assertEquals(6, freePlan.features.size)
+        assertEquals(7, freePlan.features.size)
         assertFeature(freePlan.features[0], R.string.subscriptions_feature_free_groups, expectedIncluded = true)
         assertFeature(freePlan.features[1], R.string.subscriptions_feature_free_members, expectedIncluded = true)
         assertFeature(
@@ -72,6 +72,7 @@ class SubscriptionsUiMapperImplTest {
         )
         assertFeature(freePlan.features[4], R.string.subscriptions_feature_subunits, expectedIncluded = false)
         assertFeature(freePlan.features[5], R.string.subscriptions_feature_pro_ai_ocr, expectedIncluded = false)
+        assertFeature(freePlan.features[6], R.string.subscriptions_feature_pro_ad_free, expectedIncluded = false)
     }
 
     private fun assertProPlan(proPlan: SubscriptionPlanUiModel) {
@@ -87,7 +88,7 @@ class SubscriptionsUiMapperImplTest {
         assertFalse(proPlan.isCurrentPlan)
         assertTrue(proPlan.isCtaButtonEnabled)
         assertTrue(proPlan.isHighlightedCard)
-        assertEquals(6, proPlan.features.size)
+        assertEquals(7, proPlan.features.size)
         assertFeature(
             proPlan.features[0],
             R.string.subscriptions_feature_pro_unlimited_groups,
@@ -114,12 +115,18 @@ class SubscriptionsUiMapperImplTest {
         )
         assertFeature(
             proPlan.features[4],
+            R.string.subscriptions_feature_pro_ad_free,
+            expectedIncluded = true,
+            expectedHighlighted = true
+        )
+        assertFeature(
+            proPlan.features[5],
             R.string.subscriptions_feature_pro_blended_fx,
             expectedIncluded = true,
             expectedHighlighted = false
         )
         assertFeature(
-            proPlan.features[5],
+            proPlan.features[6],
             R.string.subscriptions_feature_pro_priority_support,
             expectedIncluded = true,
             expectedHighlighted = false

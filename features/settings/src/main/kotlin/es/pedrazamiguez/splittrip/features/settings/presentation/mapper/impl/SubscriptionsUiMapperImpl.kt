@@ -73,6 +73,10 @@ class SubscriptionsUiMapperImpl(
             SubscriptionFeatureUiModel(
                 label = UiText.StringResource(R.string.subscriptions_feature_pro_ai_ocr),
                 isIncluded = false
+            ),
+            SubscriptionFeatureUiModel(
+                label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
+                isIncluded = false
             )
         ).toImmutableList()
 
@@ -108,37 +112,6 @@ class SubscriptionsUiMapperImpl(
             BillingInterval.ANNUAL -> R.string.subscriptions_period_annual_billed
         }
 
-        val features = listOf(
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_pro_unlimited_groups),
-                isIncluded = true,
-                isHighlighted = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_pro_members),
-                isIncluded = true,
-                isHighlighted = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_subunits),
-                isIncluded = true,
-                isHighlighted = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_pro_ai_ocr),
-                isIncluded = true,
-                isHighlighted = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_pro_blended_fx),
-                isIncluded = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_pro_priority_support),
-                isIncluded = true
-            )
-        ).toImmutableList()
-
         return SubscriptionPlanUiModel(
             tier = SubscriptionTier.PRO,
             title = UiText.StringResource(R.string.subscriptions_tier_pro_title),
@@ -146,7 +119,7 @@ class SubscriptionsUiMapperImpl(
             price = UiText.StringResource(priceRes),
             period = UiText.StringResource(periodRes),
             badge = UiText.StringResource(R.string.subscriptions_badge_popular),
-            features = features,
+            features = createProPlanFeatures(),
             isCurrentPlan = isCurrentPlan,
             ctaButtonText = if (isCurrentPlan) {
                 UiText.StringResource(R.string.subscriptions_cta_current_plan)
@@ -157,4 +130,40 @@ class SubscriptionsUiMapperImpl(
             isHighlightedCard = true
         )
     }
+
+    private fun createProPlanFeatures(): ImmutableList<SubscriptionFeatureUiModel> = listOf(
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_pro_unlimited_groups),
+            isIncluded = true,
+            isHighlighted = true
+        ),
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_pro_members),
+            isIncluded = true,
+            isHighlighted = true
+        ),
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_subunits),
+            isIncluded = true,
+            isHighlighted = true
+        ),
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_pro_ai_ocr),
+            isIncluded = true,
+            isHighlighted = true
+        ),
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
+            isIncluded = true,
+            isHighlighted = true
+        ),
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_pro_blended_fx),
+            isIncluded = true
+        ),
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_pro_priority_support),
+            isIncluded = true
+        )
+    ).toImmutableList()
 }

@@ -360,6 +360,7 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SPLTRP_ADMOB_APP_ID: ${{ secrets.SPLTRP_ADMOB_APP_ID }}
         # internalRelease: release-signed + minified but uses DebugAppCheckProviderFactory
         # so sideloaded APKs on physical devices are not rejected by Play Integrity.
         # Switch to assembleRelease once the app is published on Google Play.
