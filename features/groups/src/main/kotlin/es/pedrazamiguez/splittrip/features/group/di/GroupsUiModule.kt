@@ -133,6 +133,7 @@ val groupsUiModule = module {
         val featureGateService = get<FeatureGateService>()
         val appConfigService = get<AppConfigService>()
         val authenticationService = get<AuthenticationService>()
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
 
         CreateEditGroupViewModel(
             navigationEventHandler = navigationEventHandler,
@@ -147,7 +148,8 @@ val groupsUiModule = module {
             groupUiMapper = groupUiMapper,
             featureGateService = featureGateService,
             appConfigService = appConfigService,
-            authenticationService = authenticationService
+            authenticationService = authenticationService,
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase
         )
     }
 
@@ -236,7 +238,14 @@ val groupsUiModule = module {
     } bind NavigationProvider::class
 
     single {
-        GroupsScreenUiProviderImpl()
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
+        val authenticationService = get<AuthenticationService>()
+        val featureGateService = get<FeatureGateService>()
+        GroupsScreenUiProviderImpl(
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            authenticationService = authenticationService,
+            featureGateService = featureGateService
+        )
     } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { GroupDetailScreenUiProviderImpl() } bind ScreenUiProvider::class

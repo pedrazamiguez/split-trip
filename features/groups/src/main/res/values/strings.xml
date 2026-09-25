@@ -231,4 +231,12 @@
     <string name="archive_wizard_confirm_warning_banner">All settlements must be resolved before you can archive this group.</string>
     <string name="archive_wizard_confirm_desc">Archiving this group will freeze all balances and mark the group as inactive. This action is permanent and cannot be undone.</string>
     <string name="archive_wizard_go_to_settlements">Go to Settlements</string>
+
+    <!-- Group Cover Photo Upfront Gate -->
+    <string name="group_cover_photo_locked_pro_badge">Pro</string>
+    <string name="group_cover_photo_locked_description">Cover photos require SplitTrip Pro. Tap to upgrade.</string>
+
+    <!-- Group Member Capacity Indicator -->
+    <string name="group_members_capacity_counter">%1$d/%2$d members</string>
+    <string name="group_members_capacity_pro_upsell">Free limit (%1$d max). Tap to upgrade for up to 20 members.</string>
 </resources>

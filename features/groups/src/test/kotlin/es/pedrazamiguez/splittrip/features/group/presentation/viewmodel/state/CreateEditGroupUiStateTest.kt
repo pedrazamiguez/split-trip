@@ -117,6 +117,16 @@ class CreateEditGroupUiStateTest {
             )
             assertFalse(state.canGoNext)
         }
+
+        @Test
+        fun `canGoNext is false when isCreationBlocked is true`() {
+            val state = CreateEditGroupUiState(
+                isEditMode = false,
+                currentStep = CreateEditGroupStep.INFO,
+                isCreationBlocked = true
+            )
+            assertFalse(state.canGoNext)
+        }
     }
 
     @Nested
@@ -137,6 +147,17 @@ class CreateEditGroupUiStateTest {
 
     @Nested
     inner class IsCurrentStepValid {
+
+        @Test
+        fun `isCurrentStepValid is false when isCreationBlocked is true`() {
+            val state = CreateEditGroupUiState(
+                currentStep = CreateEditGroupStep.INFO,
+                groupName = "My Trip",
+                isNameValid = true,
+                isCreationBlocked = true
+            )
+            assertFalse(state.isCurrentStepValid)
+        }
 
         @Test
         fun `INFO step valid when name is not blank and isNameValid is true`() {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,13 +22,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.badge.ProBadge
 import es.pedrazamiguez.splittrip.features.group.R
 
 @Composable
 internal fun LockedGroupImagePreview(
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val coverHeight = 200.dp
@@ -49,7 +53,8 @@ internal fun LockedGroupImagePreview(
                     start = Offset.Zero,
                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
                 )
-            ),
+            )
+            .debouncedClickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -57,16 +62,28 @@ internal fun LockedGroupImagePreview(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
             modifier = Modifier.padding(MaterialTheme.spacing.Medium)
         ) {
-            Icon(
-                imageVector = TablerIcons.Outline.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                modifier = Modifier.size(48.dp)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+            ) {
+                Icon(
+                    imageVector = TablerIcons.Outline.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                    modifier = Modifier.size(32.dp)
+                )
+                ProBadge()
+            }
             Text(
                 text = stringResource(R.string.group_error_limit_cover_upload_disabled),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = stringResource(R.string.group_cover_photo_locked_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center
             )
         }

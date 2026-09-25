@@ -194,6 +194,25 @@ class CreateEditSubunitViewModel(
         val newParams = InitParams(groupId, subunitId)
         if (newParams != _initParams.value) {
             _initParams.value = newParams
+            if (subunitId == null) {
+                viewModelScope.launch {
+                    val isEnabled = featureGateService.isFeatureEnabled(
+                        feature = GatedFeature.SUBUNIT_CREATION,
+                        groupId = groupId
+                    ).first()
+                    if (!isEnabled) {
+                        _actions.emit(
+                            CreateEditSubunitUiAction.ShowError(
+                                UiText.StringResource(R.string.subunit_error_pro_required)
+                            )
+                        )
+                        if (!featureGateService.isActingUserPro().first()) {
+                            _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
+                        }
+                        _actions.emit(CreateEditSubunitUiAction.NavigateBack)
+                    }
+                }
+            }
         }
     }
 

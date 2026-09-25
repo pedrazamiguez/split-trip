@@ -110,6 +110,11 @@ class ReceiptAutoFillEventHandler(
     ) {
         val isEnabled = featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first()
         if (!isEnabled) {
+            _actionsFlow.emit(
+                AddExpenseUiAction.ShowPill(
+                    UiText.StringResource(R.string.expense_autofill_pro_required)
+                )
+            )
             _actionsFlow.emit(AddExpenseUiAction.NavigateToSubscriptions)
             return
         }
@@ -160,6 +165,11 @@ class ReceiptAutoFillEventHandler(
             scope.launch {
                 val isEnabled = featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first()
                 if (!isEnabled) {
+                    _actionsFlow.emit(
+                        AddExpenseUiAction.ShowPill(
+                            UiText.StringResource(R.string.expense_autofill_pro_required)
+                        )
+                    )
                     _actionsFlow.emit(AddExpenseUiAction.NavigateToSubscriptions)
                     return@launch
                 }

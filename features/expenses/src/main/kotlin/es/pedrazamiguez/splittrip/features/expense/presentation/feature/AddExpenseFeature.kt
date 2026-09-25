@@ -53,7 +53,6 @@ fun AddExpenseFeature(
     val context = LocalContext.current
     val navController = LocalTabNavController.current
     val rootNavController = LocalRootNavController.current
-    val proRequiredMessage = stringResource(R.string.expense_autofill_pro_required)
 
     val state by addExpenseViewModel.uiState.collectAsStateWithLifecycle()
     val selectedGroupId = sharedViewModel.selectedGroupId.collectAsStateWithLifecycle()
@@ -86,10 +85,8 @@ fun AddExpenseFeature(
 
                 AddExpenseUiAction.NavigateBack -> navController.popBackStack()
 
-                AddExpenseUiAction.NavigateToSubscriptions -> {
-                    pillController.showPill(message = proRequiredMessage)
+                AddExpenseUiAction.NavigateToSubscriptions ->
                     rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS)
-                }
 
                 AddExpenseUiAction.None -> Unit
             }

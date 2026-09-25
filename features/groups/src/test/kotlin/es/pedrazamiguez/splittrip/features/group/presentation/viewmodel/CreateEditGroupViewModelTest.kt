@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
@@ -11,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
@@ -24,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyU
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
+import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
@@ -116,6 +119,8 @@ class CreateEditGroupViewModelTest {
         emailValidationService = EmailValidationServiceImpl()
         appConfigService = mockk(relaxed = true) {
             every { defaultCurrencyCode } returns MutableStateFlow("EUR")
+            every { maxMembersPerGroupFree } returns MutableStateFlow(4)
+            every { maxMembersPerGroupPro } returns MutableStateFlow(20)
         }
         authenticationService = mockk(relaxed = true)
         every { authenticationService.currentUserEmail() } returns testUser1.email
@@ -123,6 +128,7 @@ class CreateEditGroupViewModelTest {
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
         every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
         every { featureGateService.isFeatureEnabled(any(), any()) } returns flowOf(true)
+        every { featureGateService.isActingUserPro() } returns flowOf(false)
         coEvery { featureGateService.checkLimit(any(), any(), any()) } returns flowOf(LimitResult.Allowed)
         coEvery { getSupportedCurrenciesUseCase() } returns Result.success(emptyList())
         every { groupUiMapper.toCurrencyUiModels(any()) } returns
@@ -161,6 +167,7 @@ class CreateEditGroupViewModelTest {
             featureGateService = featureGateService,
             appConfigService = appConfigService,
             authenticationService = authenticationService,
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             defaultDispatcher = testDispatcher
         )
     }
@@ -729,6 +736,127 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertFalse(viewModel.uiState.value.showUpgradeDialog)
+            }
+
+        @Test
+        fun `onEvent DismissUpgradeDialog emits NavigateBack when isCreationBlocked is true`() =
+            runTest(testDispatcher) {
+                every { authenticationService.currentUserId() } returns "user-1"
+                every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup.copy(createdBy = "user-1")))
+                coEvery {
+                    featureGateService.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 1)
+                } returns flowOf(LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = true))
+
+                val customVm = createViewModel()
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    customVm.actions.collect { actionsList.add(it) }
+                }
+
+                customVm.init(null)
+                advanceUntilIdle()
+
+                assertTrue(customVm.uiState.value.isCreationBlocked)
+                assertTrue(customVm.uiState.value.showUpgradeDialog)
+
+                customVm.onEvent(CreateEditGroupUiEvent.DismissUpgradeDialog) {}
+                advanceUntilIdle()
+
+                assertFalse(customVm.uiState.value.showUpgradeDialog)
+                assertEquals(
+                    listOf(CreateEditGroupUiAction.NavigateBack),
+                    actionsList
+                )
+                job.cancel()
+            }
+
+        @Test
+        fun `init with null groupId when owned groups limit reached blocks creation and shows upgrade dialog`() =
+            runTest(testDispatcher) {
+                every { authenticationService.currentUserId() } returns "user-1"
+                every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup.copy(createdBy = "user-1")))
+                coEvery {
+                    featureGateService.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 1)
+                } returns flowOf(LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = true))
+
+                val customVm = createViewModel()
+                customVm.init(null)
+                advanceUntilIdle()
+
+                assertTrue(customVm.uiState.value.isCreationBlocked)
+                assertTrue(customVm.uiState.value.showUpgradeDialog)
+            }
+
+        @Test
+        fun `onEvent LockedCoverPhotoClicked emits ShowError and NavigateToRoute with SETTINGS_SUBSCRIPTIONS`() =
+            runTest(testDispatcher) {
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                viewModel.onEvent(CreateEditGroupUiEvent.LockedCoverPhotoClicked) {}
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf(
+                        CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
+                        ),
+                        CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS)
+                    ),
+                    actionsList
+                )
+                job.cancel()
+            }
+
+        @Test
+        fun `onEvent MemberCapacityUpsellClicked emits NavigateToRoute with SETTINGS_SUBSCRIPTIONS`() =
+            runTest(testDispatcher) {
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                viewModel.onEvent(CreateEditGroupUiEvent.MemberCapacityUpsellClicked) {}
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS)),
+                    actionsList
+                )
+                job.cancel()
+            }
+
+        @Test
+        fun `handleMemberSelected when limit reached triggers upgrade dialog and emits ShowError`() =
+            runTest(testDispatcher) {
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                viewModel.init(null)
+                advanceUntilIdle()
+
+                val members = (1..4).map { idx ->
+                    User(userId = "user-$idx", email = "user$idx@example.com")
+                }
+                members.forEach { user ->
+                    viewModel.onEvent(CreateEditGroupUiEvent.MemberSelected(user)) {}
+                }
+                advanceUntilIdle()
+
+                assertEquals(4, viewModel.uiState.value.selectedMembers.size)
+
+                val fifthUser = User(userId = "user-5", email = "user5@example.com")
+                viewModel.onEvent(CreateEditGroupUiEvent.MemberSelected(fifthUser)) {}
+                advanceUntilIdle()
+
+                assertEquals(4, viewModel.uiState.value.selectedMembers.size)
+                assertTrue(viewModel.uiState.value.showUpgradeDialog)
+                assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+                job.cancel()
             }
     }
 }

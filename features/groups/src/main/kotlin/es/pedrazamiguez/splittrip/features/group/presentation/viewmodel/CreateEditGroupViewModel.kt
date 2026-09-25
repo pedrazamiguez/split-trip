@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.LogTag
@@ -14,8 +15,11 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
+import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
@@ -46,7 +50,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "TooManyFunctions")
 class CreateEditGroupViewModel(
     private val navigationEventHandler: CreateEditGroupNavigationEventHandler,
     private val imageEventHandler: CreateEditGroupImageEventHandler,
@@ -61,6 +65,7 @@ class CreateEditGroupViewModel(
     private val featureGateService: FeatureGateService,
     private val appConfigService: AppConfigService,
     private val authenticationService: AuthenticationService,
+    private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -79,26 +84,88 @@ class CreateEditGroupViewModel(
         submitEventHandler.bind(_uiState, _actions, viewModelScope)
 
         imageEventHandler.cleanTempImages()
-
-        viewModelScope.launch {
-            featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).collect { isEnabled ->
-                _uiState.update { it.copy(isCoverUploadEnabled = isEnabled) }
-            }
-        }
     }
 
     fun init(groupId: String?) {
         if (isInitialized) return
         isInitialized = true
 
-        if (groupId != null) {
-            viewModelScope.launch {
-                featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId).collect { isEnabled ->
-                    _uiState.update { it.copy(isCoverUploadEnabled = isEnabled) }
+        observeCoverUploadGate(groupId)
+
+        if (groupId == null) {
+            checkGroupCreationLimit()
+            observeActingUserMemberLimit()
+        } else {
+            observeExistingGroupMemberLimit(groupId)
+        }
+
+        loadInitialUserData(groupId)
+    }
+
+    private fun observeCoverUploadGate(groupId: String?) {
+        viewModelScope.launch {
+            featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId).collect { isEnabled ->
+                _uiState.update { it.copy(isCoverUploadEnabled = isEnabled) }
+            }
+        }
+    }
+
+    private fun checkGroupCreationLimit() {
+        viewModelScope.launch {
+            val currentGroups = getUserGroupsFlowUseCase().firstOrNull() ?: emptyList()
+            val currentUserId = authenticationService.currentUserId()
+            val ownedGroupsCount = currentGroups.count { it.createdBy == currentUserId }
+            val limitResult = featureGateService.checkLimit(
+                limit = GatedLimit.MAX_OWNED_GROUPS_COUNT,
+                currentCount = ownedGroupsCount
+            ).firstOrNull()
+            if (limitResult is LimitResult.Blocked && limitResult.upgradeRequired) {
+                _uiState.update {
+                    it.copy(
+                        isCreationBlocked = true,
+                        showUpgradeDialog = true,
+                        upgradeDialogTitle = UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
+                        upgradeDialogMessage = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
+                    )
                 }
             }
         }
+    }
 
+    private fun observeActingUserMemberLimit() {
+        viewModelScope.launch {
+            featureGateService.isActingUserPro().collect { isPro ->
+                _uiState.update {
+                    it.copy(
+                        isGroupPro = isPro,
+                        maxMembersLimit = if (isPro) {
+                            appConfigService.maxMembersPerGroupPro.value
+                        } else {
+                            appConfigService.maxMembersPerGroupFree.value
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun observeExistingGroupMemberLimit(groupId: String) {
+        viewModelScope.launch {
+            val maxFree = appConfigService.maxMembersPerGroupFree.value
+            val maxPro = appConfigService.maxMembersPerGroupPro.value
+            featureGateService.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, maxFree, groupId).collect { result ->
+                val isPro = result is LimitResult.Allowed
+                _uiState.update {
+                    it.copy(
+                        isGroupPro = isPro,
+                        maxMembersLimit = if (isPro) maxPro else maxFree
+                    )
+                }
+            }
+        }
+    }
+
+    private fun loadInitialUserData(groupId: String?) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val email = authenticationService.currentUserEmail()
@@ -109,7 +176,7 @@ class CreateEditGroupViewModel(
         }
     }
 
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun onEvent(event: CreateEditGroupUiEvent, onSuccess: () -> Unit) {
         Timber.tag(LogTag.MVI).d("Event: ${formatEventForLogging(event)}")
         when (event) {
@@ -162,6 +229,26 @@ class CreateEditGroupViewModel(
             }
             is CreateEditGroupUiEvent.DismissUpgradeDialog -> {
                 _uiState.update { it.copy(showUpgradeDialog = false) }
+                if (_uiState.value.isCreationBlocked) {
+                    viewModelScope.launch {
+                        _actions.emit(CreateEditGroupUiAction.NavigateBack)
+                    }
+                }
+            }
+            is CreateEditGroupUiEvent.LockedCoverPhotoClicked -> {
+                viewModelScope.launch {
+                    _actions.emit(
+                        CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
+                        )
+                    )
+                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS))
+                }
+            }
+            is CreateEditGroupUiEvent.MemberCapacityUpsellClicked -> {
+                viewModelScope.launch {
+                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS))
+                }
             }
         }
     }
@@ -190,15 +277,32 @@ class CreateEditGroupViewModel(
     }
 
     private fun handleMemberSelected(event: CreateEditGroupUiEvent.MemberSelected) {
-        _uiState.update { state ->
-            if (state.selectedMembers.any { it.userId == event.user.userId }) {
-                state
-            } else {
-                state.copy(
-                    selectedMembers = (state.selectedMembers + event.user).toImmutableList(),
-                    memberSearchResults = persistentListOf()
-                )
+        val state = _uiState.value
+        if (state.selectedMembers.any { it.userId == event.user.userId }) {
+            return
+        }
+        if (state.selectedMembers.size >= state.maxMembersLimit) {
+            val errorRes = UiText.StringResource(R.string.group_error_limit_members_exceeded)
+            if (!state.isGroupPro) {
+                _uiState.update {
+                    it.copy(
+                        showUpgradeDialog = true,
+                        upgradeDialogTitle = UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
+                        upgradeDialogMessage = errorRes,
+                        memberSearchResults = persistentListOf()
+                    )
+                }
             }
+            viewModelScope.launch {
+                _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
+            }
+            return
+        }
+        _uiState.update {
+            it.copy(
+                selectedMembers = (it.selectedMembers + event.user).toImmutableList(),
+                memberSearchResults = persistentListOf()
+            )
         }
     }
 
@@ -330,8 +434,26 @@ class CreateEditGroupViewModel(
     }
 
     private fun handleMemberScanned(userId: String, email: String) {
-        val alreadySelected = _uiState.value.selectedMembers.any { it.userId == userId }
+        val state = _uiState.value
+        val alreadySelected = state.selectedMembers.any { it.userId == userId }
         if (alreadySelected) return
+
+        if (state.selectedMembers.size >= state.maxMembersLimit) {
+            val errorRes = UiText.StringResource(R.string.group_error_limit_members_exceeded)
+            if (!state.isGroupPro) {
+                _uiState.update {
+                    it.copy(
+                        showUpgradeDialog = true,
+                        upgradeDialogTitle = UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
+                        upgradeDialogMessage = errorRes
+                    )
+                }
+            }
+            viewModelScope.launch {
+                _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
+            }
+            return
+        }
 
         val partialUser = User(
             userId = userId,
@@ -340,9 +462,9 @@ class CreateEditGroupViewModel(
             profileImagePath = null,
             bio = null
         )
-        _uiState.update { state ->
-            state.copy(
-                selectedMembers = (state.selectedMembers + partialUser).toImmutableList()
+        _uiState.update {
+            it.copy(
+                selectedMembers = (it.selectedMembers + partialUser).toImmutableList()
             )
         }
 
