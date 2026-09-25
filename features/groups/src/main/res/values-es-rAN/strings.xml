@@ -202,4 +202,8 @@
     <string name="archive_wizard_confirm_warning_banner">Tôh lô acuerdô de pago deben êttâh reçuertô antê de podêh arxibâh êtte grupo.</string>
     <string name="archive_wizard_confirm_desc">Arxibâh êtte grupo conhelará tôh lô balançê y marcará er grupo como inâttibo. Êtta âççión êh permanente y no çe puede deçaçêh.</string>
     <string name="archive_wizard_go_to_settlements">Îh a Acuerdô de pago</string>
+    <string name="group_cover_photo_locked_pro_badge">Pro</string>
+    <string name="group_cover_photo_locked_description">Lâ fotô de portá requieren SplîTTrîh Pro. Toca pa dêbbloqueâh.</string>
+    <string name="group_members_capacity_counter">%1$d/%2$d miembrô</string>
+    <string name="group_members_capacity_pro_upsell">Límite Gratî (mâh. %1$d). Toca pa ampliâh âtta 20 miembrô con Pro.</string>
 </resources>

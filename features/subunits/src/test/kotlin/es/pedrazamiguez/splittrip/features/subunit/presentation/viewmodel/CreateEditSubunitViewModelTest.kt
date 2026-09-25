@@ -182,6 +182,32 @@ class CreateEditSubunitViewModelTest {
         }
 
         @Test
+        fun `init in create mode when creation disabled emits error and paywall`() = runTest(testDispatcher) {
+            every {
+                featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
+            } returns flowOf(false)
+            every { featureGateService.isActingUserPro() } returns flowOf(false)
+            setupDefaultMocks()
+            createViewModel()
+
+            val actions = mutableListOf<CreateEditSubunitUiAction>()
+            val collectJob = backgroundScope.launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.init("group-1", null)
+            advanceUntilIdle()
+
+            assertEquals(3, actions.size)
+            assertEquals(
+                CreateEditSubunitUiAction.ShowError(UiText.StringResource(R.string.subunit_error_pro_required)),
+                actions[0]
+            )
+            assertEquals(CreateEditSubunitUiAction.NavigateToSubscriptions, actions[1])
+            assertEquals(CreateEditSubunitUiAction.NavigateBack, actions[2])
+
+            collectJob.cancel()
+        }
+
+        @Test
         fun `UpdateName updates name and clears error`() = runTest(testDispatcher) {
             setupDefaultMocks()
             createViewModel()

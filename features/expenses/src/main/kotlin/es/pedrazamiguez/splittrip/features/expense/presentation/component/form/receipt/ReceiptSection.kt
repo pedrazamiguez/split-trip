@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -27,6 +28,11 @@ internal fun ReceiptSection(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         SectionHeadingText(text = stringResource(R.string.add_expense_receipt_title))
+        Text(
+            text = stringResource(R.string.add_expense_receipt_manual_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         ReceiptImagePicker(
             receiptUri = receiptUri,
             mimeType = mimeType,

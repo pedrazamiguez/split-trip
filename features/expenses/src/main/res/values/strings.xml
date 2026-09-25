@@ -381,4 +381,8 @@
     <string name="confirm_payment_expected_charge_label">Estimated group charge: %1$s</string>
     <string name="confirm_payment_actual_amount_field_label">Actual charge in %1$s</string>
     <string name="expense_detail_expected_with_shift">Estimated: %1$s (%2$s shift)</string>
+
+    <!-- AI Scan Pro Gate and Manual Receipt Demarcation -->
+    <string name="expense_autofill_unlock_with_pro">Unlock AI Scan with Pro</string>
+    <string name="add_expense_receipt_manual_description">Attach a receipt photo or PDF as proof of purchase for all members (Free &amp; unlimited).</string>
 </resources>

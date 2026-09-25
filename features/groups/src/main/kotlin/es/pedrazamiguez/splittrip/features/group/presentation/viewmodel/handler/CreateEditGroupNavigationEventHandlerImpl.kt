@@ -30,6 +30,7 @@ class CreateEditGroupNavigationEventHandlerImpl : CreateEditGroupNavigationEvent
         val state = _uiState.value
         when (event) {
             is CreateEditGroupUiEvent.NextStep -> {
+                if (state.isCreationBlocked) return
                 val next = wizardNavigator.navigateNext(state.currentStep, state.steps) ?: return
                 _uiState.update { it.copy(currentStep = next, error = null) }
             }
@@ -55,6 +56,7 @@ class CreateEditGroupNavigationEventHandlerImpl : CreateEditGroupNavigationEvent
                 }
             }
             is CreateEditGroupUiEvent.JumpToStep -> {
+                if (state.isCreationBlocked) return
                 val target = wizardNavigator.jumpToStep(state.currentStep, event.stepIndex, state.steps) ?: return
                 _uiState.update { it.copy(currentStep = target, error = null) }
             }

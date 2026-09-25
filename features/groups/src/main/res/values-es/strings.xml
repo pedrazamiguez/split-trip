@@ -232,4 +232,12 @@
     <string name="archive_wizard_confirm_warning_banner">Todos los acuerdos de pago deben estar resueltos antes de poder archivar este grupo.</string>
     <string name="archive_wizard_confirm_desc">Archivar este grupo congelará todos los balances y marcará el grupo como inactivo. Esta acción es permanente y no se puede deshacer.</string>
     <string name="archive_wizard_go_to_settlements">Ir a Acuerdos de pago</string>
+
+    <!-- Group Cover Photo Upfront Gate -->
+    <string name="group_cover_photo_locked_pro_badge">Pro</string>
+    <string name="group_cover_photo_locked_description">Las fotos de portada requieren SplitTrip Pro. Toca para desbloquear.</string>
+
+    <!-- Group Member Capacity Indicator -->
+    <string name="group_members_capacity_counter">%1$d/%2$d miembros</string>
+    <string name="group_members_capacity_pro_upsell">Límite Gratis (máx. %1$d). Toca para ampliar hasta 20 miembros con Pro.</string>
 </resources>

@@ -51,7 +51,9 @@ fun GroupImageStep(
                 onImageRemoved = { onEvent(CreateEditGroupUiEvent.GroupImageRemoved) }
             )
         } else {
-            LockedGroupImagePreview()
+            LockedGroupImagePreview(
+                onClick = { onEvent(CreateEditGroupUiEvent.LockedCoverPhotoClicked) }
+            )
         }
     }
 }
