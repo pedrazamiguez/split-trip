@@ -2,6 +2,7 @@
 
 > [!IMPORTANT]
 > **Source of Truth:** This document is the single source of truth for Google Play Console store listing copy, categorization, Data Safety declarations, and graphic asset specifications for **SplitTrip**.
+> For the step-by-step developer execution runbook in Google Play Console, see [`docs/release/play-console-sdd-runbook.md`](play-console-sdd-runbook.md).
 
 ---
 
@@ -22,7 +23,10 @@
 
 ---
 
-## 2. English Store Listing (`en-US`)
+## 2. English Store Listing (`en-GB` / `en-US`)
+
+> [!NOTE]
+> Per [#1691](https://github.com/pedrazamiguez/split-trip/issues/1691), all English copy is standardised to British English (`en-GB`) to align with SplitTrip's primary European travel market and `splittrip.eu` identity. Both `en-GB` and `en-US` listings use this unified copy.
 
 ### App Title (25 / 30 characters)
 ```text
@@ -34,14 +38,14 @@ SplitTrip: Group Expenses
 Split travel expenses offline & multi-currency. Fair debts, zero stress.
 ```
 
-### Full Description (2,486 / 4,000 characters)
+### Full Description (2,488 / 4,000 characters)
 ```text
-Traveling with friends, family, or your partner should be about making memories—not doing accounting gymnastics in messy spreadsheets. SplitTrip is the modern, offline-first group expense manager crafted specifically for travelers who cross borders, share expenses, and value fairness.
+Travelling with friends, family, or your partner should be about making memories—not doing accounting gymnastics in messy spreadsheets. SplitTrip is the modern, offline-first group expense manager crafted specifically for travellers who cross borders, share expenses, and value fairness.
 
-Whether you're backpacking through Southeast Asia, organizing a European road trip, or sharing an apartment with roommates, SplitTrip handles complex currencies, cash pockets, and debt settlements effortlessly.
+Whether you're backpacking through Southeast Asia, organising a European road trip, or sharing an apartment with flatmates, SplitTrip handles complex currencies, cash pockets, and debt settlements effortlessly.
 
 ⚡ TRUE OFFLINE-FIRST ARCHITECTURE
-Log expenses anywhere—on a mountain hike, on a flight, or in remote areas with zero cell reception. SplitTrip writes all transactions instantly to your local device database. When internet connection is restored, background synchronization reconciles changes across your entire group automatically.
+Log expenses anywhere—on a mountain hike, on a flight, or in remote areas with zero cell reception. SplitTrip writes all transactions instantly to your local device database. When internet connection is restored, background synchronisation reconciles changes across your entire group automatically.
 
 🌍 MULTI-CURRENCY & REAL-TIME EXCHANGE RATES
 Spend in Japanese Yen, pay back in Euros, or split in US Dollars. SplitTrip supports 150+ global currencies with live exchange rates and captures immutable rate snapshots at the moment of each transaction so past calculations never shift unexpectedly.
@@ -53,7 +57,7 @@ Eliminate end-of-trip awkwardness. SplitTrip simplifies tangled web-of-debt bala
 Keep shared virtual group funds separate from physical cash in hand. Track contributions into the group pocket and log cash withdrawals with First-In, First-Out (FIFO) currency tracking to ensure exact multi-currency precision down to the cent.
 
 👥 SUBUNITS FOR COUPLES & FAMILIES
-Traveling as a couple or family within a larger group? Create subunits to aggregate balances or split bills proportionally between units without tedious manual recalculations.
+Travelling as a couple or family within a larger group? Create subunits to aggregate balances or split bills proportionally between units without tedious manual recalculations.
 
 📸 SMART RECEIPT SCANNING [PRO]
 Snap a photo of your dining or taxi receipt. SplitTrip extracts the total, tax, currency, and line items automatically, letting you assign specific dishes or add-on items to companions in seconds.
@@ -61,6 +65,7 @@ Snap a photo of your dining or taxi receipt. SplitTrip extracts the total, tax, 
 🔒 AD-FREE WITH PRO & PRIVACY-FIRST
 Your financial data belongs to you. No bank linking or credit cards required. SplitTrip is a dedicated travel expense ledger—we never access your personal bank accounts or process money transfers. SplitTrip Pro offers an entirely ad-free experience, while the Free tier includes non-intrusive banner and occasional interstitial ads. SplitTrip never sells your transaction history to data brokers.
 ```
+
 
 ---
 
@@ -175,3 +180,21 @@ A minimum of 4 and maximum of 8 screenshots are required. The recommended 6-scre
 ### Tablet Screenshots Specification
 - **7-inch Tablet:** Minimum 1 screenshot (min 1200 x 1920 or 1920 x 1200), max 8 screenshots. Recommended: Trips Hub & Balances Dashboard in 2-pane master-detail layout.
 - **10-inch Tablet:** Minimum 1 screenshot (min 1600 x 2560 or 2560 x 1600), max 8 screenshots. Recommended: Expense Log with side-by-side expense preview.
+
+---
+
+### Promotional Video (YouTube URL)
+
+- **Google Play Field Status:** **Optional** (unstarred).
+- **v1.0.0 Launch Strategy:** Leave empty for initial MVP submission to unblock closed testing and production rollout without video production lead time.
+- **Policy Requirements for Future Updates:**
+  - Standard YouTube video URL (`https://www.youtube.com/watch?v=...`).
+  - Video must be Public or Unlisted.
+  - Ads and monetization must be disabled.
+  - Landscape 16:9 orientation (1920 x 1080).
+- **Target 30-Second Storyboard (Post-MVP):**
+  - `00:00–00:05`: Group arriving in Tokyo / Barcelona — split-second expense entry in JPY/EUR with zero cell coverage (*"Offline-First Ledger"*).
+  - `00:05–00:12`: Multi-currency receipt scan with AI itemization assigning dishes to individuals and couples (*"Smart Receipt OCR"*).
+  - `00:12–00:20`: Group pocket fund tracking & cash withdrawal with FIFO multi-currency precision (*"Virtual Pocket & Cash"*).
+  - `00:20–00:26`: "Your Position" consensus matrix reducing 15 debts to 2 simple transfers (*"Settlement Consensus"*).
+  - `00:26–00:30`: Horizon branding, tagline *"Split expenses without borders"*, and call-to-action on Google Play.
