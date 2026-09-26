@@ -96,28 +96,22 @@ class SubunitSplitEventHandler(
                     displayName = addExpenseSplitMapper.resolveDisplayName(memberId, memberProfiles, currentUserId),
                     subunitId = subunit.id
                 )
-            }.sortedWith(
-                compareBy(String.CASE_INSENSITIVE_ORDER) { it.displayName }
-            ).toImmutableList()
+            }
+            val sortedMemberRows = addExpenseSplitMapper.sortSubunitMembers(memberRows, currentUserId)
 
             entityRows.add(
                 SplitUiModel(
                     userId = subunit.id,
                     displayName = subunit.name,
                     isEntityRow = true,
-                    entityMembers = memberRows,
+                    entityMembers = sortedMemberRows,
                     entitySplitType = defaultSplitType
                 )
             )
         }
 
-        // Sort entity rows: solo members first, then subunits, alphabetically within each group
-        val sortedEntityRows = entityRows
-            .sortedWith(
-                compareBy<SplitUiModel> { it.entityMembers.isNotEmpty() }
-                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.displayName }
-            )
-            .toImmutableList()
+        // Sort entity rows using shared mapper logic
+        val sortedEntityRows = addExpenseSplitMapper.sortEntityRows(entityRows, currentUserId)
 
         _uiState.update {
             it.copy(
