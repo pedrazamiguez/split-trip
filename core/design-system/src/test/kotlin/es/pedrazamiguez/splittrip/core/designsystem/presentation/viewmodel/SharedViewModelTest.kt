@@ -283,6 +283,133 @@ class SharedViewModelTest {
 
             collectJob.cancel()
         }
+
+        @Test
+        fun `emits group name from selectedGroup when group model is present`() = runTest(testDispatcher) {
+            val group = Group(id = "group-1", name = "Alpine Adventure", currency = "CHF")
+            every { observeSelectedGroupUseCase() } returns flowOf(group)
+            every { getSelectedGroupIdUseCase() } returns flowOf()
+            every { getSelectedGroupNameUseCase() } returns flowOf("Old Stored Name")
+            every { getSelectedGroupCurrencyUseCase() } returns flowOf()
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.selectedGroupName.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("Alpine Adventure", viewModel.selectedGroupName.value)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `reflects updated group name reactively when selectedGroup emits update`() = runTest(testDispatcher) {
+            val groupFlow = MutableStateFlow<Group?>(Group(id = "group-1", name = "Old Name", currency = "EUR"))
+            every { observeSelectedGroupUseCase() } returns groupFlow
+            every { getSelectedGroupIdUseCase() } returns flowOf()
+            every { getSelectedGroupNameUseCase() } returns flowOf("Fallback Name")
+            every { getSelectedGroupCurrencyUseCase() } returns flowOf()
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.selectedGroupName.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("Old Name", viewModel.selectedGroupName.value)
+
+            groupFlow.value = Group(id = "group-1", name = "New Name", currency = "EUR")
+            advanceUntilIdle()
+
+            assertEquals("New Name", viewModel.selectedGroupName.value)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `falls back to preference when selectedGroup is null`() = runTest(testDispatcher) {
+            every { observeSelectedGroupUseCase() } returns flowOf(null)
+            every { getSelectedGroupIdUseCase() } returns flowOf()
+            every { getSelectedGroupNameUseCase() } returns flowOf("Fallback From DataStore")
+            every { getSelectedGroupCurrencyUseCase() } returns flowOf()
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.selectedGroupName.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("Fallback From DataStore", viewModel.selectedGroupName.value)
+
+            collectJob.cancel()
+        }
+    }
+
+    @Nested
+    @DisplayName("selectedGroupCurrency")
+    inner class SelectedGroupCurrency {
+
+        @Test
+        fun `initial value is null before use case emits`() = runTest(testDispatcher) {
+            every { observeSelectedGroupUseCase() } returns flowOf()
+            every { getSelectedGroupIdUseCase() } returns flowOf()
+            every { getSelectedGroupNameUseCase() } returns flowOf()
+            every { getSelectedGroupCurrencyUseCase() } returns flowOf()
+
+            val viewModel = createViewModel()
+
+            assertNull(viewModel.selectedGroupCurrency.value)
+        }
+
+        @Test
+        fun `emits group currency from selectedGroup when group model is present`() = runTest(testDispatcher) {
+            val group = Group(id = "group-1", name = "Japan Trip", currency = "JPY")
+            every { observeSelectedGroupUseCase() } returns flowOf(group)
+            every { getSelectedGroupIdUseCase() } returns flowOf()
+            every { getSelectedGroupNameUseCase() } returns flowOf()
+            every { getSelectedGroupCurrencyUseCase() } returns flowOf("USD")
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.selectedGroupCurrency.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("JPY", viewModel.selectedGroupCurrency.value)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `reflects updated group currency reactively when selectedGroup emits update`() = runTest(testDispatcher) {
+            val groupFlow = MutableStateFlow<Group?>(Group(id = "group-1", name = "Trip", currency = "EUR"))
+            every { observeSelectedGroupUseCase() } returns groupFlow
+            every { getSelectedGroupIdUseCase() } returns flowOf()
+            every { getSelectedGroupNameUseCase() } returns flowOf()
+            every { getSelectedGroupCurrencyUseCase() } returns flowOf("USD")
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.selectedGroupCurrency.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("EUR", viewModel.selectedGroupCurrency.value)
+
+            groupFlow.value = Group(id = "group-1", name = "Trip", currency = "GBP")
+            advanceUntilIdle()
+
+            assertEquals("GBP", viewModel.selectedGroupCurrency.value)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `falls back to preference when selectedGroup is null`() = runTest(testDispatcher) {
+            every { observeSelectedGroupUseCase() } returns flowOf(null)
+            every { getSelectedGroupIdUseCase() } returns flowOf()
+            every { getSelectedGroupNameUseCase() } returns flowOf()
+            every { getSelectedGroupCurrencyUseCase() } returns flowOf("EUR")
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.selectedGroupCurrency.collect {} }
+            advanceUntilIdle()
+
+            assertEquals("EUR", viewModel.selectedGroupCurrency.value)
+
+            collectJob.cancel()
+        }
     }
 
     @Nested
@@ -335,7 +462,7 @@ class SharedViewModelTest {
             val groupIdFlow = MutableStateFlow<String?>(null)
             val groupNameFlow = MutableStateFlow<String?>(null)
             val groupCurrencyFlow = MutableStateFlow<String?>(null)
-            val groupFlow = MutableStateFlow<es.pedrazamiguez.splittrip.domain.model.Group?>(null)
+            val groupFlow = MutableStateFlow<Group?>(null)
             every { getSelectedGroupIdUseCase() } returns groupIdFlow
             every { getSelectedGroupNameUseCase() } returns groupNameFlow
             every { getSelectedGroupCurrencyUseCase() } returns groupCurrencyFlow
@@ -343,10 +470,17 @@ class SharedViewModelTest {
             every { observeGroupUseCase(any()) } answers { groupFlow }
             coEvery { setSelectedGroupUseCase(any(), any(), any()) } coAnswers {
                 // Simulate DataStore behavior: writing updates the observed flows
-                groupIdFlow.value = arg(0)
-                groupNameFlow.value = arg(1)
-                groupCurrencyFlow.value = arg(2)
-                groupFlow.value = if (arg<String?>(0) != null) mockk() else null
+                val id = arg<String?>(0)
+                val name = arg<String?>(1)
+                val currency = arg<String?>(2)
+                groupIdFlow.value = id
+                groupNameFlow.value = name
+                groupCurrencyFlow.value = currency
+                groupFlow.value = if (id != null) {
+                    Group(id = id, name = name ?: "", currency = currency ?: "EUR")
+                } else {
+                    null
+                }
             }
 
             val viewModel = createViewModel()
@@ -382,7 +516,7 @@ class SharedViewModelTest {
         @Test
         fun `clears selectedGroupId when group resolves to null for non-null stored id`() = runTest(testDispatcher) {
             val groupIdFlow = MutableStateFlow<String?>("stale-id")
-            val groupFlow = MutableStateFlow<es.pedrazamiguez.splittrip.domain.model.Group?>(null)
+            val groupFlow = MutableStateFlow<Group?>(null)
             every { getSelectedGroupIdUseCase() } returns groupIdFlow
             every { getSelectedGroupNameUseCase() } returns flowOf()
             every { getSelectedGroupCurrencyUseCase() } returns flowOf()
@@ -398,7 +532,7 @@ class SharedViewModelTest {
         @Test
         fun `does not clear when both selectedGroupId and selectedGroup are null`() = runTest(testDispatcher) {
             val groupIdFlow = MutableStateFlow<String?>(null)
-            val groupFlow = MutableStateFlow<es.pedrazamiguez.splittrip.domain.model.Group?>(null)
+            val groupFlow = MutableStateFlow<Group?>(null)
             every { getSelectedGroupIdUseCase() } returns groupIdFlow
             every { getSelectedGroupNameUseCase() } returns flowOf()
             every { getSelectedGroupCurrencyUseCase() } returns flowOf()
@@ -414,7 +548,7 @@ class SharedViewModelTest {
         @Test
         fun `does not clear when selectedGroup resolves successfully`() = runTest(testDispatcher) {
             val groupIdFlow = MutableStateFlow<String?>("group-456")
-            val groupFlow = MutableStateFlow<es.pedrazamiguez.splittrip.domain.model.Group?>(mockk())
+            val groupFlow = MutableStateFlow<Group?>(mockk())
 
             every { getSelectedGroupIdUseCase() } returns groupIdFlow
             every { observeSelectedGroupUseCase() } returns groupFlow
@@ -431,7 +565,7 @@ class SharedViewModelTest {
         @Test
         fun `clears only once even if selectedGroup emits null multiple times`() = runTest(testDispatcher) {
             val groupIdFlow = MutableStateFlow<String?>("stale-id")
-            val groupFlow = MutableStateFlow<es.pedrazamiguez.splittrip.domain.model.Group?>(null)
+            val groupFlow = MutableStateFlow<Group?>(null)
             every { getSelectedGroupIdUseCase() } returns groupIdFlow
             every { getSelectedGroupNameUseCase() } returns flowOf()
             every { getSelectedGroupCurrencyUseCase() } returns flowOf()
@@ -455,7 +589,7 @@ class SharedViewModelTest {
         @Test
         fun `clears selection when selectedGroup emits null`() = runTest(testDispatcher) {
             val groupIdFlow = MutableStateFlow<String?>("group-123")
-            val groupFlow = MutableStateFlow<es.pedrazamiguez.splittrip.domain.model.Group?>(mockk())
+            val groupFlow = MutableStateFlow<Group?>(mockk())
 
             every { getSelectedGroupIdUseCase() } returns groupIdFlow
             every { getSelectedGroupNameUseCase() } returns flowOf()
