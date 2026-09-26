@@ -154,21 +154,39 @@ fun GroupItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.large)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
                     ) {
-                        Text(
-                            text = groupUiModel.currency,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(
-                                horizontal = CURRENCY_HORIZONTAL_PADDING,
-                                vertical = CURRENCY_VERTICAL_PADDING
+                        Box(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.large)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Text(
+                                text = groupUiModel.currency,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(
+                                    horizontal = CURRENCY_HORIZONTAL_PADDING,
+                                    vertical = CURRENCY_VERTICAL_PADDING
+                                )
                             )
-                        )
+                        }
+                        if (groupUiModel.extraCurrencies.isNotEmpty()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                groupUiModel.extraCurrencies.forEach { extraCurrency ->
+                                    GroupExtraCurrencyChip(currency = extraCurrency)
+                                }
+                                groupUiModel.extraCurrenciesOverflowText?.let { overflowText ->
+                                    GroupExtraCurrencyChip(currency = overflowText)
+                                }
+                            }
+                        }
                     }
                     Icon(
                         imageVector = TablerIcons.Outline.ChevronRight,
