@@ -76,6 +76,8 @@
     <string name="group_member_role_member">Miembro</string>
     <string name="group_detail_section_details">Detalles</string>
     <string name="group_detail_currency_label">Moneda principal</string>
+    <string name="group_detail_extra_currencies_label">Otras monedas</string>
+    <string name="group_detail_exchange_rate_format">1 %1$s ≈ %2$s %3$s</string>
     <string name="group_detail_description_label">Descripción</string>
 
     <!-- Member search -->

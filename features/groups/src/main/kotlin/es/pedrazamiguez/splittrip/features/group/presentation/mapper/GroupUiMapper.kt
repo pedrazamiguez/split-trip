@@ -4,7 +4,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyU
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupCurrencyRateUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
+import java.math.BigDecimal
 import kotlinx.collections.immutable.ImmutableList
 
 interface GroupUiMapper {
@@ -33,4 +35,9 @@ interface GroupUiMapper {
 
     fun toCurrencyUiModel(currency: Currency): CurrencyUiModel
     fun toCurrencyUiModels(currencies: List<Currency>): ImmutableList<CurrencyUiModel>
+
+    fun mapCurrencyExchangeRates(
+        baseCurrency: String,
+        rates: Map<String, BigDecimal?>
+    ): ImmutableList<GroupCurrencyRateUiModel>
 }
