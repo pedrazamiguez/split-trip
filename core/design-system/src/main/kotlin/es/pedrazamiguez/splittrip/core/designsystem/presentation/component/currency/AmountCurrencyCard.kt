@@ -74,6 +74,7 @@ fun AmountCurrencyCard(
                 value = state.amount,
                 onValueChange = onAmountChanged,
                 evaluator = evaluator,
+                displayValue = state.displayAmount,
                 maxDecimalPlaces = state.selectedCurrency?.decimalDigits ?: UiConstants.DEFAULT_MAX_DECIMAL_PLACES,
                 minDecimalPlaces = state.selectedCurrency?.decimalDigits ?: 0,
                 label = state.amountLabel,

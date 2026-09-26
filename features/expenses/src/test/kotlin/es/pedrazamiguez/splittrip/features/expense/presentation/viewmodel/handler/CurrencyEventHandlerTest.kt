@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
@@ -97,7 +96,6 @@ class CurrencyEventHandlerTest {
         val resourceProvider = mockk<ResourceProvider>(relaxed = true)
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
-        val formattingHelper = FormattingHelper(localeProvider)
         val splitPreviewService = SplitPreviewServiceImpl()
 
         withdrawalPoolSelectionDelegate = mockk(relaxed = true)
@@ -105,14 +103,12 @@ class CurrencyEventHandlerTest {
         handler = CurrencyEventHandler(
             getExchangeRateUseCase = getExchangeRateUseCase,
             exchangeRateCalculationService = exchangeRateCalculationService,
-            formattingHelper = formattingHelper,
             addExpenseOptionsMapper = AddExpenseOptionsUiMapper(resourceProvider, mockk(relaxed = true)),
             withdrawalPoolSelectionDelegate = withdrawalPoolSelectionDelegate,
             cashRateDelegate = CashRateDelegate(
                 previewCashExchangeRateUseCase = previewCashExchangeRateUseCase,
                 expenseCalculatorService = expenseCalculatorService,
                 splitPreviewService = splitPreviewService,
-                formattingHelper = formattingHelper,
                 addExpenseOptionsMapper = AddExpenseOptionsUiMapper(resourceProvider, mockk(relaxed = true))
             )
         )
@@ -938,6 +934,20 @@ class CurrencyEventHandlerTest {
             val finalState = uiState.value
             assertEquals("1.1", finalState.displayExchangeRate)
             assertFalse(finalState.isLoadingRate)
+        }
+
+        @Test
+        fun `recalculateForward stores raw plain string without grouping separators for large amounts`() = runTest {
+            uiState.value = nonCashForeignState.copy(
+                sourceAmount = "100000",
+                displayExchangeRate = "37.0"
+            )
+
+            handler.bind(uiState, actions, this)
+            handler.recalculateForward()
+
+            // 100000 / 37.0 = 2702.70 (raw, without thousands grouping separator ",")
+            assertEquals("2702.70", uiState.value.calculatedGroupAmount)
         }
     }
 }

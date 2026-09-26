@@ -216,14 +216,12 @@ val expensesUiModule = module {
             previewCashExchangeRateUseCase = get<PreviewCashExchangeRateUseCase>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             splitPreviewService = get<SplitPreviewService>(),
-            formattingHelper = formattingHelper,
             addExpenseOptionsMapper = addExpenseOptionsUiMapper
         )
 
         val currencyEventHandler = CurrencyEventHandler(
             getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
-            formattingHelper = formattingHelper,
             addExpenseOptionsMapper = addExpenseOptionsUiMapper,
             withdrawalPoolSelectionDelegate = withdrawalPoolSelectionDelegate,
             cashRateDelegate = cashRateDelegate
@@ -268,7 +266,6 @@ val expensesUiModule = module {
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             splitPreviewService = get<SplitPreviewService>(),
-            formattingHelper = formattingHelper,
             getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
             previewCashExchangeRateUseCase = get<PreviewCashExchangeRateUseCase>()
         )

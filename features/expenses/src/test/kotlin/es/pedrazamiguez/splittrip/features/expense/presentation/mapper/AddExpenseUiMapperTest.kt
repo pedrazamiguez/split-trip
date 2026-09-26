@@ -171,6 +171,24 @@ class AddExpenseUiMapperTest {
         }
 
         @Test
+        fun `large amount with arithmetic submits without being divided by 1000`() {
+            val state = AddExpenseUiState(
+                expenseTitle = "Hotel",
+                sourceAmount = "10450",
+                selectedCurrency = eurUi,
+                groupCurrency = eurUi,
+                selectedPaymentMethod = creditCardPaymentMethod
+            )
+
+            val result = mapper.mapToDomain(state, "group-123")
+
+            assertTrue(result.isSuccess)
+            val expense = result.getOrThrow()
+            assertEquals(1045000L, expense.sourceAmount)
+            assertEquals(1045000L, expense.groupAmount)
+        }
+
+        @Test
         fun `handles European format with comma decimal`() {
             val state = AddExpenseUiState(
                 expenseTitle = "Museum",
