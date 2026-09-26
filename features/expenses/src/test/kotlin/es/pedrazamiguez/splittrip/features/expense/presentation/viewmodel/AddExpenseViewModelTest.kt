@@ -263,14 +263,12 @@ class AddExpenseViewModelTest {
         val currencyHandler = CurrencyEventHandler(
             getExchangeRateUseCase = getExchangeRateUseCase,
             exchangeRateCalculationService = ExchangeRateCalculationServiceImpl(),
-            formattingHelper = formattingHelper,
             addExpenseOptionsMapper = addExpenseOptionsMapper,
             withdrawalPoolSelectionDelegate = mockk(relaxed = true),
             cashRateDelegate = CashRateDelegate(
                 previewCashExchangeRateUseCase = previewCashExchangeRateUseCase,
                 expenseCalculatorService = expenseCalculatorService,
                 splitPreviewService = splitPreviewService,
-                formattingHelper = formattingHelper,
                 addExpenseOptionsMapper = addExpenseOptionsMapper
             )
         )
@@ -318,7 +316,6 @@ class AddExpenseViewModelTest {
             exchangeRateCalculationService = ExchangeRateCalculationServiceImpl(),
             expenseCalculatorService = ExpenseCalculatorServiceImpl(),
             splitPreviewService = splitPreviewService,
-            formattingHelper = formattingHelper,
             getExchangeRateUseCase = getExchangeRateUseCase,
             previewCashExchangeRateUseCase = mockk(relaxed = true)
         )

@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
@@ -40,7 +39,6 @@ class CashRateDelegate(
     private val previewCashExchangeRateUseCase: PreviewCashExchangeRateUseCase,
     private val expenseCalculatorService: ExpenseCalculatorService,
     private val splitPreviewService: SplitPreviewService,
-    private val formattingHelper: FormattingHelper,
     private val addExpenseOptionsMapper: AddExpenseOptionsUiMapper
 ) {
 
@@ -233,23 +231,18 @@ class CashRateDelegate(
             )
         }
 
-        val formattedRate = formattingHelper.formatRateForDisplay(preview.displayRate.toPlainString())
+        val rawRate = preview.displayRate.stripTrailingZeros().toPlainString()
 
         return if (preview.groupAmountCents > 0) {
             // FIFO-simulated: update both rate and group amount
-            val groupAmountStr = expenseCalculatorService.centsToBigDecimalString(
+            val rawAmount = expenseCalculatorService.centsToBigDecimalString(
                 preview.groupAmountCents,
                 targetDecimalDigits
             )
-            val formattedAmount = formattingHelper.formatForDisplay(
-                internalValue = groupAmountStr,
-                maxDecimalPlaces = targetDecimalDigits,
-                minDecimalPlaces = targetDecimalDigits
-            )
             current.copy(
                 isLoadingRate = false,
-                displayExchangeRate = formattedRate,
-                calculatedGroupAmount = formattedAmount,
+                displayExchangeRate = rawRate,
+                calculatedGroupAmount = rawAmount,
                 isExchangeRateLocked = true,
                 isInsufficientCash = false,
                 exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint),
@@ -259,7 +252,7 @@ class CashRateDelegate(
             // Weighted-average preview (no amount entered yet).
             current.copy(
                 isLoadingRate = false,
-                displayExchangeRate = formattedRate,
+                displayExchangeRate = rawRate,
                 calculatedGroupAmount = "",
                 isExchangeRateLocked = true,
                 isInsufficientCash = false,

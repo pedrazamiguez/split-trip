@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.features.withdrawal.di
 
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -40,7 +39,6 @@ val withdrawalsUiModule = module {
 
     viewModel {
         val addCashWithdrawalUiMapper = get<AddCashWithdrawalUiMapper>()
-        val formattingHelper = get<FormattingHelper>()
 
         val configHandler = WithdrawalConfigHandler(
             getGroupExpenseConfigUseCase = get<GetGroupExpenseConfigUseCase>(),
@@ -53,15 +51,13 @@ val withdrawalsUiModule = module {
         val currencyHandler = WithdrawalCurrencyHandler(
             getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
-            addCashWithdrawalUiMapper = addCashWithdrawalUiMapper,
-            formattingHelper = formattingHelper
+            addCashWithdrawalUiMapper = addCashWithdrawalUiMapper
         )
 
         val feeHandler = WithdrawalFeeHandler(
             getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
-            addCashWithdrawalUiMapper = addCashWithdrawalUiMapper,
-            formattingHelper = formattingHelper
+            addCashWithdrawalUiMapper = addCashWithdrawalUiMapper
         )
 
         val submitHandler = WithdrawalSubmitHandler(

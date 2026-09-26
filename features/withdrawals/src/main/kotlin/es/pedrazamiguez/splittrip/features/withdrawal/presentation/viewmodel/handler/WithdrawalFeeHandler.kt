@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.isValidDecimalInput
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -23,8 +22,7 @@ import timber.log.Timber
 class WithdrawalFeeHandler(
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
     private val exchangeRateCalculationService: ExchangeRateCalculationService,
-    private val addCashWithdrawalUiMapper: AddCashWithdrawalUiMapper,
-    private val formattingHelper: FormattingHelper
+    private val addCashWithdrawalUiMapper: AddCashWithdrawalUiMapper
 ) : AddCashWithdrawalEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddCashWithdrawalUiState>
@@ -147,12 +145,7 @@ class WithdrawalFeeHandler(
             sourceDecimalPlaces = sourceDecimalPlaces,
             targetDecimalPlaces = targetDecimalPlaces
         )
-        val formatted = formattingHelper.formatForDisplay(
-            internalValue = calculatedConverted,
-            maxDecimalPlaces = targetDecimalPlaces,
-            minDecimalPlaces = targetDecimalPlaces
-        )
-        _uiState.update { it.copy(feeConvertedAmount = formatted) }
+        _uiState.update { it.copy(feeConvertedAmount = calculatedConverted) }
     }
 
     private fun recalculateFeeRateFromConverted() {
@@ -165,8 +158,7 @@ class WithdrawalFeeHandler(
             groupAmountString = state.feeConvertedAmount,
             sourceDecimalPlaces = sourceDecimalPlaces
         )
-        val formatted = formattingHelper.formatRateForDisplay(impliedRate)
-        _uiState.update { it.copy(feeExchangeRate = formatted) }
+        _uiState.update { it.copy(feeExchangeRate = impliedRate) }
     }
 
     private fun fetchFeeRate(groupCurrencyCode: String, feeCurrencyCode: String) {
@@ -213,9 +205,7 @@ class WithdrawalFeeHandler(
         }
         return copy(
             isFeeExchangeRateError = isError,
-            feeExchangeRate = rateResult?.rate?.let { r ->
-                formattingHelper.formatRateForDisplay(r.toPlainString())
-            } ?: feeExchangeRate,
+            feeExchangeRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString() ?: feeExchangeRate,
             isFeeExchangeRateStale = rateResult?.isStale ?: false
         )
     }
