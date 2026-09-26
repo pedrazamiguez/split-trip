@@ -23,6 +23,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.remem
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.domain.service.calculator.ExpressionCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.calculator.ExpressionResult
+import java.math.RoundingMode
 
 @Suppress("LongMethod", "LongParameterList", "CognitiveComplexMethod")
 @Composable
@@ -31,6 +32,7 @@ fun ArithmeticTextField(
     onValueChange: (String) -> Unit,
     evaluator: ExpressionCalculatorService,
     modifier: Modifier = Modifier,
+    displayValue: String? = null,
     maxDecimalPlaces: Int = UiConstants.DEFAULT_MAX_DECIMAL_PLACES,
     minDecimalPlaces: Int = 0,
     label: String? = null,
@@ -69,19 +71,32 @@ fun ArithmeticTextField(
         evaluationResult = evaluator.evaluate(expressionBuffer)
     }
 
+    LaunchedEffect(value, isFocused) {
+        if (!isFocused) {
+            expressionBuffer = value
+        }
+    }
+
     val commitResult = {
         val res = evaluationResult
         if (res is ExpressionResult.Success) {
-            val formatted = res.value.stripTrailingZeros().formatForDisplay(
-                locale = locale,
-                maxDecimalPlaces = maxDecimalPlaces,
-                minDecimalPlaces = minDecimalPlaces
-            )
-            onValueChange(formatted)
-            expressionBuffer = formatted
+            val scaledValue = res.value.setScale(maxDecimalPlaces, RoundingMode.HALF_UP).stripTrailingZeros()
+            val rawValue = scaledValue.toPlainString()
+            onValueChange(rawValue)
+            expressionBuffer = rawValue
         } else {
             onValueChange(expressionBuffer)
         }
+    }
+
+    val resolvedDisplayValue = if (displayValue != null) {
+        displayValue
+    } else {
+        value.toBigDecimalOrNull()?.stripTrailingZeros()?.formatForDisplay(
+            locale = locale,
+            maxDecimalPlaces = maxDecimalPlaces,
+            minDecimalPlaces = minDecimalPlaces
+        ) ?: value
     }
 
     LaunchedEffect(isFocused, expressionBuffer, evaluationResult) {
@@ -129,7 +144,7 @@ fun ArithmeticTextField(
     )
 
     StyledOutlinedTextField(
-        value = if (isFocused) expressionBuffer else value,
+        value = if (isFocused) expressionBuffer else resolvedDisplayValue,
         onValueChange = {
             if (isFocused) {
                 expressionBuffer = it

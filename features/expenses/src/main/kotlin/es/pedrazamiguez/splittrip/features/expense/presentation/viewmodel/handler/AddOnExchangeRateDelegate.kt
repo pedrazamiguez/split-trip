@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
@@ -34,7 +33,6 @@ class AddOnExchangeRateDelegate(
     private val exchangeRateCalculationService: ExchangeRateCalculationService,
     private val expenseCalculatorService: ExpenseCalculatorService,
     private val splitPreviewService: SplitPreviewService,
-    private val formattingHelper: FormattingHelper,
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
     private val previewCashExchangeRateUseCase: PreviewCashExchangeRateUseCase
 ) {
@@ -82,12 +80,11 @@ class AddOnExchangeRateDelegate(
                     ) {
                         current.copy(isLoadingRate = false)
                     } else {
-                        val formattedRate = rateResult?.let {
-                            formattingHelper.formatRateForDisplay(it.rate.toPlainString())
-                        } ?: current.displayExchangeRate
+                        val rawRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString()
+                            ?: current.displayExchangeRate
                         current.copy(
                             isLoadingRate = false,
-                            displayExchangeRate = formattedRate,
+                            displayExchangeRate = rawRate,
                             isExchangeRateStale = rateResult?.isStale
                                 ?: current.isExchangeRateStale
                         )
@@ -140,13 +137,7 @@ class AddOnExchangeRateDelegate(
             targetDecimalPlaces = targetDecimalPlaces
         )
 
-        val formattedAmount = formattingHelper.formatForDisplay(
-            internalValue = calculatedAmount,
-            maxDecimalPlaces = targetDecimalPlaces,
-            minDecimalPlaces = targetDecimalPlaces
-        )
-
-        updateAddOn(addOnId) { it.copy(calculatedGroupAmount = formattedAmount) }
+        updateAddOn(addOnId) { it.copy(calculatedGroupAmount = calculatedAmount) }
     }
 
     /**
@@ -178,8 +169,7 @@ class AddOnExchangeRateDelegate(
             sourceDecimalPlaces = sourceDecimalPlaces
         )
 
-        val formattedRate = formattingHelper.formatRateForDisplay(impliedDisplayRate)
-        updateAddOn(addOnId) { it.copy(displayExchangeRate = formattedRate) }
+        updateAddOn(addOnId) { it.copy(displayExchangeRate = impliedDisplayRate) }
     }
 
     // ── CASH Rate ───────────────────────────────────────────────────────
@@ -332,26 +322,19 @@ class AddOnExchangeRateDelegate(
         targetDecimalDigits: Int
     ): AddOnUiModel {
         val preview = result.preview
-        val formattedRate = formattingHelper.formatRateForDisplay(
-            preview.displayRate.toPlainString()
-        )
-        val formattedAmount = if (preview.groupAmountCents > 0) {
-            val groupAmountStr = expenseCalculatorService.centsToBigDecimalString(
+        val rawRate = preview.displayRate.stripTrailingZeros().toPlainString()
+        val rawAmount = if (preview.groupAmountCents > 0) {
+            expenseCalculatorService.centsToBigDecimalString(
                 preview.groupAmountCents,
                 targetDecimalDigits
-            )
-            formattingHelper.formatForDisplay(
-                internalValue = groupAmountStr,
-                maxDecimalPlaces = targetDecimalDigits,
-                minDecimalPlaces = targetDecimalDigits
             )
         } else {
             ""
         }
         return current.copy(
             isLoadingRate = false,
-            displayExchangeRate = formattedRate,
-            calculatedGroupAmount = formattedAmount,
+            displayExchangeRate = rawRate,
+            calculatedGroupAmount = rawAmount,
             isExchangeRateLocked = true,
             isInsufficientCash = false,
             exchangeRateLockedHint = UiText.StringResource(
