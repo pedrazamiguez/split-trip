@@ -18,6 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
 import java.util.Locale
+import kotlinx.collections.immutable.persistentListOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -153,6 +154,23 @@ class AddExpenseSplitUiMapperTest {
         }
 
         @Test
+        fun `places currentUserId at index 0 when specified`() {
+            val userZeta = User(userId = "user-1", email = "zeta@test.com", displayName = "Zeta")
+            val userAna = User(userId = "user-2", email = "ana@test.com", displayName = "Ana")
+
+            val result = mapper.buildInitialSplits(
+                memberIds = listOf("user-1", "user-2"),
+                shares = emptyList(),
+                memberProfiles = mapOf("user-1" to userZeta, "user-2" to userAna),
+                currentUserId = "user-1"
+            )
+
+            assertEquals(2, result.size)
+            assertEquals("user-1", result[0].userId)
+            assertEquals("user-2", result[1].userId)
+        }
+
+        @Test
         fun `populates percentageInput from share percentage`() {
             val shares = listOf(
                 ExpenseSplit(userId = "user-1", amountCents = 5000L, percentage = BigDecimal("50.00"))
@@ -278,6 +296,27 @@ class AddExpenseSplitUiMapperTest {
             val ids = result.map { it.userId }
             assertTrue(ids.contains("user-1"))
             assertTrue(ids.contains("user-2"))
+        }
+
+        @Test
+        fun `places currentUserId at index 0`() {
+            val userZeta = User(userId = "user-1", email = "zeta@test.com", displayName = "Zeta")
+            val userAna = User(userId = "user-2", email = "ana@test.com", displayName = "Ana")
+            val shares = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 5000L),
+                ExpenseSplit(userId = "user-2", amountCents = 5000L)
+            )
+
+            val result = mapper.mapDomainToSplits(
+                memberIds = listOf("user-1", "user-2"),
+                shares = shares,
+                memberProfiles = mapOf("user-1" to userZeta, "user-2" to userAna),
+                currentUserId = "user-1"
+            )
+
+            assertEquals(2, result.size)
+            assertEquals("user-1", result[0].userId)
+            assertEquals("user-2", result[1].userId)
         }
 
         @Test
@@ -434,6 +473,197 @@ class AddExpenseSplitUiMapperTest {
             )
 
             assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `places user's subunit at index 0 followed by remaining subunits then solo members`() {
+            val coupleSubunit = Subunit(
+                id = "sub-1",
+                groupId = "group-1",
+                name = "Couple",
+                memberIds = listOf("user-1", "user-2")
+            )
+            val familySubunit = Subunit(
+                id = "sub-2",
+                groupId = "group-1",
+                name = "Family",
+                memberIds = listOf("user-4", "user-5")
+            )
+            val shares = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 2000L, subunitId = "sub-1"),
+                ExpenseSplit(userId = "user-2", amountCents = 2000L, subunitId = "sub-1"),
+                ExpenseSplit(userId = "user-4", amountCents = 3000L, subunitId = "sub-2"),
+                ExpenseSplit(userId = "user-5", amountCents = 3000L, subunitId = "sub-2"),
+                ExpenseSplit(userId = "user-3", amountCents = 1000L)
+            )
+            val soloUser = User(userId = "user-3", email = "solo@test.com", displayName = "Solo")
+
+            val result = mapper.buildEntitySplitsFromDomain(
+                memberIds = listOf("user-1", "user-2", "user-3", "user-4", "user-5"),
+                subunits = listOf(familySubunit, coupleSubunit),
+                shares = shares,
+                availableSplitTypes = availableSplitTypes,
+                memberProfiles = mapOf("user-3" to soloUser),
+                currentUserId = "user-1"
+            )
+
+            assertEquals(3, result.size)
+            assertEquals("sub-1", result[0].userId)
+            assertEquals("sub-2", result[1].userId)
+            assertEquals("user-3", result[2].userId)
+        }
+
+        @Test
+        fun `places user's solo card at index 0 followed by remaining solo members then subunits`() {
+            val coupleSubunit = Subunit(
+                id = "sub-1",
+                groupId = "group-1",
+                name = "Couple",
+                memberIds = listOf("user-1", "user-2")
+            )
+            val shares = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 2000L, subunitId = "sub-1"),
+                ExpenseSplit(userId = "user-2", amountCents = 2000L, subunitId = "sub-1"),
+                ExpenseSplit(userId = "user-3", amountCents = 1000L),
+                ExpenseSplit(userId = "user-4", amountCents = 1000L)
+            )
+            val solo3 = User(userId = "user-3", email = "solo3@test.com", displayName = "Zeta Solo")
+            val solo4 = User(userId = "user-4", email = "solo4@test.com", displayName = "Ana Solo")
+
+            val result = mapper.buildEntitySplitsFromDomain(
+                memberIds = listOf("user-1", "user-2", "user-3", "user-4"),
+                subunits = listOf(coupleSubunit),
+                shares = shares,
+                availableSplitTypes = availableSplitTypes,
+                memberProfiles = mapOf("user-3" to solo3, "user-4" to solo4),
+                currentUserId = "user-3"
+            )
+
+            assertEquals(3, result.size)
+            assertEquals("user-3", result[0].userId)
+            assertEquals("user-4", result[1].userId)
+            assertEquals("sub-1", result[2].userId)
+        }
+
+        @Test
+        fun `pins current user first within subunit member list`() {
+            val coupleSubunit = Subunit(
+                id = "sub-1",
+                groupId = "group-1",
+                name = "Couple",
+                memberIds = listOf("user-1", "user-2")
+            )
+            val userAna = User(userId = "user-1", email = "ana@test.com", displayName = "Ana")
+            val userZeta = User(userId = "user-2", email = "zeta@test.com", displayName = "Zeta")
+            val shares = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 2000L, subunitId = "sub-1"),
+                ExpenseSplit(userId = "user-2", amountCents = 2000L, subunitId = "sub-1")
+            )
+
+            val result = mapper.buildEntitySplitsFromDomain(
+                memberIds = listOf("user-1", "user-2"),
+                subunits = listOf(coupleSubunit),
+                shares = shares,
+                availableSplitTypes = availableSplitTypes,
+                memberProfiles = mapOf("user-1" to userAna, "user-2" to userZeta),
+                currentUserId = "user-2"
+            )
+
+            val subunitRow = result.first { it.userId == "sub-1" }
+            assertEquals(2, subunitRow.entityMembers.size)
+            assertEquals("user-2", subunitRow.entityMembers[0].userId)
+            assertEquals("user-1", subunitRow.entityMembers[1].userId)
+        }
+    }
+
+    // ── sortEntityRows ────────────────────────────────────────────────────
+
+    @Nested
+    inner class SortEntityRows {
+
+        @Test
+        fun `sorts solo first and subunits second when currentUserId is null`() {
+            val solo = SplitUiModel(userId = "solo-1", displayName = "Solo", isEntityRow = true)
+            val sub = SplitUiModel(
+                userId = "sub-1",
+                displayName = "Sub",
+                isEntityRow = true,
+                entityMembers = persistentListOf(SplitUiModel(userId = "m-1", displayName = "M1"))
+            )
+
+            val result = mapper.sortEntityRows(listOf(sub, solo), currentUserId = null)
+            assertEquals("solo-1", result[0].userId)
+            assertEquals("sub-1", result[1].userId)
+        }
+
+        @Test
+        fun `places user's subunit first when user belongs to subunit`() {
+            val sub1 = SplitUiModel(
+                userId = "sub-1",
+                displayName = "Couple",
+                isEntityRow = true,
+                entityMembers = persistentListOf(
+                    SplitUiModel(userId = "u-1", displayName = "U1"),
+                    SplitUiModel(userId = "u-2", displayName = "U2")
+                )
+            )
+            val sub2 = SplitUiModel(
+                userId = "sub-2",
+                displayName = "Alpha Sub",
+                isEntityRow = true,
+                entityMembers = persistentListOf(SplitUiModel(userId = "u-3", displayName = "U3"))
+            )
+            val solo = SplitUiModel(userId = "solo-1", displayName = "Solo", isEntityRow = true)
+
+            val result = mapper.sortEntityRows(listOf(sub2, solo, sub1), currentUserId = "u-2")
+            assertEquals("sub-1", result[0].userId)
+            assertEquals("sub-2", result[1].userId)
+            assertEquals("solo-1", result[2].userId)
+        }
+
+        @Test
+        fun `places user's solo card first when user is solo`() {
+            val sub = SplitUiModel(
+                userId = "sub-1",
+                displayName = "Sub",
+                isEntityRow = true,
+                entityMembers = persistentListOf(SplitUiModel(userId = "u-1", displayName = "U1"))
+            )
+            val solo1 = SplitUiModel(userId = "solo-1", displayName = "Zeta", isEntityRow = true)
+            val solo2 = SplitUiModel(userId = "solo-2", displayName = "Alpha", isEntityRow = true)
+
+            val result = mapper.sortEntityRows(listOf(sub, solo2, solo1), currentUserId = "solo-1")
+            assertEquals("solo-1", result[0].userId)
+            assertEquals("solo-2", result[1].userId)
+            assertEquals("sub-1", result[2].userId)
+        }
+    }
+
+    // ── sortSubunitMembers ────────────────────────────────────────────────
+
+    @Nested
+    inner class SortSubunitMembers {
+
+        @Test
+        fun `sorts purely alphabetically when currentUserId is null`() {
+            val m1 = SplitUiModel(userId = "u-1", displayName = "Zeta")
+            val m2 = SplitUiModel(userId = "u-2", displayName = "Alpha")
+
+            val result = mapper.sortSubunitMembers(listOf(m1, m2), currentUserId = null)
+            assertEquals("u-2", result[0].userId)
+            assertEquals("u-1", result[1].userId)
+        }
+
+        @Test
+        fun `pins current user to index 0 followed by alphabetical order`() {
+            val m1 = SplitUiModel(userId = "u-1", displayName = "Zeta")
+            val m2 = SplitUiModel(userId = "u-2", displayName = "Alpha")
+            val m3 = SplitUiModel(userId = "u-3", displayName = "Beta")
+
+            val result = mapper.sortSubunitMembers(listOf(m2, m3, m1), currentUserId = "u-1")
+            assertEquals("u-1", result[0].userId)
+            assertEquals("u-2", result[1].userId)
+            assertEquals("u-3", result[2].userId)
         }
     }
 }
