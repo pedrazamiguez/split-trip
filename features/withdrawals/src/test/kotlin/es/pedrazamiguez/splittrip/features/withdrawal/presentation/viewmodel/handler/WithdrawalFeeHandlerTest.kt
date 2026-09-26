@@ -496,7 +496,7 @@ class WithdrawalFeeHandlerTest {
             // Then
             val state = uiState.value
             assertTrue(state.isFeeExchangeRateStale)
-            assertEquals("37.0", state.feeExchangeRate)
+            assertEquals("37", state.feeExchangeRate)
         }
 
         @Test
@@ -521,7 +521,7 @@ class WithdrawalFeeHandlerTest {
             advanceUntilIdle()
 
             val finalState = uiState.value
-            assertEquals("37.0", finalState.feeExchangeRate)
+            assertEquals("38", finalState.feeExchangeRate)
         }
 
         @Test

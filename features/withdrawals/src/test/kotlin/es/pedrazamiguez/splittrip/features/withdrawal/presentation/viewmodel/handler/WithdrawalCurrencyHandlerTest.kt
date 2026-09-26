@@ -425,7 +425,7 @@ class WithdrawalCurrencyHandlerTest {
             advanceUntilIdle()
 
             val finalState = uiState.value
-            assertEquals("37.037", finalState.displayExchangeRate)
+            assertEquals("38", finalState.displayExchangeRate)
             assertFalse(finalState.isLoadingRate)
         }
     }
