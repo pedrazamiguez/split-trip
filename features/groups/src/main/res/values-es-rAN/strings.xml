@@ -31,6 +31,7 @@
     <string name="group_extra_currency_search_hint">ej. ÛDD, MXN, Libra…</string>
     <string name="group_extra_currency_remove">Quitâh moneda</string>
     <string name="group_extra_currency_clear">Limpiâh</string>
+    <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Dêccrîççión</string>
     <string name="group_field_created_at">Creao el</string>
     <string name="group_error_name_empty">¡Ey! Tu grupo neçeçita un nombre</string>

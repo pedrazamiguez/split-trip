@@ -117,65 +117,97 @@ fun GroupItem(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        text = groupUiModel.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    // Line 1: Title & Primary Currency Badge
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = groupUiModel.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = MaterialTheme.spacing.Small)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.large)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Text(
+                                text = groupUiModel.currency,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(
+                                    horizontal = CURRENCY_HORIZONTAL_PADDING,
+                                    vertical = CURRENCY_VERTICAL_PADDING
+                                )
+                            )
+                        }
+                    }
 
-                    // GroupItemMetaLine
+                    // Line 2: Meta & Secondary Currency Chips
                     val metaParts = buildList {
                         if (groupUiModel.dateText.isNotEmpty()) add(groupUiModel.dateText)
                         if (groupUiModel.membersCountText.isNotEmpty()) add(groupUiModel.membersCountText)
                     }
-                    if (metaParts.isNotEmpty()) {
+                    if (metaParts.isNotEmpty() || groupUiModel.extraCurrencies.isNotEmpty()) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (metaParts.isNotEmpty()) {
+                                Arrangement.SpaceBetween
+                            } else {
+                                Arrangement.End
+                            },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            metaParts.forEachIndexed { index, part ->
-                                if (index > 0) {
-                                    SecondaryBodyText(
-                                        text = stringResource(DesignR.string.metadata_separator),
-                                        maxLines = Int.MAX_VALUE
-                                    )
+                            if (metaParts.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f, fill = false)
+                                        .padding(end = MaterialTheme.spacing.Small),
+                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    metaParts.forEachIndexed { index, part ->
+                                        if (index > 0) {
+                                            SecondaryBodyText(
+                                                text = stringResource(DesignR.string.metadata_separator),
+                                                maxLines = Int.MAX_VALUE
+                                            )
+                                        }
+                                        SecondaryBodyText(text = part)
+                                    }
                                 }
-                                SecondaryBodyText(text = part)
+                            }
+                            if (groupUiModel.extraCurrencies.isNotEmpty()) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    groupUiModel.extraCurrencies.forEach { extraCurrency ->
+                                        GroupExtraCurrencyChip(currency = extraCurrency)
+                                    }
+                                    groupUiModel.extraCurrenciesOverflowText?.let { overflowText ->
+                                        GroupExtraCurrencyChip(currency = overflowText)
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                // GroupItemTrailing
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.large)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Text(
-                            text = groupUiModel.currency,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(
-                                horizontal = CURRENCY_HORIZONTAL_PADDING,
-                                vertical = CURRENCY_VERTICAL_PADDING
-                            )
-                        )
-                    }
-                    Icon(
-                        imageVector = TablerIcons.Outline.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
-                }
+                Icon(
+                    imageVector = TablerIcons.Outline.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
             }
         }
         SyncStatusBadge(syncStatus = groupUiModel.syncStatus)

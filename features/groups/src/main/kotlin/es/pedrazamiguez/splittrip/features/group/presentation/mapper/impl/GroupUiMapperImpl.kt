@@ -14,7 +14,9 @@ import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupMemberUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_DIRECT_EXTRA_CURRENCIES
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_VISIBLE_AVATARS
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_VISIBLE_EXTRA_CURRENCIES
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -52,11 +54,25 @@ class GroupUiMapperImpl(
                 )
             }.toImmutableList()
 
+            val (visibleExtraCurrencies, extraCurrenciesOverflowText) = when {
+                extraCurrencies.size <= MAX_DIRECT_EXTRA_CURRENCIES -> {
+                    extraCurrencies.toImmutableList() to null
+                }
+                else -> {
+                    val visible = extraCurrencies.take(MAX_VISIBLE_EXTRA_CURRENCIES).toImmutableList()
+                    val overflow = extraCurrencies.size - MAX_VISIBLE_EXTRA_CURRENCIES
+                    val overflowText = resourceProvider.getString(R.string.group_extra_currencies_overflow, overflow)
+                    visible to overflowText
+                }
+            }
+
             GroupUiModel(
                 id = id,
                 name = name,
                 description = description,
                 currency = currency,
+                extraCurrencies = visibleExtraCurrencies,
+                extraCurrenciesOverflowText = extraCurrenciesOverflowText,
                 membersCountText = resourceProvider.getQuantityString(
                     R.plurals.group_members_count,
                     memberCount,
