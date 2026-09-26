@@ -46,8 +46,10 @@ class AddExpenseSplitUiMapper(
         shares: List<ExpenseSplit>,
         memberProfiles: Map<String, User> = emptyMap(),
         currentUserId: String? = null
-    ): ImmutableList<SplitUiModel> =
-        memberIds.map { userId ->
+    ): ImmutableList<SplitUiModel> {
+        val localeComparator =
+            localeAwareComparator<SplitUiModel>(localeProvider.getCurrentLocale()) { it.displayName }
+        return memberIds.map { userId ->
             val share = shares.find { it.userId == userId }
             val amountCents = share?.amountCents ?: 0L
             SplitUiModel(
@@ -59,8 +61,10 @@ class AddExpenseSplitUiMapper(
                 percentageInput = share?.percentage?.toPlainString() ?: ""
             )
         }.sortedWith(
-            localeAwareComparator(localeProvider.getCurrentLocale()) { it.displayName }
+            compareByDescending<SplitUiModel> { it.userId == currentUserId }
+                .thenComparing(localeComparator)
         ).toImmutableList()
+    }
 
     /**
      * Resolves a userId to a human-readable display name using the
@@ -120,8 +124,10 @@ class AddExpenseSplitUiMapper(
         shares: List<ExpenseSplit>,
         memberProfiles: Map<String, User> = emptyMap(),
         currentUserId: String? = null
-    ): ImmutableList<SplitUiModel> =
-        memberIds.map { userId ->
+    ): ImmutableList<SplitUiModel> {
+        val localeComparator =
+            localeAwareComparator<SplitUiModel>(localeProvider.getCurrentLocale()) { it.displayName }
+        return memberIds.map { userId ->
             val share = shares.find { it.userId == userId }
             val isExcluded = share == null
             val amountCents = share?.amountCents ?: 0L
@@ -135,8 +141,10 @@ class AddExpenseSplitUiMapper(
                 isExcluded = isExcluded
             )
         }.sortedWith(
-            localeAwareComparator(localeProvider.getCurrentLocale()) { it.displayName }
+            compareByDescending<SplitUiModel> { it.userId == currentUserId }
+                .thenComparing(localeComparator)
         ).toImmutableList()
+    }
 
     /**
      * Maps domain splits back into entity-level SplitUiModels for edit mode support.
@@ -160,12 +168,62 @@ class AddExpenseSplitUiMapper(
             buildSubunitRows(subunits, shares, availableSplitTypes, defaultSplitType, memberProfiles, currentUserId)
         )
 
+        return sortEntityRows(entityRows, currentUserId)
+    }
+
+    /**
+     * Sorts entity rows for subunit split mode:
+     * - If [currentUserId] belongs to a subunit, that subunit is placed first.
+     * - If [currentUserId] is a solo member, their solo row is placed first.
+     * - Other subunits / solo members follow with consistent grouping and alphabetical order.
+     */
+    fun sortEntityRows(
+        entityRows: List<SplitUiModel>,
+        currentUserId: String?
+    ): ImmutableList<SplitUiModel> {
+        val isUserInSubunit = currentUserId != null &&
+            entityRows.any { entity ->
+                entity.entityMembers.any { it.userId == currentUserId }
+            }
         val localeComparator =
-            localeAwareComparator(localeProvider.getCurrentLocale()) { model: SplitUiModel -> model.displayName }
-        return entityRows.sortedWith { a, b ->
-            val firstCompare = a.entityMembers.isNotEmpty().compareTo(b.entityMembers.isNotEmpty())
-            if (firstCompare != 0) firstCompare else localeComparator.compare(a, b)
-        }.toImmutableList()
+            localeAwareComparator<SplitUiModel>(localeProvider.getCurrentLocale()) { it.displayName }
+        return entityRows.sortedWith(
+            compareBy<SplitUiModel> { entity ->
+                getEntityPriority(entity, currentUserId, isUserInSubunit)
+            }.thenComparing(localeComparator)
+        ).toImmutableList()
+    }
+
+    /**
+     * Sorts subunit member rows, pinning [currentUserId] at index 0 followed by
+     * remaining members sorted alphabetically by display name.
+     */
+    fun sortSubunitMembers(
+        members: List<SplitUiModel>,
+        currentUserId: String?
+    ): ImmutableList<SplitUiModel> {
+        val localeComparator =
+            localeAwareComparator<SplitUiModel>(localeProvider.getCurrentLocale()) { it.displayName }
+        return members.sortedWith(
+            compareByDescending<SplitUiModel> { it.userId == currentUserId }
+                .thenComparing(localeComparator)
+        ).toImmutableList()
+    }
+
+    internal fun getEntityPriority(
+        entity: SplitUiModel,
+        currentUserId: String?,
+        isUserInSubunit: Boolean
+    ): Int {
+        val isUserEntity = currentUserId != null &&
+            (entity.userId == currentUserId || entity.entityMembers.any { it.userId == currentUserId })
+        if (isUserEntity) return 0
+
+        return if (isUserInSubunit) {
+            if (entity.entityMembers.isNotEmpty()) 1 else 2
+        } else {
+            if (entity.entityMembers.isEmpty()) 1 else 2
+        }
     }
 
     private fun buildSoloMemberRows(
@@ -207,7 +265,7 @@ class AddExpenseSplitUiMapper(
             val subunitSplitTypeDomain = subunitShares.firstOrNull()?.splitType ?: SplitType.EQUAL
             val subunitSplitType = availableSplitTypes.find { it.id == subunitSplitTypeDomain.name } ?: defaultSplitType
 
-            val memberRows = subunit.memberIds.map { memberId ->
+            val rawMemberRows = subunit.memberIds.map { memberId ->
                 val share = subunitShares.find { it.userId == memberId }
                 val isMemberExcluded = share == null
                 val amountCents = share?.amountCents ?: 0L
@@ -221,9 +279,8 @@ class AddExpenseSplitUiMapper(
                     percentageInput = share?.percentage?.toPlainString() ?: "",
                     isExcluded = isMemberExcluded
                 )
-            }.sortedWith(
-                localeAwareComparator(localeProvider.getCurrentLocale()) { model -> model.displayName }
-            ).toImmutableList()
+            }
+            val memberRows = sortSubunitMembers(rawMemberRows, currentUserId)
 
             SplitUiModel(
                 userId = subunit.id,

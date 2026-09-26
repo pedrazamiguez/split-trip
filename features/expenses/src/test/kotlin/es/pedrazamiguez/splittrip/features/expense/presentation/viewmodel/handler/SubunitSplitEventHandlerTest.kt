@@ -247,6 +247,49 @@ class SubunitSplitEventHandlerTest {
             assertEquals("alpha", soloRows.first().userId)
             assertEquals("zeta", soloRows.last().userId)
         }
+
+        @Test
+        fun `pins current user's subunit first and pins current user inside subunit members`() = runTest {
+            uiState.value = AddExpenseUiState(
+                loadedGroupId = "group-1",
+                selectedCurrency = eurCurrency,
+                availableSplitTypes = persistentListOf(equalSplitType)
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.initEntitySplits(
+                memberIds = listOf(soloMember1, soloMember2, coupleMember1, coupleMember2),
+                subunits = listOf(coupleSubunit),
+                currentUserId = coupleMember2
+            )
+
+            val state = uiState.value
+            assertEquals(3, state.entitySplits.size)
+            assertEquals(coupleSubunit.id, state.entitySplits[0].userId)
+            assertEquals(coupleMember2, state.entitySplits[0].entityMembers[0].userId)
+        }
+
+        @Test
+        fun `pins current user's solo card first when current user is solo`() = runTest {
+            uiState.value = AddExpenseUiState(
+                loadedGroupId = "group-1",
+                selectedCurrency = eurCurrency,
+                availableSplitTypes = persistentListOf(equalSplitType)
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.initEntitySplits(
+                memberIds = listOf(soloMember1, soloMember2, coupleMember1, coupleMember2),
+                subunits = listOf(coupleSubunit),
+                currentUserId = soloMember2
+            )
+
+            val state = uiState.value
+            assertEquals(3, state.entitySplits.size)
+            assertEquals(soloMember2, state.entitySplits[0].userId)
+            assertEquals(soloMember1, state.entitySplits[1].userId)
+            assertEquals(coupleSubunit.id, state.entitySplits[2].userId)
+        }
     }
 
     // ── clearEntitySplits ────────────────────────────────────────────────
