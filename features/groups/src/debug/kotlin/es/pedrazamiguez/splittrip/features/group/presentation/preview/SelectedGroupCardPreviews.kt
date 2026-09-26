@@ -42,3 +42,15 @@ private fun SelectedGroupCardThemesPreview() {
         )
     }
 }
+
+/** Hero card with capped secondary currencies. */
+@PreviewComplete
+@Composable
+private fun SelectedGroupCardMultiCurrencyPreview() {
+    GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_MULTI_CURRENCY) {
+        SelectedGroupCard(
+            groupUiModel = it,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}

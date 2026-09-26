@@ -34,6 +34,7 @@
     <string name="group_extra_currency_search_hint">ej. USD, MXN, Libra…</string>
     <string name="group_extra_currency_remove">Quitar moneda</string>
     <string name="group_extra_currency_clear">Limpiar</string>
+    <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Descripción</string>
     <string name="group_field_created_at">Creado el</string>
     <string name="group_error_name_empty">¡Ey! Tu grupo necesita un nombre</string>

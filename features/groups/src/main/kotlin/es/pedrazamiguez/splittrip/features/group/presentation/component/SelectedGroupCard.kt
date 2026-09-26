@@ -76,7 +76,7 @@ fun SelectedGroupCard(
                         .padding(MaterialTheme.spacing.Default),
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
                 ) {
-                    // Name row with currency chip
+                    // Title row with primary currency badge
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -107,19 +107,47 @@ fun SelectedGroupCard(
                         }
                     }
 
-                    // Description row
-                    if (groupUiModel.description.isNotEmpty()) {
+                    // Description and secondary currencies row
+                    if (groupUiModel.description.isNotEmpty() || groupUiModel.extraCurrencies.isNotEmpty()) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (groupUiModel.description.isNotEmpty()) {
+                                Arrangement.SpaceBetween
+                            } else {
+                                Arrangement.End
+                            },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = TablerIcons.Outline.AlignJustified,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            SecondaryBodyText(text = groupUiModel.description)
+                            if (groupUiModel.description.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f, fill = false)
+                                        .padding(end = MaterialTheme.spacing.Small),
+                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = TablerIcons.Outline.AlignJustified,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    SecondaryBodyText(text = groupUiModel.description, maxLines = 1)
+                                }
+                            }
+                            if (groupUiModel.extraCurrencies.isNotEmpty()) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    groupUiModel.extraCurrencies.forEach { extraCurrency ->
+                                        GroupExtraCurrencyChip(currency = extraCurrency)
+                                    }
+                                    groupUiModel.extraCurrenciesOverflowText?.let { overflowText ->
+                                        GroupExtraCurrencyChip(currency = overflowText)
+                                    }
+                                }
+                            }
                         }
                     }
 

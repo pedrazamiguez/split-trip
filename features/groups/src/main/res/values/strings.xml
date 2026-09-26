@@ -33,6 +33,7 @@
     <string name="group_extra_currency_search_hint">e.g. USD, EUR, Pound…</string>
     <string name="group_extra_currency_remove">Remove currency</string>
     <string name="group_extra_currency_clear">Clear</string>
+    <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Description</string>
     <string name="group_field_created_at">Created at</string>
     <string name="group_error_name_empty">Hey! Your group needs a name</string>
