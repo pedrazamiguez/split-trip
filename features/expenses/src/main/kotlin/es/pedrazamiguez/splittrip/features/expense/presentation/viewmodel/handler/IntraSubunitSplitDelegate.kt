@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
@@ -25,6 +26,7 @@ class IntraSubunitSplitDelegate(
     private val splitCalculatorFactory: ExpenseSplitCalculatorFactory,
     private val splitPreviewService: SplitPreviewService,
     private val subunitAwareSplitService: SubunitAwareSplitService,
+    private val remainderDistributionService: RemainderDistributionService,
     private val formattingHelper: FormattingHelper
 ) {
 
@@ -239,6 +241,18 @@ class IntraSubunitSplitDelegate(
         }
     }
 
+    private fun calculateHeadcountWeightedAmounts(
+        activeEntities: List<SplitUiModel>,
+        sourceAmountCents: Long
+    ): Map<String, Long> {
+        if (activeEntities.isEmpty() || sourceAmountCents <= 0) return emptyMap()
+        val weights = activeEntities.map { BigDecimal(getEntityHeadcount(it)) }
+        val allocatedAmounts = remainderDistributionService.distributeByWeights(sourceAmountCents, weights)
+        return activeEntities.mapIndexed { index, entity ->
+            entity.userId to allocatedAmounts[index]
+        }.toMap()
+    }
+
     private fun distributeEqualEntities(
         entitySplits: ImmutableList<SplitUiModel>,
         sourceAmountCents: Long,
@@ -247,21 +261,23 @@ class IntraSubunitSplitDelegate(
         groupSubunits: List<Subunit>,
         decimalDigits: Int
     ): ImmutableList<SplitUiModel>? {
-        if (sourceAmountCents <= 0) return null
+        if (sourceAmountCents <= 0 || activeEntityIds.isEmpty()) return null
         return try {
-            val calculator = splitCalculatorFactory.create(SplitType.EQUAL)
-            val sharesByEntityId = calculator.calculateShares(sourceAmountCents, activeEntityIds)
-                .associateBy { it.userId }
+            val activeEntities = entitySplits.filter { !it.isExcluded && it.userId in activeEntityIds }
+            if (activeEntities.isEmpty()) return null
+
+            val sharesByEntityId = calculateHeadcountWeightedAmounts(activeEntities, sourceAmountCents)
+
             entitySplits.map { entity ->
-                val share = sharesByEntityId[entity.userId]
-                if (share != null && !entity.isExcluded) {
+                val shareAmount = sharesByEntityId[entity.userId]
+                if (shareAmount != null && !entity.isExcluded) {
                     val updated = entity.copy(
-                        amountCents = share.amountCents,
-                        formattedAmount = formattingHelper.formatCentsWithCurrency(share.amountCents, currencyCode)
+                        amountCents = shareAmount,
+                        formattedAmount = formattingHelper.formatCentsWithCurrency(shareAmount, currencyCode)
                     )
                     recalculate(updated, currencyCode, groupSubunits, decimalDigits)
                 } else if (entity.isExcluded) {
-                    entity.copy(amountCents = 0L, formattedAmount = "")
+                    zeroOutEntity(entity)
                 } else {
                     entity
                 }
@@ -281,20 +297,22 @@ class IntraSubunitSplitDelegate(
     ): ImmutableList<SplitUiModel>? {
         if (sourceAmountCents <= 0 || activeEntityIds.isEmpty()) return null
         return try {
-            val calculator = splitCalculatorFactory.create(SplitType.EQUAL)
-            val sharesByEntityId = calculator.calculateShares(sourceAmountCents, activeEntityIds)
-                .associateBy { it.userId }
+            val activeEntities = entitySplits.filter { !it.isExcluded && it.userId in activeEntityIds }
+            if (activeEntities.isEmpty()) return null
+
+            val sharesByEntityId = calculateHeadcountWeightedAmounts(activeEntities, sourceAmountCents)
+
             entitySplits.map { entity ->
-                val share = sharesByEntityId[entity.userId]
-                if (share != null && !entity.isExcluded) {
+                val shareAmount = sharesByEntityId[entity.userId]
+                if (shareAmount != null && !entity.isExcluded) {
                     val updated = entity.copy(
-                        amountCents = share.amountCents,
-                        amountInput = formattingHelper.formatCentsValue(share.amountCents, decimalDigits),
-                        formattedAmount = formattingHelper.formatCentsWithCurrency(share.amountCents, currencyCode)
+                        amountCents = shareAmount,
+                        amountInput = formattingHelper.formatCentsValue(shareAmount, decimalDigits),
+                        formattedAmount = formattingHelper.formatCentsWithCurrency(shareAmount, currencyCode)
                     )
                     recalculate(updated, currencyCode, groupSubunits, decimalDigits)
                 } else if (entity.isExcluded) {
-                    entity.copy(amountCents = 0L, amountInput = "", formattedAmount = "")
+                    zeroOutEntity(entity)
                 } else {
                     entity
                 }
@@ -312,30 +330,78 @@ class IntraSubunitSplitDelegate(
         groupSubunits: List<Subunit>,
         decimalDigits: Int
     ): ImmutableList<SplitUiModel> {
-        val sharesByEntityId = splitPreviewService.distributePercentagesEvenly(
-            sourceAmountCents,
-            activeEntityIds
-        ).associateBy { it.userId }
+        val activeEntities = entitySplits.filter { !it.isExcluded && it.userId in activeEntityIds }
+        if (activeEntities.isEmpty()) {
+            return entitySplits.map { if (it.isExcluded) zeroOutEntity(it) else it }.toImmutableList()
+        }
+
+        val headcounts = activeEntities.map { getEntityHeadcount(it).toLong() }
+        val percentages = remainderDistributionService.distributePercentages(
+            remainingPercentage = BigDecimal("100"),
+            amounts = headcounts,
+            totalCents = headcounts.sum()
+        )
+        val amounts = computePercentAmounts(percentages, sourceAmountCents)
+
+        val sharesByEntityId = activeEntities.mapIndexed { index, entity ->
+            entity.userId to Pair(percentages[index], amounts[index])
+        }.toMap()
+
         return entitySplits.map { entity ->
             val share = sharesByEntityId[entity.userId]
-            if (!entity.isExcluded && share != null) {
-                val pct = share.percentage ?: BigDecimal.ZERO
-                val updated = entity.copy(
-                    percentageInput = formattingHelper.formatPercentageForDisplay(pct),
-                    amountCents = share.amountCents,
-                    formattedAmount = if (sourceAmountCents > 0) {
-                        formattingHelper.formatCentsWithCurrency(share.amountCents, currencyCode)
-                    } else {
-                        ""
-                    }
+            when {
+                !entity.isExcluded && share != null -> applyPercentShareToEntity(
+                    entity = entity,
+                    pct = share.first,
+                    amountCents = share.second,
+                    sourceAmountCents = sourceAmountCents,
+                    currencyCode = currencyCode,
+                    groupSubunits = groupSubunits,
+                    decimalDigits = decimalDigits
                 )
-                recalculate(updated, currencyCode, groupSubunits, decimalDigits)
-            } else if (entity.isExcluded) {
-                entity.copy(percentageInput = "", amountCents = 0L, formattedAmount = "")
-            } else {
-                entity
+                entity.isExcluded -> zeroOutEntity(entity)
+                else -> entity
             }
         }.toImmutableList()
+    }
+
+    private fun computePercentAmounts(
+        percentages: List<BigDecimal>,
+        sourceAmountCents: Long
+    ): List<Long> {
+        val rawAmounts = percentages.map { pct ->
+            splitPreviewService.calculateAmountFromPercentage(pct, sourceAmountCents)
+        }
+        var remainder = if (sourceAmountCents > 0) sourceAmountCents - rawAmounts.sum() else 0L
+        return rawAmounts.map { amount ->
+            if (remainder > 0) {
+                remainder--
+                amount + 1L
+            } else {
+                amount
+            }
+        }
+    }
+
+    private fun applyPercentShareToEntity(
+        entity: SplitUiModel,
+        pct: BigDecimal,
+        amountCents: Long,
+        sourceAmountCents: Long,
+        currencyCode: String,
+        groupSubunits: List<Subunit>,
+        decimalDigits: Int
+    ): SplitUiModel {
+        val updated = entity.copy(
+            percentageInput = formattingHelper.formatPercentageForDisplay(pct),
+            amountCents = amountCents,
+            formattedAmount = if (sourceAmountCents > 0) {
+                formattingHelper.formatCentsWithCurrency(amountCents, currencyCode)
+            } else {
+                ""
+            }
+        )
+        return recalculate(updated, currencyCode, groupSubunits, decimalDigits)
     }
 
     // ── Private Helpers ─────────────────────────────────────────────────
@@ -362,4 +428,30 @@ class IntraSubunitSplitDelegate(
             )
         }.toImmutableList()
     }
+}
+
+private fun getEntityHeadcount(entity: SplitUiModel): Int {
+    return if (entity.entityMembers.isEmpty()) {
+        1
+    } else {
+        entity.entityMembers.count { !it.isExcluded }.coerceAtLeast(1)
+    }
+}
+
+private fun zeroOutEntity(entity: SplitUiModel): SplitUiModel {
+    val zeroedMembers = entity.entityMembers.map { member ->
+        member.copy(
+            amountCents = 0L,
+            amountInput = "",
+            percentageInput = "",
+            formattedAmount = ""
+        )
+    }.toImmutableList()
+    return entity.copy(
+        amountCents = 0L,
+        amountInput = "",
+        percentageInput = "",
+        formattedAmount = "",
+        entityMembers = zeroedMembers
+    )
 }

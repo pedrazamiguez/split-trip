@@ -501,7 +501,7 @@ Ephemeral UI-feedback calculations for **live preview** as the user types. Not a
 #### `SubunitAwareSplitService`
 
 **File:** `service/split/SubunitAwareSplitService.kt`
-**Type:** Plain class (depends on `ExpenseSplitCalculatorFactory`)
+**Type:** Plain class (depends on `ExpenseSplitCalculatorFactory`, `RemainderDistributionService`)
 
 Two-level expense splitting: first among entities (solo + subunits), then within each subunit. Output is always a flat `List<ExpenseSplit>`.
 

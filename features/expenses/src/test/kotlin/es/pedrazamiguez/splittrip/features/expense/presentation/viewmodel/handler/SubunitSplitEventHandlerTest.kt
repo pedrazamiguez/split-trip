@@ -135,7 +135,11 @@ class SubunitSplitEventHandlerTest {
         val intraSubunitSplitDelegate = IntraSubunitSplitDelegate(
             splitCalculatorFactory = splitCalculatorFactory,
             splitPreviewService = splitPreviewService,
-            subunitAwareSplitService = SubunitAwareSplitServiceImpl(splitCalculatorFactory),
+            subunitAwareSplitService = SubunitAwareSplitServiceImpl(
+                splitCalculatorFactory = splitCalculatorFactory,
+                remainderDistributionService = remainderDistributionService
+            ),
+            remainderDistributionService = remainderDistributionService,
             formattingHelper = formattingHelper
         )
 
@@ -557,12 +561,20 @@ class SubunitSplitEventHandlerTest {
     inner class RecalculateEntitySplits {
 
         @Test
-        fun `EQUAL distributes evenly across 3 entities`() = runTest {
+        fun `EQUAL distributes across entities weighted by headcount`() = runTest {
             handler.bind(uiState, actions, this)
 
             handler.recalculateEntitySplits()
 
-            assertEquals(10000L, uiState.value.entitySplits.sumOf { it.amountCents })
+            val splits = uiState.value.entitySplits
+            assertEquals(10000L, splits.sumOf { it.amountCents })
+            // Headcount: solo1 (1) + solo2 (1) + couple (2) = 4 shares -> 2500 per share
+            assertEquals(2500L, splits.first { it.userId == soloMember1 }.amountCents)
+            assertEquals(2500L, splits.first { it.userId == soloMember2 }.amountCents)
+            val couple = splits.first { it.userId == subunitCoupleId }
+            assertEquals(5000L, couple.amountCents)
+            assertEquals(2500L, couple.entityMembers[0].amountCents)
+            assertEquals(2500L, couple.entityMembers[1].amountCents)
         }
 
         @Test
@@ -595,8 +607,35 @@ class SubunitSplitEventHandlerTest {
 
             handler.recalculateEntitySplits()
 
-            assertEquals(0L, uiState.value.entitySplits.first { it.userId == soloMember1 }.amountCents)
-            val activeTotal = uiState.value.entitySplits.filter { !it.isExcluded }.sumOf { it.amountCents }
+            val splits = uiState.value.entitySplits
+            assertEquals(0L, splits.first { it.userId == soloMember1 }.amountCents)
+            // Active headcount: solo2 (1) + couple (2) = 3 shares -> solo2 = 3334, couple = 6666
+            assertEquals(3334L, splits.first { it.userId == soloMember2 }.amountCents)
+            assertEquals(6666L, splits.first { it.userId == subunitCoupleId }.amountCents)
+            val activeTotal = splits.filter { !it.isExcluded }.sumOf { it.amountCents }
+            assertEquals(10000L, activeTotal)
+        }
+
+        @Test
+        fun `EQUAL zeroes excluded subunit and allocates entire amount to active solo members`() = runTest {
+            uiState.value = baseEntityState.copy(
+                entitySplits = baseEntityState.entitySplits.map { entity ->
+                    if (entity.userId == subunitCoupleId) entity.copy(isExcluded = true) else entity
+                }.toImmutableList()
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.recalculateEntitySplits()
+
+            val splits = uiState.value.entitySplits
+            val couple = splits.first { it.userId == subunitCoupleId }
+            assertEquals(0L, couple.amountCents)
+            couple.entityMembers.forEach { assertEquals(0L, it.amountCents) }
+
+            // Active headcount: solo1 (1) + solo2 (1) = 2 shares -> 5000 each
+            assertEquals(5000L, splits.first { it.userId == soloMember1 }.amountCents)
+            assertEquals(5000L, splits.first { it.userId == soloMember2 }.amountCents)
+            val activeTotal = splits.filter { !it.isExcluded }.sumOf { it.amountCents }
             assertEquals(10000L, activeTotal)
         }
     }
