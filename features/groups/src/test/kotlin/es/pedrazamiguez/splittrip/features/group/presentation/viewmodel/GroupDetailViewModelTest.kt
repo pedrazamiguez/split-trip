@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.exception.UnresolvedSettlementsExceptio
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AreMemberSettlementsResolvedUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
@@ -13,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSettlementsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
@@ -24,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.LeaveWizardUiMapper
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupCurrencyRateUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.leave.LeaveBalanceSummaryUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.leave.LeaveSubunitImpactUiModel
@@ -36,6 +39,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -78,6 +82,7 @@ class GroupDetailViewModelTest {
     private lateinit var getGroupContributionsFlowUseCase: GetGroupContributionsFlowUseCase
     private lateinit var getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase
     private lateinit var getGroupSettlementsFlowUseCase: GetGroupSettlementsFlowUseCase
+    private lateinit var getExchangeRateUseCase: GetExchangeRateUseCase
     private lateinit var leaveWizardUiMapper: LeaveWizardUiMapper
     private lateinit var leaveWizardEventHandler: GroupLeaveWizardEventHandlerImpl
     private lateinit var viewModel: GroupDetailViewModel
@@ -118,6 +123,7 @@ class GroupDetailViewModelTest {
         getGroupContributionsFlowUseCase = mockk(relaxed = true)
         getCashWithdrawalsFlowUseCase = mockk(relaxed = true)
         getGroupSettlementsFlowUseCase = mockk(relaxed = true)
+        getExchangeRateUseCase = mockk(relaxed = true)
         leaveWizardUiMapper = mockk(relaxed = true)
 
         leaveWizardEventHandler = GroupLeaveWizardEventHandlerImpl(
@@ -149,6 +155,8 @@ class GroupDetailViewModelTest {
         every { getCashWithdrawalsFlowUseCase(any()) } returns flowOf(emptyList())
         every { getGroupSettlementsFlowUseCase(any()) } returns flowOf(emptyList())
         coEvery { areMemberSettlementsResolvedUseCase(any(), any()) } returns emptyList()
+        coEvery { getExchangeRateUseCase(any(), any()) } returns null
+        every { groupUiMapper.mapCurrencyExchangeRates(any(), any()) } returns persistentListOf()
 
         viewModel = createViewModel()
     }
@@ -167,7 +175,8 @@ class GroupDetailViewModelTest {
         authenticationService = authenticationService,
         deleteGroupUseCase = deleteGroupUseCase,
         getGroupSettlementsFlowUseCase = getGroupSettlementsFlowUseCase,
-        leaveWizardEventHandler = leaveWizardEventHandler
+        leaveWizardEventHandler = leaveWizardEventHandler,
+        getExchangeRateUseCase = getExchangeRateUseCase
     )
 
     @Nested
@@ -677,5 +686,95 @@ class GroupDetailViewModelTest {
 
             collectJob.cancel()
         }
+    }
+
+    @Nested
+    inner class ExchangeRateResolution {
+
+        @Test
+        fun `resolves and maps secondary currency exchange rates when extraCurrencies are present`() =
+            runTest(testDispatcher) {
+                val groupWithExtra = testGroup.copy(
+                    currency = "EUR",
+                    extraCurrencies = listOf("USD", "THB")
+                )
+                every { observeGroupUseCase(testGroupId) } returns flowOf(groupWithExtra)
+                coEvery { getExchangeRateUseCase("EUR", "USD") } returns ExchangeRateWithStaleness(
+                    rate = BigDecimal("1.08"),
+                    isStale = false
+                )
+                coEvery { getExchangeRateUseCase("EUR", "THB") } returns ExchangeRateWithStaleness(
+                    rate = BigDecimal("38.25"),
+                    isStale = false
+                )
+                val expectedRates = persistentListOf(
+                    GroupCurrencyRateUiModel(currency = "USD", formattedRate = "1 EUR ≈ 1.08 USD"),
+                    GroupCurrencyRateUiModel(currency = "THB", formattedRate = "1 EUR ≈ 38.25 THB")
+                )
+                every {
+                    groupUiMapper.mapCurrencyExchangeRates(
+                        "EUR",
+                        mapOf("USD" to BigDecimal("1.08"), "THB" to BigDecimal("38.25"))
+                    )
+                } returns expectedRates
+
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setGroupId(testGroupId)
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(expectedRates, state.currencyRates)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `handles exchange rate fetch failure gracefully without breaking state`() =
+            runTest(testDispatcher) {
+                val groupWithExtra = testGroup.copy(
+                    currency = "EUR",
+                    extraCurrencies = listOf("USD")
+                )
+                every { observeGroupUseCase(testGroupId) } returns flowOf(groupWithExtra)
+                coEvery { getExchangeRateUseCase("EUR", "USD") } throws RuntimeException("Offline")
+                val expectedRates = persistentListOf(
+                    GroupCurrencyRateUiModel(currency = "USD", formattedRate = null)
+                )
+                every {
+                    groupUiMapper.mapCurrencyExchangeRates(
+                        "EUR",
+                        mapOf("USD" to null)
+                    )
+                } returns expectedRates
+
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setGroupId(testGroupId)
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertFalse(state.hasError)
+                assertEquals(expectedRates, state.currencyRates)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `does not invoke getExchangeRateUseCase when extraCurrencies is empty`() =
+            runTest(testDispatcher) {
+                val groupWithoutExtra = testGroup.copy(
+                    currency = "EUR",
+                    extraCurrencies = emptyList()
+                )
+                every { observeGroupUseCase(testGroupId) } returns flowOf(groupWithoutExtra)
+
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setGroupId(testGroupId)
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { getExchangeRateUseCase(any(), any()) }
+                assertTrue(viewModel.uiState.value.currencyRates.isEmpty())
+
+                collectJob.cancel()
+            }
     }
 }

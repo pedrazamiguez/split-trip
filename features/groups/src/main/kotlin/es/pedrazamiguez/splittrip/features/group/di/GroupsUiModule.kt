@@ -21,6 +21,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSettlementsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
@@ -217,6 +218,7 @@ val groupsUiModule = module {
         val getGroupSettlementsFlowUseCase = get<GetGroupSettlementsFlowUseCase>()
         val groupLeaveWizardEventHandler =
             get<GroupLeaveWizardEventHandler>()
+        val getExchangeRateUseCase = get<GetExchangeRateUseCase>()
 
         GroupDetailViewModel(
             observeGroupUseCase = observeGroupUseCase,
@@ -227,7 +229,8 @@ val groupsUiModule = module {
             authenticationService = authenticationService,
             deleteGroupUseCase = deleteGroupUseCase,
             getGroupSettlementsFlowUseCase = getGroupSettlementsFlowUseCase,
-            leaveWizardEventHandler = groupLeaveWizardEventHandler
+            leaveWizardEventHandler = groupLeaveWizardEventHandler,
+            getExchangeRateUseCase = getExchangeRateUseCase
         )
     }
 

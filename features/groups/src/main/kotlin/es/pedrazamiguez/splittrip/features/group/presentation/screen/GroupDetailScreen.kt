@@ -103,6 +103,8 @@ fun GroupDetailScreen(
                         showActiveBadge = isActiveGroup
                     )
 
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
+
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -134,7 +136,10 @@ fun GroupDetailScreen(
                             }
                         }
 
-                        GroupDetailInfoSection(group = group)
+                        GroupDetailInfoSection(
+                            group = group,
+                            currencyRates = uiState.currencyRates
+                        )
 
                         GroupDetailSubunitCard(
                             subunitsCount = uiState.subunitsCount,

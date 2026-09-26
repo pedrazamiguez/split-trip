@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.exception.UnresolvedSettlementsException
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSettlementsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
@@ -20,8 +21,12 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.GroupLeaveWizardEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.GroupDetailUiState
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -54,7 +59,8 @@ class GroupDetailViewModel(
     private val authenticationService: AuthenticationService,
     private val deleteGroupUseCase: DeleteGroupUseCase,
     private val getGroupSettlementsFlowUseCase: GetGroupSettlementsFlowUseCase,
-    private val leaveWizardEventHandler: GroupLeaveWizardEventHandler
+    private val leaveWizardEventHandler: GroupLeaveWizardEventHandler,
+    private val getExchangeRateUseCase: GetExchangeRateUseCase
 ) : ViewModel() {
 
     private val _groupId = MutableStateFlow("")
@@ -97,6 +103,34 @@ class GroupDetailViewModel(
 
                     val groupUiModel = groupUiMapper.toGroupUiModel(group, memberProfiles)
 
+                    val currencyRates = if (group.extraCurrencies.isNotEmpty()) {
+                        coroutineScope {
+                            group.extraCurrencies.map { extraCurrency ->
+                                async {
+                                    val rate = try {
+                                        getExchangeRateUseCase(
+                                            baseCurrencyCode = group.currency,
+                                            targetCurrencyCode = extraCurrency
+                                        )?.rate
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
+                                        Timber.w(
+                                            e,
+                                            "Failed to resolve exchange rate for ${group.currency} -> $extraCurrency"
+                                        )
+                                        null
+                                    }
+                                    extraCurrency to rate
+                                }
+                            }.awaitAll().toMap()
+                        }.let { ratesMap ->
+                            groupUiMapper.mapCurrencyExchangeRates(group.currency, ratesMap)
+                        }
+                    } else {
+                        persistentListOf()
+                    }
+
                     combine(
                         getGroupSubunitsFlowUseCase(groupId).distinctUntilChanged(),
                         getUserGroupsFlowUseCase().distinctUntilChanged(),
@@ -115,12 +149,19 @@ class GroupDetailViewModel(
                             showDeleteConfirmation = localState.showDeleteConfirmation,
                             isDeleting = localState.isDeleting,
                             isLeaving = wizardState.isLeaving,
-                            leaveWizardState = wizardState
+                            leaveWizardState = wizardState,
+                            currencyRates = currencyRates
                         )
                     }
                         .catch { e ->
                             Timber.e(e, "Error loading subunits or groups for group $groupId")
-                            emit(GroupDetailUiState(group = groupUiModel, isLoading = false))
+                            emit(
+                                GroupDetailUiState(
+                                    group = groupUiModel,
+                                    isLoading = false,
+                                    currencyRates = currencyRates
+                                )
+                            )
                         }
                 }
         }

@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.extension.resolveLocalizedName
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatDisplay
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
@@ -12,11 +13,13 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupCurrencyRateUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupMemberUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_DIRECT_EXTRA_CURRENCIES
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_VISIBLE_AVATARS
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_VISIBLE_EXTRA_CURRENCIES
+import java.math.BigDecimal
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -106,4 +109,26 @@ class GroupUiMapperImpl(
 
     override fun toCurrencyUiModels(currencies: List<Currency>): ImmutableList<CurrencyUiModel> =
         currencies.map { toCurrencyUiModel(it) }.toImmutableList()
+
+    override fun mapCurrencyExchangeRates(
+        baseCurrency: String,
+        rates: Map<String, BigDecimal?>
+    ): ImmutableList<GroupCurrencyRateUiModel> {
+        val locale = localeProvider.getCurrentLocale()
+        return rates.map { (targetCurrency, rate) ->
+            val formattedRate = rate?.let {
+                val formattedNumber = it.formatForDisplay(locale, maxDecimalPlaces = 4)
+                resourceProvider.getString(
+                    R.string.group_detail_exchange_rate_format,
+                    baseCurrency,
+                    formattedNumber,
+                    targetCurrency
+                )
+            }
+            GroupCurrencyRateUiModel(
+                currency = targetCurrency,
+                formattedRate = formattedRate
+            )
+        }.toImmutableList()
+    }
 }
