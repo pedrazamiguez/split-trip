@@ -24,8 +24,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.domain.service.calculator.ExpressionCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.calculator.ExpressionResult
 import java.math.RoundingMode
+import java.util.Locale
 
-@Suppress("LongMethod", "LongParameterList", "CognitiveComplexMethod")
+@Suppress("LongMethod", "LongParameterList", "CognitiveComplexMethod", "CyclomaticComplexMethod")
 @Composable
 fun ArithmeticTextField(
     value: String,
@@ -89,15 +90,13 @@ fun ArithmeticTextField(
         }
     }
 
-    val resolvedDisplayValue = if (displayValue != null) {
-        displayValue
-    } else {
-        value.toBigDecimalOrNull()?.stripTrailingZeros()?.formatForDisplay(
-            locale = locale,
-            maxDecimalPlaces = maxDecimalPlaces,
-            minDecimalPlaces = minDecimalPlaces
-        ) ?: value
-    }
+    val resolvedDisplayValue = resolveDisplayValue(
+        value = value,
+        displayValue = displayValue,
+        locale = locale,
+        maxDecimalPlaces = maxDecimalPlaces,
+        minDecimalPlaces = minDecimalPlaces
+    )
 
     LaunchedEffect(isFocused, expressionBuffer, evaluationResult) {
         if (isFocused) {
@@ -185,4 +184,19 @@ fun ArithmeticTextField(
         shape = shape,
         colors = colors
     )
+}
+
+private fun resolveDisplayValue(
+    value: String,
+    displayValue: String?,
+    locale: Locale,
+    maxDecimalPlaces: Int,
+    minDecimalPlaces: Int
+): String {
+    if (displayValue != null) return displayValue
+    return value.toBigDecimalOrNull()?.stripTrailingZeros()?.formatForDisplay(
+        locale = locale,
+        maxDecimalPlaces = maxDecimalPlaces,
+        minDecimalPlaces = minDecimalPlaces
+    ) ?: value
 }

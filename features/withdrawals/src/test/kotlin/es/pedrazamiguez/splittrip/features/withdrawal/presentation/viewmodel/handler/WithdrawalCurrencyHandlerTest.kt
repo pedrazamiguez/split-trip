@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -35,7 +34,6 @@ class WithdrawalCurrencyHandlerTest {
     private lateinit var getExchangeRateUseCase: GetExchangeRateUseCase
     private lateinit var exchangeRateCalculationService: ExchangeRateCalculationService
     private lateinit var addCashWithdrawalUiMapper: AddCashWithdrawalUiMapper
-    private lateinit var formattingHelper: FormattingHelper
 
     private lateinit var uiState: MutableStateFlow<AddCashWithdrawalUiState>
     private lateinit var actions: MutableSharedFlow<AddCashWithdrawalUiAction>
@@ -56,7 +54,6 @@ class WithdrawalCurrencyHandlerTest {
         getExchangeRateUseCase = mockk(relaxed = true)
         exchangeRateCalculationService = mockk(relaxed = true)
         addCashWithdrawalUiMapper = mockk(relaxed = true)
-        formattingHelper = mockk(relaxed = true)
 
         // Default calculation stubs
         every {
@@ -65,8 +62,6 @@ class WithdrawalCurrencyHandlerTest {
         every {
             exchangeRateCalculationService.calculateImpliedDisplayRateFromStrings(any(), any(), any())
         } returns "37.037"
-        every { formattingHelper.formatForDisplay(any(), any(), any()) } returns "27.03"
-        every { formattingHelper.formatRateForDisplay(any()) } returns "37.037"
 
         uiState = MutableStateFlow(baseState)
         actions = MutableSharedFlow(extraBufferCapacity = 1)
@@ -74,8 +69,7 @@ class WithdrawalCurrencyHandlerTest {
         handler = WithdrawalCurrencyHandler(
             getExchangeRateUseCase = getExchangeRateUseCase,
             exchangeRateCalculationService = exchangeRateCalculationService,
-            addCashWithdrawalUiMapper = addCashWithdrawalUiMapper,
-            formattingHelper = formattingHelper
+            addCashWithdrawalUiMapper = addCashWithdrawalUiMapper
         )
     }
 
@@ -287,8 +281,28 @@ class WithdrawalCurrencyHandlerTest {
             handler.handleExchangeRateChanged("37.0")
             advanceUntilIdle()
 
-            // deductedAmount should be recalculated (formattingHelper.formatForDisplay stub returns "27.03")
+            // deductedAmount should be recalculated
             assertEquals("27.03", uiState.value.deductedAmount)
+        }
+
+        @Test
+        fun `recalculateDeducted stores raw plain string without grouping separators for large amounts`() = runTest {
+            every {
+                exchangeRateCalculationService.calculateGroupAmountFromDisplayRate("10000", "0.95", 2, 2)
+            } returns "10526.32"
+
+            uiState.value = baseState.copy(
+                showExchangeRateSection = true,
+                withdrawalAmount = "10000",
+                displayExchangeRate = "0.95",
+                selectedCurrency = usdModel,
+                groupCurrency = eurModel
+            )
+            handler.bind(uiState, actions, this)
+            handler.recalculateDeducted()
+            advanceUntilIdle()
+
+            assertEquals("10526.32", uiState.value.deductedAmount)
         }
     }
 
