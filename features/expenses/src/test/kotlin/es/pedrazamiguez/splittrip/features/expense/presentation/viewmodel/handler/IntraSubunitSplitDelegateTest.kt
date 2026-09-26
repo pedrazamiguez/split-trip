@@ -4,7 +4,9 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.impl.SubunitAwareSplitServiceImpl
@@ -14,6 +16,7 @@ import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
 import java.util.Locale
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -97,12 +100,17 @@ class IntraSubunitSplitDelegateTest {
         formattingHelper = FormattingHelper(localeProvider)
         val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
         val splitPreviewService = SplitPreviewServiceImpl()
-        val subunitAwareSplitService = SubunitAwareSplitServiceImpl(splitCalculatorFactory)
+        val remainderDistributionService = RemainderDistributionServiceImpl()
+        val subunitAwareSplitService = SubunitAwareSplitServiceImpl(
+            splitCalculatorFactory = splitCalculatorFactory,
+            remainderDistributionService = remainderDistributionService
+        )
 
         delegate = IntraSubunitSplitDelegate(
             splitCalculatorFactory = splitCalculatorFactory,
             splitPreviewService = splitPreviewService,
             subunitAwareSplitService = subunitAwareSplitService,
+            remainderDistributionService = remainderDistributionService,
             formattingHelper = formattingHelper
         )
     }
@@ -352,9 +360,10 @@ class IntraSubunitSplitDelegateTest {
 
             assertNotNull(result)
             assertEquals(3, result!!.size)
-            assertEquals(10000L, result[0].amountCents)
-            assertEquals(10000L, result[1].amountCents)
-            assertEquals(10000L, result[2].amountCents)
+            // Headcount: solo1 (1) + solo2 (1) + subunit (2) = 4 shares -> 7500 per share
+            assertEquals(7500L, result[0].amountCents)
+            assertEquals(7500L, result[1].amountCents)
+            assertEquals(15000L, result[2].amountCents)
         }
 
         @Test
@@ -373,9 +382,9 @@ class IntraSubunitSplitDelegateTest {
             // The subunit entity (index 2) should have its members recalculated
             val subunit = result!![2]
             assertEquals(2, subunit.entityMembers.size)
-            // With coupleSubunit shares (60/40): 10000 * 0.6 = 6000, 10000 * 0.4 = 4000
-            assertEquals(6000L, subunit.entityMembers[0].amountCents)
-            assertEquals(4000L, subunit.entityMembers[1].amountCents)
+            // With coupleSubunit shares (60/40): 15000 * 0.6 = 9000, 15000 * 0.4 = 6000
+            assertEquals(9000L, subunit.entityMembers[0].amountCents)
+            assertEquals(6000L, subunit.entityMembers[1].amountCents)
         }
 
         @Test
@@ -396,9 +405,37 @@ class IntraSubunitSplitDelegateTest {
             assertNotNull(result)
             assertEquals(0L, result!![0].amountCents)
             assertEquals("", result[0].formattedAmount)
-            // Remaining 30000 split between 2 entities: 15000 each
+            // Active: solo2 (1) + subunit (2) = 3 shares. 30000 / 3 = 10000 per share
+            assertEquals(10000L, result[1].amountCents)
+            assertEquals(20000L, result[2].amountCents)
+        }
+
+        @Test
+        fun `EQUAL distribution zeroes excluded subunit and its members`() {
+            val excludedSubunit = subunitEntity.copy(isExcluded = true)
+            val splits = persistentListOf(solo1Entity, solo2Entity, excludedSubunit)
+
+            val result = delegate.distributeEntitySplits(
+                entitySplits = splits,
+                splitType = SplitType.EQUAL,
+                sourceAmountCents = 30000L,
+                activeEntityIds = listOf("solo-1", "solo-2"),
+                currencyCode = "EUR",
+                groupSubunits = listOf(coupleSubunit),
+                decimalDigits = 2
+            )
+
+            assertNotNull(result)
+            // Active: solo1 (1) + solo2 (1) = 2 shares -> 15000 each
+            assertEquals(15000L, result!![0].amountCents)
             assertEquals(15000L, result[1].amountCents)
-            assertEquals(15000L, result[2].amountCents)
+            val subunit = result[2]
+            assertEquals(0L, subunit.amountCents)
+            assertEquals("", subunit.formattedAmount)
+            assertEquals(0L, subunit.entityMembers[0].amountCents)
+            assertEquals("", subunit.entityMembers[0].formattedAmount)
+            assertEquals(0L, subunit.entityMembers[1].amountCents)
+            assertEquals("", subunit.entityMembers[1].formattedAmount)
         }
 
         @Test
@@ -416,7 +453,7 @@ class IntraSubunitSplitDelegateTest {
         }
 
         @Test
-        fun `EXACT distribution pre-fills with even amounts and inputs`() {
+        fun `EXACT distribution pre-fills with headcount weighted amounts and inputs`() {
             val result = delegate.distributeEntitySplits(
                 entitySplits = entitySplits,
                 splitType = SplitType.EXACT,
@@ -428,11 +465,13 @@ class IntraSubunitSplitDelegateTest {
             )
 
             assertNotNull(result)
-            result!!.filter { !it.isExcluded }.forEach { entity ->
-                assertEquals(10000L, entity.amountCents)
-                assertTrue(entity.amountInput.isNotBlank())
-                assertTrue(entity.formattedAmount.isNotBlank())
-            }
+            // Headcount: 1, 1, 2 = 4 shares -> solo1 = 7500, solo2 = 7500, subunit = 15000
+            assertEquals(7500L, result!![0].amountCents)
+            assertEquals("75.00", result[0].amountInput)
+            assertEquals(7500L, result[1].amountCents)
+            assertEquals("75.00", result[1].amountInput)
+            assertEquals(15000L, result[2].amountCents)
+            assertEquals("150.00", result[2].amountInput)
         }
 
         @Test
@@ -453,10 +492,15 @@ class IntraSubunitSplitDelegateTest {
             assertNotNull(result)
             assertEquals(0L, result!![0].amountCents)
             assertEquals("", result[0].amountInput)
+            // Active: solo2 (1) + subunit (2) = 3 shares -> solo2 = 6667, subunit = 13333
+            assertEquals(6667L, result[1].amountCents)
+            assertEquals("66.67", result[1].amountInput)
+            assertEquals(13333L, result[2].amountCents)
+            assertEquals("133.33", result[2].amountInput)
         }
 
         @Test
-        fun `PERCENT distribution fills percentages and amounts`() {
+        fun `PERCENT distribution fills percentages and amounts weighted by headcount`() {
             val result = delegate.distributeEntitySplits(
                 entitySplits = entitySplits,
                 splitType = SplitType.PERCENT,
@@ -468,12 +512,14 @@ class IntraSubunitSplitDelegateTest {
             )
 
             assertNotNull(result)
-            result!!.filter { !it.isExcluded }.forEach { entity ->
-                assertTrue(entity.percentageInput.isNotBlank())
-                assertTrue(entity.amountCents > 0)
-                assertTrue(entity.formattedAmount.isNotBlank())
-            }
-            // Total should equal source amount
+            // Headcount: 1, 1, 2 = 4 -> 25%, 25%, 50%
+            assertEquals("25", result!![0].percentageInput)
+            assertEquals(7500L, result[0].amountCents)
+            assertEquals("25", result[1].percentageInput)
+            assertEquals(7500L, result[1].amountCents)
+            assertEquals("50", result[2].percentageInput)
+            assertEquals(15000L, result[2].amountCents)
+
             val total = result.sumOf { it.amountCents }
             assertEquals(30000L, total)
         }
@@ -496,6 +542,93 @@ class IntraSubunitSplitDelegateTest {
             assertNotNull(result)
             assertEquals(0L, result!![0].amountCents)
             assertEquals("", result[0].percentageInput)
+            // Active: solo2 (1) + subunit (2) = 3 shares -> solo2 = 33.34%, subunit = 66.66%
+            assertEquals("33.34", result[1].percentageInput)
+            assertEquals(6668L, result[1].amountCents)
+            assertEquals("66.66", result[2].percentageInput)
+            assertEquals(13332L, result[2].amountCents)
+            assertEquals(20000L, result.sumOf { it.amountCents })
+        }
+
+        private fun createEightMemberSplits(): Pair<ImmutableList<SplitUiModel>, List<String>> {
+            val solo1 = makeEntity(entityId = "solo-1", members = emptyList())
+            val solo2 = makeEntity(entityId = "solo-2", members = emptyList())
+            val solo3 = makeEntity(entityId = "solo-3", members = emptyList())
+            val solo4 = makeEntity(entityId = "solo-4", members = emptyList())
+            val subunit4 = makeEntity(
+                entityId = "subunit-4",
+                members = listOf(
+                    makeMember("m1"),
+                    makeMember("m2"),
+                    makeMember("m3"),
+                    makeMember("m4")
+                )
+            )
+            val splits = persistentListOf(solo1, solo2, solo3, solo4, subunit4)
+            val activeIds = listOf("solo-1", "solo-2", "solo-3", "solo-4", "subunit-4")
+            return Pair(splits, activeIds)
+        }
+
+        @Test
+        fun `eight member group EQUAL distribution reflects headcount weighting`() {
+            val (splits, activeIds) = createEightMemberSplits()
+            val result = delegate.distributeEntitySplits(
+                entitySplits = splits,
+                splitType = SplitType.EQUAL,
+                sourceAmountCents = 80000L,
+                activeEntityIds = activeIds,
+                currencyCode = "EUR",
+                groupSubunits = emptyList(),
+                decimalDigits = 2
+            )
+            assertNotNull(result)
+            for (i in 0..3) {
+                assertEquals(10000L, result!![i].amountCents)
+            }
+            assertEquals(40000L, result!![4].amountCents)
+        }
+
+        @Test
+        fun `eight member group EXACT prefill reflects headcount weighting`() {
+            val (splits, activeIds) = createEightMemberSplits()
+            val result = delegate.distributeEntitySplits(
+                entitySplits = splits,
+                splitType = SplitType.EXACT,
+                sourceAmountCents = 80000L,
+                activeEntityIds = activeIds,
+                currencyCode = "EUR",
+                groupSubunits = emptyList(),
+                decimalDigits = 2
+            )
+            assertNotNull(result)
+            for (i in 0..3) {
+                assertEquals(10000L, result!![i].amountCents)
+                assertEquals("100.00", result[i].amountInput)
+            }
+            assertEquals(40000L, result!![4].amountCents)
+            assertEquals("400.00", result[4].amountInput)
+        }
+
+        @Test
+        fun `eight member group PERCENT prefill reflects headcount weighting`() {
+            val (splits, activeIds) = createEightMemberSplits()
+            val result = delegate.distributeEntitySplits(
+                entitySplits = splits,
+                splitType = SplitType.PERCENT,
+                sourceAmountCents = 80000L,
+                activeEntityIds = activeIds,
+                currencyCode = "EUR",
+                groupSubunits = emptyList(),
+                decimalDigits = 2
+            )
+            assertNotNull(result)
+            for (i in 0..3) {
+                assertEquals(10000L, result!![i].amountCents)
+                assertEquals("12.5", result[i].percentageInput)
+            }
+            assertEquals(40000L, result!![4].amountCents)
+            assertEquals("50", result[4].percentageInput)
+            assertEquals(80000L, result.sumOf { it.amountCents })
         }
 
         @Test
@@ -768,10 +901,17 @@ class IntraSubunitSplitDelegateTest {
             val throwingFactory = mockk<ExpenseSplitCalculatorFactory> {
                 every { create(any()) } throws RuntimeException("Simulated calculator failure")
             }
+            val throwingRemainderService = mockk<RemainderDistributionService> {
+                every { distributeByWeights(any(), any()) } throws RuntimeException("Simulated remainder failure")
+            }
             mockedDelegate = IntraSubunitSplitDelegate(
                 splitCalculatorFactory = throwingFactory,
                 splitPreviewService = SplitPreviewServiceImpl(),
-                subunitAwareSplitService = SubunitAwareSplitServiceImpl(throwingFactory),
+                subunitAwareSplitService = SubunitAwareSplitServiceImpl(
+                    splitCalculatorFactory = throwingFactory,
+                    remainderDistributionService = throwingRemainderService
+                ),
+                remainderDistributionService = throwingRemainderService,
                 formattingHelper = formattingHelper
             )
         }

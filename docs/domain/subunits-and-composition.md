@@ -334,11 +334,11 @@ This is the most architecturally significant change. When subunits exist, expens
 graph TB
     Total["Total Expense: 200 EUR"]
     
-    subgraph Level1["Level 1 — Entity-Level Split (EQUAL)"]
-        E1["Juan (solo): 50 EUR"]
-        E2["Gay Couple: 50 EUR"]
-        E3["Father & Daughter: 50 EUR"]
-        E4["Ana's Family: 50 EUR"]
+    subgraph Level1["Level 1 — Entity-Level Split (EQUAL, Headcount-Weighted)"]
+        E1["Juan (solo, 1x): 25 EUR"]
+        E2["Gay Couple (2x): 50 EUR"]
+        E3["Father & Daughter (2x): 50 EUR"]
+        E4["Ana's Family (3x): 75 EUR"]
     end
 
     subgraph Level2a["Level 2 — Intra-Subunit (EQUAL)"]
@@ -352,8 +352,8 @@ graph TB
     end
 
     subgraph Level2c["Level 2 — Intra-Subunit (EXACT)"]
-        M5["Ana: 25 EUR"]
-        M6["Luis: 25 EUR"]
+        M5["Ana: 37.50 EUR"]
+        M6["Luis: 37.50 EUR"]
         M7["Luisito: 0 EUR 🆓"]
     end
 
@@ -380,11 +380,15 @@ graph TB
 
 **Question:** How is the total expense divided among "entities" (solo travelers + subunits as single units)?
 
-The system treats each subunit as **one participant**. Solo travelers are individual participants. The total is divided among these entities using the standard split strategies:
+When "Split by subunit" is enabled, Level 1 equal splitting weights entities by **participant headcount** so that solo travelers do not subsidize subunit members:
+- **Solo travelers** count as 1 share.
+- **Subunits** count as $N$ shares (where $N$ is the number of subunit members).
 
-- **EQUAL:** 200 EUR ÷ 4 entities = 50 EUR each
-- **EXACT:** Juan 30 EUR, Couple 60 EUR, Father+Daughter 50 EUR, Family 60 EUR
-- **PERCENT:** Juan 15%, Couple 30%, Father+Daughter 25%, Family 30%
+The total is divided among active entities using these headcount weights:
+
+- **EQUAL:** 200 EUR among 8 total members (Juan: 1, Couple: 2, Father+Daughter: 2, Family: 3) → Juan: 25 EUR, Couple: 50 EUR, Father+Daughter: 50 EUR, Family: 75 EUR.
+- **EXACT:** Headcount-weighted amounts pre-fill the exact inputs (Juan: 25 EUR, Couple: 50 EUR, Father+Daughter: 50 EUR, Family: 75 EUR), which users can freely customize.
+- **PERCENT:** Headcount-weighted percentages pre-fill the percentage inputs (Juan: 12.5%, Couple: 25%, Father+Daughter: 25%, Family: 37.5%), summing to 100%.
 
 ### Level 2: Intra-Subunit Split
 
@@ -444,7 +448,8 @@ This domain service orchestrates the two-level split:
 
 ```kotlin
 class SubunitAwareSplitService(
-    private val splitCalculatorFactory: ExpenseSplitCalculatorFactory
+    private val splitCalculatorFactory: ExpenseSplitCalculatorFactory,
+    private val remainderDistributionService: RemainderDistributionService
 ) {
     fun calculateShares(
         totalAmountCents: Long,
@@ -459,7 +464,9 @@ class SubunitAwareSplitService(
 
 **Algorithm:**
 1. Build entity list: solo user IDs + subunit IDs.
-2. Use `ExpenseSplitCalculator` (via factory) to compute entity-level shares.
+2. For Level 1 split:
+   - If `entitySplitType` is `EQUAL`, weight entities by headcount using `RemainderDistributionService.distributeByWeights`.
+   - For other split types, use `ExpenseSplitCalculator` (via factory).
 3. For each subunit's share:
    - Check `subunitSplitOverrides[subunitId]` for per-expense override.
    - If override exists → use the override's `splitType` and per-member amounts.
