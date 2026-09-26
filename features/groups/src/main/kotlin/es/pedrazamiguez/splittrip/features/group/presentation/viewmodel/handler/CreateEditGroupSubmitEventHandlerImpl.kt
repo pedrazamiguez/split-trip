@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
@@ -40,6 +41,7 @@ class CreateEditGroupSubmitEventHandlerImpl(
     private val addGroupMembersUseCase: AddGroupMembersUseCase,
     private val removeGroupMemberUseCase: RemoveGroupMemberUseCase,
     private val setSelectedGroupUseCase: SetSelectedGroupUseCase,
+    private val getSelectedGroupIdUseCase: GetSelectedGroupIdUseCase,
     private val authenticationService: AuthenticationService
 ) : CreateEditGroupSubmitEventHandler {
     private lateinit var _uiState: MutableStateFlow<CreateEditGroupUiState>
@@ -110,6 +112,13 @@ class CreateEditGroupSubmitEventHandlerImpl(
 
             updateGroupUseCase(updatedGroup)
                 .onSuccess {
+                    if (getSelectedGroupIdUseCase().firstOrNull() == group.id) {
+                        setSelectedGroupUseCase(
+                            group.id,
+                            updatedGroup.name,
+                            updatedGroup.currency
+                        )
+                    }
                     val hasError = syncMemberChanges(group, membersToAdd, membersToRemove)
                     emitGroupUpdateResult(hasError)
                     onSuccess()

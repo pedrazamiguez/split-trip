@@ -22,6 +22,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -69,6 +70,7 @@ class CreateEditGroupViewModelTest {
     private lateinit var addGroupMembersUseCase: AddGroupMembersUseCase
     private lateinit var removeGroupMemberUseCase: RemoveGroupMemberUseCase
     private lateinit var setSelectedGroupUseCase: SetSelectedGroupUseCase
+    private lateinit var getSelectedGroupIdUseCase: GetSelectedGroupIdUseCase
     private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
     private lateinit var featureGateService: FeatureGateService
     private lateinit var getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase
@@ -107,6 +109,9 @@ class CreateEditGroupViewModelTest {
         addGroupMembersUseCase = mockk(relaxed = true)
         removeGroupMemberUseCase = mockk(relaxed = true)
         setSelectedGroupUseCase = mockk(relaxed = true)
+        getSelectedGroupIdUseCase = mockk(relaxed = true) {
+            every { this@mockk.invoke() } returns flowOf(null)
+        }
         getUserGroupsFlowUseCase = mockk(relaxed = true)
         featureGateService = mockk(relaxed = true)
         getSupportedCurrenciesUseCase = mockk(relaxed = true)
@@ -151,6 +156,7 @@ class CreateEditGroupViewModelTest {
             addGroupMembersUseCase = addGroupMembersUseCase,
             removeGroupMemberUseCase = removeGroupMemberUseCase,
             setSelectedGroupUseCase = setSelectedGroupUseCase,
+            getSelectedGroupIdUseCase = getSelectedGroupIdUseCase,
             authenticationService = authenticationService
         )
         return CreateEditGroupViewModel(
