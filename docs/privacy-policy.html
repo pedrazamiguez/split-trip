@@ -7,6 +7,9 @@
   <title>SplitTrip — Privacy Policy / Política de Privacidad</title>
   <meta name="description" content="Privacy Policy for SplitTrip: Group Expenses. Transparent, offline-first travel expense tracking with zero data selling and secure cloud replication.">
   <link rel="icon" type="image/png" href="assets/app-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: light dark;
@@ -29,7 +32,9 @@
       --radius-md: 12px;
       --radius-lg: 16px;
       --radius-full: 9999px;
-      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-body: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-family: var(--font-body);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -94,7 +99,8 @@
     }
 
     body {
-      font-family: var(--font-family);
+      font-family: var(--font-body);
+      font-size-adjust: from-font;
       background-color: var(--bg-canvas);
       color: var(--text-primary);
       line-height: 1.65;
@@ -102,6 +108,11 @@
       -webkit-font-smoothing: antialiased;
       padding: 24px 16px 64px 16px;
       transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    h1, h2, h3, h4, .brand-title {
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
     }
 
     .container {
