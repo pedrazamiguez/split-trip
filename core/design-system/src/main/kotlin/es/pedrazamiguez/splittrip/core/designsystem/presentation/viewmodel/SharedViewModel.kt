@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -58,7 +59,12 @@ class SharedViewModel(
         initialValue = null
     )
 
-    val selectedGroupName: StateFlow<String?> = getSelectedGroupNameUseCase().stateIn(
+    val selectedGroupName: StateFlow<String?> = combine(
+        selectedGroup,
+        getSelectedGroupNameUseCase()
+    ) { group, prefName ->
+        group?.name ?: prefName
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(
             stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
@@ -67,7 +73,12 @@ class SharedViewModel(
         initialValue = null
     )
 
-    val selectedGroupCurrency: StateFlow<String?> = getSelectedGroupCurrencyUseCase().stateIn(
+    val selectedGroupCurrency: StateFlow<String?> = combine(
+        selectedGroup,
+        getSelectedGroupCurrencyUseCase()
+    ) { group, prefCurrency ->
+        group?.currency ?: prefCurrency
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(
             stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,

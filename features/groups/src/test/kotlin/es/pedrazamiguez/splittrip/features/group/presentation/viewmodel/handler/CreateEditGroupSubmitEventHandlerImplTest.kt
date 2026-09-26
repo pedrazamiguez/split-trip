@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -15,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
@@ -55,6 +57,7 @@ class CreateEditGroupSubmitEventHandlerImplTest {
     private lateinit var removeGroupMemberUseCase: RemoveGroupMemberUseCase
     private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
     private lateinit var setSelectedGroupUseCase: SetSelectedGroupUseCase
+    private lateinit var getSelectedGroupIdUseCase: GetSelectedGroupIdUseCase
     private lateinit var featureGateService: FeatureGateService
     private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var appConfigService: AppConfigService
@@ -81,6 +84,9 @@ class CreateEditGroupSubmitEventHandlerImplTest {
         removeGroupMemberUseCase = mockk(relaxed = true)
         getUserGroupsFlowUseCase = mockk(relaxed = true)
         setSelectedGroupUseCase = mockk(relaxed = true)
+        getSelectedGroupIdUseCase = mockk(relaxed = true) {
+            every { this@mockk.invoke() } returns flowOf(null)
+        }
         featureGateService = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
         appConfigService = mockk(relaxed = true) {
@@ -102,6 +108,7 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             addGroupMembersUseCase = addGroupMembersUseCase,
             removeGroupMemberUseCase = removeGroupMemberUseCase,
             setSelectedGroupUseCase = setSelectedGroupUseCase,
+            getSelectedGroupIdUseCase = getSelectedGroupIdUseCase,
             authenticationService = authenticationService
         )
         handler.bind(stateFlow, actionsFlow, kotlinx.coroutines.MainScope())
@@ -353,6 +360,33 @@ class CreateEditGroupSubmitEventHandlerImplTest {
 
             coVerify(exactly = 0) { telemetryTracker.trackEvent(any(), any()) }
         }
+
+        @Test
+        fun `updates selected group preferences when edited group is currently selected`() =
+            runTest(testDispatcher) {
+                stateFlow.value = stateFlow.value.copy(
+                    selectedCurrency = CurrencyUiModel("JPY", "JPY - ¥", 0, "Japanese Yen", "Yen")
+                )
+                every { getSelectedGroupIdUseCase() } returns flowOf(testGroup.id)
+                coEvery { updateGroupUseCase(any()) } returns Result.success(Unit)
+
+                handler.handleSubmit {}
+                advanceUntilIdle()
+
+                coVerify(exactly = 1) { setSelectedGroupUseCase(testGroup.id, "Updated Trip", "JPY") }
+            }
+
+        @Test
+        fun `does not update selected group preferences when edited group is not currently selected`() =
+            runTest(testDispatcher) {
+                every { getSelectedGroupIdUseCase() } returns flowOf("other-group")
+                coEvery { updateGroupUseCase(any()) } returns Result.success(Unit)
+
+                handler.handleSubmit {}
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { setSelectedGroupUseCase(any(), any(), any()) }
+            }
 
         @Test
         fun `blocks group update when adding members exceeds MAX_MEMBERS_PER_GROUP`() = runTest(testDispatcher) {
