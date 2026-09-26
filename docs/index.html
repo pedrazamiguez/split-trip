@@ -11,6 +11,9 @@
   <meta property="og:url" content="https://splittrip.eu/">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="assets/app-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: light dark;
@@ -51,7 +54,9 @@
       --radius-xl: 28px;
       --radius-full: 9999px;
       
-      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-body: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-family: var(--font-body);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -147,13 +152,37 @@
     }
 
     body {
-      font-family: var(--font-family);
+      font-family: var(--font-body);
+      font-size-adjust: from-font;
       background-color: var(--bg-canvas);
       color: var(--text-primary);
       line-height: 1.6;
       font-size: 16px;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6,
+    .brand-title,
+    .hero-title,
+    .section-title,
+    .section-eyebrow,
+    .feature-card h3,
+    .philosophy-text h2,
+    .cta-banner h2 {
+      font-family: var(--font-display);
+    }
+
+    .stat-number,
+    .metric-value,
+    .mockup-balance-amount,
+    .exchange-rate-pill,
+    .expense-amount,
+    .transaction-amount,
+    .stat-box,
+    .metric-item {
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
     }
 
     /* Bilingual Toggle Support */
