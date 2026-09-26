@@ -128,7 +128,10 @@ val expensesDomainModule = module {
         ExpenseValidationServiceImpl(splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>())
     }
     factory<SubunitAwareSplitService> {
-        SubunitAwareSplitServiceImpl(splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>())
+        SubunitAwareSplitServiceImpl(
+            splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>(),
+            remainderDistributionService = get<RemainderDistributionService>()
+        )
     }
     factory<AttachReceiptUseCase> {
         AttachReceiptUseCaseImpl(receiptStorageService = get<ReceiptStorageService>())

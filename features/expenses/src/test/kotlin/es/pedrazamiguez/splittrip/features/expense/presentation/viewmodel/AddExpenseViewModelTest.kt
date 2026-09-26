@@ -248,7 +248,11 @@ class AddExpenseViewModelTest {
         val intraSubunitSplitDelegate = IntraSubunitSplitDelegate(
             splitCalculatorFactory = splitCalculatorFactory,
             splitPreviewService = splitPreviewService,
-            subunitAwareSplitService = SubunitAwareSplitServiceImpl(splitCalculatorFactory),
+            subunitAwareSplitService = SubunitAwareSplitServiceImpl(
+                splitCalculatorFactory = splitCalculatorFactory,
+                remainderDistributionService = remainderDistributionService
+            ),
+            remainderDistributionService = remainderDistributionService,
             formattingHelper = formattingHelper
         )
 

@@ -196,6 +196,7 @@ val expensesUiModule = module {
             splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>(),
             splitPreviewService = get<SplitPreviewService>(),
             subunitAwareSplitService = get<SubunitAwareSplitService>(),
+            remainderDistributionService = get<RemainderDistributionService>(),
             formattingHelper = formattingHelper
         )
 
