@@ -111,7 +111,8 @@ class BalancesViewModel(
                         memberProfiles = memberProfiles
                     )
 
-                    val mappedBalance = balancesUiMapper.mapBalance(balance, groupName)
+                    val currentGroupName = reactiveGroup?.name?.takeIf { it.isNotBlank() } ?: groupName
+                    val mappedBalance = balancesUiMapper.mapBalance(balance, currentGroupName)
                     val formattedBalance = mappedBalance.formattedBalance
                     val currentCents = balance.virtualBalance
                     val previousCents = _lastSeenBalanceCents.value

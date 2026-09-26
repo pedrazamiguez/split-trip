@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetBalancesDashboardFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
@@ -60,8 +61,7 @@ class BalancesViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var getBalancesDashboardFlowUseCase:
-        es.pedrazamiguez.splittrip.domain.usecase.balance.GetBalancesDashboardFlowUseCase
+    private lateinit var getBalancesDashboardFlowUseCase: GetBalancesDashboardFlowUseCase
     private lateinit var getGroupByIdUseCase: GetGroupByIdUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var balancesUiMapper: BalancesUiMapper
@@ -276,8 +276,9 @@ class BalancesViewModelTest {
             val balanceUiModel2 = testBalanceUiModel.copy(groupName = "Beach Trip", currency = "USD")
 
             coEvery { getGroupByIdUseCase(group2Id) } returns group2
+            every { observeGroupUseCase(group2Id) } returns flowOf(group2)
             every { getBalancesDashboardFlowUseCase(group2Id, "USD", any()) } returns
-                kotlinx.coroutines.flow.flowOf(
+                flowOf(
                     BalancesDashboardDomainModel(
                         balance = testBalance.copy(currency = "USD"),
                         contributions = listOf(testContribution1),
@@ -332,6 +333,39 @@ class BalancesViewModelTest {
             // Then - Should not trigger additional calls
             assertEquals(initialCallCount, callCount)
         }
+
+        @Test
+        fun `observeGroupUseCase emission with updated group name reactively updates pocketBalance groupName`() =
+            runTest(testDispatcher) {
+                // Given
+                val groupFlow = MutableStateFlow(testGroup)
+                every { observeGroupUseCase(testGroupId) } returns groupFlow
+
+                val initialBalanceUiModel = testBalanceUiModel.copy(groupName = "Trip to Paris")
+                val updatedBalanceUiModel = testBalanceUiModel.copy(groupName = "Trip to Rome")
+
+                every { balancesUiMapper.mapBalance(testBalance, "Trip to Paris") } returns initialBalanceUiModel
+                every { balancesUiMapper.mapBalance(testBalance, "Trip to Rome") } returns updatedBalanceUiModel
+
+                viewModel = createViewModel()
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                // When - Initial load
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                // Then - Initial group name is rendered
+                assertEquals("Trip to Paris", viewModel.uiState.value.pocketBalance.groupName)
+
+                // When - Reactive group emits updated name without switching selectedGroupId
+                groupFlow.value = testGroup.copy(name = "Trip to Rome")
+                advanceUntilIdle()
+
+                // Then - Pocket balance reactively updates with new group name
+                assertEquals("Trip to Rome", viewModel.uiState.value.pocketBalance.groupName)
+
+                collectJob.cancel()
+            }
     }
 
     @Nested
