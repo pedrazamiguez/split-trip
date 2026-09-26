@@ -117,47 +117,23 @@ fun GroupItem(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        text = groupUiModel.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    // GroupItemMetaLine
-                    val metaParts = buildList {
-                        if (groupUiModel.dateText.isNotEmpty()) add(groupUiModel.dateText)
-                        if (groupUiModel.membersCountText.isNotEmpty()) add(groupUiModel.membersCountText)
-                    }
-                    if (metaParts.isNotEmpty()) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            metaParts.forEachIndexed { index, part ->
-                                if (index > 0) {
-                                    SecondaryBodyText(
-                                        text = stringResource(DesignR.string.metadata_separator),
-                                        maxLines = Int.MAX_VALUE
-                                    )
-                                }
-                                SecondaryBodyText(text = part)
-                            }
-                        }
-                    }
-                }
-
-                // GroupItemTrailing
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+                    // Line 1: Title & Primary Currency Badge
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Text(
+                            text = groupUiModel.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = MaterialTheme.spacing.Small)
+                        )
                         Box(
                             modifier = Modifier
                                 .clip(MaterialTheme.shapes.large)
@@ -174,26 +150,64 @@ fun GroupItem(
                                 )
                             )
                         }
-                        if (groupUiModel.extraCurrencies.isNotEmpty()) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                groupUiModel.extraCurrencies.forEach { extraCurrency ->
-                                    GroupExtraCurrencyChip(currency = extraCurrency)
+                    }
+
+                    // Line 2: Meta & Secondary Currency Chips
+                    val metaParts = buildList {
+                        if (groupUiModel.dateText.isNotEmpty()) add(groupUiModel.dateText)
+                        if (groupUiModel.membersCountText.isNotEmpty()) add(groupUiModel.membersCountText)
+                    }
+                    if (metaParts.isNotEmpty() || groupUiModel.extraCurrencies.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (metaParts.isNotEmpty()) {
+                                Arrangement.SpaceBetween
+                            } else {
+                                Arrangement.End
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (metaParts.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f, fill = false)
+                                        .padding(end = MaterialTheme.spacing.Small),
+                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    metaParts.forEachIndexed { index, part ->
+                                        if (index > 0) {
+                                            SecondaryBodyText(
+                                                text = stringResource(DesignR.string.metadata_separator),
+                                                maxLines = Int.MAX_VALUE
+                                            )
+                                        }
+                                        SecondaryBodyText(text = part)
+                                    }
                                 }
-                                groupUiModel.extraCurrenciesOverflowText?.let { overflowText ->
-                                    GroupExtraCurrencyChip(currency = overflowText)
+                            }
+                            if (groupUiModel.extraCurrencies.isNotEmpty()) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    groupUiModel.extraCurrencies.forEach { extraCurrency ->
+                                        GroupExtraCurrencyChip(currency = extraCurrency)
+                                    }
+                                    groupUiModel.extraCurrenciesOverflowText?.let { overflowText ->
+                                        GroupExtraCurrencyChip(currency = overflowText)
+                                    }
                                 }
                             }
                         }
                     }
-                    Icon(
-                        imageVector = TablerIcons.Outline.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
                 }
+
+                Icon(
+                    imageVector = TablerIcons.Outline.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
             }
         }
         SyncStatusBadge(syncStatus = groupUiModel.syncStatus)

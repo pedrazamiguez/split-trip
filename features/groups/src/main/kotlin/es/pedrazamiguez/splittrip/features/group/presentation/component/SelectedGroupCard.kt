@@ -76,24 +76,53 @@ fun SelectedGroupCard(
                         .padding(MaterialTheme.spacing.Default),
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
                 ) {
-                    // Header row: Title & description on left, currencies on right
+                    // Title row with primary currency badge
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(
+                        SheetTitleText(
+                            text = groupUiModel.name,
+                            maxLines = 1,
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(end = MaterialTheme.spacing.Medium),
-                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+                                .padding(end = MaterialTheme.spacing.Medium)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.large)
+                                .background(MaterialTheme.colorScheme.primary)
                         ) {
-                            SheetTitleText(
-                                text = groupUiModel.name,
-                                maxLines = 1
+                            Text(
+                                text = groupUiModel.currency,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(
+                                    horizontal = CURRENCY_HORIZONTAL_PADDING,
+                                    vertical = CURRENCY_VERTICAL_PADDING
+                                )
                             )
+                        }
+                    }
+
+                    // Description and secondary currencies row
+                    if (groupUiModel.description.isNotEmpty() || groupUiModel.extraCurrencies.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (groupUiModel.description.isNotEmpty()) {
+                                Arrangement.SpaceBetween
+                            } else {
+                                Arrangement.End
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             if (groupUiModel.description.isNotEmpty()) {
                                 Row(
+                                    modifier = Modifier
+                                        .weight(1f, fill = false)
+                                        .padding(end = MaterialTheme.spacing.Small),
                                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -103,29 +132,8 @@ fun SelectedGroupCard(
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(14.dp)
                                     )
-                                    SecondaryBodyText(text = groupUiModel.description)
+                                    SecondaryBodyText(text = groupUiModel.description, maxLines = 1)
                                 }
-                            }
-                        }
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(MaterialTheme.shapes.large)
-                                    .background(MaterialTheme.colorScheme.primary)
-                            ) {
-                                Text(
-                                    text = groupUiModel.currency,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.padding(
-                                        horizontal = CURRENCY_HORIZONTAL_PADDING,
-                                        vertical = CURRENCY_VERTICAL_PADDING
-                                    )
-                                )
                             }
                             if (groupUiModel.extraCurrencies.isNotEmpty()) {
                                 Row(
