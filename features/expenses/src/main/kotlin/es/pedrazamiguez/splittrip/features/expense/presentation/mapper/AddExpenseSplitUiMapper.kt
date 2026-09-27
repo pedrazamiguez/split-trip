@@ -82,6 +82,12 @@ class AddExpenseSplitUiMapper(
     }
 
     /**
+     * Formats a BigDecimal percentage for display using current locale (e.g., 33.33 -> "33.33" or "33,33").
+     */
+    fun formatPercentageForDisplay(percentage: BigDecimal): String =
+        formattingHelper.formatPercentageForDisplay(percentage)
+
+    /**
      * Maps flat split UI models to domain [ExpenseSplit] list.
      */
     fun mapSplitsToDomain(splits: List<SplitUiModel>, splitType: SplitType): List<ExpenseSplit> =
