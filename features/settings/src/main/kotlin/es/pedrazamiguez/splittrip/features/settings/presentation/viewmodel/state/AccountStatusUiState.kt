@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.stat
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
+import es.pedrazamiguez.splittrip.domain.model.PasswordRequirementStatus
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -11,10 +12,11 @@ data class AccountStatusUiState(
     val joinDateText: String = "",
     val linkedProviders: ImmutableList<AuthProviderType> = persistentListOf(),
     val isLinking: Boolean = false,
-    val showLinkEmailDialog: Boolean = false,
+    val showLinkEmailSheet: Boolean = false,
     val linkEmailInput: String = "",
     val linkPasswordInput: String = "",
     val linkConfirmPasswordInput: String = "",
+    val linkPasswordRequirementStatus: PasswordRequirementStatus = PasswordRequirementStatus(),
     val linkPasswordError: UiText? = null,
     val showDeleteAccountDialog: Boolean = false,
     val isAnonymous: Boolean = false
