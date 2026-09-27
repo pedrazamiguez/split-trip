@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
+import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedTextAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BasketUp
@@ -99,14 +100,16 @@ fun ContributionHistoryItem(
                 ) {
                     Text(
                         text = "+${contribution.formattedAmount}",
-                        modifier = Modifier.sharedElementAnimation(
+                        modifier = Modifier.sharedTextAnimation(
                             key = SharedElementKeys.contributionAmount(contribution.id),
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope
                         ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     if (contribution.isForeignCurrency && contribution.formattedEquivalentAmount.isNotBlank()) {
                         CaptionText(
