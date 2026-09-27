@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
+import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
@@ -157,7 +158,8 @@ val settingsUiModule = module {
             linkEmailPasswordUseCase = get<LinkEmailPasswordUseCase>(),
             unlinkProviderUseCase = get<UnlinkProviderUseCase>(),
             authenticationService = get<AuthenticationService>(),
-            accountStatusUiMapper = get<AccountStatusUiMapper>()
+            accountStatusUiMapper = get<AccountStatusUiMapper>(),
+            passwordValidationService = get<PasswordValidationService>()
         )
     }
 

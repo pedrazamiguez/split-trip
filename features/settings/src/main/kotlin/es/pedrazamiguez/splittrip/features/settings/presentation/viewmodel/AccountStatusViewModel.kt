@@ -42,11 +42,11 @@ class AccountStatusViewModel(
             is AccountStatusUiEvent.LinkGoogle ->
                 accountStatusEventHandler.handleLinkGoogle(event.idToken)
 
-            AccountStatusUiEvent.ShowLinkEmailDialog ->
-                accountStatusEventHandler.handleShowLinkEmailDialog()
+            AccountStatusUiEvent.ShowLinkEmailSheet ->
+                accountStatusEventHandler.handleShowLinkEmailSheet()
 
-            AccountStatusUiEvent.DismissLinkEmailDialog ->
-                accountStatusEventHandler.handleDismissLinkEmailDialog()
+            AccountStatusUiEvent.DismissLinkEmailSheet ->
+                accountStatusEventHandler.handleDismissLinkEmailSheet()
 
             is AccountStatusUiEvent.LinkEmailChanged ->
                 accountStatusEventHandler.handleLinkEmailChanged(event.value)

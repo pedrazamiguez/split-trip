@@ -2,7 +2,9 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.hand
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
+import es.pedrazamiguez.splittrip.domain.model.PasswordRequirementStatus
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
@@ -30,7 +32,8 @@ class AccountStatusEventHandlerImpl(
     private val linkEmailPasswordUseCase: LinkEmailPasswordUseCase,
     private val unlinkProviderUseCase: UnlinkProviderUseCase,
     private val authenticationService: AuthenticationService,
-    private val accountStatusUiMapper: AccountStatusUiMapper
+    private val accountStatusUiMapper: AccountStatusUiMapper,
+    private val passwordValidationService: PasswordValidationService
 ) : AccountStatusEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AccountStatusUiState>
@@ -132,20 +135,21 @@ class AccountStatusEventHandlerImpl(
         }
     }
 
-    override fun handleShowLinkEmailDialog() {
+    override fun handleShowLinkEmailSheet() {
         _uiState.update {
             it.copy(
-                showLinkEmailDialog = true,
+                showLinkEmailSheet = true,
                 linkEmailInput = "",
                 linkPasswordInput = "",
                 linkConfirmPasswordInput = "",
+                linkPasswordRequirementStatus = PasswordRequirementStatus(),
                 linkPasswordError = null
             )
         }
     }
 
-    override fun handleDismissLinkEmailDialog() {
-        _uiState.update { it.copy(showLinkEmailDialog = false) }
+    override fun handleDismissLinkEmailSheet() {
+        _uiState.update { it.copy(showLinkEmailSheet = false) }
     }
 
     override fun handleLinkEmailChanged(value: String) {
@@ -153,7 +157,14 @@ class AccountStatusEventHandlerImpl(
     }
 
     override fun handleLinkPasswordChanged(value: String) {
-        _uiState.update { it.copy(linkPasswordInput = value) }
+        val status = passwordValidationService.validate(value)
+        _uiState.update {
+            it.copy(
+                linkPasswordInput = value,
+                linkPasswordRequirementStatus = status,
+                linkPasswordError = null
+            )
+        }
     }
 
     override fun handleLinkConfirmPasswordChanged(value: String) {
@@ -166,32 +177,20 @@ class AccountStatusEventHandlerImpl(
         val password = _uiState.value.linkPasswordInput
         val confirmPassword = _uiState.value.linkConfirmPasswordInput
 
-        if (email.isEmpty()) {
-            _uiState.update {
-                it.copy(
-                    linkPasswordError = UiText.StringResource(
-                        R.string.account_status_link_email_dialog_error_email_empty
-                    )
-                )
-            }
-            return
+        val error = when {
+            email.isEmpty() ->
+                UiText.StringResource(R.string.account_status_link_email_sheet_error_email_empty)
+            password.isEmpty() || confirmPassword.isEmpty() ->
+                UiText.StringResource(R.string.account_status_link_email_sheet_error_empty)
+            !passwordValidationService.isValidPassword(password) ->
+                UiText.StringResource(R.string.account_status_link_email_sheet_error_complexity)
+            password != confirmPassword ->
+                UiText.StringResource(R.string.account_status_link_email_sheet_error_mismatch)
+            else -> null
         }
 
-        if (password.isEmpty() || confirmPassword.isEmpty()) {
-            _uiState.update {
-                it.copy(
-                    linkPasswordError = UiText.StringResource(R.string.account_status_link_email_dialog_error_empty)
-                )
-            }
-            return
-        }
-
-        if (password != confirmPassword) {
-            _uiState.update {
-                it.copy(
-                    linkPasswordError = UiText.StringResource(R.string.account_status_link_email_dialog_error_mismatch)
-                )
-            }
+        if (error != null) {
+            _uiState.update { it.copy(linkPasswordError = error) }
             return
         }
 
@@ -199,7 +198,7 @@ class AccountStatusEventHandlerImpl(
             _uiState.update { it.copy(isLinking = true, linkPasswordError = null) }
             linkEmailPasswordUseCase(email, password)
                 .onSuccess {
-                    _uiState.update { it.copy(isLinking = false, showLinkEmailDialog = false) }
+                    _uiState.update { it.copy(isLinking = false, showLinkEmailSheet = false) }
                     _actions.emit(
                         AccountStatusUiAction.ShowSuccess(UiText.StringResource(R.string.account_status_link_success))
                     )

@@ -46,7 +46,7 @@ internal fun AccountStatusProviders(
                 AccountProviderRow(
                     name = stringResource(R.string.account_status_provider_email_password),
                     isLinked = isEmailLinked,
-                    onLinkClick = { onEvent(AccountStatusUiEvent.ShowLinkEmailDialog) },
+                    onLinkClick = { onEvent(AccountStatusUiEvent.ShowLinkEmailSheet) },
                     onUnlinkClick = {
                         onEvent(AccountStatusUiEvent.UnlinkProvider(AuthProviderType.EMAIL_PASSWORD))
                     },
