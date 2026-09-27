@@ -2,7 +2,8 @@
     <!-- Login Screen -->
     <string name="login_email_label">Email</string>
     <string name="login_password_label">Password</string>
-    <string name="login_button">Let\'s go!</string>
+    <string name="login_button">Log in</string>
+    <string name="login_continue_with_email">Continue with email</string>
     <string name="login_welcome">Your curated expedition starts here</string>
     <string name="login_error_invalid">Hmm, that doesn\'t look right. Try again?</string>
     <string name="login_or_divider">or</string>
@@ -10,7 +11,7 @@
     <string name="login_google_error">Google sign-in failed. Please try again.</string>
     <string name="login_forgot_password">Forgot password?</string>
     <string name="login_new_explorer">New explorer?</string>
-    <string name="login_start_journey">Start a journey</string>
+    <string name="login_start_journey">Create account</string>
     <string name="login_forgot_password_message">Password recovery is not implemented yet.</string>
     <string name="login_start_journey_message">Registration is not implemented yet.</string>
     <string name="login_guest_button">Continue as Guest</string>

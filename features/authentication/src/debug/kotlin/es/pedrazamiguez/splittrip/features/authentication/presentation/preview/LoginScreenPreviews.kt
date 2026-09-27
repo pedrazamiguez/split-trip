@@ -12,9 +12,20 @@ import es.pedrazamiguez.splittrip.features.authentication.presentation.screen.Lo
 private fun LoginScreenPreview() {
     PreviewThemeWrapper {
         LoginScreen(
+            uiState = AuthenticationUiState()
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun LoginScreenExpandedEmailPreview() {
+    PreviewThemeWrapper {
+        LoginScreen(
             uiState = AuthenticationUiState(
                 email = "user@example.com",
-                password = "password123"
+                password = "password123",
+                isEmailFormExpanded = true
             )
         )
     }
@@ -28,6 +39,7 @@ private fun LoginScreenLoadingPreview() {
             uiState = AuthenticationUiState(
                 email = "user@example.com",
                 password = "password123",
+                isEmailFormExpanded = true,
                 isLoading = true
             )
         )
@@ -54,6 +66,7 @@ private fun LoginScreenErrorPreview() {
             uiState = AuthenticationUiState(
                 email = "invalid@example.com",
                 password = "wrong",
+                isEmailFormExpanded = true,
                 error = UiText.DynamicString("Invalid email or password")
             )
         )
