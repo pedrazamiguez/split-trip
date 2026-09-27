@@ -11,12 +11,14 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -102,9 +104,11 @@ class SharedViewModel(
                     if (storedId == null) {
                         flowOf(false)
                     } else {
-                        observeGroupUseCase(storedId).map { resolvedGroup ->
-                            resolvedGroup == null
-                        }
+                        observeGroupUseCase(storedId)
+                            .onStart { delay(OFFLINE_SYNC_DELAY) } // Wait for Room offline-first sync
+                            .map { resolvedGroup ->
+                                resolvedGroup == null
+                            }
                     }
                 }
                 .collect { isStale ->
@@ -120,5 +124,9 @@ class SharedViewModel(
         viewModelScope.launch {
             setSelectedGroupUseCase(groupId, groupName, currency)
         }
+    }
+
+    companion object {
+        private const val OFFLINE_SYNC_DELAY = 1000L
     }
 }

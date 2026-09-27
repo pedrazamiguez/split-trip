@@ -1,9 +1,11 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
@@ -57,6 +59,10 @@ class CashWithdrawalRepositoryImplTest {
         createdAt = LocalDateTime.of(2026, 1, 15, 12, 0)
     )
 
+    private lateinit var localGroupDataSource:
+        LocalGroupDataSource
+    private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
+
     @BeforeEach
     fun setUp() {
         testDispatcher = StandardTestDispatcher()
@@ -70,13 +76,17 @@ class CashWithdrawalRepositoryImplTest {
         }
         every { authenticationService.currentUserId() } returns testUserId
 
+        localGroupDataSource = mockk(relaxed = true)
+        syncTeardownCoordinator = mockk(relaxed = true)
         repository = CashWithdrawalRepositoryImpl(
             cloudCashWithdrawalDataSource = cloudDataSource,
             localQueryDataSource = localQueryDataSource,
             localWriteDataSource = localWriteDataSource,
             authenticationService = authenticationService,
             performanceMonitor = performanceMonitor,
-            ioDispatcher = testDispatcher
+            ioDispatcher = testDispatcher,
+            localGroupDataSource = localGroupDataSource,
+            syncTeardownCoordinator = syncTeardownCoordinator
         )
     }
 

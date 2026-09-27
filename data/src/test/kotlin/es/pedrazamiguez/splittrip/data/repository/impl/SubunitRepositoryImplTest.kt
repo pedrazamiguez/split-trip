@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -77,6 +79,10 @@ class SubunitRepositoryImplTest {
         )
     )
 
+    private lateinit var localGroupDataSource:
+        LocalGroupDataSource
+    private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
+
     @BeforeEach
     fun setUp() {
         cloudSubunitDataSource = mockk(relaxed = true)
@@ -89,12 +95,16 @@ class SubunitRepositoryImplTest {
 
         coEvery { authenticationService.currentUserId() } returns testUserId
 
+        localGroupDataSource = mockk(relaxed = true)
+        syncTeardownCoordinator = mockk(relaxed = true)
         repository = SubunitRepositoryImpl(
             cloudSubunitDataSource = cloudSubunitDataSource,
             localSubunitDataSource = localSubunitDataSource,
             authenticationService = authenticationService,
             performanceMonitor = performanceMonitor,
-            ioDispatcher = testDispatcher
+            ioDispatcher = testDispatcher,
+            localGroupDataSource = localGroupDataSource,
+            syncTeardownCoordinator = syncTeardownCoordinator
         )
     }
 

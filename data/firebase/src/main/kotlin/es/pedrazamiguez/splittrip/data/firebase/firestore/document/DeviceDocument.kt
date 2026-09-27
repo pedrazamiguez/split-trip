@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.document
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.PropertyName
 
+@IgnoreExtraProperties
 data class DeviceDocument(
     val deviceId: String = "",
     val token: String = "",

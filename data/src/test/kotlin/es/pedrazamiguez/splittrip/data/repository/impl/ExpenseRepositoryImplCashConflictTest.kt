@@ -85,6 +85,9 @@ class ExpenseRepositoryImplCashConflictTest {
             io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
         every { authenticationService.currentUserId() } returns testUserId
+        val syncTeardownCoordinator =
+            mockk<es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator>(relaxed = true)
+
         repository = ExpenseRepositoryImpl(
             cloudExpenseDataSource,
             localExpenseDataSource,
@@ -94,7 +97,8 @@ class ExpenseRepositoryImplCashConflictTest {
             performanceMonitor,
             localGroupDataSource,
             remainderDistributionService,
-            testDispatcher
+            syncTeardownCoordinator = syncTeardownCoordinator,
+            ioDispatcher = testDispatcher
         )
     }
 
