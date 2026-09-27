@@ -44,8 +44,10 @@ class LoginScreenTest {
     fun rendersLoginForm_inDefaultState() {
         val emailLabel = context.getString(R.string.login_email_label)
         val passwordLabel = context.getString(R.string.login_password_label)
-        val loginButton = context.getString(R.string.login_button)
         val googleButton = context.getString(R.string.login_google_button)
+        val emailDisclosureButton = context.getString(R.string.login_continue_with_email)
+        val guestButton = context.getString(R.string.login_guest_button)
+        val startJourney = context.getString(R.string.login_start_journey)
 
         composeRule.setContent {
             SplitTripTheme {
@@ -55,10 +57,37 @@ class LoginScreenTest {
 
         composeRule.waitForIdle()
 
+        composeRule.onNodeWithText(googleButton).assertIsDisplayed().assertIsEnabled()
+        composeRule.onNodeWithText(emailDisclosureButton).assertIsDisplayed().assertIsEnabled()
+        composeRule.onNodeWithText(guestButton).assertIsDisplayed().assertIsEnabled()
+        composeRule.onNodeWithText(startJourney).assertIsDisplayed().assertIsEnabled()
+        composeRule.onNodeWithText(emailLabel).assertDoesNotExist()
+        composeRule.onNodeWithText(passwordLabel).assertDoesNotExist()
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  Email form expanded state
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun rendersLoginForm_whenEmailExpanded() {
+        val emailLabel = context.getString(R.string.login_email_label)
+        val passwordLabel = context.getString(R.string.login_password_label)
+        val loginButton = context.getString(R.string.login_button)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                LoginScreen(
+                    uiState = AuthenticationUiState(isEmailFormExpanded = true)
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
         composeRule.onNodeWithText(emailLabel).assertIsDisplayed()
         composeRule.onNodeWithText(passwordLabel).assertIsDisplayed()
         composeRule.onNodeWithText(loginButton).assertIsDisplayed().assertIsEnabled()
-        composeRule.onNodeWithText(googleButton).assertIsDisplayed()
     }
 
     // ═════════════════════════════════════════════════════════════════════
@@ -73,7 +102,10 @@ class LoginScreenTest {
         composeRule.setContent {
             SplitTripTheme {
                 LoginScreen(
-                    uiState = AuthenticationUiState(isLoading = true)
+                    uiState = AuthenticationUiState(
+                        isEmailFormExpanded = true,
+                        isLoading = true
+                    )
                 )
             }
         }
@@ -114,7 +146,9 @@ class LoginScreenTest {
     @Test
     fun hidesGoogleSignIn_whenNotAvailable() {
         val googleButton = context.getString(R.string.login_google_button)
-        val orDivider = context.getString(R.string.login_or_divider)
+        val emailDisclosureButton = context.getString(R.string.login_continue_with_email)
+        val emailLabel = context.getString(R.string.login_email_label)
+        val passwordLabel = context.getString(R.string.login_password_label)
 
         composeRule.setContent {
             SplitTripTheme {
@@ -128,6 +162,8 @@ class LoginScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText(googleButton).assertDoesNotExist()
-        composeRule.onNodeWithText(orDivider).assertDoesNotExist()
+        composeRule.onNodeWithText(emailDisclosureButton).assertDoesNotExist()
+        composeRule.onNodeWithText(emailLabel).assertIsDisplayed()
+        composeRule.onNodeWithText(passwordLabel).assertIsDisplayed()
     }
 }
