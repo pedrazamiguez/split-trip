@@ -317,6 +317,31 @@ class CreateEditGroupViewModelTest {
 
             assertEquals(steps[0], viewModel.uiState.value.currentStep)
         }
+
+        @Test
+        fun `JumpToStep allows forward jump when editing existing group`() = runTest(testDispatcher) {
+            val vm = createViewModel()
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            val steps = vm.uiState.value.steps
+            assertEquals(CreateEditGroupStep.INFO, vm.uiState.value.currentStep)
+
+            vm.onEvent(CreateEditGroupUiEvent.JumpToStep(steps.lastIndex)) {}
+
+            assertEquals(steps.last(), vm.uiState.value.currentStep)
+        }
+
+        @Test
+        fun `JumpToStep ignores forward jump when creating a new group`() = runTest(testDispatcher) {
+            advanceUntilIdle()
+            val initialStep = viewModel.uiState.value.currentStep
+            assertEquals(CreateEditGroupStep.INFO, initialStep)
+
+            onEvent(CreateEditGroupUiEvent.JumpToStep(2))
+
+            assertEquals(CreateEditGroupStep.INFO, viewModel.uiState.value.currentStep)
+        }
     }
 
     @Nested

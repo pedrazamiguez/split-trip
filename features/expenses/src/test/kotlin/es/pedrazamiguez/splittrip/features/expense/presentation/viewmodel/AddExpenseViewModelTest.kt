@@ -125,6 +125,16 @@ class AddExpenseViewModelTest {
     private lateinit var featureGateService: FeatureGateService
     private lateinit var gateFlow: MutableStateFlow<Boolean>
 
+    private lateinit var configHandler: ConfigEventHandler
+    private lateinit var currencyHandler: CurrencyEventHandler
+    private lateinit var splitHandler: SplitEventHandler
+    private lateinit var subunitSplitHandler: SubunitSplitEventHandler
+    private lateinit var addOnHandler: AddOnEventHandler
+    private lateinit var submitHandler: SubmitEventHandler
+    private lateinit var formHandler: FormEventHandler
+    private lateinit var receiptAutoFillEventHandler: ReceiptAutoFillEventHandler
+    private lateinit var strategyFactory: ExpenseFlowStrategyFactory
+
     private lateinit var viewModel: AddExpenseViewModel
 
     private val eur = Currency(
@@ -237,7 +247,7 @@ class AddExpenseViewModelTest {
         )
 
         // Create handlers with shared instances (mirrors the DI module pattern)
-        val splitHandler = SplitEventHandler(
+        splitHandler = SplitEventHandler(
             splitCalculatorFactory = splitCalculatorFactory,
             splitPreviewService = splitPreviewService,
             formattingHelper = formattingHelper,
@@ -256,7 +266,7 @@ class AddExpenseViewModelTest {
             formattingHelper = formattingHelper
         )
 
-        val subunitSplitHandler = SubunitSplitEventHandler(
+        subunitSplitHandler = SubunitSplitEventHandler(
             splitPreviewService = splitPreviewService,
             addExpenseSplitMapper = addExpenseSplitMapper,
             intraSubunitSplitDelegate = intraSubunitSplitDelegate,
@@ -264,7 +274,7 @@ class AddExpenseViewModelTest {
             appConfigService = appConfigService
         )
 
-        val currencyHandler = CurrencyEventHandler(
+        currencyHandler = CurrencyEventHandler(
             getExchangeRateUseCase = getExchangeRateUseCase,
             exchangeRateCalculationService = ExchangeRateCalculationServiceImpl(),
             addExpenseOptionsMapper = addExpenseOptionsMapper,
@@ -285,7 +295,7 @@ class AddExpenseViewModelTest {
             every { isFeatureEnabled(any(), any()) } returns gateFlow
         }
 
-        val configHandler = ConfigEventHandler(
+        configHandler = ConfigEventHandler(
             getGroupExpenseConfigUseCase = getGroupExpenseConfigUseCase,
             getGroupLastUsedCurrencyUseCase = getGroupLastUsedCurrencyUseCase,
             getGroupLastUsedPaymentMethodUseCase = getGroupLastUsedPaymentMethodUseCase,
@@ -299,7 +309,7 @@ class AddExpenseViewModelTest {
             featureGateService = featureGateService
         )
 
-        val submitHandler = SubmitEventHandler(
+        submitHandler = SubmitEventHandler(
             expenseValidationService = expenseValidationService,
             addOnCalculationService = AddOnCalculationServiceImpl(),
             expenseCalculatorService = ExpenseCalculatorServiceImpl(),
@@ -329,7 +339,7 @@ class AddExpenseViewModelTest {
             exchangeRateDelegate = addOnExchangeRateDelegate
         )
 
-        val addOnHandler = AddOnEventHandler(
+        addOnHandler = AddOnEventHandler(
             addOnCalculationService = AddOnCalculationServiceImpl(),
             exchangeRateCalculationService = ExchangeRateCalculationServiceImpl(),
             expenseCalculatorService = ExpenseCalculatorServiceImpl(),
@@ -352,13 +362,13 @@ class AddExpenseViewModelTest {
                 )
             }
         }
-        val formHandler = FormEventHandler(
+        formHandler = FormEventHandler(
             addExpenseUiMapper = addExpenseUiMapper,
             addExpenseOptionsUiMapper = addExpenseOptionsMapper,
             attachReceiptUseCase = attachReceiptUseCase
         )
 
-        val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
+        receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = mockk<ExtractReceiptFieldsUseCase>(relaxed = true),
             receiptExtractionService = mockk<ReceiptExtractionService>(relaxed = true),
             formattingHelper = formattingHelper,
@@ -371,7 +381,7 @@ class AddExpenseViewModelTest {
         val getContributionByExpenseIdUseCase = mockk<GetContributionByExpenseIdUseCase>(relaxed = true)
         val getGroupSubunitsUseCase = mockk<GetGroupSubunitsUseCase>(relaxed = true)
 
-        val strategyFactory = ExpenseFlowStrategyFactory(
+        strategyFactory = ExpenseFlowStrategyFactory(
             configEventHandler = configHandler,
             addExpenseUseCase = addExpenseUseCase,
             updateExpenseUseCase = updateExpenseUseCase,
@@ -382,7 +392,12 @@ class AddExpenseViewModelTest {
             getGroupSubunitsUseCase = getGroupSubunitsUseCase
         )
 
-        viewModel = AddExpenseViewModel(
+        viewModel = createViewModel()
+    }
+
+    private fun createViewModel(expenseId: String? = null): AddExpenseViewModel {
+        return AddExpenseViewModel(
+            expenseId = expenseId,
             configEventHandler = configHandler,
             currencyEventHandler = currencyHandler,
             splitEventHandler = splitHandler,
@@ -1762,6 +1777,32 @@ class AddExpenseViewModelTest {
 
             // Then — step unchanged
             assertEquals(stepBefore, viewModel.uiState.value.currentStep)
+        }
+
+        @Test
+        fun `JumpToStep allows forward jump when isEditMode is true`() = runTest {
+            val editViewModel = createViewModel(expenseId = "expense-1")
+            assertTrue(editViewModel.uiState.value.isEditMode)
+            assertEquals(AddExpenseStep.TITLE, editViewModel.uiState.value.currentStep)
+
+            // When — jump forward to CATEGORY (index 3)
+            editViewModel.onEvent(AddExpenseUiEvent.JumpToStep(3))
+
+            // Then
+            val steps = editViewModel.uiState.value.applicableSteps
+            assertEquals(steps[3], editViewModel.uiState.value.currentStep)
+        }
+
+        @Test
+        fun `JumpToStep rejects forward jump when isEditMode is false`() = runTest {
+            assertFalse(viewModel.uiState.value.isEditMode)
+            assertEquals(AddExpenseStep.TITLE, viewModel.uiState.value.currentStep)
+
+            // When — attempt forward jump to CATEGORY (index 3)
+            viewModel.onEvent(AddExpenseUiEvent.JumpToStep(3))
+
+            // Then — step unchanged
+            assertEquals(AddExpenseStep.TITLE, viewModel.uiState.value.currentStep)
         }
     }
 

@@ -94,16 +94,17 @@ class WizardNavigator {
     }
 
     /**
-     * Returns the previously completed step at `targetIndex` in [applicableSteps],
-     * or `null` when:
+     * Returns the step at `targetIndex` in [applicableSteps], or `null` when:
      * - [currentStep] is not present in [applicableSteps],
-     * - `targetIndex` is out of bounds (negative or ≥ list size), or
-     * - `targetIndex` is not strictly before the index of [currentStep].
+     * - `targetIndex` is out of bounds (negative or ≥ list size),
+     * - `targetIndex` equals the index of [currentStep], or
+     * - `targetIndex` is strictly after the index of [currentStep] and [allowForwardJumps] is `false`.
      *
-     * Intended for tapping a completed step circle in `WizardStepIndicator` to
-     * jump directly back to that step. Jumping to the current or a future step
-     * is rejected centrally to preserve wizard progression invariants even when
-     * events are dispatched programmatically.
+     * Intended for tapping a step circle in `WizardStepIndicator` to jump directly
+     * to that step. In creation flows ([allowForwardJumps] = false, the default), jumping
+     * to future steps is rejected centrally to preserve wizard progression invariants.
+     * In edit flows ([allowForwardJumps] = true), arbitrary navigation across all valid steps
+     * is permitted because existing entity data is already fully populated and valid.
      *
      * **ViewModel integration note:** When a non-null step is returned the caller
      * must clear any recorded departure step in state so that Back navigation is
@@ -112,10 +113,13 @@ class WizardNavigator {
     fun <S : WizardStep> jumpToStep(
         currentStep: S,
         targetIndex: Int,
-        applicableSteps: List<S>
+        applicableSteps: List<S>,
+        allowForwardJumps: Boolean = false
     ): S? {
         val currentIndex = applicableSteps.indexOf(currentStep)
-        if (currentIndex < 0 || targetIndex >= currentIndex) return null
+        if (currentIndex < 0) return null
+        if (targetIndex == currentIndex) return null
+        if (!allowForwardJumps && targetIndex > currentIndex) return null
         return applicableSteps.getOrNull(targetIndex)
     }
 
