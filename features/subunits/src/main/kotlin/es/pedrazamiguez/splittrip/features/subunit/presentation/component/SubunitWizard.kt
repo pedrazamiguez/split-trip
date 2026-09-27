@@ -57,6 +57,7 @@ internal fun SubunitWizard(
             WizardStepIndicator(
                 stepLabels = orderedLabels,
                 currentStepIndex = uiState.currentStepIndex,
+                allowForwardJumps = uiState.isEditing,
                 onStepClicked = { onEvent(CreateEditSubunitUiEvent.JumpToStep(it)) }
             )
 

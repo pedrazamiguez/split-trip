@@ -300,14 +300,15 @@ class WizardNavigatorTest {
         }
 
         @Test
-        @DisplayName("returns null when targetIndex is after the current step")
-        fun `returns null when targetIndex is after currentStep`() {
-            // Given — FIRST is at index 0; jumping to index 2 (future) is not allowed
+        @DisplayName("returns null when targetIndex is after currentStep and allowForwardJumps is false")
+        fun `returns null when targetIndex is after currentStep and allowForwardJumps is false`() {
+            // Given — FIRST is at index 0; jumping to index 2 (future) is not allowed by default
             // When
             val result = navigator.jumpToStep(
                 currentStep = FakeStep.FIRST,
                 targetIndex = 2,
-                applicableSteps = allSteps
+                applicableSteps = allSteps,
+                allowForwardJumps = false
             )
 
             // Then
@@ -315,8 +316,71 @@ class WizardNavigatorTest {
         }
 
         @Test
-        @DisplayName("returns null when currentStep is not in applicableSteps")
-        fun `returns null when currentStep is not in applicableSteps`() {
+        @DisplayName("returns the future step when targetIndex is after currentStep and allowForwardJumps is true")
+        fun `returns the future step when targetIndex is after currentStep and allowForwardJumps is true`() {
+            // Given — FIRST is at index 0; jumping to index 2 (OPTIONAL) is allowed when allowForwardJumps is true
+            // When
+            val result = navigator.jumpToStep(
+                currentStep = FakeStep.FIRST,
+                targetIndex = 2,
+                applicableSteps = allSteps,
+                allowForwardJumps = true
+            )
+
+            // Then
+            assertEquals(FakeStep.OPTIONAL, result)
+        }
+
+        @Test
+        @DisplayName("returns the previous step when targetIndex is before currentStep and allowForwardJumps is true")
+        fun `returns the previous step when targetIndex is before currentStep and allowForwardJumps is true`() {
+            // Given — REVIEW is at index 3; jumping to index 1 (SECOND) is allowed when allowForwardJumps is true
+            // When
+            val result = navigator.jumpToStep(
+                currentStep = FakeStep.REVIEW,
+                targetIndex = 1,
+                applicableSteps = allSteps,
+                allowForwardJumps = true
+            )
+
+            // Then
+            assertEquals(FakeStep.SECOND, result)
+        }
+
+        @Test
+        @DisplayName("returns null when targetIndex equals currentStep index even if allowForwardJumps is true")
+        fun `returns null when targetIndex equals currentStep index even if allowForwardJumps is true`() {
+            // Given — SECOND is at index 1; jumping to index 1 (current) is not allowed even when allowForwardJumps is true
+            // When
+            val result = navigator.jumpToStep(
+                currentStep = FakeStep.SECOND,
+                targetIndex = 1,
+                applicableSteps = allSteps,
+                allowForwardJumps = true
+            )
+
+            // Then
+            assertNull(result)
+        }
+
+        @Test
+        @DisplayName("returns null when targetIndex is out of bounds even if allowForwardJumps is true")
+        fun `returns null when targetIndex is out of bounds even if allowForwardJumps is true`() {
+            // When
+            val result = navigator.jumpToStep(
+                currentStep = FakeStep.FIRST,
+                targetIndex = 999,
+                applicableSteps = allSteps,
+                allowForwardJumps = true
+            )
+
+            // Then
+            assertNull(result)
+        }
+
+        @Test
+        @DisplayName("returns null when currentStep is not in applicableSteps even if allowForwardJumps is true")
+        fun `returns null when currentStep is not in applicableSteps even if allowForwardJumps is true`() {
             // Given — REVIEW is not in the subset
             val subset = listOf(FakeStep.FIRST, FakeStep.SECOND)
 
@@ -324,7 +388,8 @@ class WizardNavigatorTest {
             val result = navigator.jumpToStep(
                 currentStep = FakeStep.REVIEW,
                 targetIndex = 0,
-                applicableSteps = subset
+                applicableSteps = subset,
+                allowForwardJumps = true
             )
 
             // Then

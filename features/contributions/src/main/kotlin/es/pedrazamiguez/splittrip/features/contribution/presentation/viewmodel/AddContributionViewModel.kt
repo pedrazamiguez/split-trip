@@ -159,13 +159,30 @@ class AddContributionViewModel(
     }
 
     /**
-     * Jumps directly to a previously completed step at [stepIndex].
-     * This feature has no optional steps so no `jumpedFromStep` field exists.
+     * Jumps directly to a step at [stepIndex].
+     * In edit mode, forward jumps are permitted.
      */
     private fun handleJumpToStep(stepIndex: Int) {
-        val target =
-            wizardNavigator.jumpToStep(_uiState.value.currentStep, stepIndex, AddContributionStep.entries) ?: return
-        _uiState.update { it.copy(currentStep = target) }
+        val state = _uiState.value
+        val target = wizardNavigator.jumpToStep(
+            currentStep = state.currentStep,
+            targetIndex = stepIndex,
+            applicableSteps = AddContributionStep.entries,
+            allowForwardJumps = state.isEditMode
+        ) ?: return
+        _uiState.update {
+            it.copy(
+                currentStep = target,
+                formattedAmountWithCurrency = if (target == AddContributionStep.REVIEW) {
+                    addContributionUiMapper.formatInputAmountWithCurrency(
+                        it.amountInput,
+                        configHandler.groupCurrency
+                    )
+                } else {
+                    it.formattedAmountWithCurrency
+                }
+            )
+        }
     }
 
     private fun handleContributionScopeSelected(scope: PayerType, subunitId: String?) {
