@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
@@ -58,6 +59,8 @@ class GroupRepositoryImplTest {
         lastUpdatedAt = LocalDateTime.of(2024, 1, 15, 12, 0)
     )
 
+    private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
+
     @BeforeEach
     fun setUp() {
         cloudGroupDataSource = mockk(relaxed = true)
@@ -73,6 +76,7 @@ class GroupRepositoryImplTest {
 
         every { authenticationService.requireUserId() } returns "current-user-id"
 
+        syncTeardownCoordinator = mockk(relaxed = true)
         repository = GroupRepositoryImpl(
             cloudGroupDataSource = cloudGroupDataSource,
             localGroupDataSource = localGroupDataSource,
@@ -81,7 +85,8 @@ class GroupRepositoryImplTest {
             groupImageStorageService = groupImageStorageService,
             cloudStorageDataSource = cloudStorageDataSource,
             performanceMonitor = performanceMonitor,
-            ioDispatcher = testDispatcher
+            ioDispatcher = testDispatcher,
+            syncTeardownCoordinator = syncTeardownCoordinator
         )
     }
 

@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.auth
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
+import es.pedrazamiguez.splittrip.domain.service.SyncTeardownService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.SignOutUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UnregisterDeviceTokenUseCase
 import io.mockk.coEvery
@@ -21,6 +22,7 @@ class SignOutUseCaseTest {
     private lateinit var localDatabaseCleaner: LocalDatabaseCleanerService
     private lateinit var authenticationService: AuthenticationService
     private lateinit var userPreferenceRepository: UserPreferenceRepository
+    private lateinit var syncTeardownService: SyncTeardownService
     private lateinit var useCase: SignOutUseCase
 
     @BeforeEach
@@ -29,13 +31,16 @@ class SignOutUseCaseTest {
         localDatabaseCleaner = mockk()
         authenticationService = mockk()
         userPreferenceRepository = mockk()
+        syncTeardownService = mockk()
         useCase = SignOutUseCaseImpl(
             unregisterDeviceTokenUseCase = unregisterDeviceTokenUseCase,
             localDatabaseCleaner = localDatabaseCleaner,
             authenticationService = authenticationService,
-            userPreferenceRepository = userPreferenceRepository
+            userPreferenceRepository = userPreferenceRepository,
+            syncTeardownService = syncTeardownService
         )
         coEvery { userPreferenceRepository.setHasSignedOut(any()) } returns Unit
+        coEvery { syncTeardownService.teardownAll() } returns Unit
     }
 
     @Nested

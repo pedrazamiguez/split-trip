@@ -2,21 +2,24 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
+import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
+import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import java.time.LocalDateTime
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -25,20 +28,20 @@ import timber.log.Timber
 class ContributionRepositoryImpl(
     private val cloudContributionDataSource: CloudContributionDataSource,
     private val localContributionDataSource: LocalContributionDataSource,
+    private val localGroupDataSource: LocalGroupDataSource,
     private val authenticationService: AuthenticationService,
     private val performanceMonitor: PerformanceMonitor,
+    private val syncTeardownCoordinator: SyncTeardownCoordinator,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ContributionRepository {
 
     private val syncScope = CoroutineScope(ioDispatcher)
 
-    /**
-     * Tracks active cloud subscription Jobs per groupId.
-     * Prevents duplicate Firestore snapshot listeners from accumulating
-     * when onStart fires multiple times (e.g., config changes, tab switches,
-     * WhileSubscribed resubscriptions, flatMapLatest restarts).
-     */
-    private val cloudSubscriptionJobs = ConcurrentHashMap<String, Job>()
+    private val cloudSubscriptionTracker = KeyedSubscriptionTracker()
+
+    init {
+        syncTeardownCoordinator.registerAction { cloudSubscriptionTracker.cancelAll() }
+    }
 
     override suspend fun addContribution(groupId: String, contribution: Contribution) {
         performanceMonitor.traceAsync(PerformanceTraces.CONTRIBUTION_ADD) {
@@ -117,16 +120,6 @@ class ContributionRepositoryImpl(
      * snapshot listeners from accumulating across flatMapLatest restarts,
      * config changes, or WhileSubscribed resubscriptions.
      */
-    override fun getGroupContributionsFlow(groupId: String): Flow<List<Contribution>> =
-        localContributionDataSource.getContributionsByGroupIdFlow(groupId)
-            .onStart {
-                // Cancel any previous cloud subscription for this group to prevent duplicates.
-                cloudSubscriptionJobs[groupId]?.cancel()
-                cloudSubscriptionJobs[groupId] = syncScope.launch {
-                    subscribeToCloudChanges(groupId)
-                }
-            }
-
     override suspend fun deleteContribution(groupId: String, contributionId: String) {
         // Delete from local first - UI updates instantly via Flow
         localContributionDataSource.deleteContribution(contributionId)
@@ -177,63 +170,35 @@ class ContributionRepositoryImpl(
         linkedExpenseId: String
     ): Contribution? = localContributionDataSource.findByLinkedExpenseId(groupId, linkedExpenseId)
 
-    /**
-     * Subscribes to real-time Firestore snapshot changes for a group's contributions.
-     *
-     * The Firestore snapshotListener fires whenever ANY user adds, modifies, or
-     * deletes a contribution in this group. Each snapshot represents the complete
-     * authoritative state of the collection.
-     *
-     * We use [replaceContributionsForGroup] with a merge reconciliation strategy
-     * (upsert remote + selective delete of stale) to safely reconcile the
-     * local DB with the cloud snapshot.
-     *
-     * After reconciliation, [confirmPendingSyncContributions] attempts to verify
-     * any PENDING_SYNC items against the server. This handles the
-     * PENDING_SYNC → SYNCED transition when the device comes back online
-     * after an app restart.
-     */
-    private suspend fun subscribeToCloudChanges(groupId: String) {
-        try {
-            cloudContributionDataSource.getContributionsByGroupIdFlow(groupId)
-                .collect { remoteContributions ->
-                    try {
-                        Timber.d("Real-time sync: ${remoteContributions.size} contributions for group $groupId")
-                        localContributionDataSource.replaceContributionsForGroup(
-                            groupId,
-                            remoteContributions
+    override fun getGroupContributionsFlow(groupId: String): Flow<List<Contribution>> =
+        localContributionDataSource.getContributionsByGroupIdFlow(groupId)
+            .onStart {
+                cloudSubscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
+                    subscribeAndReconcile(
+                        cloudFlow = cloudContributionDataSource
+                            .getContributionsByGroupIdFlow(groupId),
+                        params = SyncReconciliationParams(
+                            reconcileLocal = { remoteContributions ->
+                                localContributionDataSource.replaceContributionsForGroup(
+                                    groupId,
+                                    remoteContributions
+                                )
+                            },
+                            getPendingIds = {
+                                localContributionDataSource.getPendingSyncContributionIds(groupId)
+                            },
+                            verifyOnServer = { id ->
+                                cloudContributionDataSource.verifyContributionOnServer(groupId, id)
+                            },
+                            markSynced = { id ->
+                                localContributionDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
+                            },
+                            entityLabel = "contribution",
+                            logContext = "for group $groupId",
+                            performanceMonitor = performanceMonitor,
+                            verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
                         )
-                        confirmPendingSyncContributions(groupId)
-                    } catch (e: Exception) {
-                        Timber.w(e, "Error reconciling contributions from cloud snapshot")
-                    }
+                    )
                 }
-        } catch (e: Exception) {
-            Timber.w(e, "Error subscribing to cloud contribution changes, using local cache")
-        }
-    }
-
-    /**
-     * Attempts to confirm PENDING_SYNC contributions by verifying their existence on the server.
-     *
-     * Called after each reconciliation cycle. When the device is online and Firestore
-     * has confirmed the pending write, the server verification succeeds and the
-     * contribution transitions to SYNCED. When offline, the verification throws and the
-     * contribution remains PENDING_SYNC.
-     */
-    private suspend fun confirmPendingSyncContributions(groupId: String) {
-        val pendingIds = localContributionDataSource.getPendingSyncContributionIds(groupId)
-        if (pendingIds.isEmpty()) return
-
-        for (id in pendingIds) {
-            try {
-                if (cloudContributionDataSource.verifyContributionOnServer(groupId, id)) {
-                    localContributionDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
-                    Timber.d("Confirmed contribution sync: $id")
-                }
-            } catch (e: Exception) {
-                Timber.d(e, "Cannot confirm contribution $id — server unreachable")
             }
-        }
-    }
 }

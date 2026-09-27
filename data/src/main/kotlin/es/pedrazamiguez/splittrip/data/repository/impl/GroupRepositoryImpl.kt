@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
@@ -45,6 +46,7 @@ class GroupRepositoryImpl(
     private val groupImageStorageService: GroupImageStorageService,
     private val cloudStorageDataSource: CloudStorageDataSource,
     private val performanceMonitor: PerformanceMonitor,
+    private val syncTeardownCoordinator: SyncTeardownCoordinator,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : GroupRepository {
 
@@ -58,6 +60,13 @@ class GroupRepositoryImpl(
      */
     private var cloudSubscriptionJob: Job? = null
     private val groupSubscriptionTracker = KeyedSubscriptionTracker()
+
+    init {
+        syncTeardownCoordinator.registerAction {
+            cloudSubscriptionJob?.cancel()
+            groupSubscriptionTracker.cancelAll()
+        }
+    }
 
     /**
      * Returns a Flow of groups from local storage.

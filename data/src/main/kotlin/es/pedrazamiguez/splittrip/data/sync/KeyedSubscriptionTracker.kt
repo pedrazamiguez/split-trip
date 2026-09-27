@@ -38,4 +38,9 @@ internal class KeyedSubscriptionTracker {
             scope.launch { block() }
         }
     }
+
+    fun cancelAll() {
+        jobs.values.forEach { it.cancel() }
+        jobs.clear()
+    }
 }

@@ -161,4 +161,36 @@ class KeyedSubscriptionTrackerTest {
                 assertTrue(completed, "New job should run after cancelling the previous one")
             }
     }
+
+    @Nested
+    @DisplayName("cancelAll")
+    inner class CancelAll {
+
+        @Test
+        fun `cancels all active jobs`() = runTest(testDispatcher) {
+            val scope = CoroutineScope(testDispatcher)
+            var job1Completed = false
+            var job2Completed = false
+
+            tracker.cancelAndRelaunch("key-1", scope) {
+                try {
+                    delay(10_000)
+                    job1Completed = true
+                } catch (_: Exception) {}
+            }
+
+            tracker.cancelAndRelaunch("key-2", scope) {
+                try {
+                    delay(10_000)
+                    job2Completed = true
+                } catch (_: Exception) {}
+            }
+
+            tracker.cancelAll()
+            advanceUntilIdle()
+
+            assertFalse(job1Completed, "Job 1 should be cancelled")
+            assertFalse(job2Completed, "Job 2 should be cancelled")
+        }
+    }
 }
