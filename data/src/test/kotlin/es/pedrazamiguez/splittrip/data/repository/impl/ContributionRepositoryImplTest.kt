@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -69,6 +71,10 @@ class ContributionRepositoryImplTest {
         )
     )
 
+    private lateinit var localGroupDataSource:
+        LocalGroupDataSource
+    private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
+
     @BeforeEach
     fun setUp() {
         cloudContributionDataSource = mockk(relaxed = true)
@@ -81,12 +87,16 @@ class ContributionRepositoryImplTest {
 
         coEvery { authenticationService.currentUserId() } returns testUserId
 
+        localGroupDataSource = mockk(relaxed = true)
+        syncTeardownCoordinator = mockk(relaxed = true)
         repository = ContributionRepositoryImpl(
             cloudContributionDataSource = cloudContributionDataSource,
             localContributionDataSource = localContributionDataSource,
             authenticationService = authenticationService,
             performanceMonitor = performanceMonitor,
-            ioDispatcher = testDispatcher
+            ioDispatcher = testDispatcher,
+            localGroupDataSource = localGroupDataSource,
+            syncTeardownCoordinator = syncTeardownCoordinator
         )
     }
 

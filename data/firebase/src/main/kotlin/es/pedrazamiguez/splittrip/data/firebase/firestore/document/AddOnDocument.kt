@@ -1,11 +1,13 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.document
 
+import com.google.firebase.firestore.IgnoreExtraProperties
 /**
  * Firestore document representation of a structured add-on.
  *
  * Exchange rate is stored as [String] (via [java.math.BigDecimal.toPlainString])
  * to avoid IEEE 754 floating-point precision loss in Firestore's number serialization.
  */
+@IgnoreExtraProperties
 data class AddOnDocument(
     val id: String = "",
     val type: String = "FEE",

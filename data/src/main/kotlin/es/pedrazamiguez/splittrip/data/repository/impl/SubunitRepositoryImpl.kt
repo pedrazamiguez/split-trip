@@ -3,10 +3,12 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.sync.syncDeletionToCloud
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -23,13 +25,19 @@ import kotlinx.coroutines.flow.onStart
 class SubunitRepositoryImpl(
     private val cloudSubunitDataSource: CloudSubunitDataSource,
     private val localSubunitDataSource: LocalSubunitDataSource,
+    private val localGroupDataSource: LocalGroupDataSource,
     private val authenticationService: AuthenticationService,
     private val performanceMonitor: PerformanceMonitor,
+    private val syncTeardownCoordinator: SyncTeardownCoordinator,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : SubunitRepository {
 
     private val syncScope = CoroutineScope(ioDispatcher)
     private val subscriptionTracker = KeyedSubscriptionTracker()
+
+    init {
+        syncTeardownCoordinator.registerAction { subscriptionTracker.cancelAll() }
+    }
 
     override suspend fun createSubunit(groupId: String, subunit: Subunit): String {
         val subunitId = subunit.id.ifBlank { UUID.randomUUID().toString() }
@@ -125,7 +133,8 @@ class SubunitRepositoryImpl(
                             },
                             entityLabel = ENTITY_LABEL,
                             logContext = "for group $groupId",
-                            performanceMonitor = performanceMonitor
+                            performanceMonitor = performanceMonitor,
+                            verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
                         )
                     )
                 }

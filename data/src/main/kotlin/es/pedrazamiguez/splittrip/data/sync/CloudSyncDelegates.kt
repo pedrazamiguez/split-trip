@@ -20,7 +20,8 @@ internal data class SyncReconciliationParams<T>(
     val markSynced: suspend (String) -> Unit,
     val entityLabel: String,
     val logContext: String,
-    val performanceMonitor: PerformanceMonitor
+    val performanceMonitor: PerformanceMonitor,
+    val verifyParentExists: (suspend () -> Boolean)? = null
 )
 
 /**
@@ -43,6 +44,10 @@ internal suspend fun <T> subscribeAndReconcile(
     try {
         cloudFlow.collect { remoteItems ->
             try {
+                if (params.verifyParentExists != null && !params.verifyParentExists.invoke()) {
+                    Timber.tag(LogTag.SYNC).w("Parent missing, skipping reconciliation for %ss", params.entityLabel)
+                    return@collect
+                }
                 params.performanceMonitor.traceAsync(PerformanceTraces.SYNC_SUBSCRIBE_AND_RECONCILE) {
                     Timber.tag(LogTag.SYNC).v(
                         "Real-time sync: %d %ss %s",
