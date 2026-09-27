@@ -349,7 +349,8 @@ val expensesUiModule = module {
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             addOnCalculationService = get<AddOnCalculationService>(),
             paymentStatusBadgeUiMapper = get<PaymentStatusBadgeUiMapper>(),
-            userUiMapper = get<UserUiMapper>()
+            userUiMapper = get<UserUiMapper>(),
+            localeProvider = get<LocaleProvider>()
         )
     }
 

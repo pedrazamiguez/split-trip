@@ -17,15 +17,18 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Scale
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitBreakdownItemUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubunitSplitGroupUiModel
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 internal fun SplitBreakdownSection(
     splitTypeText: String,
-    splits: ImmutableList<SplitDetailUiModel>,
-    splitGroups: ImmutableList<SubunitSplitGroupUiModel>
+    splitBreakdownItems: ImmutableList<SplitBreakdownItemUiModel>,
+    splits: ImmutableList<SplitDetailUiModel> = persistentListOf(),
+    splitGroups: ImmutableList<SubunitSplitGroupUiModel> = persistentListOf()
 ) {
     Column(
         modifier = Modifier.padding(top = MaterialTheme.spacing.Small),
@@ -46,8 +49,17 @@ internal fun SplitBreakdownSection(
                     .padding(MaterialTheme.spacing.Default),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
             ) {
-                splitGroups.forEach { group -> SubunitGroup(group) }
-                splits.forEach { split -> SplitRow(split) }
+                if (splitBreakdownItems.isNotEmpty()) {
+                    splitBreakdownItems.forEach { item ->
+                        when (item) {
+                            is SplitBreakdownItemUiModel.Solo -> SplitRow(item.split)
+                            is SplitBreakdownItemUiModel.Subunit -> SubunitGroup(item.group)
+                        }
+                    }
+                } else {
+                    splitGroups.forEach { group -> SubunitGroup(group) }
+                    splits.forEach { split -> SplitRow(split) }
+                }
             }
         }
     }

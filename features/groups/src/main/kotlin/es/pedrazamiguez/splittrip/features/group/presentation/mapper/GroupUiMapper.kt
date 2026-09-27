@@ -14,13 +14,14 @@ interface GroupUiMapper {
      * Maps a [Group] to a [GroupUiModel] without member profile enrichment.
      * Avatar fields will be empty; use the overload accepting a `memberProfiles` map for the hero card.
      */
-    fun toGroupUiModel(group: Group): GroupUiModel = toGroupUiModel(group, emptyMap())
+    fun toGroupUiModel(group: Group): GroupUiModel = toGroupUiModel(group, emptyMap(), null)
 
     /**
      * Maps a [Group] to a [GroupUiModel] enriched with resolved member profiles.
      * [memberProfiles] is a `userId → User` map used to populate avatar URLs.
+     * When [currentUserId] is provided, pins that member to index 0 with nominative self-identification.
      */
-    fun toGroupUiModel(group: Group, memberProfiles: Map<String, User>): GroupUiModel
+    fun toGroupUiModel(group: Group, memberProfiles: Map<String, User>, currentUserId: String? = null): GroupUiModel
 
     /**
      * Maps a list of [Group]s to [GroupUiModel]s without member profile enrichment.

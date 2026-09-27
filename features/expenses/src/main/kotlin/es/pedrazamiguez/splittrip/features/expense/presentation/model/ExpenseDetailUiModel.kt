@@ -65,6 +65,7 @@ data class ExpenseDetailUiModel(
      * keep this empty and render only [splits].
      */
     val splitGroups: ImmutableList<SubunitSplitGroupUiModel> = persistentListOf(),
+    val splitBreakdownItems: ImmutableList<SplitBreakdownItemUiModel> = persistentListOf(),
 
     // Add-ons
     val hasAddOns: Boolean = false,

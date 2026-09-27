@@ -52,9 +52,16 @@ class SubunitUiMapperImpl(
         subunits: List<Subunit>,
         memberProfiles: Map<String, User>,
         currentUserId: String?
-    ): ImmutableList<SubunitUiModel> = subunits.map {
-        toSubunitUiModel(it, memberProfiles, currentUserId)
-    }.toImmutableList()
+    ): ImmutableList<SubunitUiModel> {
+        val localeComparator = localeAwareComparator<Subunit>(localeProvider.getCurrentLocale()) { it.name }
+        val sortedSubunits = subunits.sortedWith(
+            compareByDescending<Subunit> { currentUserId != null && it.memberIds.contains(currentUserId) }
+                .thenComparing(localeComparator)
+        )
+        return sortedSubunits.map {
+            toSubunitUiModel(it, memberProfiles, currentUserId)
+        }.toImmutableList()
+    }
 
     override fun toMemberUiModelList(
         memberIds: List<String>,
@@ -74,15 +81,19 @@ class SubunitUiMapperImpl(
                 }
         }
 
+        val localeComparator =
+            localeAwareComparator<MemberUiModel>(
+                locale = localeProvider.getCurrentLocale()
+            ) { member ->
+                member.displayName
+            }
         return memberIds.map { userId ->
             val profile = memberProfiles[userId]
             val displayName = userUiMapper.mapToDisplayName(
                 user = profile,
                 fallbackUserId = userId,
                 currentUserId = currentUserId,
-                selfIdentificationContext = if (currentUserId !=
-                    null
-                ) {
+                selfIdentificationContext = if (currentUserId != null) {
                     SelfIdentificationContextEnum.NOMINATIVE
                 } else {
                     null
@@ -97,7 +108,8 @@ class SubunitUiMapperImpl(
                 assignedSubunitName = assignedSubunitName ?: ""
             )
         }.sortedWith(
-            localeAwareComparator(localeProvider.getCurrentLocale()) { it.displayName }
+            compareByDescending<MemberUiModel> { it.userId == currentUserId }
+                .thenComparing(localeComparator)
         ).toImmutableList()
     }
 
@@ -128,6 +140,8 @@ class SubunitUiMapperImpl(
         val percentFormat = NumberFormat.getPercentInstance(locale).apply {
             maximumFractionDigits = 0
         } as DecimalFormat
+        val localeComparator =
+            localeAwareComparator<Pair<String, MemberShareUiModel>>(locale) { it.second.displayName }
 
         return subunit.memberIds.mapNotNull { userId ->
             val share = subunit.memberShares[userId] ?: return@mapNotNull null
@@ -135,22 +149,21 @@ class SubunitUiMapperImpl(
                 user = memberProfiles[userId],
                 fallbackUserId = userId,
                 currentUserId = currentUserId,
-                selfIdentificationContext = if (currentUserId !=
-                    null
-                ) {
+                selfIdentificationContext = if (currentUserId != null) {
                     SelfIdentificationContextEnum.NOMINATIVE
                 } else {
                     null
                 }
             )
 
-            MemberShareUiModel(
+            userId to MemberShareUiModel(
                 displayName = displayName,
                 shareText = percentFormat.format(share),
                 avatarUrl = memberProfiles[userId]?.profileImagePath
             )
         }.sortedWith(
-            localeAwareComparator(localeProvider.getCurrentLocale()) { it.displayName }
-        ).toImmutableList()
+            compareByDescending<Pair<String, MemberShareUiModel>> { it.first == currentUserId }
+                .thenComparing(localeComparator)
+        ).map { it.second }.toImmutableList()
     }
 }

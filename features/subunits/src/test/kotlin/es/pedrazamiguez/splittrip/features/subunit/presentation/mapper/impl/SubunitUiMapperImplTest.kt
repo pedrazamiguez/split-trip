@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.mapper.impl
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -32,8 +33,10 @@ class SubunitUiMapperImplTest {
         localeProvider = mockk {
             every { getCurrentLocale() } returns testLocale
         }
-        resourceProvider = mockk(relaxed = true)
-        userUiMapper = UserUiMapper(resourceProvider)
+        resourceProvider = mockk(relaxed = true) {
+            every { getString(DesignR.string.self_identification_nominative) } returns "You"
+        }
+        userUiMapper = UserUiMapper(resourceProvider, localeProvider)
         mapper = SubunitUiMapperImpl(localeProvider, resourceProvider, userUiMapper)
     }
 
@@ -176,6 +179,30 @@ class SubunitUiMapperImplTest {
 
             assertTrue(result.memberShares.isEmpty())
         }
+
+        @Test
+        fun `toMemberShareUiModels pins current user at index 0 when user belongs to subunit`() {
+            val profiles = mapOf(
+                "user-alice" to createUser("user-alice", displayName = "Alice"),
+                "user-zeta" to createUser("user-zeta", displayName = "Zeta")
+            )
+            val subunit = createSubunit(
+                memberIds = listOf("user-alice", "user-zeta"),
+                memberShares = mapOf(
+                    "user-alice" to BigDecimal("0.5"),
+                    "user-zeta" to BigDecimal("0.5")
+                )
+            )
+            every {
+                resourceProvider.getQuantityString(R.plurals.subunit_member_count, 2, 2)
+            } returns "2 members"
+
+            val result = mapper.toSubunitUiModel(subunit, profiles, currentUserId = "user-zeta")
+
+            assertEquals(2, result.memberShares.size)
+            assertEquals("You", result.memberShares[0].displayName)
+            assertEquals("Alice", result.memberShares[1].displayName)
+        }
     }
 
     @Nested
@@ -294,6 +321,50 @@ class SubunitUiMapperImplTest {
             val result = mapper.toSubunitUiModelList(emptyList(), emptyMap())
             assertTrue(result.isEmpty())
         }
+
+        @Test
+        fun `toSubunitUiModelList pins subunit containing current user to index 0`() {
+            val profiles = mapOf(
+                "user-1" to createUser("user-1", displayName = "Alice"),
+                "user-2" to createUser("user-2", displayName = "Bob"),
+                "user-3" to createUser("user-3", displayName = "Charlie"),
+                "user-4" to createUser("user-4", displayName = "David")
+            )
+            val subunits = listOf(
+                createSubunit(id = "sub-family", name = "Family", memberIds = listOf("user-3", "user-4")),
+                createSubunit(id = "sub-couple", name = "Couple", memberIds = listOf("user-1", "user-2"))
+            )
+            every {
+                resourceProvider.getQuantityString(R.plurals.subunit_member_count, any(), any())
+            } returns "members"
+
+            val result = mapper.toSubunitUiModelList(subunits, profiles, currentUserId = "user-1")
+
+            assertEquals(2, result.size)
+            assertEquals("Couple", result[0].name)
+            assertEquals("Family", result[1].name)
+        }
+
+        @Test
+        fun `toSubunitUiModelList sorts alphabetically when user has no subunit or currentUserId is null`() {
+            val profiles = mapOf(
+                "user-1" to createUser("user-1", displayName = "Alice"),
+                "user-3" to createUser("user-3", displayName = "Charlie")
+            )
+            val subunits = listOf(
+                createSubunit(id = "sub-family", name = "Family", memberIds = listOf("user-3")),
+                createSubunit(id = "sub-couple", name = "Couple", memberIds = listOf("user-1"))
+            )
+            every {
+                resourceProvider.getQuantityString(R.plurals.subunit_member_count, any(), any())
+            } returns "members"
+
+            val result = mapper.toSubunitUiModelList(subunits, profiles, currentUserId = null)
+
+            assertEquals(2, result.size)
+            assertEquals("Couple", result[0].name)
+            assertEquals("Family", result[1].name)
+        }
     }
 
     @Nested
@@ -405,6 +476,30 @@ class SubunitUiMapperImplTest {
             assertEquals("Alice", result[0].displayName)
             assertEquals("Bob", result[1].displayName)
             assertEquals("Charlie", result[2].displayName)
+        }
+
+        @Test
+        fun `toMemberUiModelList pins current user at index 0 followed by other members sorted alphabetically`() {
+            val profiles = mapOf(
+                "user-alice" to createUser("user-alice", displayName = "Alice"),
+                "user-bob" to createUser("user-bob", displayName = "Bob"),
+                "user-charlie" to createUser("user-charlie", displayName = "Charlie")
+            )
+
+            val result = mapper.toMemberUiModelList(
+                memberIds = listOf("user-alice", "user-bob", "user-charlie"),
+                memberProfiles = profiles,
+                subunits = emptyList(),
+                currentUserId = "user-charlie"
+            )
+
+            assertEquals(3, result.size)
+            assertEquals("user-charlie", result[0].userId)
+            assertEquals("You", result[0].displayName)
+            assertEquals("user-alice", result[1].userId)
+            assertEquals("Alice", result[1].displayName)
+            assertEquals("user-bob", result[2].userId)
+            assertEquals("Bob", result[2].displayName)
         }
     }
 }
