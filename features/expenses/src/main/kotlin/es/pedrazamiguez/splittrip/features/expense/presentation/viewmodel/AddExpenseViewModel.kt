@@ -458,17 +458,19 @@ class AddExpenseViewModel(
     }
 
     /**
-     * Jumps directly to a previously completed step at [stepIndex].
+     * Jumps directly to a step at [stepIndex].
+     * In edit mode, forward jumps are permitted.
      * Clears [AddExpenseUiState.jumpedFromStep] so that sequential Back navigation
      * is not misrouted after the jump.
      */
     private fun navigateToStep(stepIndex: Int) {
         val state = _uiState.value
-        val target = if (state.isEditMode) {
-            state.applicableSteps.getOrNull(stepIndex)
-        } else {
-            wizardNavigator.jumpToStep(state.currentStep, stepIndex, state.applicableSteps)
-        } ?: return
+        val target = wizardNavigator.jumpToStep(
+            currentStep = state.currentStep,
+            targetIndex = stepIndex,
+            applicableSteps = state.applicableSteps,
+            allowForwardJumps = state.isEditMode
+        ) ?: return
         _uiState.update { it.copy(currentStep = target, jumpedFromStep = null) }
     }
 
