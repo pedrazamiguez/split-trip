@@ -67,7 +67,7 @@ class AuthenticationViewModelTest {
         Dispatchers.resetMain()
     }
 
-    // ── EmailChanged / PasswordChanged ──────────────────────────────────────
+    // ── EmailChanged / PasswordChanged / ToggleEmailForm ───────────────────
 
     @Nested
     @DisplayName("Field Updates")
@@ -85,6 +85,17 @@ class AuthenticationViewModelTest {
             viewModel.onEvent(AuthenticationUiEvent.PasswordChanged("secret123")) {}
 
             assertEquals("secret123", viewModel.uiState.value.password)
+        }
+
+        @Test
+        fun `ToggleEmailForm toggles isEmailFormExpanded in state`() = runTest(testDispatcher) {
+            assertFalse(viewModel.uiState.value.isEmailFormExpanded)
+
+            viewModel.onEvent(AuthenticationUiEvent.ToggleEmailForm) {}
+            assertTrue(viewModel.uiState.value.isEmailFormExpanded)
+
+            viewModel.onEvent(AuthenticationUiEvent.ToggleEmailForm) {}
+            assertFalse(viewModel.uiState.value.isEmailFormExpanded)
         }
     }
 
@@ -114,7 +125,7 @@ class AuthenticationViewModelTest {
             }
 
         @Test
-        fun `failure sets error in state`() = runTest(testDispatcher) {
+        fun `failure sets error in state and keeps isEmailFormExpanded true`() = runTest(testDispatcher) {
             coEvery {
                 signInWithEmailUseCase(any(), any())
             } returns Result.failure(RuntimeException("Invalid credentials"))
@@ -126,6 +137,7 @@ class AuthenticationViewModelTest {
             advanceUntilIdle()
 
             assertFalse(viewModel.uiState.value.isLoading)
+            assertTrue(viewModel.uiState.value.isEmailFormExpanded)
             assertNotNull(viewModel.uiState.value.error)
             assertTrue(viewModel.uiState.value.error is UiText.DynamicString)
         }

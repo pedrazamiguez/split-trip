@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 data class AuthenticationUiState(
     val email: String = "",
     val password: String = "",
+    val isEmailFormExpanded: Boolean = false,
     val isLoading: Boolean = false,
     val isGoogleLoading: Boolean = false,
     val isGuestLoading: Boolean = false,
