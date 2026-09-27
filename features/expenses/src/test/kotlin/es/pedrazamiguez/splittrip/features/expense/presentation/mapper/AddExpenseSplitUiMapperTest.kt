@@ -108,6 +108,7 @@ class AddExpenseSplitUiMapperTest {
             val result = mapper.buildInitialSplits(
                 memberIds = listOf("user-1", "user-2"),
                 shares = shares,
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-1" to user1, "user-2" to user2)
             )
 
@@ -116,6 +117,8 @@ class AddExpenseSplitUiMapperTest {
             val names = result.map { it.displayName }
             assertTrue(names.contains("Andrés"))
             assertTrue(names.contains("Ana"))
+            assertEquals("€50.00", result[0].formattedAmount)
+            assertEquals("50.00", result[0].amountInput)
         }
 
         @Test
@@ -123,18 +126,40 @@ class AddExpenseSplitUiMapperTest {
             val result = mapper.buildInitialSplits(
                 memberIds = listOf("user-1"),
                 shares = emptyList(),
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-1" to user1)
             )
 
             assertEquals(1, result.size)
             assertEquals(0L, result[0].amountCents)
+            assertEquals("€0.00", result[0].formattedAmount)
+            assertEquals("0.00", result[0].amountInput)
+        }
+
+        @Test
+        fun `formats split amounts with corresponding currency symbol`() {
+            val shares = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 5000L)
+            )
+
+            val result = mapper.buildInitialSplits(
+                memberIds = listOf("user-1"),
+                shares = shares,
+                currencyCode = "USD",
+                memberProfiles = mapOf("user-1" to user1)
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("$50.00", result[0].formattedAmount)
+            assertEquals("50.00", result[0].amountInput)
         }
 
         @Test
         fun `returns empty list for empty member IDs`() {
             val result = mapper.buildInitialSplits(
                 memberIds = emptyList(),
-                shares = emptyList()
+                shares = emptyList(),
+                currencyCode = "EUR"
             )
 
             assertTrue(result.isEmpty())
@@ -145,6 +170,7 @@ class AddExpenseSplitUiMapperTest {
             val result = mapper.buildInitialSplits(
                 memberIds = listOf("user-1", "user-2"),
                 shares = emptyList(),
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-1" to user1, "user-2" to user2)
             )
 
@@ -161,6 +187,7 @@ class AddExpenseSplitUiMapperTest {
             val result = mapper.buildInitialSplits(
                 memberIds = listOf("user-1", "user-2"),
                 shares = emptyList(),
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-1" to userZeta, "user-2" to userAna),
                 currentUserId = "user-1"
             )
@@ -178,7 +205,8 @@ class AddExpenseSplitUiMapperTest {
 
             val result = mapper.buildInitialSplits(
                 memberIds = listOf("user-1"),
-                shares = shares
+                shares = shares,
+                currencyCode = "EUR"
             )
 
             assertEquals("50.00", result[0].percentageInput)
@@ -190,7 +218,8 @@ class AddExpenseSplitUiMapperTest {
 
             val result = mapper.buildInitialSplits(
                 memberIds = listOf("user-1"),
-                shares = shares
+                shares = shares,
+                currencyCode = "EUR"
             )
 
             assertEquals("", result[0].percentageInput)
@@ -289,6 +318,7 @@ class AddExpenseSplitUiMapperTest {
             val result = mapper.mapDomainToSplits(
                 memberIds = listOf("user-1", "user-2"),
                 shares = shares,
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-1" to user1, "user-2" to user2)
             )
 
@@ -296,6 +326,8 @@ class AddExpenseSplitUiMapperTest {
             val ids = result.map { it.userId }
             assertTrue(ids.contains("user-1"))
             assertTrue(ids.contains("user-2"))
+            assertEquals("€50.00", result[0].formattedAmount)
+            assertEquals("50.00", result[0].amountInput)
         }
 
         @Test
@@ -310,6 +342,7 @@ class AddExpenseSplitUiMapperTest {
             val result = mapper.mapDomainToSplits(
                 memberIds = listOf("user-1", "user-2"),
                 shares = shares,
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-1" to userZeta, "user-2" to userAna),
                 currentUserId = "user-1"
             )
@@ -328,7 +361,8 @@ class AddExpenseSplitUiMapperTest {
 
             val result = mapper.mapDomainToSplits(
                 memberIds = listOf("user-1", "user-2"),
-                shares = shares
+                shares = shares,
+                currencyCode = "EUR"
             )
 
             val user2Row = result.first { it.userId == "user-2" }
@@ -343,7 +377,8 @@ class AddExpenseSplitUiMapperTest {
 
             val result = mapper.mapDomainToSplits(
                 memberIds = listOf("user-1"),
-                shares = shares
+                shares = shares,
+                currencyCode = "EUR"
             )
 
             assertFalse(result[0].isExcluded)
@@ -353,7 +388,8 @@ class AddExpenseSplitUiMapperTest {
         fun `returns empty list for empty member IDs`() {
             val result = mapper.mapDomainToSplits(
                 memberIds = emptyList(),
-                shares = emptyList()
+                shares = emptyList(),
+                currencyCode = "EUR"
             )
 
             assertTrue(result.isEmpty())
@@ -419,6 +455,7 @@ class AddExpenseSplitUiMapperTest {
                 subunits = listOf(subunit),
                 shares = shares,
                 availableSplitTypes = availableSplitTypes,
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-1" to user1, "user-2" to user2)
             )
 
@@ -427,6 +464,10 @@ class AddExpenseSplitUiMapperTest {
             assertNotNull(subunitRow)
             assertEquals("Couple", subunitRow!!.displayName)
             assertEquals(2, subunitRow.entityMembers.size)
+            assertEquals("€60.00", subunitRow.formattedAmount)
+            assertEquals("60.00", subunitRow.amountInput)
+            assertEquals("€30.00", subunitRow.entityMembers[0].formattedAmount)
+            assertEquals("30.00", subunitRow.entityMembers[0].amountInput)
         }
 
         @Test
@@ -435,7 +476,8 @@ class AddExpenseSplitUiMapperTest {
                 memberIds = listOf("user-1", "user-2"),
                 subunits = listOf(subunit),
                 shares = emptyList(), // no shares → subunit excluded
-                availableSplitTypes = availableSplitTypes
+                availableSplitTypes = availableSplitTypes,
+                currencyCode = "EUR"
             )
 
             val subunitRow = result.firstOrNull { it.isEntityRow && it.userId == "sub-1" }
@@ -456,11 +498,14 @@ class AddExpenseSplitUiMapperTest {
                 subunits = listOf(subunit), // only user-1 and user-2 are in subunit
                 shares = shares,
                 availableSplitTypes = availableSplitTypes,
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-3" to soloUser)
             )
 
             val soloRow = result.firstOrNull { it.isEntityRow && it.userId == "user-3" }
             assertNotNull(soloRow)
+            assertEquals("€50.00", soloRow!!.formattedAmount)
+            assertEquals("50.00", soloRow.amountInput)
         }
 
         @Test
@@ -469,7 +514,8 @@ class AddExpenseSplitUiMapperTest {
                 memberIds = emptyList(),
                 subunits = emptyList(),
                 shares = emptyList(),
-                availableSplitTypes = availableSplitTypes
+                availableSplitTypes = availableSplitTypes,
+                currencyCode = "EUR"
             )
 
             assertTrue(result.isEmpty())
@@ -503,6 +549,7 @@ class AddExpenseSplitUiMapperTest {
                 subunits = listOf(familySubunit, coupleSubunit),
                 shares = shares,
                 availableSplitTypes = availableSplitTypes,
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-3" to soloUser),
                 currentUserId = "user-1"
             )
@@ -535,6 +582,7 @@ class AddExpenseSplitUiMapperTest {
                 subunits = listOf(coupleSubunit),
                 shares = shares,
                 availableSplitTypes = availableSplitTypes,
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-3" to solo3, "user-4" to solo4),
                 currentUserId = "user-3"
             )
@@ -565,6 +613,7 @@ class AddExpenseSplitUiMapperTest {
                 subunits = listOf(coupleSubunit),
                 shares = shares,
                 availableSplitTypes = availableSplitTypes,
+                currencyCode = "EUR",
                 memberProfiles = mapOf("user-1" to userAna, "user-2" to userZeta),
                 currentUserId = "user-2"
             )

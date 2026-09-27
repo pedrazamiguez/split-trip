@@ -21,6 +21,8 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
+import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
@@ -1434,6 +1436,74 @@ class AddExpenseUiMapperTest {
 
             assertEquals("", result.vendor)
             assertEquals("", result.notes)
+        }
+
+        @Test
+        fun `maps splits with currency symbol on initial edit state for member splits`() {
+            val splits = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 1000L),
+                ExpenseSplit(userId = "user-2", amountCents = 1000L)
+            )
+            val expense = Expense(
+                id = "exp-splits",
+                groupId = "group-1",
+                title = "Dinner",
+                sourceAmount = 2000L,
+                sourceCurrency = "EUR",
+                groupAmount = 2000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL,
+                splits = splits
+            )
+            val state = baseEditState().copy(memberIds = persistentListOf("user-1", "user-2"))
+
+            val result = mapper.mapExpenseToState(expense, null, state, emptyMap(), emptyList())
+
+            assertEquals("€10.00", result.splits[0].formattedAmount)
+            assertEquals("10.00", result.splits[0].amountInput)
+        }
+
+        @Test
+        fun `maps subunit entity splits with currency symbol on initial edit state`() {
+            val subunit = Subunit(
+                id = "sub-1",
+                groupId = "group-1",
+                name = "Couple",
+                memberIds = listOf("user-1", "user-2")
+            )
+            val splits = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 1500L, subunitId = "sub-1"),
+                ExpenseSplit(userId = "user-2", amountCents = 1500L, subunitId = "sub-1")
+            )
+            val expense = Expense(
+                id = "exp-subunit-splits",
+                groupId = "group-1",
+                title = "Hotel",
+                sourceAmount = 3000L,
+                sourceCurrency = "USD",
+                groupAmount = 3000L,
+                groupCurrency = "USD",
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CASH,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL,
+                splits = splits
+            )
+            val state = baseEditState().copy(
+                memberIds = persistentListOf("user-1", "user-2"),
+                availableCurrencies = persistentListOf(eurUi, usdUi)
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, state, emptyMap(), listOf(subunit))
+
+            assertEquals(1, result.entitySplits.size)
+            assertEquals("$30.00", result.entitySplits[0].formattedAmount)
+            assertEquals(2, result.entitySplits[0].entityMembers.size)
+            assertEquals("$15.00", result.entitySplits[0].entityMembers[0].formattedAmount)
+            assertEquals("15.00", result.entitySplits[0].entityMembers[0].amountInput)
         }
     }
 }
