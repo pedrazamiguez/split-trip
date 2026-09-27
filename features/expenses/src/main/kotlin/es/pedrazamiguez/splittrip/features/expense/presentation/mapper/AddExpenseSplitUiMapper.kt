@@ -44,6 +44,7 @@ class AddExpenseSplitUiMapper(
     fun buildInitialSplits(
         memberIds: List<String>,
         shares: List<ExpenseSplit>,
+        currencyCode: String,
         memberProfiles: Map<String, User> = emptyMap(),
         currentUserId: String? = null
     ): ImmutableList<SplitUiModel> {
@@ -56,7 +57,7 @@ class AddExpenseSplitUiMapper(
                 userId = userId,
                 displayName = resolveDisplayName(userId, memberProfiles, currentUserId),
                 amountCents = amountCents,
-                formattedAmount = formattingHelper.formatCentsValue(amountCents),
+                formattedAmount = formattingHelper.formatCentsWithCurrency(amountCents, currencyCode),
                 amountInput = formattingHelper.formatCentsValue(amountCents),
                 percentageInput = share?.percentage?.toPlainString() ?: ""
             )
@@ -128,6 +129,7 @@ class AddExpenseSplitUiMapper(
     fun mapDomainToSplits(
         memberIds: List<String>,
         shares: List<ExpenseSplit>,
+        currencyCode: String,
         memberProfiles: Map<String, User> = emptyMap(),
         currentUserId: String? = null
     ): ImmutableList<SplitUiModel> {
@@ -141,7 +143,7 @@ class AddExpenseSplitUiMapper(
                 userId = userId,
                 displayName = resolveDisplayName(userId, memberProfiles, currentUserId),
                 amountCents = amountCents,
-                formattedAmount = formattingHelper.formatCentsValue(amountCents),
+                formattedAmount = formattingHelper.formatCentsWithCurrency(amountCents, currencyCode),
                 amountInput = formattingHelper.formatCentsValue(amountCents),
                 percentageInput = share?.percentage?.toPlainString() ?: "",
                 isExcluded = isExcluded
@@ -160,6 +162,7 @@ class AddExpenseSplitUiMapper(
         subunits: List<Subunit>,
         shares: List<ExpenseSplit>,
         availableSplitTypes: List<SplitTypeUiModel>,
+        currencyCode: String,
         memberProfiles: Map<String, User> = emptyMap(),
         currentUserId: String? = null
     ): ImmutableList<SplitUiModel> {
@@ -169,9 +172,25 @@ class AddExpenseSplitUiMapper(
 
         val entityRows = mutableListOf<SplitUiModel>()
 
-        entityRows.addAll(buildSoloMemberRows(soloMemberIds, shares, memberProfiles, currentUserId))
         entityRows.addAll(
-            buildSubunitRows(subunits, shares, availableSplitTypes, defaultSplitType, memberProfiles, currentUserId)
+            buildSoloMemberRows(
+                soloMemberIds = soloMemberIds,
+                shares = shares,
+                currencyCode = currencyCode,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId
+            )
+        )
+        entityRows.addAll(
+            buildSubunitRows(
+                subunits = subunits,
+                shares = shares,
+                availableSplitTypes = availableSplitTypes,
+                defaultSplitType = defaultSplitType,
+                currencyCode = currencyCode,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId
+            )
         )
 
         return sortEntityRows(entityRows, currentUserId)
@@ -235,6 +254,7 @@ class AddExpenseSplitUiMapper(
     private fun buildSoloMemberRows(
         soloMemberIds: List<String>,
         shares: List<ExpenseSplit>,
+        currencyCode: String,
         memberProfiles: Map<String, User>,
         currentUserId: String? = null
     ): List<SplitUiModel> {
@@ -247,7 +267,7 @@ class AddExpenseSplitUiMapper(
                 displayName = resolveDisplayName(userId, memberProfiles, currentUserId),
                 isEntityRow = true,
                 amountCents = amountCents,
-                formattedAmount = formattingHelper.formatCentsValue(amountCents),
+                formattedAmount = formattingHelper.formatCentsWithCurrency(amountCents, currencyCode),
                 amountInput = formattingHelper.formatCentsValue(amountCents),
                 percentageInput = share?.percentage?.toPlainString() ?: "",
                 isExcluded = isExcluded
@@ -260,6 +280,7 @@ class AddExpenseSplitUiMapper(
         shares: List<ExpenseSplit>,
         availableSplitTypes: List<SplitTypeUiModel>,
         defaultSplitType: SplitTypeUiModel?,
+        currencyCode: String,
         memberProfiles: Map<String, User>,
         currentUserId: String? = null
     ): List<SplitUiModel> {
@@ -280,7 +301,7 @@ class AddExpenseSplitUiMapper(
                     displayName = resolveDisplayName(memberId, memberProfiles, currentUserId),
                     subunitId = subunit.id,
                     amountCents = amountCents,
-                    formattedAmount = formattingHelper.formatCentsValue(amountCents),
+                    formattedAmount = formattingHelper.formatCentsWithCurrency(amountCents, currencyCode),
                     amountInput = formattingHelper.formatCentsValue(amountCents),
                     percentageInput = share?.percentage?.toPlainString() ?: "",
                     isExcluded = isMemberExcluded
@@ -293,7 +314,7 @@ class AddExpenseSplitUiMapper(
                 displayName = subunit.name,
                 isEntityRow = true,
                 amountCents = subunitTotalCents,
-                formattedAmount = formattingHelper.formatCentsValue(subunitTotalCents),
+                formattedAmount = formattingHelper.formatCentsWithCurrency(subunitTotalCents, currencyCode),
                 amountInput = formattingHelper.formatCentsValue(subunitTotalCents),
                 percentageInput = "",
                 isExcluded = isSubunitExcluded,

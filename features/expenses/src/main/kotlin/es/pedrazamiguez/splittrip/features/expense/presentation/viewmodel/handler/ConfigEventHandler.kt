@@ -163,6 +163,7 @@ class ConfigEventHandler(
         val initialSplits = addExpenseSplitMapper.buildInitialSplits(
             memberIds = memberIds,
             shares = emptyList(),
+            currencyCode = defaults.initialCurrency.code,
             memberProfiles = memberProfiles,
             currentUserId = currentUserId
         )

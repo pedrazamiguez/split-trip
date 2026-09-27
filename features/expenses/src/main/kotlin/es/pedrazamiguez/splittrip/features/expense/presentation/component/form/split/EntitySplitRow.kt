@@ -27,7 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickableNoRipple
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
@@ -62,7 +62,7 @@ internal fun EntitySplitRow(
                     if (isSubunitHeader) {
                         Modifier
                             .clip(MaterialTheme.shapes.large)
-                            .debouncedClickable { events.onAccordionToggled(entity.userId) }
+                            .debouncedClickableNoRipple { events.onAccordionToggled(entity.userId) }
                     } else {
                         Modifier
                     }

@@ -405,6 +405,7 @@ class AddExpenseUiMapper(
             splitMapper.mapDomainToSplits(
                 memberIds = currentState.memberIds,
                 shares = expense.splits,
+                currencyCode = expense.sourceCurrency,
                 memberProfiles = memberProfiles,
                 currentUserId = currentUserId
             )
@@ -416,6 +417,7 @@ class AddExpenseUiMapper(
                 subunits = subunits,
                 shares = expense.splits,
                 availableSplitTypes = currentState.availableSplitTypes,
+                currencyCode = expense.sourceCurrency,
                 memberProfiles = memberProfiles,
                 currentUserId = currentUserId
             )
