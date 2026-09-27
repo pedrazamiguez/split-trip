@@ -18,7 +18,13 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitBreakdownItemUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import java.math.BigDecimal
+import java.text.Collator
+import java.util.Locale
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 
 internal fun buildOriginalEnteredTotal(baseGroupAmount: Long, addOns: List<AddOn>): Long {
     val includedNonDiscountTotal = addOns
@@ -169,3 +175,82 @@ internal fun buildExpenseScopeLabel(payerType: PayerType, resourceProvider: Reso
         PayerType.SUBUNIT -> resourceProvider.getString(R.string.expense_scope_subunit)
         PayerType.USER -> resourceProvider.getString(R.string.expense_scope_personal)
     }
+
+internal fun getExpenseDetailEntityPriority(
+    isUserEntity: Boolean,
+    isUserInSubunit: Boolean,
+    isSubunit: Boolean
+): Int {
+    if (isUserEntity) return 0
+    return if (isUserInSubunit) {
+        if (isSubunit) 1 else 2
+    } else {
+        if (!isSubunit) 1 else 2
+    }
+}
+
+internal fun sortSplitBreakdownItems(
+    items: List<SplitBreakdownItemUiModel>,
+    currentUserId: String?,
+    locale: Locale
+): ImmutableList<SplitBreakdownItemUiModel> {
+    val collator = Collator.getInstance(locale)
+    val isUserInSubunit = currentUserId != null &&
+        items.any { item ->
+            item is SplitBreakdownItemUiModel.Subunit && item.group.members.any { it.isCurrentUser }
+        }
+
+    return items.sortedWith { itemA, itemB ->
+        val isUserEntityA = when (itemA) {
+            is SplitBreakdownItemUiModel.Solo -> itemA.split.isCurrentUser
+            is SplitBreakdownItemUiModel.Subunit -> itemA.group.members.any { it.isCurrentUser }
+        }
+        val isSubunitA = itemA is SplitBreakdownItemUiModel.Subunit
+        val priorityA = getExpenseDetailEntityPriority(
+            isUserEntity = isUserEntityA,
+            isUserInSubunit = isUserInSubunit,
+            isSubunit = isSubunitA
+        )
+
+        val isUserEntityB = when (itemB) {
+            is SplitBreakdownItemUiModel.Solo -> itemB.split.isCurrentUser
+            is SplitBreakdownItemUiModel.Subunit -> itemB.group.members.any { it.isCurrentUser }
+        }
+        val isSubunitB = itemB is SplitBreakdownItemUiModel.Subunit
+        val priorityB = getExpenseDetailEntityPriority(
+            isUserEntity = isUserEntityB,
+            isUserInSubunit = isUserInSubunit,
+            isSubunit = isSubunitB
+        )
+
+        if (priorityA != priorityB) {
+            priorityA.compareTo(priorityB)
+        } else {
+            val nameA = when (itemA) {
+                is SplitBreakdownItemUiModel.Solo -> itemA.split.displayName
+                is SplitBreakdownItemUiModel.Subunit -> itemA.group.subunitLabel
+            }
+            val nameB = when (itemB) {
+                is SplitBreakdownItemUiModel.Solo -> itemB.split.displayName
+                is SplitBreakdownItemUiModel.Subunit -> itemB.group.subunitLabel
+            }
+            collator.compare(nameA, nameB)
+        }
+    }.toImmutableList()
+}
+
+internal fun sortSubunitMembers(
+    members: List<SplitDetailUiModel>,
+    currentUserId: String?,
+    locale: Locale
+): ImmutableList<SplitDetailUiModel> {
+    val collator = Collator.getInstance(locale)
+    return members.sortedWith(
+        compareBy<SplitDetailUiModel> {
+            val isUser = it.isCurrentUser || (currentUserId != null && it.memberDisplay.userId == currentUserId)
+            if (isUser) 0 else 1
+        }.thenComparator { a, b ->
+            collator.compare(a.displayName, b.displayName)
+        }
+    ).toImmutableList()
+}

@@ -2,11 +2,13 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.enums.GrammaticalGenderEnum
 import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
+import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.domain.model.User
 import io.mockk.every
 import io.mockk.mockk
+import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -17,10 +19,14 @@ class UserUiMapperTest {
 
     private val resourceProvider = mockk<ResourceProvider> {
         every { getString(R.string.user_pending_fallback) } returns "Pending member"
+        every { getString(R.string.self_identification_nominative) } returns "You"
         every { getString(R.string.self_identification_possessive_pronoun_feminine) } returns "tuya"
         every { getString(R.string.self_identification_possessive_pronoun_masculine) } returns "tuyo"
     }
-    private val mapper = UserUiMapper(resourceProvider)
+    private val localeProvider = mockk<LocaleProvider> {
+        every { getCurrentLocale() } returns Locale.ENGLISH
+    }
+    private val mapper = UserUiMapper(resourceProvider, localeProvider)
 
     @Nested
     inner class MapToDisplayName {
@@ -114,7 +120,38 @@ class UserUiMapperTest {
     inner class ToMemberOptions {
 
         @Test
-        fun `maps list of member IDs and profiles correctly`() {
+        fun `resolves nominative pronoun for current user and places them at index 0`() {
+            val profiles = mapOf(
+                "user-1" to User(userId = "user-1", email = "alice@example.com", displayName = "Alice"),
+                "user-2" to User(userId = "user-2", email = "bob@example.com", displayName = "Bob"),
+                "user-3" to User(userId = "user-3", email = "charlie@example.com", displayName = "Charlie")
+            )
+
+            val result = mapper.toMemberOptions(
+                memberIds = listOf("user-1", "user-2", "user-3"),
+                memberProfiles = profiles,
+                currentUserId = "user-3"
+            )
+
+            assertEquals(3, result.size)
+
+            // user-3 is current user -> pinned to index 0 with "You"
+            assertEquals("user-3", result[0].userId)
+            assertEquals("You", result[0].displayName)
+            assertTrue(result[0].isCurrentUser)
+
+            // remaining sorted alphabetically
+            assertEquals("user-1", result[1].userId)
+            assertEquals("Alice", result[1].displayName)
+            assertFalse(result[1].isCurrentUser)
+
+            assertEquals("user-2", result[2].userId)
+            assertEquals("Bob", result[2].displayName)
+            assertFalse(result[2].isCurrentUser)
+        }
+
+        @Test
+        fun `sorts purely alphabetically when currentUserId is null or not in member list`() {
             val profiles = mapOf(
                 "user-1" to User(userId = "user-1", email = "alice@example.com", displayName = "Alice"),
                 "user-2" to User(userId = "user-2", email = "bob@example.com", displayName = ""),
@@ -122,29 +159,26 @@ class UserUiMapperTest {
             )
 
             val result = mapper.toMemberOptions(
-                memberIds = listOf("user-1", "user-2", "user-3", "user-unknown"),
+                memberIds = listOf("user-3", "user-1", "user-2", "user-unknown"),
                 memberProfiles = profiles,
-                currentUserId = "user-1"
+                currentUserId = null
             )
 
             assertEquals(4, result.size)
 
-            // user-1
+            // Sorted alphabetically by resolved display name: Alice, bob@example.com, charlie@example.com, user-unknown
             assertEquals("user-1", result[0].userId)
             assertEquals("Alice", result[0].displayName)
-            assertTrue(result[0].isCurrentUser)
+            assertFalse(result[0].isCurrentUser)
 
-            // user-2 (blank display name, falls back to email)
             assertEquals("user-2", result[1].userId)
             assertEquals("bob@example.com", result[1].displayName)
             assertFalse(result[1].isCurrentUser)
 
-            // user-3 (null display name, falls back to email)
             assertEquals("user-3", result[2].userId)
             assertEquals("charlie@example.com", result[2].displayName)
             assertFalse(result[2].isCurrentUser)
 
-            // user-unknown (null profile, falls back to userId)
             assertEquals("user-unknown", result[3].userId)
             assertEquals("user-unknown", result[3].displayName)
             assertFalse(result[3].isCurrentUser)

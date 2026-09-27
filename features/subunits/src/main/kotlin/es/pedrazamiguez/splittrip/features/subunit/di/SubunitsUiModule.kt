@@ -45,7 +45,8 @@ val subunitsUiModule = module {
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             subunitUiMapper = get<SubunitUiMapper>(),
             observeGroupUseCase = get<ObserveGroupUseCase>(),
-            featureGateService = get<FeatureGateService>()
+            featureGateService = get<FeatureGateService>(),
+            authenticationService = get<AuthenticationService>()
         )
     }
 

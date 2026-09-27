@@ -64,6 +64,7 @@ internal fun ExpenseDetailContent(
 
         SplitBreakdownSection(
             splitTypeText = expense.splitTypeText,
+            splitBreakdownItems = expense.splitBreakdownItems,
             splits = expense.splits,
             splitGroups = expense.splitGroups
         )

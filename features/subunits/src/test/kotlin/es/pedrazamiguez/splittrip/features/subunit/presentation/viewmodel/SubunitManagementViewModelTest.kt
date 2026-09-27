@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
@@ -19,6 +20,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigDecimal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -51,6 +53,7 @@ class SubunitManagementViewModelTest {
     private lateinit var subunitUiMapper: SubunitUiMapper
     private lateinit var observeGroupUseCase: ObserveGroupUseCase
     private lateinit var featureGateService: FeatureGateService
+    private lateinit var authenticationService: AuthenticationService
     private lateinit var viewModel: SubunitManagementViewModel
 
     private val testGroup = Group(
@@ -93,6 +96,9 @@ class SubunitManagementViewModelTest {
         subunitUiMapper = mockk()
         observeGroupUseCase = mockk()
         featureGateService = mockk()
+        authenticationService = mockk {
+            every { currentUserId() } returns "user-1"
+        }
     }
 
     @AfterEach
@@ -108,7 +114,8 @@ class SubunitManagementViewModelTest {
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             subunitUiMapper = subunitUiMapper,
             observeGroupUseCase = observeGroupUseCase,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            authenticationService = authenticationService
         )
     }
 
@@ -120,7 +127,7 @@ class SubunitManagementViewModelTest {
         every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(true)
         every { featureGateService.isActingUserPro() } returns flowOf(false)
         every {
-            subunitUiMapper.toSubunitUiModelList(any(), any())
+            subunitUiMapper.toSubunitUiModelList(any(), any(), any())
         } returns listOf(testSubunitUiModel).toImmutableList()
     }
 
@@ -135,6 +142,26 @@ class SubunitManagementViewModelTest {
             val state = viewModel.uiState.value
             assertTrue(state.isLoading)
             assertTrue(state.subunits.isEmpty())
+        }
+
+        @Test
+        fun `passes currentUserId to subunitUiMapper`() = runTest(testDispatcher) {
+            setupDefaultMocks()
+            createViewModel()
+
+            val job = launch { viewModel.uiState.collect {} }
+            viewModel.setGroupId("group-1")
+            advanceUntilIdle()
+
+            verify {
+                subunitUiMapper.toSubunitUiModelList(
+                    subunits = any(),
+                    memberProfiles = any(),
+                    currentUserId = "user-1"
+                )
+            }
+
+            job.cancel()
         }
 
         @Test
