@@ -6,9 +6,11 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import java.math.BigDecimal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
@@ -74,44 +76,28 @@ class SubunitSplitEventHandler(
 
         val defaultSplitType = _uiState.value.availableSplitTypes
             .find { it.id == SplitType.EQUAL.name }
+        val percentSplitType = _uiState.value.availableSplitTypes
+            .find { it.id == SplitType.PERCENT.name }
 
-        val entityRows = mutableListOf<SplitUiModel>()
-
-        // Solo members — entity rows without nested members
-        for (userId in soloMemberIds) {
-            entityRows.add(
-                SplitUiModel(
-                    userId = userId,
-                    displayName = addExpenseSplitMapper.resolveDisplayName(userId, memberProfiles, currentUserId),
-                    isEntityRow = true
-                )
+        val soloRows = soloMemberIds.map { userId ->
+            SplitUiModel(
+                userId = userId,
+                displayName = addExpenseSplitMapper.resolveDisplayName(userId, memberProfiles, currentUserId),
+                isEntityRow = true
             )
         }
 
-        // Subunit entity rows with nested member rows
-        for (subunit in subunits) {
-            val memberRows = subunit.memberIds.map { memberId ->
-                SplitUiModel(
-                    userId = memberId,
-                    displayName = addExpenseSplitMapper.resolveDisplayName(memberId, memberProfiles, currentUserId),
-                    subunitId = subunit.id
-                )
-            }
-            val sortedMemberRows = addExpenseSplitMapper.sortSubunitMembers(memberRows, currentUserId)
-
-            entityRows.add(
-                SplitUiModel(
-                    userId = subunit.id,
-                    displayName = subunit.name,
-                    isEntityRow = true,
-                    entityMembers = sortedMemberRows,
-                    entitySplitType = defaultSplitType
-                )
+        val subunitRows = subunits.map { subunit ->
+            buildSubunitEntityRow(
+                subunit = subunit,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                defaultSplitType = defaultSplitType,
+                percentSplitType = percentSplitType
             )
         }
 
-        // Sort entity rows using shared mapper logic
-        val sortedEntityRows = addExpenseSplitMapper.sortEntityRows(entityRows, currentUserId)
+        val sortedEntityRows = addExpenseSplitMapper.sortEntityRows(soloRows + subunitRows, currentUserId)
 
         _uiState.update {
             it.copy(
@@ -119,6 +105,52 @@ class SubunitSplitEventHandler(
                 entitySplits = sortedEntityRows
             )
         }
+        if (_uiState.value.isSubunitMode) {
+            recalculateEntitySplits()
+        }
+    }
+
+    private fun buildSubunitEntityRow(
+        subunit: Subunit,
+        memberProfiles: Map<String, User>,
+        currentUserId: String?,
+        defaultSplitType: SplitTypeUiModel?,
+        percentSplitType: SplitTypeUiModel?
+    ): SplitUiModel {
+        val hasCustom = subunit.hasCustomShares()
+        val entitySplitType = if (hasCustom) percentSplitType else defaultSplitType
+        val memberRows = subunit.memberIds.map { memberId ->
+            buildSubunitMemberRow(subunit, memberId, memberProfiles, currentUserId, hasCustom)
+        }
+        val sortedMemberRows = addExpenseSplitMapper.sortSubunitMembers(memberRows, currentUserId)
+
+        return SplitUiModel(
+            userId = subunit.id,
+            displayName = subunit.name,
+            isEntityRow = true,
+            entityMembers = sortedMemberRows,
+            entitySplitType = entitySplitType
+        )
+    }
+
+    private fun buildSubunitMemberRow(
+        subunit: Subunit,
+        memberId: String,
+        memberProfiles: Map<String, User>,
+        currentUserId: String?,
+        hasCustom: Boolean
+    ): SplitUiModel {
+        val base = SplitUiModel(
+            userId = memberId,
+            displayName = addExpenseSplitMapper.resolveDisplayName(memberId, memberProfiles, currentUserId),
+            subunitId = subunit.id
+        )
+        if (!hasCustom) return base
+        val share = subunit.memberShares[memberId] ?: return base
+        val pct = share.multiply(HUNDRED)
+        return base.copy(
+            percentageInput = addExpenseSplitMapper.formatPercentageForDisplay(pct)
+        )
     }
 
     /**
@@ -432,5 +464,9 @@ class SubunitSplitEventHandler(
         val state = _uiState.value
         val decimalPlaces = state.selectedCurrency?.decimalDigits ?: 2
         return intraSubunitSplitDelegate.parseSourceAmountToCents(state.sourceAmount, decimalPlaces)
+    }
+
+    companion object {
+        private val HUNDRED = BigDecimal("100")
     }
 }

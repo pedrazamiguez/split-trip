@@ -24,6 +24,7 @@ import java.math.BigDecimal
 import java.util.Locale
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
@@ -210,6 +211,61 @@ class SubunitSplitEventHandlerTest {
             val subunitRow = uiState.value.entitySplits.first { it.userId == subunitCoupleId }
             assertTrue(subunitRow.isEntityRow)
             assertEquals(2, subunitRow.entityMembers.size)
+        }
+
+        @Test
+        fun `subunits with custom shares init with PERCENT split type and prefilled percentages`() = runTest {
+            val customSubunit = Subunit(
+                id = subunitCoupleId,
+                groupId = "group-1",
+                name = "The Couple",
+                memberIds = listOf(coupleMember1, coupleMember2),
+                memberShares = mapOf(
+                    coupleMember1 to BigDecimal("0.7"),
+                    coupleMember2 to BigDecimal("0.3")
+                )
+            )
+
+            uiState.value = AddExpenseUiState(
+                loadedGroupId = "group-1",
+                selectedCurrency = eurCurrency,
+                availableSplitTypes = persistentListOf(equalSplitType, exactSplitType, percentSplitType)
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.initEntitySplits(
+                memberIds = listOf(coupleMember1, coupleMember2),
+                subunits = listOf(customSubunit)
+            )
+
+            val subunitRow = uiState.value.entitySplits.first { it.userId == subunitCoupleId }
+            assertEquals("PERCENT", subunitRow.entitySplitType?.id)
+            val member1 = subunitRow.entityMembers.first { it.userId == coupleMember1 }
+            val member2 = subunitRow.entityMembers.first { it.userId == coupleMember2 }
+            assertEquals("70", member1.percentageInput)
+            assertEquals("30", member2.percentageInput)
+        }
+
+        @Test
+        fun `subunits with even or empty memberShares initialize with EQUAL entitySplitType`() = runTest {
+            uiState.value = AddExpenseUiState(
+                loadedGroupId = "group-1",
+                selectedCurrency = eurCurrency,
+                availableSplitTypes = persistentListOf(equalSplitType, exactSplitType, percentSplitType)
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.initEntitySplits(
+                memberIds = listOf(coupleMember1, coupleMember2),
+                subunits = listOf(coupleSubunit)
+            )
+
+            val subunitRow = uiState.value.entitySplits.first { it.userId == subunitCoupleId }
+            assertEquals("EQUAL", subunitRow.entitySplitType?.id)
+            val member1 = subunitRow.entityMembers.first { it.userId == coupleMember1 }
+            val member2 = subunitRow.entityMembers.first { it.userId == coupleMember2 }
+            assertEquals("", member1.percentageInput)
+            assertEquals("", member2.percentageInput)
         }
 
         @Test
@@ -883,47 +939,99 @@ class SubunitSplitEventHandlerTest {
     @Nested
     inner class WeightedMemberShares {
 
-        @Test
-        fun `intra-subunit EQUAL distribution uses weighted memberShares when provided`() = runTest {
-            val weightedSubunit = Subunit(
-                id = subunitCoupleId,
-                groupId = "group-1",
-                name = "The Couple",
-                memberIds = listOf(coupleMember1, coupleMember2),
-                // 70/30 split
-                memberShares = mapOf(
-                    coupleMember1 to BigDecimal("0.7"),
-                    coupleMember2 to BigDecimal("0.3")
-                )
+        private val weightedSubunit = Subunit(
+            id = subunitCoupleId,
+            groupId = "group-1",
+            name = "The Couple",
+            memberIds = listOf(coupleMember1, coupleMember2),
+            // 70/30 split
+            memberShares = mapOf(
+                coupleMember1 to BigDecimal("0.7"),
+                coupleMember2 to BigDecimal("0.3")
             )
+        )
 
+        private fun CoroutineScope.setupWeightedHandler() {
             uiState.value = AddExpenseUiState(
                 loadedGroupId = "group-1",
                 selectedCurrency = eurCurrency,
-                availableSplitTypes = persistentListOf(equalSplitType)
-            )
-            handler.bind(uiState, actions, this)
-
-            handler.initEntitySplits(
-                memberIds = listOf(coupleMember1, coupleMember2),
-                subunits = listOf(weightedSubunit)
-            )
-
-            // Now recalculate entity splits with 100 EUR
-            uiState.value = uiState.value.copy(
+                availableSplitTypes = persistentListOf(equalSplitType, exactSplitType, percentSplitType),
                 sourceAmount = "100",
                 isSubunitMode = true,
                 selectedSplitType = equalSplitType
             )
+            handler.bind(uiState, actions, this)
+            handler.initEntitySplits(
+                memberIds = listOf(coupleMember1, coupleMember2),
+                subunits = listOf(weightedSubunit)
+            )
+        }
+
+        @Test
+        fun `recalculating entity splits with custom shares subunit in PERCENT calculates weighted cents`() = runTest {
+            setupWeightedHandler()
             handler.recalculateEntitySplits()
 
             val subunit = uiState.value.entitySplits.first { it.userId == subunitCoupleId }
-            // Subunit gets 100% since it's the only entity
+            assertEquals("PERCENT", subunit.entitySplitType?.id)
             assertEquals(10000L, subunit.amountCents)
-            // Weighted intra-split: 7000 and 3000
             val member1 = subunit.entityMembers.first { it.userId == coupleMember1 }
             val member2 = subunit.entityMembers.first { it.userId == coupleMember2 }
             assertEquals(7000L, member1.amountCents)
+            assertEquals(3000L, member2.amountCents)
+            assertEquals("70", member1.percentageInput)
+            assertEquals("30", member2.percentageInput)
+        }
+
+        @Test
+        fun `switching custom shares subunit to EQUAL calculates true 1-N equal split`() = runTest {
+            setupWeightedHandler()
+            handler.recalculateEntitySplits()
+
+            handler.handleIntraSubunitSplitTypeChanged(subunitCoupleId, "EQUAL")
+
+            val subunit = uiState.value.entitySplits.first { it.userId == subunitCoupleId }
+            assertEquals("EQUAL", subunit.entitySplitType?.id)
+            val member1 = subunit.entityMembers.first { it.userId == coupleMember1 }
+            val member2 = subunit.entityMembers.first { it.userId == coupleMember2 }
+            assertEquals(5000L, member1.amountCents)
+            assertEquals(5000L, member2.amountCents)
+        }
+
+        @Test
+        fun `switching custom shares subunit to EXACT pre-fills amounts based on configured shares`() = runTest {
+            setupWeightedHandler()
+            handler.recalculateEntitySplits()
+
+            handler.handleIntraSubunitSplitTypeChanged(subunitCoupleId, "EXACT")
+
+            val subunit = uiState.value.entitySplits.first { it.userId == subunitCoupleId }
+            assertEquals("EXACT", subunit.entitySplitType?.id)
+            val member1 = subunit.entityMembers.first { it.userId == coupleMember1 }
+            val member2 = subunit.entityMembers.first { it.userId == coupleMember2 }
+            assertEquals("70.00", member1.amountInput)
+            assertEquals(7000L, member1.amountCents)
+            assertEquals("30.00", member2.amountInput)
+            assertEquals(3000L, member2.amountCents)
+        }
+
+        @Test
+        fun `switching custom shares subunit back to PERCENT restores configured shares`() = runTest {
+            setupWeightedHandler()
+            handler.recalculateEntitySplits()
+
+            // First switch to EQUAL
+            handler.handleIntraSubunitSplitTypeChanged(subunitCoupleId, "EQUAL")
+            // Then switch back to PERCENT
+            handler.handleIntraSubunitSplitTypeChanged(subunitCoupleId, "PERCENT")
+
+            val subunit = uiState.value.entitySplits.first { it.userId == subunitCoupleId }
+            assertEquals("PERCENT", subunit.entitySplitType?.id)
+            val member1 = subunit.entityMembers.first { it.userId == coupleMember1 }
+            val member2 = subunit.entityMembers.first { it.userId == coupleMember2 }
+            assertEquals("70", member1.percentageInput)
+            assertEquals(7000L, member1.amountCents)
+            assertEquals("30", member2.percentageInput)
             assertEquals(3000L, member2.amountCents)
         }
     }

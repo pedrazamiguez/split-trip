@@ -394,13 +394,18 @@ The total is divided among active entities using these headcount weights:
 
 **Question:** How is each subunit's share divided among its members?
 
-This is configured **independently per subunit, per expense**. The `Subunit.memberShares` is the default, but the user can override it:
+This is configured **independently per subunit, per expense**:
 
-| Subunit | Default (`memberShares`) | Override for this expense | Reason |
-|---|---|---|---|
-| Gay Couple | 50/50 | EQUAL (use default) | Both adults, same price |
-| Father & Daughter | 60/40 | EXACT: Miguel 35, María 15 | María gets under-18 discount |
-| Ana's Family | 40/40/20 | EXACT: Ana 25, Luis 25, Luisito 0 | Luisito is under 12, free entry |
+- **Subunits with custom/uneven configured `memberShares`** (e.g. 60/40 or 30/30/25/15) default to **`PERCENT`** strategy when initialized in the expense wizard, pre-filled with the subunit's configured percentage weights. Switching them to **`EXACT`** pre-fills amounts calculated from their configured `memberShares`.
+- **Subunits with even configured `memberShares`** (e.g. 50/50) or empty shares default to **`EQUAL`** strategy.
+- **Selecting `EQUAL`** within any subunit strictly executes a true mathematical 1/N equal split across all active members, guaranteeing that "Equal" always results in identical amounts for all members.
+- **Switching to `PERCENT` or `EXACT`** restores or derives values from the subunit's configured `memberShares` (falling back to equal distribution only if shares are unconfigured).
+
+| Subunit | Default (`memberShares`) | Initial Strategy | Override for this expense | Reason |
+|---|---|---|---|---|
+| Gay Couple | 50/50 | EQUAL | EQUAL (use default) | Both adults, same price |
+| Father & Daughter | 60/40 | PERCENT (60/40) | EXACT: Miguel 35, María 15 | María gets under-18 discount |
+| Ana's Family | 40/40/20 | PERCENT (40/40/20) | EXACT: Ana 25, Luis 25, Luisito 0 | Luisito is under 12, free entry |
 
 ### Practical Example: Water Park Tickets
 
