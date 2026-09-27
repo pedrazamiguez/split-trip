@@ -377,6 +377,20 @@ class ConfigEventHandlerTest {
             advanceUntilIdle()
 
             assertEquals(listOf("user-1", "user-2"), uiState.value.memberIds.toList())
+            assertEquals("€0.00", uiState.value.splits[0].formattedAmount)
+            assertEquals("0.00", uiState.value.splits[0].amountInput)
+        }
+
+        @Test
+        fun `initialises split members with currency symbol from initial selected currency`() = runTest {
+            every { getGroupLastUsedCurrencyUseCase(any()) } returns flowOf("USD")
+            handler.bind(uiState, actions, this)
+
+            handler.loadGroupConfig("group-1")
+            advanceUntilIdle()
+
+            assertEquals("$0.00", uiState.value.splits[0].formattedAmount)
+            assertEquals("0.00", uiState.value.splits[0].amountInput)
         }
 
         @Test
