@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.authentication.di
 
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SendPasswordResetEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
@@ -30,9 +31,11 @@ val authenticationUiModule = module {
     factory<RegisterSubmitEventHandler> {
         val signUpWithEmailUseCase = get<SignUpWithEmailUseCase>()
         val emailValidationService = get<EmailValidationService>()
+        val passwordValidationService = get<PasswordValidationService>()
         RegisterSubmitEventHandlerImpl(
             signUpWithEmailUseCase = signUpWithEmailUseCase,
-            emailValidationService = emailValidationService
+            emailValidationService = emailValidationService,
+            passwordValidationService = passwordValidationService
         )
     }
 
@@ -51,8 +54,10 @@ val authenticationUiModule = module {
 
     viewModel {
         val registerSubmitEventHandler = get<RegisterSubmitEventHandler>()
+        val passwordValidationService = get<PasswordValidationService>()
         RegisterViewModel(
-            registerSubmitEventHandler = registerSubmitEventHandler
+            registerSubmitEventHandler = registerSubmitEventHandler,
+            passwordValidationService = passwordValidationService
         )
     }
 
