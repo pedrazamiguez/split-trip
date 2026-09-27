@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
+import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
@@ -41,6 +43,7 @@ class ExpenseRepositoryImpl(
     private val performanceMonitor: PerformanceMonitor,
     private val localGroupDataSource: LocalGroupDataSource,
     private val remainderDistributionService: RemainderDistributionService,
+    private val syncTeardownCoordinator: SyncTeardownCoordinator,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ExpenseRepository {
 
@@ -52,7 +55,11 @@ class ExpenseRepositoryImpl(
      * when onStart fires multiple times (e.g., config changes, tab switches,
      * WhileSubscribed resubscriptions, flatMapLatest restarts).
      */
-    private val cloudSubscriptionJobs = ConcurrentHashMap<String, Job>()
+    private val cloudSubscriptionTracker = KeyedSubscriptionTracker()
+
+    init {
+        syncTeardownCoordinator.registerAction { cloudSubscriptionTracker.cancelAll() }
+    }
 
     /**
      * Tracks active receipt upload Jobs per expenseId.
@@ -191,12 +198,13 @@ class ExpenseRepositoryImpl(
         localExpenseDataSource.getExpensesByGroupIdFlow(groupId)
             .onStart {
                 // Cancel any previous cloud subscription for this group to prevent duplicates.
-                cloudSubscriptionJobs[groupId]?.cancel()
-                cloudSubscriptionJobs[groupId] = syncScope.launch {
-                    launch {
-                        observeAndProcessMembershipRemovals(groupId)
+                cloudSubscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
+                    kotlinx.coroutines.coroutineScope {
+                        launch {
+                            observeAndProcessMembershipRemovals(groupId)
+                        }
+                        subscribeToCloudChanges(groupId)
                     }
-                    subscribeToCloudChanges(groupId)
                 }
             }
 
@@ -229,6 +237,10 @@ class ExpenseRepositoryImpl(
             cloudExpenseDataSource.getExpensesByGroupIdFlow(groupId)
                 .collect { remoteExpenses ->
                     try {
+                        if (localGroupDataSource.getGroupById(groupId) == null) {
+                            Timber.w("Parent group missing, skipping expense reconciliation")
+                            return@collect
+                        }
                         Timber.d("Real-time sync: ${remoteExpenses.size} expenses for group $groupId")
                         localExpenseDataSource.replaceExpensesForGroup(groupId, remoteExpenses)
                         confirmPendingSyncExpenses(groupId)

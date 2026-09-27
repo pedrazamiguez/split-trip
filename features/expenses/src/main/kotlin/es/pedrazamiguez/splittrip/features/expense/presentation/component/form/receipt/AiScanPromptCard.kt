@@ -12,6 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.badge.ProBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
@@ -54,8 +56,13 @@ fun AiScanPromptCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             SecondaryButton(
-                text = stringResource(R.string.expense_autofill_switch_ai),
+                text = if (isProFeature) {
+                    stringResource(R.string.expense_autofill_unlock_with_pro)
+                } else {
+                    stringResource(R.string.expense_autofill_switch_ai)
+                },
                 onClick = onSwitchToAi,
+                leadingIcon = if (isProFeature) TablerIcons.Outline.Lock else null,
                 modifier = Modifier.fillMaxWidth()
             )
         }

@@ -93,7 +93,8 @@ class ExpenseDetailUiMapperTest {
             expenseCalculatorService = expenseCalculatorService,
             addOnCalculationService = addOnCalculationService,
             paymentStatusBadgeUiMapper = paymentStatusBadgeUiMapper,
-            userUiMapper = UserUiMapper(resourceProvider)
+            userUiMapper = UserUiMapper(resourceProvider, localeProvider),
+            localeProvider = localeProvider
         )
     }
 

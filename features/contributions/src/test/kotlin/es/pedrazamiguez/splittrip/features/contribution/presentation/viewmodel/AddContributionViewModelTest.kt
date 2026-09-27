@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -551,6 +552,76 @@ class AddContributionViewModelTest {
             viewModel.onEvent(AddContributionUiEvent.JumpToStep(999))
 
             // Then — step unchanged
+            assertEquals(AddContributionStep.AMOUNT, viewModel.uiState.value.currentStep)
+        }
+
+        @Test
+        fun `JumpToStep allows forward jump when in edit mode`() = runTest(testDispatcher) {
+            val contribution = Contribution(
+                id = "contrib-1",
+                groupId = "group-1",
+                userId = "user-1",
+                amount = 5000L
+            )
+            coEvery { getGroupByIdUseCase("group-1") } returns testGroup
+            coEvery { authenticationService.currentUserId() } returns "user-1"
+            coEvery { getGroupSubunitsUseCase("group-1") } returns emptyList()
+            coEvery { getContributionUseCase("contrib-1") } returns contribution
+
+            viewModel.setGroupContext("group-1", "contrib-1", "EUR")
+            advanceUntilIdle()
+
+            assertEquals(AddContributionStep.AMOUNT, viewModel.uiState.value.currentStep)
+            assertTrue(viewModel.uiState.value.isEditMode)
+
+            // When — jump forward to DATE (index 2)
+            viewModel.onEvent(AddContributionUiEvent.JumpToStep(2))
+
+            // Then
+            assertEquals(AddContributionStep.DATE, viewModel.uiState.value.currentStep)
+        }
+
+        @Test
+        fun `JumpToStep formats amount with currency when jumping forward to REVIEW in edit mode`() =
+            runTest(testDispatcher) {
+                val contribution = Contribution(
+                    id = "contrib-1",
+                    groupId = "group-1",
+                    userId = "user-1",
+                    amount = 5000L
+                )
+                coEvery { getGroupByIdUseCase("group-1") } returns testGroup
+                coEvery { authenticationService.currentUserId() } returns "user-1"
+                coEvery { getGroupSubunitsUseCase("group-1") } returns emptyList()
+                coEvery { getContributionUseCase("contrib-1") } returns contribution
+                every { addContributionUiMapper.formatInputAmountWithCurrency(any(), "EUR") } returns "50,00 €"
+
+                viewModel.setGroupContext("group-1", "contrib-1", "EUR")
+                advanceUntilIdle()
+
+                // When — jump forward to REVIEW (index 3)
+                viewModel.onEvent(AddContributionUiEvent.JumpToStep(3))
+
+                // Then
+                assertEquals(AddContributionStep.REVIEW, viewModel.uiState.value.currentStep)
+                assertEquals("50,00 €", viewModel.uiState.value.formattedAmountWithCurrency)
+            }
+
+        @Test
+        fun `JumpToStep ignores forward jump when in create mode`() = runTest(testDispatcher) {
+            coEvery { getGroupByIdUseCase("group-1") } returns testGroup
+            coEvery { authenticationService.currentUserId() } returns "user-1"
+            coEvery { getGroupSubunitsUseCase("group-1") } returns emptyList()
+            viewModel.setGroupContext("group-1", null, "EUR")
+            advanceUntilIdle()
+
+            assertEquals(AddContributionStep.AMOUNT, viewModel.uiState.value.currentStep)
+            assertFalse(viewModel.uiState.value.isEditMode)
+
+            // When — attempt to jump forward to REVIEW (index 3)
+            viewModel.onEvent(AddContributionUiEvent.JumpToStep(3))
+
+            // Then — remains on AMOUNT
             assertEquals(AddContributionStep.AMOUNT, viewModel.uiState.value.currentStep)
         }
     }

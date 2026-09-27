@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -34,7 +33,6 @@ class WithdrawalFeeHandlerTest {
     private lateinit var getExchangeRateUseCase: GetExchangeRateUseCase
     private lateinit var exchangeRateCalculationService: ExchangeRateCalculationService
     private lateinit var addCashWithdrawalUiMapper: AddCashWithdrawalUiMapper
-    private lateinit var formattingHelper: FormattingHelper
 
     private lateinit var uiState: MutableStateFlow<AddCashWithdrawalUiState>
     private lateinit var actions: MutableSharedFlow<AddCashWithdrawalUiAction>
@@ -54,7 +52,6 @@ class WithdrawalFeeHandlerTest {
         getExchangeRateUseCase = mockk(relaxed = true)
         exchangeRateCalculationService = mockk(relaxed = true)
         addCashWithdrawalUiMapper = mockk(relaxed = true)
-        formattingHelper = mockk(relaxed = true)
 
         every {
             exchangeRateCalculationService.calculateGroupAmountFromDisplayRate(any(), any(), any(), any())
@@ -62,8 +59,6 @@ class WithdrawalFeeHandlerTest {
         every {
             exchangeRateCalculationService.calculateImpliedDisplayRateFromStrings(any(), any(), any())
         } returns "37.0"
-        every { formattingHelper.formatForDisplay(any(), any(), any()) } returns "2.70"
-        every { formattingHelper.formatRateForDisplay(any()) } returns "37.0"
         every { addCashWithdrawalUiMapper.buildFeeConvertedLabel(any()) } returns "Converted (EUR)"
         every { addCashWithdrawalUiMapper.buildExchangeRateLabel(any(), any()) } returns "1 EUR = X THB"
 
@@ -73,8 +68,7 @@ class WithdrawalFeeHandlerTest {
         handler = WithdrawalFeeHandler(
             getExchangeRateUseCase = getExchangeRateUseCase,
             exchangeRateCalculationService = exchangeRateCalculationService,
-            addCashWithdrawalUiMapper = addCashWithdrawalUiMapper,
-            formattingHelper = formattingHelper
+            addCashWithdrawalUiMapper = addCashWithdrawalUiMapper
         )
     }
 
@@ -356,9 +350,29 @@ class WithdrawalFeeHandlerTest {
                 handler.handleFeeExchangeRateChanged("37.0")
                 advanceUntilIdle()
 
-                // formattingHelper.formatForDisplay stub returns "2.70"
                 assertEquals("2.70", uiState.value.feeConvertedAmount)
             }
+
+        @Test
+        fun `recalculateFeeConverted stores raw plain string without grouping separators`() = runTest {
+            every {
+                exchangeRateCalculationService.calculateGroupAmountFromDisplayRate("10000", "0.95", 2, 2)
+            } returns "10526.32"
+
+            uiState.value = baseState.copy(
+                hasFee = true,
+                feeAmount = "10000",
+                feeExchangeRate = "0.95",
+                feeCurrency = eurModel,
+                groupCurrency = eurModel,
+                showFeeExchangeRateSection = true
+            )
+            handler.bind(uiState, actions, this)
+            handler.recalculateFeeConverted()
+            advanceUntilIdle()
+
+            assertEquals("10526.32", uiState.value.feeConvertedAmount)
+        }
     }
 
     // ── FeeConvertedAmountChanged ─────────────────────────────────────────
@@ -387,7 +401,6 @@ class WithdrawalFeeHandlerTest {
             handler.handleFeeConvertedAmountChanged("2.70")
             advanceUntilIdle()
 
-            // formattingHelper.formatRateForDisplay stub returns "37.0"
             assertEquals("37.0", uiState.value.feeExchangeRate)
         }
     }
@@ -483,7 +496,7 @@ class WithdrawalFeeHandlerTest {
             // Then
             val state = uiState.value
             assertTrue(state.isFeeExchangeRateStale)
-            assertEquals("37.0", state.feeExchangeRate)
+            assertEquals("37", state.feeExchangeRate)
         }
 
         @Test
@@ -508,7 +521,7 @@ class WithdrawalFeeHandlerTest {
             advanceUntilIdle()
 
             val finalState = uiState.value
-            assertEquals("37.0", finalState.feeExchangeRate)
+            assertEquals("38", finalState.feeExchangeRate)
         }
 
         @Test

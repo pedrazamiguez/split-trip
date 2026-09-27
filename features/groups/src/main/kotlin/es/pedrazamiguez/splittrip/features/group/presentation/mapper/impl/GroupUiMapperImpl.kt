@@ -1,9 +1,12 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.mapper.impl
 
+import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
+import es.pedrazamiguez.splittrip.core.common.extensions.localeAwareComparator
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.extension.resolveLocalizedName
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatDisplay
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
@@ -12,9 +15,13 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupCurrencyRateUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupMemberUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_DIRECT_EXTRA_CURRENCIES
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_VISIBLE_AVATARS
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel.Companion.MAX_VISIBLE_EXTRA_CURRENCIES
+import java.math.BigDecimal
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -24,39 +31,43 @@ class GroupUiMapperImpl(
     private val userUiMapper: UserUiMapper
 ) : GroupUiMapper {
 
-    override fun toGroupUiModel(group: Group, memberProfiles: Map<String, User>): GroupUiModel =
+    override fun toGroupUiModel(
+        group: Group,
+        memberProfiles: Map<String, User>,
+        currentUserId: String?
+    ): GroupUiModel =
         with(group) {
             val currentLocale = localeProvider.getCurrentLocale()
             val memberCount = members.size
+            val memberUiModels = buildGroupMemberUiModels(group, memberProfiles, currentUserId)
 
-            val avatarUrls = members
-                .mapNotNull { userId -> memberProfiles[userId]?.profileImagePath }
+            val avatarUrls = memberUiModels
+                .mapNotNull { it.avatarUrl }
                 .take(MAX_VISIBLE_AVATARS)
             // Overflow = members not represented by any avatar circle.
             // When no avatars are shown at all (nobody has a profile image),
             // overflow stays 0 — the member-count text already conveys the number.
             val overflowCount = if (avatarUrls.isEmpty()) 0 else maxOf(0, memberCount - avatarUrls.size)
 
-            val memberUiModels = members.map { userId ->
-                val profile = memberProfiles[userId]
-                val isCreator = userId == createdBy
-                val roleBadgeText = resourceProvider.getString(
-                    if (isCreator) R.string.group_member_role_creator else R.string.group_member_role_member
-                )
-                GroupMemberUiModel(
-                    userId = userId,
-                    displayName = userUiMapper.mapToDisplayName(user = profile, fallbackUserId = userId),
-                    avatarUrl = profile?.profileImagePath,
-                    isCreator = isCreator,
-                    roleBadgeText = roleBadgeText
-                )
-            }.toImmutableList()
+            val (visibleExtraCurrencies, extraCurrenciesOverflowText) = when {
+                extraCurrencies.size <= MAX_DIRECT_EXTRA_CURRENCIES -> {
+                    extraCurrencies.toImmutableList() to null
+                }
+                else -> {
+                    val visible = extraCurrencies.take(MAX_VISIBLE_EXTRA_CURRENCIES).toImmutableList()
+                    val overflow = extraCurrencies.size - MAX_VISIBLE_EXTRA_CURRENCIES
+                    val overflowText = resourceProvider.getString(R.string.group_extra_currencies_overflow, overflow)
+                    visible to overflowText
+                }
+            }
 
             GroupUiModel(
                 id = id,
                 name = name,
                 description = description,
                 currency = currency,
+                extraCurrencies = visibleExtraCurrencies,
+                extraCurrenciesOverflowText = extraCurrenciesOverflowText,
                 membersCountText = resourceProvider.getQuantityString(
                     R.plurals.group_members_count,
                     memberCount,
@@ -90,4 +101,61 @@ class GroupUiMapperImpl(
 
     override fun toCurrencyUiModels(currencies: List<Currency>): ImmutableList<CurrencyUiModel> =
         currencies.map { toCurrencyUiModel(it) }.toImmutableList()
+
+    override fun mapCurrencyExchangeRates(
+        baseCurrency: String,
+        rates: Map<String, BigDecimal?>
+    ): ImmutableList<GroupCurrencyRateUiModel> {
+        val locale = localeProvider.getCurrentLocale()
+        return rates.map { (targetCurrency, rate) ->
+            val formattedRate = rate?.let {
+                val formattedNumber = it.formatForDisplay(locale, maxDecimalPlaces = 4)
+                resourceProvider.getString(
+                    R.string.group_detail_exchange_rate_format,
+                    baseCurrency,
+                    formattedNumber,
+                    targetCurrency
+                )
+            }
+            GroupCurrencyRateUiModel(
+                currency = targetCurrency,
+                formattedRate = formattedRate
+            )
+        }.toImmutableList()
+    }
+
+    private fun buildGroupMemberUiModels(
+        group: Group,
+        memberProfiles: Map<String, User>,
+        currentUserId: String?
+    ): ImmutableList<GroupMemberUiModel> {
+        val currentLocale = localeProvider.getCurrentLocale()
+        val localeComparator = localeAwareComparator<GroupMemberUiModel>(currentLocale) { it.displayName }
+        return group.members.map { userId ->
+            val profile = memberProfiles[userId]
+            val isCreator = userId == group.createdBy
+            val roleBadgeText = resourceProvider.getString(
+                if (isCreator) R.string.group_member_role_creator else R.string.group_member_role_member
+            )
+            GroupMemberUiModel(
+                userId = userId,
+                displayName = userUiMapper.mapToDisplayName(
+                    user = profile,
+                    fallbackUserId = userId,
+                    currentUserId = currentUserId,
+                    selfIdentificationContext = if (currentUserId != null) {
+                        SelfIdentificationContextEnum.NOMINATIVE
+                    } else {
+                        null
+                    }
+                ),
+                avatarUrl = profile?.profileImagePath,
+                isCreator = isCreator,
+                roleBadgeText = roleBadgeText
+            )
+        }.sortedWith(
+            compareByDescending<GroupMemberUiModel> { it.userId == currentUserId }
+                .thenComparing(localeComparator)
+        ).toImmutableList()
+    }
 }

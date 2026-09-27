@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.isValidDecimalInput
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -24,8 +23,7 @@ import timber.log.Timber
 class WithdrawalCurrencyHandler(
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
     private val exchangeRateCalculationService: ExchangeRateCalculationService,
-    private val addCashWithdrawalUiMapper: AddCashWithdrawalUiMapper,
-    private val formattingHelper: FormattingHelper
+    private val addCashWithdrawalUiMapper: AddCashWithdrawalUiMapper
 ) : AddCashWithdrawalEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddCashWithdrawalUiState>
@@ -116,12 +114,7 @@ class WithdrawalCurrencyHandler(
             sourceDecimalPlaces = sourceDecimalPlaces,
             targetDecimalPlaces = targetDecimalPlaces
         )
-        val formatted = formattingHelper.formatForDisplay(
-            internalValue = calculatedDeducted,
-            maxDecimalPlaces = targetDecimalPlaces,
-            minDecimalPlaces = targetDecimalPlaces
-        )
-        _uiState.update { it.copy(deductedAmount = formatted) }
+        _uiState.update { it.copy(deductedAmount = calculatedDeducted) }
     }
 
     /**
@@ -137,8 +130,7 @@ class WithdrawalCurrencyHandler(
             groupAmountString = state.deductedAmount,
             sourceDecimalPlaces = sourceDecimalPlaces
         )
-        val formatted = formattingHelper.formatRateForDisplay(impliedRate)
-        _uiState.update { it.copy(displayExchangeRate = formatted) }
+        _uiState.update { it.copy(displayExchangeRate = impliedRate) }
     }
 
     private fun fetchRate() {
@@ -201,9 +193,7 @@ class WithdrawalCurrencyHandler(
         return copy(
             isLoadingRate = false,
             isExchangeRateError = isError,
-            displayExchangeRate = rateResult?.rate?.let { r ->
-                formattingHelper.formatRateForDisplay(r.toPlainString())
-            } ?: displayExchangeRate,
+            displayExchangeRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString() ?: displayExchangeRate,
             isExchangeRateStale = rateResult?.isStale ?: false
         )
     }

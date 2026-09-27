@@ -45,6 +45,10 @@ class AuthenticationViewModel(
                 _uiState.update { it.copy(password = event.value) }
             }
 
+            AuthenticationUiEvent.ToggleEmailForm -> {
+                _uiState.update { it.copy(isEmailFormExpanded = !it.isEmailFormExpanded) }
+            }
+
             AuthenticationUiEvent.SubmitLogin -> {
                 login(onLoginSuccess)
             }
@@ -104,7 +108,8 @@ class AuthenticationViewModel(
                     _uiState.update {
                         it.copy(
                             error = UiText.DynamicString(e.message ?: ""),
-                            isLoading = false
+                            isLoading = false,
+                            isEmailFormExpanded = true
                         )
                     }
                 }

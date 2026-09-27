@@ -1,10 +1,12 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupFormSnapshot
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupStep
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -63,7 +65,7 @@ class CreateEditGroupNavigationEventHandlerImplTest {
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = CreateEditGroupUiState(
                 currentStep = CreateEditGroupStep.INFO,
-                error = es.pedrazamiguez.splittrip.core.common.presentation.UiText.DynamicString("Some error")
+                error = UiText.DynamicString("Some error")
             )
 
             handler.handleNavigation(CreateEditGroupUiEvent.NextStep)
@@ -126,8 +128,8 @@ class CreateEditGroupNavigationEventHandlerImplTest {
                     groupName = "Original",
                     groupDescription = "",
                     selectedCurrency = null,
-                    extraCurrencies = kotlinx.collections.immutable.persistentListOf(),
-                    selectedMembers = kotlinx.collections.immutable.persistentListOf(),
+                    extraCurrencies = persistentListOf(),
+                    selectedMembers = persistentListOf(),
                     localGroupImagePath = null
                 )
             )
@@ -173,8 +175,8 @@ class CreateEditGroupNavigationEventHandlerImplTest {
                     groupName = "Original",
                     groupDescription = "",
                     selectedCurrency = null,
-                    extraCurrencies = kotlinx.collections.immutable.persistentListOf(),
-                    selectedMembers = kotlinx.collections.immutable.persistentListOf(),
+                    extraCurrencies = persistentListOf(),
+                    selectedMembers = persistentListOf(),
                     localGroupImagePath = null
                 )
             )
@@ -207,6 +209,36 @@ class CreateEditGroupNavigationEventHandlerImplTest {
             stateFlow.value = CreateEditGroupUiState(currentStep = CreateEditGroupStep.INFO)
 
             handler.handleNavigation(CreateEditGroupUiEvent.JumpToStep(999))
+
+            assertEquals(CreateEditGroupStep.INFO, stateFlow.value.currentStep)
+        }
+
+        @Test
+        fun `JumpToStep allows forward jump when isEditMode is true`() = runTest(testDispatcher) {
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = CreateEditGroupUiState(
+                currentStep = CreateEditGroupStep.INFO,
+                isEditMode = true,
+                groupId = "group-123"
+            )
+
+            // Jump from INFO (index 0) to REVIEW (index 4)
+            handler.handleNavigation(CreateEditGroupUiEvent.JumpToStep(4))
+
+            assertEquals(CreateEditGroupStep.REVIEW, stateFlow.value.currentStep)
+        }
+
+        @Test
+        fun `JumpToStep rejects forward jump when isEditMode is false`() = runTest(testDispatcher) {
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = CreateEditGroupUiState(
+                currentStep = CreateEditGroupStep.INFO,
+                isEditMode = false,
+                groupId = null
+            )
+
+            // Attempt forward jump from INFO (index 0) to REVIEW (index 4) in create mode
+            handler.handleNavigation(CreateEditGroupUiEvent.JumpToStep(4))
 
             assertEquals(CreateEditGroupStep.INFO, stateFlow.value.currentStep)
         }

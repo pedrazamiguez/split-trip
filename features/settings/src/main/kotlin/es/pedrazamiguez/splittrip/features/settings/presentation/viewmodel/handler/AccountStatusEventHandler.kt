@@ -26,8 +26,8 @@ interface AccountStatusEventHandler {
 
     fun loadAccountStatus()
     fun handleLinkGoogle(idToken: String)
-    fun handleShowLinkEmailDialog()
-    fun handleDismissLinkEmailDialog()
+    fun handleShowLinkEmailSheet()
+    fun handleDismissLinkEmailSheet()
     fun handleLinkEmailChanged(value: String)
     fun handleLinkPasswordChanged(value: String)
     fun handleLinkConfirmPasswordChanged(value: String)

@@ -196,6 +196,7 @@ val expensesUiModule = module {
             splitCalculatorFactory = get<ExpenseSplitCalculatorFactory>(),
             splitPreviewService = get<SplitPreviewService>(),
             subunitAwareSplitService = get<SubunitAwareSplitService>(),
+            remainderDistributionService = get<RemainderDistributionService>(),
             formattingHelper = formattingHelper
         )
 
@@ -216,14 +217,12 @@ val expensesUiModule = module {
             previewCashExchangeRateUseCase = get<PreviewCashExchangeRateUseCase>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             splitPreviewService = get<SplitPreviewService>(),
-            formattingHelper = formattingHelper,
             addExpenseOptionsMapper = addExpenseOptionsUiMapper
         )
 
         val currencyEventHandler = CurrencyEventHandler(
             getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
-            formattingHelper = formattingHelper,
             addExpenseOptionsMapper = addExpenseOptionsUiMapper,
             withdrawalPoolSelectionDelegate = withdrawalPoolSelectionDelegate,
             cashRateDelegate = cashRateDelegate
@@ -268,7 +267,6 @@ val expensesUiModule = module {
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             splitPreviewService = get<SplitPreviewService>(),
-            formattingHelper = formattingHelper,
             getExchangeRateUseCase = get<GetExchangeRateUseCase>(),
             previewCashExchangeRateUseCase = get<PreviewCashExchangeRateUseCase>()
         )
@@ -351,7 +349,8 @@ val expensesUiModule = module {
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             addOnCalculationService = get<AddOnCalculationService>(),
             paymentStatusBadgeUiMapper = get<PaymentStatusBadgeUiMapper>(),
-            userUiMapper = get<UserUiMapper>()
+            userUiMapper = get<UserUiMapper>(),
+            localeProvider = get<LocaleProvider>()
         )
     }
 

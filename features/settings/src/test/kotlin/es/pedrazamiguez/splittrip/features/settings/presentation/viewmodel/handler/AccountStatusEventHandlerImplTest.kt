@@ -2,8 +2,10 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.hand
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
+import es.pedrazamiguez.splittrip.domain.model.PasswordRequirementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
@@ -57,6 +59,7 @@ class AccountStatusEventHandlerImplTest {
     private lateinit var unlinkProviderUseCase: UnlinkProviderUseCase
     private lateinit var accountStatusUiMapper: AccountStatusUiMapper
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var passwordValidationService: PasswordValidationService
 
     private lateinit var handler: AccountStatusEventHandlerImpl
     private lateinit var stateFlow: MutableStateFlow<AccountStatusUiState>
@@ -80,11 +83,14 @@ class AccountStatusEventHandlerImplTest {
         unlinkProviderUseCase = mockk()
         accountStatusUiMapper = mockk()
         authenticationService = mockk()
+        passwordValidationService = mockk()
 
         stateFlow = MutableStateFlow(AccountStatusUiState())
         actionsFlow = MutableSharedFlow()
 
         coEvery { authenticationService.isAnonymous() } returns false
+        every { passwordValidationService.validate(any()) } returns PasswordRequirementStatus()
+        every { passwordValidationService.isValidPassword(any()) } returns true
 
         handler = AccountStatusEventHandlerImpl(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
@@ -93,7 +99,8 @@ class AccountStatusEventHandlerImplTest {
             linkEmailPasswordUseCase = linkEmailPasswordUseCase,
             unlinkProviderUseCase = unlinkProviderUseCase,
             accountStatusUiMapper = accountStatusUiMapper,
-            authenticationService = authenticationService
+            authenticationService = authenticationService,
+            passwordValidationService = passwordValidationService
         )
 
         handler.bind(stateFlow, actionsFlow, CoroutineScope(testDispatcher))
@@ -218,33 +225,39 @@ class AccountStatusEventHandlerImplTest {
     inner class LinkEmailPassword {
 
         @Test
-        fun `shows and dismisses dialog`() = runTest(testDispatcher) {
-            handler.handleShowLinkEmailDialog()
-            assertTrue(stateFlow.value.showLinkEmailDialog)
+        fun `shows and dismisses sheet`() = runTest(testDispatcher) {
+            handler.handleShowLinkEmailSheet()
+            assertTrue(stateFlow.value.showLinkEmailSheet)
 
-            handler.handleDismissLinkEmailDialog()
-            assertFalse(stateFlow.value.showLinkEmailDialog)
+            handler.handleDismissLinkEmailSheet()
+            assertFalse(stateFlow.value.showLinkEmailSheet)
         }
 
         @Test
-        fun `updates input values`() = runTest(testDispatcher) {
+        fun `updates input values and evaluates password requirements`() = runTest(testDispatcher) {
+            val requirementStatus = PasswordRequirementStatus(isMinLengthValid = true)
+            every { passwordValidationService.validate("pass123") } returns requirementStatus
+
+            handler.handleLinkEmailChanged("user@example.com")
             handler.handleLinkPasswordChanged("pass123")
             handler.handleLinkConfirmPasswordChanged("pass456")
 
+            assertEquals("user@example.com", stateFlow.value.linkEmailInput)
             assertEquals("pass123", stateFlow.value.linkPasswordInput)
+            assertEquals(requirementStatus, stateFlow.value.linkPasswordRequirementStatus)
             assertEquals("pass456", stateFlow.value.linkConfirmPasswordInput)
         }
 
         @Test
         fun `submitting with empty fields sets error`() = runTest(testDispatcher) {
             stateFlow.value = stateFlow.value.copy(email = "test@example.com")
-            handler.handleShowLinkEmailDialog()
+            handler.handleShowLinkEmailSheet()
             handler.handleSubmitLinkEmailPassword()
 
             assertNotNull(stateFlow.value.linkPasswordError)
             assertTrue(stateFlow.value.linkPasswordError is UiText.StringResource)
             assertEquals(
-                R.string.account_status_link_email_dialog_error_empty,
+                R.string.account_status_link_email_sheet_error_empty,
                 (stateFlow.value.linkPasswordError as UiText.StringResource).resId
             )
         }
@@ -252,13 +265,30 @@ class AccountStatusEventHandlerImplTest {
         @Test
         fun `submitting with empty email for anonymous user sets email empty error`() = runTest(testDispatcher) {
             stateFlow.value = stateFlow.value.copy(isAnonymous = true, linkEmailInput = "")
-            handler.handleShowLinkEmailDialog()
+            handler.handleShowLinkEmailSheet()
             handler.handleSubmitLinkEmailPassword()
 
             assertNotNull(stateFlow.value.linkPasswordError)
             assertTrue(stateFlow.value.linkPasswordError is UiText.StringResource)
             assertEquals(
-                R.string.account_status_link_email_dialog_error_email_empty,
+                R.string.account_status_link_email_sheet_error_email_empty,
+                (stateFlow.value.linkPasswordError as UiText.StringResource).resId
+            )
+        }
+
+        @Test
+        fun `submitting with failing password complexity sets error`() = runTest(testDispatcher) {
+            stateFlow.value = stateFlow.value.copy(email = "test@example.com")
+            every { passwordValidationService.isValidPassword("weak") } returns false
+
+            handler.handleLinkPasswordChanged("weak")
+            handler.handleLinkConfirmPasswordChanged("weak")
+            handler.handleSubmitLinkEmailPassword()
+
+            assertNotNull(stateFlow.value.linkPasswordError)
+            assertTrue(stateFlow.value.linkPasswordError is UiText.StringResource)
+            assertEquals(
+                R.string.account_status_link_email_sheet_error_complexity,
                 (stateFlow.value.linkPasswordError as UiText.StringResource).resId
             )
         }
@@ -267,14 +297,14 @@ class AccountStatusEventHandlerImplTest {
         fun `submitting with mismatched passwords sets error`() = runTest(testDispatcher) {
             // Setup email state
             stateFlow.value = stateFlow.value.copy(email = "test@example.com")
-            handler.handleLinkPasswordChanged("password123")
-            handler.handleLinkConfirmPasswordChanged("password456")
+            handler.handleLinkPasswordChanged("Password123!")
+            handler.handleLinkConfirmPasswordChanged("Password456!")
             handler.handleSubmitLinkEmailPassword()
 
             assertNotNull(stateFlow.value.linkPasswordError)
             assertTrue(stateFlow.value.linkPasswordError is UiText.StringResource)
             assertEquals(
-                R.string.account_status_link_email_dialog_error_mismatch,
+                R.string.account_status_link_email_sheet_error_mismatch,
                 (stateFlow.value.linkPasswordError as UiText.StringResource).resId
             )
         }
@@ -283,7 +313,7 @@ class AccountStatusEventHandlerImplTest {
         fun `submitting successful email password link clears state and reloads`() = runTest(testDispatcher) {
             // Setup email state
             stateFlow.value = stateFlow.value.copy(email = "test@example.com")
-            coEvery { linkEmailPasswordUseCase("test@example.com", "password123") } returns Result.success(Unit)
+            coEvery { linkEmailPasswordUseCase("test@example.com", "Password123!") } returns Result.success(Unit)
             coEvery { getLinkedProvidersUseCase() } returns
                 Result.success(listOf(AuthProviderType.GOOGLE, AuthProviderType.EMAIL_PASSWORD))
 
@@ -292,13 +322,13 @@ class AccountStatusEventHandlerImplTest {
                 actionsFlow.collect { emittedActions.add(it) }
             }
 
-            handler.handleLinkPasswordChanged("password123")
-            handler.handleLinkConfirmPasswordChanged("password123")
+            handler.handleLinkPasswordChanged("Password123!")
+            handler.handleLinkConfirmPasswordChanged("Password123!")
             handler.handleSubmitLinkEmailPassword()
             advanceUntilIdle()
 
             assertFalse(stateFlow.value.isLinking)
-            assertFalse(stateFlow.value.showLinkEmailDialog)
+            assertFalse(stateFlow.value.showLinkEmailSheet)
             assertNull(stateFlow.value.linkPasswordError)
             assertTrue(emittedActions.any { it is AccountStatusUiAction.ShowSuccess })
             collectJob.cancel()
@@ -307,11 +337,11 @@ class AccountStatusEventHandlerImplTest {
         @Test
         fun `submitting email password link with IllegalArgumentException sets error`() = runTest(testDispatcher) {
             stateFlow.value = stateFlow.value.copy(email = "test@example.com")
-            coEvery { linkEmailPasswordUseCase("test@example.com", "password123") } returns
+            coEvery { linkEmailPasswordUseCase("test@example.com", "Password123!") } returns
                 Result.failure(IllegalArgumentException("Email must match the existing account's email"))
 
-            handler.handleLinkPasswordChanged("password123")
-            handler.handleLinkConfirmPasswordChanged("password123")
+            handler.handleLinkPasswordChanged("Password123!")
+            handler.handleLinkConfirmPasswordChanged("Password123!")
             handler.handleSubmitLinkEmailPassword()
             advanceUntilIdle()
 

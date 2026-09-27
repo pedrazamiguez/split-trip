@@ -38,4 +38,22 @@ data class Subunit(
     val createdAt: LocalDateTime? = null,
     val lastUpdatedAt: LocalDateTime? = null,
     val syncStatus: SyncStatus = SyncStatus.SYNCED
-)
+) {
+    /**
+     * Determines whether this subunit has custom/uneven configured member shares.
+     *
+     * Returns `false` when [memberShares] contains 0 or 1 member, or when all
+     * share values are equal within [CUSTOM_SHARE_TOLERANCE].
+     * Returns `true` when members have uneven configured weights (e.g., 60/40 or 30/30/25/15).
+     */
+    fun hasCustomShares(): Boolean {
+        if (memberShares.size <= 1) return false
+        val min = memberShares.values.minOrNull() ?: return false
+        val max = memberShares.values.maxOrNull() ?: return false
+        return max.subtract(min).abs() > CUSTOM_SHARE_TOLERANCE
+    }
+
+    companion object {
+        private val CUSTOM_SHARE_TOLERANCE = BigDecimal("0.001")
+    }
+}

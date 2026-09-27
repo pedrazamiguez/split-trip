@@ -18,6 +18,7 @@ import kotlinx.collections.immutable.ImmutableList
  * @param currencyLabel       Localised hint label for the currency dropdown.
  * @param title               Optional card title shown above the fields.
  * @param autoFocus           If `true`, the amount field requests focus on first composition.
+ * @param displayAmount       Optional custom display-formatted amount text for unfocused state.
  */
 data class AmountCurrencyCardState(
     val amount: String,
@@ -27,5 +28,6 @@ data class AmountCurrencyCardState(
     val amountLabel: String,
     val currencyLabel: String,
     val title: String? = null,
-    val autoFocus: Boolean = false
+    val autoFocus: Boolean = false,
+    val displayAmount: String? = null
 )

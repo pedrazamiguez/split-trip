@@ -5,13 +5,15 @@ import es.pedrazamiguez.splittrip.domain.model.EntitySplit
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.SubunitSplitOverride
+import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 class SubunitAwareSplitServiceImpl(
-    private val splitCalculatorFactory: ExpenseSplitCalculatorFactory
+    private val splitCalculatorFactory: ExpenseSplitCalculatorFactory,
+    private val remainderDistributionService: RemainderDistributionService
 ) : SubunitAwareSplitService {
 
     /**
@@ -47,12 +49,13 @@ class SubunitAwareSplitServiceImpl(
         // Step 1: Build entity list — solo user IDs + subunit IDs
         val entityIds = individualParticipantIds + subunits.map { it.id }
 
-        // Step 2: Compute entity-level shares using the calculator factory
+        // Step 2: Compute entity-level shares using headcount weights for EQUAL or factory for EXACT/PERCENT
         val entityLevelSplits = calculateEntityLevelSplits(
-            totalAmountCents,
-            entityIds,
-            entitySplitType,
-            entitySplits
+            totalAmountCents = totalAmountCents,
+            individualParticipantIds = individualParticipantIds,
+            subunits = subunits,
+            entitySplitType = entitySplitType,
+            entitySplits = entitySplits
         )
 
         // Step 3: Build a lookup of entity shares by entity ID
@@ -197,15 +200,38 @@ class SubunitAwareSplitServiceImpl(
     }
 
     /**
-     * Computes Level 1 entity-level shares by treating each entity (solo user or subunit)
-     * as a single "participant" and delegating to the appropriate [ExpenseSplitCalculator].
+     * Computes Level 1 entity-level shares.
+     *
+     * For EQUAL splits, weights entities by participant headcount (solo = 1, subunit = member count)
+     * and delegates to [RemainderDistributionService.distributeByWeights] to ensure fair per-traveler
+     * cost attribution.
+     *
+     * For EXACT and PERCENT splits, delegates to the appropriate [ExpenseSplitCalculator].
      */
     private fun calculateEntityLevelSplits(
         totalAmountCents: Long,
-        entityIds: List<String>,
+        individualParticipantIds: List<String>,
+        subunits: List<Subunit>,
         entitySplitType: SplitType,
         entitySplits: List<EntitySplit>
     ): List<ExpenseSplit> {
+        val entityIds = individualParticipantIds + subunits.map { it.id }
+        if (entityIds.isEmpty()) return emptyList()
+
+        if (entitySplitType == SplitType.EQUAL) {
+            if (totalAmountCents <= 0) {
+                return entityIds.map { ExpenseSplit(userId = it, amountCents = 0L) }
+            }
+
+            val weights = individualParticipantIds.map { BigDecimal.ONE } +
+                subunits.map { BigDecimal(it.memberIds.size.coerceAtLeast(1)) }
+
+            val allocatedAmounts = remainderDistributionService.distributeByWeights(totalAmountCents, weights)
+            return entityIds.zip(allocatedAmounts).map { (entityId, amount) ->
+                ExpenseSplit(userId = entityId, amountCents = amount)
+            }
+        }
+
         val calculator = splitCalculatorFactory.create(entitySplitType)
         val existingSplits = entitySplits.map { entitySplit ->
             ExpenseSplit(

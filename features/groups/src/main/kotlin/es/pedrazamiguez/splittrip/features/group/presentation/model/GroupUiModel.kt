@@ -10,6 +10,10 @@ data class GroupUiModel(
     val name: String = "",
     val description: String = "",
     val currency: String = "",
+    /** Up to [MAX_VISIBLE_EXTRA_CURRENCIES] (or 3 when no overflow) secondary currency codes for group chips. */
+    val extraCurrencies: ImmutableList<String> = persistentListOf(),
+    /** Formatted overflow string (e.g. "+3") when extra currencies exceed [MAX_DIRECT_EXTRA_CURRENCIES], or null. */
+    val extraCurrenciesOverflowText: String? = null,
     val membersCountText: String = "",
     val dateText: String = "",
     /** Formatted last-updated date string for the Group Detail screen. Empty if not available. */
@@ -29,5 +33,11 @@ data class GroupUiModel(
     companion object {
         /** Maximum number of avatar circles shown in the hero card avatar stack. */
         const val MAX_VISIBLE_AVATARS = 4
+
+        /** Maximum number of visible extra currency chips when overflow occurs. */
+        const val MAX_VISIBLE_EXTRA_CURRENCIES = 2
+
+        /** Maximum extra currencies displayed directly without collapsing into an overflow badge. */
+        const val MAX_DIRECT_EXTRA_CURRENCIES = 3
     }
 }

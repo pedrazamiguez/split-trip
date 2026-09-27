@@ -25,4 +25,6 @@ sealed interface CreateEditGroupUiEvent {
     data object Submit : CreateEditGroupUiEvent
     data object UpgradeClicked : CreateEditGroupUiEvent
     data object DismissUpgradeDialog : CreateEditGroupUiEvent
+    data object LockedCoverPhotoClicked : CreateEditGroupUiEvent
+    data object MemberCapacityUpsellClicked : CreateEditGroupUiEvent
 }

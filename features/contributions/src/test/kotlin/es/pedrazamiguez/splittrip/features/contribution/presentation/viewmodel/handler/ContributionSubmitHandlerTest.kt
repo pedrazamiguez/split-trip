@@ -291,6 +291,23 @@ class ContributionSubmitHandlerTest {
                 )
             }
         }
+
+        @Test
+        fun `submitting large raw contribution amount parses correctly to cents`() = runTest {
+            uiState.value = validState.copy(amountInput = "10450")
+            coEvery { addContributionUseCase(any(), any()) } just Runs
+            handler.bind(uiState, actions, this)
+
+            handler.handleSubmit("group-1") {}
+            advanceUntilIdle()
+
+            coVerify {
+                addContributionUseCase(
+                    "group-1",
+                    match { it.amount == 1045000L }
+                )
+            }
+        }
     }
 
     @Nested

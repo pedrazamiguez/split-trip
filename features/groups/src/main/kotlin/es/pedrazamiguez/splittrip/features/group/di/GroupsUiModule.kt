@@ -21,6 +21,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSettlementsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
@@ -33,6 +34,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -104,6 +106,7 @@ val groupsUiModule = module {
         val addGroupMembersUseCase = get<AddGroupMembersUseCase>()
         val removeGroupMemberUseCase = get<RemoveGroupMemberUseCase>()
         val setSelectedGroupUseCase = get<SetSelectedGroupUseCase>()
+        val getSelectedGroupIdUseCase = get<GetSelectedGroupIdUseCase>()
         val authenticationService = get<AuthenticationService>()
         CreateEditGroupSubmitEventHandlerImpl(
             createGroupUseCase = createGroupUseCase,
@@ -115,6 +118,7 @@ val groupsUiModule = module {
             addGroupMembersUseCase = addGroupMembersUseCase,
             removeGroupMemberUseCase = removeGroupMemberUseCase,
             setSelectedGroupUseCase = setSelectedGroupUseCase,
+            getSelectedGroupIdUseCase = getSelectedGroupIdUseCase,
             authenticationService = authenticationService
         )
     }
@@ -133,6 +137,7 @@ val groupsUiModule = module {
         val featureGateService = get<FeatureGateService>()
         val appConfigService = get<AppConfigService>()
         val authenticationService = get<AuthenticationService>()
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
 
         CreateEditGroupViewModel(
             navigationEventHandler = navigationEventHandler,
@@ -147,7 +152,8 @@ val groupsUiModule = module {
             groupUiMapper = groupUiMapper,
             featureGateService = featureGateService,
             appConfigService = appConfigService,
-            authenticationService = authenticationService
+            authenticationService = authenticationService,
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase
         )
     }
 
@@ -215,6 +221,7 @@ val groupsUiModule = module {
         val getGroupSettlementsFlowUseCase = get<GetGroupSettlementsFlowUseCase>()
         val groupLeaveWizardEventHandler =
             get<GroupLeaveWizardEventHandler>()
+        val getExchangeRateUseCase = get<GetExchangeRateUseCase>()
 
         GroupDetailViewModel(
             observeGroupUseCase = observeGroupUseCase,
@@ -225,7 +232,8 @@ val groupsUiModule = module {
             authenticationService = authenticationService,
             deleteGroupUseCase = deleteGroupUseCase,
             getGroupSettlementsFlowUseCase = getGroupSettlementsFlowUseCase,
-            leaveWizardEventHandler = groupLeaveWizardEventHandler
+            leaveWizardEventHandler = groupLeaveWizardEventHandler,
+            getExchangeRateUseCase = getExchangeRateUseCase
         )
     }
 
@@ -236,7 +244,14 @@ val groupsUiModule = module {
     } bind NavigationProvider::class
 
     single {
-        GroupsScreenUiProviderImpl()
+        val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
+        val authenticationService = get<AuthenticationService>()
+        val featureGateService = get<FeatureGateService>()
+        GroupsScreenUiProviderImpl(
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            authenticationService = authenticationService,
+            featureGateService = featureGateService
+        )
     } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { GroupDetailScreenUiProviderImpl() } bind ScreenUiProvider::class

@@ -31,6 +31,7 @@
     <string name="group_extra_currency_search_hint">ej. ÛDD, MXN, Libra…</string>
     <string name="group_extra_currency_remove">Quitâh moneda</string>
     <string name="group_extra_currency_clear">Limpiâh</string>
+    <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Dêccrîççión</string>
     <string name="group_field_created_at">Creao el</string>
     <string name="group_error_name_empty">¡Ey! Tu grupo neçeçita un nombre</string>
@@ -70,6 +71,8 @@
     <string name="group_member_role_member">Miembro</string>
     <string name="group_detail_section_details">Detayê</string>
     <string name="group_detail_currency_label">Moneda prinçipâh</string>
+    <string name="group_detail_extra_currencies_label">Otrâ monedâ</string>
+    <string name="group_detail_exchange_rate_format">1 %1$s ≈ %2$s %3$s</string>
     <string name="group_detail_description_label">Dêccrîççión</string>
     <string name="group_field_members">Miembrô</string>
     <string name="group_member_search">Bûccâh por emaîh</string>
@@ -202,4 +205,8 @@
     <string name="archive_wizard_confirm_warning_banner">Tôh lô acuerdô de pago deben êttâh reçuertô antê de podêh arxibâh êtte grupo.</string>
     <string name="archive_wizard_confirm_desc">Arxibâh êtte grupo conhelará tôh lô balançê y marcará er grupo como inâttibo. Êtta âççión êh permanente y no çe puede deçaçêh.</string>
     <string name="archive_wizard_go_to_settlements">Îh a Acuerdô de pago</string>
+    <string name="group_cover_photo_locked_pro_badge">Pro</string>
+    <string name="group_cover_photo_locked_description">Lâ fotô de portá requieren SplîTTrîh Pro. Toca pa dêbbloqueâh.</string>
+    <string name="group_members_capacity_counter">%1$d/%2$d miembrô</string>
+    <string name="group_members_capacity_pro_upsell">Límite Gratî (mâh. %1$d). Toca pa ampliâh âtta 20 miembrô con Pro.</string>
 </resources>

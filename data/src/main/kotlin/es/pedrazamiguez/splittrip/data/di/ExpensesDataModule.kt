@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.data.service.AICoreCapabilityProvider
 import es.pedrazamiguez.splittrip.data.service.AiModelResolverImpl
 import es.pedrazamiguez.splittrip.data.service.MLKitOcrService
 import es.pedrazamiguez.splittrip.data.service.ReceiptExtractionServiceImpl
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
@@ -37,6 +38,7 @@ val expensesDataModule = module {
             receiptStorageService = get<ReceiptStorageService>(),
             performanceMonitor = get<PerformanceMonitor>(),
             localGroupDataSource = get<LocalGroupDataSource>(),
+            syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             remainderDistributionService = get<RemainderDistributionService>(),
             ioDispatcher = Dispatchers.IO
         )

@@ -1,7 +1,5 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
@@ -15,10 +13,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiMod
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
-import java.util.Locale
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,9 +42,6 @@ class AddOnExchangeRateDelegateTest {
 
     @BeforeEach
     fun setUp() {
-        val localeProvider = mockk<LocaleProvider>()
-        every { localeProvider.getCurrentLocale() } returns Locale.US
-
         getExchangeRateUseCase = mockk(relaxed = true)
         previewCashExchangeRateUseCase = mockk(relaxed = true)
 
@@ -56,7 +49,6 @@ class AddOnExchangeRateDelegateTest {
             exchangeRateCalculationService = ExchangeRateCalculationServiceImpl(),
             expenseCalculatorService = ExpenseCalculatorServiceImpl(),
             splitPreviewService = SplitPreviewServiceImpl(),
-            formattingHelper = FormattingHelper(localeProvider),
             getExchangeRateUseCase = getExchangeRateUseCase,
             previewCashExchangeRateUseCase = previewCashExchangeRateUseCase
         )

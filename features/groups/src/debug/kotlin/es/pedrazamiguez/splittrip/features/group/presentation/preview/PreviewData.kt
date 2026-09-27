@@ -4,7 +4,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyU
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupCurrencyRateUiModel
 import java.time.LocalDateTime
+import kotlinx.collections.immutable.persistentListOf
 
 val PREVIEW_USER_1 = User(
     userId = "17415e0b-7acb-40af-bd43-e7fd631116a2",
@@ -95,6 +97,21 @@ val GROUP_DOMAIN_NO_IMAGE: Group = Group(
     lastUpdatedAt = LocalDateTime.of(2026, 3, 10, 9, 30)
 )
 
+val GROUP_DOMAIN_MULTI_CURRENCY: Group = Group(
+    id = "d4e6f8a0-b2c3-4567-89ab-cdef01234567",
+    name = "World Tour",
+    description = "Across 5 continents",
+    currency = "EUR",
+    extraCurrencies = listOf("USD", "GBP", "JPY", "THB", "CAD"),
+    members = listOf(
+        PREVIEW_USER_1.userId,
+        PREVIEW_USER_2.userId,
+        PREVIEW_USER_4.userId
+    ),
+    createdAt = LocalDateTime.of(2026, 5, 1, 10, 0),
+    lastUpdatedAt = LocalDateTime.of(2026, 5, 10, 15, 30)
+)
+
 val PREVIEW_GROUPS = listOf(GROUP_DOMAIN_1, GROUP_DOMAIN_2)
 val PREVIEW_GROUPS_WITH_MANY = listOf(GROUP_DOMAIN_1, GROUP_DOMAIN_NO_IMAGE, GROUP_DOMAIN_2)
 
@@ -139,4 +156,8 @@ val CURRENCY_UI_MXN = CurrencyUiModel(
     decimalDigits = 2,
     defaultName = "Mexican Peso",
     localizedName = "Mexican Peso"
+)
+
+val PREVIEW_CURRENCY_RATES = persistentListOf(
+    GroupCurrencyRateUiModel(currency = "THB", formattedRate = "1 EUR ≈ 38.25 THB")
 )

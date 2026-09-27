@@ -10,6 +10,7 @@ sealed interface AuthenticationUiEvent {
     data class PasswordChanged(val value: String) : AuthenticationUiEvent {
         override fun toString(): String = "PasswordChanged(input=***)"
     }
+    data object ToggleEmailForm : AuthenticationUiEvent
     data object SubmitLogin : AuthenticationUiEvent
     data class GoogleSignInResult(val idToken: String) : AuthenticationUiEvent {
         override fun toString(): String = "GoogleSignInResult(idToken=***)"

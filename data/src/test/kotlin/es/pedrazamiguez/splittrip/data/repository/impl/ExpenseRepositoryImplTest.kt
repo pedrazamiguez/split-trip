@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
@@ -85,6 +86,8 @@ class ExpenseRepositoryImplTest {
         )
     )
 
+    private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
+
     @BeforeEach
     fun setUp() {
         testDispatcher = StandardTestDispatcher()
@@ -100,6 +103,7 @@ class ExpenseRepositoryImplTest {
             io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
         every { authenticationService.currentUserId() } returns testUserId
+        syncTeardownCoordinator = mockk(relaxed = true)
         repository = ExpenseRepositoryImpl(
             cloudExpenseDataSource,
             localExpenseDataSource,
@@ -109,7 +113,8 @@ class ExpenseRepositoryImplTest {
             performanceMonitor,
             localGroupDataSource,
             remainderDistributionService,
-            testDispatcher
+            syncTeardownCoordinator = syncTeardownCoordinator,
+            ioDispatcher = testDispatcher
         )
     }
 
@@ -649,7 +654,8 @@ class ExpenseRepositoryImplTest {
                 performanceMonitor,
                 localGroupDataSource,
                 remainderDistributionService,
-                testDispatcher
+                syncTeardownCoordinator = syncTeardownCoordinator,
+                ioDispatcher = testDispatcher
             )
 
             // When

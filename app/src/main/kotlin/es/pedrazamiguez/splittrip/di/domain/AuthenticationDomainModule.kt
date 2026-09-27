@@ -7,6 +7,9 @@ import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
+import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
+import es.pedrazamiguez.splittrip.domain.service.SyncTeardownService
+import es.pedrazamiguez.splittrip.domain.service.impl.PasswordValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
@@ -72,7 +75,8 @@ val authenticationDomainModule = module {
                 unregisterDeviceTokenUseCase = get<UnregisterDeviceTokenUseCase>(),
                 localDatabaseCleaner = get<LocalDatabaseCleanerService>(),
                 authenticationService = get<AuthenticationService>(),
-                userPreferenceRepository = get<UserPreferenceRepository>()
+                userPreferenceRepository = get<UserPreferenceRepository>(),
+                syncTeardownService = get<SyncTeardownService>()
             ),
             LogTag.USE_CASE
         )
@@ -139,6 +143,12 @@ val authenticationDomainModule = module {
                 authenticationService = get<AuthenticationService>()
             ),
             LogTag.USE_CASE
+        )
+    }
+    factory<PasswordValidationService> {
+        createLoggingProxy<PasswordValidationService>(
+            PasswordValidationServiceImpl(),
+            LogTag.SERVICE
         )
     }
 }

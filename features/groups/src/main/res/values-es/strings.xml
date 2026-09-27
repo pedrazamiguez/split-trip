@@ -34,6 +34,7 @@
     <string name="group_extra_currency_search_hint">ej. USD, MXN, Libra…</string>
     <string name="group_extra_currency_remove">Quitar moneda</string>
     <string name="group_extra_currency_clear">Limpiar</string>
+    <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Descripción</string>
     <string name="group_field_created_at">Creado el</string>
     <string name="group_error_name_empty">¡Ey! Tu grupo necesita un nombre</string>
@@ -75,6 +76,8 @@
     <string name="group_member_role_member">Miembro</string>
     <string name="group_detail_section_details">Detalles</string>
     <string name="group_detail_currency_label">Moneda principal</string>
+    <string name="group_detail_extra_currencies_label">Otras monedas</string>
+    <string name="group_detail_exchange_rate_format">1 %1$s ≈ %2$s %3$s</string>
     <string name="group_detail_description_label">Descripción</string>
 
     <!-- Member search -->
@@ -232,4 +235,12 @@
     <string name="archive_wizard_confirm_warning_banner">Todos los acuerdos de pago deben estar resueltos antes de poder archivar este grupo.</string>
     <string name="archive_wizard_confirm_desc">Archivar este grupo congelará todos los balances y marcará el grupo como inactivo. Esta acción es permanente y no se puede deshacer.</string>
     <string name="archive_wizard_go_to_settlements">Ir a Acuerdos de pago</string>
+
+    <!-- Group Cover Photo Upfront Gate -->
+    <string name="group_cover_photo_locked_pro_badge">Pro</string>
+    <string name="group_cover_photo_locked_description">Las fotos de portada requieren SplitTrip Pro. Toca para desbloquear.</string>
+
+    <!-- Group Member Capacity Indicator -->
+    <string name="group_members_capacity_counter">%1$d/%2$d miembros</string>
+    <string name="group_members_capacity_pro_upsell">Límite Gratis (máx. %1$d). Toca para ampliar hasta 20 miembros con Pro.</string>
 </resources>

@@ -32,6 +32,7 @@ fun CreateEditGroupForm(
             WizardStepIndicator(
                 stepLabels = orderedLabels,
                 currentStepIndex = uiState.currentStepIndex,
+                allowForwardJumps = uiState.isEditMode,
                 onStepClicked = { onEvent(CreateEditGroupUiEvent.JumpToStep(it)) }
             )
             CreateEditGroupWizardContent(

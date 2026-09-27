@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
-import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
+import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedTextAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
@@ -135,7 +135,7 @@ internal fun ContributionHeroSection(
                 )
                 Text(
                     text = "+${contribution.formattedAmount}",
-                    modifier = Modifier.fillMaxWidth().sharedElementAnimation(
+                    modifier = Modifier.sharedTextAnimation(
                         key = SharedElementKeys.contributionAmount(
                             contribution.id
                         ),
@@ -146,7 +146,9 @@ internal fun ContributionHeroSection(
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = HERO_AMOUNT_SIZE,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false
                 )
                 Text(
                     text = contribution.contributedByText,

@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -44,7 +45,7 @@ fun AccountStatusFeature(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val webClientId = remember(activity) { getWebClientId(activity) }
-    val googleLinkingFailedMsg = androidx.compose.ui.res.stringResource(
+    val googleLinkingFailedMsg = stringResource(
         id = R.string.account_status_error_prefix,
         "Failed to link Google"
     )
@@ -86,11 +87,11 @@ fun AccountStatusFeature(
 
     if (uiState.showDeleteAccountDialog) {
         DestructiveConfirmationDialog(
-            title = androidx.compose.ui.res.stringResource(id = R.string.account_status_delete_account_dialog_title),
-            text = androidx.compose.ui.res.stringResource(id = R.string.account_status_delete_account_dialog_text),
+            title = stringResource(id = R.string.account_status_delete_account_dialog_title),
+            text = stringResource(id = R.string.account_status_delete_account_dialog_text),
             onConfirm = { viewModel.onEvent(AccountStatusUiEvent.ConfirmDeleteAccount) },
             onDismiss = { viewModel.onEvent(AccountStatusUiEvent.DismissDeleteAccountDialog) },
-            confirmLabel = androidx.compose.ui.res.stringResource(
+            confirmLabel = stringResource(
                 id = R.string.account_status_delete_account_dialog_confirm
             )
         )

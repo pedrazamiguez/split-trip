@@ -19,3 +19,19 @@ private fun GroupItemNoImagePreview() {
         GroupItem(groupUiModel = it)
     }
 }
+
+@PreviewComplete
+@Composable
+private fun GroupItemSingleExtraCurrencyPreview() {
+    GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_1) {
+        GroupItem(groupUiModel = it)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun GroupItemMultiCurrencyPreview() {
+    GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_MULTI_CURRENCY) {
+        GroupItem(groupUiModel = it)
+    }
+}

@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.model.PasswordRequirementStatus
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiAction
@@ -37,6 +39,7 @@ class RegisterViewModelTest {
 
     private lateinit var signUpWithEmailUseCase: SignUpWithEmailUseCase
     private lateinit var emailValidationService: EmailValidationService
+    private lateinit var passwordValidationService: PasswordValidationService
     private lateinit var viewModel: RegisterViewModel
 
     @BeforeEach
@@ -44,13 +47,16 @@ class RegisterViewModelTest {
         Dispatchers.setMain(testDispatcher)
         signUpWithEmailUseCase = mockk()
         emailValidationService = mockk()
+        passwordValidationService = mockk()
 
         val submitHandler = RegisterSubmitEventHandlerImpl(
             signUpWithEmailUseCase = signUpWithEmailUseCase,
-            emailValidationService = emailValidationService
+            emailValidationService = emailValidationService,
+            passwordValidationService = passwordValidationService
         )
         viewModel = RegisterViewModel(
-            registerSubmitEventHandler = submitHandler
+            registerSubmitEventHandler = submitHandler,
+            passwordValidationService = passwordValidationService
         )
     }
 
@@ -76,10 +82,22 @@ class RegisterViewModelTest {
         }
 
         @Test
-        fun `PasswordChanged updates password in state`() = runTest(testDispatcher) {
-            viewModel.onEvent(RegisterUiEvent.PasswordChanged("secure123"))
-            assertEquals("secure123", viewModel.uiState.value.password)
-        }
+        fun `PasswordChanged updates password and evaluates passwordRequirementStatus in state`() =
+            runTest(testDispatcher) {
+                val expectedStatus = PasswordRequirementStatus(
+                    isMinLengthValid = true,
+                    hasUpperCase = true,
+                    hasLowerCase = true,
+                    hasDigit = true,
+                    hasSpecialChar = true
+                )
+                every { passwordValidationService.validate("P@ssword1") } returns expectedStatus
+
+                viewModel.onEvent(RegisterUiEvent.PasswordChanged("P@ssword1"))
+
+                assertEquals("P@ssword1", viewModel.uiState.value.password)
+                assertEquals(expectedStatus, viewModel.uiState.value.passwordRequirementStatus)
+            }
 
         @Test
         fun `ConfirmPasswordChanged updates confirmPassword in state`() = runTest(testDispatcher) {
@@ -96,8 +114,15 @@ class RegisterViewModelTest {
         fun `fails when display name is empty`() = runTest(testDispatcher) {
             viewModel.onEvent(RegisterUiEvent.DisplayNameChanged(""))
             viewModel.onEvent(RegisterUiEvent.EmailChanged("a@b.com"))
-            viewModel.onEvent(RegisterUiEvent.PasswordChanged("secret"))
-            viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("secret"))
+            every { passwordValidationService.validate("P@ssword1") } returns PasswordRequirementStatus(
+                isMinLengthValid = true,
+                hasUpperCase = true,
+                hasLowerCase = true,
+                hasDigit = true,
+                hasSpecialChar = true
+            )
+            viewModel.onEvent(RegisterUiEvent.PasswordChanged("P@ssword1"))
+            viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("P@ssword1"))
 
             viewModel.onEvent(RegisterUiEvent.SubmitSignUp)
 
@@ -110,11 +135,18 @@ class RegisterViewModelTest {
         @Test
         fun `fails when email is invalid`() = runTest(testDispatcher) {
             every { emailValidationService.isValidEmail("invalid-email") } returns false
+            every { passwordValidationService.validate("P@ssword1") } returns PasswordRequirementStatus(
+                isMinLengthValid = true,
+                hasUpperCase = true,
+                hasLowerCase = true,
+                hasDigit = true,
+                hasSpecialChar = true
+            )
 
             viewModel.onEvent(RegisterUiEvent.DisplayNameChanged("Explorer"))
             viewModel.onEvent(RegisterUiEvent.EmailChanged("invalid-email"))
-            viewModel.onEvent(RegisterUiEvent.PasswordChanged("secret"))
-            viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("secret"))
+            viewModel.onEvent(RegisterUiEvent.PasswordChanged("P@ssword1"))
+            viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("P@ssword1"))
 
             viewModel.onEvent(RegisterUiEvent.SubmitSignUp)
 
@@ -125,8 +157,13 @@ class RegisterViewModelTest {
         }
 
         @Test
-        fun `fails when password is too short`() = runTest(testDispatcher) {
+        fun `fails when password complexity is not satisfied`() = runTest(testDispatcher) {
             every { emailValidationService.isValidEmail("a@b.com") } returns true
+            every { passwordValidationService.validate("12345") } returns PasswordRequirementStatus(
+                isMinLengthValid = false,
+                hasDigit = true
+            )
+            every { passwordValidationService.isValidPassword("12345") } returns false
 
             viewModel.onEvent(RegisterUiEvent.DisplayNameChanged("Explorer"))
             viewModel.onEvent(RegisterUiEvent.EmailChanged("a@b.com"))
@@ -138,16 +175,24 @@ class RegisterViewModelTest {
             val error = viewModel.uiState.value.error
             assertNotNull(error)
             assertTrue(error is UiText.StringResource)
-            assertEquals(R.string.register_error_password_too_short, (error as UiText.StringResource).resId)
+            assertEquals(R.string.register_error_password_complexity, (error as UiText.StringResource).resId)
         }
 
         @Test
         fun `fails when passwords do not match`() = runTest(testDispatcher) {
             every { emailValidationService.isValidEmail("a@b.com") } returns true
+            every { passwordValidationService.validate("P@ssword1") } returns PasswordRequirementStatus(
+                isMinLengthValid = true,
+                hasUpperCase = true,
+                hasLowerCase = true,
+                hasDigit = true,
+                hasSpecialChar = true
+            )
+            every { passwordValidationService.isValidPassword("P@ssword1") } returns true
 
             viewModel.onEvent(RegisterUiEvent.DisplayNameChanged("Explorer"))
             viewModel.onEvent(RegisterUiEvent.EmailChanged("a@b.com"))
-            viewModel.onEvent(RegisterUiEvent.PasswordChanged("secret"))
+            viewModel.onEvent(RegisterUiEvent.PasswordChanged("P@ssword1"))
             viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("mismatch"))
 
             viewModel.onEvent(RegisterUiEvent.SubmitSignUp)
@@ -166,12 +211,20 @@ class RegisterViewModelTest {
         @Test
         fun `success emits RegisterSuccess action and clears loading`() = runTest(testDispatcher) {
             every { emailValidationService.isValidEmail("a@b.com") } returns true
+            every { passwordValidationService.validate("P@ssword1") } returns PasswordRequirementStatus(
+                isMinLengthValid = true,
+                hasUpperCase = true,
+                hasLowerCase = true,
+                hasDigit = true,
+                hasSpecialChar = true
+            )
+            every { passwordValidationService.isValidPassword("P@ssword1") } returns true
             coEvery { signUpWithEmailUseCase(any(), any(), any()) } returns Result.success("new-user-id")
 
             viewModel.onEvent(RegisterUiEvent.DisplayNameChanged("Explorer"))
             viewModel.onEvent(RegisterUiEvent.EmailChanged("a@b.com"))
-            viewModel.onEvent(RegisterUiEvent.PasswordChanged("secret"))
-            viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("secret"))
+            viewModel.onEvent(RegisterUiEvent.PasswordChanged("P@ssword1"))
+            viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("P@ssword1"))
 
             val actions = mutableListOf<RegisterUiAction>()
             val job = launch {
@@ -190,13 +243,21 @@ class RegisterViewModelTest {
         @Test
         fun `failure sets error in state`() = runTest(testDispatcher) {
             every { emailValidationService.isValidEmail("a@b.com") } returns true
+            every { passwordValidationService.validate("P@ssword1") } returns PasswordRequirementStatus(
+                isMinLengthValid = true,
+                hasUpperCase = true,
+                hasLowerCase = true,
+                hasDigit = true,
+                hasSpecialChar = true
+            )
+            every { passwordValidationService.isValidPassword("P@ssword1") } returns true
             coEvery { signUpWithEmailUseCase(any(), any(), any()) } returns
                 Result.failure(RuntimeException("Registration failed"))
 
             viewModel.onEvent(RegisterUiEvent.DisplayNameChanged("Explorer"))
             viewModel.onEvent(RegisterUiEvent.EmailChanged("a@b.com"))
-            viewModel.onEvent(RegisterUiEvent.PasswordChanged("secret"))
-            viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("secret"))
+            viewModel.onEvent(RegisterUiEvent.PasswordChanged("P@ssword1"))
+            viewModel.onEvent(RegisterUiEvent.ConfirmPasswordChanged("P@ssword1"))
 
             viewModel.onEvent(RegisterUiEvent.SubmitSignUp)
             advanceUntilIdle()

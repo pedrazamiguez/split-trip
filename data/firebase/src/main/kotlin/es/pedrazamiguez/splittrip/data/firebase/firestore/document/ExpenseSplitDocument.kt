@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.document
 
+import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.PropertyName
 
+@IgnoreExtraProperties
 data class ExpenseSplitDocument(
     val userId: String = "",
     val subunitId: String? = null,

@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.data.repository.impl.CashTransferRepositoryImp
 import es.pedrazamiguez.splittrip.data.repository.impl.CashWithdrawalRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.ContributionRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.SettlementRepositoryImpl
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashTransferDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
@@ -13,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSettlementDataSou
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSettlementDataSource
 import es.pedrazamiguez.splittrip.domain.repository.CashTransferRepository
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
@@ -27,7 +29,9 @@ val balancesDataModule = module {
         ContributionRepositoryImpl(
             cloudContributionDataSource = get<CloudContributionDataSource>(),
             localContributionDataSource = get<LocalContributionDataSource>(),
+            localGroupDataSource = get<LocalGroupDataSource>(),
             authenticationService = get<AuthenticationService>(),
+            syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             performanceMonitor = get<PerformanceMonitor>()
         )
     }
@@ -37,7 +41,9 @@ val balancesDataModule = module {
             cloudCashWithdrawalDataSource = get<CloudCashWithdrawalDataSource>(),
             localQueryDataSource = get<LocalCashWithdrawalQueryDataSource>(),
             localWriteDataSource = get<LocalCashWithdrawalWriteDataSource>(),
+            localGroupDataSource = get<LocalGroupDataSource>(),
             authenticationService = get<AuthenticationService>(),
+            syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             performanceMonitor = get<PerformanceMonitor>(),
             ioDispatcher = Dispatchers.IO
         )

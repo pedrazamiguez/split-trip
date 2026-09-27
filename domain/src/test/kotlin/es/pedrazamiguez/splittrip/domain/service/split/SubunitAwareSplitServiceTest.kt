@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.SubunitSplitOverride
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.impl.SubunitAwareSplitServiceImpl
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -24,7 +25,8 @@ class SubunitAwareSplitServiceTest {
     @BeforeEach
     fun setUp() {
         val calculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
-        service = SubunitAwareSplitServiceImpl(calculatorFactory)
+        val remainderDistributionService = RemainderDistributionServiceImpl()
+        service = SubunitAwareSplitServiceImpl(calculatorFactory, remainderDistributionService)
     }
 
     // ── No subunits (backward compatibility) ───────────────────────────
@@ -114,16 +116,16 @@ class SubunitAwareSplitServiceTest {
                 entitySplitType = SplitType.EQUAL
             )
 
-            // 2 entities → 5000 each
-            // Couple 5000 split 50/50 → 2500 each
+            // Headcount weighting: solo (1) + couple (2) = 3 shares
+            // 10000 / 3 = 3333 with 1 cent remainder allocated to solo
             assertEquals(3, result.size)
-            assertEquals(5000L, result.find { it.userId == "solo" }!!.amountCents)
+            assertEquals(3334L, result.find { it.userId == "solo" }!!.amountCents)
             assertNull(result.find { it.userId == "solo" }!!.subunitId)
 
-            assertEquals(2500L, result.find { it.userId == "userA" }!!.amountCents)
+            assertEquals(3333L, result.find { it.userId == "userA" }!!.amountCents)
             assertEquals("subunit-couple", result.find { it.userId == "userA" }!!.subunitId)
 
-            assertEquals(2500L, result.find { it.userId == "userB" }!!.amountCents)
+            assertEquals(3333L, result.find { it.userId == "userB" }!!.amountCents)
             assertEquals("subunit-couple", result.find { it.userId == "userB" }!!.subunitId)
 
             assertEquals(10000L, result.sumOf { it.amountCents })
@@ -164,25 +166,63 @@ class SubunitAwareSplitServiceTest {
                 entitySplitType = SplitType.EQUAL
             )
 
-            // 4 entities, 20000 / 4 = 5000 each
+            // Headcount: juan (1) + couple (2) + pair (2) + family (3) = 8 shares
+            // 20000 / 8 = 2500 per share
             assertEquals(8, result.size)
-            assertEquals(5000L, result.find { it.userId == "juan" }!!.amountCents)
+            assertEquals(2500L, result.find { it.userId == "juan" }!!.amountCents)
             assertNull(result.find { it.userId == "juan" }!!.subunitId)
 
-            // Couple: 5000 * 0.5 = 2500 each
+            // Couple: 2 shares = 5000 * 0.5 = 2500 each
             assertEquals(2500L, result.find { it.userId == "antonio" }!!.amountCents)
             assertEquals(2500L, result.find { it.userId == "me" }!!.amountCents)
 
-            // Pair: 5000 * 0.5 = 2500 each
+            // Pair: 2 shares = 5000 * 0.5 = 2500 each
             assertEquals(2500L, result.find { it.userId == "miguel" }!!.amountCents)
             assertEquals(2500L, result.find { it.userId == "maria" }!!.amountCents)
 
-            // Family: 5000 * 0.4 = 2000, 5000 * 0.4 = 2000, 5000 * 0.2 = 1000
-            assertEquals(2000L, result.find { it.userId == "ana" }!!.amountCents)
-            assertEquals(2000L, result.find { it.userId == "luis" }!!.amountCents)
-            assertEquals(1000L, result.find { it.userId == "luisito" }!!.amountCents)
+            // Family: 3 shares = 7500 -> ana (3000), luis (3000), luisito (1500)
+            assertEquals(3000L, result.find { it.userId == "ana" }!!.amountCents)
+            assertEquals(3000L, result.find { it.userId == "luis" }!!.amountCents)
+            assertEquals(1500L, result.find { it.userId == "luisito" }!!.amountCents)
 
             assertEquals(20000L, result.sumOf { it.amountCents })
+        }
+
+        @Test
+        fun `eight member group equal split — four solo and one subunit of four`() {
+            val subunit4 = Subunit(
+                id = "subunit-4",
+                name = "Four Friends",
+                memberIds = listOf("m1", "m2", "m3", "m4"),
+                memberShares = emptyMap()
+            )
+
+            val result = service.calculateShares(
+                totalAmountCents = 80000L,
+                individualParticipantIds = listOf("solo1", "solo2", "solo3", "solo4"),
+                subunits = listOf(subunit4),
+                entitySplitType = SplitType.EQUAL
+            )
+
+            // 8 travelers in total: 4 solo + 4 in subunit -> 10000L (€100) per person
+            assertEquals(8, result.size)
+            listOf("solo1", "solo2", "solo3", "solo4").forEach { soloId ->
+                val split = result.find { it.userId == soloId }
+                assertNotNull(split)
+                assertEquals(10000L, split!!.amountCents)
+                assertNull(split.subunitId)
+            }
+
+            listOf("m1", "m2", "m3", "m4").forEach { memberId ->
+                val split = result.find { it.userId == memberId }
+                assertNotNull(split)
+                assertEquals(10000L, split!!.amountCents)
+                assertEquals("subunit-4", split.subunitId)
+            }
+
+            val subunitTotal = result.filter { it.subunitId == "subunit-4" }.sumOf { it.amountCents }
+            assertEquals(40000L, subunitTotal)
+            assertEquals(80000L, result.sumOf { it.amountCents })
         }
 
         @Test
@@ -375,14 +415,15 @@ class SubunitAwareSplitServiceTest {
 
             val result = service.calculateShares(
                 totalAmountCents = 10000L,
-                individualParticipantIds = listOf("solo"),
+                individualParticipantIds = listOf("solo1", "solo2"),
                 subunits = listOf(couple),
                 entitySplitType = SplitType.EQUAL,
                 subunitSplitOverrides = overrides
             )
 
-            assertEquals(3, result.size)
-            assertEquals(5000L, result.find { it.userId == "solo" }!!.amountCents)
+            assertEquals(4, result.size)
+            assertEquals(2500L, result.find { it.userId == "solo1" }!!.amountCents)
+            assertEquals(2500L, result.find { it.userId == "solo2" }!!.amountCents)
             // Couple gets 5000, but override says A=4000, B=1000
             assertEquals(4000L, result.find { it.userId == "userA" }!!.amountCents)
             assertEquals(1000L, result.find { it.userId == "userB" }!!.amountCents)
@@ -445,14 +486,15 @@ class SubunitAwareSplitServiceTest {
 
             val result = service.calculateShares(
                 totalAmountCents = 10000L,
-                individualParticipantIds = listOf("solo"),
+                individualParticipantIds = listOf("solo1", "solo2"),
                 subunits = listOf(couple),
                 entitySplitType = SplitType.EQUAL,
                 subunitSplitOverrides = overrides
             )
 
-            assertEquals(3, result.size)
-            assertEquals(5000L, result.find { it.userId == "solo" }!!.amountCents)
+            assertEquals(4, result.size)
+            assertEquals(2500L, result.find { it.userId == "solo1" }!!.amountCents)
+            assertEquals(2500L, result.find { it.userId == "solo2" }!!.amountCents)
             // Couple gets 5000, override 70/30 → 3500 + 1500
             assertEquals(3500L, result.find { it.userId == "userA" }!!.amountCents)
             assertEquals(1500L, result.find { it.userId == "userB" }!!.amountCents)
@@ -461,7 +503,6 @@ class SubunitAwareSplitServiceTest {
 
         @Test
         fun `mixed overrides — different split types per subunit`() {
-            // Use 9000 to divide evenly: 9000 / 3 entities = 3000 each
             val couple = Subunit(
                 id = "subunit-couple",
                 memberIds = listOf("userA", "userB"),
@@ -480,14 +521,16 @@ class SubunitAwareSplitServiceTest {
                 )
             )
 
-            // Family gets 3000 from entity-level EQUAL split
+            // Headcount: juan (1) + couple (2) + family (3) = 6
+            // 9000 / 6 = 1500 per share
+            // Family gets 3 shares = 4500 from entity-level EQUAL split
             val overrides = mapOf(
                 "subunit-couple" to SubunitSplitOverride(splitType = SplitType.EQUAL),
                 "subunit-family" to SubunitSplitOverride(
                     splitType = SplitType.EXACT,
                     memberSplits = listOf(
-                        ExpenseSplit(userId = "ana", amountCents = 1500L),
-                        ExpenseSplit(userId = "luis", amountCents = 1500L),
+                        ExpenseSplit(userId = "ana", amountCents = 2250L),
+                        ExpenseSplit(userId = "luis", amountCents = 2250L),
                         ExpenseSplit(userId = "luisito", amountCents = 0L)
                     )
                 )
@@ -501,12 +544,11 @@ class SubunitAwareSplitServiceTest {
                 subunitSplitOverrides = overrides
             )
 
-            // 3 entities (juan, couple, family) → 3000 each
             assertEquals(6, result.size)
             assertEquals(9000L, result.sumOf { it.amountCents })
 
-            // Juan is solo → 3000
-            assertEquals(3000L, result.find { it.userId == "juan" }!!.amountCents)
+            // Juan is solo → 1500
+            assertEquals(1500L, result.find { it.userId == "juan" }!!.amountCents)
             assertNull(result.find { it.userId == "juan" }!!.subunitId)
 
             // Couple: EQUAL override → 1500 each
@@ -515,9 +557,9 @@ class SubunitAwareSplitServiceTest {
             assertEquals(1500L, coupleMembers[0].amountCents)
             assertEquals(1500L, coupleMembers[1].amountCents)
 
-            // Family: EXACT override → luisito gets 0
-            assertEquals(1500L, result.find { it.userId == "ana" }!!.amountCents)
-            assertEquals(1500L, result.find { it.userId == "luis" }!!.amountCents)
+            // Family: EXACT override → luisito gets 0, ana & luis get 2250 each
+            assertEquals(2250L, result.find { it.userId == "ana" }!!.amountCents)
+            assertEquals(2250L, result.find { it.userId == "luis" }!!.amountCents)
             assertEquals(0L, result.find { it.userId == "luisito" }!!.amountCents)
         }
     }

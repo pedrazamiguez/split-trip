@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
@@ -35,7 +34,6 @@ import timber.log.Timber
 class CurrencyEventHandler(
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
     private val exchangeRateCalculationService: ExchangeRateCalculationService,
-    private val formattingHelper: FormattingHelper,
     private val addExpenseOptionsMapper: AddExpenseOptionsUiMapper,
     private val withdrawalPoolSelectionDelegate: WithdrawalPoolSelectionDelegate,
     private val cashRateDelegate: CashRateDelegate
@@ -158,14 +156,7 @@ class CurrencyEventHandler(
             sourceDecimalPlaces = sourceDecimalPlaces,
             targetDecimalPlaces = targetDecimalPlaces
         )
-        // Format the amount for display using locale-aware formatting
-        // Use currency's decimal digits as minimum to ensure proper display (e.g., "1,10" for EUR instead of "1,1")
-        val formattedAmount = formattingHelper.formatForDisplay(
-            internalValue = calculatedAmount,
-            maxDecimalPlaces = targetDecimalPlaces,
-            minDecimalPlaces = targetDecimalPlaces
-        )
-        _uiState.update { it.copy(calculatedGroupAmount = formattedAmount) }
+        _uiState.update { it.copy(calculatedGroupAmount = calculatedAmount) }
     }
 
     /**
@@ -181,9 +172,7 @@ class CurrencyEventHandler(
             groupAmountString = state.calculatedGroupAmount,
             sourceDecimalPlaces = sourceDecimalPlaces
         )
-        // Format the rate for display using locale-aware formatting
-        val formattedRate = formattingHelper.formatRateForDisplay(impliedDisplayRate)
-        _uiState.update { it.copy(displayExchangeRate = formattedRate) }
+        _uiState.update { it.copy(displayExchangeRate = impliedDisplayRate) }
     }
 
     fun fetchRate() {
@@ -465,9 +454,7 @@ class CurrencyEventHandler(
         return copy(
             isLoadingRate = false,
             isExchangeRateError = isError,
-            displayExchangeRate = rateResult?.rate?.let { exchangeRate ->
-                formattingHelper.formatRateForDisplay(exchangeRate.toPlainString())
-            } ?: displayExchangeRate,
+            displayExchangeRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString() ?: displayExchangeRate,
             isExchangeRateStale = rateResult?.isStale ?: false
         )
     }

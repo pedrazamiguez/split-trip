@@ -58,6 +58,7 @@ internal fun ContributionWizard(
             WizardStepIndicator(
                 stepLabels = orderedLabels,
                 currentStepIndex = uiState.currentStepIndex,
+                allowForwardJumps = uiState.isEditMode,
                 onStepClicked = { onEvent(AddContributionUiEvent.JumpToStep(it)) }
             )
 

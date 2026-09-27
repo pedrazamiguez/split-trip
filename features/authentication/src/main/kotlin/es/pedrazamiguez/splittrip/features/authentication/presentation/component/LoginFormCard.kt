@@ -1,10 +1,9 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.component
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -14,8 +13,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
-import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Mail
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
@@ -23,6 +26,7 @@ import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiState
 
+@Suppress("LongMethod")
 @Composable
 internal fun LoginFormCard(
     modifier: Modifier = Modifier,
@@ -46,27 +50,8 @@ internal fun LoginFormCard(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            LoginFormFields(
-                uiState = uiState,
-                anyLoading = anyLoading,
-                onEvent = onEvent,
-                onForgotPasswordClick = onForgotPasswordClick
-            )
-
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
-
-            GradientButton(
-                text = stringResource(R.string.login_button),
-                onClick = { onEvent(AuthenticationUiEvent.SubmitLogin) },
-                enabled = !anyLoading,
-                isLoading = uiState.isLoading,
-                modifier = Modifier.fillMaxWidth()
-            )
-
             if (isGoogleSignInAvailable) {
-                OrDivider()
-
-                SecondaryButton(
+                GradientButton(
                     text = stringResource(R.string.login_google_button),
                     onClick = onGoogleSignInClick,
                     enabled = !anyLoading,
@@ -76,9 +61,62 @@ internal fun LoginFormCard(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                SecondaryButton(
+                    text = stringResource(R.string.login_continue_with_email),
+                    onClick = { onEvent(AuthenticationUiEvent.ToggleEmailForm) },
+                    enabled = !anyLoading,
+                    leadingIcon = TablerIcons.Outline.Mail,
+                    trailingIcon = if (uiState.isEmailFormExpanded) {
+                        TablerIcons.Outline.ChevronUp
+                    } else {
+                        TablerIcons.Outline.ChevronDown
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                AnimatedVisibility(
+                    visible = uiState.isEmailFormExpanded,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        LoginFormFields(
+                            uiState = uiState,
+                            anyLoading = anyLoading,
+                            onEvent = onEvent,
+                            onForgotPasswordClick = onForgotPasswordClick
+                        )
+
+                        GradientButton(
+                            text = stringResource(R.string.login_button),
+                            onClick = { onEvent(AuthenticationUiEvent.SubmitLogin) },
+                            enabled = !anyLoading,
+                            isLoading = uiState.isLoading,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            } else {
+                LoginFormFields(
+                    uiState = uiState,
+                    anyLoading = anyLoading,
+                    onEvent = onEvent,
+                    onForgotPasswordClick = onForgotPasswordClick
+                )
+
+                GradientButton(
+                    text = stringResource(R.string.login_button),
+                    onClick = { onEvent(AuthenticationUiEvent.SubmitLogin) },
+                    enabled = !anyLoading,
+                    isLoading = uiState.isLoading,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
+            OrDivider()
 
             SecondaryButton(
                 text = stringResource(R.string.login_guest_button),
@@ -88,9 +126,7 @@ internal fun LoginFormCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (uiState.error != null) {
-                LoginErrorText(errorMessage = uiState.error.asString())
-            }
+            FormErrorBanner(error = uiState.error)
         }
     }
 }

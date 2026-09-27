@@ -194,6 +194,25 @@ class CreateEditSubunitViewModel(
         val newParams = InitParams(groupId, subunitId)
         if (newParams != _initParams.value) {
             _initParams.value = newParams
+            if (subunitId == null) {
+                viewModelScope.launch {
+                    val isEnabled = featureGateService.isFeatureEnabled(
+                        feature = GatedFeature.SUBUNIT_CREATION,
+                        groupId = groupId
+                    ).first()
+                    if (!isEnabled) {
+                        _actions.emit(
+                            CreateEditSubunitUiAction.ShowError(
+                                UiText.StringResource(R.string.subunit_error_pro_required)
+                            )
+                        )
+                        if (!featureGateService.isActingUserPro().first()) {
+                            _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
+                        }
+                        _actions.emit(CreateEditSubunitUiAction.NavigateBack)
+                    }
+                }
+            }
         }
     }
 
@@ -272,13 +291,19 @@ class CreateEditSubunitViewModel(
     }
 
     /**
-     * Jumps directly to a previously completed step at [stepIndex].
+     * Jumps directly to a step at [stepIndex].
+     * In edit mode, forward jumps are permitted.
      * Clears all step-level validation errors so the destination renders cleanly,
      * matching the behaviour of [handlePreviousStep].
      */
     private fun handleJumpToStep(stepIndex: Int) {
-        val target =
-            wizardNavigator.jumpToStep(_formState.value.currentStep, stepIndex, CreateEditSubunitStep.entries) ?: return
+        val isEditing = _initParams.value?.subunitId != null
+        val target = wizardNavigator.jumpToStep(
+            currentStep = _formState.value.currentStep,
+            targetIndex = stepIndex,
+            applicableSteps = CreateEditSubunitStep.entries,
+            allowForwardJumps = isEditing
+        ) ?: return
         _formState.update {
             it.copy(currentStep = target, nameError = null, membersError = null, sharesError = null)
         }

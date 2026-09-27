@@ -26,6 +26,7 @@ import io.mockk.mockk
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -161,7 +162,15 @@ class ReceiptAutoFillEventHandlerTest {
 
             assertFalse(uiState.value.isAiModeActive)
             assertEquals(AddExpenseStep.TITLE, uiState.value.currentStep)
-            assertEquals(AddExpenseUiAction.NavigateToSubscriptions, actions.replayCache.lastOrNull())
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowPill(
+                        UiText.StringResource(R.string.expense_autofill_pro_required)
+                    ),
+                    AddExpenseUiAction.NavigateToSubscriptions
+                ),
+                actions.replayCache
+            )
         }
     }
 
@@ -196,7 +205,15 @@ class ReceiptAutoFillEventHandlerTest {
 
             handler.handleReceiptAttached(attachment)
 
-            assertEquals(AddExpenseUiAction.NavigateToSubscriptions, actions.replayCache.lastOrNull())
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowPill(
+                        UiText.StringResource(R.string.expense_autofill_pro_required)
+                    ),
+                    AddExpenseUiAction.NavigateToSubscriptions
+                ),
+                actions.replayCache
+            )
             coVerify(exactly = 0) { extractReceiptFieldsUseCase(any()) }
             assertFalse(uiState.value.isAnalyzingReceipt)
         }
@@ -585,7 +602,7 @@ class ReceiptAutoFillEventHandlerTest {
         fun `rethrows CancellationException when extraction throws it`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
             coEvery { extractReceiptFieldsUseCase(attachment) } throws
-                kotlinx.coroutines.CancellationException("cancelled")
+                CancellationException("cancelled")
 
             handler.handleReceiptAttached(attachment)
 

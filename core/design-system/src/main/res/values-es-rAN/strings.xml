@@ -157,5 +157,10 @@
     <string name="upgrade_dialog_confirm">Mehorâh a Pro</string>
     <string name="upgrade_dialog_dismiss">Aora no</string>
     <string name="badge_pro">PRO</string>
+    <string name="password_requirement_min_length">Ar menô 8 carâtterê</string>
+    <string name="password_requirement_uppercase">Ar menô una letra mayúccula (A-Z)</string>
+    <string name="password_requirement_lowercase">Ar menô una letra minúccula (a-z)</string>
+    <string name="password_requirement_digit">Ar menô un número (0-9)</string>
+    <string name="password_requirement_special_char">Ar menô un caráttê êppeçiâh (!@#$%...)</string>
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

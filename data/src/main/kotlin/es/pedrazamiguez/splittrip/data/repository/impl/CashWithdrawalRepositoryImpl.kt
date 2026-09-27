@@ -4,12 +4,14 @@ import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.sync.syncDeletionToCloud
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
@@ -29,13 +31,19 @@ class CashWithdrawalRepositoryImpl(
     private val cloudCashWithdrawalDataSource: CloudCashWithdrawalDataSource,
     private val localQueryDataSource: LocalCashWithdrawalQueryDataSource,
     private val localWriteDataSource: LocalCashWithdrawalWriteDataSource,
+    private val localGroupDataSource: LocalGroupDataSource,
     private val authenticationService: AuthenticationService,
     private val performanceMonitor: PerformanceMonitor,
+    private val syncTeardownCoordinator: SyncTeardownCoordinator,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CashWithdrawalRepository {
 
     private val syncScope = CoroutineScope(ioDispatcher)
     private val subscriptionTracker = KeyedSubscriptionTracker()
+
+    init {
+        syncTeardownCoordinator.registerAction { subscriptionTracker.cancelAll() }
+    }
 
     override suspend fun addWithdrawal(groupId: String, withdrawal: CashWithdrawal) {
         performanceMonitor.traceAsync(PerformanceTraces.WITHDRAWAL_ADD) {
@@ -108,7 +116,8 @@ class CashWithdrawalRepositoryImpl(
                             },
                             entityLabel = ENTITY_LABEL,
                             logContext = "for group $groupId",
-                            performanceMonitor = performanceMonitor
+                            performanceMonitor = performanceMonitor,
+                            verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
                         )
                     )
                 }

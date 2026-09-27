@@ -81,21 +81,30 @@ class AccountStatusViewModelTest {
     }
 
     @Test
-    fun `onEvent ShowLinkEmailDialog delegates to handler`() = runTest(testDispatcher) {
+    fun `onEvent ShowLinkEmailSheet delegates to handler`() = runTest(testDispatcher) {
         createViewModel()
-        viewModel.onEvent(AccountStatusUiEvent.ShowLinkEmailDialog)
+        viewModel.onEvent(AccountStatusUiEvent.ShowLinkEmailSheet)
         advanceUntilIdle()
 
-        coVerify { handler.handleShowLinkEmailDialog() }
+        coVerify { handler.handleShowLinkEmailSheet() }
     }
 
     @Test
-    fun `onEvent DismissLinkEmailDialog delegates to handler`() = runTest(testDispatcher) {
+    fun `onEvent DismissLinkEmailSheet delegates to handler`() = runTest(testDispatcher) {
         createViewModel()
-        viewModel.onEvent(AccountStatusUiEvent.DismissLinkEmailDialog)
+        viewModel.onEvent(AccountStatusUiEvent.DismissLinkEmailSheet)
         advanceUntilIdle()
 
-        coVerify { handler.handleDismissLinkEmailDialog() }
+        coVerify { handler.handleDismissLinkEmailSheet() }
+    }
+
+    @Test
+    fun `onEvent LinkEmailChanged delegates to handler`() = runTest(testDispatcher) {
+        createViewModel()
+        viewModel.onEvent(AccountStatusUiEvent.LinkEmailChanged("user@example.com"))
+        advanceUntilIdle()
+
+        coVerify { handler.handleLinkEmailChanged("user@example.com") }
     }
 
     @Test

@@ -20,7 +20,12 @@ import org.koin.dsl.module
 
 val coreDesignSystemModule = module {
 
-    single { UserUiMapper(resourceProvider = get<ResourceProvider>()) }
+    single {
+        UserUiMapper(
+            resourceProvider = get<ResourceProvider>(),
+            localeProvider = get<LocaleProvider>()
+        )
+    }
 
     single {
         FormattingHelper(

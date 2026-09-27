@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.data.local.datastore.SettlementNudgePreference
 import es.pedrazamiguez.splittrip.data.local.service.LocalDatabaseCleanerServiceImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.CurrencyRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.SettlementNudgeRepositoryImpl
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSettlementDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCurrencyDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSettlementDataSource
@@ -14,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.repository.SettlementNudgeRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.LocalDatabaseCleanerService
+import es.pedrazamiguez.splittrip.domain.service.SyncTeardownService
 import java.time.Duration
 import kotlinx.coroutines.Dispatchers
 import org.koin.dsl.module
@@ -42,5 +44,13 @@ val dataCommonModule = module {
             localSettlementDataSource = get<LocalSettlementDataSource>(),
             authenticationService = get<AuthenticationService>()
         )
+    }
+
+    single {
+        SyncTeardownCoordinator()
+    }
+
+    single<SyncTeardownService> {
+        get<SyncTeardownCoordinator>()
     }
 }

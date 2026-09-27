@@ -267,6 +267,20 @@ class WithdrawalSubmitHandlerTest {
             assertTrue(withdrawalSlot.isCaptured)
             assertEquals("", withdrawalSlot.captured.withdrawnBy)
         }
+
+        @Test
+        fun `submitting large raw withdrawal amount parses correctly to cents`() = runTest {
+            val withdrawalSlot = slot<CashWithdrawal>()
+            coEvery { addCashWithdrawalUseCase(any(), capture(withdrawalSlot)) } returns Result.success(Unit)
+            uiState.value = validState.copy(withdrawalAmount = "10450")
+
+            handler.bind(uiState, actions, this)
+            handler.submitWithdrawal("group-1") {}
+            advanceUntilIdle()
+
+            assertTrue(withdrawalSlot.isCaptured)
+            assertEquals(1045000L, withdrawalSlot.captured.amountWithdrawn)
+        }
     }
 
     // ── Failed submission ─────────────────────────────────────────────────

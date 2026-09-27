@@ -322,4 +322,6 @@
     <string name="confirm_payment_expected_charge_label">Cargo êttimao en grupo: %1$s</string>
     <string name="confirm_payment_actual_amount_field_label">Cargo reâh en %1$s</string>
     <string name="expense_detail_expected_with_shift">Êttimao: %1$s (dêbbiaçión: %2$s)</string>
+    <string name="expense_autofill_unlock_with_pro">Dêbbloquea êccaneo IA con Pro</string>
+    <string name="add_expense_receipt_manual_description">Âhhunta una foto o PDF como comprobante de compra pa tôh lô miembrô (Gratî e ilimitao).</string>
 </resources>

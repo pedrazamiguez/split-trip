@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
@@ -46,7 +47,8 @@ class SubunitManagementViewModel(
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val subunitUiMapper: SubunitUiMapper,
     private val observeGroupUseCase: ObserveGroupUseCase,
-    private val featureGateService: FeatureGateService
+    private val featureGateService: FeatureGateService,
+    private val authenticationService: AuthenticationService
 ) : ViewModel() {
 
     private val _groupId = MutableStateFlow("")
@@ -62,6 +64,7 @@ class SubunitManagementViewModel(
             val memberIds = group?.members ?: emptyList()
             val memberProfiles = getMemberProfilesUseCase(memberIds)
             val groupName = group?.name ?: ""
+            val currentUserId = authenticationService.currentUserId()
 
             combine(
                 getGroupSubunitsFlowUseCase(groupId),
@@ -72,7 +75,7 @@ class SubunitManagementViewModel(
                     isLoading = false,
                     groupId = groupId,
                     groupName = groupName,
-                    subunits = subunitUiMapper.toSubunitUiModelList(subunits, memberProfiles),
+                    subunits = subunitUiMapper.toSubunitUiModelList(subunits, memberProfiles, currentUserId),
                     isGroupArchived = reactiveGroup?.status == GroupStatus.ARCHIVED,
                     isSubunitCreationEnabled = isSubunitCreationEnabled
                 )

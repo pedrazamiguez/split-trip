@@ -4,7 +4,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyU
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupCurrencyRateUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
+import java.math.BigDecimal
 import kotlinx.collections.immutable.ImmutableList
 
 interface GroupUiMapper {
@@ -12,13 +14,14 @@ interface GroupUiMapper {
      * Maps a [Group] to a [GroupUiModel] without member profile enrichment.
      * Avatar fields will be empty; use the overload accepting a `memberProfiles` map for the hero card.
      */
-    fun toGroupUiModel(group: Group): GroupUiModel = toGroupUiModel(group, emptyMap())
+    fun toGroupUiModel(group: Group): GroupUiModel = toGroupUiModel(group, emptyMap(), null)
 
     /**
      * Maps a [Group] to a [GroupUiModel] enriched with resolved member profiles.
      * [memberProfiles] is a `userId → User` map used to populate avatar URLs.
+     * When [currentUserId] is provided, pins that member to index 0 with nominative self-identification.
      */
-    fun toGroupUiModel(group: Group, memberProfiles: Map<String, User>): GroupUiModel
+    fun toGroupUiModel(group: Group, memberProfiles: Map<String, User>, currentUserId: String? = null): GroupUiModel
 
     /**
      * Maps a list of [Group]s to [GroupUiModel]s without member profile enrichment.
@@ -33,4 +36,9 @@ interface GroupUiMapper {
 
     fun toCurrencyUiModel(currency: Currency): CurrencyUiModel
     fun toCurrencyUiModels(currencies: List<Currency>): ImmutableList<CurrencyUiModel>
+
+    fun mapCurrencyExchangeRates(
+        baseCurrency: String,
+        rates: Map<String, BigDecimal?>
+    ): ImmutableList<GroupCurrencyRateUiModel>
 }

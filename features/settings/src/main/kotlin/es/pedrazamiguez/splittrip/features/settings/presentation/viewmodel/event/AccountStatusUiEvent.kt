@@ -5,8 +5,8 @@ import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 sealed interface AccountStatusUiEvent {
     data object LoadAccountStatus : AccountStatusUiEvent
     data class LinkGoogle(val idToken: String) : AccountStatusUiEvent
-    data object ShowLinkEmailDialog : AccountStatusUiEvent
-    data object DismissLinkEmailDialog : AccountStatusUiEvent
+    data object ShowLinkEmailSheet : AccountStatusUiEvent
+    data object DismissLinkEmailSheet : AccountStatusUiEvent
     data class LinkEmailChanged(val value: String) : AccountStatusUiEvent
     data class LinkPasswordChanged(val value: String) : AccountStatusUiEvent
     data class LinkConfirmPasswordChanged(val value: String) : AccountStatusUiEvent

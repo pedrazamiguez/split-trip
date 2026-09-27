@@ -21,6 +21,8 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
  * @param isGroupAmountError  Shows error styling on the group-amount field.
  * @param isExchangeRateStale When true, shows a warning that the rate may be outdated.
  * @param autoFocus           If `true`, the exchange-rate field requests focus on first composition.
+ * @param displayExchangeRate Optional custom display-formatted rate text for unfocused state.
+ * @param displayGroupAmount  Optional custom display-formatted group amount text for unfocused state.
  */
 data class CurrencyConversionCardState(
     val title: String,
@@ -35,5 +37,7 @@ data class CurrencyConversionCardState(
     val isGroupAmountError: Boolean = false,
     val isExchangeRateStale: Boolean = false,
     val isExchangeRateError: Boolean = false,
-    val autoFocus: Boolean = false
+    val autoFocus: Boolean = false,
+    val displayExchangeRate: String? = null,
+    val displayGroupAmount: String? = null
 )

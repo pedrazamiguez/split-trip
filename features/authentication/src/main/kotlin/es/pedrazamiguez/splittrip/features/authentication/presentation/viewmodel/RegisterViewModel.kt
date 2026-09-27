@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.authentication.presentation.viewmode
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiAction
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiState
@@ -15,7 +16,8 @@ import kotlinx.coroutines.flow.update
 import timber.log.Timber
 
 class RegisterViewModel(
-    private val registerSubmitEventHandler: RegisterSubmitEventHandler
+    private val registerSubmitEventHandler: RegisterSubmitEventHandler,
+    private val passwordValidationService: PasswordValidationService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
@@ -41,7 +43,14 @@ class RegisterViewModel(
             }
 
             is RegisterUiEvent.PasswordChanged -> {
-                _uiState.update { it.copy(password = event.value, error = null) }
+                val status = passwordValidationService.validate(event.value)
+                _uiState.update {
+                    it.copy(
+                        password = event.value,
+                        passwordRequirementStatus = status,
+                        error = null
+                    )
+                }
             }
 
             is RegisterUiEvent.ConfirmPasswordChanged -> {

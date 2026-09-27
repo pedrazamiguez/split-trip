@@ -116,7 +116,6 @@ class AddOnEventHandlerTest {
             exchangeRateCalculationService = ExchangeRateCalculationServiceImpl(),
             expenseCalculatorService = ExpenseCalculatorServiceImpl(),
             splitPreviewService = splitPreviewService,
-            formattingHelper = formattingHelper,
             getExchangeRateUseCase = getExchangeRateUseCase,
             previewCashExchangeRateUseCase = previewCashExchangeRateUseCase
         )

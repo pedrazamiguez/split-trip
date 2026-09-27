@@ -27,7 +27,9 @@ class AddCashWithdrawalUiMapperTest {
 
     @BeforeEach
     fun setUp() {
-        resourceProvider = mockk(relaxed = true)
+        resourceProvider = mockk(relaxed = true) {
+            every { getString(DesignR.string.self_identification_nominative) } returns "You"
+        }
         userUiMapper = UserUiMapper(resourceProvider)
         mapper = AddCashWithdrawalUiMapper(resourceProvider, userUiMapper)
     }
@@ -160,14 +162,14 @@ class AddCashWithdrawalUiMapperTest {
         @Test
         fun `toMemberOptions maps member IDs to MemberOptionUiModel list`() {
             val result = mapper.toMemberOptions(
-                memberIds = listOf("user-1", "user-2"),
+                memberIds = listOf("user-2", "user-1"),
                 memberProfiles = profiles,
                 currentUserId = "user-1"
             )
 
             assertEquals(2, result.size)
             assertEquals("user-1", result[0].userId)
-            assertEquals("Andrés", result[0].displayName)
+            assertEquals("You", result[0].displayName)
             assertTrue(result[0].isCurrentUser)
             assertEquals("user-2", result[1].userId)
             assertEquals("Ana", result[1].displayName)

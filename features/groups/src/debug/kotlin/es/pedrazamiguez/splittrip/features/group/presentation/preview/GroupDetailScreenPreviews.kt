@@ -43,7 +43,8 @@ private fun GroupDetailScreenActivePreview() {
                 group = groupUiModel,
                 isUserAdmin = true,
                 isOnlyGroup = false,
-                subunitsCount = 3
+                subunitsCount = 3,
+                currencyRates = PREVIEW_CURRENCY_RATES
             ),
             isActiveGroup = true
         )
@@ -88,7 +89,10 @@ private fun GroupDetailScreenDeleteDialogPreview() {
 @Composable
 private fun GroupDetailInfoSectionPreview() {
     GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_1) { groupUiModel ->
-        GroupDetailInfoSection(group = groupUiModel)
+        GroupDetailInfoSection(
+            group = groupUiModel,
+            currencyRates = PREVIEW_CURRENCY_RATES
+        )
     }
 }
 

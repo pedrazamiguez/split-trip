@@ -182,6 +182,32 @@ class CreateEditSubunitViewModelTest {
         }
 
         @Test
+        fun `init in create mode when creation disabled emits error and paywall`() = runTest(testDispatcher) {
+            every {
+                featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
+            } returns flowOf(false)
+            every { featureGateService.isActingUserPro() } returns flowOf(false)
+            setupDefaultMocks()
+            createViewModel()
+
+            val actions = mutableListOf<CreateEditSubunitUiAction>()
+            val collectJob = backgroundScope.launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.init("group-1", null)
+            advanceUntilIdle()
+
+            assertEquals(3, actions.size)
+            assertEquals(
+                CreateEditSubunitUiAction.ShowError(UiText.StringResource(R.string.subunit_error_pro_required)),
+                actions[0]
+            )
+            assertEquals(CreateEditSubunitUiAction.NavigateToSubscriptions, actions[1])
+            assertEquals(CreateEditSubunitUiAction.NavigateBack, actions[2])
+
+            collectJob.cancel()
+        }
+
+        @Test
         fun `UpdateName updates name and clears error`() = runTest(testDispatcher) {
             setupDefaultMocks()
             createViewModel()
@@ -926,6 +952,48 @@ class CreateEditSubunitViewModelTest {
 
             // Then — step unchanged
             assertEquals(stepBefore, viewModel.uiState.value.currentStep)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `JumpToStep allows forward jump when in edit mode`() = runTest(testDispatcher) {
+            setupDefaultMocks(subunits = listOf(testSubunit))
+            createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.init("group-1", "sub-1")
+            advanceUntilIdle()
+
+            assertEquals(CreateEditSubunitStep.NAME, viewModel.uiState.value.currentStep)
+            assertTrue(viewModel.uiState.value.isEditing)
+
+            // When — jump forward to SHARES (index 2)
+            viewModel.onEvent(CreateEditSubunitUiEvent.JumpToStep(2))
+            advanceUntilIdle()
+
+            // Then
+            assertEquals(CreateEditSubunitStep.SHARES, viewModel.uiState.value.currentStep)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `JumpToStep ignores forward jump when in create mode`() = runTest(testDispatcher) {
+            setupDefaultMocks()
+            createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.init("group-1", null)
+            advanceUntilIdle()
+
+            assertEquals(CreateEditSubunitStep.NAME, viewModel.uiState.value.currentStep)
+            assertFalse(viewModel.uiState.value.isEditing)
+
+            // When — attempt to jump forward to REVIEW (index 3)
+            viewModel.onEvent(CreateEditSubunitUiEvent.JumpToStep(3))
+            advanceUntilIdle()
+
+            // Then — step unchanged
+            assertEquals(CreateEditSubunitStep.NAME, viewModel.uiState.value.currentStep)
             collectJob.cancel()
         }
     }
