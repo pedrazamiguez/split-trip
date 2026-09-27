@@ -11,6 +11,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.PasswordRequirementsIndicator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiEvent
@@ -56,6 +57,10 @@ internal fun RegisterFormFields(
             enabled = !anyLoading,
             keyboardType = KeyboardType.Password,
             imeAction = ImeAction.Next,
+            modifier = Modifier.fillMaxWidth()
+        )
+        PasswordRequirementsIndicator(
+            status = uiState.passwordRequirementStatus,
             modifier = Modifier.fillMaxWidth()
         )
         StyledOutlinedTextField(

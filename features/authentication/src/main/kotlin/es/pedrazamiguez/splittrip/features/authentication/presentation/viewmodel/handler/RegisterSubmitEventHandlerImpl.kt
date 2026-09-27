@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.authentication.presentation.viewmode
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.exception.EmailCollisionException
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
+import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.RegisterUiAction
@@ -16,7 +17,8 @@ import timber.log.Timber
 
 class RegisterSubmitEventHandlerImpl(
     private val signUpWithEmailUseCase: SignUpWithEmailUseCase,
-    private val emailValidationService: EmailValidationService
+    private val emailValidationService: EmailValidationService,
+    private val passwordValidationService: PasswordValidationService
 ) : RegisterSubmitEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<RegisterUiState>
@@ -53,8 +55,8 @@ class RegisterSubmitEventHandlerImpl(
             return
         }
 
-        if (password.length < MIN_PASSWORD_LENGTH) {
-            _uiState.update { it.copy(error = UiText.StringResource(R.string.register_error_password_too_short)) }
+        if (!passwordValidationService.isValidPassword(password)) {
+            _uiState.update { it.copy(error = UiText.StringResource(R.string.register_error_password_complexity)) }
             return
         }
 
@@ -96,9 +98,5 @@ class RegisterSubmitEventHandlerImpl(
                     }
                 }
         }
-    }
-
-    companion object {
-        private const val MIN_PASSWORD_LENGTH = 6
     }
 }

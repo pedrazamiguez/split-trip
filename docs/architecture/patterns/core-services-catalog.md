@@ -594,6 +594,16 @@ Creates `AddOnAmountResolver` based on `AddOnValueType` (EXACT or PERCENTAGE).
 |---|---|
 | `isValidEmail(email)` | Pure Kotlin regex email validation. No Android dependencies. |
 
+#### `PasswordValidationService`
+
+**File:** `service/PasswordValidationService.kt`
+**Impl:** `service/impl/PasswordValidationServiceImpl.kt`
+
+| Method | Purpose |
+|---|---|
+| `validate(password)` | Evaluates 5 complexity rules (min 8 chars, uppercase, lowercase, digit, special char) and returns `PasswordRequirementStatus`. |
+| `isValidPassword(password)` | Returns `true` if all 5 complexity rules are satisfied. |
+
 ### E.5 Membership & Auth Services
 
 #### `GroupMembershipService`
@@ -763,6 +773,7 @@ confirmPendingSync:  PENDING_SYNC ──server verified──→ SYNCED
 | Resolve add-on amount | `AddOnCalculationService.resolveAddOnAmountCents()` |
 | Validate expense title/amount | `ExpenseValidationService` |
 | Validate email | `EmailValidationService.isValidEmail()` |
+| Validate password complexity | `PasswordValidationService.validate()` / `.isValidPassword()` |
 | Check group membership | `GroupMembershipService.requireMembership()` |
 | Convert cents to BigDecimal | `ExpenseCalculatorService.centsToBigDecimal()` |
 | Create a confirmation dialog | `DestructiveConfirmationDialog` |

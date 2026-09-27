@@ -308,6 +308,7 @@ Before creating any new service, utility, formatter, or UI component, **check th
 | `ContributionValidationService` | Contribution amount and scope validation |
 | `CashWithdrawalValidationService` | Cash withdrawal field validation |
 | `EmailValidationService` | Pure Kotlin regex email validation |
+| `PasswordValidationService` | Evaluates 5 password complexity rules (8 chars, upper, lower, digit, symbol) |
 | `GroupMembershipService` | Enforces user is a group member before writes |
 | `CurrencyConverter` (object) | Currency conversion, amount parsing, string normalization |
 

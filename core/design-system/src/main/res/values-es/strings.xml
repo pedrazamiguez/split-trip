@@ -198,6 +198,13 @@
     <string name="upgrade_dialog_dismiss">Ahora no</string>
     <string name="badge_pro">PRO</string>
 
+    <!-- Password Requirements Indicator -->
+    <string name="password_requirement_min_length">Al menos 8 caracteres</string>
+    <string name="password_requirement_uppercase">Al menos una letra mayúscula (A-Z)</string>
+    <string name="password_requirement_lowercase">Al menos una letra minúscula (a-z)</string>
+    <string name="password_requirement_digit">Al menos un número (0-9)</string>
+    <string name="password_requirement_special_char">Al menos un carácter especial (!@#$%...)</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>
