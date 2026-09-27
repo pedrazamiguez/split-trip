@@ -24,7 +24,8 @@
     <string name="register_sign_in_link">Iniçiâh çeçión</string>
     <string name="register_error_invalid_email">Por fabôh, introduçe un correo elêttrónico bálido.</string>
     <string name="register_error_empty_display_name">Er nombre no puede êttâh baçío.</string>
-    <string name="register_error_password_too_short">La contraçeña debe tenêh ar menô 6 carâtterê.</string>
+    <string name="register_error_password_too_short">La contraçeña debe tenêh ar menô 8 carâtterê.</string>
+    <string name="register_error_password_complexity">La contraçeña no cumple con lô requiçitô de çeguridá.</string>
     <string name="register_error_passwords_do_not_match">Lâ contraçeñâ no coinçiden.</string>
     <string name="register_error_failed">Errôh ar creâh la cuenta. Por fabôh, inténtelo de nuebo.</string>
     <string name="forgot_password_title">Rêttableçêh contraçeña</string>

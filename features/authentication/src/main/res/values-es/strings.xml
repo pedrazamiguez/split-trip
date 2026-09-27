@@ -26,7 +26,8 @@
     <string name="register_sign_in_link">Iniciar sesión</string>
     <string name="register_error_invalid_email">Por favor, introduce un correo electrónico válido.</string>
     <string name="register_error_empty_display_name">El nombre no puede estar vacío.</string>
-    <string name="register_error_password_too_short">La contraseña debe tener al menos 6 caracteres.</string>
+    <string name="register_error_password_too_short">La contraseña debe tener al menos 8 caracteres.</string>
+    <string name="register_error_password_complexity">La contraseña no cumple con los requisitos de seguridad.</string>
     <string name="register_error_passwords_do_not_match">Las contraseñas no coinciden.</string>
     <string name="register_error_failed">Error al crear la cuenta. Por favor, inténtelo de nuevo.</string>
 
