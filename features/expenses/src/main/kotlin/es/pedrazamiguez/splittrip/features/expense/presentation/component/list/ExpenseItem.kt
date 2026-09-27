@@ -29,7 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickable
-import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
+import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedTextAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CirclePlus
@@ -131,7 +131,7 @@ fun ExpenseItem(
                                 text = expenseUiModel.formattedAmount,
                                 modifier = Modifier
                                     .padding(horizontal = 14.dp, vertical = MaterialTheme.spacing.Small)
-                                    .sharedElementAnimation(
+                                    .sharedTextAnimation(
                                         key = SharedElementKeys.expenseAmount(expenseUiModel.id),
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope
@@ -139,6 +139,8 @@ fun ExpenseItem(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                maxLines = 1,
+                                softWrap = false,
                                 textDecoration = if (expenseUiModel.isCancelled) TextDecoration.LineThrough else null
                             )
                         }

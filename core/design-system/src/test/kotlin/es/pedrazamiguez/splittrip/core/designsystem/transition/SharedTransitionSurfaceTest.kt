@@ -19,6 +19,18 @@ class SharedTransitionSurfaceTest {
     }
 
     @Test
+    fun `expenseAmount key formats correctly`() {
+        val key = SharedElementKeys.expenseAmount("123")
+        assertEquals("expense-amount-123", key)
+    }
+
+    @Test
+    fun `contributionAmount key formats correctly`() {
+        val key = SharedElementKeys.contributionAmount("456")
+        assertEquals("contribution-amount-456", key)
+    }
+
+    @Test
     fun `containerSharedTransitionModifier constants match specification`() {
         assertEquals(300, TRANSITION_DURATION_MS)
         assertEquals(0.8f, SPRING_DAMPING_RATIO)

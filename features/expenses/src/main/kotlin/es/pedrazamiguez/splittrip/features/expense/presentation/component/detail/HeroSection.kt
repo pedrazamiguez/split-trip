@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.detai
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
-import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedElementAnimation
+import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedTextAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
@@ -112,20 +113,27 @@ internal fun HeroSection(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = expense.formattedGroupAmount,
-                    modifier = Modifier.fillMaxWidth().sharedElementAnimation(
-                        key = SharedElementKeys.expenseAmount(expense.id),
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope
-                    ),
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = HERO_AMOUNT_SIZE,
-                    textAlign = TextAlign.Center,
-                    textDecoration = if (expense.isCancelled) TextDecoration.LineThrough else null
-                )
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = expense.formattedGroupAmount,
+                        modifier = Modifier.sharedTextAnimation(
+                            key = SharedElementKeys.expenseAmount(expense.id),
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = HERO_AMOUNT_SIZE,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        softWrap = false,
+                        textDecoration = if (expense.isCancelled) TextDecoration.LineThrough else null
+                    )
+                }
                 Text(
                     text = expense.paidByText,
                     modifier = Modifier.fillMaxWidth(),
