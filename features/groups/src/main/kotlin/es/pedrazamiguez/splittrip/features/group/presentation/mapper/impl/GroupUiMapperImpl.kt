@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.mapper.impl
 
+import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
+import es.pedrazamiguez.splittrip.core.common.extensions.localeAwareComparator
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.extension.resolveLocalizedName
@@ -29,33 +31,23 @@ class GroupUiMapperImpl(
     private val userUiMapper: UserUiMapper
 ) : GroupUiMapper {
 
-    override fun toGroupUiModel(group: Group, memberProfiles: Map<String, User>): GroupUiModel =
+    override fun toGroupUiModel(
+        group: Group,
+        memberProfiles: Map<String, User>,
+        currentUserId: String?
+    ): GroupUiModel =
         with(group) {
             val currentLocale = localeProvider.getCurrentLocale()
             val memberCount = members.size
+            val memberUiModels = buildGroupMemberUiModels(group, memberProfiles, currentUserId)
 
-            val avatarUrls = members
-                .mapNotNull { userId -> memberProfiles[userId]?.profileImagePath }
+            val avatarUrls = memberUiModels
+                .mapNotNull { it.avatarUrl }
                 .take(MAX_VISIBLE_AVATARS)
             // Overflow = members not represented by any avatar circle.
             // When no avatars are shown at all (nobody has a profile image),
             // overflow stays 0 — the member-count text already conveys the number.
             val overflowCount = if (avatarUrls.isEmpty()) 0 else maxOf(0, memberCount - avatarUrls.size)
-
-            val memberUiModels = members.map { userId ->
-                val profile = memberProfiles[userId]
-                val isCreator = userId == createdBy
-                val roleBadgeText = resourceProvider.getString(
-                    if (isCreator) R.string.group_member_role_creator else R.string.group_member_role_member
-                )
-                GroupMemberUiModel(
-                    userId = userId,
-                    displayName = userUiMapper.mapToDisplayName(user = profile, fallbackUserId = userId),
-                    avatarUrl = profile?.profileImagePath,
-                    isCreator = isCreator,
-                    roleBadgeText = roleBadgeText
-                )
-            }.toImmutableList()
 
             val (visibleExtraCurrencies, extraCurrenciesOverflowText) = when {
                 extraCurrencies.size <= MAX_DIRECT_EXTRA_CURRENCIES -> {
@@ -130,5 +122,40 @@ class GroupUiMapperImpl(
                 formattedRate = formattedRate
             )
         }.toImmutableList()
+    }
+
+    private fun buildGroupMemberUiModels(
+        group: Group,
+        memberProfiles: Map<String, User>,
+        currentUserId: String?
+    ): ImmutableList<GroupMemberUiModel> {
+        val currentLocale = localeProvider.getCurrentLocale()
+        val localeComparator = localeAwareComparator<GroupMemberUiModel>(currentLocale) { it.displayName }
+        return group.members.map { userId ->
+            val profile = memberProfiles[userId]
+            val isCreator = userId == group.createdBy
+            val roleBadgeText = resourceProvider.getString(
+                if (isCreator) R.string.group_member_role_creator else R.string.group_member_role_member
+            )
+            GroupMemberUiModel(
+                userId = userId,
+                displayName = userUiMapper.mapToDisplayName(
+                    user = profile,
+                    fallbackUserId = userId,
+                    currentUserId = currentUserId,
+                    selfIdentificationContext = if (currentUserId != null) {
+                        SelfIdentificationContextEnum.NOMINATIVE
+                    } else {
+                        null
+                    }
+                ),
+                avatarUrl = profile?.profileImagePath,
+                isCreator = isCreator,
+                roleBadgeText = roleBadgeText
+            )
+        }.sortedWith(
+            compareByDescending<GroupMemberUiModel> { it.userId == currentUserId }
+                .thenComparing(localeComparator)
+        ).toImmutableList()
     }
 }

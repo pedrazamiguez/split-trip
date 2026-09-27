@@ -38,6 +38,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigDecimal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
@@ -147,8 +148,9 @@ class GroupDetailViewModelTest {
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
         every { getGroupSubunitsFlowUseCase(any()) } returns flowOf(emptyList())
         every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup))
-        every { groupUiMapper.toGroupUiModel(any(), any()) } returns testGroupUiModel
+        every { groupUiMapper.toGroupUiModel(any(), any(), any()) } returns testGroupUiModel
         every { observeGroupUseCase(any()) } returns flowOf(testGroup)
+        every { authenticationService.currentUserId() } returns "user-1"
         every { authenticationService.requireUserId() } returns "user-1"
         every { getGroupExpensesFlowUseCase(any()) } returns flowOf(emptyList())
         every { getGroupContributionsFlowUseCase(any()) } returns flowOf(emptyList())
@@ -220,6 +222,7 @@ class GroupDetailViewModelTest {
             assertFalse(state.isLoading)
             assertNotNull(state.group)
             assertEquals(testGroupUiModel, state.group)
+            verify { groupUiMapper.toGroupUiModel(testGroup, any(), "user-1") }
 
             collectJob.cancel()
         }

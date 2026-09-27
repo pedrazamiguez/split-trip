@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
+import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
@@ -30,8 +31,10 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStr
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTrancheDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitBreakdownItemUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubunitSplitGroupUiModel
+import java.util.Locale
 import kotlin.math.abs
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -42,8 +45,15 @@ class ExpenseDetailUiMapper(
     private val expenseCalculatorService: ExpenseCalculatorService,
     private val addOnCalculationService: AddOnCalculationService,
     private val paymentStatusBadgeUiMapper: PaymentStatusBadgeUiMapper,
-    private val userUiMapper: UserUiMapper
+    private val userUiMapper: UserUiMapper,
+    private val localeProvider: LocaleProvider? = null
 ) {
+
+    private data class SplitBreakdownResult(
+        val soloSplits: ImmutableList<SplitDetailUiModel>,
+        val splitGroups: ImmutableList<SubunitSplitGroupUiModel>,
+        val splitBreakdownItems: ImmutableList<SplitBreakdownItemUiModel>
+    )
 
     fun map(
         expense: Expense,
@@ -74,7 +84,7 @@ class ExpenseDetailUiMapper(
         @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
         fun build(): ExpenseDetailUiModel {
             val youLabel = resourceProvider.getString(R.string.you_label)
-            val (soloSplits, splitGroups) = resolveSplits()
+            val (soloSplits, splitGroups, splitBreakdownItems) = resolveSplits()
             val isForeign = expense.sourceCurrency != expense.groupCurrency
             val badgeData = paymentStatusBadgeUiMapper.buildBadge(expense)
             val badgeIcon = badgeData?.let {
@@ -165,6 +175,7 @@ class ExpenseDetailUiMapper(
                 splitTypeText = resourceProvider.getString(expense.splitType.toStringRes()),
                 splits = soloSplits,
                 splitGroups = splitGroups,
+                splitBreakdownItems = splitBreakdownItems,
                 hasAddOns = expense.addOns.isNotEmpty(),
                 hasIncludedAddOns = expense.addOns.any { it.mode == AddOnMode.INCLUDED },
                 addOns = mapAddOns(expense.addOns, expense.groupCurrency),
@@ -258,7 +269,8 @@ class ExpenseDetailUiMapper(
         currentUserId: String?,
         subunitNameLookup: Map<String, String>,
         groupMemberIds: List<String>
-    ): Pair<ImmutableList<SplitDetailUiModel>, ImmutableList<SubunitSplitGroupUiModel>> {
+    ): SplitBreakdownResult {
+        val locale = localeProvider?.getCurrentLocale() ?: Locale.getDefault()
         val rows = expense.splits.map { split ->
             split to mapSplitRow(
                 split = split,
@@ -274,16 +286,34 @@ class ExpenseDetailUiMapper(
             .filter { !it.first.subunitId.isNullOrBlank() }
             .groupBy { it.first.subunitId!! }
             .map { (subunitId, entries) ->
-                buildSubunitGroup(subunitId, entries.map { it.second }, expense, subunitNameLookup)
+                buildSubunitGroup(
+                    subunitId = subunitId,
+                    members = entries.map { it.second },
+                    expense = expense,
+                    subunitNameLookup = subunitNameLookup,
+                    currentUserId = currentUserId,
+                    locale = locale
+                )
             }
-        return solo.toImmutableList() to grouped.toImmutableList()
+        val unsortedItems = solo.map { SplitBreakdownItemUiModel.Solo(it) } +
+            grouped.map { SplitBreakdownItemUiModel.Subunit(it) }
+        val sortedBreakdownItems = sortSplitBreakdownItems(unsortedItems, currentUserId, locale)
+        val sortedSolo = sortedBreakdownItems.filterIsInstance<SplitBreakdownItemUiModel.Solo>()
+            .map { it.split }
+            .toImmutableList()
+        val sortedGrouped = sortedBreakdownItems.filterIsInstance<SplitBreakdownItemUiModel.Subunit>()
+            .map { it.group }
+            .toImmutableList()
+        return SplitBreakdownResult(sortedSolo, sortedGrouped, sortedBreakdownItems)
     }
 
     private fun buildSubunitGroup(
         subunitId: String,
         members: List<SplitDetailUiModel>,
         expense: Expense,
-        subunitNameLookup: Map<String, String>
+        subunitNameLookup: Map<String, String>,
+        currentUserId: String?,
+        locale: Locale
     ): SubunitSplitGroupUiModel {
         val label = subunitNameLookup[subunitId]
             ?: resourceProvider.getString(R.string.expense_detail_subunit_fallback_label)
@@ -300,6 +330,7 @@ class ExpenseDetailUiMapper(
             .firstOrNull { it.subunitId == subunitId }
             ?.splitType
             ?: SplitType.EQUAL
+        val sortedMembers = sortSubunitMembers(members, currentUserId, locale)
         return SubunitSplitGroupUiModel(
             subunitId = subunitId,
             subunitLabel = label,
@@ -312,8 +343,8 @@ class ExpenseDetailUiMapper(
             } else {
                 null
             },
-            memberCount = members.size,
-            members = members.toImmutableList(),
+            memberCount = sortedMembers.size,
+            members = sortedMembers,
             splitTypeText = resourceProvider.getString(intraType.toStringRes())
         )
     }

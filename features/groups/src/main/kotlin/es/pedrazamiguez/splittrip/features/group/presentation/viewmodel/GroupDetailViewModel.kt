@@ -101,7 +101,8 @@ class GroupDetailViewModel(
                         emptyMap()
                     }
 
-                    val groupUiModel = groupUiMapper.toGroupUiModel(group, memberProfiles)
+                    val currentUserId = authenticationService.currentUserId()
+                    val groupUiModel = groupUiMapper.toGroupUiModel(group, memberProfiles, currentUserId)
 
                     val currencyRates = if (group.extraCurrencies.isNotEmpty()) {
                         coroutineScope {

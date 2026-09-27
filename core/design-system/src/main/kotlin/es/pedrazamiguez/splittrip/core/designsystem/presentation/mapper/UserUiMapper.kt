@@ -2,11 +2,14 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.enums.GrammaticalGenderEnum
 import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
+import es.pedrazamiguez.splittrip.core.common.extensions.localeAwareComparator
+import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.common.util.DisplayNameResolver
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.User
+import java.util.Locale
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -16,7 +19,8 @@ import kotlinx.collections.immutable.toImmutableList
  * Provides shared formatting and resolution for User profiles.
  */
 class UserUiMapper(
-    private val resourceProvider: ResourceProvider
+    private val resourceProvider: ResourceProvider,
+    private val localeProvider: LocaleProvider? = null
 ) {
 
     /**
@@ -122,15 +126,25 @@ class UserUiMapper(
         memberIds: List<String>,
         memberProfiles: Map<String, User>,
         currentUserId: String?
-    ): ImmutableList<MemberOptionUiModel> = memberIds.map { memberId ->
-        val user = memberProfiles[memberId]
-        MemberOptionUiModel(
-            userId = memberId,
-            displayName = mapToDisplayName(
-                user = user,
-                fallbackUserId = memberId
-            ),
-            isCurrentUser = memberId == currentUserId
-        )
-    }.toImmutableList()
+    ): ImmutableList<MemberOptionUiModel> {
+        val locale = localeProvider?.getCurrentLocale() ?: Locale.getDefault()
+        val localeComparator = localeAwareComparator<MemberOptionUiModel>(locale) { it.displayName }
+        return memberIds.map { memberId ->
+            val user = memberProfiles[memberId]
+            val isCurrentUser = currentUserId != null && memberId == currentUserId
+            MemberOptionUiModel(
+                userId = memberId,
+                displayName = mapToDisplayName(
+                    user = user,
+                    fallbackUserId = memberId,
+                    currentUserId = currentUserId,
+                    selfIdentificationContext = if (isCurrentUser) SelfIdentificationContextEnum.NOMINATIVE else null
+                ),
+                isCurrentUser = isCurrentUser
+            )
+        }.sortedWith(
+            compareByDescending<MemberOptionUiModel> { it.isCurrentUser }
+                .thenComparing(localeComparator)
+        ).toImmutableList()
+    }
 }

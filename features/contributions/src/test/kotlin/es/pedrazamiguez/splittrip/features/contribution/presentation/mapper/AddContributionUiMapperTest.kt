@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
@@ -26,8 +28,11 @@ class AddContributionUiMapperTest {
     @BeforeEach
     fun setUp() {
         localeProvider = mockk()
-        userUiMapper = UserUiMapper(mockk(relaxed = true))
+        val resourceProvider = mockk<ResourceProvider>(relaxed = true) {
+            every { getString(R.string.self_identification_nominative) } returns "You"
+        }
         every { localeProvider.getCurrentLocale() } returns Locale.US
+        userUiMapper = UserUiMapper(resourceProvider, localeProvider)
         mapper = AddContributionUiMapper(localeProvider, userUiMapper)
     }
 
@@ -170,14 +175,16 @@ class AddContributionUiMapperTest {
             )
 
             val result = mapper.toMemberOptions(
-                memberIds = listOf("user-1", "user-2"),
+                memberIds = listOf("user-2", "user-1"),
                 memberProfiles = profiles,
                 currentUserId = "user-1"
             )
 
             assertEquals(2, result.size)
-            assertEquals("Andrés", result[0].displayName)
+            assertEquals("user-1", result[0].userId)
+            assertEquals("You", result[0].displayName)
             assertTrue(result[0].isCurrentUser)
+            assertEquals("user-2", result[1].userId)
             assertEquals("Ana", result[1].displayName)
             assertFalse(result[1].isCurrentUser)
         }
@@ -187,7 +194,7 @@ class AddContributionUiMapperTest {
             val result = mapper.toMemberOptions(
                 memberIds = listOf("user-1"),
                 memberProfiles = emptyMap(),
-                currentUserId = "user-1"
+                currentUserId = null
             )
 
             assertEquals(1, result.size)
@@ -203,7 +210,7 @@ class AddContributionUiMapperTest {
             val result = mapper.toMemberOptions(
                 memberIds = listOf("user-1"),
                 memberProfiles = profiles,
-                currentUserId = "user-1"
+                currentUserId = null
             )
 
             assertEquals("a@test.com", result[0].displayName)
@@ -218,7 +225,7 @@ class AddContributionUiMapperTest {
             val result = mapper.toMemberOptions(
                 memberIds = listOf("user-1"),
                 memberProfiles = profiles,
-                currentUserId = "user-1"
+                currentUserId = null
             )
 
             assertEquals("user-1", result[0].displayName)
