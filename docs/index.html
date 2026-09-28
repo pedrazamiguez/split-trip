@@ -250,6 +250,9 @@
     }
 
     .lang-btn, .theme-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: transparent;
       border: none;
       color: var(--text-secondary);
@@ -260,6 +263,21 @@
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: inherit;
+    }
+
+    .theme-btn {
+      padding: 6px 10px;
+    }
+
+    .theme-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      display: block;
     }
 
     .lang-btn:hover, .theme-btn:hover {
@@ -384,6 +402,7 @@
       width: 24px;
       height: 24px;
       fill: currentColor;
+      flex-shrink: 0;
     }
 
     .btn-secondary {
@@ -551,10 +570,28 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
       background-color: var(--bg-surface-low);
       border: 1px solid var(--border-color);
       margin-bottom: 4px;
+      color: var(--accent-primary);
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+    }
+
+    .feature-card:hover .feature-icon-wrapper {
+      background-color: var(--badge-bg);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    .feature-icon-wrapper svg {
+      width: 26px;
+      height: 26px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      display: block;
     }
 
     .feature-card h3 {
@@ -780,9 +817,25 @@
 
         <!-- Theme Switcher -->
         <div class="theme-switcher" role="group" aria-label="Colour theme">
-          <button type="button" class="theme-btn" id="theme-light" title="Light Mode" onclick="setTheme('light')">☀️</button>
-          <button type="button" class="theme-btn" id="theme-auto" title="System Theme" onclick="setTheme('auto')">💻</button>
-          <button type="button" class="theme-btn" id="theme-dark" title="Dark Mode" onclick="setTheme('dark')">🌙</button>
+          <button type="button" class="theme-btn" id="theme-light" title="Light Theme" aria-label="Light Theme" onclick="setTheme('light')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
+              <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>
+            </svg>
+          </button>
+          <button type="button" class="theme-btn" id="theme-auto" title="System Theme" aria-label="System Theme" onclick="setTheme('auto')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 5a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-10"/>
+              <path d="M7 20h10"/>
+              <path d="M9 16v4"/>
+              <path d="M15 16v4"/>
+            </svg>
+          </button>
+          <button type="button" class="theme-btn" id="theme-dark" title="Dark Theme" aria-label="Dark Theme" onclick="setTheme('dark')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"/>
+            </svg>
+          </button>
         </div>
 
         <a href="#download" class="header-cta-link">
@@ -816,7 +869,7 @@
         <div class="hero-buttons" id="download">
           <a href="https://play.google.com/store/apps/details?id=es.pedrazamiguez.splittrip" class="btn-playstore" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3.609 1.814L13.792 12 3.61 22.186c-.367-.34-.61-.83-.61-1.396V3.21c0-.566.243-1.056.609-1.396zm11.242 11.245l2.428 2.429-11.83 6.83 9.402-9.259zm0-2.118L5.449 1.682l11.83 6.83-2.428 2.429zm3.504 2.118l3.195-1.845c.87-.502.87-1.326 0-1.828l-3.195-1.845-2.38 2.38 2.38 2.38z"/>
+              <path d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594zM1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924zm12.207 10.065l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973zm0 2.067l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z"/>
             </svg>
             <div>
               <span style="display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;">Get it on</span>
@@ -889,7 +942,11 @@
       <div class="features-grid">
         <!-- Pillar 1 -->
         <div class="feature-card">
-          <div class="feature-icon-wrapper">⚡</div>
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>
+            </svg>
+          </div>
           <h3 data-lang="en">True Offline-First</h3>
           <h3 data-lang="es">Funcionamiento sin conexión</h3>
           <p data-lang="en">
@@ -902,7 +959,15 @@
 
         <!-- Pillar 2 -->
         <div class="feature-card">
-          <div class="feature-icon-wrapper">🌍</div>
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/>
+              <path d="M3.6 9h16.8"/>
+              <path d="M3.6 15h16.8"/>
+              <path d="M11.5 3a17 17 0 0 0 0 18"/>
+              <path d="M12.5 3a17 17 0 0 1 0 18"/>
+            </svg>
+          </div>
           <h3 data-lang="en">Multi-Currency &amp; Live Rates</h3>
           <h3 data-lang="es">Multidivisa y tipos de cambio</h3>
           <p data-lang="en">
@@ -915,7 +980,15 @@
 
         <!-- Pillar 3 -->
         <div class="feature-card">
-          <div class="feature-icon-wrapper">🤝</div>
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 20l10 0"/>
+              <path d="M6 6l6 -1l6 1"/>
+              <path d="M12 3l0 17"/>
+              <path d="M9 12l-3 -6l-3 6a3 3 0 0 0 6 0"/>
+              <path d="M21 12l-3 -6l-3 6a3 3 0 0 0 6 0"/>
+            </svg>
+          </div>
           <h3 data-lang="en">Settlement Consensus</h3>
           <h3 data-lang="es">Acuerdos y consenso de pago</h3>
           <p data-lang="en">
@@ -928,7 +1001,12 @@
 
         <!-- Pillar 4 -->
         <div class="feature-card">
-          <div class="feature-icon-wrapper">💰</div>
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/>
+              <path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/>
+            </svg>
+          </div>
           <h3 data-lang="en">Group Pockets &amp; Cash</h3>
           <h3 data-lang="es">Pockets y efectivo compartido</h3>
           <p data-lang="en">
@@ -941,7 +1019,14 @@
 
         <!-- Pillar 5 -->
         <div class="feature-card">
-          <div class="feature-icon-wrapper">👥</div>
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
+              <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              <path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
+            </svg>
+          </div>
           <h3 data-lang="en">Subunits for Couples</h3>
           <h3 data-lang="es">Subunidades para parejas</h3>
           <p data-lang="en">
@@ -954,7 +1039,13 @@
 
         <!-- Pillar 6 -->
         <div class="feature-card">
-          <div class="feature-icon-wrapper">🔒</div>
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"/>
+              <path d="M11 11a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
+              <path d="M12 12l0 2.5"/>
+            </svg>
+          </div>
           <h3 data-lang="en">Ad-Free with Pro &amp; Privacy-First</h3>
           <h3 data-lang="es">Sin anuncios con Pro y máxima privacidad</h3>
           <p data-lang="en">
@@ -1024,7 +1115,7 @@
       <p data-lang="es">Descarga SplitTrip para Android hoy y empieza a compartir los gastos de viaje de forma justa y sin complicaciones.</p>
       <a href="https://play.google.com/store/apps/details?id=es.pedrazamiguez.splittrip" class="btn-playstore" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3.609 1.814L13.792 12 3.61 22.186c-.367-.34-.61-.83-.61-1.396V3.21c0-.566.243-1.056.609-1.396zm11.242 11.245l2.428 2.429-11.83 6.83 9.402-9.259zm0-2.118L5.449 1.682l11.83 6.83-2.428 2.429zm3.504 2.118l3.195-1.845c.87-.502.87-1.326 0-1.828l-3.195-1.845-2.38 2.38 2.38 2.38z"/>
+          <path d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594zM1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924zm12.207 10.065l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973zm0 2.067l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z"/>
         </svg>
         <div>
           <span style="display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;">Get it on</span>
