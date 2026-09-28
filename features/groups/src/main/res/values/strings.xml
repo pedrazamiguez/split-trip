@@ -41,8 +41,8 @@
     <string name="group_error_load_currencies">Couldn\'t load currencies. Are you online?</string>
     <string name="group_created_success">Done! \"%1$s\" is ready for the trip</string>
     <plurals name="group_members_count">
-        <item quantity="one">%d traveler</item>
-        <item quantity="other">%d travelers</item>
+        <item quantity="one">%d traveller</item>
+        <item quantity="other">%d travellers</item>
     </plurals>
     <string name="group_delete_title">Delete Group?</string>
     <string name="group_delete_warning">Are you sure you want to delete \"%1$s\"? This will remove all expenses and cannot be undone.</string>
@@ -121,15 +121,15 @@
     <string name="group_image_step_uploading">Uploading image…</string>
 
     <!-- Unregistered members display names step -->
-    <string name="group_wizard_step_unregistered_names">Travelers</string>
-    <string name="group_unregistered_names_title">Unregistered travelers</string>
-    <string name="group_unregistered_names_subtitle">Assign display names for people who aren\'t registered yet so they are easier to recognize in splits and balances.</string>
+    <string name="group_wizard_step_unregistered_names">Travellers</string>
+    <string name="group_unregistered_names_title">Unregistered travellers</string>
+    <string name="group_unregistered_names_subtitle">Assign display names for people who aren\'t registered yet so they are easier to recognise in splits and balances.</string>
 
     <!-- Guest limits/gating -->
     <string name="group_error_limit_groups_exceeded">Upgrade to SplitTrip Pro to create more groups. Free accounts can own up to 1 group.</string>
     <string name="group_error_limit_members_exceeded">Upgrade to SplitTrip Pro to add more members to this group. Free groups are limited to 4 members.</string>
     <string name="group_error_limit_members_registered_exceeded">Groups are limited to %1$d members.</string>
-    <string name="group_error_limit_cover_upload_disabled">Custom cover images are a SplitTrip Pro feature. Upgrade your account or join a Pro group to customize covers.</string>
+    <string name="group_error_limit_cover_upload_disabled">Custom cover images are a SplitTrip Pro feature. Upgrade your account or join a Pro group to customise covers.</string>
 
     <!-- Edit Group -->
     <string name="group_edit_title">Edit group</string>
@@ -214,7 +214,7 @@
     <string name="leave_wizard_unresolved_settlements_error">There are pending settlements that must be resolved before leaving.</string>
     <string name="leave_wizard_settlement_section_your_action">Your Action Required</string>
     <string name="leave_wizard_settlement_section_waiting">Waiting on Others</string>
-    <string name="leave_wizard_balances_with_members">Balances with other travelers</string>
+    <string name="leave_wizard_balances_with_members">Balances with other travellers</string>
     <string name="leave_wizard_go_to_settlements">Go to Settlements</string>
 
     <!-- Archive Group Wizard -->

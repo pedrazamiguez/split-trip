@@ -109,7 +109,7 @@ class GroupsViewModelTest {
                     name = group.name,
                     description = group.description,
                     currency = group.currency,
-                    membersCountText = "${group.members.size} travelers",
+                    membersCountText = "${group.members.size} travellers",
                     dateText = group.createdAt?.toString() ?: ""
                 )
             }.toImmutableList()

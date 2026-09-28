@@ -101,7 +101,7 @@ class GroupDetailViewModelTest {
         id = testGroupId,
         name = "Summer Trip",
         currency = "EUR",
-        membersCountText = "2 travelers"
+        membersCountText = "2 travellers"
     )
 
     @BeforeEach

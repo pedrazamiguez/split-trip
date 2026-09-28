@@ -194,7 +194,7 @@
     <string name="faq_question_1">What is SplitTrip?</string>
     <string name="faq_answer_1">SplitTrip is a modern expense-sharing and group bill-splitting application designed to make group travel, dinners, and events stress-free. It calculates balances, tracks spending, and reconciles debts offline or online.</string>
     <string name="faq_question_2">How does the offline-first mode work?</string>
-    <string name="faq_answer_2">SplitTrip is built on an offline-first architecture. Any transaction or group edit you make is saved instantly to your local database (Room) and propagates to the UI immediately. When a network connection becomes available, changes are safely synchronized in the background to our Cloud Firestore databases.</string>
+    <string name="faq_answer_2">SplitTrip is built on an offline-first architecture. Any transaction or group edit you make is saved instantly to your local database (Room) and propagates to the UI immediately. When a network connection becomes available, changes are safely synchronised in the background to our Cloud Firestore databases.</string>
     <string name="faq_question_3">Can I use multiple currencies?</string>
     <string name="faq_answer_3">Yes! SplitTrip fully supports multi-currency trips. You can set a default currency for your profile, specify currencies for individual expenses, and see automatically converted balances based on real-time exchange rates.</string>
     <string name="faq_question_4">Is my data secure?</string>
@@ -207,16 +207,16 @@
     <string name="privacy_section_1_title">1. Information We Collect</string>
     <string name="privacy_section_1_body">We collect authentication information when you sign up (email, profile name, profile image) and financial sharing details (trips, expense descriptions, amounts, and member lists) to facilitate debt calculations. We do not collect credit card details, bank credentials, or connect to banking APIs. Debt settlements are informational calculations and no money is transferred within the app. Guest accounts store this data only on your device.</string>
     <string name="privacy_section_2_title">2. How We Use Data</string>
-    <string name="privacy_section_2_body">Your data is processed on-device and synchronized to the cloud for real-time group collaboration. We do not sell or monetize your transaction logs, payment methods, or personal information.</string>
+    <string name="privacy_section_2_body">Your data is processed on-device and synchronised to the cloud for real-time group collaboration. We do not sell or monetise your transaction logs, payment methods, or personal information.</string>
     <string name="privacy_section_3_title">3. Data Security</string>
-    <string name="privacy_section_3_body">Local data is secured in Room databases and DataStore preferences. Cloud synchronization is protected by transit encryption and strict Firestore rules, ensuring only members of a group can read or write to it.</string>
+    <string name="privacy_section_3_body">Local data is secured in Room databases and DataStore preferences. Cloud synchronisation is protected by transit encryption and strict Firestore rules, ensuring only members of a group can read or write to it.</string>
     <string name="privacy_section_4_title">4. Your Rights &amp; Account Deletion</string>
     <string name="privacy_section_4_body">You retain full rights to your data. You can delete or unlink accounts at any time. Permanent deletion requests can be initiated from the Account Status screen.</string>
 
     <!-- Open Source Screen -->
     <string name="open_source_title">Open Source</string>
     <string name="open_source_libraries_header">We leverage these open-source packages to build a premium, fast, and offline-first experience:</string>
-    <string name="open_source_lib_license">License: %1$s</string>
+    <string name="open_source_lib_license">Licence: %1$s</string>
     <string name="open_source_view_source">View Codebase</string>
 
     <!-- Open Source Libraries -->

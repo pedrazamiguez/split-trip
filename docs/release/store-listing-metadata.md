@@ -12,17 +12,17 @@
 | **Package Name** | `es.pedrazamiguez.splittrip` | Defined in `:app/build.gradle.kts` |
 | **Primary Category** | `Finance` | Financial management, group expense splitting |
 | **Secondary Category** | `Travel & Local` | Vacation budget planning, multi-currency trips |
-| **Default Language** | English (`en-US`) | Global baseline locale |
+| **Default Language** | English (`en-GB`) | European English baseline locale |
 | **Additional Languages** | Spanish (`es-ES`) | European Castilian Spanish (Tone of Voice compliant) |
 | **Content Rating** | PEGI 3 / ESRB Everyone | Contains ads (Free tier). No offensive content, violence, or gambling |
-| **Target Audience** | 18+ (General Audience) | Group travelers, roommates, couples, families |
+| **Target Audience** | 18+ (General Audience) | Group travellers, roommates, couples, families |
 | **Privacy Policy URL** | `https://splittrip.eu/privacy-policy.html` | Public web-accessible URL |
 | **Developer Contact** | `support@splittrip.eu` | Official support inbox |
 | **Website** | `https://splittrip.eu` | Official developer website & web presence |
 
 ---
 
-## 2. English Store Listing (`en-US`)
+## 2. English Store Listing (`en-GB`)
 
 ### App Title (25 / 30 characters)
 ```text
@@ -36,12 +36,12 @@ Split travel expenses offline & multi-currency. Fair debts, zero stress.
 
 ### Full Description (2,486 / 4,000 characters)
 ```text
-Traveling with friends, family, or your partner should be about making memories—not doing accounting gymnastics in messy spreadsheets. SplitTrip is the modern, offline-first group expense manager crafted specifically for travelers who cross borders, share expenses, and value fairness.
+Travelling with friends, family, or your partner should be about making memories—not doing accounting gymnastics in messy spreadsheets. SplitTrip is the modern, offline-first group expense manager crafted specifically for travellers who cross borders, share expenses, and value fairness.
 
-Whether you're backpacking through Southeast Asia, organizing a European road trip, or sharing an apartment with roommates, SplitTrip handles complex currencies, cash pockets, and debt settlements effortlessly.
+Whether you're backpacking through Southeast Asia, organising a European road trip, or sharing an apartment with roommates, SplitTrip handles complex currencies, cash pockets, and debt settlements effortlessly.
 
 ⚡ TRUE OFFLINE-FIRST ARCHITECTURE
-Log expenses anywhere—on a mountain hike, on a flight, or in remote areas with zero cell reception. SplitTrip writes all transactions instantly to your local device database. When internet connection is restored, background synchronization reconciles changes across your entire group automatically.
+Log expenses anywhere—on a mountain hike, on a flight, or in remote areas with zero cell reception. SplitTrip writes all transactions instantly to your local device database. When internet connection is restored, background synchronisation reconciles changes across your entire group automatically.
 
 🌍 MULTI-CURRENCY & REAL-TIME EXCHANGE RATES
 Spend in Japanese Yen, pay back in Euros, or split in US Dollars. SplitTrip supports 150+ global currencies with live exchange rates and captures immutable rate snapshots at the moment of each transaction so past calculations never shift unexpectedly.
@@ -53,7 +53,7 @@ Eliminate end-of-trip awkwardness. SplitTrip simplifies tangled web-of-debt bala
 Keep shared virtual group funds separate from physical cash in hand. Track contributions into the group pocket and log cash withdrawals with First-In, First-Out (FIFO) currency tracking to ensure exact multi-currency precision down to the cent.
 
 👥 SUBUNITS FOR COUPLES & FAMILIES
-Traveling as a couple or family within a larger group? Create subunits to aggregate balances or split bills proportionally between units without tedious manual recalculations.
+Travelling as a couple or family within a larger group? Create subunits to aggregate balances or split bills proportionally between units without tedious manual recalculations.
 
 📸 SMART RECEIPT SCANNING [PRO]
 Snap a photo of your dining or taxi receipt. SplitTrip extracts the total, tax, currency, and line items automatically, letting you assign specific dishes or add-on items to companions in seconds.
@@ -167,8 +167,8 @@ A minimum of 4 and maximum of 8 screenshots are required. The recommended 6-scre
    - Visual: Debt resolution screen highlighting simplified debt pathways, pending settlements, and consensus status.
    - Header Caption: **Settle debts with minimal transactions** / **Acuerdos de pago claros y sin fricciones**
 6. **Screen 6 — Smart AI Receipt Auto-Fill [Pro]:**
-   - Visual: Camera scan overlay with receipt itemization and automated currency extraction.
-   - Header Caption: **Instant receipt itemization with AI** / **Desglose inteligente de tiques con IA**
+   - Visual: Camera scan overlay with receipt itemisation and automated currency extraction.
+   - Header Caption: **Instant receipt itemisation with AI** / **Desglose inteligente de tiques con IA**
 
 ---
 
