@@ -136,21 +136,46 @@ header {
 .brand-text h1 {
   font-family: var(--font-display);
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: 1.15;
+}
+
+.brand-trip {
+  color: #0284c7;
+}
+
+html[data-theme="dark"] .brand-trip {
+  color: #38bdf8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand-trip {
+    color: #38bdf8;
+  }
+}
+
+.brand-caption {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: -0.01em;
+  margin-top: 1px;
+  padding-left: 1px;
 }
 
 .brand-text .app-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   font-size: 12px;
   font-weight: 600;
+  line-height: 1.2;
   color: var(--badge-text);
   background-color: var(--badge-bg);
-  padding: 2px 8px;
+  padding: 4px 10px;
   border-radius: var(--radius-full);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .controls-group {
@@ -350,29 +375,39 @@ footer {
 
 /* Language visibility handling */
 [data-lang] {
-  display: none;
+  display: none !important;
 }
 
 html[lang="en"] [data-lang="en"],
 html:not([lang="es"]) [data-lang="en"] {
-  display: block;
+  display: block !important;
 }
 
 html[lang="es"] [data-lang="es"] {
-  display: block;
+  display: block !important;
 }
 
 /* Inline flex variant for badges/buttons */
 html[lang="en"] span[data-lang="en"],
 html[lang="en"] strong[data-lang="en"],
 html[lang="en"] a[data-lang="en"] {
-  display: inline;
+  display: inline !important;
 }
 
 html[lang="es"] span[data-lang="es"],
 html[lang="es"] strong[data-lang="es"],
 html[lang="es"] a[data-lang="es"] {
-  display: inline;
+  display: inline !important;
+}
+
+html[lang="en"] span.app-badge[data-lang="en"],
+html[lang="es"] span.app-badge[data-lang="es"] {
+  display: inline-flex !important;
+}
+
+html[lang="en"] .brand-caption[data-lang="en"],
+html[lang="es"] .brand-caption[data-lang="es"] {
+  display: block !important;
 }
 
 @media (max-width: 640px) {

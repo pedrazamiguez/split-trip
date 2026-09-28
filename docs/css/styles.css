@@ -175,6 +175,13 @@ html[lang="es"] a[data-lang="es"] {
   display: inline !important;
 }
 
+html[lang="en"] .btn-playstore-sub[data-lang="en"],
+html[lang="es"] .btn-playstore-sub[data-lang="es"],
+html[lang="en"] .brand-caption[data-lang="en"],
+html[lang="es"] .brand-caption[data-lang="es"] {
+  display: block !important;
+}
+
 .container {
   max-width: 1160px;
   margin: 0 auto;
@@ -216,11 +223,41 @@ header.site-header {
   box-shadow: 0 4px 14px rgba(0, 71, 141, 0.28);
 }
 
+.brand-text-nav {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
 .brand-title {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.brand-trip {
+  color: #0284c7;
+}
+
+html[data-theme="dark"] .brand-trip {
+  color: #38bdf8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand-trip {
+    color: #38bdf8;
+  }
+}
+
+.brand-caption {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: -0.01em;
+  margin-top: 2px;
+  padding-left: 1px;
 }
 
 .header-actions {
@@ -372,8 +409,11 @@ header.site-header {
 .btn-playstore {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  padding: 12px 24px;
+  padding: 8px 24px;
+  min-height: 52px;
+  box-sizing: border-box;
   background-color: var(--text-primary);
   color: var(--bg-canvas) !important;
   text-decoration: none;
@@ -396,11 +436,35 @@ header.site-header {
   flex-shrink: 0;
 }
 
+.btn-playstore-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.btn-playstore-sub {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.88;
+}
+
+.btn-playstore-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
 .btn-secondary {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 12px 22px;
+  padding: 8px 22px;
+  min-height: 52px;
+  box-sizing: border-box;
   background-color: var(--bg-surface-elevated);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
