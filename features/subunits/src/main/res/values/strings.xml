@@ -1,7 +1,7 @@
 <resources>
     <!-- Subunit management -->
     <string name="subunit_manage_title">Subunits</string>
-    <string name="subunit_empty_state">No subunits yet! Create one to organize your travel group</string>
+    <string name="subunit_empty_state">No subunits yet! Create one to organise your travel group</string>
     <string name="subunit_create">Create subunit</string>
     <string name="subunit_edit">Edit subunit</string>
     <string name="subunit_create_edit_title">Subunit</string>

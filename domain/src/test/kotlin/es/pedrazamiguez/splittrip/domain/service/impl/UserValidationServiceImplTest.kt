@@ -92,7 +92,7 @@ class UserValidationServiceImplTest {
         @Test
         fun `validateBio returns Valid for standard bio`() {
             // When
-            val result = service.validateBio("Kotlin enthusiast, traveler")
+            val result = service.validateBio("Kotlin enthusiast, traveller")
 
             // Then
             assertEquals(ValidationResult.Valid, result)

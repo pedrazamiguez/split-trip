@@ -7,7 +7,7 @@
     <string name="onboarding_back_button">Back</string>
     <string name="onboarding_skip_button">Skip</string>
     <string name="onboarding_step_trips_title">Trips &amp; Groups</string>
-    <string name="onboarding_step_trips_description">Organize travel expenses with your friends, manage multiple currencies, and keep everyone on the same page from takeoff to touchdown.</string>
+    <string name="onboarding_step_trips_description">Organise travel expenses with your friends, manage multiple currencies, and keep everyone on the same page from takeoff to touchdown.</string>
     <string name="onboarding_step_split_title">Smart Splitting</string>
     <string name="onboarding_step_split_description">Split expenses your way: equally, by exact amounts, percentages, or subunits for couples and families. Attach receipts to keep a clear paper trail.</string>
     <string name="onboarding_step_cash_title">Cash in Hand &amp; Pocket</string>

@@ -51,13 +51,13 @@ class GroupUiMapperImplTest {
         fun `maps group with zero members correctly`() {
             // Given
             val group = createGroup(members = emptyList())
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group)
 
             // Then
-            assertEquals("0 travelers", result.membersCountText)
+            assertEquals("0 travellers", result.membersCountText)
             verify { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) }
         }
 
@@ -65,13 +65,13 @@ class GroupUiMapperImplTest {
         fun `maps group with one member using singular form`() {
             // Given
             val group = createGroup(members = listOf("user-1"))
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 1, 1) } returns "1 traveler"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 1, 1) } returns "1 traveller"
 
             // When
             val result = mapper.toGroupUiModel(group)
 
             // Then
-            assertEquals("1 traveler", result.membersCountText)
+            assertEquals("1 traveller", result.membersCountText)
             verify { resourceProvider.getQuantityString(R.plurals.group_members_count, 1, 1) }
         }
 
@@ -80,13 +80,13 @@ class GroupUiMapperImplTest {
             // Given
             val members = listOf("user-1", "user-2", "user-3")
             val group = createGroup(members = members)
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 3, 3) } returns "3 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 3, 3) } returns "3 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group)
 
             // Then
-            assertEquals("3 travelers", result.membersCountText)
+            assertEquals("3 travellers", result.membersCountText)
             verify { resourceProvider.getQuantityString(R.plurals.group_members_count, 3, 3) }
         }
 
@@ -95,13 +95,13 @@ class GroupUiMapperImplTest {
             // Given
             val members = (1..25).map { "user-$it" }
             val group = createGroup(members = members)
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 25, 25) } returns "25 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 25, 25) } returns "25 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group)
 
             // Then
-            assertEquals("25 travelers", result.membersCountText)
+            assertEquals("25 travellers", result.membersCountText)
             verify { resourceProvider.getQuantityString(R.plurals.group_members_count, 25, 25) }
         }
     }
@@ -156,18 +156,18 @@ class GroupUiMapperImplTest {
                 createGroup(id = "2", members = listOf("user-1", "user-2", "user-3")),
                 createGroup(id = "3", members = emptyList())
             )
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 1, 1) } returns "1 traveler"
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 3, 3) } returns "3 travelers"
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 1, 1) } returns "1 traveller"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 3, 3) } returns "3 travellers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
 
             // When
             val result = mapper.toGroupUiModelList(groups)
 
             // Then
             assertEquals(3, result.size)
-            assertEquals("1 traveler", result[0].membersCountText)
-            assertEquals("3 travelers", result[1].membersCountText)
-            assertEquals("0 travelers", result[2].membersCountText)
+            assertEquals("1 traveller", result[0].membersCountText)
+            assertEquals("3 travellers", result[1].membersCountText)
+            assertEquals("0 travellers", result[2].membersCountText)
         }
 
         @Test
@@ -182,8 +182,8 @@ class GroupUiMapperImplTest {
                 "user-1" to createUser("user-1", "https://example.com/avatar1.jpg"),
                 "user-2" to createUser("user-2", "https://example.com/avatar2.jpg")
             )
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travelers"
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 1, 1) } returns "1 traveler"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travellers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 1, 1) } returns "1 traveller"
 
             // When — call the 2-arg overload directly (covers the Impl's toGroupUiModelList implementation)
             val result = mapper.toGroupUiModelList(groups, profiles)
@@ -202,7 +202,7 @@ class GroupUiMapperImplTest {
 
         @Test
         fun `maps PENDING_SYNC status`() {
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
             val group = createGroup().copy(syncStatus = SyncStatus.PENDING_SYNC)
             val result = mapper.toGroupUiModel(group)
             assertEquals(SyncStatus.PENDING_SYNC, result.syncStatus)
@@ -210,7 +210,7 @@ class GroupUiMapperImplTest {
 
         @Test
         fun `maps SYNC_FAILED status`() {
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
             val group = createGroup().copy(syncStatus = SyncStatus.SYNC_FAILED)
             val result = mapper.toGroupUiModel(group)
             assertEquals(SyncStatus.SYNC_FAILED, result.syncStatus)
@@ -218,7 +218,7 @@ class GroupUiMapperImplTest {
 
         @Test
         fun `default maps to SYNCED`() {
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
             val group = createGroup()
             val result = mapper.toGroupUiModel(group)
             assertEquals(SyncStatus.SYNCED, result.syncStatus)
@@ -358,7 +358,7 @@ class GroupUiMapperImplTest {
 
         @Test
         fun `maps empty extraCurrencies to empty list with null overflow`() {
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
             val group = createGroup(extraCurrencies = emptyList())
 
             val result = mapper.toGroupUiModel(group)
@@ -369,7 +369,7 @@ class GroupUiMapperImplTest {
 
         @Test
         fun `maps up to 3 extraCurrencies without overflow`() {
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
             val extra = listOf("USD", "GBP", "JPY")
             val group = createGroup(extraCurrencies = extra)
 
@@ -381,7 +381,7 @@ class GroupUiMapperImplTest {
 
         @Test
         fun `caps extraCurrencies when exceeding 3 and formats overflow text`() {
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
             every { resourceProvider.getString(R.string.group_extra_currencies_overflow, 3) } returns "+3"
             val extra = listOf("USD", "GBP", "JPY", "THB", "CAD")
             val group = createGroup(extraCurrencies = extra)
@@ -403,7 +403,7 @@ class GroupUiMapperImplTest {
             val group = createGroup(mainImagePath = "https://example.com/image.jpg", members = emptyList())
             every {
                 resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0)
-            } returns "0 travelers"
+            } returns "0 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group)
@@ -416,7 +416,7 @@ class GroupUiMapperImplTest {
         fun `maps null mainImagePath to null imageUrl`() {
             // Given
             val group = createGroup(mainImagePath = null, members = emptyList())
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group)
@@ -438,7 +438,7 @@ class GroupUiMapperImplTest {
                 "user-1" to createUser("user-1", "https://example.com/avatar1.jpg"),
                 "user-2" to createUser("user-2", "https://example.com/avatar2.jpg")
             )
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group, profiles)
@@ -459,7 +459,7 @@ class GroupUiMapperImplTest {
                 "user-1" to createUser("user-1", "https://example.com/avatar1.jpg"),
                 "user-2" to createUser("user-2", null)
             )
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group, profiles)
@@ -480,7 +480,7 @@ class GroupUiMapperImplTest {
             }
             every {
                 resourceProvider.getQuantityString(R.plurals.group_members_count, memberCount, memberCount)
-            } returns "$memberCount travelers"
+            } returns "$memberCount travellers"
 
             // When
             val result = mapper.toGroupUiModel(group, profiles)
@@ -498,7 +498,7 @@ class GroupUiMapperImplTest {
             val profiles = members.associate { userId ->
                 userId to createUser(userId, "https://example.com/$userId.jpg")
             }
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group, profiles)
@@ -519,7 +519,7 @@ class GroupUiMapperImplTest {
                 "user-4" to createUser("user-4", null),
                 "user-5" to createUser("user-5", null)
             )
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 5, 5) } returns "5 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 5, 5) } returns "5 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group, profiles)
@@ -534,7 +534,7 @@ class GroupUiMapperImplTest {
             // Given
             val members = listOf("user-1", "user-2")
             val group = createGroup(members = members)
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group, emptyMap())
@@ -563,7 +563,7 @@ class GroupUiMapperImplTest {
                 ).copy(displayName = "Creator"),
                 "member-id" to createUser("member-id", null).copy(displayName = "Member")
             )
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travelers"
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 2, 2) } returns "2 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group, profiles)

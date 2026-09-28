@@ -9,12 +9,12 @@ This document establishes the verbal identity, tone of voice principles, and cop
 ### Brand Persona: *The Expert Travel Companion*
 SplitTrip is the reliable, worldly travel companion who has everything under control. Calm under pressure, transparent with the numbers, and always focused on the trip rather than the bureaucracy of accounting.
 
-- **Warm & Encouraging:** Welcomes travelers without sounding forced, childish, or overly enthusiastic.
+- **Warm & Encouraging:** Welcomes travellers without sounding forced, childish, or overly enthusiastic.
 - **Competent & Direct:** Demystifies complex multi-currency splits and FIFO cash tranches with concise, clear prose.
-- **Unobtrusive:** Steps back so travelers can focus on their adventure.
+- **Unobtrusive:** Steps back so travellers can focus on their adventure.
 
-### Audience Persona: *Modern Group Travelers*
-Our users are young to mid-age friends, couples, families, and colleagues traveling together across borders. They value speed, transparency, and fairness. They appreciate clean design and clear explanations without slang or corporate jargon.
+### Audience Persona: *Modern Group Travellers*
+Our users are young to mid-age friends, couples, families, and colleagues travelling together across borders. They value speed, transparency, and fairness. They appreciate clean design and clear explanations without slang or corporate jargon.
 
 ---
 
@@ -76,7 +76,13 @@ All copy must align strictly with [`docs/domain/ubiquitous-language.md`](../doma
 - **Gender Inclusivity:** Use neutral group terms (*"Compañeros de viaje"*, *"Miembros del grupo"*, *"Viajeros"*).
 
 ### English (`values/`)
-- **Formality:** Modern, clean, conversational US/International English.
+- **Formality:** Modern, clean, conversational British English (en-GB) as the single baseline standard across default resource catalogs (`res/values/strings.xml`).
+- **Spelling & Vocabulary:**
+  - `-ise` / `-isation` / `-ising` / `-ised` suffixes instead of `-ize` / `-ization` / `-izing` / `-ized` (*organise*, *customise*, *synchronise*, *synchronisation*, *prioritise*, *recognise*, *monetise*, *authorise*, *normalise*, *finalise*, *neutralise*, *itemise*, *analyse*).
+  - Double 'l' consonants (*traveller*, *travelling*, *cancelled*, *cancelling*, *labelled*).
+  - `-our` endings (*colour*, *favourite*, *behaviour*).
+  - `-re` endings (*centre*, *theatre*).
+  - Noun / verb distinctions (*licence* [noun] vs. *license* [verb], *practise* [verb] vs. *practice* [noun]).
 - **Sentence Case:** Use Sentence case for subtitles, helper text, and descriptions. Title Case is reserved for TopBar titles and formal modal headers.
 - **Contractions:** Natural contractions (*"Couldn't"*, *"You'll"*, *"Don't"*) are encouraged in body and error copy to maintain warmth.
 

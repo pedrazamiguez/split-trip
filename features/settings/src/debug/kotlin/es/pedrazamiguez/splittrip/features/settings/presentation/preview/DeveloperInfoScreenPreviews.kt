@@ -28,7 +28,7 @@ private fun DeveloperInfoScreenPreview() {
                 splitTripRepoUrl = "https://github.com/pedrazamiguez/split-trip",
                 linkedinUrl = "https://www.linkedin.com/in/pedrazamiguez",
                 portfolioUrl = "https://pedrazamiguez.github.io",
-                credits = "SplitTrip is a modular Android application designed for travelers to manage shared " +
+                credits = "SplitTrip is a modular Android application designed for travellers to manage shared " +
                     "expenses efficiently. It allows users to create expense groups, track spending in multiple " +
                     "currencies, calculate debts, and sync data across devices.\n\n" +
                     "Built with modern Android practices—including Jetpack Compose, Clean Architecture, and " +
