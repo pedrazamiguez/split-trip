@@ -1,21 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048">
   <defs>
     <linearGradient id="fav-grad1" x1="1288.5" y1="476" x2="1492.5" y2="2014.5" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#006874" class="stop-teal"/>
-      <stop offset="100%" stop-color="#00478D" class="stop-blue"/>
+      <stop offset="0%" stop-color="#006874"/>
+      <stop offset="100%" stop-color="#00478D"/>
     </linearGradient>
     <linearGradient id="fav-grad2" x1="363" y1="573.5" x2="1076" y2="1847" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00478D" class="stop-blue"/>
-      <stop offset="100%" stop-color="#006874" class="stop-teal"/>
+      <stop offset="0%" stop-color="#00478D"/>
+      <stop offset="100%" stop-color="#006874"/>
     </linearGradient>
-    <style>
-      @media (prefers-color-scheme: dark) {
-        .stop-teal { stop-color: #4FD8EB !important; }
-        .stop-blue { stop-color: #9ECAFF !important; }
-      }
-    </style>
   </defs>
-  <g transform="translate(100, 0)">
+  <!-- Background badge for high contrast on both light and dark browser tabs -->
+  <rect width="2048" height="2048" rx="460" fill="#FFFFFF"/>
+  <g transform="translate(286.72, 286.72) scale(0.72)">
     <path d="M1105,2101C1427.5,1833.5 1503,1586 1427.5,1384.5C1194,892.5 530,1037.5 606.5,501.5C671,200 1113.5,180.1 1224.5,200C1551.5,258.5 1802.5,482.5 1687,625C1571,723.5 1481,534.2 1308,465C1152,402.6 942.5,390 885.5,538.5C786.5,855 1699.5,846 1727.5,1359C1727.5,1558 1621.5,1645.5 1610,1655"
           stroke="url(#fav-grad1)" stroke-width="160" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M1145,1828.5C1109,1841 933,1878.5 699,1791.5C542,1725.5 248,1548 410.5,1412.5C548,1329 610,1517.2 816,1601C1022,1684.8 1164.5,1593 1164.5,1479.5C1164.5,1230.5 380.5,1139 365,732.5C358.6,565.5 453,455 472,424"

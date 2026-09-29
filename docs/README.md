@@ -8,7 +8,6 @@ Welcome to the central technical documentation and architectural knowledge base 
 
 ```
 docs/
-├── css/                    → External stylesheets for web documentation & privacy policy
 ├── domain/                 → Living business invariants, ubiquitous language & models
 ├── architecture/
 │   ├── adrs/               → Formal MADR Architectural Decision Records
@@ -16,8 +15,6 @@ docs/
 ├── design-system/          → Horizon Narrative tokens, glassmorphism & Compose guides
 ├── engineering/            → Code quality, static analysis, validation & releases
 ├── release/                → Google Play Store compliance, metadata & assets
-├── index.html              → Public web landing page
-├── privacy-policy.html     → Public web-hosted Privacy Policy (bilingual)
 └── ai/                     → Multi-agent architecture, MCP integrations & SDD taxonomy
 ```
 
@@ -92,5 +89,6 @@ docs/
 ## 🚀 6. Release & Store Distribution
 
 * [Google Play Store Listing Metadata, Data Safety & Asset Specs](release/store-listing-metadata.md)
-* [Public Web Landing Page](index.html)
-* [Public Web Privacy Policy Page](privacy-policy.html)
+* [Production Service Integrations & Configuration Guide](release/production-service-integrations.md)
+* [Public Web Landing Page (Source)](../web/index.html)
+* [Public Web Privacy Policy Page (Source)](../web/privacy-policy.html)
