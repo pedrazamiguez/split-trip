@@ -8,7 +8,7 @@
 ## Overview
 
 SplitTrip utilizes the custom domain `splittrip.eu` across multiple services:
-1. **GitHub Pages:** Hosts the public landing page (`docs/index.html`), Privacy Policy (`docs/privacy-policy.html`), and Digital Asset Links (`docs/.well-known/assetlinks.json`).
+1. **GitHub Pages:** Hosts the public landing page (`web/index.html`), Privacy Policy (`web/privacy-policy.html`), and Digital Asset Links (`web/.well-known/assetlinks.json`) via GitHub Actions deployment.
 2. **DNS & Email Forwarding:** Routes apex and subdomain traffic to GitHub Pages, and forwards inbound support emails (`support@splittrip.eu`) to the developer's personal inbox.
 3. **Firebase Authentication:** Authorizes `splittrip.eu` for OAuth redirect handlers and brands transactional auth emails (password resets and email verification).
 4. **Google Play Console:** Maps the official website, support email, privacy policy URL, and App Signing SHA-256 fingerprints for Android App Links.
@@ -67,19 +67,24 @@ SplitTrip does not require a paid email inbox provider. Free inbound email forwa
 
 ---
 
-## 2. GitHub Pages Configuration (Repository Settings)
+## 2. GitHub Pages Configuration (Repository Settings & Deployment Workflow)
 
 1. Navigate to the GitHub repository: **Settings → Pages**.
 2. Under **Build and deployment**:
-   - **Source:** Select **Deploy from a branch**.
-   - **Branch:** Select `develop` (or `main`), Folder: `/docs`. Click **Save**.
-3. Under **Custom domain**:
-   - Enter `splittrip.eu`.
-   - Click **Save**.
-   - GitHub will create or verify `docs/CNAME` and run a DNS check against the apex `A` records.
-4. Once the DNS check passes:
-   - Check **Enforce HTTPS**.
-   - GitHub will automatically provision and renew a free Let's Encrypt TLS certificate for `splittrip.eu` and `www.splittrip.eu`.
+   - **Source:** Select **GitHub Actions** (switches repository build type from legacy branch deployment to automated workflow deployment).
+   - Alternatively, configure this via GitHub CLI:
+     ```bash
+     gh api --method PUT repos/pedrazamiguez/split-trip/pages -f build_type=workflow
+     ```
+3. **Automated Deployment Workflow (`.github/workflows/deploy-pages.yml`):**
+   - Automatically builds and publishes the `web/` directory when changes to `web/**` or the workflow itself are pushed to `main`.
+   - Uses official GitHub actions: `actions/configure-pages@v5`, `actions/upload-pages-artifact@v3` (pointing to `web/`), and `actions/deploy-pages@v4`.
+   - Can also be triggered manually on demand via `workflow_dispatch`.
+4. Under **Custom domain**:
+   - Verify `splittrip.eu` is active (persisted by `web/CNAME`).
+   - GitHub validates DNS apex `A` records and Let's Encrypt TLS certificate.
+5. Under **Enforce HTTPS**:
+   - Ensure **Enforce HTTPS** is checked to redirect all HTTP traffic to HTTPS.
 
 ---
 
@@ -120,7 +125,7 @@ SplitTrip does not require a paid email inbox provider. Free inbound email forwa
 4. Under **Release → Setup → App Signing** (or **App integrity**):
    - Locate the **App signing key certificate** card.
    - Copy both the **SHA-1** and **SHA-256** certificate fingerprints (`0D:E0:AE:D1:74:2A:59:FF:A5:2B:20:0F:EF:65:E9:C5:57:6B:79:2F:6D:35:CB:36:6C:20:14:08:5A:DA:EA:DB`).
-   - In `docs/.well-known/assetlinks.json`, both the Play App Signing SHA-256 and the local upload key SHA-256 (`01:2A:B7:5D:86:66:1D:95:C0:A2:E5:09:23:66:25:F7:C8:14:2A:EB:6F:CB:DD:CE:B0:46:6E:DC:26:20:86:0E`) are configured.
+   - In `web/.well-known/assetlinks.json`, both the Play App Signing SHA-256 and the local upload key SHA-256 (`01:2A:B7:5D:86:66:1D:95:C0:A2:E5:09:23:66:25:F7:C8:14:2A:EB:6F:CB:DD:CE:B0:46:6E:DC:26:20:86:0E`) are configured.
    - Add both the **Play App Signing SHA-1** and **SHA-256** fingerprints to **Firebase Console → Project settings → Your apps → SplitTrip (Android)** so that Google Sign-In and App Check work in production Play Store builds.
 
 ---
