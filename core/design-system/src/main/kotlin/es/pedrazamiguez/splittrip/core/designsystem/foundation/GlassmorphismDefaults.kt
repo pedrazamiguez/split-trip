@@ -111,9 +111,8 @@ internal object GlassmorphismDefaults {
      */
     val LightTopAppBarGradient: Brush = Brush.verticalGradient(
         colors = listOf(
-            HorizonBlue.copy(alpha = 0.85f),
-            HorizonBlue.copy(alpha = 0.70f),
-            HorizonBlueContainer.copy(alpha = 0.50f)
+            HorizonBlue.copy(alpha = 0.95f),
+            HorizonBlueContainer.copy(alpha = 0.85f)
         )
     )
 
@@ -124,9 +123,8 @@ internal object GlassmorphismDefaults {
      */
     val DarkTopAppBarGradient: Brush = Brush.verticalGradient(
         colors = listOf(
-            HorizonSurfaceContainerHighDark.copy(alpha = 0.85f),
-            HorizonSurfaceContainerHighDark.copy(alpha = 0.70f),
-            HorizonSurfaceDark.copy(alpha = 0.50f)
+            HorizonSurfaceContainerHighDark.copy(alpha = 0.95f),
+            HorizonSurfaceDark.copy(alpha = 0.85f)
         )
     )
 

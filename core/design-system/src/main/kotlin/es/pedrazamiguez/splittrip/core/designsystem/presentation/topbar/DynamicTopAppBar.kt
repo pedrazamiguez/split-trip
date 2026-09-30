@@ -130,7 +130,7 @@ private fun resolveContentColors(isDark: Boolean): TopAppBarContentColors {
     } else {
         TopAppBarContentColors(
             contentColor = MaterialTheme.colorScheme.onPrimary,
-            subtitleColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
+            subtitleColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
             backButtonBg = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)
         )
     }

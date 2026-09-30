@@ -407,9 +407,9 @@ Box(
 #### Top App Bar Atmospheric Gradient & Blur
 
 `DynamicTopAppBar` incorporates this glassmorphism recipe backed by an atmospheric translucent gradient:
-- **Light mode:** `GlassmorphismDefaults.LightTopAppBarGradient` blends `HorizonBlue` (85% alpha down to 70% and 50% alpha `HorizonBlueContainer`), paired with `GlassmorphismDefaults.LightTopAppBarStyle`.
-- **Dark mode:** `GlassmorphismDefaults.DarkTopAppBarGradient` blends `HorizonSurfaceContainerHighDark` (85% alpha down to 70% and 50% alpha `HorizonSurfaceDark`), paired with `GlassmorphismDefaults.DarkTopAppBarStyle`.
-- **Translucency & Scroll-Under:** List content scrolls seamlessly underneath the top app bar using `LocalTopPadding`, diffusing through the frosted backdrop without double-tinting.
+- **Light mode:** `GlassmorphismDefaults.LightTopAppBarGradient` blends `HorizonBlue` (95% alpha) into `HorizonBlueContainer` (85% alpha), paired with `GlassmorphismDefaults.LightTopAppBarStyle`.
+- **Dark mode:** `GlassmorphismDefaults.DarkTopAppBarGradient` blends `HorizonSurfaceContainerHighDark` (95% alpha) into `HorizonSurfaceDark` (85% alpha), paired with `GlassmorphismDefaults.DarkTopAppBarStyle`.
+- **Translucency & Scroll-Under:** List content scrolls seamlessly underneath the top app bar using `LocalTopPadding`, diffusing through the frosted backdrop. The high minimum opacity (85%) keeps the gradient firmly within the blue tonal family.
 - **Contrast & Legibility:** Guarantees WCAG AA compliant contrast (>= 4.5:1 ratio) in both themes (`onPrimary` in light mode, `onSurface` in dark mode).
 - **Ambient Coordination:** Screens automatically receive ambient `HazeState` via `LocalHazeState` and top spacing through `LocalTopPadding`.
 
