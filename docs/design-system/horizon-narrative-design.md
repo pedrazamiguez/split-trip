@@ -404,9 +404,17 @@ Box(
 )
 ```
 
+#### Top App Bar Atmospheric Gradient & Blur
+
+`DynamicTopAppBar` incorporates this glassmorphism recipe backed by an atmospheric translucent gradient:
+- **Light mode:** `GlassmorphismDefaults.LightTopAppBarGradient` blends `HorizonBlue` (90% alpha) into `HorizonBlueContainer` (80% alpha).
+- **Dark mode:** `GlassmorphismDefaults.DarkTopAppBarGradient` blends `HorizonSurfaceContainerHighDark` (90% alpha) into `HorizonSurfaceDark` (80% alpha).
+- **Contrast & Legibility:** Guarantees WCAG AA compliant contrast (>= 4.5:1 ratio) in both themes (`onPrimary` in light mode, `onSurface` in dark mode).
+- **Ambient Coordination:** Screens automatically receive ambient `HazeState` via `LocalHazeState` and top spacing through `LocalTopPadding`.
+
 Powered by the `dev.chrisbanes.haze` library (`dev.chrisbanes.haze:haze` and `dev.chrisbanes.haze:haze-blur`, Haze 2.0). Constants and the `Modifier.horizonGlassEffect()` extension live in `GlassmorphismDefaults`.
 
-> **Implementation:** `GlassmorphismDefaults.kt` in `core/design-system/.../foundation/`
+> **Implementation:** `GlassmorphismDefaults.kt`, `LocalHazeState.kt` in `core/design-system/.../foundation/` and `DynamicTopAppBar.kt` in `core/design-system/.../presentation/topbar/`
 
 ---
 

@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.foundation
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeInput
@@ -102,6 +103,36 @@ internal object GlassmorphismDefaults {
         blurRadius(DarkBlurRadius)
         colorEffects(listOf(DarkTint))
     }
+
+    /**
+     * Atmospheric linear gradient brush for the top app bar in light mode.
+     * Blends [HorizonBlue] (primary) into [HorizonBlueContainer] (primaryContainer)
+     * with tuned translucency to diffuse content scrolling underneath.
+     */
+    val LightTopAppBarGradient: Brush = Brush.verticalGradient(
+        colors = listOf(
+            HorizonBlue.copy(alpha = 0.90f),
+            HorizonBlueContainer.copy(alpha = 0.80f)
+        )
+    )
+
+    /**
+     * Atmospheric linear gradient brush for the top app bar in dark mode.
+     * Blends deep surface container tones [HorizonSurfaceContainerHighDark] into [HorizonSurfaceDark]
+     * with tuned translucency to diffuse content scrolling underneath on dark foundations.
+     */
+    val DarkTopAppBarGradient: Brush = Brush.verticalGradient(
+        colors = listOf(
+            HorizonSurfaceContainerHighDark.copy(alpha = 0.90f),
+            HorizonSurfaceDark.copy(alpha = 0.80f)
+        )
+    )
+
+    /**
+     * Returns the appropriate top app bar gradient brush for [darkTheme].
+     */
+    fun topAppBarGradient(darkTheme: Boolean): Brush =
+        if (darkTheme) DarkTopAppBarGradient else LightTopAppBarGradient
 }
 
 /**

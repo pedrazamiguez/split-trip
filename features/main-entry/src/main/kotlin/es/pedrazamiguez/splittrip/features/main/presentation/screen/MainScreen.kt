@@ -45,8 +45,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.LocalHazeState
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.ad.AdaptiveBannerAd
@@ -176,17 +178,20 @@ fun MainScreen(
 
     // Wrap Scaffold in CompositionLocalProvider to provide LocalTabNavController for topBar/FAB
     // Provide LocalProfileAvatarUrl to prevent profile avatar blinking
+    // Provide LocalHazeState for ambient top bar / bottom bar glassmorphism coordination
     CompositionLocalProvider(
         LocalTabNavController provides selectedNavController,
         LocalProfileAvatarUrl provides profile?.profileImagePath,
-        LocalIsProUser provides (profile?.isPro == true)
+        LocalIsProUser provides (profile?.isPro == true),
+        LocalHazeState provides hazeState
     ) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 AnimatedTopBar(
                     currentRoute = currentRoute,
-                    screenUiProviders = screenUiProviders
+                    screenUiProviders = screenUiProviders,
+                    hazeState = hazeState
                 )
             },
             bottomBar = {
@@ -224,15 +229,18 @@ fun MainScreen(
             // Remove default content window insets since we're handling padding manually
             contentWindowInsets = WindowInsets(0, 0, 0, 0)
         ) { innerPadding ->
-            // Calculate bottom padding for content (FABs, list content padding)
+            val topPadding = innerPadding.calculateTopPadding()
             val bottomPadding = innerPadding.calculateBottomPadding()
 
-            CompositionLocalProvider(LocalBottomPadding provides bottomPadding) {
+            CompositionLocalProvider(
+                LocalTopPadding provides topPadding,
+                LocalBottomPadding provides bottomPadding
+            ) {
                 Box(
                     modifier = Modifier
-                        .padding(top = innerPadding.calculateTopPadding())
                         .fillMaxSize()
                         .hazeSource(state = hazeState)
+                        .padding(top = topPadding)
                 ) {
                     MainTabsContent(
                         navigationProviders = navigationProviders,
@@ -257,22 +265,25 @@ fun MainScreen(
 @Composable
 private fun AnimatedTopBar(
     currentRoute: String,
-    screenUiProviders: List<ScreenUiProvider>
+    screenUiProviders: List<ScreenUiProvider>,
+    hazeState: HazeState
 ) {
-    AnimatedContent(
-        targetState = currentRoute,
-        transitionSpec = {
-            NavTransitionDefaults.topBarEnterTransition togetherWith
-                NavTransitionDefaults.topBarExitTransition using
-                NavTransitionDefaults.topBarSizeTransform
-        },
-        label = "TopBarTransition"
-    ) { route ->
-        val provider = screenUiProviders.firstOrNull { it.route == route }
-        if (provider?.topBar != null) {
-            provider.topBar!!.invoke()
-        } else {
-            Spacer(modifier = Modifier.statusBarsPadding())
+    CompositionLocalProvider(LocalHazeState provides hazeState) {
+        AnimatedContent(
+            targetState = currentRoute,
+            transitionSpec = {
+                NavTransitionDefaults.topBarEnterTransition togetherWith
+                    NavTransitionDefaults.topBarExitTransition using
+                    NavTransitionDefaults.topBarSizeTransform
+            },
+            label = "TopBarTransition"
+        ) { route ->
+            val provider = screenUiProviders.firstOrNull { it.route == route }
+            if (provider?.topBar != null) {
+                provider.topBar!!.invoke()
+            } else {
+                Spacer(modifier = Modifier.statusBarsPadding())
+            }
         }
     }
 }

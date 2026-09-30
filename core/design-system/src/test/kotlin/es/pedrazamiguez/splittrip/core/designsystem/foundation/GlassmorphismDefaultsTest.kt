@@ -43,4 +43,34 @@ class GlassmorphismDefaultsTest {
 
         assertNotNull(chainedStyle)
     }
+
+    @Test
+    fun `light top app bar gradient is non-null`() {
+        assertNotNull(GlassmorphismDefaults.LightTopAppBarGradient)
+    }
+
+    @Test
+    fun `dark top app bar gradient is non-null`() {
+        assertNotNull(GlassmorphismDefaults.DarkTopAppBarGradient)
+    }
+
+    @Test
+    fun `light and dark top app bar gradients are distinct`() {
+        assertNotEquals(
+            GlassmorphismDefaults.LightTopAppBarGradient,
+            GlassmorphismDefaults.DarkTopAppBarGradient
+        )
+    }
+
+    @Test
+    fun `topAppBarGradient returns correct brush based on darkTheme flag`() {
+        assertEquals(
+            GlassmorphismDefaults.LightTopAppBarGradient,
+            GlassmorphismDefaults.topAppBarGradient(darkTheme = false)
+        )
+        assertEquals(
+            GlassmorphismDefaults.DarkTopAppBarGradient,
+            GlassmorphismDefaults.topAppBarGradient(darkTheme = true)
+        )
+    }
 }
