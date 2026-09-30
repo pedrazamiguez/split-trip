@@ -3,15 +3,17 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DashboardShimmer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -24,7 +26,6 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.
 @Composable
 internal fun BalancesBodyContent(
     uiState: BalancesUiState,
-    bottomPadding: Dp,
     onEvent: (BalancesUiEvent) -> Unit,
     onNavigateToContribution: () -> Unit,
     onNavigateToContributionDetail: (String) -> Unit,
@@ -33,11 +34,15 @@ internal fun BalancesBodyContent(
     modifier: Modifier = Modifier,
     onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
+    val topPadding = LocalTopPadding.current
+    val bottomPadding = LocalBottomPadding.current
+
     Box(modifier = modifier) {
         DeferredLoadingContainer(
             isLoading = uiState.isLoading,
             loadingContent = {
                 DashboardShimmer(
+                    modifier = Modifier.padding(top = topPadding),
                     bottomPadding = bottomPadding,
                     headerContent = {
                         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
@@ -54,13 +59,15 @@ internal fun BalancesBodyContent(
                     EmptyStateView(
                         title = stringResource(R.string.balances_empty_title),
                         description = stringResource(R.string.balances_empty_description),
-                        icon = TablerIcons.Outline.Wallet
+                        icon = TablerIcons.Outline.Wallet,
+                        modifier = Modifier.padding(top = topPadding)
                     )
                 }
 
                 else -> {
                     BalancesListContent(
                         uiState = uiState,
+                        topPadding = topPadding,
                         bottomPadding = bottomPadding,
                         onEvent = onEvent,
                         onNavigateToContribution = onNavigateToContribution,

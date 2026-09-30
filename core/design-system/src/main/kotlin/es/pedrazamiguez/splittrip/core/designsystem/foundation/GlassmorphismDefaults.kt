@@ -111,8 +111,9 @@ internal object GlassmorphismDefaults {
      */
     val LightTopAppBarGradient: Brush = Brush.verticalGradient(
         colors = listOf(
-            HorizonBlue.copy(alpha = 0.90f),
-            HorizonBlueContainer.copy(alpha = 0.80f)
+            HorizonBlue.copy(alpha = 0.85f),
+            HorizonBlue.copy(alpha = 0.70f),
+            HorizonBlueContainer.copy(alpha = 0.50f)
         )
     )
 
@@ -123,10 +124,35 @@ internal object GlassmorphismDefaults {
      */
     val DarkTopAppBarGradient: Brush = Brush.verticalGradient(
         colors = listOf(
-            HorizonSurfaceContainerHighDark.copy(alpha = 0.90f),
-            HorizonSurfaceDark.copy(alpha = 0.80f)
+            HorizonSurfaceContainerHighDark.copy(alpha = 0.85f),
+            HorizonSurfaceContainerHighDark.copy(alpha = 0.70f),
+            HorizonSurfaceDark.copy(alpha = 0.50f)
         )
     )
+
+    /**
+     * Light-mode top app bar blur style.
+     * Applies [LightBlurRadius] without an opaque white surface wash so that the atmospheric
+     * top app bar gradient shines through and content scrolling underneath remains subtly visible.
+     */
+    val LightTopAppBarStyle: HazeBlurStyle = HazeBlurStyle {
+        blurRadius(LightBlurRadius)
+    }
+
+    /**
+     * Dark-mode top app bar blur style.
+     * Applies [DarkBlurRadius] without an opaque surface wash so that the atmospheric
+     * dark top app bar gradient shines through and content scrolling underneath remains subtly visible.
+     */
+    val DarkTopAppBarStyle: HazeBlurStyle = HazeBlurStyle {
+        blurRadius(DarkBlurRadius)
+    }
+
+    /**
+     * Returns the appropriate top app bar blur style for [darkTheme].
+     */
+    fun topAppBarBlurStyle(darkTheme: Boolean): HazeBlurStyle =
+        if (darkTheme) DarkTopAppBarStyle else LightTopAppBarStyle
 
     /**
      * Returns the appropriate top app bar gradient brush for [darkTheme].
@@ -142,6 +168,8 @@ internal object GlassmorphismDefaults {
  * - **Light mode:** [GlassmorphismDefaults.LightStyle] ([GlassmorphismDefaults.LightTint] + [GlassmorphismDefaults.LightBlurRadius])
  * - **Dark mode:** [GlassmorphismDefaults.DarkStyle] ([GlassmorphismDefaults.DarkTint] + [GlassmorphismDefaults.DarkBlurRadius])
  *
+ * Callers can pass a custom [style] (e.g. [GlassmorphismDefaults.topAppBarBlurStyle]) to customize the blur effect.
+ *
  * An optional [block] parameter exposes the full [HazeBlurStyleScope] for callers that need
  * layout-specific customisation (e.g. a gradient [HazeBlurStyleScope.mask] for the bottom bar's
  * fade-in scrim) without requiring a separate `hazeBlur` call.
@@ -149,6 +177,7 @@ internal object GlassmorphismDefaults {
  * @param hazeState The [HazeState] shared with the `hazeSource` content that sits behind
  *   this floating element. Must be created at the common ancestor composable.
  * @param darkTheme Whether to apply the dark-mode recipe. Defaults to [isSystemInDarkTheme].
+ * @param style Optional [HazeBlurStyle] override. Defaults to [GlassmorphismDefaults.DarkStyle] or [GlassmorphismDefaults.LightStyle].
  * @param block Optional lambda on [HazeBlurStyleScope] for additional per-site customisation
  *   (e.g. [HazeBlurStyleScope.mask]).
  * @return A [Modifier] with the glassmorphism blur effect applied.
@@ -159,10 +188,10 @@ internal object GlassmorphismDefaults {
 fun Modifier.horizonGlassEffect(
     hazeState: HazeState,
     darkTheme: Boolean = isSystemInDarkTheme(),
+    style: HazeBlurStyle = if (darkTheme) GlassmorphismDefaults.DarkStyle else GlassmorphismDefaults.LightStyle,
     block: (HazeBlurStyleScope.() -> Unit)? = null
 ): Modifier {
-    val baseStyle = if (darkTheme) GlassmorphismDefaults.DarkStyle else GlassmorphismDefaults.LightStyle
-    val finalStyle = if (block != null) baseStyle.then(block) else baseStyle
+    val finalStyle = if (block != null) style.then(block) else style
     return hazeBlur(
         input = HazeInput.Sources(hazeState),
         style = finalStyle

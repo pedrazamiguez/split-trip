@@ -64,7 +64,11 @@ fun DynamicTopAppBar(
     val colors = resolveContentColors(isDark)
 
     val glassModifier = if (hazeState != null) {
-        Modifier.horizonGlassEffect(hazeState = hazeState)
+        Modifier.horizonGlassEffect(
+            hazeState = hazeState,
+            darkTheme = isDark,
+            style = GlassmorphismDefaults.topAppBarBlurStyle(isDark)
+        )
     } else {
         Modifier
     }
@@ -185,10 +189,10 @@ private fun DynamicTopAppBarBackButton(
     Box(
         modifier = modifier
             .minimumInteractiveComponentSize()
-            .then(clickModifier)
             .size(40.dp)
             .clip(backButtonShape)
-            .background(backgroundColor),
+            .background(backgroundColor)
+            .then(clickModifier),
         contentAlignment = Alignment.Center
     ) {
         Icon(

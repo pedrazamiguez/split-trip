@@ -73,4 +73,26 @@ class GlassmorphismDefaultsTest {
             GlassmorphismDefaults.topAppBarGradient(darkTheme = true)
         )
     }
+
+    @Test
+    fun `light and dark top app bar blur styles are non-null and distinct`() {
+        assertNotNull(GlassmorphismDefaults.LightTopAppBarStyle)
+        assertNotNull(GlassmorphismDefaults.DarkTopAppBarStyle)
+        assertNotEquals(
+            GlassmorphismDefaults.LightTopAppBarStyle,
+            GlassmorphismDefaults.DarkTopAppBarStyle
+        )
+    }
+
+    @Test
+    fun `topAppBarBlurStyle returns correct blur style based on darkTheme flag`() {
+        assertEquals(
+            GlassmorphismDefaults.LightTopAppBarStyle,
+            GlassmorphismDefaults.topAppBarBlurStyle(darkTheme = false)
+        )
+        assertEquals(
+            GlassmorphismDefaults.DarkTopAppBarStyle,
+            GlassmorphismDefaults.topAppBarBlurStyle(darkTheme = true)
+        )
+    }
 }

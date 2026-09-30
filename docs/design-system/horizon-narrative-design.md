@@ -407,8 +407,9 @@ Box(
 #### Top App Bar Atmospheric Gradient & Blur
 
 `DynamicTopAppBar` incorporates this glassmorphism recipe backed by an atmospheric translucent gradient:
-- **Light mode:** `GlassmorphismDefaults.LightTopAppBarGradient` blends `HorizonBlue` (90% alpha) into `HorizonBlueContainer` (80% alpha).
-- **Dark mode:** `GlassmorphismDefaults.DarkTopAppBarGradient` blends `HorizonSurfaceContainerHighDark` (90% alpha) into `HorizonSurfaceDark` (80% alpha).
+- **Light mode:** `GlassmorphismDefaults.LightTopAppBarGradient` blends `HorizonBlue` (85% alpha down to 70% and 50% alpha `HorizonBlueContainer`), paired with `GlassmorphismDefaults.LightTopAppBarStyle`.
+- **Dark mode:** `GlassmorphismDefaults.DarkTopAppBarGradient` blends `HorizonSurfaceContainerHighDark` (85% alpha down to 70% and 50% alpha `HorizonSurfaceDark`), paired with `GlassmorphismDefaults.DarkTopAppBarStyle`.
+- **Translucency & Scroll-Under:** List content scrolls seamlessly underneath the top app bar using `LocalTopPadding`, diffusing through the frosted backdrop without double-tinting.
 - **Contrast & Legibility:** Guarantees WCAG AA compliant contrast (>= 4.5:1 ratio) in both themes (`onPrimary` in light mode, `onSurface` in dark mode).
 - **Ambient Coordination:** Screens automatically receive ambient `HazeState` via `LocalHazeState` and top spacing through `LocalTopPadding`.
 

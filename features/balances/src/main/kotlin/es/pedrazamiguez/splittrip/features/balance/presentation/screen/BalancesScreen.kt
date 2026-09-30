@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalanceMetricInfoBottomSheet
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalancesBodyContent
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalancesScreenOverlays
@@ -28,8 +27,6 @@ fun BalancesScreen(
     onNavigateToEditContribution: (String) -> Unit = {},
     onNavigateToWithdrawal: () -> Unit = {}
 ) {
-    val bottomPadding = LocalBottomPadding.current
-
     var contributionPendingDelete by remember { mutableStateOf<ContributionUiModel?>(null) }
     var withdrawalPendingDelete by remember { mutableStateOf<CashWithdrawalUiModel?>(null) }
     var showExtrasBreakdown by remember { mutableStateOf(false) }
@@ -37,7 +34,6 @@ fun BalancesScreen(
 
     BalancesBodyContent(
         uiState = uiState,
-        bottomPadding = bottomPadding,
         onEvent = onEvent,
         onNavigateToContribution = onNavigateToContribution,
         onNavigateToContributionDetail = onNavigateToContributionDetail,
