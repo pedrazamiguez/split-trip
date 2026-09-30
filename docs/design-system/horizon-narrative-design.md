@@ -399,12 +399,12 @@ Box(modifier = Modifier.horizonGlassEffect(hazeState = hazeState))
 // With layout-specific customisation (bottom bar gradient mask)
 Box(
     modifier = Modifier.horizonGlassEffect(hazeState = hazeState) {
-        mask = Brush.verticalGradient(...)
+        mask(Brush.verticalGradient(...))
     }
 )
 ```
 
-Powered by the `dev.chrisbanes.haze` library. Constants and the `Modifier.horizonGlassEffect()` extension live in `GlassmorphismDefaults`.
+Powered by the `dev.chrisbanes.haze` library (`dev.chrisbanes.haze:haze` and `dev.chrisbanes.haze:haze-blur`, Haze 2.0). Constants and the `Modifier.horizonGlassEffect()` extension live in `GlassmorphismDefaults`.
 
 > **Implementation:** `GlassmorphismDefaults.kt` in `core/design-system/.../foundation/`
 

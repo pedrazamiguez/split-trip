@@ -107,10 +107,12 @@ fun FloatingNavigationBar(
                     .fillMaxWidth()
                     .height(NavBarDefaults.BarHeight + NavBarDefaults.BottomPadding + navBarInset + 32.dp)
                     .horizonGlassEffect(hazeState = hazeState) {
-                        mask = Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black, Color.Black),
-                            startY = 0f,
-                            endY = Float.POSITIVE_INFINITY
+                        mask(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black, Color.Black),
+                                startY = 0f,
+                                endY = Float.POSITIVE_INFINITY
+                            )
                         )
                     }
             )

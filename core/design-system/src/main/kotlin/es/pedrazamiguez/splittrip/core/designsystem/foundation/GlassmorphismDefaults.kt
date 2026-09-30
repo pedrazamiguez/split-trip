@@ -3,12 +3,14 @@ package es.pedrazamiguez.splittrip.core.designsystem.foundation
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeEffectScope
+import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.HazeBlurStyleScope
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.hazeBlur
 
 /**
  * Design-system constants and utilities for the **Horizon Narrative Glassmorphism** recipe.
@@ -40,8 +42,10 @@ import dev.chrisbanes.haze.hazeEffect
  *         .fillMaxWidth()
  *         .height(barHeight)
  *         .horizonGlassEffect(hazeState = hazeState) {
- *             mask = Brush.verticalGradient(
- *                 colors = listOf(Color.Transparent, Color.Black, Color.Black),
+ *             mask(
+ *                 Brush.verticalGradient(
+ *                     colors = listOf(Color.Transparent, Color.Black, Color.Black),
+ *                 )
  *             )
  *         }
  * )
@@ -57,7 +61,7 @@ internal object GlassmorphismDefaults {
      * Applied on top of the blurred content as a translucent surface wash.
      * Matches the Horizon Narrative Glass & Gradient rule (§2).
      */
-    val LightTint: HazeTint = HazeTint(HorizonSurface.copy(alpha = 0.70f))
+    val LightTint: HazeColorEffect = HazeColorEffect.tint(HorizonSurface.copy(alpha = 0.70f))
 
     /**
      * Dark-mode tint: [HorizonSurfaceDark] at **60 % opacity**.
@@ -66,14 +70,14 @@ internal object GlassmorphismDefaults {
      * already provides enough visual separation between layers on dark surfaces.
      * Matches the Horizon Narrative Glass & Gradient rule (§7).
      */
-    val DarkTint: HazeTint = HazeTint(HorizonSurfaceDark.copy(alpha = 0.60f))
+    val DarkTint: HazeColorEffect = HazeColorEffect.tint(HorizonSurfaceDark.copy(alpha = 0.60f))
 
     /**
      * Light-mode backdrop blur radius: **20 dp**.
      *
      * Matches the Horizon Narrative Glass & Gradient rule (§2).
      */
-    val LightBlurRadius = 20.dp
+    val LightBlurRadius: Dp = 20.dp
 
     /**
      * Dark-mode backdrop blur radius: **24 dp**.
@@ -81,25 +85,41 @@ internal object GlassmorphismDefaults {
      * The extra 4 dp compensates for the reduced contrast between surface hierarchy levels
      * on dark backgrounds, ensuring a perceptibly distinct frosted-glass appearance (§7).
      */
-    val DarkBlurRadius = 24.dp
+    val DarkBlurRadius: Dp = 24.dp
+
+    /**
+     * Light-mode blur style combining [LightBlurRadius] and [LightTint].
+     */
+    val LightStyle: HazeBlurStyle = HazeBlurStyle {
+        blurRadius(LightBlurRadius)
+        colorEffects(listOf(LightTint))
+    }
+
+    /**
+     * Dark-mode blur style combining [DarkBlurRadius] and [DarkTint].
+     */
+    val DarkStyle: HazeBlurStyle = HazeBlurStyle {
+        blurRadius(DarkBlurRadius)
+        colorEffects(listOf(DarkTint))
+    }
 }
 
 /**
  * Applies the **Horizon Narrative glassmorphism recipe** to the receiver [Modifier].
  *
  * Selects blur radius and surface tint automatically based on [darkTheme]:
- * - **Light mode:** [GlassmorphismDefaults.LightTint] + [GlassmorphismDefaults.LightBlurRadius]
- * - **Dark mode:** [GlassmorphismDefaults.DarkTint] + [GlassmorphismDefaults.DarkBlurRadius]
+ * - **Light mode:** [GlassmorphismDefaults.LightStyle] ([GlassmorphismDefaults.LightTint] + [GlassmorphismDefaults.LightBlurRadius])
+ * - **Dark mode:** [GlassmorphismDefaults.DarkStyle] ([GlassmorphismDefaults.DarkTint] + [GlassmorphismDefaults.DarkBlurRadius])
  *
- * An optional [block] parameter exposes the full [HazeEffectScope] for callers that need
- * layout-specific customisation (e.g. a gradient [HazeEffectScope.mask] for the bottom bar's
- * fade-in scrim) without requiring a separate `hazeEffect` call.
+ * An optional [block] parameter exposes the full [HazeBlurStyleScope] for callers that need
+ * layout-specific customisation (e.g. a gradient [HazeBlurStyleScope.mask] for the bottom bar's
+ * fade-in scrim) without requiring a separate `hazeBlur` call.
  *
  * @param hazeState The [HazeState] shared with the `hazeSource` content that sits behind
  *   this floating element. Must be created at the common ancestor composable.
  * @param darkTheme Whether to apply the dark-mode recipe. Defaults to [isSystemInDarkTheme].
- * @param block Optional lambda on [HazeEffectScope] for additional per-site customisation
- *   (e.g. [HazeEffectScope.mask], [HazeEffectScope.alpha]).
+ * @param block Optional lambda on [HazeBlurStyleScope] for additional per-site customisation
+ *   (e.g. [HazeBlurStyleScope.mask]).
  * @return A [Modifier] with the glassmorphism blur effect applied.
  *
  * @see GlassmorphismDefaults
@@ -108,16 +128,12 @@ internal object GlassmorphismDefaults {
 fun Modifier.horizonGlassEffect(
     hazeState: HazeState,
     darkTheme: Boolean = isSystemInDarkTheme(),
-    block: (HazeEffectScope.() -> Unit)? = null
+    block: (HazeBlurStyleScope.() -> Unit)? = null
 ): Modifier {
-    val tint = if (darkTheme) GlassmorphismDefaults.DarkTint else GlassmorphismDefaults.LightTint
-    val blurRadius = if (darkTheme) GlassmorphismDefaults.DarkBlurRadius else GlassmorphismDefaults.LightBlurRadius
-    return hazeEffect(
-        state = hazeState,
-        style = HazeStyle(
-            tint = tint,
-            blurRadius = blurRadius
-        ),
-        block = block
+    val baseStyle = if (darkTheme) GlassmorphismDefaults.DarkStyle else GlassmorphismDefaults.LightStyle
+    val finalStyle = if (block != null) baseStyle.then(block) else baseStyle
+    return hazeBlur(
+        input = HazeInput.Sources(hazeState),
+        style = finalStyle
     )
 }
