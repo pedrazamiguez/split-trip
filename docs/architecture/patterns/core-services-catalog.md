@@ -145,7 +145,7 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Utility | File | Purpose |
 |---|---|---|
-| `GlassmorphismDefaults` | `foundation/GlassmorphismDefaults.kt` | Constants and `Modifier.horizonGlassEffect()` extension for the Horizon Narrative glass-blur recipe. Light mode: surface at 70% opacity + 20dp blur. Dark mode: surface at 60% opacity + 24dp blur. Accepts optional `HazeEffectScope` block for per-site customisation (e.g., gradient mask). **Use for:** Any floating UI element that needs frosted-glass depth (nav bars, top bars, modal sheets). Powered by `dev.chrisbanes.haze`. |
+| `GlassmorphismDefaults` | `foundation/GlassmorphismDefaults.kt` | Constants and `Modifier.horizonGlassEffect()` extension for the Horizon Narrative glass-blur recipe. Light mode: surface at 70% opacity + 20dp blur. Dark mode: surface at 60% opacity + 24dp blur. Accepts optional `HazeBlurStyleScope` block for per-site customisation (e.g., gradient mask). **Use for:** Any floating UI element that needs frosted-glass depth (nav bars, top bars, modal sheets). Powered by `dev.chrisbanes.haze` (`haze` + `haze-blur`, Haze 2.0). |
 
 ---
 
