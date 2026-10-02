@@ -92,7 +92,7 @@ fun SettingsFeature(
         context.startActivity(Intent.createChooser(intent, "Send email..."))
     }
 
-    FeatureScaffold(currentRoute = Routes.SETTINGS) {
+    FeatureScaffold(currentRoute = Routes.SETTINGS, scrollContentUnderTopBar = true) {
         SettingsScreen(
             onAccountStatusClick = { navController.navigate(Routes.SETTINGS_ACCOUNT_STATUS) },
             onSubscriptionsClick = { navController.navigate(Routes.SETTINGS_SUBSCRIPTIONS) },

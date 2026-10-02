@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.LocalHazeState
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import org.koin.compose.getKoin
@@ -24,6 +25,7 @@ import org.koin.compose.getKoin
 fun FeatureScaffold(
     currentRoute: String,
     modifier: Modifier = Modifier,
+    scrollContentUnderTopBar: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val koin = getKoin()
@@ -50,14 +52,33 @@ fun FeatureScaffold(
             val topPadding = innerPadding.calculateTopPadding()
             val bottomPadding = innerPadding.calculateBottomPadding()
 
-            CompositionLocalProvider(LocalTopPadding provides 0.dp) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .hazeSource(state = hazeState)
-                        .padding(top = topPadding, bottom = bottomPadding)
+            if (scrollContentUnderTopBar) {
+                CompositionLocalProvider(
+                    LocalTopPadding provides topPadding,
+                    LocalBottomPadding provides bottomPadding
                 ) {
-                    content()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .hazeSource(state = hazeState)
+                            .padding(bottom = bottomPadding)
+                    ) {
+                        content()
+                    }
+                }
+            } else {
+                CompositionLocalProvider(
+                    LocalTopPadding provides 0.dp,
+                    LocalBottomPadding provides bottomPadding
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .hazeSource(state = hazeState)
+                            .padding(top = topPadding, bottom = bottomPadding)
+                    ) {
+                        content()
+                    }
                 }
             }
         }
