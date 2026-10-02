@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.LocalHazeState
@@ -49,7 +50,7 @@ fun FeatureScaffold(
             val topPadding = innerPadding.calculateTopPadding()
             val bottomPadding = innerPadding.calculateBottomPadding()
 
-            CompositionLocalProvider(LocalTopPadding provides topPadding) {
+            CompositionLocalProvider(LocalTopPadding provides 0.dp) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

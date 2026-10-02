@@ -1,7 +1,10 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.screen
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.AddExpenseConfigFailedContent
@@ -20,6 +23,8 @@ fun AddExpenseScreen(
     uiState: AddExpenseUiState,
     onEvent: (AddExpenseUiEvent) -> Unit = {}
 ) {
+    val topPadding = LocalTopPadding.current
+
     LaunchedEffect(groupId) {
         onEvent(AddExpenseUiEvent.LoadGroupConfig(groupId))
     }
@@ -32,12 +37,13 @@ fun AddExpenseScreen(
 
             uiState.configLoadFailed -> {
                 AddExpenseConfigFailedContent(
+                    modifier = Modifier.padding(top = topPadding),
                     onRetry = { onEvent(AddExpenseUiEvent.RetryLoadConfig(groupId)) }
                 )
             }
 
             else -> {
-                ShimmerLoadingList()
+                ShimmerLoadingList(modifier = Modifier.padding(top = topPadding))
             }
         }
     }

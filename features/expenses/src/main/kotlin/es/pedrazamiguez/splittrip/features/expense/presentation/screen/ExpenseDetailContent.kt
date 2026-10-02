@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.BreakdownCardSection
@@ -32,6 +33,7 @@ internal fun ExpenseDetailContent(
     onReceiptTap: (() -> Unit)?,
     onConfirmPaymentTap: (() -> Unit)?
 ) {
+    val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
 
     Column(
@@ -41,7 +43,7 @@ internal fun ExpenseDetailContent(
             .padding(horizontal = MaterialTheme.spacing.Default),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small + topPadding))
 
         HeroSection(expense = expense, onReceiptTap = onReceiptTap)
 

@@ -6,8 +6,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -20,7 +22,9 @@ internal fun ExpenseWizardBody(
     onEvent: (AddExpenseUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
+    val topPadding = LocalTopPadding.current
+
+    Column(modifier = modifier.padding(top = topPadding)) {
         WizardStepIndicator(
             stepLabels = orderedLabels,
             currentStepIndex = uiState.currentStepIndex,

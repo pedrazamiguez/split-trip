@@ -31,6 +31,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlignJustified
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
@@ -57,13 +58,14 @@ fun ExpensesFilterScreen(
     onApplyFilters: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
     var showResetFiltersDialog by remember { mutableStateOf(false) }
     val hazeState = remember { HazeState() }
 
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
-        loadingContent = { ShimmerLoadingList() }
+        loadingContent = { ShimmerLoadingList(modifier = Modifier.padding(top = topPadding)) }
     ) {
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn(
@@ -72,7 +74,7 @@ fun ExpensesFilterScreen(
                     .hazeSource(state = hazeState),
                 contentPadding = PaddingValues(
                     start = MaterialTheme.spacing.Default,
-                    top = MaterialTheme.spacing.Default,
+                    top = MaterialTheme.spacing.Default + topPadding,
                     end = MaterialTheme.spacing.Default,
                     bottom = STICKY_ACTION_BAR_BOTTOM_SPACING + bottomPadding
                 ),

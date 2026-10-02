@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -21,6 +22,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Edit
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -41,19 +43,21 @@ fun SubunitManagementScreen(
 ) {
     var selectedSubunitForMenu by remember { mutableStateOf<SubunitUiModel?>(null) }
     var subunitToDelete by remember { mutableStateOf<SubunitUiModel?>(null) }
+    val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
     val listState = rememberLazyListState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         DeferredLoadingContainer(
             isLoading = uiState.isLoading,
-            loadingContent = { ShimmerLoadingList() }
+            loadingContent = { ShimmerLoadingList(modifier = Modifier.padding(top = topPadding)) }
         ) {
             when {
                 uiState.subunits.isEmpty() -> {
                     EmptyStateView(
                         title = stringResource(R.string.subunit_empty_state),
-                        icon = TablerIcons.Outline.Sitemap
+                        icon = TablerIcons.Outline.Sitemap,
+                        modifier = Modifier.padding(top = topPadding)
                     )
                 }
 
@@ -63,7 +67,7 @@ fun SubunitManagementScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
                             start = MaterialTheme.spacing.Default,
-                            top = MaterialTheme.spacing.Default,
+                            top = MaterialTheme.spacing.Default + topPadding,
                             end = MaterialTheme.spacing.Default,
                             bottom = MaterialTheme.spacing.Default + bottomPadding
                         ),

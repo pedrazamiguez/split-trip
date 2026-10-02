@@ -1,7 +1,10 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.screen
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
@@ -16,6 +19,8 @@ fun AddCashWithdrawalScreen(
     uiState: AddCashWithdrawalUiState,
     onEvent: (AddCashWithdrawalUiEvent) -> Unit = {}
 ) {
+    val topPadding = LocalTopPadding.current
+
     LaunchedEffect(groupId) {
         onEvent(AddCashWithdrawalUiEvent.LoadGroupConfig(groupId))
     }
@@ -32,12 +37,13 @@ fun AddCashWithdrawalScreen(
 
             uiState.configLoadFailed -> {
                 WithdrawalConfigLoadFailedContent(
+                    modifier = Modifier.padding(top = topPadding),
                     onRetry = { onEvent(AddCashWithdrawalUiEvent.RetryLoadConfig(groupId)) }
                 )
             }
 
             else -> {
-                ShimmerLoadingList()
+                ShimmerLoadingList(modifier = Modifier.padding(top = topPadding))
             }
         }
     }
