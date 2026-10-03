@@ -58,7 +58,13 @@ class EditProfileViewModel(
                 _uiState.update { it.copy(displayName = event.name, displayNameError = null) }
             }
             is EditProfileUiEvent.OnBioChanged -> {
-                _uiState.update { it.copy(bio = event.bio, bioError = null) }
+                val bioValidation = userValidationService.validateBio(event.bio)
+                val bioError = if (bioValidation is ValidationResult.Invalid) {
+                    UiText.StringResource(R.string.edit_profile_error_bio_length)
+                } else {
+                    null
+                }
+                _uiState.update { it.copy(bio = event.bio, bioError = bioError) }
             }
             is EditProfileUiEvent.OnAvatarPicked -> {
                 _uiState.update {
@@ -155,6 +161,8 @@ class EditProfileViewModel(
     }
 
     private fun saveProfile() {
+        if (_uiState.value.displayNameError != null || _uiState.value.bioError != null) return
+
         val currentUserId = userId
         if (currentUserId == null) {
             viewModelScope.launch {

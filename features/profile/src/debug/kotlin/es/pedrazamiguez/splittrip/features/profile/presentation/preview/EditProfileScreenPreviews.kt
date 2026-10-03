@@ -62,9 +62,9 @@ fun EditProfileScreenErrorsPreview() {
         EditProfileScreen(
             uiState = EditProfileUiState(
                 displayName = "",
-                bio = "A".repeat(300),
+                bio = "A".repeat(160),
                 displayNameError = UiText.DynamicString("Display name cannot be empty"),
-                bioError = UiText.DynamicString("Bio cannot exceed 200 characters")
+                bioError = UiText.DynamicString("Bio cannot exceed 150 characters")
             ),
             onEvent = {},
             onAvatarClick = {}

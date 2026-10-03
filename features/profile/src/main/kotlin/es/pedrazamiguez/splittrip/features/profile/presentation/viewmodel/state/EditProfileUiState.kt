@@ -15,4 +15,7 @@ data class EditProfileUiState(
     val displayNameError: UiText? = null,
     val bioError: UiText? = null,
     val avatarUpdatedTime: Long = 0L
-)
+) {
+    val isSaveEnabled: Boolean
+        get() = !isSaving && !isLoading && displayNameError == null && bioError == null
+}
