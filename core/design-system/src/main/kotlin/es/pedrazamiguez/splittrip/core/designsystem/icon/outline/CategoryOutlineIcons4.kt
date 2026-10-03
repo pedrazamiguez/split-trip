@@ -350,55 +350,36 @@ val TablerIcons.Outline.CircleDotted: ImageVector
 
 private var _CircleDotted: ImageVector? = null
 
-val TablerIcons.Outline.Van: ImageVector
-    get() = _Van ?: ImageVector.Builder(
-        name = "Outline.Van",
+val TablerIcons.Outline.Keyframes: ImageVector
+    get() = _Keyframes ?: ImageVector.Builder(
+        name = "Outline.Keyframes",
         defaultWidth = 24.dp,
         defaultHeight = 24.dp,
         viewportWidth = 24f,
         viewportHeight = 24f
     ).addPath(
-        pathData = addPathNodes("M5 18a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"),
+        pathData = addPathNodes(
+            "M9.225 18.412a1.595 1.595 0 0 1 -1.225 .588c-.468 0 -.914 -.214 -1.225 -.588" +
+                "l-4.361 -5.248a1.844 1.844 0 0 1 0 -2.328l4.361 -5.248" +
+                "a1.595 1.595 0 0 1 1.225 -.588c.468 0 .914 .214 1.225 .588" +
+                "l4.361 5.248a1.844 1.844 0 0 1 0 2.328l-4.361 5.248"
+        ),
         stroke = SolidColor(Color.Black),
         strokeLineWidth = 2f,
         strokeLineCap = StrokeCap.Round,
         strokeLineJoin = StrokeJoin.Round
     ).addPath(
-        pathData = addPathNodes("M15 18a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"),
+        pathData = addPathNodes("M17 5l4.586 5.836a1.844 1.844 0 0 1 0 2.328l-4.586 5.836"),
         stroke = SolidColor(Color.Black),
         strokeLineWidth = 2f,
         strokeLineCap = StrokeCap.Round,
         strokeLineJoin = StrokeJoin.Round
     ).addPath(
-        pathData = addPathNodes("M5 18h-1a1 1 0 0 1 -1 -1v-11a2 2 0 0 1 2 -2h12a4 4 0 0 1 4 4h-18"),
+        pathData = addPathNodes("M13 5l4.586 5.836a1.844 1.844 0 0 1 0 2.328l-4.586 5.836"),
         stroke = SolidColor(Color.Black),
         strokeLineWidth = 2f,
         strokeLineCap = StrokeCap.Round,
         strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M9 18h6"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M19 18h1a1 1 0 0 0 1 -1v-4l-3 -5"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M21 13h-7"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M14 8v10"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).build().also { _Van = it }
+    ).build().also { _Keyframes = it }
 
-private var _Van: ImageVector? = null
+private var _Keyframes: ImageVector? = null

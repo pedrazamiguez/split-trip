@@ -2,7 +2,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.extensions
 
 import es.pedrazamiguez.splittrip.core.common.R as CommonR
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Van
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Keyframes
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Theater
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
@@ -68,10 +69,18 @@ class ExpenseSubcategoryExtensionsTest {
     inner class IconVectorMapping {
 
         @Test
-        fun `maps private transfer to van icon`() {
+        fun `maps private transfer to keyframes icon`() {
             assertSame(
-                TablerIcons.Outline.Van,
+                TablerIcons.Outline.Keyframes,
                 ExpenseSubcategory.PRIVATE_TRANSFER.toIconVector()
+            )
+        }
+
+        @Test
+        fun `maps cinema theater to theater icon`() {
+            assertSame(
+                TablerIcons.Outline.Theater,
+                ExpenseSubcategory.CINEMA_THEATER.toIconVector()
             )
         }
 
