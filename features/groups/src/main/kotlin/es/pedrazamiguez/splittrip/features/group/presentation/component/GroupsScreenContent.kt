@@ -11,11 +11,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.InlineWarningBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -35,17 +37,22 @@ internal fun GroupsScreenContent(
     onUpgradeClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val topPadding = LocalTopPadding.current
     Column(modifier = modifier.fillMaxSize()) {
-        InlineWarningBanner(
-            warning = if (uiState.isAnonymous) UiText.StringResource(R.string.groups_anonymous_warning) else null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = MaterialTheme.spacing.Default,
-                    vertical = MaterialTheme.spacing.Small
-                )
-                .debouncedClickable { onUpgradeClicked() }
-        )
+        if (uiState.isAnonymous) {
+            InlineWarningBanner(
+                warning = UiText.StringResource(R.string.groups_anonymous_warning),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = MaterialTheme.spacing.Default,
+                        top = topPadding + MaterialTheme.spacing.Small,
+                        end = MaterialTheme.spacing.Default,
+                        bottom = MaterialTheme.spacing.Small
+                    )
+                    .debouncedClickable { onUpgradeClicked() }
+            )
+        }
         Box(modifier = Modifier.weight(1f)) {
             DeferredLoadingContainer(
                 isLoading = uiState.isLoading,
@@ -54,13 +61,15 @@ internal fun GroupsScreenContent(
                 if (uiState.groups.isEmpty()) {
                     EmptyStateView(
                         title = stringResource(R.string.groups_not_found),
-                        icon = TablerIcons.Outline.UsersGroup
+                        icon = TablerIcons.Outline.UsersGroup,
+                        modifier = Modifier.padding(top = topPadding)
                     )
                 } else {
                     GroupsListContent(
                         groups = uiState.groups,
                         selectedGroupId = selectedGroupId,
                         listState = listState,
+                        topPadding = if (uiState.isAnonymous) 0.dp else topPadding,
                         bottomPadding = bottomPadding,
                         onGroupClicked = onGroupClicked,
                         onGroupLongClicked = onGroupLongClicked

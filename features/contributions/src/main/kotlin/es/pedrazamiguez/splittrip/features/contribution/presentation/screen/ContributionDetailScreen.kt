@@ -2,12 +2,14 @@ package es.pedrazamiguez.splittrip.features.contribution.presentation.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
@@ -20,6 +22,7 @@ fun ContributionDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val bottomPadding = LocalBottomPadding.current
+    val topPadding = LocalTopPadding.current
 
     Box(
         modifier = modifier
@@ -27,19 +30,21 @@ fun ContributionDetailScreen(
     ) {
         DeferredLoadingContainer(
             isLoading = uiState.isLoading,
-            loadingContent = { ShimmerLoadingList() }
+            loadingContent = { ShimmerLoadingList(modifier = Modifier.padding(top = topPadding)) }
         ) {
             when {
                 uiState.hasError || uiState.contribution == null -> {
                     EmptyStateView(
                         title = stringResource(R.string.contribution_detail_error_loading),
-                        icon = TablerIcons.Outline.Wallet
+                        icon = TablerIcons.Outline.Wallet,
+                        modifier = Modifier.padding(top = topPadding)
                     )
                 }
                 else -> {
                     ContributionDetailContent(
                         contribution = uiState.contribution,
-                        bottomPadding = bottomPadding
+                        bottomPadding = bottomPadding,
+                        topPadding = topPadding
                     )
                 }
             }

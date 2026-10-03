@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,14 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlignJustified
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
@@ -57,22 +56,20 @@ fun ExpensesFilterScreen(
     onApplyFilters: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
     var showResetFiltersDialog by remember { mutableStateOf(false) }
-    val hazeState = remember { HazeState() }
 
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
-        loadingContent = { ShimmerLoadingList() }
+        loadingContent = { ShimmerLoadingList(modifier = Modifier.padding(top = topPadding)) }
     ) {
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(state = hazeState),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = MaterialTheme.spacing.Default,
-                    top = MaterialTheme.spacing.Default,
+                    top = MaterialTheme.spacing.Default + topPadding,
                     end = MaterialTheme.spacing.Default,
                     bottom = STICKY_ACTION_BAR_BOTTOM_SPACING + bottomPadding
                 ),
@@ -110,11 +107,12 @@ fun ExpensesFilterScreen(
                 }
             }
 
-            Box(
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = MaterialTheme.spacing.Large,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .horizonGlassEffect(hazeState = hazeState)
             ) {
                 Column(
                     modifier = Modifier

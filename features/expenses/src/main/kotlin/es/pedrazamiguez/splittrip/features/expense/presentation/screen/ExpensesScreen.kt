@@ -30,6 +30,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
@@ -68,6 +69,7 @@ fun ExpensesScreen(
     onResetFilters: () -> Unit = {}
 ) {
     val bottomPadding = LocalBottomPadding.current
+    val topPadding = LocalTopPadding.current
 
     var selectedExpenseForMenu by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var expenseToDelete by remember { mutableStateOf<ExpenseUiModel?>(null) }
@@ -96,20 +98,25 @@ fun ExpensesScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         DeferredLoadingContainer(
             isLoading = uiState.isLoading,
-            loadingContent = { ShimmerLoadingList() }
+            loadingContent = { ShimmerLoadingList(modifier = Modifier.padding(top = topPadding)) }
         ) {
             when {
                 uiState.isGroupEmpty -> {
                     EmptyStateView(
                         title = stringResource(R.string.expenses_not_found),
-                        icon = TablerIcons.Outline.Receipt
+                        icon = TablerIcons.Outline.Receipt,
+                        modifier = Modifier.padding(top = topPadding)
                     )
                 }
 
                 else -> {
                     val sharedTransitionScope = LocalSharedTransitionScope.current
                     val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = topPadding)
+                    ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             if (!uiState.isSearchResultEmpty) {
                                 ExpensesTotalSummaryRow(

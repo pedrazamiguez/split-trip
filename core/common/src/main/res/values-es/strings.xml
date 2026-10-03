@@ -26,8 +26,9 @@
     <string name="expense_subcategory_train">Tren</string>
     <string name="expense_subcategory_bus">Autobús</string>
     <string name="expense_subcategory_taxi_rideshare">Taxi y VTC</string>
+    <string name="expense_subcategory_private_transfer">Traslado privado</string>
     <string name="expense_subcategory_car_rental">Alquiler de coche</string>
-    <string name="expense_subcategory_motorbike_rental">Alquiler de moto</string>
+    <string name="expense_subcategory_motorbike_rental">Bicis y motos</string>
     <string name="expense_subcategory_fuel">Combustible</string>
     <string name="expense_subcategory_tolls_parking">Peajes y aparcamiento</string>
     <string name="expense_subcategory_ferry_boat">Ferry y barco</string>

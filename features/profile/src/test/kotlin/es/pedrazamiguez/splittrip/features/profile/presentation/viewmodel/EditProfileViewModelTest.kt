@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CropRect
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
@@ -53,7 +54,7 @@ class EditProfileViewModelTest {
         profileImagePath = "https://example.com/photo.jpg",
         createdAt = LocalDateTime.of(2024, 6, 15, 10, 30),
         bio = "Hello",
-        syncStatus = es.pedrazamiguez.splittrip.domain.enums.SyncStatus.SYNCED
+        syncStatus = SyncStatus.SYNCED
     )
 
     @BeforeEach
@@ -174,6 +175,7 @@ class EditProfileViewModelTest {
         @Test
         fun `OnBioChanged updates bio and resets error`() = runTest(testDispatcher) {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateBio("New Bio") } returns ValidationResult.Valid
             createViewModel()
             advanceUntilIdle()
 
@@ -183,6 +185,46 @@ class EditProfileViewModelTest {
             // Then
             assertEquals("New Bio", viewModel.uiState.value.bio)
             assertNull(viewModel.uiState.value.bioError)
+        }
+
+        @Test
+        fun `OnBioChanged sets bioError when bio exceeds maximum length`() = runTest(testDispatcher) {
+            coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateBio(any()) } returns
+                ValidationResult.Invalid("Bio cannot exceed 150 characters")
+            createViewModel()
+            advanceUntilIdle()
+
+            // When
+            val longBio = "b".repeat(151)
+            viewModel.onEvent(EditProfileUiEvent.OnBioChanged(longBio))
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals(longBio, state.bio)
+            assertTrue(state.bioError is UiText.StringResource)
+            assertEquals(R.string.edit_profile_error_bio_length, (state.bioError as UiText.StringResource).resId)
+        }
+
+        @Test
+        fun `OnBioChanged clears bioError when bio is reduced back to valid length`() = runTest(testDispatcher) {
+            coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateBio("b".repeat(151)) } returns
+                ValidationResult.Invalid("Bio cannot exceed 150 characters")
+            every { userValidationService.validateBio("valid bio") } returns ValidationResult.Valid
+            createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(EditProfileUiEvent.OnBioChanged("b".repeat(151)))
+            assertNotNull(viewModel.uiState.value.bioError)
+
+            // When
+            viewModel.onEvent(EditProfileUiEvent.OnBioChanged("valid bio"))
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals("valid bio", state.bio)
+            assertNull(state.bioError)
         }
     }
 
@@ -331,14 +373,13 @@ class EditProfileViewModelTest {
         @Test
         fun `OnSaveClicked performs validation and saves profile successfully`() = runTest(testDispatcher) {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateDisplayName("New Name") } returns ValidationResult.Valid
+            every { userValidationService.validateBio("New Bio") } returns ValidationResult.Valid
             createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(EditProfileUiEvent.OnDisplayNameChanged("New Name"))
             viewModel.onEvent(EditProfileUiEvent.OnBioChanged("New Bio"))
-
-            every { userValidationService.validateDisplayName("New Name") } returns ValidationResult.Valid
-            every { userValidationService.validateBio("New Bio") } returns ValidationResult.Valid
 
             coEvery {
                 updateUserProfileUseCase("user-123", "New Name", "New Bio", "https://example.com/photo.jpg")
@@ -397,14 +438,13 @@ class EditProfileViewModelTest {
         @Test
         fun `OnSaveClicked displays bio error when bio is too long`() = runTest(testDispatcher) {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateDisplayName("Test User") } returns ValidationResult.Valid
+            every { userValidationService.validateBio("long bio...") } returns
+                ValidationResult.Invalid("Bio cannot exceed 150 characters")
             createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(EditProfileUiEvent.OnBioChanged("long bio..."))
-
-            every { userValidationService.validateDisplayName("Test User") } returns ValidationResult.Valid
-            every { userValidationService.validateBio("long bio...") } returns
-                ValidationResult.Invalid("Bio cannot exceed 150 characters")
 
             // When
             viewModel.onEvent(EditProfileUiEvent.OnSaveClicked)
@@ -499,16 +539,56 @@ class EditProfileViewModelTest {
         }
 
         @Test
+        fun `OnSaveClicked does not proceed when bioError is already present`() = runTest(testDispatcher) {
+            coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateBio(any()) } returns
+                ValidationResult.Invalid("Bio cannot exceed 150 characters")
+            createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(EditProfileUiEvent.OnBioChanged("b".repeat(151)))
+            assertNotNull(viewModel.uiState.value.bioError)
+
+            // When
+            viewModel.onEvent(EditProfileUiEvent.OnSaveClicked)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 0) { updateUserProfileUseCase(any(), any(), any(), any()) }
+        }
+
+        @Test
+        fun `OnSaveClicked does not proceed when displayNameError is already present`() = runTest(testDispatcher) {
+            coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateDisplayName("") } returns
+                ValidationResult.Invalid("Display name cannot be empty")
+            every { userValidationService.validateBio(any()) } returns ValidationResult.Valid
+            createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(EditProfileUiEvent.OnDisplayNameChanged(""))
+            viewModel.onEvent(EditProfileUiEvent.OnSaveClicked)
+            assertNotNull(viewModel.uiState.value.displayNameError)
+
+            // When
+            viewModel.onEvent(EditProfileUiEvent.OnSaveClicked)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 0) { updateUserProfileUseCase(any(), any(), any(), any()) }
+        }
+
+        @Test
         fun `saveProfile_trimsBioBeforePersistence`() = runTest(testDispatcher) {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateBio("  My bio  ") } returns ValidationResult.Valid
+            every { userValidationService.validateDisplayName(any()) } returns ValidationResult.Valid
+            every { userValidationService.validateBio("My bio") } returns ValidationResult.Valid
+            coEvery { updateUserProfileUseCase(any(), any(), any(), any()) } returns Result.success(Unit)
             createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(EditProfileUiEvent.OnBioChanged("  My bio  "))
-
-            every { userValidationService.validateDisplayName(any()) } returns ValidationResult.Valid
-            every { userValidationService.validateBio("My bio") } returns ValidationResult.Valid
-            coEvery { updateUserProfileUseCase(any(), any(), any(), any()) } returns Result.success(Unit)
 
             viewModel.onEvent(EditProfileUiEvent.OnSaveClicked)
             advanceUntilIdle()
@@ -519,14 +599,14 @@ class EditProfileViewModelTest {
         @Test
         fun `saveProfile_treatsWhitespaceOnlyBioAsNull`() = runTest(testDispatcher) {
             coEvery { getCurrentUserProfileUseCase() } returns testUser
+            every { userValidationService.validateBio("   ") } returns ValidationResult.Valid
+            every { userValidationService.validateDisplayName(any()) } returns ValidationResult.Valid
+            every { userValidationService.validateBio(null) } returns ValidationResult.Valid
+            coEvery { updateUserProfileUseCase(any(), any(), any(), any()) } returns Result.success(Unit)
             createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(EditProfileUiEvent.OnBioChanged("   "))
-
-            every { userValidationService.validateDisplayName(any()) } returns ValidationResult.Valid
-            every { userValidationService.validateBio(null) } returns ValidationResult.Valid
-            coEvery { updateUserProfileUseCase(any(), any(), any(), any()) } returns Result.success(Unit)
 
             viewModel.onEvent(EditProfileUiEvent.OnSaveClicked)
             advanceUntilIdle()

@@ -19,13 +19,14 @@ import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransi
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import kotlinx.collections.immutable.ImmutableList
 
-@Suppress("LongMethod")
+@Suppress("LongMethod", "LongParameterList")
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun GroupsListContent(
     groups: ImmutableList<GroupUiModel>,
     selectedGroupId: String?,
     listState: LazyListState,
+    topPadding: Dp,
     bottomPadding: Dp,
     onGroupClicked: (String, String, String) -> Unit,
     onGroupLongClicked: (GroupUiModel) -> Unit,
@@ -42,7 +43,7 @@ internal fun GroupsListContent(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = MaterialTheme.spacing.Default,
-            top = MaterialTheme.spacing.Default,
+            top = MaterialTheme.spacing.Default + topPadding,
             end = MaterialTheme.spacing.Default,
             bottom = MaterialTheme.spacing.Default + bottomPadding
         ),

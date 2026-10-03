@@ -141,3 +141,43 @@ private fun StyledOutlinedTextFieldReadOnlyPreview() {
         }
     }
 }
+
+@PreviewLocales
+@Composable
+private fun StyledOutlinedTextFieldWithCounterPreview() {
+    PreviewThemeWrapper {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            StyledOutlinedTextField(
+                value = "Short bio",
+                onValueChange = {},
+                label = "Bio",
+                maxLength = 150
+            )
+        }
+    }
+}
+
+@PreviewLocales
+@Composable
+private fun StyledOutlinedTextFieldWithCounterOverflowPreview() {
+    PreviewThemeWrapper {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            StyledOutlinedTextField(
+                value = "A".repeat(155),
+                onValueChange = {},
+                label = "Bio",
+                maxLength = 150,
+                isError = true,
+                supportingText = "Bio cannot exceed 150 characters"
+            )
+        }
+    }
+}

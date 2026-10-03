@@ -61,4 +61,14 @@ class ModifierExtensionsTest {
 
         assertNotNull(modifier)
     }
+
+    @Test
+    fun `debouncedCombinedClickableNoRipple creates a valid modifier`() {
+        val modifier = Modifier.debouncedCombinedClickableNoRipple(
+            onClick = {},
+            onLongClick = {}
+        )
+
+        assertNotNull(modifier)
+    }
 }

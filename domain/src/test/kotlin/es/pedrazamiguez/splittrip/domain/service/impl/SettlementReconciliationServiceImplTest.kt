@@ -235,7 +235,8 @@ class SettlementReconciliationServiceImplTest {
 
             // Verify no new cash settlements would be generated
             val simplificationService = DebtSimplificationServiceImpl(
-                CashDebtScalingServiceImpl(RemainderDistributionServiceImpl())
+                CashDebtScalingServiceImpl(RemainderDistributionServiceImpl()),
+                PocketDebtDistributionServiceImpl()
             )
             val newSettlements = simplificationService.simplifyByPocket(reconciled, "EUR")
             val cashSettlements = newSettlements.filter {

@@ -273,7 +273,7 @@ Before creating any new service, utility, formatter, or UI component, **check th
 | **Scaffold & Nav** | `FeatureScaffold`, `ExpressiveFab`, `LargeExpressiveFab`, `MainAction`, `rememberScrollAwareFabVisibility`, `ScrollAwareFabContainer`, `NavigationBarIcon`, `TabGraphContributor` |
 | **Layout** | `ShimmerLoadingList`, `ShimmerItemCard`, `EmptyStateView`, `FlatCard`, `SectionCard`, `AnimatedAmount`, `DeferredLoadingContainer` |
 | **Input** | `StyledOutlinedTextField`, `SearchableChipSelector<T>`, `AsyncSearchableChipSelector<T>` |
-| **Currency** | `CurrencyDropdown`, `AmountCurrencyCard`, `CurrencyConversionCard` |
+| **Currency** | `CurrencySelectorField`, `CurrencyPickerBottomSheet`, `CurrencyDropdown` (deprecated), `AmountCurrencyCard`, `CurrencyConversionCard` |
 | **Wizard** | `WizardStepLayout`, `WizardStepIndicator`, `WizardNavigationBar` |
 | **Form** | `GradientButton`, `SecondaryButton`, `DestructiveButton`, `FormErrorBanner`, `FormSubmitButton` |
 | **Chip** | `PassportChip` |

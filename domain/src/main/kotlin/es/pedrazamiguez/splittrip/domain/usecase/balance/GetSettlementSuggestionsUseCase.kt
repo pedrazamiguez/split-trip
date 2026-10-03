@@ -13,6 +13,17 @@ interface GetSettlementSuggestionsUseCase : UseCase {
     fun invokeByPocket(memberBalances: List<MemberBalance>, groupCurrency: String): List<Settlement>
 
     /**
+     * Ephemerally computes suggested settlements in-memory for the given member balances
+     * and merges them with active (non-RESOLVED) persisted records.
+     */
+    fun getEphemeralSettlements(
+        groupId: String,
+        memberBalances: List<MemberBalance>,
+        groupCurrency: String,
+        persistedRecords: List<SettlementRecord>
+    ): List<SettlementRecord>
+
+    /**
      * Computes per-pocket settlement suggestions for [groupId], persists them as
      * [SettlementRecord]s (idempotent — skips pairs that already have a non-RESOLVED record),
      * and returns the full current list.

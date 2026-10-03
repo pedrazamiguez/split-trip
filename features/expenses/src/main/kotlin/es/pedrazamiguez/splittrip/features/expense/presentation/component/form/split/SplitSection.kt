@@ -68,6 +68,9 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
                     onExcludedToggled = { entityId ->
                         onEvent(AddExpenseUiEvent.EntitySplitExcludedToggled(entityId))
                     },
+                    onSoloSelected = { entityId ->
+                        onEvent(AddExpenseUiEvent.EntitySplitSoloSelected(entityId))
+                    },
                     onShareLockToggled = { entityId ->
                         onEvent(AddExpenseUiEvent.EntityShareLockToggled(entityId))
                     },
@@ -103,6 +106,9 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
                 },
                 onExcludedToggled = { userId ->
                     onEvent(AddExpenseUiEvent.SplitExcludedToggled(userId))
+                },
+                onSoloSelected = { userId ->
+                    onEvent(AddExpenseUiEvent.SplitSoloSelected(userId))
                 },
                 onShareLockToggled = { userId ->
                     onEvent(AddExpenseUiEvent.SplitShareLockToggled(userId))

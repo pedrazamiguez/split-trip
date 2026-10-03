@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel
 import es.pedrazamiguez.splittrip.core.common.network.NetworkMonitor
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
@@ -28,6 +29,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.util.Locale
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
@@ -93,6 +95,9 @@ class YourBalanceViewModelTest {
         every { appConfigService.settlementNudgeRateLimitHours } returns MutableStateFlow(24L)
         every { authenticationService.currentUserId() } returns "user1"
         coEvery { getSettlementSuggestionsUseCase.persistForGroup(any(), any()) } returns emptyList()
+        every {
+            getSettlementSuggestionsUseCase.getEphemeralSettlements(any(), any(), any(), any())
+        } returns emptyList()
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
         every { getNudgeTimestampsFlowUseCase() } returns flowOf(emptyMap())
         every { settlementConsensusUiMapper.toConsensusItems(any(), any(), any(), any(), any(), any(), any()) } returns
@@ -175,7 +180,8 @@ class YourBalanceViewModelTest {
         assertFalse(state.isOffline)
         assertNotNull(state.personalPosition)
         assertEquals("€500.00", state.personalPosition?.formattedNetPosition)
-        coVerify { getSettlementSuggestionsUseCase.persistForGroup("group1") }
+        coVerify(exactly = 0) { getSettlementSuggestionsUseCase.persistForGroup(any(), any()) }
+        verify(atLeast = 1) { getSettlementSuggestionsUseCase.getEphemeralSettlements("group1", any(), any(), any()) }
     }
 
     @Test
@@ -241,7 +247,7 @@ class YourBalanceViewModelTest {
         val group = Group(id = "group1", name = "Trip", currency = "EUR", members = listOf("user1"))
         coEvery { getGroupByIdUseCase("group1") } returns group
         every { getGroupContributionsFlowUseCase("group1") } returns flowOf(emptyList())
-        val mockWithdrawal = es.pedrazamiguez.splittrip.domain.model.CashWithdrawal(
+        val mockWithdrawal = CashWithdrawal(
             id = "w1",
             groupId = "group1",
             withdrawnBy = "user1",

@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
@@ -19,6 +20,7 @@ import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.event.
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.CreateEditSubunitStep
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.CreateEditSubunitUiState
 
+@Suppress("LongMethod")
 @Composable
 internal fun SubunitWizard(
     uiState: CreateEditSubunitUiState,
@@ -47,13 +49,18 @@ internal fun SubunitWizard(
     val nextLabel = stringResource(R.string.subunit_wizard_next)
     val submitLabel = stringResource(R.string.subunit_save)
 
+    val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
 
     Box(
         modifier = modifier
             .fillMaxSize()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = topPadding)
+        ) {
             WizardStepIndicator(
                 stepLabels = orderedLabels,
                 currentStepIndex = uiState.currentStepIndex,

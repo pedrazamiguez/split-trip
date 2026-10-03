@@ -23,6 +23,7 @@ class ExpenseSubcategoryTest {
         @Test
         fun `resolves case-insensitive input`() {
             assertEquals(ExpenseSubcategory.INTERNATIONAL_FLIGHT, ExpenseSubcategory.fromString("international_flight"))
+            assertEquals(ExpenseSubcategory.PRIVATE_TRANSFER, ExpenseSubcategory.fromString("private_transfer"))
             assertEquals(ExpenseSubcategory.RESTAURANT, ExpenseSubcategory.fromString("restaurant"))
             assertEquals(ExpenseSubcategory.HOTEL, ExpenseSubcategory.fromString("hotel"))
         }
@@ -48,7 +49,7 @@ class ExpenseSubcategoryTest {
 
         @Test
         fun `returns correct counts for each category`() {
-            assertEquals(11, ExpenseSubcategory.forCategory(ExpenseCategory.TRANSPORT).size)
+            assertEquals(12, ExpenseSubcategory.forCategory(ExpenseCategory.TRANSPORT).size)
             assertEquals(6, ExpenseSubcategory.forCategory(ExpenseCategory.FOOD).size)
             assertEquals(6, ExpenseSubcategory.forCategory(ExpenseCategory.LODGING).size)
             assertEquals(7, ExpenseSubcategory.forCategory(ExpenseCategory.ACTIVITIES).size)

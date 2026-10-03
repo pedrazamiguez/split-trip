@@ -7,6 +7,7 @@ enum class ExpenseSubcategory(val parentCategory: ExpenseCategory) {
     TRAIN(ExpenseCategory.TRANSPORT),
     BUS(ExpenseCategory.TRANSPORT),
     TAXI_RIDESHARE(ExpenseCategory.TRANSPORT),
+    PRIVATE_TRANSFER(ExpenseCategory.TRANSPORT),
     CAR_RENTAL(ExpenseCategory.TRANSPORT),
     MOTORBIKE_RENTAL(ExpenseCategory.TRANSPORT),
     FUEL(ExpenseCategory.TRANSPORT),

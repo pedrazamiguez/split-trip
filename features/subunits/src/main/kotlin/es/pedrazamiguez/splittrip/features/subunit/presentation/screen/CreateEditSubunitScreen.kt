@@ -1,6 +1,9 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.screen
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.subunit.presentation.component.SubunitWizard
@@ -19,7 +22,7 @@ fun CreateEditSubunitScreen(
 ) {
     SharedTransitionSurface(sharedElementKey = CREATE_EDIT_SUBUNIT_SHARED_ELEMENT_KEY) {
         if (uiState.isLoading) {
-            ShimmerLoadingList()
+            ShimmerLoadingList(modifier = Modifier.padding(top = LocalTopPadding.current))
         } else {
             SubunitWizard(uiState = uiState, onEvent = onEvent)
         }

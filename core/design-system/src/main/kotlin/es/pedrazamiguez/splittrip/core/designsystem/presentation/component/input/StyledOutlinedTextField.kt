@@ -1,10 +1,14 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -61,6 +66,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
  * @param suffix Optional suffix text displayed after the input
  * @param supportingText Optional supporting / error text displayed below the field
  * @param isError Whether the field is in error state
+ * @param maxLength Optional maximum character length to display a counter ("current / max") below the field
  * @param enabled Whether the field is enabled
  * @param readOnly Whether the field is read-only (no editing but can be focused)
  * @param singleLine Whether the field should be a single line
@@ -81,7 +87,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
  * @param shape The shape of the field container
  * @param colors Custom colors for the field
  */
-@Suppress("LongMethod", "LongParameterList", "CognitiveComplexMethod") // Compose UI builder DSL — not procedural logic
+@Suppress("LongMethod", "LongParameterList", "CognitiveComplexMethod", "CyclomaticComplexMethod")
 @Composable
 fun StyledOutlinedTextField(
     value: String,
@@ -95,6 +101,7 @@ fun StyledOutlinedTextField(
     suffix: @Composable (() -> Unit)? = null,
     supportingText: String? = null,
     isError: Boolean = false,
+    maxLength: Int? = null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     singleLine: Boolean = true,
@@ -123,13 +130,22 @@ fun StyledOutlinedTextField(
         .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
         .then(if (!focusable) Modifier.focusProperties { canFocus = false } else Modifier)
 
+    val supportingTextSlot: @Composable (() -> Unit)? = supportingText?.let { text ->
+        {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+
     val fieldConfig = TextFieldConfig(
         placeholder = placeholder,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         prefix = prefix,
         suffix = suffix,
-        supportingText = supportingText,
+        supportingText = supportingTextSlot,
         isError = isError,
         enabled = enabled,
         readOnly = readOnly,
@@ -148,19 +164,48 @@ fun StyledOutlinedTextField(
         colors = colors
     )
 
+    val isOverLimit = maxLength != null && value.length > maxLength
+    val counterColor = if (isError || isOverLimit) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Column(modifier = modifier) {
-        // Static external label — placed above the field with no animation.
-        if (label != null) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = when {
-                    !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                    isError -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                modifier = Modifier.padding(start = MaterialTheme.spacing.ExtraSmall, bottom = 6.dp)
-            )
+        if (label != null || maxLength != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = MaterialTheme.spacing.ExtraSmall,
+                        end = MaterialTheme.spacing.ExtraSmall,
+                        bottom = 6.dp
+                    ),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (label != null) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = when {
+                            !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                            isError -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
+
+                if (maxLength != null) {
+                    Text(
+                        text = "${value.length} / $maxLength",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = counterColor
+                    )
+                }
+            }
         }
 
         when {
@@ -201,7 +246,7 @@ private data class TextFieldConfig(
     val trailingIcon: @Composable (() -> Unit)?,
     val prefix: @Composable (() -> Unit)?,
     val suffix: @Composable (() -> Unit)?,
-    val supportingText: String?,
+    val supportingText: @Composable (() -> Unit)?,
     val isError: Boolean,
     val enabled: Boolean,
     val readOnly: Boolean,
@@ -286,7 +331,7 @@ private fun CursorToEndTextField(
         trailingIcon = config.trailingIcon,
         prefix = config.prefix,
         suffix = config.suffix,
-        supportingText = config.supportingText?.let { { Text(it) } },
+        supportingText = config.supportingText,
         isError = config.isError,
         enabled = config.enabled,
         readOnly = config.readOnly,
@@ -341,7 +386,7 @@ private fun CoreOutlinedTextField(
         trailingIcon = config.trailingIcon,
         prefix = config.prefix,
         suffix = config.suffix,
-        supportingText = config.supportingText?.let { { Text(it) } },
+        supportingText = config.supportingText,
         isError = config.isError,
         enabled = config.enabled,
         readOnly = config.readOnly,
