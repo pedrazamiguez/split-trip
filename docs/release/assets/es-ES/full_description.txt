@@ -1,0 +1,24 @@
+Viajar con amigos, en pareja o en familia consiste en coleccionar experiencias inolvidables, no en pelear con hojas de cálculo ni acumular recibos arrugados. SplitTrip es el gestor inteligente de gastos compartidos diseñado específicamente para viajeros que cruzan fronteras, comparten aventuras y buscan cuentas transparentes.
+
+Tanto si estás de ruta en furgoneta, de vacaciones en la playa o compartiendo piso, SplitTrip resuelve los cambios de moneda, los botes comunes y los acuerdos de pago con total claridad y elegancia.
+
+⚡ FUNCIONAMIENTO REAL SIN CONEXIÓN (OFFLINE-FIRST)
+Añade gastos en cualquier lugar: en un vuelo, en alta mar o en pueblos de montaña sin cobertura. SplitTrip registra todas las transacciones de forma instantánea en la base de datos local de tu móvil. En cuanto recuperes la conexión, la sincronización en segundo plano actualiza los datos del grupo de forma automática y transparente.
+
+🌍 MULTIDIVISA Y TIPOS DE CAMBIO OFICIALES
+Paga en yenes, aporta en dólares o liquida en euros. Compatible con más de 150 divisas internacionales con tipos de cambio actualizados. SplitTrip almacena una instantánea inmutable del cambio oficial en cada gasto para que las cuentas nunca varíen con el tiempo.
+
+🤝 ACUERDOS DE PAGO Y CONSENSO ("TU POSICIÓN")
+Olvídate de las tensiones al final del viaje. SplitTrip simplifica las deudas cruzadas para saldarlas con el menor número de transferencias posible. Propón acuerdos de pago, revisa transferencias pendientes y confirma recepciones con un sistema de consenso claro y transparente.
+
+💰 POCKET DEL GRUPO Y RETIRADAS DE EFECTIVO
+Gestiona el fondo virtual compartido separado del dinero físico. Registra aportaciones al pocket del grupo y retiradas de efectivo con trazabilidad FIFO de divisas, garantizando precisión bancaria hasta el último céntimo.
+
+👥 SUBUNIDADES PARA PAREJAS Y FAMILIAS
+¿Viajas en pareja o con hijos dentro de un grupo grande? Agrupa miembros en subunidades para repartir costes de forma conjunta o proporcional sin necesidad de hacer cálculos manuales.
+
+📸 ESCANEO INTELIGENTE DE TIQUES [PRO]
+Fotografía el tique de una cena o transporte. SplitTrip detecta automáticamente importes, impuestos y conceptos para que puedas asignar extras o consumiciones individuales en segundos.
+
+🔒 SIN PUBLICIDAD CON PRO Y MÁXIMA PRIVACIDAD
+Tus datos financieros son únicamente tuyos. Sin necesidad de vincular cuentas bancarias ni tarjetas de crédito. SplitTrip es un registro de viaje independiente: nunca accedemos a tus cuentas bancarias personales ni gestionamos transferencias monetarias. SplitTrip Pro elimina por completo la publicidad, mientras que la versión gratuita incluye banners y anuncios intersticiales puntuales y no intrusivos. SplitTrip jamás comercializa tus registros de viaje.

@@ -1,0 +1,24 @@
+Travelling with friends, family, or your partner should be about making memories—not doing accounting gymnastics in messy spreadsheets. SplitTrip is the modern, offline-first group expense manager crafted specifically for travellers who cross borders, share expenses, and value fairness.
+
+Whether you're backpacking through Southeast Asia, organising a European road trip, or sharing an apartment with flatmates, SplitTrip handles complex currencies, cash pockets, and debt settlements effortlessly.
+
+⚡ TRUE OFFLINE-FIRST ARCHITECTURE
+Log expenses anywhere—on a mountain hike, on a flight, or in remote areas with zero cell reception. SplitTrip writes all transactions instantly to your local device database. When internet connection is restored, background synchronisation reconciles changes across your entire group automatically.
+
+🌍 MULTI-CURRENCY & REAL-TIME EXCHANGE RATES
+Spend in Japanese Yen, pay back in Euros, or split in US Dollars. SplitTrip supports 150+ global currencies with live exchange rates and captures immutable rate snapshots at the moment of each transaction so past calculations never shift unexpectedly.
+
+🤝 SETTLEMENT CONSENSUS ("YOUR POSITION")
+Eliminate end-of-trip awkwardness. SplitTrip simplifies tangled web-of-debt balances into the fewest possible transactions. Propose debt settlements directly within the app, review pending payments, and track mutual consensus state in real time.
+
+💰 GROUP POCKETS & FIFO CASH TRANCHES
+Keep shared virtual group funds separate from physical cash in hand. Track contributions into the group pocket and log cash withdrawals with First-In, First-Out (FIFO) currency tracking to ensure exact multi-currency precision down to the cent.
+
+👥 SUBUNITS FOR COUPLES & FAMILIES
+Travelling as a couple or family within a larger group? Create subunits to aggregate balances or split bills proportionally between units without tedious manual recalculations.
+
+📸 SMART RECEIPT SCANNING [PRO]
+Snap a photo of your dining or taxi receipt. SplitTrip extracts the total, tax, currency, and line items automatically, letting you assign specific dishes or add-on items to companions in seconds.
+
+🔒 AD-FREE WITH PRO & PRIVACY-FIRST
+Your financial data belongs to you. No bank linking or credit cards required. SplitTrip is a dedicated travel expense ledger—we never access your personal bank accounts or process money transfers. SplitTrip Pro offers an entirely ad-free experience, while the Free tier includes non-intrusive banner and occasional interstitial ads. SplitTrip never sells your transaction history to data brokers.

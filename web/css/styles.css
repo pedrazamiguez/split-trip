@@ -141,6 +141,7 @@ html {
 
 body {
   font-family: var(--font-family);
+  font-size-adjust: from-font;
   background-color: var(--bg-canvas);
   color: var(--text-primary);
   line-height: 1.6;
@@ -718,6 +719,8 @@ html[data-theme="light"] .app-screenshot-frame:hover {
   letter-spacing: -0.03em;
   color: var(--accent-primary);
   margin-bottom: 4px;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-label {
