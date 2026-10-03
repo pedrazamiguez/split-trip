@@ -8,22 +8,17 @@ class UserValidationServiceImpl : UserValidationService {
         val trimmed = displayName.trim()
         return when {
             trimmed.isBlank() -> ValidationResult.Invalid("Display name cannot be empty")
-            trimmed.length > MAX_DISPLAY_NAME_LENGTH -> ValidationResult.Invalid(
-                "Display name cannot exceed $MAX_DISPLAY_NAME_LENGTH characters"
+            trimmed.length > UserValidationService.MAX_DISPLAY_NAME_LENGTH -> ValidationResult.Invalid(
+                "Display name cannot exceed ${UserValidationService.MAX_DISPLAY_NAME_LENGTH} characters"
             )
             else -> ValidationResult.Valid
         }
     }
 
     override fun validateBio(bio: String?): ValidationResult = when {
-        bio != null && bio.length > MAX_BIO_LENGTH -> ValidationResult.Invalid(
-            "Bio cannot exceed $MAX_BIO_LENGTH characters"
+        bio != null && bio.length > UserValidationService.MAX_BIO_LENGTH -> ValidationResult.Invalid(
+            "Bio cannot exceed ${UserValidationService.MAX_BIO_LENGTH} characters"
         )
         else -> ValidationResult.Valid
-    }
-
-    private companion object {
-        const val MAX_DISPLAY_NAME_LENGTH = 50
-        const val MAX_BIO_LENGTH = 150
     }
 }
