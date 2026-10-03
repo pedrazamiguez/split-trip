@@ -42,7 +42,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyConversionCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyConversionCardState
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyDropdown
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencySelectorField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
@@ -159,7 +159,7 @@ fun AddOnItemEditor(
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
-            CurrencyDropdown(
+            CurrencySelectorField(
                 selectedCurrency = addOn.currency,
                 availableCurrencies = availableCurrencies,
                 onCurrencySelected = { code ->

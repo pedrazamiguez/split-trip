@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyDropdown
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencySelectorField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.SearchableChipSelector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
@@ -13,7 +13,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.Cr
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 /**
- * Step 2: Primary currency dropdown + optional extra currencies chip selector.
+ * Step 2: Primary currency selector + optional extra currencies chip selector.
  */
 @Composable
 fun GroupCurrencyStep(
@@ -22,7 +22,7 @@ fun GroupCurrencyStep(
     modifier: Modifier = Modifier
 ) {
     WizardStepLayout(modifier = modifier) {
-        CurrencyDropdown(
+        CurrencySelectorField(
             selectedCurrency = uiState.selectedCurrency,
             availableCurrencies = uiState.availableCurrencies,
             onCurrencySelected = { onEvent(CreateEditGroupUiEvent.CurrencySelected(it)) },
