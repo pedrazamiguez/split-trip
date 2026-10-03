@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
+import es.pedrazamiguez.splittrip.domain.service.UserValidationService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -9,6 +10,12 @@ import org.junit.jupiter.api.Test
 class UserValidationServiceImplTest {
 
     private val service = UserValidationServiceImpl()
+
+    @Test
+    fun `constants exposed on companion match expected values`() {
+        assertEquals(50, UserValidationService.MAX_DISPLAY_NAME_LENGTH)
+        assertEquals(150, UserValidationService.MAX_BIO_LENGTH)
+    }
 
     @Nested
     inner class ValidateDisplayName {
@@ -45,7 +52,7 @@ class UserValidationServiceImplTest {
         @Test
         fun `validateDisplayName returns Valid for exactly 50 characters`() {
             // Given
-            val name = "a".repeat(50)
+            val name = "a".repeat(UserValidationService.MAX_DISPLAY_NAME_LENGTH)
 
             // When
             val result = service.validateDisplayName(name)
@@ -57,14 +64,17 @@ class UserValidationServiceImplTest {
         @Test
         fun `validateDisplayName returns Invalid for 51 characters`() {
             // Given
-            val name = "a".repeat(51)
+            val name = "a".repeat(UserValidationService.MAX_DISPLAY_NAME_LENGTH + 1)
 
             // When
             val result = service.validateDisplayName(name)
 
             // Then
             assertTrue(result is ValidationResult.Invalid)
-            assertEquals("Display name cannot exceed 50 characters", (result as ValidationResult.Invalid).message)
+            assertEquals(
+                "Display name cannot exceed ${UserValidationService.MAX_DISPLAY_NAME_LENGTH} characters",
+                (result as ValidationResult.Invalid).message
+            )
         }
     }
 
@@ -92,7 +102,7 @@ class UserValidationServiceImplTest {
         @Test
         fun `validateBio returns Valid for standard bio`() {
             // When
-            val result = service.validateBio("Kotlin enthusiast, traveler")
+            val result = service.validateBio("Kotlin enthusiast, traveller")
 
             // Then
             assertEquals(ValidationResult.Valid, result)
@@ -101,7 +111,7 @@ class UserValidationServiceImplTest {
         @Test
         fun `validateBio returns Valid for exactly 150 characters`() {
             // Given
-            val bio = "b".repeat(150)
+            val bio = "b".repeat(UserValidationService.MAX_BIO_LENGTH)
 
             // When
             val result = service.validateBio(bio)
@@ -113,14 +123,17 @@ class UserValidationServiceImplTest {
         @Test
         fun `validateBio returns Invalid for 151 characters`() {
             // Given
-            val bio = "b".repeat(151)
+            val bio = "b".repeat(UserValidationService.MAX_BIO_LENGTH + 1)
 
             // When
             val result = service.validateBio(bio)
 
             // Then
             assertTrue(result is ValidationResult.Invalid)
-            assertEquals("Bio cannot exceed 150 characters", (result as ValidationResult.Invalid).message)
+            assertEquals(
+                "Bio cannot exceed ${UserValidationService.MAX_BIO_LENGTH} characters",
+                (result as ValidationResult.Invalid).message
+            )
         }
     }
 }

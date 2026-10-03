@@ -349,3 +349,37 @@ val TablerIcons.Outline.CircleDotted: ImageVector
     ).build().also { _CircleDotted = it }
 
 private var _CircleDotted: ImageVector? = null
+
+val TablerIcons.Outline.Keyframes: ImageVector
+    get() = _Keyframes ?: ImageVector.Builder(
+        name = "Outline.Keyframes",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).addPath(
+        pathData = addPathNodes(
+            "M9.225 18.412a1.595 1.595 0 0 1 -1.225 .588c-.468 0 -.914 -.214 -1.225 -.588" +
+                "l-4.361 -5.248a1.844 1.844 0 0 1 0 -2.328l4.361 -5.248" +
+                "a1.595 1.595 0 0 1 1.225 -.588c.468 0 .914 .214 1.225 .588" +
+                "l4.361 5.248a1.844 1.844 0 0 1 0 2.328l-4.361 5.248"
+        ),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M17 5l4.586 5.836a1.844 1.844 0 0 1 0 2.328l-4.586 5.836"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M13 5l4.586 5.836a1.844 1.844 0 0 1 0 2.328l-4.586 5.836"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).build().also { _Keyframes = it }
+
+private var _Keyframes: ImageVector? = null

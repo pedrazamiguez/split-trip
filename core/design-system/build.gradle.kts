@@ -16,8 +16,9 @@ dependencies {
     // Kotlinx immutable collections (used by shared UI components & UiState models)
     api(libs.kotlinx.collections.immutable)
 
-    // Glassmorphism (blur/haze effects) — api because HazeState appears in horizonGlassEffect signature
+    // Glassmorphism (blur/haze effects) — api because HazeState and HazeBlurStyleScope appear in horizonGlassEffect signature
     api(libs.haze)
+    api(libs.haze.blur)
 
     // Biometric authentication
     api(libs.androidx.biometric)

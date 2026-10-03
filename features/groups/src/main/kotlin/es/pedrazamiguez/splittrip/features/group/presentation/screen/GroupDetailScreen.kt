@@ -25,6 +25,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -53,17 +54,19 @@ fun GroupDetailScreen(
     onManageSubunits: () -> Unit = {},
     onEvent: (GroupDetailUiEvent) -> Unit = {}
 ) {
+    val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
 
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
-        loadingContent = { ShimmerLoadingList() }
+        loadingContent = { ShimmerLoadingList(modifier = Modifier.padding(top = topPadding)) }
     ) {
         when {
             uiState.hasError || uiState.group == null -> {
                 EmptyStateView(
                     title = stringResource(R.string.group_detail_error_loading),
-                    icon = TablerIcons.Outline.UsersGroup
+                    icon = TablerIcons.Outline.UsersGroup,
+                    modifier = Modifier.padding(top = topPadding)
                 )
             }
             else -> {
@@ -97,6 +100,8 @@ fun GroupDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                 ) {
+                    Spacer(modifier = Modifier.height(topPadding))
+
                     SelectedGroupCoverImage(
                         imageUrl = group.imageUrl,
                         groupName = group.name,

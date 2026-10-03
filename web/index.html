@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>SplitTrip — Travel Together. Split Fairly. Zero Stress.</title>
+  <meta name="description" content="SplitTrip is the modern, offline-first group travel expense manager with real-time multi-currency conversion, seamless payment agreements, and privacy-first design.">
+  <meta property="og:title" content="SplitTrip — Travel Together. Split Fairly. Zero Stress.">
+  <meta property="og:description" content="Modern, offline-first group travel expense manager with real-time multi-currency conversion, seamless payment agreements, and privacy-first design.">
+  <meta property="og:url" content="https://splittrip.eu/">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=2">
+  <link rel="icon" type="image/png" href="assets/app-icon.png?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    // Initialise language & theme preference immediately to prevent flicker
+    (function() {
+      try {
+        var savedLang = localStorage.getItem('splittrip-lang');
+        var lang = savedLang || (navigator.language && navigator.language.startsWith('es') ? 'es' : 'en');
+        document.documentElement.lang = lang;
+
+        var savedTheme = localStorage.getItem('splittrip-theme') || 'auto';
+        if (savedTheme !== 'auto') {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+      } catch (e) {
+        document.documentElement.lang = 'en';
+      }
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="index.html" class="brand-link" aria-label="SplitTrip Homepage">
+        <img src="assets/app-icon.png" alt="SplitTrip" class="brand-icon">
+        <div class="brand-text-nav">
+          <span class="brand-title">Split<span class="brand-trip">Trip</span></span>
+          <span class="brand-caption" data-lang="en">Split expenses without borders</span>
+          <span class="brand-caption" data-lang="es">Divide gastos sin fronteras</span>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <!-- Language Switcher -->
+        <div class="lang-switcher" role="group" aria-label="Select Language / Seleccionar idioma">
+          <button type="button" class="lang-btn" id="btn-en" aria-pressed="true" onclick="setLanguage('en')">EN</button>
+          <button type="button" class="lang-btn" id="btn-es" aria-pressed="false" onclick="setLanguage('es')">ES</button>
+        </div>
+
+        <!-- Theme Switcher -->
+        <div class="theme-switcher" role="group" aria-label="Colour theme">
+          <button type="button" class="theme-btn" id="theme-light" title="Light Theme" aria-label="Light Theme" onclick="setTheme('light')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
+              <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>
+            </svg>
+          </button>
+          <button type="button" class="theme-btn" id="theme-auto" title="System Theme" aria-label="System Theme" onclick="setTheme('auto')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 5a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-10"/>
+              <path d="M7 20h10"/>
+              <path d="M9 16v4"/>
+              <path d="M15 16v4"/>
+            </svg>
+          </button>
+          <button type="button" class="theme-btn" id="theme-dark" title="Dark Theme" aria-label="Dark Theme" onclick="setTheme('dark')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"/>
+            </svg>
+          </button>
+        </div>
+
+        <a href="#download" class="header-cta-link">
+          <span data-lang="en">Get App</span>
+          <span data-lang="es">Descargar</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <span data-lang="en">Smart Group Expenses &bull; 100% Offline-Ready</span>
+          <span data-lang="es">Gastos de viaje inteligentes &bull; 100% sin conexión</span>
+        </div>
+
+        <h1 class="hero-title">
+          <span data-lang="en">Travel Together.<br><span class="gradient-text">Split Fairly.</span> Zero Stress.</span>
+          <span data-lang="es">Viajad juntos.<br><span class="gradient-text">Dividid de manera justa.</span> Cero estrés.</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          <span data-lang="en">The modern travel expense manager engineered for adventures across borders. Instant offline logging, 150+ live currencies, shared cash pockets, and seamless debt settlements.</span>
+          <span data-lang="es">El gestor de gastos de viaje inteligente diseñado para cruzar fronteras. Registro instantáneo sin cobertura, más de 150 divisas en tiempo real, pockets de grupo y acuerdos de pago sin fricción.</span>
+        </p>
+
+        <div class="hero-buttons" id="download">
+          <a href="https://play.google.com/store/apps/details?id=es.pedrazamiguez.splittrip" class="btn-playstore" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594zM1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924zm12.207 10.065l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973zm0 2.067l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z"/>
+            </svg>
+            <div class="btn-playstore-text">
+              <span class="btn-playstore-sub" data-lang="en">Get it on</span>
+              <span class="btn-playstore-sub" data-lang="es">Disponible en</span>
+              <span class="btn-playstore-title">Google Play</span>
+            </div>
+          </a>
+
+          <a href="#features" class="btn-secondary">
+            <span data-lang="en">Explore Features &darr;</span>
+            <span data-lang="es">Explorar funciones &darr;</span>
+          </a>
+        </div>
+
+        <div class="hero-trust-row">
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span data-lang="en">Ad-free with Pro</span>
+            <span data-lang="es">Sin anuncios con Pro</span>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span data-lang="en">100% Offline-Ready</span>
+            <span data-lang="es">100% operativo sin red</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Visual App Screenshot -->
+      <div class="hero-visual">
+        <div class="app-screenshot-frame">
+          <img
+            src="assets/hero-app-screen-en.png"
+            alt="SplitTrip Balances screen showing group balances, remaining funds, member metrics, and payment agreements in English"
+            class="app-screenshot"
+            data-lang="en"
+            width="1002"
+            height="1507"
+            loading="eager"
+          >
+          <img
+            src="assets/hero-app-screen-es.png"
+            alt="Pantalla de balances de SplitTrip mostrando balances del grupo, fondos restantes, métricas por miembro y acuerdos de pago en español"
+            class="app-screenshot"
+            data-lang="es"
+            width="1002"
+            height="1507"
+            loading="eager"
+          >
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Showcase (6 Core Pillars) -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow" data-lang="en">Engineered for Perfection</div>
+        <div class="section-eyebrow" data-lang="es">Diseñado para la excelencia</div>
+        <h2 class="section-title">
+          <span data-lang="en">Everything you need for seamless group travel.</span>
+          <span data-lang="es">Todo lo necesario para viajar en grupo sin fricción.</span>
+        </h2>
+        <p class="section-subtitle">
+          <span data-lang="en">No messy spreadsheets. No awkward math at the end of the trip. Just crystal-clear balances and fair settlements.</span>
+          <span data-lang="es">Sin hojas de cálculo complicadas. Sin conversaciones incómodas al final del viaje. Cuentas transparentes y acuerdos de pago justos.</span>
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Pillar 1 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>
+            </svg>
+          </div>
+          <h3 data-lang="en">True Offline-First</h3>
+          <h3 data-lang="es">Funcionamiento sin conexión</h3>
+          <p data-lang="en">
+            Log expenses atop mountain peaks, in subways, or mid-flight. Everything saves instantly on your device with zero loading screens, and syncs seamlessly the moment you're back online.
+          </p>
+          <p data-lang="es">
+            Apunta gastos en lo alto de una montaña, en el metro o en mitad de un vuelo. Todo se guarda al instante en tu dispositivo sin pantallas de espera y se sincroniza en cuanto recuperas cobertura.
+          </p>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/>
+              <path d="M3.6 9h16.8"/>
+              <path d="M3.6 15h16.8"/>
+              <path d="M11.5 3a17 17 0 0 0 0 18"/>
+              <path d="M12.5 3a17 17 0 0 1 0 18"/>
+            </svg>
+          </div>
+          <h3 data-lang="en">Multi-Currency &amp; Live Rates</h3>
+          <h3 data-lang="es">Multidivisa y tipos de cambio</h3>
+          <p data-lang="en">
+            Support for 150+ global currencies with real-time conversion rates. SplitTrip records an immutable rate snapshot for every single expense, so historical balances never drift.
+          </p>
+          <p data-lang="es">
+            Compatible con más de 150 divisas y tipos de cambio oficiales. Registra una instantánea inmutable del cambio en cada gasto para que el balance nunca se altere.
+          </p>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+              <path d="M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2"/>
+              <path d="M9 14h.01"/>
+              <path d="M9 17h.01"/>
+              <path d="M12 16l1 1l3 -3"/>
+            </svg>
+          </div>
+          <h3 data-lang="en">Payment Agreements</h3>
+          <h3 data-lang="es">Acuerdos de pago</h3>
+          <p data-lang="en">
+            "Your Position" simplifies tangled web-of-debt balances into the minimum required transfers. Propose payment agreements, confirm receipts, and keep accounts transparent with one tap.
+          </p>
+          <p data-lang="es">
+            "Tu balance" reduce las deudas cruzadas al mínimo número de transferencias. Propón acuerdos de pago, confirma recepciones y mantén las cuentas claras entre todos con un toque.
+          </p>
+        </div>
+
+        <!-- Pillar 4 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/>
+              <path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/>
+            </svg>
+          </div>
+          <h3 data-lang="en">Group Pockets &amp; Cash</h3>
+          <h3 data-lang="es">Pockets y efectivo compartido</h3>
+          <p data-lang="en">
+            Manage shared group pockets alongside physical cash withdrawals. Smart currency tracking preserves mathematical precision down to the exact cent.
+          </p>
+          <p data-lang="es">
+            Gestiona pockets de grupo y retiradas de efectivo en metálico. Control inteligente de gastos y tramos de divisa que garantiza precisión matemática hasta el último céntimo.
+          </p>
+        </div>
+
+        <!-- Pillar 5 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
+              <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              <path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
+            </svg>
+          </div>
+          <h3 data-lang="en">Subunits for Couples</h3>
+          <h3 data-lang="es">Subunidades para parejas</h3>
+          <p data-lang="en">
+            Travelling with couples or families in a larger group? Bundle members into subunits to split bills proportionally or as a single unit without tedious manual spreadsheets.
+          </p>
+          <p data-lang="es">
+            ¿Viajáis con parejas o familias dentro del grupo? Agrupa miembros en subunidades para repartir gastos de forma unificada o proporcional sin cálculos manuales tediosos.
+          </p>
+        </div>
+
+        <!-- Pillar 6 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"/>
+              <path d="M11 11a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
+              <path d="M12 12l0 2.5"/>
+            </svg>
+          </div>
+          <h3 data-lang="en">Ad-Free with Pro &amp; Privacy-First</h3>
+          <h3 data-lang="es">Sin anuncios con Pro y máxima privacidad</h3>
+          <p data-lang="en">
+            No bank credentials or credit cards required. SplitTrip is a pure expense ledger. SplitTrip Pro offers an entirely ad-free experience, and we never sell your personal data or transaction history to advertisers or data brokers.
+          </p>
+          <p data-lang="es">
+            Sin vincular cuentas bancarias ni tarjetas. SplitTrip es un libro de gastos limpio. SplitTrip Pro ofrece una experiencia totalmente libre de anuncios, y jamás vendemos tus datos personales ni tus registros a anunciantes o intermediarios.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Philosophy & Architecture Section -->
+  <section class="philosophy-section">
+    <div class="container">
+      <div class="philosophy-card">
+        <div class="philosophy-text">
+          <div class="section-eyebrow" data-lang="en">Design &amp; Philosophy</div>
+          <div class="section-eyebrow" data-lang="es">Diseño y filosofía</div>
+          <h2 data-lang="en">Built like an editorial travel journal, not an accounting tool.</h2>
+          <h2 data-lang="es">Diseñado como un diario de viaje editorial, no como una hoja de cálculo.</h2>
+          <p data-lang="en">
+            SplitTrip blends the elegance of an editorial travel journal with fluid, instant interactions. Every detail is thoughtfully crafted so you can focus on making unforgettable memories, not stressing over calculations.
+          </p>
+          <p data-lang="es">
+            SplitTrip combina la elegancia de un diario de viaje con una experiencia fluida e intuitiva. Cada detalle está pensado para que disfrutes de recuerdos inolvidables, no de cuadrar cuentas.
+          </p>
+          <a href="privacy-policy.html" class="btn-secondary">
+            <span data-lang="en">Read Privacy Policy &rarr;</span>
+            <span data-lang="es">Leer Política de Privacidad &rarr;</span>
+          </a>
+        </div>
+
+        <div class="stat-boxes">
+          <div class="stat-box">
+            <div class="stat-number">
+              <span data-lang="en">150+</span>
+              <span data-lang="es">+150</span>
+            </div>
+            <div class="stat-label" data-lang="en">Supported Currencies</div>
+            <div class="stat-label" data-lang="es">Divisas compatibles</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">
+              <span data-lang="en">Instant</span>
+              <span data-lang="es">Al instante</span>
+            </div>
+            <div class="stat-label" data-lang="en">On-Device Speed</div>
+            <div class="stat-label" data-lang="es">Procesamiento en local</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">100%</div>
+            <div class="stat-label" data-lang="en">On-Device Privacy</div>
+            <div class="stat-label" data-lang="es">Privacidad en tu dispositivo</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">0</div>
+            <div class="stat-label" data-lang="en">Bank Credentials</div>
+            <div class="stat-label" data-lang="es">Vinculaciones bancarias</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="cta-banner">
+    <div class="container">
+      <h2 data-lang="en">Ready for your next expedition?</h2>
+      <h2 data-lang="es">¿Listos para vuestra próxima expedición?</h2>
+      <p data-lang="en">Download SplitTrip for Android today and start sharing group travel expenses fairly and effortlessly.</p>
+      <p data-lang="es">Descarga SplitTrip para Android hoy y empieza a compartir los gastos de viaje de forma justa y sin complicaciones.</p>
+      <a href="https://play.google.com/store/apps/details?id=es.pedrazamiguez.splittrip" class="btn-playstore" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594zM1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924zm12.207 10.065l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973zm0 2.067l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z"/>
+        </svg>
+        <div class="btn-playstore-text">
+          <span class="btn-playstore-sub" data-lang="en">Get it on</span>
+          <span class="btn-playstore-sub" data-lang="es">Disponible en</span>
+          <span class="btn-playstore-title">Google Play</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <img src="assets/app-icon.png" alt="SplitTrip" class="brand-icon" style="width:28px;height:28px;border-radius:6px;box-shadow:none;">
+        <span>Split<span class="brand-trip">Trip</span> &bull; &copy; <span class="current-year">2026</span> Andr&eacute;s Pedraza M&iacute;guez</span>
+      </div>
+
+      <ul class="footer-links">
+        <li><a href="privacy-policy.html"><span data-lang="en">Privacy Policy</span><span data-lang="es">Política de Privacidad</span></a></li>
+        <li><a href="https://github.com/pedrazamiguez/split-trip" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a href="mailto:support@splittrip.eu">support@splittrip.eu</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    function setLanguage(lang) {
+      if (lang !== 'en' && lang !== 'es') lang = 'en';
+      document.documentElement.lang = lang;
+
+      var btnEn = document.getElementById('btn-en');
+      var btnEs = document.getElementById('btn-es');
+
+      if (btnEn && btnEs) {
+        btnEn.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
+        btnEs.setAttribute('aria-pressed', lang === 'es' ? 'true' : 'false');
+      }
+
+      try {
+        localStorage.setItem('splittrip-lang', lang);
+      } catch (e) {}
+    }
+
+    function setTheme(theme) {
+      var btnLight = document.getElementById('theme-light');
+      var btnAuto = document.getElementById('theme-auto');
+      var btnDark = document.getElementById('theme-dark');
+
+      if (theme === 'light' || theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', theme);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        theme = 'auto';
+      }
+
+      if (btnLight && btnAuto && btnDark) {
+        btnLight.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
+        btnAuto.setAttribute('aria-pressed', theme === 'auto' ? 'true' : 'false');
+        btnDark.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      }
+
+      try {
+        localStorage.setItem('splittrip-theme', theme);
+      } catch (e) {}
+    }
+
+    // Sync button state and dynamic year on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      var lang = document.documentElement.lang || 'en';
+      setLanguage(lang);
+
+      var savedTheme = localStorage.getItem('splittrip-theme') || 'auto';
+      setTheme(savedTheme);
+
+      var currentYear = new Date().getFullYear();
+      var yearEls = document.querySelectorAll('.current-year');
+      for (var i = 0; i < yearEls.length; i++) {
+        yearEls[i].textContent = currentYear;
+      }
+    });
+  </script>
+</body>
+</html>

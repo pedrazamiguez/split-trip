@@ -33,7 +33,6 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -66,7 +65,6 @@ class YourBalanceViewModel(
             val currency = group?.currency ?: appConfigService.defaultCurrencyCode.value
             val groupMemberIds = group?.members ?: emptyList()
             val currentUserId = authenticationService.currentUserId() ?: ""
-            var lastTransactionSignature: String? = null
 
             val transactionsFlow = combine(
                 useCases.getGroupContributionsFlowUseCase(groupId),
@@ -99,21 +97,6 @@ class YourBalanceViewModel(
                     rateLimitHours = rateLimitHours
                 )
             }
-                .onEach { snapshot ->
-                    val totalExpensesAmount = snapshot.expenses.sumOf { it.sourceAmount }
-                    val signature = "${snapshot.contributions.size}_${snapshot.withdrawals.size}_" +
-                        "${snapshot.expenses.size}_${snapshot.subunits.size}_$totalExpensesAmount"
-                    if (signature != lastTransactionSignature) {
-                        lastTransactionSignature = signature
-                        viewModelScope.launch {
-                            try {
-                                useCases.getSettlementSuggestionsUseCase.persistForGroup(groupId)
-                            } catch (e: Exception) {
-                                Timber.e(e, "Failed to persist settlement suggestions for group $groupId")
-                            }
-                        }
-                    }
-                }
                 .debounce { appConfigService.balanceComputationDebounceMs.value }
                 .combine(_isCashBreakdownVisible) { snapshot, isCashBreakdownVisible ->
                     Pair(snapshot, isCashBreakdownVisible)
@@ -161,8 +144,15 @@ class YourBalanceViewModel(
                         emptyMap()
                     }
 
+                    val allSettlementRecords = useCases.getSettlementSuggestionsUseCase.getEphemeralSettlements(
+                        groupId = groupId,
+                        memberBalances = memberBalances,
+                        groupCurrency = currency,
+                        persistedRecords = snapshot.settlements
+                    )
+
                     val settlementConsensus = settlementConsensusUiMapper.toConsensusItems(
-                        settlements = snapshot.settlements,
+                        settlements = allSettlementRecords,
                         currentUserId = currentUserId,
                         groupCreatorId = group?.createdBy ?: "",
                         memberProfiles = memberProfiles,
@@ -217,15 +207,6 @@ class YourBalanceViewModel(
     fun setSelectedGroup(groupId: String?) {
         if (groupId != _selectedGroupId.value) {
             _selectedGroupId.value = groupId
-            groupId?.let { gid ->
-                viewModelScope.launch {
-                    try {
-                        useCases.getSettlementSuggestionsUseCase.persistForGroup(gid)
-                    } catch (e: Exception) {
-                        Timber.e(e, "Failed to persist settlement suggestions for group $gid")
-                    }
-                }
-            }
         }
     }
 

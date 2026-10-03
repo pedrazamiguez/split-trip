@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.service.impl.PocketDebtDistributionServiceImpl
 import io.mockk.every
 import io.mockk.mockk
 import java.util.Locale
@@ -29,7 +30,8 @@ class MemberSpendingChartUiMapperTest {
 
         mapper = MemberSpendingChartUiMapper(
             localeProvider = localeProvider,
-            userUiMapper = userUiMapper
+            userUiMapper = userUiMapper,
+            pocketDebtDistributionService = PocketDebtDistributionServiceImpl()
         )
     }
 

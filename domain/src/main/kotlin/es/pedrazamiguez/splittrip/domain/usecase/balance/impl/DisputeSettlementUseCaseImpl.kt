@@ -4,7 +4,10 @@ import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.repository.SettlementRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.EphemeralSettlementIdHelper
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DisputeSettlementUseCase
+import java.time.LocalDateTime
+import java.util.UUID
 
 class DisputeSettlementUseCaseImpl(
     private val settlementRepository: SettlementRepository,
@@ -17,8 +20,32 @@ class DisputeSettlementUseCaseImpl(
         reason: String
     ): Result<SettlementRecord> = runCatching {
         val currentUserId = authenticationService.requireUserId()
-        val record = settlementRepository.getSettlementById(settlementId)
-            ?: throw IllegalArgumentException("Settlement not found: $settlementId")
+        val (record, isNewMaterialization) = if (EphemeralSettlementIdHelper.isEphemeral(settlementId)) {
+            val settlement = EphemeralSettlementIdHelper.parse(settlementId)
+                ?: throw IllegalArgumentException("Invalid ephemeral settlement ID: $settlementId")
+            val existing = settlementRepository.getGroupSettlements(groupId).find {
+                it.status != SettlementStatus.RESOLVED &&
+                    it.settlement.fromUserId == settlement.fromUserId &&
+                    it.settlement.toUserId == settlement.toUserId &&
+                    it.settlement.sourcePocket == settlement.sourcePocket &&
+                    it.settlement.currency == settlement.currency
+            }
+            if (existing != null) {
+                existing to false
+            } else {
+                SettlementRecord(
+                    id = UUID.randomUUID().toString(),
+                    groupId = groupId,
+                    settlement = settlement,
+                    status = SettlementStatus.SUGGESTED,
+                    createdAt = LocalDateTime.now()
+                ) to true
+            }
+        } else {
+            val found = settlementRepository.getSettlementById(settlementId)
+                ?: throw IllegalArgumentException("Settlement not found: $settlementId")
+            found to false
+        }
 
         val isPayer = record.settlement.fromUserId == currentUserId
         val isPayee = record.settlement.toUserId == currentUserId
@@ -37,7 +64,11 @@ class DisputeSettlementUseCaseImpl(
             disputeReason = reason
         )
 
-        settlementRepository.updateSettlement(updated)
+        if (isNewMaterialization) {
+            settlementRepository.addSettlement(updated)
+        } else {
+            settlementRepository.updateSettlement(updated)
+        }
         updated
     }
 }

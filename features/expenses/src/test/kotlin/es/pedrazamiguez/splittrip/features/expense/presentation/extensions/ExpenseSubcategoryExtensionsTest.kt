@@ -1,6 +1,9 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.extensions
 
 import es.pedrazamiguez.splittrip.core.common.R as CommonR
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Keyframes
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Theater
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
@@ -20,6 +23,14 @@ class ExpenseSubcategoryExtensionsTest {
             assertEquals(
                 CommonR.string.expense_subcategory_international_flight,
                 ExpenseSubcategory.INTERNATIONAL_FLIGHT.toStringRes()
+            )
+        }
+
+        @Test
+        fun `maps private transfer to string resource`() {
+            assertEquals(
+                CommonR.string.expense_subcategory_private_transfer,
+                ExpenseSubcategory.PRIVATE_TRANSFER.toStringRes()
             )
         }
 
@@ -56,6 +67,22 @@ class ExpenseSubcategoryExtensionsTest {
 
     @Nested
     inner class IconVectorMapping {
+
+        @Test
+        fun `maps private transfer to keyframes icon`() {
+            assertSame(
+                TablerIcons.Outline.Keyframes,
+                ExpenseSubcategory.PRIVATE_TRANSFER.toIconVector()
+            )
+        }
+
+        @Test
+        fun `maps cinema theater to theater icon`() {
+            assertSame(
+                TablerIcons.Outline.Theater,
+                ExpenseSubcategory.CINEMA_THEATER.toIconVector()
+            )
+        }
 
         @Test
         fun `all subcategories return non-null icon vectors`() {

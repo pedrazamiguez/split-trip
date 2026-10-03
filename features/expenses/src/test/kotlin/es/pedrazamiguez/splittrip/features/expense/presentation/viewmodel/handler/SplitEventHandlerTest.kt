@@ -930,4 +930,127 @@ class SplitEventHandlerTest {
             assertNull(uiState.value.personalCashSplitWarning)
         }
     }
+
+    @Nested
+    inner class SplitSoloSelected {
+
+        @Test
+        fun `solo-selects member by including target and excluding all other members`() = runTest {
+            handler.bind(uiState, actions, this)
+
+            handler.handleSplitSoloSelected("user-2")
+
+            val splits = uiState.value.splits
+            assertFalse(splits.first { it.userId == "user-2" }.isExcluded)
+            assertTrue(splits.first { it.userId == "user-1" }.isExcluded)
+            assertTrue(splits.first { it.userId == "user-3" }.isExcluded)
+        }
+
+        @Test
+        fun `clears all share locks when solo-selected`() = runTest {
+            uiState.value = baseState.copy(
+                splits = persistentListOf(
+                    makeSplit("user-1", isShareLocked = true),
+                    makeSplit("user-2", isShareLocked = true),
+                    makeSplit("user-3", isShareLocked = false)
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.handleSplitSoloSelected("user-2")
+
+            uiState.value.splits.forEach { split ->
+                assertFalse(split.isShareLocked, "Lock should be cleared for ${split.userId}")
+            }
+        }
+
+        @Test
+        fun `recalculates 100 percent of expense amount to solo member in EQUAL mode`() = runTest {
+            handler.bind(uiState, actions, this)
+
+            handler.handleSplitSoloSelected("user-1")
+
+            val soloSplit = uiState.value.splits.first { it.userId == "user-1" }
+            assertEquals(10000L, soloSplit.amountCents)
+            assertEquals("€100.00", soloSplit.formattedAmount)
+
+            uiState.value.splits.filter { it.userId != "user-1" }.forEach { split ->
+                assertEquals(0L, split.amountCents)
+                assertTrue(split.formattedAmount.isEmpty())
+            }
+        }
+
+        @Test
+        fun `recalculates 100 percent of expense amount to solo member in EXACT mode`() = runTest {
+            uiState.value = baseState.copy(
+                selectedSplitType = exactSplitType
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.handleSplitSoloSelected("user-2")
+
+            val soloSplit = uiState.value.splits.first { it.userId == "user-2" }
+            assertEquals(10000L, soloSplit.amountCents)
+            assertEquals("100.00", soloSplit.amountInput)
+
+            uiState.value.splits.filter { it.userId != "user-2" }.forEach { split ->
+                assertEquals(0L, split.amountCents)
+                assertTrue(split.amountInput.isEmpty())
+            }
+        }
+
+        @Test
+        fun `recalculates 100 percent of expense amount to solo member in PERCENT mode`() = runTest {
+            uiState.value = baseState.copy(
+                selectedSplitType = percentSplitType
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.handleSplitSoloSelected("user-3")
+
+            val soloSplit = uiState.value.splits.first { it.userId == "user-3" }
+            assertEquals(10000L, soloSplit.amountCents)
+            assertEquals("100", soloSplit.percentageInput)
+
+            uiState.value.splits.filter { it.userId != "user-3" }.forEach { split ->
+                assertEquals(0L, split.amountCents)
+                assertTrue(split.percentageInput.isEmpty())
+            }
+        }
+
+        @Test
+        fun `recomputes personal cash warning when solo selecting member outside user pool`() = runTest {
+            val userPool = WithdrawalPoolOptionUiModel(
+                scope = PayerType.USER,
+                ownerId = "user-1",
+                displayLabel = "My cash"
+            )
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = userPool
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.handleSplitSoloSelected("user-2")
+
+            assertNotNull(uiState.value.personalCashSplitWarning)
+        }
+
+        @Test
+        fun `clears personal cash warning when solo selecting pool owner`() = runTest {
+            val userPool = WithdrawalPoolOptionUiModel(
+                scope = PayerType.USER,
+                ownerId = "user-1",
+                displayLabel = "My cash"
+            )
+            uiState.value = baseState.copy(
+                selectedWithdrawalPool = userPool,
+                personalCashSplitWarning = UiText.DynamicString("warning")
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.handleSplitSoloSelected("user-1")
+
+            assertNull(uiState.value.personalCashSplitWarning)
+        }
+    }
 }

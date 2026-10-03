@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
@@ -26,9 +27,14 @@ fun CreateEditGroupForm(
 ) {
     val orderedLabels = RememberGroupStepLabels(uiState.steps)
     val bottomPadding = LocalBottomPadding.current
+    val topPadding = LocalTopPadding.current
 
     Box(modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = topPadding)
+        ) {
             WizardStepIndicator(
                 stepLabels = orderedLabels,
                 currentStepIndex = uiState.currentStepIndex,

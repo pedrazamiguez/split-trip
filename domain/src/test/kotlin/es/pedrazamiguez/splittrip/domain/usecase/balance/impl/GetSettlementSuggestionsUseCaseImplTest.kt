@@ -24,6 +24,7 @@ import java.time.LocalDateTime
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GetSettlementSuggestionsUseCaseImplTest {
@@ -514,24 +515,15 @@ class GetSettlementSuggestionsUseCaseImplTest {
 
     @Test
     fun `persistForGroup with leavingUserId when leaving member is not in balances`() = runTest {
+        mockBaseFlowRepos()
         val group = mockk<Group>(relaxed = true).apply {
             every { members } returns listOf("member-2")
             every { this@apply.currency } returns "EUR"
         }
         coEvery { groupRepository.getGroupById(groupId) } returns group
-        every { expenseRepository.getGroupExpensesFlow(groupId) } returns flowOf(emptyList())
-        every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(emptyList())
-        every { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(emptyList())
-        coEvery { subunitRepository.getGroupSubunits(groupId) } returns emptyList()
-        every { cashTransferRepository.observeGroupCashTransfers(groupId) } returns flowOf(emptyList())
-
-        val balances = listOf(
+        coEvery { getMemberBalancesFlowUseCase.computeMemberBalances(any()) } returns listOf(
             MemberBalance(userId = "member-2", pocketBalance = 1000, cashInHand = 0)
         )
-        coEvery {
-            getMemberBalancesFlowUseCase.computeMemberBalances(any())
-        } returns balances
-
         coEvery { settlementRepository.getGroupSettlements(groupId) } returns emptyList()
 
         useCase.persistForGroup(groupId, leavingUserId = "non-existent")
@@ -541,28 +533,63 @@ class GetSettlementSuggestionsUseCaseImplTest {
 
     @Test
     fun `persistForGroup with leavingUserId when there are no remaining members`() = runTest {
+        mockBaseFlowRepos()
         val group = mockk<Group>(relaxed = true).apply {
             every { members } returns listOf("leaving-user")
             every { this@apply.currency } returns "EUR"
         }
         coEvery { groupRepository.getGroupById(groupId) } returns group
-        every { expenseRepository.getGroupExpensesFlow(groupId) } returns flowOf(emptyList())
-        every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(emptyList())
-        every { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(emptyList())
-        coEvery { subunitRepository.getGroupSubunits(groupId) } returns emptyList()
-        every { cashTransferRepository.observeGroupCashTransfers(groupId) } returns flowOf(emptyList())
-
-        val balances = listOf(
+        coEvery { getMemberBalancesFlowUseCase.computeMemberBalances(any()) } returns listOf(
             MemberBalance(userId = "leaving-user", pocketBalance = 1000, cashInHand = 0)
         )
-        coEvery {
-            getMemberBalancesFlowUseCase.computeMemberBalances(any())
-        } returns balances
-
         coEvery { settlementRepository.getGroupSettlements(groupId) } returns emptyList()
 
         useCase.persistForGroup(groupId, leavingUserId = "leaving-user")
 
         coVerify(exactly = 0) { settlementRepository.addSettlement(any()) }
+    }
+
+    @Test
+    fun `getEphemeralSettlements returns ephemeral suggestions when no active persisted records exist`() {
+        val settlement = Settlement(
+            fromUserId = "1",
+            toUserId = "2",
+            amount = 1000L,
+            currency = "EUR",
+            sourcePocket = SettlementPocketType.POCKET
+        )
+        every { debtSimplificationService.simplifyByPocket(memberBalances, "EUR") } returns listOf(settlement)
+
+        val result = useCase.getEphemeralSettlements(groupId, memberBalances, "EUR", emptyList())
+
+        assertEquals(1, result.size)
+        assertEquals(SettlementStatus.SUGGESTED, result[0].status)
+        assertEquals(settlement, result[0].settlement)
+        assertTrue(result[0].id.startsWith("ephemeral|"))
+    }
+
+    @Test
+    fun `getEphemeralSettlements preserves active persisted CONFIRMED_BY_PAYER and does not duplicate`() {
+        val settlement = Settlement(
+            fromUserId = "1",
+            toUserId = "2",
+            amount = 1000L,
+            currency = "EUR",
+            sourcePocket = SettlementPocketType.POCKET
+        )
+        val existingRecord = SettlementRecord(
+            id = "persisted-1",
+            groupId = groupId,
+            settlement = settlement,
+            status = SettlementStatus.CONFIRMED_BY_PAYER,
+            createdAt = LocalDateTime.now()
+        )
+        every { debtSimplificationService.simplifyByPocket(memberBalances, "EUR") } returns listOf(settlement)
+
+        val result = useCase.getEphemeralSettlements(groupId, memberBalances, "EUR", listOf(existingRecord))
+
+        assertEquals(1, result.size)
+        assertEquals("persisted-1", result[0].id)
+        assertEquals(SettlementStatus.CONFIRMED_BY_PAYER, result[0].status)
     }
 }

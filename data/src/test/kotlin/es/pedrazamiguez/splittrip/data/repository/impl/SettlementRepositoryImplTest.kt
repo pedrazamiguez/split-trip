@@ -15,6 +15,8 @@ import io.mockk.every
 import io.mockk.mockk
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -181,6 +183,42 @@ class SettlementRepositoryImplTest {
 
             coVerify(exactly = 1) {
                 cloudSettlementDataSource.deleteSettlement(testGroupId, testRecord.id)
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("GetGroupSettlementsFlow")
+    inner class GetGroupSettlementsFlow {
+
+        @Test
+        fun `purges remote records with SUGGESTED status from cloud`() = runTest(testDispatcher) {
+            val legacySuggested = testRecord.copy(id = "legacy-sug", status = SettlementStatus.SUGGESTED)
+            val confirmedRecord = testRecord.copy(id = "confirmed-rec", status = SettlementStatus.CONFIRMED_BY_PAYER)
+
+            every { localSettlementDataSource.getSettlementsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+            every { cloudSettlementDataSource.getSettlementsByGroupIdFlow(testGroupId) } returns flowOf(
+                listOf(legacySuggested, confirmedRecord)
+            )
+            coEvery { localSettlementDataSource.getPendingSyncSettlementIds(testGroupId) } returns emptyList()
+            coEvery { cloudSettlementDataSource.deleteSettlement(any(), any()) } returns Unit
+            coEvery { localSettlementDataSource.replaceSettlementsForGroup(any(), any()) } returns Unit
+
+            repository.getGroupSettlementsFlow(testGroupId).first()
+
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                cloudSettlementDataSource.deleteSettlement(testGroupId, "legacy-sug")
+            }
+            coVerify(exactly = 1) {
+                localSettlementDataSource.replaceSettlementsForGroup(
+                    testGroupId,
+                    match { list ->
+                        list.none { it.status == SettlementStatus.SUGGESTED } &&
+                            list.contains(confirmedRecord)
+                    }
+                )
             }
         }
     }

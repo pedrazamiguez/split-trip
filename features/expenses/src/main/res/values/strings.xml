@@ -79,7 +79,7 @@
     <string name="error_deleting_expense">Failed to delete expense. Please try again</string>
     <string name="expense_detail_cancel_refund">Cancel &amp; Refund</string>
     <string name="expense_cancel_dialog_title">Cancel Reservation</string>
-    <string name="expense_cancel_dialog_message">Are you sure you want to cancel this reservation and refund the expense? This will neutralize its effect on group and member balances.</string>
+    <string name="expense_cancel_dialog_message">Are you sure you want to cancel this reservation and refund the expense? This will neutralise its effect on group and member balances.</string>
     <string name="expense_cancel_dialog_confirm">Cancel &amp; Refund</string>
     <string name="expense_cancel_dialog_dismiss">Keep Reservation</string>
     <string name="expense_cancelled_successfully">Reservation cancelled and refunded successfully</string>
@@ -343,7 +343,7 @@
     <string name="receipt_viewer_pdf_page_cd">PDF page %1$d</string>
 
     
-    <string name="expense_autofill_in_progress">Analyzing receipt…</string>
+    <string name="expense_autofill_in_progress">Analysing receipt…</string>
     <string name="expense_autofill_success">Receipt scanned successfully</string>
     <string name="expense_autofill_failed">Could not read receipt fields</string>
     <string name="expense_autofill_unavailable">AI features are not supported on this device</string>

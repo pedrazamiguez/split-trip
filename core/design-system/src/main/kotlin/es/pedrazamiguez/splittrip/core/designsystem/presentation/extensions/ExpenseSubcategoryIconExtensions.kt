@@ -25,7 +25,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.GasStation
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Gift
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.GlassCocktail
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Home2
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.MasksTheater
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Keyframes
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.MedicalCross
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Microphone2
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Motorbike
@@ -47,6 +47,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ShoppingBag
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.SoccerField
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Speedboat
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Tent
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Theater
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.TipJarEuro
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Train
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.TruckDelivery
@@ -59,6 +60,7 @@ private val subcategoryToIconMap: Map<ExpenseSubcategory, ImageVector> = mapOf(
     ExpenseSubcategory.TRAIN to TablerIcons.Outline.Train,
     ExpenseSubcategory.BUS to TablerIcons.Outline.Bus,
     ExpenseSubcategory.TAXI_RIDESHARE to TablerIcons.Outline.Car,
+    ExpenseSubcategory.PRIVATE_TRANSFER to TablerIcons.Outline.Keyframes,
     ExpenseSubcategory.CAR_RENTAL to TablerIcons.Outline.CarSuv,
     ExpenseSubcategory.MOTORBIKE_RENTAL to TablerIcons.Outline.Motorbike,
     ExpenseSubcategory.FUEL to TablerIcons.Outline.GasStation,
@@ -86,7 +88,7 @@ private val subcategoryToIconMap: Map<ExpenseSubcategory, ImageVector> = mapOf(
     ExpenseSubcategory.TICKETS_ATTRACTIONS to TablerIcons.Outline.BuildingCarousel,
     ExpenseSubcategory.CONCERT_FESTIVAL to TablerIcons.Outline.Microphone2,
     ExpenseSubcategory.NIGHTLIFE_CLUB to TablerIcons.Outline.GlassCocktail,
-    ExpenseSubcategory.CINEMA_THEATER to TablerIcons.Outline.MasksTheater,
+    ExpenseSubcategory.CINEMA_THEATER to TablerIcons.Outline.Theater,
     ExpenseSubcategory.GAMES_ARCADE to TablerIcons.Outline.DeviceGamepad2,
     ExpenseSubcategory.SPORTS_EVENT to TablerIcons.Outline.SoccerField,
     ExpenseSubcategory.CLOTHING to TablerIcons.Outline.Shirt,

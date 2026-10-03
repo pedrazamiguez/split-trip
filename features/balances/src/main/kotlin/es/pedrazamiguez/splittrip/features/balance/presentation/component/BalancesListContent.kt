@@ -33,10 +33,12 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.BalancesUiState
 import kotlinx.collections.immutable.ImmutableList
 
+@Suppress("LongParameterList")
 @Composable
 internal fun BalancesListContent(
     modifier: Modifier = Modifier,
     uiState: BalancesUiState,
+    topPadding: Dp,
     bottomPadding: Dp,
     onEvent: (BalancesUiEvent) -> Unit,
     onNavigateToContribution: () -> Unit,
@@ -49,7 +51,7 @@ internal fun BalancesListContent(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = MaterialTheme.spacing.Default,
-            top = MaterialTheme.spacing.Default,
+            top = MaterialTheme.spacing.Default + topPadding,
             end = MaterialTheme.spacing.Default,
             bottom = MaterialTheme.spacing.Default + bottomPadding
         ),

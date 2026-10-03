@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SettlementRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.DebtSimplificationService
+import es.pedrazamiguez.splittrip.domain.service.EphemeralSettlementIdHelper
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.strategy.StandardContributionAttributionStrategy
@@ -41,6 +42,46 @@ class GetSettlementSuggestionsUseCaseImpl(
         groupCurrency: String
     ): List<Settlement> =
         debtSimplificationService.simplifyByPocket(memberBalances, groupCurrency)
+
+    override fun getEphemeralSettlements(
+        groupId: String,
+        memberBalances: List<MemberBalance>,
+        groupCurrency: String,
+        persistedRecords: List<SettlementRecord>
+    ): List<SettlementRecord> {
+        val computedSettlements = debtSimplificationService.simplifyByPocket(memberBalances, groupCurrency)
+            .filter { it.sourcePocket != SettlementPocketType.NET }
+
+        val activePersisted = persistedRecords.filter { it.status != SettlementStatus.RESOLVED }
+
+        val ephemeralRecords = computedSettlements.mapNotNull { settlement ->
+            val existing = activePersisted.find { existing ->
+                existing.settlement.fromUserId == settlement.fromUserId &&
+                    existing.settlement.toUserId == settlement.toUserId &&
+                    existing.settlement.sourcePocket == settlement.sourcePocket &&
+                    existing.settlement.currency == settlement.currency
+            }
+            if (existing != null) {
+                null
+            } else {
+                SettlementRecord(
+                    id = EphemeralSettlementIdHelper.createId(
+                        fromUserId = settlement.fromUserId,
+                        toUserId = settlement.toUserId,
+                        sourcePocket = settlement.sourcePocket,
+                        currency = settlement.currency,
+                        amount = settlement.amount
+                    ),
+                    groupId = groupId,
+                    settlement = settlement,
+                    status = SettlementStatus.SUGGESTED,
+                    createdAt = LocalDateTime.now()
+                )
+            }
+        }
+
+        return activePersisted + ephemeralRecords
+    }
 
     override suspend fun persistForGroup(groupId: String, leavingUserId: String?): List<SettlementRecord> {
         val group = groupRepository.getGroupById(groupId)

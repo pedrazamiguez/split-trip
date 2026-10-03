@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
@@ -19,19 +17,14 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.domain.service.calculator.ExpressionCalculatorService
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
-/** Weight ratio for amount input field vs currency dropdown. */
+/** Weight ratio for amount input field vs currency selector. */
 private const val AMOUNT_FIELD_WEIGHT = 0.5f
 private const val CURRENCY_FIELD_WEIGHT = 0.5f
 
-/** Delay for re-focusing the amount field after the dropdown closes. */
-private const val REFOCUS_DELAY_MS = 100L
-
 /**
- * Reusable component combining an amount text field and a [CurrencyDropdown].
+ * Reusable component combining an amount text field and a [CurrencySelectorField].
  *
  * Renders as a plain [Column] — no card wrapper — so it blends seamlessly
  * on any step background (wizard surface, etc.). Can be used for any
@@ -54,8 +47,6 @@ fun AmountCurrencyCard(
     modifier: Modifier = Modifier
 ) {
     val focusRequester = rememberAutoFocusRequester(state.autoFocus)
-    val coroutineScope = rememberCoroutineScope()
-    val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
     Column(
@@ -91,19 +82,10 @@ fun AmountCurrencyCard(
                 focusRequester = if (state.autoFocus) focusRequester else null,
                 moveCursorToEndOnFocus = state.autoFocus
             )
-            CurrencyDropdown(
+            CurrencySelectorField(
                 selectedCurrency = state.selectedCurrency,
                 availableCurrencies = state.availableCurrencies,
-                onCurrencySelected = { code ->
-                    onCurrencySelected(code)
-                    if (state.autoFocus) {
-                        coroutineScope.launch {
-                            delay(REFOCUS_DELAY_MS)
-                            focusRequester.requestFocus()
-                            keyboardController?.show()
-                        }
-                    }
-                },
+                onCurrencySelected = onCurrencySelected,
                 label = state.currencyLabel,
                 modifier = Modifier.weight(CURRENCY_FIELD_WEIGHT)
             )

@@ -13,10 +13,10 @@
 | **Package Name** | `es.pedrazamiguez.splittrip` | Defined in `:app/build.gradle.kts` |
 | **Primary Category** | `Finance` | Financial management, group expense splitting |
 | **Secondary Category** | `Travel & Local` | Vacation budget planning, multi-currency trips |
-| **Default Language** | English (`en-US`) | Global baseline locale |
+| **Default Language** | English (`en-GB`) | European English baseline locale |
 | **Additional Languages** | Spanish (`es-ES`) | European Castilian Spanish (Tone of Voice compliant) |
 | **Content Rating** | PEGI 3 / ESRB Everyone | Contains ads (Free tier). No offensive content, violence, or gambling |
-| **Target Audience** | 18+ (General Audience) | Group travelers, roommates, couples, families |
+| **Target Audience** | 18+ (General Audience) | Group travellers, roommates, couples, families |
 | **Privacy Policy URL** | `https://splittrip.eu/privacy-policy.html` | Public web-accessible URL |
 | **Developer Contact** | `support@splittrip.eu` | Official support inbox |
 | **Website** | `https://splittrip.eu` | Official developer website & web presence |
@@ -172,8 +172,8 @@ A minimum of 4 and maximum of 8 screenshots are required. The recommended 6-scre
    - Visual: Debt resolution screen highlighting simplified debt pathways, pending settlements, and consensus status.
    - Header Caption: **Settle debts with minimal transactions** / **Acuerdos de pago claros y sin fricciones**
 6. **Screen 6 — Smart AI Receipt Auto-Fill [Pro]:**
-   - Visual: Camera scan overlay with receipt itemization and automated currency extraction.
-   - Header Caption: **Instant receipt itemization with AI** / **Desglose inteligente de tiques con IA**
+   - Visual: Camera scan overlay with receipt itemisation and automated currency extraction.
+   - Header Caption: **Instant receipt itemisation with AI** / **Desglose inteligente de tiques con IA**
 
 ---
 

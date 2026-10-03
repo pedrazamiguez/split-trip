@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMa
 import es.pedrazamiguez.splittrip.core.designsystem.preview.MappedPreview
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.impl.PocketDebtDistributionServiceImpl
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.MemberSpendingChartUiMapper
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.MemberSpendingChartUiModel
 
@@ -44,7 +45,8 @@ internal fun MemberSpendingBarChartPreviewHelper(
         mapper = { localeProvider, resourceProvider ->
             MemberSpendingChartUiMapper(
                 localeProvider = localeProvider,
-                userUiMapper = UserUiMapper(resourceProvider)
+                userUiMapper = UserUiMapper(resourceProvider),
+                pocketDebtDistributionService = PocketDebtDistributionServiceImpl()
             )
         },
         transform = { mapper, domain ->

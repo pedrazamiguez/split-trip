@@ -336,3 +336,28 @@ val TablerIcons.Outline.PaperBag: ImageVector
     ).build().also { _PaperBag = it }
 
 private var _PaperBag: ImageVector? = null
+
+val TablerIcons.Outline.Theater: ImageVector
+    get() = _Theater ?: ImageVector.Builder(
+        name = "Outline.Theater",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).addPath(
+        pathData = addPathNodes("M4 20h16"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes(
+            "M20 16v-10a2 2 0 0 0 -2 -2h-12a2 2 0 0 0 -2 2v10l4 -6c2.667 1.333 5.333 1.333 8 0l4 6"
+        ),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).build().also { _Theater = it }
+
+private var _Theater: ImageVector? = null
