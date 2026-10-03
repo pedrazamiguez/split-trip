@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.curr
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -271,7 +272,11 @@ fun CurrencyPickerBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = MaterialTheme.spacing.ExtraLarge)
+                .then(if (showSearch) Modifier.fillMaxHeight() else Modifier)
+                .padding(
+                    top = MaterialTheme.spacing.ExtraLarge,
+                    bottom = MaterialTheme.spacing.ExtraLarge
+                )
         ) {
             SheetTitleText(
                 text = title,
@@ -295,7 +300,8 @@ fun CurrencyPickerBottomSheet(
                 onCurrencySelected = onCurrencySelected,
                 onDismiss = onDismiss,
                 sheetState = sheetState,
-                scope = coroutineScope
+                scope = coroutineScope,
+                modifier = if (showSearch) Modifier.weight(1f) else Modifier
             )
         }
     }
