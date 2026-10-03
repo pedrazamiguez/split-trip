@@ -6,16 +6,16 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.MemberSpendingBarUiModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.MemberSpendingChartUiModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SpilloverSegment
-import java.math.BigDecimal
-import java.math.RoundingMode
 import kotlinx.collections.immutable.toImmutableList
 
 class MemberSpendingChartUiMapper(
     private val localeProvider: LocaleProvider,
-    private val userUiMapper: UserUiMapper
+    private val userUiMapper: UserUiMapper,
+    private val pocketDebtDistributionService: PocketDebtDistributionService
 ) {
     fun toChartUiModel(
         memberBalances: List<MemberBalance>,
@@ -29,7 +29,7 @@ class MemberSpendingChartUiMapper(
                 .thenBy { resolveDisplayName(it.userId, memberProfiles, currentUserId) }
         )
 
-        val analysis = analyzeMemberSpends(sortedMembers, cashOnly)
+        val analysis = analyzeMemberSpends(sortedMembers, cashOnly, groupCurrencyCode)
 
         val bars = sortedMembers.mapIndexed { index, balance ->
             MemberSpendingBarUiModel(
@@ -67,7 +67,8 @@ class MemberSpendingChartUiMapper(
 
     private fun analyzeMemberSpends(
         sortedMembers: List<MemberBalance>,
-        cashOnly: Boolean
+        cashOnly: Boolean,
+        groupCurrencyCode: String
     ): SpendAnalysis {
         val capacities = mutableListOf<Pair<Int, Long>>()
         val overspenders = mutableListOf<Pair<Int, Long>>()
@@ -94,7 +95,12 @@ class MemberSpendingChartUiMapper(
             }
         }
 
-        val spilloverAllocations = buildSpilloverAllocations(overspenders, capacities)
+        val spilloverAllocations = buildSpilloverAllocations(
+            sortedMembers = sortedMembers,
+            overspenders = overspenders,
+            capacities = capacities,
+            groupCurrencyCode = groupCurrencyCode
+        )
 
         return SpendAnalysis(
             allowances = allowances,
@@ -112,33 +118,27 @@ class MemberSpendingChartUiMapper(
     )
 
     private fun buildSpilloverAllocations(
+        sortedMembers: List<MemberBalance>,
         overspenders: List<Pair<Int, Long>>,
-        capacities: MutableList<Pair<Int, Long>>
+        capacities: List<Pair<Int, Long>>,
+        groupCurrencyCode: String
     ): Map<Int, List<SpilloverSegment>> {
-        val spilloverAllocations = mutableMapOf<Int, MutableList<SpilloverSegment>>()
-        for ((ownerIndex, amountToDistribute) in overspenders) {
-            if (capacities.isEmpty()) continue
+        val userIndexMap = sortedMembers.mapIndexed { index, balance -> balance.userId to index }.toMap()
+        val deficits = overspenders.map { (index, overspent) -> sortedMembers[index].userId to overspent }
+        val caps = capacities.map { (index, cap) -> sortedMembers[index].userId to cap }
 
-            val distribution = distributeSpillover(amountToDistribute, capacities)
-            for ((receiverIndex, amount) in distribution) {
-                val list = spilloverAllocations.getOrPut(receiverIndex) { mutableListOf() }
-                list.add(SpilloverSegment(ownerColorIndex = ownerIndex, amountCents = amount))
-                updateCapacity(receiverIndex, amount, capacities)
+        val settlements = pocketDebtDistributionService.distribute(deficits, caps, groupCurrencyCode)
+
+        val spilloverAllocations = mutableMapOf<Int, MutableList<SpilloverSegment>>()
+        for (settlement in settlements) {
+            val ownerIndex = userIndexMap[settlement.fromUserId]
+            val receiverIndex = userIndexMap[settlement.toUserId]
+            if (ownerIndex != null && receiverIndex != null) {
+                val segments = spilloverAllocations.getOrPut(receiverIndex) { mutableListOf() }
+                segments.add(SpilloverSegment(ownerColorIndex = ownerIndex, amountCents = settlement.amount))
             }
         }
         return spilloverAllocations
-    }
-
-    private fun updateCapacity(receiverIndex: Int, amount: Long, capacities: MutableList<Pair<Int, Long>>) {
-        val capIndex = capacities.indexOfFirst { it.first == receiverIndex }
-        if (capIndex == -1) return
-
-        val newCap = capacities[capIndex].second - amount
-        if (newCap > 0) {
-            capacities[capIndex] = receiverIndex to newCap
-        } else {
-            capacities.removeAt(capIndex)
-        }
     }
 
     private fun resolveDisplayName(
@@ -152,45 +152,5 @@ class MemberSpendingChartUiMapper(
             currentUserId = currentUserId,
             selfIdentificationContext = SelfIdentificationContextEnum.NOMINATIVE
         )
-    }
-
-    private fun distributeSpillover(
-        overspentCents: Long,
-        availableSlots: List<Pair<Int, Long>>
-    ): Map<Int, Long> {
-        if (availableSlots.isEmpty() || overspentCents <= 0) return emptyMap()
-
-        val activeSlots = availableSlots.filter { it.second > 0 }
-        if (activeSlots.isEmpty()) return emptyMap()
-
-        val allocation = mutableMapOf<Int, Long>()
-        var remainingToDistribute = overspentCents
-
-        val totalAvailableCapacity = activeSlots.sumOf { it.second }
-        val amountToDistributeThisRound = minOf(remainingToDistribute, totalAvailableCapacity)
-
-        val slotsCount = BigDecimal(activeSlots.size)
-        val sharePerSlot = BigDecimal(amountToDistributeThisRound)
-            .divide(slotsCount, 0, RoundingMode.HALF_UP)
-            .toLong()
-
-        var remainder = amountToDistributeThisRound - (sharePerSlot * activeSlots.size)
-
-        for (slot in activeSlots) {
-            val receiverIndex = slot.first
-            var grant = sharePerSlot
-            if (remainder > 0) {
-                grant += 1
-                remainder -= 1
-            } else if (remainder < 0) {
-                grant -= 1
-                remainder += 1
-            }
-            val availableCapacity = slot.second
-            val finalGrant = minOf(grant, availableCapacity)
-            allocation[receiverIndex] = finalGrant
-        }
-
-        return allocation
     }
 }

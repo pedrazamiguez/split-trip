@@ -142,4 +142,26 @@ class DisputeSettlementUseCaseImplTest {
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is IllegalArgumentException)
     }
+
+    @Test
+    fun `disputing ephemeral settlement materializes record and persists directly with DISPUTED`() = runTest {
+        every { authenticationService.requireUserId() } returns payerId
+        coEvery { settlementRepository.getGroupSettlements(groupId) } returns emptyList()
+        coEvery { settlementRepository.addSettlement(any()) } returns Unit
+
+        val ephemeralId = "ephemeral|$payerId|$payeeId|POCKET|EUR|5000"
+        val result = useCase(groupId, ephemeralId, "Incorrect amount")
+
+        assertTrue(result.isSuccess)
+        val updated = result.getOrThrow()
+        assertEquals(SettlementStatus.DISPUTED, updated.status)
+        assertEquals(payerId, updated.disputedBy)
+        assertEquals("Incorrect amount", updated.disputeReason)
+        assertEquals(5000L, updated.settlement.amount)
+        coVerify(exactly = 1) {
+            settlementRepository.addSettlement(
+                match { it.status == SettlementStatus.DISPUTED && it.disputeReason == "Incorrect amount" }
+            )
+        }
+    }
 }

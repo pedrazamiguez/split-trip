@@ -8,11 +8,14 @@ import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SettlementRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.EphemeralSettlementIdHelper
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.strategy.CashSettlementPaymentStrategy
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.strategy.PocketSettlementPaymentStrategy
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.strategy.SettlementConfirmationStrategyFactory
+import java.time.LocalDateTime
+import java.util.UUID
 
 class ConfirmSettlementUseCaseImpl(
     private val settlementRepository: SettlementRepository,
@@ -29,17 +32,45 @@ class ConfirmSettlementUseCaseImpl(
         settlementId: String
     ): Result<SettlementRecord> = runCatching {
         val currentUserId = authenticationService.requireUserId()
-        val record = settlementRepository.getSettlementById(settlementId)
-            ?: throw IllegalArgumentException("Settlement not found: $settlementId")
-
         val group = groupRepository.getGroupById(groupId)
             ?: throw IllegalArgumentException("Group not found: $groupId")
         val isCreator = group.createdBy == currentUserId
 
+        val (record, isNewMaterialization) = if (EphemeralSettlementIdHelper.isEphemeral(settlementId)) {
+            val settlement = EphemeralSettlementIdHelper.parse(settlementId)
+                ?: throw IllegalArgumentException("Invalid ephemeral settlement ID: $settlementId")
+            val existing = settlementRepository.getGroupSettlements(groupId).find {
+                it.status != SettlementStatus.RESOLVED &&
+                    it.settlement.fromUserId == settlement.fromUserId &&
+                    it.settlement.toUserId == settlement.toUserId &&
+                    it.settlement.sourcePocket == settlement.sourcePocket &&
+                    it.settlement.currency == settlement.currency
+            }
+            if (existing != null) {
+                existing to false
+            } else {
+                SettlementRecord(
+                    id = UUID.randomUUID().toString(),
+                    groupId = groupId,
+                    settlement = settlement,
+                    status = SettlementStatus.SUGGESTED,
+                    createdAt = LocalDateTime.now()
+                ) to true
+            }
+        } else {
+            val found = settlementRepository.getSettlementById(settlementId)
+                ?: throw IllegalArgumentException("Settlement not found: $settlementId")
+            found to false
+        }
+
         val strategy = SettlementConfirmationStrategyFactory.getStrategy(record)
         val updated = strategy.confirm(record, currentUserId, isCreator)
 
-        settlementRepository.updateSettlement(updated)
+        if (isNewMaterialization) {
+            settlementRepository.addSettlement(updated)
+        } else {
+            settlementRepository.updateSettlement(updated)
+        }
 
         if (updated.status == SettlementStatus.RESOLVED) {
             handleResolvedSettlement(
