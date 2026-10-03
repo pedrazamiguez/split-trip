@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
@@ -27,20 +28,23 @@ fun CategorySpendingScreen(
     uiState: CategorySpendingUiState,
     modifier: Modifier = Modifier
 ) {
+    val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
 
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
         loadingContent = {
             ShimmerLoadingList(
-                modifier = modifier.fillMaxSize(),
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(top = topPadding),
                 itemCount = 5
             )
         }
     ) {
         LazyColumn(
             modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = bottomPadding)
+            contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding)
         ) {
             item {
                 CategorySpendingChart(uiState = uiState)

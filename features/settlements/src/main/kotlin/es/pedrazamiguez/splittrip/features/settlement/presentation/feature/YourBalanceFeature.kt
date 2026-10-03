@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.feature
 
 import android.app.Activity
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,6 +16,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.ad.InterstitialAdManager
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -43,6 +45,7 @@ fun YourBalanceFeature(
     val context = LocalContext.current
     val koin = getKoin()
     val interstitialAdManager = remember(koin) { koin.get<InterstitialAdManager>() }
+    val topPadding = LocalTopPadding.current
 
     LaunchedEffect(selectedGroupId) { yourBalanceViewModel.setSelectedGroup(selectedGroupId) }
 
@@ -65,7 +68,7 @@ fun YourBalanceFeature(
     SharedTransitionSurface(sharedElementKey = SharedElementKeys.YOUR_BALANCE, modifier = modifier) {
         DeferredLoadingContainer(
             isLoading = uiState.isLoading,
-            loadingContent = { ShimmerLoadingList(modifier = Modifier.fillMaxSize()) }
+            loadingContent = { ShimmerLoadingList(modifier = Modifier.fillMaxSize().padding(top = topPadding)) }
         ) {
             when {
                 uiState.personalPosition != null -> YourBalanceFeatureBody(
@@ -76,7 +79,7 @@ fun YourBalanceFeature(
                     icon = TablerIcons.Outline.Wallet,
                     title = stringResource(R.string.your_balance_empty_title),
                     description = stringResource(R.string.your_balance_empty_description),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().padding(top = topPadding)
                 )
             }
         }

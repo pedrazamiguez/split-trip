@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.domain.enums.AppTheme
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.LogoutButton
@@ -69,7 +70,7 @@ fun SettingsScreen(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            top = MaterialTheme.spacing.Default,
+            top = MaterialTheme.spacing.Default + LocalTopPadding.current,
             bottom = MaterialTheme.spacing.Default + LocalBottomPadding.current
         )
     ) {

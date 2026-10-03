@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
@@ -42,13 +43,16 @@ fun GroupSettlementOverviewScreen(
         )
     }
 
+    val topPadding = LocalTopPadding.current
+
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
-        loadingContent = { ShimmerLoadingList() }
+        loadingContent = { ShimmerLoadingList(modifier = Modifier.padding(top = topPadding)) }
     ) {
         when {
             uiState.hasError -> EmptyStateView(
-                title = stringResource(R.string.settlement_overview_error_loading)
+                title = stringResource(R.string.settlement_overview_error_loading),
+                modifier = Modifier.padding(top = topPadding)
             )
             uiState.isUserCreator -> {
                 val activeSteps = uiState.activeSteps
@@ -61,7 +65,11 @@ fun GroupSettlementOverviewScreen(
                     else -> true
                 }
 
-                Column(modifier = modifier.fillMaxSize()) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(top = topPadding)
+                ) {
                     if (activeSteps.isNotEmpty()) {
                         WizardStepIndicator(
                             stepLabels = activeSteps.map { stringResource(it.labelResId) },

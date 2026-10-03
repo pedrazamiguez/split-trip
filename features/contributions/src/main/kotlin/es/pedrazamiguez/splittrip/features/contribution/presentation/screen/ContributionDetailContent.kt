@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.features.contribution.presentation.component.detail.ContributionHeroSection
 import es.pedrazamiguez.splittrip.features.contribution.presentation.component.detail.ContributionProvenanceSection
 import es.pedrazamiguez.splittrip.features.contribution.presentation.component.detail.ContributionScopeSection
@@ -21,7 +22,8 @@ import es.pedrazamiguez.splittrip.features.contribution.presentation.model.Contr
 internal fun ContributionDetailContent(
     contribution: ContributionDetailUiModel,
     bottomPadding: Dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    topPadding: Dp = LocalTopPadding.current
 ) {
     Column(
         modifier = modifier
@@ -30,7 +32,7 @@ internal fun ContributionDetailContent(
             .padding(
                 PaddingValues(
                     start = MaterialTheme.spacing.Default,
-                    top = MaterialTheme.spacing.Default,
+                    top = MaterialTheme.spacing.Default + topPadding,
                     end = MaterialTheme.spacing.Default,
                     bottom = MaterialTheme.spacing.Default + bottomPadding
                 )

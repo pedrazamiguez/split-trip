@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Scale
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.event.GroupSettlementOverviewUiEvent
@@ -29,6 +30,7 @@ internal fun SettlementContent(
     modifier: Modifier = Modifier
 ) {
     val bottomPadding = LocalBottomPadding.current
+    val topPadding = LocalTopPadding.current
 
     Column(
         modifier = modifier
@@ -37,7 +39,7 @@ internal fun SettlementContent(
             .padding(
                 start = MaterialTheme.spacing.Default,
                 end = MaterialTheme.spacing.Default,
-                top = MaterialTheme.spacing.Small
+                top = MaterialTheme.spacing.Small + topPadding
             ),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {

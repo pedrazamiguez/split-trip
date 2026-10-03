@@ -11,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.InlineWarningBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.CashBreakdownBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
@@ -34,6 +35,7 @@ internal fun YourBalanceContent(
     isOffline: Boolean = false
 ) {
     val bottomPadding = LocalBottomPadding.current
+    val topPadding = LocalTopPadding.current
     val spacing = MaterialTheme.spacing
 
     LazyColumn(
@@ -41,7 +43,7 @@ internal fun YourBalanceContent(
         contentPadding = PaddingValues(
             start = spacing.Default,
             end = spacing.Default,
-            top = spacing.Default,
+            top = spacing.Default + topPadding,
             bottom = bottomPadding + spacing.Default
         ),
         verticalArrangement = Arrangement.spacedBy(spacing.Medium)

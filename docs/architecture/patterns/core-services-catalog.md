@@ -145,7 +145,7 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Utility | File | Purpose |
 |---|---|---|
-| `GlassmorphismDefaults` | `foundation/GlassmorphismDefaults.kt` | Constants and `Modifier.horizonGlassEffect()` extension for the Horizon Narrative glass-blur recipe. Light mode: surface at 70% opacity + 20dp blur. Dark mode: surface at 60% opacity + 24dp blur. Accepts optional `HazeBlurStyleScope` block for per-site customisation (e.g., gradient mask). **Use for:** Any floating UI element that needs frosted-glass depth (nav bars, top bars, modal sheets). Powered by `dev.chrisbanes.haze` (`haze` + `haze-blur`, Haze 2.0). |
+| `GlassmorphismDefaults` | `foundation/GlassmorphismDefaults.kt` | Constants, top app bar gradient brushes (`LightTopAppBarGradient`, `DarkTopAppBarGradient`), and `Modifier.horizonGlassEffect()` extension for the Horizon Narrative glass-blur recipe. Light mode: surface at 70% opacity + 20dp blur. Dark mode: surface at 60% opacity + 24dp blur. Accepts optional `HazeBlurStyleScope` block for per-site customisation (e.g., gradient mask). **Use for:** Any floating UI element that needs frosted-glass depth (nav bars, top bars, modal sheets). Powered by `dev.chrisbanes.haze` (`haze` + `haze-blur`, Haze 2.0). |
 
 ---
 
@@ -158,6 +158,8 @@ All components are `@Composable` functions following Material 3 design. They acc
 | `LocalRootNavController` | `navigation/LocalRootNavController.kt` | Global (Activity-level) navigation controller. **Use for:** Full-screen flows (Login, Onboarding, Settings). |
 | `LocalTabNavController` | `navigation/LocalTabNavController.kt` | Tab-level navigation controller inside `MainScreen`. **Use for:** Drill-down navigation within a bottom tab. |
 | `LocalBottomPadding` | `navigation/LocalBottomPadding.kt` | Dynamic bottom padding value to account for floating bottom nav bar. **Must be applied** by all tab screens to prevent content from being hidden. |
+| `LocalTopPadding` | `navigation/LocalTopPadding.kt` | Dynamic top padding value for screens inside a floating or translucent top bar layout to allow scroll-under while keeping initial content offset. |
+| `LocalHazeState` | `foundation/LocalHazeState.kt` | Ambient `HazeState` for coordinating top app bars, navigation bars, and overlays with `Modifier.hazeSource`. |
 | `LocalTopPillController` | `notification/TopPillNotification.kt` | Global top-pill notification controller that survives navigation. Consumed in Feature layer. |
 | `LocalSharedTransitionScope` | `transition/SharedElements.kt` | Shared-element transition scope for container-transform animations. |
 | `LocalAnimatedVisibilityScope` | `transition/SharedElements.kt` | Animated visibility scope for shared-element transitions. |
@@ -176,7 +178,7 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Component | File | Purpose |
 |---|---|---|
-| `DynamicTopAppBar` | `topbar/DynamicTopAppBar.kt` | Standard pinned `TopAppBar` with primary background and `onPrimary` content color. **Use for:** Screens that need a fixed top app bar (wizards, sub-screens with back navigation, settings, etc.). |
+| `DynamicTopAppBar` | `topbar/DynamicTopAppBar.kt` | Pinned `TopAppBar` with atmospheric gradient, glassmorphism backdrop blur (`Modifier.horizonGlassEffect()`), and WCAG AA contrast colors. **Use for:** Screens that need a modern top app bar (wizards, sub-screens with back navigation, settings, tab roots, etc.). |
 
 ### B.4 Notification
 
