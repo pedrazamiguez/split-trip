@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMa
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DisputeSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
@@ -113,9 +114,13 @@ val settlementsUiModule = module {
             resourceProvider = resourceProvider
         )
 
+        val userUiMapper = get<UserUiMapper>()
+        val pocketDebtDistributionService = get<PocketDebtDistributionService>()
+
         val memberSpendingChartUiMapper = MemberSpendingChartUiMapper(
             localeProvider = localeProvider,
-            userUiMapper = get<UserUiMapper>()
+            userUiMapper = userUiMapper,
+            pocketDebtDistributionService = pocketDebtDistributionService
         )
 
         val yourBalanceUseCases = YourBalanceUseCases(

@@ -16,10 +16,12 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CashDebtScalingService
 import es.pedrazamiguez.splittrip.domain.service.DebtSimplificationService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.SettlementReconciliationService
 import es.pedrazamiguez.splittrip.domain.service.impl.CashDebtScalingServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.DebtSimplificationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.PocketDebtDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.SettlementReconciliationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AreGroupSettlementsResolvedUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AreMemberSettlementsResolvedUseCase
@@ -119,9 +121,16 @@ val balancesDomainModule = module {
         )
     }
 
+    factory<PocketDebtDistributionService> {
+        PocketDebtDistributionServiceImpl()
+    }
+
     factory<DebtSimplificationService> {
+        val cashDebtScalingService = get<CashDebtScalingService>()
+        val pocketDebtDistributionService = get<PocketDebtDistributionService>()
         DebtSimplificationServiceImpl(
-            cashDebtScalingService = get<CashDebtScalingService>()
+            cashDebtScalingService = cashDebtScalingService,
+            pocketDebtDistributionService = pocketDebtDistributionService
         )
     }
 

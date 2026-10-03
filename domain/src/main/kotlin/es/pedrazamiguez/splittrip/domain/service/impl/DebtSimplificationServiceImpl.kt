@@ -5,11 +5,13 @@ import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.service.CashDebtScalingService
 import es.pedrazamiguez.splittrip.domain.service.DebtSimplificationService
+import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
 import es.pedrazamiguez.splittrip.domain.service.cashdebt.CashDebtNode
 import kotlin.math.min
 
 class DebtSimplificationServiceImpl(
-    private val cashDebtScalingService: CashDebtScalingService
+    private val cashDebtScalingService: CashDebtScalingService,
+    private val pocketDebtDistributionService: PocketDebtDistributionService
 ) : DebtSimplificationService {
     override fun simplify(memberBalances: List<MemberBalance>): List<Settlement> =
         runGreedyAlgorithm(
@@ -22,10 +24,9 @@ class DebtSimplificationServiceImpl(
         memberBalances: List<MemberBalance>,
         groupCurrency: String
     ): List<Settlement> =
-        runGreedyAlgorithm(
-            balances = memberBalances.map { it.userId to it.pocketBalance },
-            sourcePocket = SettlementPocketType.POCKET,
-            currency = groupCurrency
+        pocketDebtDistributionService.distributePocketDebts(
+            memberBalances = memberBalances,
+            groupCurrency = groupCurrency
         ) + buildCashSettlements(memberBalances, groupCurrency)
 
     private fun buildCashSettlements(

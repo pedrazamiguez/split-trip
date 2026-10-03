@@ -10,12 +10,15 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSettlementDataSou
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSettlementDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
+import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.repository.SettlementRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class SettlementRepositoryImpl(
     private val cloudSettlementDataSource: CloudSettlementDataSource,
@@ -35,10 +38,20 @@ class SettlementRepositoryImpl(
                         cloudFlow = cloudSettlementDataSource.getSettlementsByGroupIdFlow(groupId),
                         params = SyncReconciliationParams(
                             reconcileLocal = { remoteRecords ->
-                                localSettlementDataSource.replaceSettlementsForGroup(
-                                    groupId,
-                                    remoteRecords
-                                )
+                                val legacySuggested = remoteRecords.filter { it.status == SettlementStatus.SUGGESTED }
+                                if (legacySuggested.isNotEmpty()) {
+                                    syncScope.launch {
+                                        legacySuggested.forEach { stale ->
+                                            try {
+                                                cloudSettlementDataSource.deleteSettlement(groupId, stale.id)
+                                            } catch (e: Exception) {
+                                                Timber.w(e, "Failed to cleanup legacy suggested settlement ${stale.id}")
+                                            }
+                                        }
+                                    }
+                                }
+                                val validRecords = remoteRecords.filter { it.status != SettlementStatus.SUGGESTED }
+                                localSettlementDataSource.replaceSettlementsForGroup(groupId, validRecords)
                             },
                             getPendingIds = {
                                 localSettlementDataSource.getPendingSyncSettlementIds(groupId)

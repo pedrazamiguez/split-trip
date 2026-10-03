@@ -10,7 +10,8 @@ import org.junit.jupiter.api.Test
 class DebtSimplificationServiceImplTest {
 
     private val service = DebtSimplificationServiceImpl(
-        CashDebtScalingServiceImpl(RemainderDistributionServiceImpl())
+        CashDebtScalingServiceImpl(RemainderDistributionServiceImpl()),
+        PocketDebtDistributionServiceImpl()
     )
 
     @Test
@@ -163,8 +164,30 @@ class DebtSimplificationServiceImplTest {
 
     class SimplifyByPocket {
         private val service = DebtSimplificationServiceImpl(
-            CashDebtScalingServiceImpl(RemainderDistributionServiceImpl())
+            CashDebtScalingServiceImpl(RemainderDistributionServiceImpl()),
+            PocketDebtDistributionServiceImpl()
         )
+
+        @Test
+        fun `simplifyByPocket with single pocket debtor distributes fairly among multiple pocket creditors`() {
+            val balances = listOf(
+                MemberBalance(userId = "Antonio", pocketBalance = -133334),
+                MemberBalance(userId = "Andres", pocketBalance = 166667),
+                MemberBalance(userId = "Pepe", pocketBalance = 166666)
+            )
+            val result = service.simplifyByPocket(balances, "EUR")
+            val pocketSettlements = result.filter { it.sourcePocket == SettlementPocketType.POCKET }
+
+            assertEquals(2, pocketSettlements.size)
+            val toAndres = pocketSettlements.first { it.toUserId == "Andres" }
+            val toPepe = pocketSettlements.first { it.toUserId == "Pepe" }
+
+            assertEquals("Antonio", toAndres.fromUserId)
+            assertEquals(66667L, toAndres.amount)
+            assertEquals("Antonio", toPepe.fromUserId)
+            assertEquals(66667L, toPepe.amount)
+            assertEquals(133334L, pocketSettlements.sumOf { it.amount })
+        }
 
         @Test
         fun `pocket creditor and cash debtor with opposite signs produce separate settlements`() {
