@@ -50,6 +50,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Tent
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.TipJarEuro
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Train
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.TruckDelivery
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Van
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.WashMachine
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 
@@ -59,6 +60,7 @@ private val subcategoryToIconMap: Map<ExpenseSubcategory, ImageVector> = mapOf(
     ExpenseSubcategory.TRAIN to TablerIcons.Outline.Train,
     ExpenseSubcategory.BUS to TablerIcons.Outline.Bus,
     ExpenseSubcategory.TAXI_RIDESHARE to TablerIcons.Outline.Car,
+    ExpenseSubcategory.PRIVATE_TRANSFER to TablerIcons.Outline.Van,
     ExpenseSubcategory.CAR_RENTAL to TablerIcons.Outline.CarSuv,
     ExpenseSubcategory.MOTORBIKE_RENTAL to TablerIcons.Outline.Motorbike,
     ExpenseSubcategory.FUEL to TablerIcons.Outline.GasStation,

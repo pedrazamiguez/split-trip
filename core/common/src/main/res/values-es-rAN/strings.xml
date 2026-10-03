@@ -23,6 +23,7 @@
     <string name="expense_subcategory_train">Tren</string>
     <string name="expense_subcategory_bus">Autobûh</string>
     <string name="expense_subcategory_taxi_rideshare">Tâççi y BTC</string>
+    <string name="expense_subcategory_private_transfer">Trâl-lao pribao</string>
     <string name="expense_subcategory_car_rental">Arquilêh de coxe</string>
     <string name="expense_subcategory_motorbike_rental">Arquilêh de moto</string>
     <string name="expense_subcategory_fuel">Combûttible</string>

@@ -9,6 +9,7 @@ private val subcategoryToStringResMap: Map<ExpenseSubcategory, Int> = mapOf(
     ExpenseSubcategory.TRAIN to R.string.expense_subcategory_train,
     ExpenseSubcategory.BUS to R.string.expense_subcategory_bus,
     ExpenseSubcategory.TAXI_RIDESHARE to R.string.expense_subcategory_taxi_rideshare,
+    ExpenseSubcategory.PRIVATE_TRANSFER to R.string.expense_subcategory_private_transfer,
     ExpenseSubcategory.CAR_RENTAL to R.string.expense_subcategory_car_rental,
     ExpenseSubcategory.MOTORBIKE_RENTAL to R.string.expense_subcategory_motorbike_rental,
     ExpenseSubcategory.FUEL to R.string.expense_subcategory_fuel,

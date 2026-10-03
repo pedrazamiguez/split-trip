@@ -26,6 +26,7 @@
     <string name="expense_subcategory_train">Train</string>
     <string name="expense_subcategory_bus">Bus</string>
     <string name="expense_subcategory_taxi_rideshare">Taxi &amp; Rideshare</string>
+    <string name="expense_subcategory_private_transfer">Private Transfer</string>
     <string name="expense_subcategory_car_rental">Car Rental</string>
     <string name="expense_subcategory_motorbike_rental">Motorbike Rental</string>
     <string name="expense_subcategory_fuel">Fuel &amp; Gas</string>
