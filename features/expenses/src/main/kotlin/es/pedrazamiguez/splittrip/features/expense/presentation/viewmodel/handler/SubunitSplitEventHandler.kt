@@ -253,6 +253,19 @@ class SubunitSplitEventHandler(
         recalculateEntitySplits()
     }
 
+    fun handleEntitySoloSelected(entityId: String) {
+        val updatedSplits = _uiState.value.entitySplits.map { entity ->
+            val clearedMembers = entity.entityMembers.map { it.copy(isShareLocked = false) }.toImmutableList()
+            entity.copy(
+                isExcluded = entity.userId != entityId,
+                isShareLocked = false,
+                entityMembers = clearedMembers
+            )
+        }.toImmutableList()
+        _uiState.update { it.copy(entitySplits = updatedSplits, splitError = null) }
+        recalculateEntitySplits()
+    }
+
     fun handleEntityShareLockToggled(entityId: String) {
         val updatedSplits = _uiState.value.entitySplits.map { entity ->
             if (entity.userId == entityId) {

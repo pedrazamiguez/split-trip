@@ -80,6 +80,18 @@ class SplitEventHandler(
         recomputePersonalCashWarning()
     }
 
+    fun handleSplitSoloSelected(userId: String) {
+        val updatedSplits = _uiState.value.splits.map { split ->
+            split.copy(
+                isExcluded = split.userId != userId,
+                isShareLocked = false
+            )
+        }.toImmutableList()
+        _uiState.update { it.copy(splits = updatedSplits, splitError = null) }
+        recalculateSplits()
+        recomputePersonalCashWarning()
+    }
+
     fun handleShareLockToggled(userId: String) {
         val updatedSplits = _uiState.value.splits.map { split ->
             if (split.userId == userId) {

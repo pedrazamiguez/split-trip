@@ -7,6 +7,7 @@ data class EntitySplitEditorEvents(
     val onAmountChanged: (entityId: String, amount: String) -> Unit,
     val onPercentageChanged: (entityId: String, percentage: String) -> Unit,
     val onExcludedToggled: (entityId: String) -> Unit,
+    val onSoloSelected: (entityId: String) -> Unit,
     val onShareLockToggled: (entityId: String) -> Unit,
     val onAccordionToggled: (entityId: String) -> Unit,
     val onIntraSubunitSplitTypeChanged: (subunitId: String, splitTypeId: String) -> Unit,

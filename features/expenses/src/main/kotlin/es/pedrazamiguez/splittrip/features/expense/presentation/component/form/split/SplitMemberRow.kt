@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,12 +15,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
@@ -35,6 +40,7 @@ internal fun SplitMemberRow(
     onAmountChanged: (String) -> Unit,
     onPercentageChanged: (String) -> Unit,
     onExcludedToggled: () -> Unit,
+    onSoloSelected: () -> Unit,
     onShareLockToggled: () -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
@@ -108,9 +114,21 @@ internal fun SplitMemberRow(
             }
         }
 
-        Switch(
-            checked = !split.isExcluded,
-            onCheckedChange = { onExcludedToggled() }
-        )
+        val haptic = LocalHapticFeedback.current
+        Box(
+            modifier = Modifier.debouncedCombinedClickable(
+                onClick = onExcludedToggled,
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onSoloSelected()
+                },
+                role = Role.Switch
+            )
+        ) {
+            Switch(
+                checked = !split.isExcluded,
+                onCheckedChange = null
+            )
+        }
     }
 }
