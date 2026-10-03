@@ -13,9 +13,9 @@ import kotlinx.collections.immutable.ImmutableList
  * @param amount              Current amount text.
  * @param isAmountError       Whether the amount field should show error styling.
  * @param selectedCurrency    Currently selected [CurrencyUiModel].
- * @param availableCurrencies All available currencies for the dropdown.
+ * @param availableCurrencies All available currencies for the selector.
  * @param amountLabel         Localised hint label for the amount field.
- * @param currencyLabel       Localised hint label for the currency dropdown.
+ * @param currencyLabel       Localised hint label for the currency selector.
  * @param title               Optional card title shown above the fields.
  * @param autoFocus           If `true`, the amount field requests focus on first composition.
  * @param displayAmount       Optional custom display-formatted amount text for unfocused state.

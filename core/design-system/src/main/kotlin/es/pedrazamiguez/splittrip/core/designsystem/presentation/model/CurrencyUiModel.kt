@@ -1,11 +1,14 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.model
 
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.AmountCurrencyCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyPickerBottomSheet
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencySelectorField
+
 /**
  * Presentation model for a selectable currency option.
  *
  * Shared across features (expenses, balances) and consumed by common UI components
- * such as [es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyDropdown]
- * and [es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.AmountCurrencyCard].
+ * such as [CurrencySelectorField], [CurrencyPickerBottomSheet], and [AmountCurrencyCard].
  *
  * @param code          ISO 4217 currency code (e.g. "EUR", "THB").
  * @param displayText   Human-readable label shown in the UI (e.g. "EUR (€)").

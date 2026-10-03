@@ -205,6 +205,11 @@
     <string name="password_requirement_digit">At least one number (0-9)</string>
     <string name="password_requirement_special_char">At least one special character (!@#$%...)</string>
 
+    <!-- Currency Picker Bottom Sheet -->
+    <string name="currency_picker_title">Select currency</string>
+    <string name="currency_picker_search_placeholder">Search by currency code or name</string>
+    <string name="currency_picker_empty">No currencies found</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>
