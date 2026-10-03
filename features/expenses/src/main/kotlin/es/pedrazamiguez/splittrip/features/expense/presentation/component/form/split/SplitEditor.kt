@@ -27,6 +27,7 @@ fun SplitEditor(
     onAmountChanged: (userId: String, amount: String) -> Unit,
     onPercentageChanged: (userId: String, percentage: String) -> Unit,
     onExcludedToggled: (userId: String) -> Unit,
+    onSoloSelected: (userId: String) -> Unit,
     onShareLockToggled: (userId: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -44,6 +45,7 @@ fun SplitEditor(
                 onAmountChanged = { amount -> onAmountChanged(split.userId, amount) },
                 onPercentageChanged = { pct -> onPercentageChanged(split.userId, pct) },
                 onExcludedToggled = { onExcludedToggled(split.userId) },
+                onSoloSelected = { onSoloSelected(split.userId) },
                 onShareLockToggled = { onShareLockToggled(split.userId) },
                 onDone = { focusManager.clearFocus() }
             )

@@ -19,6 +19,7 @@ private val PREVIEW_EVENTS = EntitySplitEditorEvents(
     onAmountChanged = { _, _ -> },
     onPercentageChanged = { _, _ -> },
     onExcludedToggled = { _ -> },
+    onSoloSelected = { _ -> },
     onShareLockToggled = { _ -> },
     onAccordionToggled = { _ -> },
     onIntraSubunitSplitTypeChanged = { _, _ -> },

@@ -746,6 +746,24 @@ class AddExpenseViewModelTest {
         }
 
         @Test
+        fun `EntitySplitSoloSelected excludes all other entities and retains only target`() = runTest {
+            loadConfigWithSubunits()
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-sub"))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.SubunitModeToggled)
+            viewModel.onEvent(AddExpenseUiEvent.EntitySplitSoloSelected("couple-1"))
+
+            val entitySplits = viewModel.uiState.value.entitySplits
+            val coupleEntity = entitySplits.first { it.userId == "couple-1" }
+            assertFalse(coupleEntity.isExcluded)
+            entitySplits.filter { it.userId != "couple-1" }.forEach {
+                assertTrue(it.isExcluded)
+            }
+        }
+
+        @Test
         fun `entity splits contain solo user and subunit entity`() = runTest {
             loadConfigWithSubunits()
 
@@ -1871,6 +1889,12 @@ class AddExpenseViewModelTest {
         }
 
         @Test
+        fun `SplitSoloSelected routes to split handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.SplitSoloSelected("user-1"))
+            advanceUntilIdle()
+        }
+
+        @Test
         fun `SplitShareLockToggled routes to split handler`() = runTest {
             viewModel.onEvent(AddExpenseUiEvent.SplitShareLockToggled("user-1"))
             advanceUntilIdle()
@@ -1879,6 +1903,12 @@ class AddExpenseViewModelTest {
 
     @Nested
     inner class EntitySplitAndIntraSubunitEvents {
+
+        @Test
+        fun `EntitySplitSoloSelected routes to subunit split handler and recomputes warning`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.EntitySplitSoloSelected("entity-1"))
+            advanceUntilIdle()
+        }
 
         @Test
         fun `EntitySplitAmountChanged routes to subunit split handler`() = runTest {

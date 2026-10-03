@@ -1164,4 +1164,88 @@ class SubunitSplitEventHandlerTest {
             assertFalse(uiState.value.isSubunitMode)
         }
     }
+
+    @Nested
+    inner class EntitySoloSelected {
+
+        @Test
+        fun `solo-selects entity by including target and excluding all other entities`() = runTest {
+            uiState.value = baseEntityState
+            handler.bind(uiState, actions, this)
+
+            handler.handleEntitySoloSelected(soloMember1)
+
+            val entities = uiState.value.entitySplits
+            assertFalse(entities.first { it.userId == soloMember1 }.isExcluded)
+            assertTrue(entities.first { it.userId == soloMember2 }.isExcluded)
+            assertTrue(entities.first { it.userId == subunitCoupleId }.isExcluded)
+        }
+
+        @Test
+        fun `clears all entity share locks and nested member locks`() = runTest {
+            val lockedSubunit = makeSplit(
+                subunitCoupleId,
+                displayName = "The Couple",
+                isEntityRow = true,
+                isShareLocked = true,
+                entitySplitType = equalSplitType,
+                entityMembers = listOf(
+                    makeSplit(coupleMember1, isShareLocked = true),
+                    makeSplit(coupleMember2, isShareLocked = true)
+                )
+            )
+            uiState.value = baseEntityState.copy(
+                entitySplits = persistentListOf(
+                    makeSplit(soloMember1, isEntityRow = true, isShareLocked = true),
+                    makeSplit(soloMember2, isEntityRow = true, isShareLocked = true),
+                    lockedSubunit
+                )
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.handleEntitySoloSelected(soloMember1)
+
+            val entities = uiState.value.entitySplits
+            entities.forEach { entity ->
+                assertFalse(entity.isShareLocked, "Entity ${entity.userId} lock should be cleared")
+                entity.entityMembers.forEach { member ->
+                    assertFalse(member.isShareLocked, "Member ${member.userId} lock should be cleared")
+                }
+            }
+        }
+
+        @Test
+        fun `recalculates splits giving 100 percent of expense to solo entity in EQUAL mode`() = runTest {
+            uiState.value = baseEntityState
+            handler.bind(uiState, actions, this)
+
+            handler.handleEntitySoloSelected(soloMember1)
+
+            val entities = uiState.value.entitySplits
+            val solo = entities.first { it.userId == soloMember1 }
+            assertEquals(10000L, solo.amountCents)
+            assertEquals(0L, entities.first { it.userId == soloMember2 }.amountCents)
+            assertEquals(0L, entities.first { it.userId == subunitCoupleId }.amountCents)
+        }
+
+        @Test
+        fun `solo-selects subunit entity and distributes 100 percent among its members`() = runTest {
+            uiState.value = baseEntityState
+            handler.bind(uiState, actions, this)
+
+            handler.handleEntitySoloSelected(subunitCoupleId)
+
+            val entities = uiState.value.entitySplits
+            val subunit = entities.first { it.userId == subunitCoupleId }
+            assertFalse(subunit.isExcluded)
+            assertEquals(10000L, subunit.amountCents)
+            assertTrue(entities.first { it.userId == soloMember1 }.isExcluded)
+            assertTrue(entities.first { it.userId == soloMember2 }.isExcluded)
+
+            val members = subunit.entityMembers
+            assertEquals(2, members.size)
+            assertEquals(5000L, members.first { it.userId == coupleMember1 }.amountCents)
+            assertEquals(5000L, members.first { it.userId == coupleMember2 }.amountCents)
+        }
+    }
 }

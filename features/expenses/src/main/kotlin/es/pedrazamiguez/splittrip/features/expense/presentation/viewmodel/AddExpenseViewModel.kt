@@ -229,6 +229,9 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.SplitExcludedToggled ->
                 splitEventHandler.handleSplitExcludedToggled(event.userId)
 
+            is AddExpenseUiEvent.SplitSoloSelected ->
+                splitEventHandler.handleSplitSoloSelected(event.userId)
+
             is AddExpenseUiEvent.SplitShareLockToggled ->
                 splitEventHandler.handleShareLockToggled(event.userId)
 
@@ -245,6 +248,11 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.EntitySplitExcludedToggled -> {
                 subunitSplitEventHandler.handleEntityExcludedToggled(event.entityId)
                 // Entity inclusion change may bring out-of-scope entities into the split.
+                splitEventHandler.recomputePersonalCashWarning()
+            }
+
+            is AddExpenseUiEvent.EntitySplitSoloSelected -> {
+                subunitSplitEventHandler.handleEntitySoloSelected(event.entityId)
                 splitEventHandler.recomputePersonalCashWarning()
             }
 

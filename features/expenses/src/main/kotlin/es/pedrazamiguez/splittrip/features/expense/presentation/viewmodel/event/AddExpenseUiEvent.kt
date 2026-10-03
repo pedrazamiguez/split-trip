@@ -52,11 +52,13 @@ sealed interface AddExpenseUiEvent {
     data class SplitAmountChanged(val userId: String, val amount: String) : AddExpenseUiEvent
     data class SplitPercentageChanged(val userId: String, val percentage: String) : AddExpenseUiEvent
     data class SplitExcludedToggled(val userId: String) : AddExpenseUiEvent
+    data class SplitSoloSelected(val userId: String) : AddExpenseUiEvent
     data class SplitShareLockToggled(val userId: String) : AddExpenseUiEvent
 
     // Subunit split events
     data object SubunitModeToggled : AddExpenseUiEvent
     data class EntitySplitExcludedToggled(val entityId: String) : AddExpenseUiEvent
+    data class EntitySplitSoloSelected(val entityId: String) : AddExpenseUiEvent
     data class EntitySplitAmountChanged(val entityId: String, val amount: String) : AddExpenseUiEvent
     data class EntitySplitPercentageChanged(val entityId: String, val percentage: String) : AddExpenseUiEvent
     data class EntityShareLockToggled(val entityId: String) : AddExpenseUiEvent
