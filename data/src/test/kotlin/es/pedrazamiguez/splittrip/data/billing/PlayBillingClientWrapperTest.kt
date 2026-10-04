@@ -14,6 +14,7 @@ import com.android.billingclient.api.ProductDetailsResponseListener
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesResponseListener
 import com.android.billingclient.api.QueryProductDetailsParams
+import com.android.billingclient.api.QueryProductDetailsResult
 import com.android.billingclient.api.QueryPurchasesParams
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
@@ -109,6 +110,10 @@ class PlayBillingClientWrapperTest {
         return details
     }
 
+    private fun createMockQueryResult(
+        products: List<ProductDetails> = emptyList()
+    ): QueryProductDetailsResult = QueryProductDetailsResult.create(products, emptyList())
+
     @Test
     fun `querySubscriptionProducts starts connection and queries product details successfully`() = runTest(
         testDispatcher
@@ -119,7 +124,7 @@ class PlayBillingClientWrapperTest {
 
         every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
             val listener = secondArg<ProductDetailsResponseListener>()
-            listener.onProductDetailsResponse(okResult, listOf(monthlyDetails, annualDetails))
+            listener.onProductDetailsResponse(okResult, createMockQueryResult(listOf(monthlyDetails, annualDetails)))
         }
 
         val result = wrapper.querySubscriptionProducts()
@@ -159,7 +164,7 @@ class PlayBillingClientWrapperTest {
         mockSuccessfulConnection()
         every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
             val listener = secondArg<ProductDetailsResponseListener>()
-            listener.onProductDetailsResponse(errorResult, emptyList())
+            listener.onProductDetailsResponse(errorResult, createMockQueryResult())
         }
 
         val result = wrapper.querySubscriptionProducts()
@@ -174,7 +179,7 @@ class PlayBillingClientWrapperTest {
         val monthlyDetails = createMockProductDetails(BillingConstants.PRODUCT_ID_PRO_MONTHLY)
         every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
             val listener = secondArg<ProductDetailsResponseListener>()
-            listener.onProductDetailsResponse(okResult, listOf(monthlyDetails))
+            listener.onProductDetailsResponse(okResult, createMockQueryResult(listOf(monthlyDetails)))
         }
         wrapper.querySubscriptionProducts()
         advanceUntilIdle()
@@ -445,7 +450,7 @@ class PlayBillingClientWrapperTest {
         mockSuccessfulConnection()
         every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
             val listener = secondArg<ProductDetailsResponseListener>()
-            listener.onProductDetailsResponse(errorResult, emptyList())
+            listener.onProductDetailsResponse(errorResult, createMockQueryResult())
         }
 
         val result = simWrapper.querySubscriptionProducts()
@@ -462,7 +467,7 @@ class PlayBillingClientWrapperTest {
             mockSuccessfulConnection()
             every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
                 val listener = secondArg<ProductDetailsResponseListener>()
-                listener.onProductDetailsResponse(okResult, emptyList())
+                listener.onProductDetailsResponse(okResult, createMockQueryResult())
             }
 
             val result = simWrapper.querySubscriptionProducts()
@@ -556,7 +561,7 @@ class PlayBillingClientWrapperTest {
             mockSuccessfulConnection()
             every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
                 val listener = secondArg<ProductDetailsResponseListener>()
-                listener.onProductDetailsResponse(errorResult, emptyList())
+                listener.onProductDetailsResponse(errorResult, createMockQueryResult())
             }
 
             val result = repoWrapper.querySubscriptionProducts()
