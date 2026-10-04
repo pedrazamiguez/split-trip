@@ -14,6 +14,7 @@ import com.android.billingclient.api.ProductDetailsResponseListener
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesResponseListener
 import com.android.billingclient.api.QueryProductDetailsParams
+import com.android.billingclient.api.QueryProductDetailsResult
 import com.android.billingclient.api.QueryPurchasesParams
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
@@ -109,6 +110,10 @@ class PlayBillingClientWrapperTest {
         return details
     }
 
+    private fun createMockQueryResult(
+        products: List<ProductDetails> = emptyList()
+    ): QueryProductDetailsResult = QueryProductDetailsResult.create(products, emptyList())
+
     @Test
     fun `querySubscriptionProducts starts connection and queries product details successfully`() = runTest(
         testDispatcher
@@ -119,7 +124,7 @@ class PlayBillingClientWrapperTest {
 
         every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
             val listener = secondArg<ProductDetailsResponseListener>()
-            listener.onProductDetailsResponse(okResult, listOf(monthlyDetails, annualDetails))
+            listener.onProductDetailsResponse(okResult, createMockQueryResult(listOf(monthlyDetails, annualDetails)))
         }
 
         val result = wrapper.querySubscriptionProducts()
