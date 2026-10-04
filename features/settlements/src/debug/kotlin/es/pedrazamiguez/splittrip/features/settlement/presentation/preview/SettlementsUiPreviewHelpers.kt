@@ -4,10 +4,17 @@ import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.MappedPreview
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.Settlement
+import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
+import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
+import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.impl.PocketDebtDistributionServiceImpl
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.MemberSpendingChartUiMapper
+import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.SettlementConsensusUiMapper
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.MemberSpendingChartUiModel
+import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
+import java.time.LocalDateTime
 
 internal val PREVIEW_SETTLEMENT_USER_YOU = User(userId = "user-1", displayName = "You", email = "")
 internal val PREVIEW_SETTLEMENT_USER_ANDRES = User(userId = "user-2", displayName = "Andrés", email = "")
@@ -57,6 +64,70 @@ internal fun MemberSpendingBarChartPreviewHelper(
                 memberProfiles = memberProfiles,
                 groupCurrencyCode = groupCurrencyCode
             )
+        },
+        content = content
+    )
+}
+
+internal val PREVIEW_SETTLEMENT_RECORD_PENDING = SettlementRecord(
+    id = "c-1",
+    groupId = "group-1",
+    settlement = Settlement(
+        fromUserId = PREVIEW_SETTLEMENT_USER_YOU.userId,
+        toUserId = PREVIEW_SETTLEMENT_USER_ANDRES.userId,
+        amount = 2500L,
+        currency = "EUR",
+        sourcePocket = SettlementPocketType.NET
+    ),
+    status = SettlementStatus.SUGGESTED,
+    createdAt = LocalDateTime.now()
+)
+
+internal val PREVIEW_SETTLEMENT_RECORD_CONFIRMED = PREVIEW_SETTLEMENT_RECORD_PENDING.copy(
+    id = "c-2",
+    status = SettlementStatus.CONFIRMED_BY_PAYER
+)
+
+internal val PREVIEW_SETTLEMENT_RECORD_DISPUTED = PREVIEW_SETTLEMENT_RECORD_PENDING.copy(
+    id = "c-3",
+    status = SettlementStatus.DISPUTED,
+    disputeReason = "Wrong amount entered"
+)
+
+internal val PREVIEW_SETTLEMENT_RECORD_RECEIVER = SettlementRecord(
+    id = "c-4",
+    groupId = "group-1",
+    settlement = Settlement(
+        fromUserId = PREVIEW_SETTLEMENT_USER_ANDRES.userId,
+        toUserId = PREVIEW_SETTLEMENT_USER_YOU.userId,
+        amount = 5000L,
+        currency = "EUR",
+        sourcePocket = SettlementPocketType.NET
+    ),
+    status = SettlementStatus.SUGGESTED,
+    createdAt = LocalDateTime.now()
+)
+
+@Composable
+internal fun SettlementConsensusCardPreviewHelper(
+    record: SettlementRecord = PREVIEW_SETTLEMENT_RECORD_PENDING,
+    currentUserId: String = PREVIEW_SETTLEMENT_USER_YOU.userId,
+    groupCreatorId: String = PREVIEW_SETTLEMENT_USER_YOU.userId,
+    memberProfiles: Map<String, User> = PREVIEW_SETTLEMENT_MEMBER_PROFILES,
+    content: @Composable (SettlementConsensusItemUiModel) -> Unit
+) {
+    MappedPreview(
+        domain = record,
+        mapper = { localeProvider, resourceProvider ->
+            SettlementConsensusUiMapper(localeProvider, resourceProvider)
+        },
+        transform = { mapper, domain ->
+            mapper.toConsensusItems(
+                settlements = listOf(domain),
+                currentUserId = currentUserId,
+                groupCreatorId = groupCreatorId,
+                memberProfiles = memberProfiles
+            ).first()
         },
         content = content
     )

@@ -31,7 +31,7 @@
     <string name="your_balance_settlement_empty_description">No tienê acuerdô de pago pendientê por reçorbêh en êtte grupo.</string>
     <string name="your_balance_settlement_you_owe">Debê a %s</string>
     <string name="your_balance_settlement_owes_you">%s te debe</string>
-    <string name="your_balance_settlement_mark_paid">Marcâh como pagao</string>
+    <string name="your_balance_settlement_mark_paid">E pagao</string>
     <string name="your_balance_settlement_confirm_receipt">Confirmâh reçêççión</string>
     <string name="your_balance_settlement_resolve_dispute">Reçorbêh dîpputa</string>
     <string name="your_balance_settlement_dispute">Dîpputâh</string>
