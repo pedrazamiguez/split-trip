@@ -19,12 +19,14 @@ import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.PurchaseStatus
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -67,6 +69,7 @@ class PlayBillingClientWrapperTest {
         wrapper = PlayBillingClientWrapper(
             context = context,
             ioDispatcher = testDispatcher,
+            isSimulationOverride = false,
             billingClientFactory = { billingClient }
         )
     }
@@ -402,4 +405,164 @@ class PlayBillingClientWrapperTest {
 
         assertTrue(result.isFailure)
     }
+
+    private fun createSimulationWrapper(): PlayBillingClientWrapper {
+        return PlayBillingClientWrapper(
+            context = context,
+            ioDispatcher = testDispatcher,
+            isSimulationOverride = true,
+            billingClientFactory = { billingClient }
+        )
+    }
+
+    @Test
+    fun `querySubscriptionProducts returns mock products when simulation is active and connection fails`() = runTest(
+        testDispatcher
+    ) {
+        val simWrapper = createSimulationWrapper()
+        every { billingClient.isReady } returns false
+        every { billingClient.startConnection(any()) } answers {
+            val listener = firstArg<BillingClientStateListener>()
+            listener.onBillingSetupFinished(errorResult)
+        }
+
+        val result = simWrapper.querySubscriptionProducts()
+        advanceUntilIdle()
+
+        assertTrue(result.isSuccess)
+        val products = result.getOrThrow()
+        assertEquals(2, products.size)
+        assertEquals(BillingConstants.PRODUCT_ID_PRO_MONTHLY, products[0].productId)
+        assertEquals(BillingConstants.PRODUCT_ID_PRO_ANNUAL, products[1].productId)
+        assertEquals(products, simWrapper.subscriptionProducts.value)
+    }
+
+    @Test
+    fun `querySubscriptionProducts returns mock products when simulation is active and query fails`() = runTest(
+        testDispatcher
+    ) {
+        val simWrapper = createSimulationWrapper()
+        mockSuccessfulConnection()
+        every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
+            val listener = secondArg<ProductDetailsResponseListener>()
+            listener.onProductDetailsResponse(errorResult, emptyList())
+        }
+
+        val result = simWrapper.querySubscriptionProducts()
+        advanceUntilIdle()
+
+        assertTrue(result.isSuccess)
+        assertEquals(2, result.getOrThrow().size)
+    }
+
+    @Test
+    fun `querySubscriptionProducts returns mock products when simulation is active and 0 products returned`() =
+        runTest(testDispatcher) {
+            val simWrapper = createSimulationWrapper()
+            mockSuccessfulConnection()
+            every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
+                val listener = secondArg<ProductDetailsResponseListener>()
+                listener.onProductDetailsResponse(okResult, emptyList())
+            }
+
+            val result = simWrapper.querySubscriptionProducts()
+            advanceUntilIdle()
+
+            assertTrue(result.isSuccess)
+            assertEquals(2, result.getOrThrow().size)
+        }
+
+    @Test
+    fun `launchBillingFlow with missing cached product emits success when simulation is active`() = runTest(
+        testDispatcher
+    ) {
+        val simWrapper = createSimulationWrapper()
+        val activity = mockk<Activity>()
+        val emitted = mutableListOf<PurchaseStatus>()
+        val job = launch {
+            simWrapper.purchaseUpdates.toList(emitted)
+        }
+
+        val result = simWrapper.launchBillingFlow(activity, BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+        advanceUntilIdle()
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, emitted.size)
+        val status = emitted.first() as PurchaseStatus.Success
+        assertEquals(BillingConstants.PRODUCT_ID_PRO_MONTHLY, status.productId)
+        job.cancel()
+    }
+
+    @Test
+    fun `restorePurchases returns true when simulation is active and connection fails`() = runTest(testDispatcher) {
+        val simWrapper = createSimulationWrapper()
+        every { billingClient.isReady } returns false
+        every { billingClient.startConnection(any()) } answers {
+            val listener = firstArg<BillingClientStateListener>()
+            listener.onBillingSetupFinished(errorResult)
+        }
+
+        val result = simWrapper.restorePurchases()
+        advanceUntilIdle()
+
+        assertTrue(result.isSuccess)
+        assertTrue(result.getOrThrow())
+    }
+
+    @Test
+    fun `restorePurchases returns true when simulation is active and query fails`() = runTest(testDispatcher) {
+        val simWrapper = createSimulationWrapper()
+        mockSuccessfulConnection()
+        every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+            secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(errorResult, emptyList())
+        }
+
+        val result = simWrapper.restorePurchases()
+        advanceUntilIdle()
+
+        assertTrue(result.isSuccess)
+        assertTrue(result.getOrThrow())
+    }
+
+    @Test
+    fun `restorePurchases returns true when simulation is active and no pro purchase exists`() = runTest(
+        testDispatcher
+    ) {
+        val simWrapper = createSimulationWrapper()
+        mockSuccessfulConnection()
+        every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+            secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(okResult, emptyList())
+        }
+
+        val result = simWrapper.restorePurchases()
+        advanceUntilIdle()
+
+        assertTrue(result.isSuccess)
+        assertTrue(result.getOrThrow())
+    }
+
+    @Test
+    fun `billingSimulationEnabled from appConfigRepository enables simulation when isSimulationOverride is null`() =
+        runTest(testDispatcher) {
+            val appConfigRepository = mockk<AppConfigRepository> {
+                every { billingSimulationEnabled } returns MutableStateFlow(true)
+            }
+            val repoWrapper = PlayBillingClientWrapper(
+                context = context,
+                appConfigRepository = appConfigRepository,
+                ioDispatcher = testDispatcher,
+                billingClientFactory = { billingClient }
+            )
+            mockSuccessfulConnection()
+            every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
+                val listener = secondArg<ProductDetailsResponseListener>()
+                listener.onProductDetailsResponse(errorResult, emptyList())
+            }
+
+            val result = repoWrapper.querySubscriptionProducts()
+            advanceUntilIdle()
+
+            assertTrue(result.isSuccess)
+            assertEquals(2, result.getOrThrow().size)
+        }
 }

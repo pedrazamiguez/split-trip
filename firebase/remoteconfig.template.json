@@ -11,6 +11,13 @@
           "description": "Master operational killswitch to enforce or bypass feature gating and tier quotas.",
           "valueType": "BOOLEAN"
         },
+        "billing_simulation_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Allows mocking Pro billing flow and entitlements on physical test devices without real Google Play transactions.",
+          "valueType": "BOOLEAN"
+        },
         "max_owned_groups_free": {
           "defaultValue": {
             "value": "1"

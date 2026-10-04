@@ -16,11 +16,13 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
+import es.pedrazamiguez.splittrip.data.BuildConfig
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.PurchaseStatus
 import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.BillingService
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
@@ -43,7 +45,9 @@ import timber.log.Timber
 
 class PlayBillingClientWrapper(
     context: Context,
+    private val appConfigRepository: AppConfigRepository? = null,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val isSimulationOverride: Boolean? = null,
     billingClientFactory: (PurchasesUpdatedListener) -> BillingClient = { listener ->
         BillingClient.newBuilder(context)
             .setListener(listener)
@@ -70,6 +74,11 @@ class PlayBillingClientWrapper(
 
     private val _purchaseUpdates = MutableSharedFlow<PurchaseStatus>()
     override val purchaseUpdates: Flow<PurchaseStatus> = _purchaseUpdates.asSharedFlow()
+
+    private fun isSimulationActive(): Boolean {
+        return isSimulationOverride
+            ?: ((appConfigRepository?.billingSimulationEnabled?.value == true) || BuildConfig.DEBUG)
+    }
 
     private suspend fun ensureConnected(): Result<Unit> = withContext(ioDispatcher) {
         if (billingClient.isReady) {
@@ -111,36 +120,39 @@ class PlayBillingClientWrapper(
     override suspend fun querySubscriptionProducts(): Result<List<SubscriptionProduct>> = withContext(ioDispatcher) {
         val connectionResult = ensureConnected()
         if (connectionResult.isFailure) {
-            val error = connectionResult.exceptionOrNull()
-                ?: IllegalStateException("Failed to connect to billing service")
-            return@withContext Result.failure(error)
+            return@withContext handleQueryFailure("Billing connection failed", connectionResult.exceptionOrNull())
         }
 
-        val productList = listOf(
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(BillingConstants.PRODUCT_ID_PRO_MONTHLY)
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build(),
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(BillingConstants.PRODUCT_ID_PRO_ANNUAL)
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build()
-        )
-
-        val params = QueryProductDetailsParams.newBuilder()
-            .setProductList(productList)
-            .build()
-
-        val (billingResult, productDetailsList) = billingClient.queryProductDetails(params)
+        val (billingResult, productDetailsList) = billingClient.queryProductDetails(buildProductQueryParams())
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-            return@withContext Result.failure(
-                IllegalStateException(
-                    "Query product details failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
-                )
+            val error = IllegalStateException(
+                "Query product details failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
             )
+            return@withContext handleQueryFailure("Query product details failed", error)
         }
 
-        val mappedProducts = productDetailsList.orEmpty().map { details ->
+        val mappedProducts = mapProductDetails(productDetailsList)
+        if (mappedProducts.isEmpty() && isSimulationActive()) {
+            return@withContext handleQueryFailure("No live products found in Google Play", null)
+        }
+
+        _subscriptionProducts.value = mappedProducts
+        Result.success(mappedProducts)
+    }
+
+    private fun handleQueryFailure(reason: String, error: Throwable?): Result<List<SubscriptionProduct>> {
+        return if (isSimulationActive()) {
+            Timber.i("$reason but simulation is active; providing mock products.")
+            val mockProducts = getMockSubscriptionProducts()
+            _subscriptionProducts.value = mockProducts
+            Result.success(mockProducts)
+        } else {
+            Result.failure(error ?: IllegalStateException(reason))
+        }
+    }
+
+    private fun mapProductDetails(productDetailsList: List<ProductDetails>?): List<SubscriptionProduct> {
+        return productDetailsList.orEmpty().map { details ->
             cachedProductDetails[details.productId] = details
             val offer = details.subscriptionOfferDetails?.firstOrNull()
             val pricingPhase = offer?.pricingPhases?.pricingPhaseList?.firstOrNull()
@@ -160,20 +172,45 @@ class PlayBillingClientWrapper(
                 offerToken = offer?.offerToken.orEmpty()
             )
         }
-
-        _subscriptionProducts.value = mappedProducts
-        Result.success(mappedProducts)
     }
 
     override fun launchBillingFlow(activity: Any, productId: String): Result<Unit> {
+        val productDetails = cachedProductDetails[productId]
+        if (productDetails == null && isSimulationActive()) {
+            return simulateBillingFlow(productId)
+        }
+
         val androidActivity = activity as? Activity
             ?: return Result.failure(IllegalArgumentException("Activity parameter must be an android.app.Activity"))
-        val productDetails = cachedProductDetails[productId]
-            ?: return Result.failure(
+        if (productDetails == null) {
+            return Result.failure(
                 IllegalStateException(
                     "Product details not cached for $productId. Call querySubscriptionProducts() first."
                 )
             )
+        }
+
+        return launchPlayBillingFlow(androidActivity, productDetails, productId)
+    }
+
+    private fun simulateBillingFlow(productId: String): Result<Unit> {
+        Timber.i("Simulating successful billing flow for product: $productId")
+        scope.launch {
+            _purchaseUpdates.emit(
+                PurchaseStatus.Success(
+                    productId = productId,
+                    purchaseToken = "simulated_token_$productId"
+                )
+            )
+        }
+        return Result.success(Unit)
+    }
+
+    private fun launchPlayBillingFlow(
+        activity: Activity,
+        productDetails: ProductDetails,
+        productId: String
+    ): Result<Unit> {
         val offerToken = productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken
             ?: return Result.failure(IllegalStateException("No offer token found for product $productId"))
 
@@ -186,7 +223,7 @@ class PlayBillingClientWrapper(
             .setProductDetailsParamsList(listOf(productDetailsParams))
             .build()
 
-        val result = billingClient.launchBillingFlow(androidActivity, flowParams)
+        val result = billingClient.launchBillingFlow(activity, flowParams)
         return if (result.responseCode == BillingClient.BillingResponseCode.OK) {
             Result.success(Unit)
         } else {
@@ -242,9 +279,10 @@ class PlayBillingClientWrapper(
     override suspend fun restorePurchases(): Result<Boolean> = withContext(ioDispatcher) {
         val connectionResult = ensureConnected()
         if (connectionResult.isFailure) {
-            val error = connectionResult.exceptionOrNull()
-                ?: IllegalStateException("Failed to connect to billing service")
-            return@withContext Result.failure(error)
+            return@withContext handleRestoreFailure(
+                "Restore purchases connection failed",
+                connectionResult.exceptionOrNull()
+            )
         }
 
         val params = QueryPurchasesParams.newBuilder()
@@ -253,13 +291,25 @@ class PlayBillingClientWrapper(
 
         val (billingResult, purchasesList) = billingClient.queryPurchasesAsync(params)
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-            return@withContext Result.failure(
-                IllegalStateException(
-                    "Query purchases failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
-                )
+            val error = IllegalStateException(
+                "Query purchases failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
             )
+            return@withContext handleRestoreFailure("Query purchases failed", error)
         }
 
+        processRestoredPurchases(purchasesList)
+    }
+
+    private fun handleRestoreFailure(reason: String, error: Throwable?): Result<Boolean> {
+        return if (isSimulationActive()) {
+            Timber.i("$reason but simulation is active; restoring simulated Pro.")
+            Result.success(true)
+        } else {
+            Result.failure(error ?: IllegalStateException(reason))
+        }
+    }
+
+    private suspend fun processRestoredPurchases(purchasesList: List<Purchase>?): Result<Boolean> {
         val proProductIds = setOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY, BillingConstants.PRODUCT_ID_PRO_ANNUAL)
         val activeProPurchase = purchasesList.orEmpty().firstOrNull { purchase ->
             purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
@@ -273,9 +323,51 @@ class PlayBillingClientWrapper(
                     .build()
                 billingClient.acknowledgePurchase(ackParams)
             }
-            Result.success(true)
-        } else {
-            Result.success(false)
+            return Result.success(true)
         }
+
+        if (isSimulationActive()) {
+            Timber.i("No live Pro purchase found but simulation is active; restoring simulated Pro.")
+            return Result.success(true)
+        }
+
+        return Result.success(false)
     }
 }
+
+private fun buildProductQueryParams(): QueryProductDetailsParams {
+    val productList = listOf(
+        QueryProductDetailsParams.Product.newBuilder()
+            .setProductId(BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+            .setProductType(BillingClient.ProductType.SUBS)
+            .build(),
+        QueryProductDetailsParams.Product.newBuilder()
+            .setProductId(BillingConstants.PRODUCT_ID_PRO_ANNUAL)
+            .setProductType(BillingClient.ProductType.SUBS)
+            .build()
+    )
+    return QueryProductDetailsParams.newBuilder()
+        .setProductList(productList)
+        .build()
+}
+
+private fun getMockSubscriptionProducts(): List<SubscriptionProduct> = listOf(
+    SubscriptionProduct(
+        productId = BillingConstants.PRODUCT_ID_PRO_MONTHLY,
+        tier = SubscriptionTier.PRO,
+        billingInterval = BillingInterval.MONTHLY,
+        formattedPrice = "0,99 €",
+        priceAmountMicros = 990000L,
+        priceCurrencyCode = "EUR",
+        offerToken = "mock_monthly_token"
+    ),
+    SubscriptionProduct(
+        productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
+        tier = SubscriptionTier.PRO,
+        billingInterval = BillingInterval.ANNUAL,
+        formattedPrice = "3,99 €",
+        priceAmountMicros = 3990000L,
+        priceCurrencyCode = "EUR",
+        offerToken = "mock_annual_token"
+    )
+)

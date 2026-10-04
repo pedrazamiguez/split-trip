@@ -40,6 +40,8 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("max_members_per_group") } returns 15L
         every { firebaseRemoteConfig.getString("subscription_gating_enabled") } returns "true"
         every { firebaseRemoteConfig.getBoolean("subscription_gating_enabled") } returns true
+        every { firebaseRemoteConfig.getString("billing_simulation_enabled") } returns "true"
+        every { firebaseRemoteConfig.getBoolean("billing_simulation_enabled") } returns true
         every { firebaseRemoteConfig.getLong("max_owned_groups_free") } returns 2L
         every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns 50L
         every { firebaseRemoteConfig.getLong("max_members_per_group_free") } returns 5L
@@ -80,6 +82,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(500L, repository.balanceComputationDebounceMs.value)
         assertEquals(15, repository.maxMembersPerGroup.value)
         assertEquals(true, repository.subscriptionGatingEnabled.value)
+        assertEquals(true, repository.billingSimulationEnabled.value)
         assertEquals(2, repository.maxOwnedGroupsFree.value)
         assertEquals(50, repository.maxOwnedGroupsPro.value)
         assertEquals(5, repository.maxMembersPerGroupFree.value)
@@ -116,6 +119,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(100L, repository.balanceComputationDebounceMs.value)
         assertEquals(25, repository.maxMembersPerGroup.value)
         assertEquals(false, repository.subscriptionGatingEnabled.value)
+        assertEquals(false, repository.billingSimulationEnabled.value)
         assertEquals(3, repository.maxOwnedGroupsFree.value)
         assertEquals(200, repository.maxOwnedGroupsPro.value)
         assertEquals(8, repository.maxMembersPerGroupFree.value)
@@ -165,6 +169,8 @@ class FirebaseAppConfigRepositoryTest {
 
         every { firebaseRemoteConfig.getString("subscription_gating_enabled") } returns "false"
         every { firebaseRemoteConfig.getBoolean("subscription_gating_enabled") } returns false
+        every { firebaseRemoteConfig.getString("billing_simulation_enabled") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("billing_simulation_enabled") } returns false
         every { firebaseRemoteConfig.getLong("max_owned_groups_free") } returns 6L
 
         updateListenerSlot.captured.onUpdate(mockConfigUpdate)
@@ -174,6 +180,7 @@ class FirebaseAppConfigRepositoryTest {
         listenerSlot.captured.onComplete(mockActivateTask)
 
         assertEquals(false, repository.subscriptionGatingEnabled.value)
+        assertEquals(false, repository.billingSimulationEnabled.value)
         assertEquals(6, repository.maxOwnedGroupsFree.value)
     }
 
@@ -189,6 +196,7 @@ class FirebaseAppConfigRepositoryTest {
     @Test
     fun `updateFlowsFromConfig falls back to defaults when remote config values are invalid or blank`() {
         every { firebaseRemoteConfig.getString("subscription_gating_enabled") } returns ""
+        every { firebaseRemoteConfig.getString("billing_simulation_enabled") } returns ""
         every { firebaseRemoteConfig.getLong("max_owned_groups_free") } returns 0L
         every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns -5L
         every { firebaseRemoteConfig.getLong("max_members_per_group_free") } returns 0L
@@ -202,6 +210,7 @@ class FirebaseAppConfigRepositoryTest {
         val fallbackRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
 
         assertEquals(true, fallbackRepo.subscriptionGatingEnabled.value)
+        assertEquals(false, fallbackRepo.billingSimulationEnabled.value)
         assertEquals(1, fallbackRepo.maxOwnedGroupsFree.value)
         assertEquals(100, fallbackRepo.maxOwnedGroupsPro.value)
         assertEquals(4, fallbackRepo.maxMembersPerGroupFree.value)
@@ -246,6 +255,8 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("max_members_per_group") } returns 25L
         every { firebaseRemoteConfig.getString("subscription_gating_enabled") } returns "false"
         every { firebaseRemoteConfig.getBoolean("subscription_gating_enabled") } returns false
+        every { firebaseRemoteConfig.getString("billing_simulation_enabled") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("billing_simulation_enabled") } returns false
         every { firebaseRemoteConfig.getLong("max_owned_groups_free") } returns 3L
         every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns 200L
         every { firebaseRemoteConfig.getLong("max_members_per_group_free") } returns 8L

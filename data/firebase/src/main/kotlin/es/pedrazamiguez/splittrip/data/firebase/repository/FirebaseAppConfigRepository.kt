@@ -33,6 +33,9 @@ class FirebaseAppConfigRepository(
     private val _subscriptionGatingEnabled = MutableStateFlow(DEFAULT_SUBSCRIPTION_GATING_ENABLED)
     override val subscriptionGatingEnabled: StateFlow<Boolean> = _subscriptionGatingEnabled.asStateFlow()
 
+    private val _billingSimulationEnabled = MutableStateFlow(DEFAULT_BILLING_SIMULATION_ENABLED)
+    override val billingSimulationEnabled: StateFlow<Boolean> = _billingSimulationEnabled.asStateFlow()
+
     private val _maxOwnedGroupsFree = MutableStateFlow(DEFAULT_MAX_OWNED_GROUPS_FREE)
     override val maxOwnedGroupsFree: StateFlow<Int> = _maxOwnedGroupsFree.asStateFlow()
 
@@ -180,13 +183,7 @@ class FirebaseAppConfigRepository(
     }
 
     private fun updateTierLimitFlows() {
-        val gatingStr = remoteConfig.getString("subscription_gating_enabled").trim()
-        _subscriptionGatingEnabled.value = if (gatingStr.isNotBlank()) {
-            remoteConfig.getBoolean("subscription_gating_enabled")
-        } else {
-            DEFAULT_SUBSCRIPTION_GATING_ENABLED
-        }
-
+        updateSubscriptionFlags()
         val maxOwnedFree = remoteConfig.getLong("max_owned_groups_free").toInt()
         _maxOwnedGroupsFree.value = if (maxOwnedFree > 0) maxOwnedFree else DEFAULT_MAX_OWNED_GROUPS_FREE
 
@@ -204,6 +201,22 @@ class FirebaseAppConfigRepository(
 
         val aiLimitPro = remoteConfig.getLong("ai_receipt_monthly_limit_pro").toInt()
         _aiReceiptMonthlyLimitPro.value = if (aiLimitPro > 0) aiLimitPro else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO
+    }
+
+    private fun updateSubscriptionFlags() {
+        val gatingStr = remoteConfig.getString("subscription_gating_enabled").trim()
+        _subscriptionGatingEnabled.value = if (gatingStr.isNotBlank()) {
+            remoteConfig.getBoolean("subscription_gating_enabled")
+        } else {
+            DEFAULT_SUBSCRIPTION_GATING_ENABLED
+        }
+
+        val simulationStr = remoteConfig.getString("billing_simulation_enabled").trim()
+        _billingSimulationEnabled.value = if (simulationStr.isNotBlank()) {
+            remoteConfig.getBoolean("billing_simulation_enabled")
+        } else {
+            DEFAULT_BILLING_SIMULATION_ENABLED
+        }
     }
 
     private fun updateOcrAndDeveloperFlows() {
@@ -233,6 +246,7 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_BALANCE_DEBOUNCE_MS = 300L
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP = 20
         private const val DEFAULT_SUBSCRIPTION_GATING_ENABLED = true
+        private const val DEFAULT_BILLING_SIMULATION_ENABLED = false
         private const val DEFAULT_MAX_OWNED_GROUPS_FREE = 1
         private const val DEFAULT_MAX_OWNED_GROUPS_PRO = 100
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_FREE = 4

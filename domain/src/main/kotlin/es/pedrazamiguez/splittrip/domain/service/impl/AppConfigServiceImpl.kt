@@ -11,6 +11,7 @@ class AppConfigServiceImpl(
     override val balanceComputationDebounceMs: StateFlow<Long> = appConfigRepository.balanceComputationDebounceMs
     override val maxMembersPerGroup: StateFlow<Int> = appConfigRepository.maxMembersPerGroup
     override val subscriptionGatingEnabled: StateFlow<Boolean> = appConfigRepository.subscriptionGatingEnabled
+    override val billingSimulationEnabled: StateFlow<Boolean> = appConfigRepository.billingSimulationEnabled
     override val maxOwnedGroupsFree: StateFlow<Int> = appConfigRepository.maxOwnedGroupsFree
     override val maxOwnedGroupsPro: StateFlow<Int> = appConfigRepository.maxOwnedGroupsPro
     override val maxMembersPerGroupFree: StateFlow<Int> = appConfigRepository.maxMembersPerGroupFree

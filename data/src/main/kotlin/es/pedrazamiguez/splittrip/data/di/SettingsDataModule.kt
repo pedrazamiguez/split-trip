@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.data.repository.impl.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.data.repository.impl.OnboardingPreferenceRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.UserPreferenceRepositoryImpl
 import es.pedrazamiguez.splittrip.data.service.BiometricAuthServiceImpl
+import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
@@ -38,6 +39,10 @@ val settingsDataModule = module {
     }
 
     single<BillingService> {
-        PlayBillingClientWrapper(context = androidContext())
+        val appConfigRepository = get<AppConfigRepository>()
+        PlayBillingClientWrapper(
+            context = androidContext(),
+            appConfigRepository = appConfigRepository
+        )
     }
 }
