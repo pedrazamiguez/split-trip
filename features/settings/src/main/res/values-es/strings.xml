@@ -309,7 +309,12 @@
     <string name="subscriptions_cta_downgrade_free">Cambiar a Free</string>
     <string name="subscriptions_badge_popular">Más popular</string>
     <string name="subscriptions_restore_purchases">Restaurar compras</string>
-    <string name="subscriptions_disclaimer">Las suscripciones se facturan a través de tu cuenta de Google Play y se renuevan automáticamente salvo cancelación al menos 24 horas antes del final del período actual. (Simulado en MVP)</string>
-    <string name="subscriptions_upgrade_success">Suscripción actualizada a %1$s (Simulado)</string>
-    <string name="subscriptions_restore_success">Compras restauradas con éxito (Simulado)</string>
+    <string name="subscriptions_disclaimer">Las suscripciones se facturan a través de tu cuenta de Google Play y se renuevan automáticamente salvo cancelación al menos 24 horas antes del final del período actual.</string>
+    <string name="subscriptions_upgrade_success">¡Suscripción actualizada a %1$s con éxito!</string>
+    <string name="subscriptions_restore_success">¡Compras restauradas con éxito!</string>
+    <string name="subscriptions_purchase_pending">La compra está pendiente. Tu suscripción se activará una vez completado el pago.</string>
+    <string name="subscriptions_purchase_already_owned">Ya dispones de SplitTrip Pro. ¡Suscripción restaurada!</string>
+    <string name="subscriptions_restore_none_found">No se han encontrado suscripciones activas para restaurar.</string>
+    <string name="subscriptions_billing_error">No se pudo completar la compra. Por favor, inténtalo de nuevo más tarde.</string>
+    <string name="subscriptions_service_unavailable">Las opciones de suscripción no están disponibles en este momento. Por favor, inténtalo más tarde.</string>
 </resources>

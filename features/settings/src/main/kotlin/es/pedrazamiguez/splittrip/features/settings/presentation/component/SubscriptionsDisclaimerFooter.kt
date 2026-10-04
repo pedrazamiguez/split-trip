@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickableNoRipple
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.settings.R
 
@@ -32,7 +32,7 @@ fun SubscriptionsDisclaimerFooter(
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .debouncedClickable(onClick = onRestorePurchasesClick)
+                .debouncedClickableNoRipple(onClick = onRestorePurchasesClick)
                 .padding(MaterialTheme.spacing.Small)
         )
 

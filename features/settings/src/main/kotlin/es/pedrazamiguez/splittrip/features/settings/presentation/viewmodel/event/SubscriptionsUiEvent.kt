@@ -1,7 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.event
 
+import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
-import es.pedrazamiguez.splittrip.features.settings.presentation.model.BillingInterval
 
 sealed interface SubscriptionsUiEvent {
     data object LoadSubscriptions : SubscriptionsUiEvent

@@ -5,9 +5,9 @@ import androidx.compose.ui.platform.LocalContext
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewLocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
+import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.SubscriptionsUiMapperImpl
-import es.pedrazamiguez.splittrip.features.settings.presentation.model.BillingInterval
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.SubscriptionsScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.state.SubscriptionsUiState
 
@@ -18,7 +18,8 @@ private fun SubscriptionsScreenPreview() {
     val mapper = SubscriptionsUiMapperImpl(PreviewLocaleProvider(context))
     val plans = mapper.mapPlans(
         currentTier = SubscriptionTier.FREE,
-        selectedInterval = BillingInterval.ANNUAL
+        selectedInterval = BillingInterval.ANNUAL,
+        products = emptyList()
     )
 
     PreviewThemeWrapper {
@@ -42,7 +43,8 @@ private fun SubscriptionsScreenProPlanPreview() {
     val mapper = SubscriptionsUiMapperImpl(PreviewLocaleProvider(context))
     val plans = mapper.mapPlans(
         currentTier = SubscriptionTier.PRO,
-        selectedInterval = BillingInterval.MONTHLY
+        selectedInterval = BillingInterval.MONTHLY,
+        products = emptyList()
     )
 
     PreviewThemeWrapper {

@@ -2,9 +2,11 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
+import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.features.settings.R
-import es.pedrazamiguez.splittrip.features.settings.presentation.model.BillingInterval
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
 import io.mockk.every
@@ -75,7 +77,10 @@ class SubscriptionsUiMapperImplTest {
         assertFeature(freePlan.features[6], R.string.subscriptions_feature_pro_ad_free, expectedIncluded = false)
     }
 
-    private fun assertProPlan(proPlan: SubscriptionPlanUiModel) {
+    private fun assertProPlan(
+        proPlan: SubscriptionPlanUiModel,
+        expectedCtaEnabled: Boolean = false
+    ) {
         assertEquals(SubscriptionTier.PRO, proPlan.tier)
         val proTitle = assertInstanceOf(UiText.StringResource::class.java, proPlan.title)
         assertEquals(R.string.subscriptions_tier_pro_title, proTitle.resId)
@@ -86,7 +91,7 @@ class SubscriptionsUiMapperImplTest {
         val proBadge = assertInstanceOf(UiText.StringResource::class.java, proPlan.badge)
         assertEquals(R.string.subscriptions_badge_popular, proBadge.resId)
         assertFalse(proPlan.isCurrentPlan)
-        assertTrue(proPlan.isCtaButtonEnabled)
+        assertEquals(expectedCtaEnabled, proPlan.isCtaButtonEnabled)
         assertTrue(proPlan.isHighlightedCard)
         assertEquals(7, proPlan.features.size)
         assertFeature(
@@ -141,7 +146,8 @@ class SubscriptionsUiMapperImplTest {
         fun `mapPlans generates Free and Pro plans with Annual pricing when Annual selected`() {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
-                selectedInterval = BillingInterval.ANNUAL
+                selectedInterval = BillingInterval.ANNUAL,
+                products = emptyList()
             )
 
             assertEquals(2, plans.size)
@@ -153,7 +159,8 @@ class SubscriptionsUiMapperImplTest {
         fun `mapPlans generates Pro plan with Monthly pricing when Monthly selected`() {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
-                selectedInterval = BillingInterval.MONTHLY
+                selectedInterval = BillingInterval.MONTHLY,
+                products = emptyList()
             )
 
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
@@ -164,10 +171,49 @@ class SubscriptionsUiMapperImplTest {
         }
 
         @Test
+        fun `mapPlans with SubscriptionProducts formats Pro plan price dynamically with formattedPrice`() {
+            val monthlyProduct = SubscriptionProduct(
+                productId = BillingConstants.PRODUCT_ID_PRO_MONTHLY,
+                tier = SubscriptionTier.PRO,
+                billingInterval = BillingInterval.MONTHLY,
+                formattedPrice = "$4.99",
+                priceAmountMicros = 4990000L,
+                priceCurrencyCode = "USD"
+            )
+            val annualProduct = SubscriptionProduct(
+                productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
+                tier = SubscriptionTier.PRO,
+                billingInterval = BillingInterval.ANNUAL,
+                formattedPrice = "$39.99",
+                priceAmountMicros = 39990000L,
+                priceCurrencyCode = "USD"
+            )
+
+            val monthlyPlans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.MONTHLY,
+                products = listOf(monthlyProduct, annualProduct)
+            )
+            val monthlyPro = monthlyPlans.first { it.tier == SubscriptionTier.PRO }
+            val dynamicMonthlyPrice = assertInstanceOf(UiText.DynamicString::class.java, monthlyPro.price)
+            assertEquals("$4.99", dynamicMonthlyPrice.value)
+
+            val annualPlans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.ANNUAL,
+                products = listOf(monthlyProduct, annualProduct)
+            )
+            val annualPro = annualPlans.first { it.tier == SubscriptionTier.PRO }
+            val dynamicAnnualPrice = assertInstanceOf(UiText.DynamicString::class.java, annualPro.price)
+            assertEquals("$39.99", dynamicAnnualPrice.value)
+        }
+
+        @Test
         fun `mapPlans sets Pro as current plan when user tier is Pro`() {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.PRO,
-                selectedInterval = BillingInterval.ANNUAL
+                selectedInterval = BillingInterval.ANNUAL,
+                products = emptyList()
             )
 
             val freePlan = plans.first { it.tier == SubscriptionTier.FREE }
@@ -231,6 +277,78 @@ class SubscriptionsUiMapperImplTest {
             val result = mapper.formatRestorePurchasesSuccessMessage()
             val res = assertInstanceOf(UiText.StringResource::class.java, result)
             assertEquals(R.string.subscriptions_restore_success, res.resId)
+        }
+    }
+
+    @Nested
+    @DisplayName("Play Billing formatters")
+    inner class PlayBillingFormatters {
+
+        @Test
+        fun `formatPurchasePendingMessage returns correct string resource`() {
+            val result = mapper.formatPurchasePendingMessage()
+            val res = assertInstanceOf(UiText.StringResource::class.java, result)
+            assertEquals(R.string.subscriptions_purchase_pending, res.resId)
+        }
+
+        @Test
+        fun `formatAlreadyOwnedMessage returns correct string resource`() {
+            val result = mapper.formatAlreadyOwnedMessage()
+            val res = assertInstanceOf(UiText.StringResource::class.java, result)
+            assertEquals(R.string.subscriptions_purchase_already_owned, res.resId)
+        }
+
+        @Test
+        fun `formatNoPurchasesToRestoreMessage returns correct string resource`() {
+            val result = mapper.formatNoPurchasesToRestoreMessage()
+            val res = assertInstanceOf(UiText.StringResource::class.java, result)
+            assertEquals(R.string.subscriptions_restore_none_found, res.resId)
+        }
+
+        @Test
+        fun `mapPlans disables Pro CTA button when product is not available in products list`() {
+            val plans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.ANNUAL,
+                products = emptyList()
+            )
+            val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
+            assertFalse(proPlan.isCtaButtonEnabled)
+        }
+
+        @Test
+        fun `mapPlans enables Pro CTA button when product is available in products list`() {
+            val annualProduct = SubscriptionProduct(
+                productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
+                tier = SubscriptionTier.PRO,
+                billingInterval = BillingInterval.ANNUAL,
+                formattedPrice = "$39.99",
+                priceAmountMicros = 39990000L,
+                priceCurrencyCode = "USD"
+            )
+            val plans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.ANNUAL,
+                products = listOf(annualProduct)
+            )
+            val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
+            assertTrue(proPlan.isCtaButtonEnabled)
+        }
+
+        @Test
+        fun `formatBillingError returns sanitized error message string resource`() {
+            val result = mapper.formatBillingError()
+            val res = assertInstanceOf(UiText.StringResource::class.java, result)
+            assertEquals(R.string.subscriptions_billing_error, res.resId)
+            assertTrue(res.args.isEmpty())
+        }
+
+        @Test
+        fun `formatSubscriptionsUnavailableMessage returns service unavailable string resource`() {
+            val result = mapper.formatSubscriptionsUnavailableMessage()
+            val res = assertInstanceOf(UiText.StringResource::class.java, result)
+            assertEquals(R.string.subscriptions_service_unavailable, res.resId)
+            assertTrue(res.args.isEmpty())
         }
     }
 }

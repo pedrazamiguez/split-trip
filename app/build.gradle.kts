@@ -149,6 +149,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.timber)
+    implementation(libs.play.billing.ktx)
     testImplementation(libs.junit4)
     testImplementation(libs.mockk)
 

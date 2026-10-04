@@ -1,15 +1,19 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
+import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.PurchaseStatus
+import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
-import es.pedrazamiguez.splittrip.features.settings.presentation.model.BillingInterval
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.SubscriptionsUiAction
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.event.SubscriptionsUiEvent
@@ -21,6 +25,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -49,8 +54,11 @@ class SubscriptionsViewModelTest {
     private lateinit var updateUserTierUseCase: UpdateUserTierUseCase
     private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
     private lateinit var subscriptionsUiMapper: SubscriptionsUiMapper
+    private lateinit var billingService: BillingService
 
     private val userProfileFlow = MutableSharedFlow<User?>(replay = 1)
+    private val subscriptionProductsFlow = MutableStateFlow<List<SubscriptionProduct>>(emptyList())
+    private val purchaseUpdatesFlow = MutableSharedFlow<PurchaseStatus>()
 
     private val testUser = User(
         userId = "user_123",
@@ -86,6 +94,25 @@ class SubscriptionsViewModelTest {
         isHighlightedCard = true
     )
 
+    private val defaultTestProducts = listOf(
+        SubscriptionProduct(
+            productId = BillingConstants.PRODUCT_ID_PRO_MONTHLY,
+            tier = SubscriptionTier.PRO,
+            billingInterval = BillingInterval.MONTHLY,
+            formattedPrice = "$4.99",
+            priceAmountMicros = 4990000L,
+            priceCurrencyCode = "USD"
+        ),
+        SubscriptionProduct(
+            productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
+            tier = SubscriptionTier.PRO,
+            billingInterval = BillingInterval.ANNUAL,
+            formattedPrice = "$39.99",
+            priceAmountMicros = 39990000L,
+            priceCurrencyCode = "USD"
+        )
+    )
+
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
@@ -94,14 +121,26 @@ class SubscriptionsViewModelTest {
         updateUserTierUseCase = mockk(relaxed = true)
         isUserAnonymousUseCase = mockk()
         subscriptionsUiMapper = mockk()
+        billingService = mockk(relaxed = true)
 
         userProfileFlow.tryEmit(testUser)
+        subscriptionProductsFlow.value = defaultTestProducts
+
         coEvery { getCurrentUserProfileUseCase() } returns testUser
         every { observeCurrentUserProfileUseCase() } returns userProfileFlow
         every { isUserAnonymousUseCase() } returns flowOf(false)
         coEvery { updateUserTierUseCase(any(), any()) } returns Result.success(Unit)
+
+        every { billingService.subscriptionProducts } returns subscriptionProductsFlow
+        every { billingService.purchaseUpdates } returns purchaseUpdatesFlow
+        coEvery { billingService.querySubscriptionProducts() } returns Result.success(emptyList())
+
+        setupUiMapperMocks()
+    }
+
+    private fun setupUiMapperMocks() {
         every {
-            subscriptionsUiMapper.mapPlans(any(), any())
+            subscriptionsUiMapper.mapPlans(any(), any(), any())
         } returns persistentListOf(mockFreePlan, mockProPlan)
         every { subscriptionsUiMapper.formatUpgradeSuccessMessage(any()) } returns UiText.StringResource(
             R.string.subscriptions_upgrade_success,
@@ -109,6 +148,21 @@ class SubscriptionsViewModelTest {
         )
         every { subscriptionsUiMapper.formatRestorePurchasesSuccessMessage() } returns UiText.StringResource(
             R.string.subscriptions_restore_success
+        )
+        every { subscriptionsUiMapper.formatPurchasePendingMessage() } returns UiText.StringResource(
+            R.string.subscriptions_purchase_pending
+        )
+        every { subscriptionsUiMapper.formatAlreadyOwnedMessage() } returns UiText.StringResource(
+            R.string.subscriptions_purchase_already_owned
+        )
+        every { subscriptionsUiMapper.formatNoPurchasesToRestoreMessage() } returns UiText.StringResource(
+            R.string.subscriptions_restore_none_found
+        )
+        every { subscriptionsUiMapper.formatBillingError() } returns UiText.StringResource(
+            R.string.subscriptions_billing_error
+        )
+        every { subscriptionsUiMapper.formatSubscriptionsUnavailableMessage() } returns UiText.StringResource(
+            R.string.subscriptions_service_unavailable
         )
     }
 
@@ -122,7 +176,8 @@ class SubscriptionsViewModelTest {
         observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
         updateUserTierUseCase = updateUserTierUseCase,
         isUserAnonymousUseCase = isUserAnonymousUseCase,
-        subscriptionsUiMapper = subscriptionsUiMapper
+        subscriptionsUiMapper = subscriptionsUiMapper,
+        billingService = billingService
     )
 
     @Nested
@@ -141,6 +196,7 @@ class SubscriptionsViewModelTest {
             assertEquals(SubscriptionTier.FREE, state.currentTier)
             assertEquals(2, state.plans.size)
             assertFalse(state.isProcessingAction)
+            coVerify(atLeast = 1) { billingService.querySubscriptionProducts() }
         }
 
         @Test
@@ -166,6 +222,7 @@ class SubscriptionsViewModelTest {
             advanceUntilIdle()
 
             coVerify(atLeast = 2) { getCurrentUserProfileUseCase() }
+            coVerify(atLeast = 2) { billingService.querySubscriptionProducts() }
         }
 
         @Test
@@ -193,7 +250,33 @@ class SubscriptionsViewModelTest {
             coVerify {
                 subscriptionsUiMapper.mapPlans(
                     currentTier = SubscriptionTier.PRO,
-                    selectedInterval = BillingInterval.ANNUAL
+                    selectedInterval = BillingInterval.ANNUAL,
+                    products = any()
+                )
+            }
+        }
+
+        @Test
+        fun `Observing subscriptionProducts updates uiState plans with dynamic pricing`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val product = SubscriptionProduct(
+                productId = BillingConstants.PRODUCT_ID_PRO_MONTHLY,
+                tier = SubscriptionTier.PRO,
+                billingInterval = BillingInterval.MONTHLY,
+                formattedPrice = "$4.99",
+                priceAmountMicros = 4990000L,
+                priceCurrencyCode = "USD"
+            )
+            subscriptionProductsFlow.value = listOf(product)
+            advanceUntilIdle()
+
+            coVerify {
+                subscriptionsUiMapper.mapPlans(
+                    currentTier = SubscriptionTier.FREE,
+                    selectedInterval = BillingInterval.ANNUAL,
+                    products = listOf(product)
                 )
             }
         }
@@ -216,7 +299,8 @@ class SubscriptionsViewModelTest {
             coVerify {
                 subscriptionsUiMapper.mapPlans(
                     currentTier = SubscriptionTier.FREE,
-                    selectedInterval = BillingInterval.MONTHLY
+                    selectedInterval = BillingInterval.MONTHLY,
+                    products = any()
                 )
             }
         }
@@ -227,7 +311,32 @@ class SubscriptionsViewModelTest {
     inner class UpgradePlan {
 
         @Test
-        fun `UpgradePlan invokes UpdateUserTierUseCase and emits ShowTopPill`() = runTest(testDispatcher) {
+        fun `UpgradePlan for Pro with Monthly selected emits LaunchBillingFlow with monthly id`() = runTest(
+            testDispatcher
+        ) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(SubscriptionsUiEvent.SelectBillingInterval(BillingInterval.MONTHLY))
+            advanceUntilIdle()
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.PRO))
+            advanceUntilIdle()
+
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(SubscriptionsUiAction.LaunchBillingFlow::class.java, actions.first())
+            assertEquals(BillingConstants.PRODUCT_ID_PRO_MONTHLY, action.productId)
+
+            job.cancel()
+        }
+
+        @Test
+        fun `UpgradePlan for Pro with Annual selected emits LaunchBillingFlow with annual id`() = runTest(
+            testDispatcher
+        ) {
             val viewModel = createViewModel()
             advanceUntilIdle()
 
@@ -237,8 +346,93 @@ class SubscriptionsViewModelTest {
             viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.PRO))
             advanceUntilIdle()
 
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(SubscriptionsUiAction.LaunchBillingFlow::class.java, actions.first())
+            assertEquals(BillingConstants.PRODUCT_ID_PRO_ANNUAL, action.productId)
+
+            job.cancel()
+        }
+
+        @Test
+        fun `UpgradePlan for Pro when product is not available emits ShowTopPill with service unavailable message`() =
+            runTest(testDispatcher) {
+                subscriptionProductsFlow.value = emptyList()
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                val actions = mutableListOf<SubscriptionsUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+                viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.PRO))
+                advanceUntilIdle()
+
+                assertEquals(1, actions.size)
+                val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+                val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+                assertEquals(R.string.subscriptions_service_unavailable, message.resId)
+
+                job.cancel()
+            }
+
+        @Test
+        fun `UpgradePlan for Free invokes UpdateUserTierUseCase`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.FREE))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { updateUserTierUseCase("user_123", SubscriptionTier.FREE) }
+            val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+            job.cancel()
+        }
+
+        @Test
+        fun `launchBillingFlow delegates to BillingService and emits ShowTopPill on failure`() = runTest(
+            testDispatcher
+        ) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            every {
+                billingService.launchBillingFlow(any(), any())
+            } returns Result.failure(IllegalStateException("Flow error"))
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.launchBillingFlow("activity", BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+            advanceUntilIdle()
+
+            assertEquals(1, actions.size)
+            assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+            job.cancel()
+        }
+    }
+
+    @Nested
+    @DisplayName("purchaseUpdates observation")
+    inner class PurchaseUpdatesObservation {
+
+        @Test
+        fun `purchaseUpdates Success updates user tier to PRO and emits upgrade success top pill`() = runTest(
+            testDispatcher
+        ) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            purchaseUpdatesFlow.emit(
+                PurchaseStatus.Success(BillingConstants.PRODUCT_ID_PRO_ANNUAL, "token")
+            )
+            advanceUntilIdle()
+
             coVerify(exactly = 1) { updateUserTierUseCase("user_123", SubscriptionTier.PRO) }
-            assertFalse(viewModel.uiState.value.isProcessingAction)
             assertEquals(1, actions.size)
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
@@ -248,16 +442,78 @@ class SubscriptionsViewModelTest {
         }
 
         @Test
-        fun `UpgradePlan handles exception gracefully`() = runTest(testDispatcher) {
-            every { subscriptionsUiMapper.formatUpgradeSuccessMessage(any()) } throws RuntimeException("Error")
-
+        fun `purchaseUpdates Pending emits pending message top pill`() = runTest(testDispatcher) {
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.PRO))
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            purchaseUpdatesFlow.emit(PurchaseStatus.Pending)
             advanceUntilIdle()
 
-            assertFalse(viewModel.uiState.value.isProcessingAction)
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+            val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+            assertEquals(R.string.subscriptions_purchase_pending, message.resId)
+
+            job.cancel()
+        }
+
+        @Test
+        fun `purchaseUpdates AlreadyOwned updates user tier to PRO and emits already owned top pill`() = runTest(
+            testDispatcher
+        ) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            purchaseUpdatesFlow.emit(PurchaseStatus.AlreadyOwned)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { updateUserTierUseCase("user_123", SubscriptionTier.PRO) }
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+            val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+            assertEquals(R.string.subscriptions_purchase_already_owned, message.resId)
+
+            job.cancel()
+        }
+
+        @Test
+        fun `purchaseUpdates UserCanceled emits no action`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            purchaseUpdatesFlow.emit(PurchaseStatus.UserCanceled)
+            advanceUntilIdle()
+
+            assertEquals(0, actions.size)
+            job.cancel()
+        }
+
+        @Test
+        fun `purchaseUpdates Error emits ShowTopPill with error message`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            purchaseUpdatesFlow.emit(PurchaseStatus.Error("Failed"))
+            advanceUntilIdle()
+
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+            val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+            assertEquals(R.string.subscriptions_billing_error, message.resId)
+
+            job.cancel()
         }
     }
 
@@ -266,7 +522,11 @@ class SubscriptionsViewModelTest {
     inner class RestorePurchases {
 
         @Test
-        fun `RestorePurchases invokes UpdateUserTierUseCase and emits ShowTopPill`() = runTest(testDispatcher) {
+        fun `RestorePurchases with true result updates user tier to PRO and emits restore success top pill`() = runTest(
+            testDispatcher
+        ) {
+            coEvery { billingService.restorePurchases() } returns Result.success(true)
+
             val viewModel = createViewModel()
             advanceUntilIdle()
 
@@ -287,16 +547,50 @@ class SubscriptionsViewModelTest {
         }
 
         @Test
-        fun `RestorePurchases handles exception gracefully`() = runTest(testDispatcher) {
-            every { subscriptionsUiMapper.formatRestorePurchasesSuccessMessage() } throws RuntimeException("Error")
+        fun `RestorePurchases with false result emits no purchases found top pill`() = runTest(testDispatcher) {
+            coEvery { billingService.restorePurchases() } returns Result.success(false)
 
             val viewModel = createViewModel()
             advanceUntilIdle()
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.onEvent(SubscriptionsUiEvent.RestorePurchases)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { updateUserTierUseCase(any(), any()) }
+            assertFalse(viewModel.uiState.value.isProcessingAction)
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+            val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+            assertEquals(R.string.subscriptions_restore_none_found, message.resId)
+
+            job.cancel()
+        }
+
+        @Test
+        fun `RestorePurchases with failure emits error top pill`() = runTest(testDispatcher) {
+            coEvery {
+                billingService.restorePurchases()
+            } returns Result.failure(IllegalStateException("Billing unavailable"))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
 
             viewModel.onEvent(SubscriptionsUiEvent.RestorePurchases)
             advanceUntilIdle()
 
             assertFalse(viewModel.uiState.value.isProcessingAction)
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+            val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+            assertEquals(R.string.subscriptions_billing_error, message.resId)
+
+            job.cancel()
         }
     }
 }

@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
+import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.features.settings.R
-import es.pedrazamiguez.splittrip.features.settings.presentation.model.BillingInterval
 
 @Composable
 fun BillingIntervalSelector(
