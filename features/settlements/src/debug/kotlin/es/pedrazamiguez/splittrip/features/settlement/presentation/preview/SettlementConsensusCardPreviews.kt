@@ -8,7 +8,7 @@ import es.pedrazamiguez.splittrip.features.settlement.presentation.component.Set
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.ConsensusChipStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
 
-private val PREVIEW_CONSENSUS_PENDING = SettlementConsensusItemUiModel(
+internal val PREVIEW_CONSENSUS_PENDING = SettlementConsensusItemUiModel(
     settlementId = "c-1",
     counterpartyName = "María López",
     formattedAmount = "25.00 €",
@@ -19,12 +19,12 @@ private val PREVIEW_CONSENSUS_PENDING = SettlementConsensusItemUiModel(
     statusChipStyle = ConsensusChipStyle.SUGGESTED,
     isCurrentUserPayer = true,
     canConfirm = true,
-    confirmLabel = "I Paid",
+    confirmLabel = "Mark as paid",
     canDispute = true,
     status = SettlementStatus.SUGGESTED
 )
 
-private val PREVIEW_CONSENSUS_CONFIRMED = SettlementConsensusItemUiModel(
+internal val PREVIEW_CONSENSUS_CONFIRMED = SettlementConsensusItemUiModel(
     settlementId = "c-2",
     counterpartyName = "María López",
     formattedAmount = "25.00 €",
@@ -35,12 +35,12 @@ private val PREVIEW_CONSENSUS_CONFIRMED = SettlementConsensusItemUiModel(
     statusChipStyle = ConsensusChipStyle.IN_PROGRESS,
     isCurrentUserPayer = true,
     canConfirm = false,
-    confirmLabel = "I Paid",
+    confirmLabel = "Mark as paid",
     canDispute = false,
     status = SettlementStatus.CONFIRMED_BY_PAYER
 )
 
-private val PREVIEW_CONSENSUS_DISPUTED = SettlementConsensusItemUiModel(
+internal val PREVIEW_CONSENSUS_DISPUTED = SettlementConsensusItemUiModel(
     settlementId = "c-3",
     counterpartyName = "María López",
     formattedAmount = "25.00 €",
@@ -51,13 +51,13 @@ private val PREVIEW_CONSENSUS_DISPUTED = SettlementConsensusItemUiModel(
     statusChipStyle = ConsensusChipStyle.DISPUTED,
     isCurrentUserPayer = true,
     canConfirm = true,
-    confirmLabel = "I Paid",
+    confirmLabel = "Mark as paid",
     canDispute = false,
     disputeReason = "Wrong amount entered",
     status = SettlementStatus.DISPUTED
 )
 
-private val PREVIEW_CONSENSUS_RECEIVER = SettlementConsensusItemUiModel(
+internal val PREVIEW_CONSENSUS_RECEIVER = SettlementConsensusItemUiModel(
     settlementId = "c-4",
     counterpartyName = "Antonio García",
     formattedAmount = "50.00 €",
@@ -68,7 +68,7 @@ private val PREVIEW_CONSENSUS_RECEIVER = SettlementConsensusItemUiModel(
     statusChipStyle = ConsensusChipStyle.SUGGESTED,
     isCurrentUserPayer = false,
     canConfirm = true,
-    confirmLabel = "I Received",
+    confirmLabel = "Confirm receipt",
     canDispute = true,
     canNudge = true,
     nudgeButtonLabel = "Remind",
@@ -79,12 +79,14 @@ private val PREVIEW_CONSENSUS_RECEIVER = SettlementConsensusItemUiModel(
 @Composable
 private fun SettlementConsensusCardPendingPreview() {
     PreviewThemeWrapper {
-        SettlementConsensusCard(
-            item = PREVIEW_CONSENSUS_PENDING,
-            onConfirm = {},
-            onDispute = {},
-            onNudge = {}
-        )
+        SettlementConsensusCardPreviewHelper(record = PREVIEW_SETTLEMENT_RECORD_PENDING) { item ->
+            SettlementConsensusCard(
+                item = item,
+                onConfirm = {},
+                onDispute = {},
+                onNudge = {}
+            )
+        }
     }
 }
 
@@ -92,12 +94,14 @@ private fun SettlementConsensusCardPendingPreview() {
 @Composable
 private fun SettlementConsensusCardConfirmedPreview() {
     PreviewThemeWrapper {
-        SettlementConsensusCard(
-            item = PREVIEW_CONSENSUS_CONFIRMED,
-            onConfirm = {},
-            onDispute = {},
-            onNudge = {}
-        )
+        SettlementConsensusCardPreviewHelper(record = PREVIEW_SETTLEMENT_RECORD_CONFIRMED) { item ->
+            SettlementConsensusCard(
+                item = item,
+                onConfirm = {},
+                onDispute = {},
+                onNudge = {}
+            )
+        }
     }
 }
 
@@ -105,12 +109,14 @@ private fun SettlementConsensusCardConfirmedPreview() {
 @Composable
 private fun SettlementConsensusCardDisputedPreview() {
     PreviewThemeWrapper {
-        SettlementConsensusCard(
-            item = PREVIEW_CONSENSUS_DISPUTED,
-            onConfirm = {},
-            onDispute = {},
-            onNudge = {}
-        )
+        SettlementConsensusCardPreviewHelper(record = PREVIEW_SETTLEMENT_RECORD_DISPUTED) { item ->
+            SettlementConsensusCard(
+                item = item,
+                onConfirm = {},
+                onDispute = {},
+                onNudge = {}
+            )
+        }
     }
 }
 
@@ -118,12 +124,14 @@ private fun SettlementConsensusCardDisputedPreview() {
 @Composable
 private fun SettlementConsensusCardSenderViewPreview() {
     PreviewThemeWrapper {
-        SettlementConsensusCard(
-            item = PREVIEW_CONSENSUS_PENDING,
-            onConfirm = {},
-            onDispute = {},
-            onNudge = {}
-        )
+        SettlementConsensusCardPreviewHelper(record = PREVIEW_SETTLEMENT_RECORD_PENDING) { item ->
+            SettlementConsensusCard(
+                item = item,
+                onConfirm = {},
+                onDispute = {},
+                onNudge = {}
+            )
+        }
     }
 }
 
@@ -131,11 +139,13 @@ private fun SettlementConsensusCardSenderViewPreview() {
 @Composable
 private fun SettlementConsensusCardReceiverViewPreview() {
     PreviewThemeWrapper {
-        SettlementConsensusCard(
-            item = PREVIEW_CONSENSUS_RECEIVER,
-            onConfirm = {},
-            onDispute = {},
-            onNudge = {}
-        )
+        SettlementConsensusCardPreviewHelper(record = PREVIEW_SETTLEMENT_RECORD_RECEIVER) { item ->
+            SettlementConsensusCard(
+                item = item,
+                onConfirm = {},
+                onDispute = {},
+                onNudge = {}
+            )
+        }
     }
 }
