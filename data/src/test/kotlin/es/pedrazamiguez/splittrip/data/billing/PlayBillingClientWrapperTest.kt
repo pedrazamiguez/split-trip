@@ -164,7 +164,7 @@ class PlayBillingClientWrapperTest {
         mockSuccessfulConnection()
         every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
             val listener = secondArg<ProductDetailsResponseListener>()
-            listener.onProductDetailsResponse(errorResult, emptyList())
+            listener.onProductDetailsResponse(errorResult, createMockQueryResult())
         }
 
         val result = wrapper.querySubscriptionProducts()
@@ -179,7 +179,7 @@ class PlayBillingClientWrapperTest {
         val monthlyDetails = createMockProductDetails(BillingConstants.PRODUCT_ID_PRO_MONTHLY)
         every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
             val listener = secondArg<ProductDetailsResponseListener>()
-            listener.onProductDetailsResponse(okResult, listOf(monthlyDetails))
+            listener.onProductDetailsResponse(okResult, createMockQueryResult(listOf(monthlyDetails)))
         }
         wrapper.querySubscriptionProducts()
         advanceUntilIdle()
@@ -450,7 +450,7 @@ class PlayBillingClientWrapperTest {
         mockSuccessfulConnection()
         every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
             val listener = secondArg<ProductDetailsResponseListener>()
-            listener.onProductDetailsResponse(errorResult, emptyList())
+            listener.onProductDetailsResponse(errorResult, createMockQueryResult())
         }
 
         val result = simWrapper.querySubscriptionProducts()
@@ -467,7 +467,7 @@ class PlayBillingClientWrapperTest {
             mockSuccessfulConnection()
             every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
                 val listener = secondArg<ProductDetailsResponseListener>()
-                listener.onProductDetailsResponse(okResult, emptyList())
+                listener.onProductDetailsResponse(okResult, createMockQueryResult())
             }
 
             val result = simWrapper.querySubscriptionProducts()
@@ -561,7 +561,7 @@ class PlayBillingClientWrapperTest {
             mockSuccessfulConnection()
             every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
                 val listener = secondArg<ProductDetailsResponseListener>()
-                listener.onProductDetailsResponse(errorResult, emptyList())
+                listener.onProductDetailsResponse(errorResult, createMockQueryResult())
             }
 
             val result = repoWrapper.querySubscriptionProducts()
