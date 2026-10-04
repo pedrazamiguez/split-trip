@@ -94,6 +94,25 @@ class SubscriptionsViewModelTest {
         isHighlightedCard = true
     )
 
+    private val defaultTestProducts = listOf(
+        SubscriptionProduct(
+            productId = BillingConstants.PRODUCT_ID_PRO_MONTHLY,
+            tier = SubscriptionTier.PRO,
+            billingInterval = BillingInterval.MONTHLY,
+            formattedPrice = "$4.99",
+            priceAmountMicros = 4990000L,
+            priceCurrencyCode = "USD"
+        ),
+        SubscriptionProduct(
+            productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
+            tier = SubscriptionTier.PRO,
+            billingInterval = BillingInterval.ANNUAL,
+            formattedPrice = "$39.99",
+            priceAmountMicros = 39990000L,
+            priceCurrencyCode = "USD"
+        )
+    )
+
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
@@ -105,7 +124,7 @@ class SubscriptionsViewModelTest {
         billingService = mockk(relaxed = true)
 
         userProfileFlow.tryEmit(testUser)
-        subscriptionProductsFlow.value = emptyList()
+        subscriptionProductsFlow.value = defaultTestProducts
 
         coEvery { getCurrentUserProfileUseCase() } returns testUser
         every { observeCurrentUserProfileUseCase() } returns userProfileFlow
@@ -116,6 +135,10 @@ class SubscriptionsViewModelTest {
         every { billingService.purchaseUpdates } returns purchaseUpdatesFlow
         coEvery { billingService.querySubscriptionProducts() } returns Result.success(emptyList())
 
+        setupUiMapperMocks()
+    }
+
+    private fun setupUiMapperMocks() {
         every {
             subscriptionsUiMapper.mapPlans(any(), any(), any())
         } returns persistentListOf(mockFreePlan, mockProPlan)
@@ -135,9 +158,11 @@ class SubscriptionsViewModelTest {
         every { subscriptionsUiMapper.formatNoPurchasesToRestoreMessage() } returns UiText.StringResource(
             R.string.subscriptions_restore_none_found
         )
-        every { subscriptionsUiMapper.formatBillingError(any()) } returns UiText.StringResource(
-            R.string.subscriptions_billing_error,
-            UiText.DynamicString("Error")
+        every { subscriptionsUiMapper.formatBillingError() } returns UiText.StringResource(
+            R.string.subscriptions_billing_error
+        )
+        every { subscriptionsUiMapper.formatSubscriptionsUnavailableMessage() } returns UiText.StringResource(
+            R.string.subscriptions_service_unavailable
         )
     }
 
@@ -327,6 +352,27 @@ class SubscriptionsViewModelTest {
 
             job.cancel()
         }
+
+        @Test
+        fun `UpgradePlan for Pro when product is not available emits ShowTopPill with service unavailable message`() =
+            runTest(testDispatcher) {
+                subscriptionProductsFlow.value = emptyList()
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                val actions = mutableListOf<SubscriptionsUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+                viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.PRO))
+                advanceUntilIdle()
+
+                assertEquals(1, actions.size)
+                val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+                val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+                assertEquals(R.string.subscriptions_service_unavailable, message.resId)
+
+                job.cancel()
+            }
 
         @Test
         fun `UpgradePlan for Free invokes UpdateUserTierUseCase`() = runTest(testDispatcher) {

@@ -315,5 +315,6 @@
     <string name="subscriptions_purchase_pending">Purchase is pending. Your subscription will activate once payment is completed.</string>
     <string name="subscriptions_purchase_already_owned">You already own SplitTrip Pro. Subscription restored!</string>
     <string name="subscriptions_restore_none_found">No active subscriptions found to restore.</string>
-    <string name="subscriptions_billing_error">Unable to complete purchase: %1$s</string>
+    <string name="subscriptions_billing_error">Unable to complete purchase. Please try again later.</string>
+    <string name="subscriptions_service_unavailable">Subscription options are currently unavailable. Please try again later.</string>
 </resources>

@@ -63,12 +63,12 @@ class SubscriptionsUiMapperImpl(
         return UiText.StringResource(R.string.subscriptions_restore_none_found)
     }
 
-    override fun formatBillingError(errorMessage: String?): UiText {
-        val message = errorMessage?.takeIf { it.isNotBlank() } ?: "Unknown error"
-        return UiText.StringResource(
-            R.string.subscriptions_billing_error,
-            UiText.DynamicString(message)
-        )
+    override fun formatBillingError(): UiText {
+        return UiText.StringResource(R.string.subscriptions_billing_error)
+    }
+
+    override fun formatSubscriptionsUnavailableMessage(): UiText {
+        return UiText.StringResource(R.string.subscriptions_service_unavailable)
     }
 
     private fun createFreePlan(isCurrentPlan: Boolean): SubscriptionPlanUiModel {
@@ -156,7 +156,7 @@ class SubscriptionsUiMapperImpl(
             } else {
                 UiText.StringResource(R.string.subscriptions_cta_upgrade_pro)
             },
-            isCtaButtonEnabled = !isCurrentPlan,
+            isCtaButtonEnabled = !isCurrentPlan && matchingProduct != null,
             isHighlightedCard = true
         )
     }

@@ -20,5 +20,6 @@ interface SubscriptionsUiMapper {
     fun formatPurchasePendingMessage(): UiText
     fun formatAlreadyOwnedMessage(): UiText
     fun formatNoPurchasesToRestoreMessage(): UiText
-    fun formatBillingError(errorMessage: String?): UiText
+    fun formatBillingError(): UiText
+    fun formatSubscriptionsUnavailableMessage(): UiText
 }

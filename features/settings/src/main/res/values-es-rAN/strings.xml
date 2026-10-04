@@ -273,5 +273,6 @@
     <string name="subscriptions_purchase_pending">La compra êttá pendiente. Tu çûccrîççión çe âttibará una bêh completao er pago.</string>
     <string name="subscriptions_purchase_already_owned">Ya dîpponê de SplîTTrîh Pro. ¡Çûccrîççión rêttaurá!</string>
     <string name="subscriptions_restore_none_found">No çe an encontrao çûccrîççionê âttibâ pa rêttaurâh.</string>
-    <string name="subscriptions_billing_error">No çe pudo completâh la compra: %1$s</string>
+    <string name="subscriptions_billing_error">No çe pudo completâh la compra. Por fabôh, inténtalo de nuebo mâh tarde.</string>
+    <string name="subscriptions_service_unavailable">Lâ ôççionê de çûccrîççión no êttán dîpponiblê en êtte momento. Por fabôh, inténtalo mâh tarde.</string>
 </resources>

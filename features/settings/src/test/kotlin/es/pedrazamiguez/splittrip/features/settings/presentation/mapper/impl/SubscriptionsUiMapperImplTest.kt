@@ -77,7 +77,10 @@ class SubscriptionsUiMapperImplTest {
         assertFeature(freePlan.features[6], R.string.subscriptions_feature_pro_ad_free, expectedIncluded = false)
     }
 
-    private fun assertProPlan(proPlan: SubscriptionPlanUiModel) {
+    private fun assertProPlan(
+        proPlan: SubscriptionPlanUiModel,
+        expectedCtaEnabled: Boolean = false
+    ) {
         assertEquals(SubscriptionTier.PRO, proPlan.tier)
         val proTitle = assertInstanceOf(UiText.StringResource::class.java, proPlan.title)
         assertEquals(R.string.subscriptions_tier_pro_title, proTitle.resId)
@@ -88,7 +91,7 @@ class SubscriptionsUiMapperImplTest {
         val proBadge = assertInstanceOf(UiText.StringResource::class.java, proPlan.badge)
         assertEquals(R.string.subscriptions_badge_popular, proBadge.resId)
         assertFalse(proPlan.isCurrentPlan)
-        assertTrue(proPlan.isCtaButtonEnabled)
+        assertEquals(expectedCtaEnabled, proPlan.isCtaButtonEnabled)
         assertTrue(proPlan.isHighlightedCard)
         assertEquals(7, proPlan.features.size)
         assertFeature(
@@ -303,13 +306,49 @@ class SubscriptionsUiMapperImplTest {
         }
 
         @Test
-        fun `formatBillingError returns error message string resource with arg`() {
-            val result = mapper.formatBillingError("Network error")
+        fun `mapPlans disables Pro CTA button when product is not available in products list`() {
+            val plans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.ANNUAL,
+                products = emptyList()
+            )
+            val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
+            assertFalse(proPlan.isCtaButtonEnabled)
+        }
+
+        @Test
+        fun `mapPlans enables Pro CTA button when product is available in products list`() {
+            val annualProduct = SubscriptionProduct(
+                productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
+                tier = SubscriptionTier.PRO,
+                billingInterval = BillingInterval.ANNUAL,
+                formattedPrice = "$39.99",
+                priceAmountMicros = 39990000L,
+                priceCurrencyCode = "USD"
+            )
+            val plans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.ANNUAL,
+                products = listOf(annualProduct)
+            )
+            val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
+            assertTrue(proPlan.isCtaButtonEnabled)
+        }
+
+        @Test
+        fun `formatBillingError returns sanitized error message string resource`() {
+            val result = mapper.formatBillingError()
             val res = assertInstanceOf(UiText.StringResource::class.java, result)
             assertEquals(R.string.subscriptions_billing_error, res.resId)
-            assertEquals(1, res.args.size)
-            val arg = assertInstanceOf(UiText.DynamicString::class.java, res.args[0])
-            assertEquals("Network error", arg.value)
+            assertTrue(res.args.isEmpty())
+        }
+
+        @Test
+        fun `formatSubscriptionsUnavailableMessage returns service unavailable string resource`() {
+            val result = mapper.formatSubscriptionsUnavailableMessage()
+            val res = assertInstanceOf(UiText.StringResource::class.java, result)
+            assertEquals(R.string.subscriptions_service_unavailable, res.resId)
+            assertTrue(res.args.isEmpty())
         }
     }
 }

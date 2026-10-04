@@ -105,7 +105,8 @@ class SubscriptionsViewModel(
                         // User canceled purchase dialog; no action needed
                     }
                     is PurchaseStatus.Error -> {
-                        val message = subscriptionsUiMapper.formatBillingError(status.message)
+                        Timber.w("Billing purchase update error: ${status.message}")
+                        val message = subscriptionsUiMapper.formatBillingError()
                         _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                     }
                 }
@@ -129,7 +130,7 @@ class SubscriptionsViewModel(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to update user tier after purchase")
-            val message = subscriptionsUiMapper.formatBillingError(e.message)
+            val message = subscriptionsUiMapper.formatBillingError()
             _actions.send(SubscriptionsUiAction.ShowTopPill(message))
         }
     }
@@ -146,9 +147,9 @@ class SubscriptionsViewModel(
     fun launchBillingFlow(activity: Any, productId: String) {
         val result = billingService.launchBillingFlow(activity, productId)
         if (result.isFailure) {
+            Timber.e(result.exceptionOrNull(), "Failed to launch billing flow for product: $productId")
             viewModelScope.launch {
-                val error = result.exceptionOrNull()?.message
-                val message = subscriptionsUiMapper.formatBillingError(error)
+                val message = subscriptionsUiMapper.formatBillingError()
                 _actions.send(SubscriptionsUiAction.ShowTopPill(message))
             }
         }
@@ -158,7 +159,13 @@ class SubscriptionsViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                billingService.querySubscriptionProducts()
+                val queryResult = billingService.querySubscriptionProducts()
+                if (queryResult.isFailure) {
+                    Timber.w(
+                        queryResult.exceptionOrNull(),
+                        "Failed to query subscription products from billing service"
+                    )
+                }
                 val isAnon = isUserAnonymousUseCase().firstOrNull() ?: false
                 val currentUser = getCurrentUserProfileUseCase()
                 val currentTier = currentUser?.tier ?: SubscriptionTier.FREE
@@ -205,31 +212,48 @@ class SubscriptionsViewModel(
 
     private fun handleUpgradePlan(tier: SubscriptionTier) {
         if (tier == SubscriptionTier.PRO) {
-            val productId = if (_uiState.value.selectedInterval == BillingInterval.MONTHLY) {
-                BillingConstants.PRODUCT_ID_PRO_MONTHLY
-            } else {
-                BillingConstants.PRODUCT_ID_PRO_ANNUAL
-            }
-            viewModelScope.launch {
-                _actions.send(SubscriptionsUiAction.LaunchBillingFlow(productId))
-            }
+            handleUpgradeToPro()
         } else {
+            handleDowngradeToFree(tier)
+        }
+    }
+
+    private fun handleUpgradeToPro() {
+        val selectedInterval = _uiState.value.selectedInterval
+        val hasProduct = billingService.subscriptionProducts.value.any { it.billingInterval == selectedInterval }
+        if (!hasProduct) {
             viewModelScope.launch {
-                _uiState.update { it.copy(isProcessingAction = true) }
-                try {
-                    val user = getCurrentUserProfileUseCase()
-                    if (user != null) {
-                        updateUserTierUseCase(user.userId, tier)
-                    }
-                    val message = subscriptionsUiMapper.formatUpgradeSuccessMessage(tier)
-                    _actions.send(SubscriptionsUiAction.ShowTopPill(message))
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Timber.e(e, "Failed to handle upgrade plan")
-                } finally {
-                    _uiState.update { it.copy(isProcessingAction = false) }
+                val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
+                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+            }
+            return
+        }
+        val productId = if (selectedInterval == BillingInterval.MONTHLY) {
+            BillingConstants.PRODUCT_ID_PRO_MONTHLY
+        } else {
+            BillingConstants.PRODUCT_ID_PRO_ANNUAL
+        }
+        viewModelScope.launch {
+            _actions.send(SubscriptionsUiAction.LaunchBillingFlow(productId))
+        }
+    }
+
+    private fun handleDowngradeToFree(tier: SubscriptionTier) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingAction = true) }
+            try {
+                val user = getCurrentUserProfileUseCase()
+                if (user != null) {
+                    updateUserTierUseCase(user.userId, tier)
                 }
+                val message = subscriptionsUiMapper.formatUpgradeSuccessMessage(tier)
+                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to handle upgrade plan")
+            } finally {
+                _uiState.update { it.copy(isProcessingAction = false) }
             }
         }
     }
@@ -242,15 +266,15 @@ class SubscriptionsViewModel(
                 if (restoreResult.isSuccess) {
                     processRestoreSuccess(restoreResult.getOrDefault(false))
                 } else {
-                    val error = restoreResult.exceptionOrNull()?.message
-                    val message = subscriptionsUiMapper.formatBillingError(error)
+                    Timber.e(restoreResult.exceptionOrNull(), "Failed to restore purchases")
+                    val message = subscriptionsUiMapper.formatBillingError()
                     _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to handle restore purchases")
-                val message = subscriptionsUiMapper.formatBillingError(e.message)
+                val message = subscriptionsUiMapper.formatBillingError()
                 _actions.send(SubscriptionsUiAction.ShowTopPill(message))
             } finally {
                 _uiState.update { it.copy(isProcessingAction = false) }
