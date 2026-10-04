@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -583,6 +584,85 @@ class GroupUiMapperImplTest {
             assertNull(regularMember.avatarUrl)
             assertFalse(regularMember.isCreator)
             assertEquals("Member", regularMember.roleBadgeText)
+        }
+    }
+
+    @Nested
+    inner class DateMapping {
+
+        @Test
+        fun `maps createdAt and lastUpdatedAt in current year without year`() {
+            // Given
+            val currentYear = LocalDate.now().year
+            val createdAt = LocalDateTime.of(currentYear, 11, 10, 14, 0)
+            val group = createGroup().copy(
+                createdAt = createdAt,
+                lastUpdatedAt = createdAt
+            )
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, any(), any()) } returns
+                "2 travellers"
+
+            // When
+            val result = mapper.toGroupUiModel(group)
+
+            // Then
+            assertEquals("10 Nov", result.dateText)
+            assertEquals("10 Nov", result.lastUpdatedText)
+        }
+
+        @Test
+        fun `maps createdAt and lastUpdatedAt outside current year with 4-digit year`() {
+            // Given
+            val currentYear = LocalDate.now().year
+            val pastDate = LocalDateTime.of(currentYear - 1, 11, 10, 14, 0)
+            val futureDate = LocalDateTime.of(currentYear + 1, 11, 10, 14, 0)
+            val pastGroup = createGroup().copy(createdAt = pastDate, lastUpdatedAt = pastDate)
+            val futureGroup = createGroup().copy(createdAt = futureDate, lastUpdatedAt = futureDate)
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, any(), any()) } returns
+                "2 travellers"
+
+            // When
+            val pastResult = mapper.toGroupUiModel(pastGroup)
+            val futureResult = mapper.toGroupUiModel(futureGroup)
+
+            // Then
+            assertEquals("10 Nov ${currentYear - 1}", pastResult.dateText)
+            assertEquals("10 Nov ${currentYear - 1}", pastResult.lastUpdatedText)
+            assertEquals("10 Nov ${currentYear + 1}", futureResult.dateText)
+            assertEquals("10 Nov ${currentYear + 1}", futureResult.lastUpdatedText)
+        }
+
+        @Test
+        fun `maps null createdAt and lastUpdatedAt to empty strings`() {
+            // Given
+            val group = createGroup().copy(createdAt = null, lastUpdatedAt = null)
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, any(), any()) } returns
+                "2 travellers"
+
+            // When
+            val result = mapper.toGroupUiModel(group)
+
+            // Then
+            assertEquals("", result.dateText)
+            assertEquals("", result.lastUpdatedText)
+        }
+
+        @Test
+        fun `maps date outside current year with Spanish locale`() {
+            // Given
+            every { localeProvider.getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
+            val currentYear = LocalDate.now().year
+            val pastDate = LocalDateTime.of(currentYear - 1, 11, 10, 14, 0)
+            val group = createGroup().copy(createdAt = pastDate, lastUpdatedAt = pastDate)
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, any(), any()) } returns
+                "2 viajeros"
+
+            // When
+            val result = mapper.toGroupUiModel(group)
+
+            // Then
+            assertEquals("10 nov ${currentYear - 1}", result.dateText.lowercase())
+            assertEquals("10 nov ${currentYear - 1}", result.lastUpdatedText.lowercase())
         }
     }
 }
