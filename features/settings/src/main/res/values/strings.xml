@@ -309,7 +309,11 @@
     <string name="subscriptions_cta_downgrade_free">Downgrade to Free</string>
     <string name="subscriptions_badge_popular">Most Popular</string>
     <string name="subscriptions_restore_purchases">Restore Purchases</string>
-    <string name="subscriptions_disclaimer">Subscriptions are billed through your Google Play account and renew automatically unless cancelled at least 24 hours before the end of the current period. (Simulated in MVP)</string>
-    <string name="subscriptions_upgrade_success">Upgraded to %1$s (Simulated)</string>
-    <string name="subscriptions_restore_success">Purchases restored successfully (Simulated)</string>
+    <string name="subscriptions_disclaimer">Subscriptions are billed through your Google Play account and renew automatically unless cancelled at least 24 hours before the end of the current period.</string>
+    <string name="subscriptions_upgrade_success">Upgraded to %1$s successfully!</string>
+    <string name="subscriptions_restore_success">Purchases restored successfully!</string>
+    <string name="subscriptions_purchase_pending">Purchase is pending. Your subscription will activate once payment is completed.</string>
+    <string name="subscriptions_purchase_already_owned">You already own SplitTrip Pro. Subscription restored!</string>
+    <string name="subscriptions_restore_none_found">No active subscriptions found to restore.</string>
+    <string name="subscriptions_billing_error">Unable to complete purchase: %1$s</string>
 </resources>

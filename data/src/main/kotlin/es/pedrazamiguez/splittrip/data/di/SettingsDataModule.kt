@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.di
 
+import es.pedrazamiguez.splittrip.data.billing.PlayBillingClientWrapper
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.data.repository.impl.BalancePreferenceRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.GroupPreferenceRepositoryImpl
@@ -10,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.service.BiometricAuthService
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -33,5 +35,9 @@ val settingsDataModule = module {
 
     single<BiometricAuthService> {
         BiometricAuthServiceImpl(context = androidContext())
+    }
+
+    single<BillingService> {
+        PlayBillingClientWrapper(context = androidContext())
     }
 }

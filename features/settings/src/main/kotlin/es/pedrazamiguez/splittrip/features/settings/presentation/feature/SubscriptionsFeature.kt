@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.feature
 
+import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,6 +17,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Subsc
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.SubscriptionsUiAction
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
+import timber.log.Timber
 
 @Composable
 fun SubscriptionsFeature(
@@ -32,6 +34,14 @@ fun SubscriptionsFeature(
             when (action) {
                 is SubscriptionsUiAction.ShowTopPill -> {
                     pillController.showPill(message = action.message.asString(context))
+                }
+                is SubscriptionsUiAction.LaunchBillingFlow -> {
+                    val activity = context as? Activity
+                    if (activity != null) {
+                        viewModel.launchBillingFlow(activity, action.productId)
+                    } else {
+                        Timber.w("Cannot launch billing flow: Host activity is null")
+                    }
                 }
                 SubscriptionsUiAction.NavigateBack -> {
                     navController.popBackStack()

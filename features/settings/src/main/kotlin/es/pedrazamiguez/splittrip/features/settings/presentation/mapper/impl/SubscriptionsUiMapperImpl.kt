@@ -2,10 +2,11 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
-import es.pedrazamiguez.splittrip.features.settings.presentation.model.BillingInterval
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -19,12 +20,14 @@ class SubscriptionsUiMapperImpl(
 
     override fun mapPlans(
         currentTier: SubscriptionTier,
-        selectedInterval: BillingInterval
+        selectedInterval: BillingInterval,
+        products: List<SubscriptionProduct>
     ): ImmutableList<SubscriptionPlanUiModel> {
         val freePlan = createFreePlan(isCurrentPlan = currentTier == SubscriptionTier.FREE)
         val proPlan = createProPlan(
             isCurrentPlan = currentTier == SubscriptionTier.PRO,
-            selectedInterval = selectedInterval
+            selectedInterval = selectedInterval,
+            products = products
         )
         return persistentListOf(freePlan, proPlan)
     }
@@ -46,6 +49,26 @@ class SubscriptionsUiMapperImpl(
 
     override fun formatRestorePurchasesSuccessMessage(): UiText {
         return UiText.StringResource(R.string.subscriptions_restore_success)
+    }
+
+    override fun formatPurchasePendingMessage(): UiText {
+        return UiText.StringResource(R.string.subscriptions_purchase_pending)
+    }
+
+    override fun formatAlreadyOwnedMessage(): UiText {
+        return UiText.StringResource(R.string.subscriptions_purchase_already_owned)
+    }
+
+    override fun formatNoPurchasesToRestoreMessage(): UiText {
+        return UiText.StringResource(R.string.subscriptions_restore_none_found)
+    }
+
+    override fun formatBillingError(errorMessage: String?): UiText {
+        val message = errorMessage?.takeIf { it.isNotBlank() } ?: "Unknown error"
+        return UiText.StringResource(
+            R.string.subscriptions_billing_error,
+            UiText.DynamicString(message)
+        )
     }
 
     private fun createFreePlan(isCurrentPlan: Boolean): SubscriptionPlanUiModel {
@@ -101,11 +124,18 @@ class SubscriptionsUiMapperImpl(
 
     private fun createProPlan(
         isCurrentPlan: Boolean,
-        selectedInterval: BillingInterval
+        selectedInterval: BillingInterval,
+        products: List<SubscriptionProduct>
     ): SubscriptionPlanUiModel {
-        val priceRes = when (selectedInterval) {
-            BillingInterval.MONTHLY -> R.string.subscriptions_tier_pro_price_monthly
-            BillingInterval.ANNUAL -> R.string.subscriptions_tier_pro_price_annual
+        val matchingProduct = products.firstOrNull { it.billingInterval == selectedInterval }
+        val price = if (matchingProduct != null && matchingProduct.formattedPrice.isNotBlank()) {
+            UiText.DynamicString(matchingProduct.formattedPrice)
+        } else {
+            val fallbackRes = when (selectedInterval) {
+                BillingInterval.MONTHLY -> R.string.subscriptions_tier_pro_price_monthly
+                BillingInterval.ANNUAL -> R.string.subscriptions_tier_pro_price_annual
+            }
+            UiText.StringResource(fallbackRes)
         }
         val periodRes = when (selectedInterval) {
             BillingInterval.MONTHLY -> R.string.subscriptions_period_month
@@ -116,7 +146,7 @@ class SubscriptionsUiMapperImpl(
             tier = SubscriptionTier.PRO,
             title = UiText.StringResource(R.string.subscriptions_tier_pro_title),
             description = UiText.StringResource(R.string.subscriptions_tier_pro_description),
-            price = UiText.StringResource(priceRes),
+            price = price,
             period = UiText.StringResource(periodRes),
             badge = UiText.StringResource(R.string.subscriptions_badge_popular),
             features = createProPlanFeatures(),

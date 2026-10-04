@@ -46,6 +46,7 @@ mlkitTextRecognition = "19.0.1"
 mockk = "1.14.11"
 navigation = "2.10.2"
 playServicesAds = "25.5.0"
+playBilling = "7.1.1"
 retrofit = "3.0.0"
 robolectric = "4.17"
 room = "2.8.5"
@@ -135,6 +136,7 @@ leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version.re
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 okhttp-logging-interceptor = "com.squareup.okhttp3:logging-interceptor:5.5.0"
+play-billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "playBilling" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 play-services-mlkit-barcode-scanning = { module = "com.google.android.gms:play-services-mlkit-barcode-scanning", version.ref = "mlkitBarcodeScanning" }
 play-services-mlkit-text-recognition = { module = "com.google.android.gms:play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }

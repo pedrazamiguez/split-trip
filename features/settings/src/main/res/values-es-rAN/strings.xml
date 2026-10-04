@@ -267,7 +267,11 @@
     <string name="subscriptions_cta_downgrade_free">Cambiâh a Free</string>
     <string name="subscriptions_badge_popular">Mâh populâh</string>
     <string name="subscriptions_restore_purchases">Rêttaurâh comprâ</string>
-    <string name="subscriptions_disclaimer">Lâ çûccrîççionê çe fâtturan a trabêh de tu cuenta de Google Play y çe renueban automáticamente çarbo cançelaçión ar menô 24 orâ antê der finâh der período âttuâh. (Çimulao en MBP)</string>
-    <string name="subscriptions_upgrade_success">Çûccrîççión âttualiçá a %1$s (Çimulao)</string>
-    <string name="subscriptions_restore_success">Comprâ rêttaurâh con éççito (Çimulao)</string>
+    <string name="subscriptions_disclaimer">Lâ çûccrîççionê çe fâtturan a trabêh de tu cuenta de Google Play y çe renueban automáticamente çarbo cançelaçión ar menô 24 orâ antê der finâh der período âttuâh.</string>
+    <string name="subscriptions_upgrade_success">¡Çûccrîççión âttualiçá a %1$s con éççito!</string>
+    <string name="subscriptions_restore_success">¡Comprâ rêttaurâh con éççito!</string>
+    <string name="subscriptions_purchase_pending">La compra êttá pendiente. Tu çûccrîççión çe âttibará una bêh completao er pago.</string>
+    <string name="subscriptions_purchase_already_owned">Ya dîpponê de SplîTTrîh Pro. ¡Çûccrîççión rêttaurá!</string>
+    <string name="subscriptions_restore_none_found">No çe an encontrao çûccrîççionê âttibâ pa rêttaurâh.</string>
+    <string name="subscriptions_billing_error">No çe pudo completâh la compra: %1$s</string>
 </resources>
