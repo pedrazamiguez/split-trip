@@ -31,7 +31,7 @@ private val CARD_ELEVATION_HIGHLIGHTED = 4.dp
 private val BADGE_HORIZONTAL_PADDING = 10.dp
 private val BADGE_VERTICAL_PADDING = 4.dp
 
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
 fun PlanComparisonCard(
     plan: SubscriptionPlanUiModel,
@@ -114,6 +114,15 @@ fun PlanComparisonCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = MaterialTheme.spacing.ExtraSmall)
+                )
+            }
+
+            if (plan.billingDetail != null) {
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
+                Text(
+                    text = plan.billingDetail.asString(context),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

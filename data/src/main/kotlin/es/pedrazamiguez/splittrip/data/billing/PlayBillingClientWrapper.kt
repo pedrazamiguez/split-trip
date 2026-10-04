@@ -356,8 +356,8 @@ private fun getMockSubscriptionProducts(): List<SubscriptionProduct> = listOf(
         productId = BillingConstants.PRODUCT_ID_PRO_MONTHLY,
         tier = SubscriptionTier.PRO,
         billingInterval = BillingInterval.MONTHLY,
-        formattedPrice = "0,99 €",
-        priceAmountMicros = 990000L,
+        formattedPrice = "2,99 €",
+        priceAmountMicros = 2990000L,
         priceCurrencyCode = "EUR",
         offerToken = "mock_monthly_token"
     ),
@@ -365,8 +365,8 @@ private fun getMockSubscriptionProducts(): List<SubscriptionProduct> = listOf(
         productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
         tier = SubscriptionTier.PRO,
         billingInterval = BillingInterval.ANNUAL,
-        formattedPrice = "3,99 €",
-        priceAmountMicros = 3990000L,
+        formattedPrice = "26,90 €",
+        priceAmountMicros = 26900000L,
         priceCurrencyCode = "EUR",
         offerToken = "mock_annual_token"
     )

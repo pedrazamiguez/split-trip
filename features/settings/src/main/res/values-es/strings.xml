@@ -289,8 +289,10 @@
     <string name="subscriptions_tier_free_period">Gratis para siempre</string>
     <string name="subscriptions_tier_pro_title">SplitTrip Pro</string>
     <string name="subscriptions_tier_pro_description">Funciones avanzadas con IA y gestión ilimitada de grupos</string>
-    <string name="subscriptions_tier_pro_price_monthly">4,99 €</string>
-    <string name="subscriptions_tier_pro_price_annual">3,99 €</string>
+    <string name="subscriptions_tier_pro_price_monthly">2,99 €</string>
+    <string name="subscriptions_tier_pro_price_annual">2,24 €</string>
+    <string name="subscriptions_tier_pro_price_annual_total">26,90 €</string>
+    <string name="subscriptions_tier_pro_billing_annual_detail">Facturado anualmente en un único pago de %1$s</string>
     <string name="subscriptions_period_month">/ mes</string>
     <string name="subscriptions_period_annual_billed">facturado anualmente</string>
     <string name="subscriptions_feature_free_groups">1 grupo</string>
@@ -301,7 +303,7 @@
     <string name="subscriptions_feature_pro_unlimited_groups">Grupos ilimitados</string>
     <string name="subscriptions_feature_pro_members">Hasta 20 miembros por grupo</string>
     <string name="subscriptions_feature_pro_ai_ocr">Escaneo de recibos con IA y OCR</string>
-    <string name="subscriptions_feature_pro_ad_free">Experiencia 100%% sin publicidad</string>
+    <string name="subscriptions_feature_pro_ad_free" formatted="false">Experiencia 100% sin publicidad</string>
     <string name="subscriptions_feature_pro_blended_fx">Tipos de cambio combinados y en tiempo real</string>
     <string name="subscriptions_feature_pro_priority_support">Soporte prioritario</string>
     <string name="subscriptions_cta_current_plan">Plan actual</string>

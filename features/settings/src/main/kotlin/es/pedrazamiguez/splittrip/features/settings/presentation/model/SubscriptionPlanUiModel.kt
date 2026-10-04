@@ -10,6 +10,7 @@ data class SubscriptionPlanUiModel(
     val description: UiText,
     val price: UiText,
     val period: UiText,
+    val billingDetail: UiText? = null,
     val badge: UiText? = null,
     val features: ImmutableList<SubscriptionFeatureUiModel>,
     val isCurrentPlan: Boolean,

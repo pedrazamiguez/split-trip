@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatCurrencyAmount
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
@@ -9,11 +10,19 @@ import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.util.Currency
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
-@Suppress("UnusedPrivateProperty", "unused")
+private const val MONTHS_IN_YEAR = 12
+private const val MICROS_PER_UNIT = 1_000_000L
+private const val DEFAULT_FRACTION_DIGITS = 2
+private const val EXTRA_CALCULATION_SCALE = 2
+
+@Suppress("unused")
 class SubscriptionsUiMapperImpl(
     private val localeProvider: LocaleProvider
 ) : SubscriptionsUiMapper {
@@ -128,26 +137,15 @@ class SubscriptionsUiMapperImpl(
         products: List<SubscriptionProduct>
     ): SubscriptionPlanUiModel {
         val matchingProduct = products.firstOrNull { it.billingInterval == selectedInterval }
-        val price = if (matchingProduct != null && matchingProduct.formattedPrice.isNotBlank()) {
-            UiText.DynamicString(matchingProduct.formattedPrice)
-        } else {
-            val fallbackRes = when (selectedInterval) {
-                BillingInterval.MONTHLY -> R.string.subscriptions_tier_pro_price_monthly
-                BillingInterval.ANNUAL -> R.string.subscriptions_tier_pro_price_annual
-            }
-            UiText.StringResource(fallbackRes)
-        }
-        val periodRes = when (selectedInterval) {
-            BillingInterval.MONTHLY -> R.string.subscriptions_period_month
-            BillingInterval.ANNUAL -> R.string.subscriptions_period_annual_billed
-        }
+        val (price, billingDetail) = resolveProPricing(selectedInterval, matchingProduct)
 
         return SubscriptionPlanUiModel(
             tier = SubscriptionTier.PRO,
             title = UiText.StringResource(R.string.subscriptions_tier_pro_title),
             description = UiText.StringResource(R.string.subscriptions_tier_pro_description),
             price = price,
-            period = UiText.StringResource(periodRes),
+            period = UiText.StringResource(R.string.subscriptions_period_month),
+            billingDetail = billingDetail,
             badge = UiText.StringResource(R.string.subscriptions_badge_popular),
             features = createProPlanFeatures(),
             isCurrentPlan = isCurrentPlan,
@@ -158,6 +156,50 @@ class SubscriptionsUiMapperImpl(
             },
             isCtaButtonEnabled = !isCurrentPlan && matchingProduct != null,
             isHighlightedCard = true
+        )
+    }
+
+    private fun resolveProPricing(
+        selectedInterval: BillingInterval,
+        matchingProduct: SubscriptionProduct?
+    ): Pair<UiText, UiText?> = when (selectedInterval) {
+        BillingInterval.MONTHLY -> {
+            val price = if (matchingProduct != null && matchingProduct.formattedPrice.isNotBlank()) {
+                UiText.DynamicString(matchingProduct.formattedPrice)
+            } else {
+                UiText.StringResource(R.string.subscriptions_tier_pro_price_monthly)
+            }
+            price to null
+        }
+        BillingInterval.ANNUAL -> resolveAnnualProPricing(matchingProduct)
+    }
+
+    private fun resolveAnnualProPricing(
+        matchingProduct: SubscriptionProduct?
+    ): Pair<UiText, UiText> = if (matchingProduct != null && matchingProduct.priceAmountMicros > 0) {
+        val fractionDigits = runCatching {
+            Currency.getInstance(matchingProduct.priceCurrencyCode).defaultFractionDigits
+        }.getOrDefault(DEFAULT_FRACTION_DIGITS)
+        val multiplier = BigDecimal.TEN.pow(fractionDigits)
+        val divisor = BigDecimal(MONTHS_IN_YEAR * MICROS_PER_UNIT)
+        val monthlySmallestUnit = BigDecimal(matchingProduct.priceAmountMicros)
+            .divide(divisor, fractionDigits + EXTRA_CALCULATION_SCALE, RoundingMode.HALF_UP)
+            .multiply(multiplier)
+            .setScale(0, RoundingMode.HALF_UP)
+            .toLong()
+        val formattedMonthlyEquivalent = formatCurrencyAmount(
+            amount = monthlySmallestUnit,
+            currencyCode = matchingProduct.priceCurrencyCode,
+            locale = localeProvider.getCurrentLocale()
+        )
+        UiText.DynamicString(formattedMonthlyEquivalent) to UiText.StringResource(
+            R.string.subscriptions_tier_pro_billing_annual_detail,
+            matchingProduct.formattedPrice
+        )
+    } else {
+        UiText.StringResource(R.string.subscriptions_tier_pro_price_annual) to UiText.StringResource(
+            R.string.subscriptions_tier_pro_billing_annual_detail,
+            UiText.StringResource(R.string.subscriptions_tier_pro_price_annual_total)
         )
     }
 

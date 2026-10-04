@@ -85,7 +85,7 @@ class SubscriptionsViewModelTest {
         title = UiText.StringResource(R.string.subscriptions_tier_pro_title),
         description = UiText.StringResource(R.string.subscriptions_tier_pro_description),
         price = UiText.StringResource(R.string.subscriptions_tier_pro_price_annual),
-        period = UiText.StringResource(R.string.subscriptions_period_annual_billed),
+        period = UiText.StringResource(R.string.subscriptions_period_month),
         badge = UiText.StringResource(R.string.subscriptions_badge_popular),
         features = persistentListOf(),
         isCurrentPlan = false,
