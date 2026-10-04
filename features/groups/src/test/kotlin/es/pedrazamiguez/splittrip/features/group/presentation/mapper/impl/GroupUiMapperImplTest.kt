@@ -599,8 +599,13 @@ class GroupUiMapperImplTest {
                 createdAt = createdAt,
                 lastUpdatedAt = createdAt
             )
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, any(), any()) } returns
-                "2 travellers"
+            every {
+                resourceProvider.getQuantityString(
+                    R.plurals.group_members_count,
+                    any(),
+                    any()
+                )
+            } returns "2 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group)
@@ -618,8 +623,13 @@ class GroupUiMapperImplTest {
             val futureDate = LocalDateTime.of(currentYear + 1, 11, 10, 14, 0)
             val pastGroup = createGroup().copy(createdAt = pastDate, lastUpdatedAt = pastDate)
             val futureGroup = createGroup().copy(createdAt = futureDate, lastUpdatedAt = futureDate)
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, any(), any()) } returns
-                "2 travellers"
+            every {
+                resourceProvider.getQuantityString(
+                    R.plurals.group_members_count,
+                    any(),
+                    any()
+                )
+            } returns "2 travellers"
 
             // When
             val pastResult = mapper.toGroupUiModel(pastGroup)
@@ -636,8 +646,13 @@ class GroupUiMapperImplTest {
         fun `maps null createdAt and lastUpdatedAt to empty strings`() {
             // Given
             val group = createGroup().copy(createdAt = null, lastUpdatedAt = null)
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, any(), any()) } returns
-                "2 travellers"
+            every {
+                resourceProvider.getQuantityString(
+                    R.plurals.group_members_count,
+                    any(),
+                    any()
+                )
+            } returns "2 travellers"
 
             // When
             val result = mapper.toGroupUiModel(group)
@@ -654,8 +669,13 @@ class GroupUiMapperImplTest {
             val currentYear = LocalDate.now().year
             val pastDate = LocalDateTime.of(currentYear - 1, 11, 10, 14, 0)
             val group = createGroup().copy(createdAt = pastDate, lastUpdatedAt = pastDate)
-            every { resourceProvider.getQuantityString(R.plurals.group_members_count, any(), any()) } returns
-                "2 viajeros"
+            every {
+                resourceProvider.getQuantityString(
+                    R.plurals.group_members_count,
+                    any(),
+                    any()
+                )
+            } returns "2 viajeros"
 
             // When
             val result = mapper.toGroupUiModel(group)
