@@ -149,6 +149,7 @@
     <string name="account_status_link_success">Cuenta binculá con éççito</string>
     <string name="account_status_unlink_success">Cuenta dêbbinculá con éççito</string>
     <string name="account_status_unlink_error_last_provider">No çe puede dêbbinculâh el úrtimo probeedôh de iniçio de çeçión</string>
+    <string name="account_status_link_google_error">Errôh ar binculâh la cuenta de Google</string>
     <string name="account_status_error_prefix">Errôh: %1$s</string>
     <string name="account_status_error_user_not_found">Uçuario no encontrao</string>
     <string name="account_status_delete_request_submitted">La çoliçitûh de eliminaçión de cuenta a çido embiá</string>

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.model.PasswordRequirementStatus
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -121,6 +122,13 @@ class AccountStatusEventHandlerImpl(
                     loadAccountStatus()
                 }
                 .onFailure { e ->
+                    recordDiagnosticException(
+                        throwable = e,
+                        customKeys = mapOf(
+                            "auth_provider" to "google",
+                            "credential_stage" to "link_google_use_case"
+                        )
+                    )
                     Timber.e(e, "Failed to link Google account")
                     _uiState.update { it.copy(isLinking = false) }
                     _actions.emit(

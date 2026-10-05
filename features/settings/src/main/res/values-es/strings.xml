@@ -177,6 +177,7 @@
     <string name="account_status_link_success">Cuenta vinculada con éxito</string>
     <string name="account_status_unlink_success">Cuenta desvinculada con éxito</string>
     <string name="account_status_unlink_error_last_provider">No se puede desvincular el último proveedor de inicio de sesión</string>
+    <string name="account_status_link_google_error">Error al vincular la cuenta de Google</string>
     <string name="account_status_error_prefix">Error: %1$s</string>
     <string name="account_status_error_user_not_found">Usuario no encontrado</string>
     <string name="account_status_delete_request_submitted">La solicitud de eliminación de cuenta ha sido enviada</string>

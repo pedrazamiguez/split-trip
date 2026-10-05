@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.model.PasswordRequirementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -20,7 +21,9 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.unmockkAll
+import io.mockk.verify
 import java.time.LocalDateTime
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
@@ -201,23 +204,37 @@ class AccountStatusEventHandlerImplTest {
         }
 
         @Test
-        fun `fails to link Google account and emits ShowError`() = runTest(testDispatcher) {
-            coEvery {
-                linkGoogleAccountUseCase("google-token")
-            } returns Result.failure(RuntimeException("Google error"))
+        fun `fails to link Google account, emits ShowError, and records diagnostic telemetry`() =
+            runTest(testDispatcher) {
+                mockkStatic(::recordDiagnosticException)
+                every { recordDiagnosticException(any(), any()) } returns Unit
 
-            val emittedActions = mutableListOf<AccountStatusUiAction>()
-            val collectJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                actionsFlow.collect { emittedActions.add(it) }
+                val exception = RuntimeException("Google error")
+                coEvery {
+                    linkGoogleAccountUseCase("google-token")
+                } returns Result.failure(exception)
+
+                val emittedActions = mutableListOf<AccountStatusUiAction>()
+                val collectJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    actionsFlow.collect { emittedActions.add(it) }
+                }
+
+                handler.handleLinkGoogle("google-token")
+                advanceUntilIdle()
+
+                assertFalse(stateFlow.value.isLinking)
+                assertTrue(emittedActions.any { it is AccountStatusUiAction.ShowError })
+                verify(exactly = 1) {
+                    recordDiagnosticException(
+                        throwable = exception,
+                        customKeys = mapOf(
+                            "auth_provider" to "google",
+                            "credential_stage" to "link_google_use_case"
+                        )
+                    )
+                }
+                collectJob.cancel()
             }
-
-            handler.handleLinkGoogle("google-token")
-            advanceUntilIdle()
-
-            assertFalse(stateFlow.value.isLinking)
-            assertTrue(emittedActions.any { it is AccountStatusUiAction.ShowError })
-            collectJob.cancel()
-        }
     }
 
     @Nested

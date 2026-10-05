@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -22,6 +23,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.AccountStatusScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.AccountStatusViewModel
@@ -33,6 +35,7 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
+@Suppress("LongMethod", "CognitiveComplexMethod") // Feature orchestrator with multi-action collection
 @Composable
 fun AccountStatusFeature(
     viewModel: AccountStatusViewModel = koinViewModel<AccountStatusViewModel>()
@@ -47,8 +50,16 @@ fun AccountStatusFeature(
     val webClientId = remember(activity) { getWebClientId(activity) }
     val googleLinkingFailedMsg = stringResource(
         id = R.string.account_status_error_prefix,
-        "Failed to link Google"
+        stringResource(id = R.string.account_status_link_google_error)
     )
+
+    LaunchedEffect(webClientId) {
+        if (webClientId.isNullOrBlank()) {
+            Timber.e("Google account linking webClientId (default_web_client_id) could not be resolved from resources")
+        } else {
+            Timber.d("Google account linking webClientId initialized successfully")
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.actions.collectLatest { action ->
@@ -70,16 +81,33 @@ fun AccountStatusFeature(
         AccountStatusScreen(
             uiState = uiState,
             onLinkGoogleClick = {
-                if (!webClientId.isNullOrEmpty() && activity != null) {
-                    linkGoogleAccount(
-                        coroutineScope = coroutineScope,
-                        activity = activity,
-                        webClientId = webClientId,
-                        viewModel = viewModel,
-                        pillController = pillController,
-                        googleLinkingFailedMsg = googleLinkingFailedMsg
-                    )
+                if (activity == null) {
+                    Timber.w("Activity is null during Google account linking")
+                    return@AccountStatusScreen
                 }
+                if (webClientId.isNullOrBlank()) {
+                    val error = IllegalStateException(
+                        "Google account linking webClientId (default_web_client_id) is missing or blank"
+                    )
+                    Timber.e(error, "Google account linking clicked but webClientId is unavailable")
+                    recordDiagnosticException(
+                        throwable = error,
+                        customKeys = mapOf(
+                            "auth_provider" to "google",
+                            "credential_stage" to "web_client_id_resolution"
+                        )
+                    )
+                    pillController.showPill(message = googleLinkingFailedMsg)
+                    return@AccountStatusScreen
+                }
+                linkGoogleAccount(
+                    coroutineScope = coroutineScope,
+                    activity = activity,
+                    webClientId = webClientId,
+                    viewModel = viewModel,
+                    pillController = pillController,
+                    googleLinkingFailedMsg = googleLinkingFailedMsg
+                )
             },
             onEvent = viewModel::onEvent
         )
@@ -120,10 +148,27 @@ private fun linkGoogleAccount(
         try {
             val idToken = getGoogleIdToken(activity, webClientId)
             viewModel.onEvent(AccountStatusUiEvent.LinkGoogle(idToken))
-        } catch (_: GetCredentialCancellationException) {
-            // User cancelled - do nothing
+        } catch (e: GetCredentialCancellationException) {
+            Timber.w(e, "Google account linking cancelled or aborted: type=${e.type}, message=${e.message}")
+        } catch (e: NoCredentialException) {
+            Timber.w(e, "No Google accounts available for linking on this device: message=${e.message}")
+            recordDiagnosticException(
+                throwable = e,
+                customKeys = mapOf(
+                    "auth_provider" to "google",
+                    "credential_stage" to "link_google_credential"
+                )
+            )
+            pillController.showPill(message = googleLinkingFailedMsg)
         } catch (e: Exception) {
-            Timber.e(e, "Google account linking failed")
+            Timber.e(e, "Google account linking failed: type=${e.javaClass.simpleName}, message=${e.message}")
+            recordDiagnosticException(
+                throwable = e,
+                customKeys = mapOf(
+                    "auth_provider" to "google",
+                    "credential_stage" to "link_google_credential"
+                )
+            )
             pillController.showPill(message = googleLinkingFailedMsg)
         }
     }
