@@ -200,7 +200,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_JSON_KEY }}
           packageName: es.pedrazamiguez.splittrip
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
-          track: ${{ steps.track_resolver.outputs.TRACK }}
+          tracks: ${{ steps.track_resolver.outputs.TRACK }}
           mappingFile: app/build/outputs/mapping/release/mapping.txt
           whatsNewDirectory: distribution/whatsnew
           status: completed
