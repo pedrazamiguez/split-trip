@@ -115,12 +115,15 @@ jobs:
           SHA256_FP=$(echo "$CERT_OUTPUT" | grep "SHA256:" | head -n 1 | awk '{print $2}')
           BUNDLE_SIZE=$(du -h "$BUNDLE_PATH" | cut -f1)
 
-          # 3. Check against documented production upload key
-          EXPECTED_SHA256="01:2A:B7:5D:86:66:1D:95:C0:A2:E5:09:23:66:25:F7:C8:14:2A:EB:6F:CB:DD:CE:B0:46:6E:DC:26:20:86:0E"
-          if [ "$SHA256_FP" = "$EXPECTED_SHA256" ]; then
-            echo "✅ Certificate fingerprint strictly matches production upload key: $SHA256_FP"
-          else
-            echo "::warning::Certificate SHA-256 ($SHA256_FP) does not match documented upload key ($EXPECTED_SHA256)."
+          # 3. Optional verification against configured repository variable
+          EXPECTED_SHA256="${{ vars.EXPECTED_UPLOAD_KEY_SHA256 }}"
+          if [ -n "$EXPECTED_SHA256" ]; then
+            if [ "$SHA256_FP" = "$EXPECTED_SHA256" ]; then
+              echo "✅ Certificate fingerprint strictly matches configured upload key: $SHA256_FP"
+            else
+              echo "::error::Certificate SHA-256 ($SHA256_FP) does not match expected upload key ($EXPECTED_SHA256)!"
+              exit 1
+            fi
           fi
 
           echo "✅ Production upload certificate successfully verified."
