@@ -16,6 +16,7 @@ import java.util.concurrent.Executor
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
+import timber.log.Timber
 
 object BiometricPromptHelper {
 
@@ -70,6 +71,7 @@ object BiometricPromptHelper {
                             authenticatedCipher.doFinal(AUTH_CHALLENGE)
                             onSuccess()
                         } catch (e: Exception) {
+                            Timber.w(e, "Biometric cryptographic verification failed")
                             onError(
                                 BiometricPrompt.ERROR_UNABLE_TO_PROCESS,
                                 e.localizedMessage ?: "Cryptographic verification failed"
@@ -112,21 +114,26 @@ object BiometricPromptHelper {
         return try {
             val cipher = try {
                 initCipher()
-            } catch (_: KeyPermanentlyInvalidatedException) {
+            } catch (e: KeyPermanentlyInvalidatedException) {
+                Timber.w(e, "Biometric key permanently invalidated, regenerating key")
                 deleteSecretKey()
                 initCipher()
-            } catch (_: GeneralSecurityException) {
+            } catch (e: GeneralSecurityException) {
+                Timber.w(e, "Biometric security exception encountered, regenerating key")
                 deleteSecretKey()
                 initCipher()
-            } catch (_: ProviderException) {
+            } catch (e: ProviderException) {
+                Timber.w(e, "Biometric provider exception encountered, regenerating key")
                 deleteSecretKey()
                 initCipher()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Timber.w(e, "Unexpected exception during cipher initialization, regenerating key")
                 deleteSecretKey()
                 initCipher()
             }
             BiometricPrompt.CryptoObject(cipher)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to initialize biometric cipher")
             null
         }
     }
@@ -194,8 +201,8 @@ object BiometricPromptHelper {
             if (keyStore.containsAlias(alias)) {
                 keyStore.deleteEntry(alias)
             }
-        } catch (_: Exception) {
-            // Ignore keystore deletion failure
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to delete biometric key entry: %s", alias)
         }
     }
 }

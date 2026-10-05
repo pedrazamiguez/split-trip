@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.authentication.presentation.feature
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -14,6 +15,7 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.features.authentication.presentation.component.CollisionMergeDialog
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.screen.LoginScreen
@@ -45,13 +47,19 @@ fun LoginFeature(
         }
     }
 
-    val isGoogleSignInAvailable = !webClientId.isNullOrEmpty()
+    LaunchedEffect(webClientId) {
+        if (webClientId.isNullOrBlank()) {
+            Timber.e("Google Sign-In webClientId (default_web_client_id) could not be resolved from resources")
+        } else {
+            Timber.d("Google Sign-In webClientId initialized successfully")
+        }
+    }
 
     val navController = LocalRootNavController.current
 
     LoginScreen(
         uiState = uiState,
-        isGoogleSignInAvailable = isGoogleSignInAvailable,
+        isGoogleSignInAvailable = true,
         onEvent = { event ->
             viewModel.onEvent(
                 event,
@@ -65,7 +73,28 @@ fun LoginFeature(
             navController.navigate(Routes.REGISTER)
         },
         onGoogleSignInClick = {
-            if (!isGoogleSignInAvailable) return@LoginScreen
+            if (activity == null) {
+                Timber.w("Activity is null during Google sign-in click")
+                return@LoginScreen
+            }
+            if (webClientId.isNullOrBlank()) {
+                val error = IllegalStateException(
+                    "Google Sign-In webClientId (default_web_client_id) is missing or blank"
+                )
+                Timber.e(error, "Google sign-in clicked but webClientId is unavailable")
+                recordDiagnosticException(
+                    throwable = error,
+                    customKeys = mapOf(
+                        "auth_provider" to "google",
+                        "credential_stage" to "web_client_id_resolution"
+                    )
+                )
+                viewModel.onEvent(
+                    AuthenticationUiEvent.GoogleSignInFailed,
+                    onLoginSuccess
+                )
+                return@LoginScreen
+            }
             coroutineScope.launch {
                 try {
                     // Use GetSignInWithGoogleOption which provides the standard
@@ -77,7 +106,7 @@ fun LoginFeature(
                         .addCredentialOption(signInWithGoogleOption)
                         .build()
 
-                    val credentialManager = CredentialManager.create(activity ?: return@launch)
+                    val credentialManager = CredentialManager.create(activity)
                     val result = credentialManager.getCredential(
                         request = request,
                         context = activity
@@ -92,16 +121,30 @@ fun LoginFeature(
                         ),
                         onLoginSuccess
                     )
-                } catch (_: GetCredentialCancellationException) {
-                    // User cancelled - do nothing
+                } catch (e: GetCredentialCancellationException) {
+                    Timber.w(e, "Google sign-in cancelled or aborted: type=${e.type}, message=${e.message}")
                 } catch (e: NoCredentialException) {
-                    Timber.w(e, "No Google accounts available on this device")
+                    Timber.w(e, "No Google accounts available on this device: message=${e.message}")
+                    recordDiagnosticException(
+                        throwable = e,
+                        customKeys = mapOf(
+                            "auth_provider" to "google",
+                            "credential_stage" to "get_credential"
+                        )
+                    )
                     viewModel.onEvent(
                         AuthenticationUiEvent.GoogleSignInFailed,
                         onLoginSuccess
                     )
                 } catch (e: Exception) {
-                    Timber.e(e, "Google sign-in failed")
+                    Timber.e(e, "Google sign-in failed: type=${e.javaClass.simpleName}, message=${e.message}")
+                    recordDiagnosticException(
+                        throwable = e,
+                        customKeys = mapOf(
+                            "auth_provider" to "google",
+                            "credential_stage" to "get_credential"
+                        )
+                    )
                     viewModel.onEvent(
                         AuthenticationUiEvent.GoogleSignInFailed,
                         onLoginSuccess

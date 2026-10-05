@@ -61,6 +61,7 @@
     <string name="notification_prefs_timezone">Çona oraria</string>
     <string name="notification_prefs_no_timezones_found">No çe encontraron çonâ orariâ</string>
     <string name="notification_prefs_reminder_time">Ora del recordatorio (H:MM)</string>
+    <string name="notification_prefs_update_failed">Errôh al âttualiçâh lâ preferençiâ de notificaçionê</string>
     <string name="developer_services_selected_attachment">Âhhunto Çelêççionao</string>
     <string name="developer_services_no_document_selected">Ningún documento çelêççionao. Elihe una imahen (JPÊH, PNG, WÊPP, BMP) o PDF pa ehecutâh OCR.</string>
     <string name="developer_services_name">Nombre:</string>
@@ -149,6 +150,7 @@
     <string name="account_status_link_success">Cuenta binculá con éççito</string>
     <string name="account_status_unlink_success">Cuenta dêbbinculá con éççito</string>
     <string name="account_status_unlink_error_last_provider">No çe puede dêbbinculâh el úrtimo probeedôh de iniçio de çeçión</string>
+    <string name="account_status_link_google_error">Errôh ar binculâh la cuenta de Google</string>
     <string name="account_status_error_prefix">Errôh: %1$s</string>
     <string name="account_status_error_user_not_found">Uçuario no encontrao</string>
     <string name="account_status_delete_request_submitted">La çoliçitûh de eliminaçión de cuenta a çido embiá</string>
@@ -247,8 +249,10 @@
     <string name="subscriptions_tier_free_period">Gratî pa çiempre</string>
     <string name="subscriptions_tier_pro_title">SplîTTrîh Pro</string>
     <string name="subscriptions_tier_pro_description">Funçionê abançâh con IA y hêttión ilimitá de grupô</string>
-    <string name="subscriptions_tier_pro_price_monthly">4,99 €</string>
-    <string name="subscriptions_tier_pro_price_annual">3,99 €</string>
+    <string name="subscriptions_tier_pro_price_monthly">2,99 €</string>
+    <string name="subscriptions_tier_pro_price_annual">2,24 €</string>
+    <string name="subscriptions_tier_pro_price_annual_total">26,90 €</string>
+    <string name="subscriptions_tier_pro_billing_annual_detail">Fâtturao anuarmente en un único pago de %1$s</string>
     <string name="subscriptions_period_month">/ mê</string>
     <string name="subscriptions_period_annual_billed">fâtturao anuarmente</string>
     <string name="subscriptions_feature_free_groups">1 grupo</string>
@@ -259,15 +263,23 @@
     <string name="subscriptions_feature_pro_unlimited_groups">Grupô ilimitáô</string>
     <string name="subscriptions_feature_pro_members">Âtta 20 miembrô por grupo</string>
     <string name="subscriptions_feature_pro_ai_ocr">Êccaneo de reçibô con IA y OCR</string>
-    <string name="subscriptions_feature_pro_ad_free">Êpperiençia 100%% çin publiçidá</string>
-    <string name="subscriptions_feature_pro_blended_fx">Tipô de cambio combináô y en tiempo reâh</string>
+    <string name="subscriptions_feature_pro_ad_free" formatted="false">Êpperiençia 100% çin publiçidá</string>
     <string name="subscriptions_feature_pro_priority_support">Çoporte prioritario</string>
     <string name="subscriptions_cta_current_plan">Plan âttuâh</string>
     <string name="subscriptions_cta_upgrade_pro">Mehorâh a Pro</string>
-    <string name="subscriptions_cta_downgrade_free">Cambiâh a Free</string>
+    <string name="subscriptions_cta_manage_subscription">Hêttionâh çûccrîççión</string>
+    <string name="subscriptions_manage_dialog_title">Hêttionâh çûccrîççión</string>
+    <string name="subscriptions_manage_dialog_text">Tu çûccrîççión a SplîTTrîh Pro çe hêttiona a trabêh de Google Play. Çi deçidê cançelâl-la, mantendrâh toâ lâ bentahâ Pro âtta que finaliçe er periodo fâtturao âttuâh. No perderâh tû bentahâ de îmmediato.</string>
+    <string name="subscriptions_manage_dialog_confirm">Abrîh Google Play</string>
+    <string name="subscriptions_manage_dialog_dismiss">Çerrâh</string>
     <string name="subscriptions_badge_popular">Mâh populâh</string>
     <string name="subscriptions_restore_purchases">Rêttaurâh comprâ</string>
-    <string name="subscriptions_disclaimer">Lâ çûccrîççionê çe fâtturan a trabêh de tu cuenta de Google Play y çe renueban automáticamente çarbo cançelaçión ar menô 24 orâ antê der finâh der período âttuâh. (Çimulao en MBP)</string>
-    <string name="subscriptions_upgrade_success">Çûccrîççión âttualiçá a %1$s (Çimulao)</string>
-    <string name="subscriptions_restore_success">Comprâ rêttaurâh con éççito (Çimulao)</string>
+    <string name="subscriptions_disclaimer">Lâ çûccrîççionê çe fâtturan a trabêh de tu cuenta de Google Play y çe renueban automáticamente çarbo cançelaçión ar menô 24 orâ antê der finâh der período âttuâh.</string>
+    <string name="subscriptions_upgrade_success">¡Çûccrîççión âttualiçá a %1$s con éççito!</string>
+    <string name="subscriptions_restore_success">¡Comprâ rêttaurâh con éççito!</string>
+    <string name="subscriptions_purchase_pending">La compra êttá pendiente. Tu çûccrîççión çe âttibará una bêh completao er pago.</string>
+    <string name="subscriptions_purchase_already_owned">Ya dîpponê de SplîTTrîh Pro. ¡Çûccrîççión rêttaurá!</string>
+    <string name="subscriptions_restore_none_found">No çe an encontrao çûccrîççionê âttibâ pa rêttaurâh.</string>
+    <string name="subscriptions_billing_error">No çe pudo completâh la compra. Por fabôh, inténtalo de nuebo mâh tarde.</string>
+    <string name="subscriptions_service_unavailable">Lâ ôççionê de çûccrîççión no êttán dîpponiblê en êtte momento. Por fabôh, inténtalo mâh tarde.</string>
 </resources>

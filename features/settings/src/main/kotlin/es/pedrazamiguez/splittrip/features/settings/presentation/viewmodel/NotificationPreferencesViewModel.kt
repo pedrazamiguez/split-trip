@@ -3,19 +3,24 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserReminderPreferencesUseCase
+import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.NotificationPreferencesUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.NotificationPreferencesUiEvent
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.NotificationPreferencesUiState
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.NotificationPreferencesUiAction
 import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -27,6 +32,9 @@ class NotificationPreferencesViewModel(
     private val updateUserReminderPreferencesUseCase: UpdateUserReminderPreferencesUseCase,
     private val notificationPreferencesUiMapper: NotificationPreferencesUiMapper
 ) : ViewModel() {
+
+    private val _actions = Channel<NotificationPreferencesUiAction>(Channel.BUFFERED)
+    val actions = _actions.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -79,6 +87,11 @@ class NotificationPreferencesViewModel(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update notification preference")
+                _actions.send(
+                    NotificationPreferencesUiAction.ShowTopPill(
+                        UiText.StringResource(R.string.notification_prefs_update_failed)
+                    )
+                )
             }
         }
     }
@@ -98,6 +111,11 @@ class NotificationPreferencesViewModel(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update timezone preference")
+                _actions.send(
+                    NotificationPreferencesUiAction.ShowTopPill(
+                        UiText.StringResource(R.string.notification_prefs_update_failed)
+                    )
+                )
             }
         }
     }
@@ -118,6 +136,11 @@ class NotificationPreferencesViewModel(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update reminder time preference")
+                _actions.send(
+                    NotificationPreferencesUiAction.ShowTopPill(
+                        UiText.StringResource(R.string.notification_prefs_update_failed)
+                    )
+                )
             }
         }
     }

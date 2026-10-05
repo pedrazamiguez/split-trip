@@ -32,7 +32,7 @@
     <string name="your_balance_settlement_empty_description">No tienes acuerdos de pago pendientes por resolver en este grupo.</string>
     <string name="your_balance_settlement_you_owe">Debes a %s</string>
     <string name="your_balance_settlement_owes_you">%s te debe</string>
-    <string name="your_balance_settlement_mark_paid">Marcar como pagado</string>
+    <string name="your_balance_settlement_mark_paid">He pagado</string>
     <string name="your_balance_settlement_confirm_receipt">Confirmar recepción</string>
     <string name="your_balance_settlement_resolve_dispute">Resolver disputa</string>
     <string name="your_balance_settlement_dispute">Disputar</string>

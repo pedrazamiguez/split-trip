@@ -264,8 +264,10 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Function | Signature | Purpose |
 |---|---|---|
-| `formatShortDate` | `LocalDateTime.formatShortDate(locale): String` | Formats as `"12 Jan"` (short month). For list items. |
+| `formatShortDate` | `LocalDateTime.formatShortDate(locale, referenceYear = LocalDate.now().year): String` | Formats as `"12 Jan"` (short month) when in `referenceYear`, or `"12 Jan 2025"` when outside. For list items and metadata chips. |
+| `formatShortDate` | `LocalDate.formatShortDate(locale, referenceYear = LocalDate.now().year): String` | Formats as `"12 Jan"` when in `referenceYear`, or `"12 Jan 2025"` when outside. |
 | `formatMediumDate` | `LocalDateTime.formatMediumDate(locale): String` | Formats as `"January 2025"`. For section headers. |
+| `formatMediumDate` | `LocalDate.formatMediumDate(locale): String` | Formats as `"January 2025"`. For section headers. |
 
 **When to use:** Displaying dates in expense lists, group headers, etc.
 
@@ -283,7 +285,8 @@ A convenience wrapper around all the above formatters, injected with `LocaleProv
 | `formatCentsWithCurrency(cents, currencyCode)` | Cents → formatted currency string (e.g., `"16,67 €"`). |
 | `formatCentsValue(cents, decimalDigits)` | Cents → plain locale number (e.g., `"16,67"`). For input fields. |
 | `formatPercentageForDisplay(percentage)` | BigDecimal percentage → locale string (e.g., `"33,33"`). |
-| `formatShortDate(date)` | `LocalDateTime` → `"12 Jan"` short date string. Used for cash tranche withdrawal date labels. |
+| `formatShortDate(date, referenceYear = LocalDate.now().year)` | `LocalDateTime?` or `LocalDate?` → `"12 Jan"` (or `"12 Jan 2025"` outside `referenceYear`) short date string. Used for groups, expenses, and cash tranches. |
+| `formatMediumDate(date)` | `LocalDate?` → `"January 2025"` medium date string. |
 
 **When to use:** Inject into feature mappers as the primary formatting API. Eliminates locale-passing boilerplate.
 

@@ -25,15 +25,43 @@ class DateFormatterTest {
     inner class LocalDateTimeFormatting {
 
         @Test
-        fun `formatShortDate formats correctly with US locale`() {
-            val result = testLocalDateTime.formatShortDate(usLocale)
+        fun `formatShortDate formats correctly without year when in reference year with US locale`() {
+            val result = testLocalDateTime.formatShortDate(usLocale, referenceYear = 2026)
             assertEquals("15 Jun", result)
         }
 
         @Test
-        fun `formatShortDate formats correctly with Spanish locale`() {
-            val result = testLocalDateTime.formatShortDate(esLocale)
+        fun `formatShortDate formats correctly without year when in reference year with Spanish locale`() {
+            val result = testLocalDateTime.formatShortDate(esLocale, referenceYear = 2026)
             assertEquals("15 jun", result.lowercase())
+        }
+
+        @Test
+        fun `formatShortDate includes 4-digit year when in past year with US locale`() {
+            val result = testLocalDateTime.formatShortDate(usLocale, referenceYear = 2027)
+            assertEquals("15 Jun 2026", result)
+        }
+
+        @Test
+        fun `formatShortDate includes 4-digit year when in past year with Spanish locale`() {
+            val result = testLocalDateTime.formatShortDate(esLocale, referenceYear = 2027)
+            assertEquals("15 jun 2026", result.lowercase())
+        }
+
+        @Test
+        fun `formatShortDate includes 4-digit year when in future year with US locale`() {
+            val result = testLocalDateTime.formatShortDate(usLocale, referenceYear = 2025)
+            assertEquals("15 Jun 2026", result)
+        }
+
+        @Test
+        fun `formatShortDate defaults referenceYear to current year`() {
+            val currentYear = LocalDate.now().year
+            val currentYearDateTime = LocalDateTime.of(currentYear, 6, 15, 12, 0)
+            assertEquals("15 Jun", currentYearDateTime.formatShortDate(usLocale))
+
+            val pastYearDateTime = LocalDateTime.of(currentYear - 1, 6, 15, 12, 0)
+            assertEquals("15 Jun ${currentYear - 1}", pastYearDateTime.formatShortDate(usLocale))
         }
 
         @Test
@@ -54,15 +82,43 @@ class DateFormatterTest {
     inner class LocalDateFormatting {
 
         @Test
-        fun `formatShortDate formats correctly with US locale`() {
-            val result = testLocalDate.formatShortDate(usLocale)
+        fun `formatShortDate formats correctly without year when in reference year with US locale`() {
+            val result = testLocalDate.formatShortDate(usLocale, referenceYear = 2026)
             assertEquals("15 Jun", result)
         }
 
         @Test
-        fun `formatShortDate formats correctly with Spanish locale`() {
-            val result = testLocalDate.formatShortDate(esLocale)
+        fun `formatShortDate formats correctly without year when in reference year with Spanish locale`() {
+            val result = testLocalDate.formatShortDate(esLocale, referenceYear = 2026)
             assertEquals("15 jun", result.lowercase())
+        }
+
+        @Test
+        fun `formatShortDate includes 4-digit year when in past year with US locale`() {
+            val result = testLocalDate.formatShortDate(usLocale, referenceYear = 2027)
+            assertEquals("15 Jun 2026", result)
+        }
+
+        @Test
+        fun `formatShortDate includes 4-digit year when in past year with Spanish locale`() {
+            val result = testLocalDate.formatShortDate(esLocale, referenceYear = 2027)
+            assertEquals("15 jun 2026", result.lowercase())
+        }
+
+        @Test
+        fun `formatShortDate includes 4-digit year when in future year with US locale`() {
+            val result = testLocalDate.formatShortDate(usLocale, referenceYear = 2025)
+            assertEquals("15 Jun 2026", result)
+        }
+
+        @Test
+        fun `formatShortDate defaults referenceYear to current year`() {
+            val currentYear = LocalDate.now().year
+            val currentYearDate = LocalDate.of(currentYear, 6, 15)
+            assertEquals("15 Jun", currentYearDate.formatShortDate(usLocale))
+
+            val pastYearDate = LocalDate.of(currentYear - 1, 6, 15)
+            assertEquals("15 Jun ${currentYear - 1}", pastYearDate.formatShortDate(usLocale))
         }
 
         @Test
@@ -88,15 +144,25 @@ class DateFormatterTest {
         private val helper = FormattingHelper(localeProvider = localeProvider)
 
         @Test
-        fun `formatShortDate with LocalDateTime formats or returns empty on null`() {
-            assertEquals("15 Jun", helper.formatShortDate(testLocalDateTime))
-            assertEquals("", helper.formatShortDate(null as LocalDateTime?))
+        fun `formatShortDate with LocalDateTime formats same year or returns empty on null`() {
+            assertEquals("15 Jun", helper.formatShortDate(testLocalDateTime, referenceYear = 2026))
+            assertEquals("", helper.formatShortDate(null as LocalDateTime?, referenceYear = 2026))
         }
 
         @Test
-        fun `formatShortDate with LocalDate formats or returns empty on null`() {
-            assertEquals("15 Jun", helper.formatShortDate(testLocalDate))
-            assertEquals("", helper.formatShortDate(null as LocalDate?))
+        fun `formatShortDate with LocalDateTime formats different year`() {
+            assertEquals("15 Jun 2026", helper.formatShortDate(testLocalDateTime, referenceYear = 2027))
+        }
+
+        @Test
+        fun `formatShortDate with LocalDate formats same year or returns empty on null`() {
+            assertEquals("15 Jun", helper.formatShortDate(testLocalDate, referenceYear = 2026))
+            assertEquals("", helper.formatShortDate(null as LocalDate?, referenceYear = 2026))
+        }
+
+        @Test
+        fun `formatShortDate with LocalDate formats different year`() {
+            assertEquals("15 Jun 2026", helper.formatShortDate(testLocalDate, referenceYear = 2027))
         }
 
         @Test

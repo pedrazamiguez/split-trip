@@ -7,6 +7,7 @@ interface AppConfigService {
     val balanceComputationDebounceMs: StateFlow<Long>
     val maxMembersPerGroup: StateFlow<Int>
     val subscriptionGatingEnabled: StateFlow<Boolean>
+    val billingSimulationEnabled: StateFlow<Boolean>
     val maxOwnedGroupsFree: StateFlow<Int>
     val maxOwnedGroupsPro: StateFlow<Int>
     val maxMembersPerGroupFree: StateFlow<Int>

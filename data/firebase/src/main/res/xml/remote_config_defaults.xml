@@ -17,6 +17,10 @@
         <value>true</value>
     </entry>
     <entry>
+        <key>billing_simulation_enabled</key>
+        <value>false</value>
+    </entry>
+    <entry>
         <key>max_owned_groups_free</key>
         <value>1</value>
     </entry>

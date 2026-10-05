@@ -16,8 +16,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     api(libs.timber)
 
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.crashlytics)
+    api(platform(libs.firebase.bom))
+    api(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
 
     testImplementation(libs.junit.jupiter)

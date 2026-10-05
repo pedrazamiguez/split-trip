@@ -4,6 +4,7 @@ import android.app.Application
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
 import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
@@ -213,12 +214,14 @@ val settingsUiModule = module {
         val updateUserTierUseCase = get<UpdateUserTierUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         val subscriptionsUiMapper = get<SubscriptionsUiMapper>()
+        val billingService = get<BillingService>()
         SubscriptionsViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
             updateUserTierUseCase = updateUserTierUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
-            subscriptionsUiMapper = subscriptionsUiMapper
+            subscriptionsUiMapper = subscriptionsUiMapper,
+            billingService = billingService
         )
     }
 

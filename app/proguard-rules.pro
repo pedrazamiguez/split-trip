@@ -176,3 +176,11 @@
 # Keep attribute information for better stack traces and reflection
 -keepattributes SourceFile, LineNumberTable
 -keepattributes Exceptions
+
+############################################################################
+# 💳 GOOGLE PLAY BILLING
+############################################################################
+-keep class com.android.billingclient.** { *; }
+-dontwarn com.android.billingclient.**
+-keep class es.pedrazamiguez.splittrip.data.billing.** { *; }
+

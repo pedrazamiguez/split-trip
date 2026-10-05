@@ -13,6 +13,7 @@ private object DefaultAppConfigService : AppConfigService {
     override val balanceComputationDebounceMs: StateFlow<Long> = MutableStateFlow(300L)
     override val maxMembersPerGroup: StateFlow<Int> = MutableStateFlow(20)
     override val subscriptionGatingEnabled: StateFlow<Boolean> = MutableStateFlow(true)
+    override val billingSimulationEnabled: StateFlow<Boolean> = MutableStateFlow(false)
     override val maxOwnedGroupsFree: StateFlow<Int> = MutableStateFlow(1)
     override val maxOwnedGroupsPro: StateFlow<Int> = MutableStateFlow(100)
     override val maxMembersPerGroupFree: StateFlow<Int> = MutableStateFlow(4)
@@ -105,22 +106,34 @@ class FormattingHelper(
         )
 
     /**
-     * Formats a [LocalDateTime] to a short human-readable date (e.g., "10 Jan").
+     * Formats a [LocalDateTime] to a short human-readable date (e.g., "10 Jan" or "10 Jan 2025").
+     *
+     * Formats as "d MMM" if the date falls in [referenceYear], or "d MMM yyyy" if outside.
      *
      * @param date The date to format. Returns an empty string if null.
+     * @param referenceYear The reference calendar year to compare against (defaults to current year).
      * @return Locale-aware short date string.
      */
-    fun formatShortDate(date: LocalDateTime?): String =
-        date?.formatShortDate(locale = localeProvider.getCurrentLocale()) ?: ""
+    fun formatShortDate(
+        date: LocalDateTime?,
+        referenceYear: Int = LocalDate.now().year
+    ): String =
+        date?.formatShortDate(locale = localeProvider.getCurrentLocale(), referenceYear = referenceYear) ?: ""
 
     /**
-     * Formats a [LocalDate] to a short human-readable date (e.g., "10 Jan").
+     * Formats a [LocalDate] to a short human-readable date (e.g., "10 Jan" or "10 Jan 2025").
+     *
+     * Formats as "d MMM" if the date falls in [referenceYear], or "d MMM yyyy" if outside.
      *
      * @param date The date to format. Returns an empty string if null.
+     * @param referenceYear The reference calendar year to compare against (defaults to current year).
      * @return Locale-aware short date string.
      */
-    fun formatShortDate(date: LocalDate?): String =
-        date?.formatShortDate(locale = localeProvider.getCurrentLocale()) ?: ""
+    fun formatShortDate(
+        date: LocalDate?,
+        referenceYear: Int = LocalDate.now().year
+    ): String =
+        date?.formatShortDate(locale = localeProvider.getCurrentLocale(), referenceYear = referenceYear) ?: ""
 
     /**
      * Formats a [LocalDate] to a medium human-readable date (e.g., "January 2026").

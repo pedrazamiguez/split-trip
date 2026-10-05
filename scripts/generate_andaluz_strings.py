@@ -28,10 +28,19 @@ def escape_android_string(text):
     text = re.sub(r'(?<!\\)"', r'\"', text)
     return text
 
-def translate_text(text):
+def translate_text(text, is_formatted=True):
     if not text:
         return text
     
+    if not is_formatted:
+        stripped = text.strip()
+        if stripped:
+            translated = andaluh.epa(stripped)
+            leading = text[:len(text) - len(text.lstrip())]
+            trailing = text[len(text.rstrip()):]
+            return escape_android_string(leading + translated + trailing)
+        return escape_android_string(text)
+
     # Split text by Android placeholders
     tokens = ANDROID_PLACEHOLDER_REGEX.split(text)
     for i in range(len(tokens)):
@@ -54,17 +63,23 @@ def translate_text(text):
     # Reassemble and escape quotes
     return escape_android_string("".join(tokens))
 
-def translate_node(node):
+def translate_node(node, parent_formatted=True):
     # Skip nodes that are explicitly marked as not translatable
     if node.attrib.get('translatable') == 'false':
         return
         
+    node_formatted = node.attrib.get('formatted')
+    if node_formatted is not None:
+        is_formatted = node_formatted != 'false'
+    else:
+        is_formatted = parent_formatted
+
     if node.text:
-        node.text = translate_text(node.text)
+        node.text = translate_text(node.text, is_formatted=is_formatted)
     for child in node:
-        translate_node(child)
+        translate_node(child, parent_formatted=is_formatted)
         if child.tail:
-            child.tail = translate_text(child.tail)
+            child.tail = translate_text(child.tail, is_formatted=is_formatted)
 
 def process_file(src_path, dest_path):
     print(f"Translating: {src_path} -> {dest_path}")

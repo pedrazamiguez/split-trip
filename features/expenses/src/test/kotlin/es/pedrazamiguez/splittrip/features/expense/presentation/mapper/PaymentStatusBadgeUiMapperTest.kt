@@ -251,7 +251,7 @@ class PaymentStatusBadgeUiMapperTest {
             val badgeData = mapper.buildBadge(expense)
             val badge = badgeData?.text
             val isPastDue = badgeData?.isPassed ?: false
-            assertEquals("20 Aug", badge)
+            assertEquals("20 Aug 2027", badge)
             assertFalse(isPastDue)
         }
     }
@@ -271,7 +271,7 @@ class PaymentStatusBadgeUiMapperTest {
             val badgeData = mapper.buildBadge(expense)
             val badge = badgeData?.text
             val isPastDue = badgeData?.isPassed ?: false
-            assertEquals("20 Aug", badge)
+            assertEquals("20 Aug 2027", badge)
             assertFalse(isPastDue)
         }
 

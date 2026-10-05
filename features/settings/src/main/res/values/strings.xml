@@ -74,6 +74,7 @@
     <string name="notification_prefs_timezone">Timezone</string>
     <string name="notification_prefs_no_timezones_found">No timezones found</string>
     <string name="notification_prefs_reminder_time">Reminder Time (HH:MM)</string>
+    <string name="notification_prefs_update_failed">Failed to update notification preferences</string>
 
     <!-- Developer Services Playground -->
     <string name="developer_services_selected_attachment">Selected Attachment</string>
@@ -178,6 +179,7 @@
     <string name="account_status_link_success">Account linked successfully</string>
     <string name="account_status_unlink_success">Account unlinked successfully</string>
     <string name="account_status_unlink_error_last_provider">Cannot unlink the last remaining sign-in provider</string>
+    <string name="account_status_link_google_error">Failed to link Google account</string>
     <string name="account_status_error_prefix">Error: %1$s</string>
     <string name="account_status_error_user_not_found">User not found</string>
     <string name="account_status_delete_request_submitted">Account deletion request has been submitted</string>
@@ -289,8 +291,10 @@
     <string name="subscriptions_tier_free_period">Free forever</string>
     <string name="subscriptions_tier_pro_title">SplitTrip Pro</string>
     <string name="subscriptions_tier_pro_description">Advanced AI features and unlimited group management</string>
-    <string name="subscriptions_tier_pro_price_monthly">4,99 €</string>
-    <string name="subscriptions_tier_pro_price_annual">3,99 €</string>
+    <string name="subscriptions_tier_pro_price_monthly">2.99 €</string>
+    <string name="subscriptions_tier_pro_price_annual">2.24 €</string>
+    <string name="subscriptions_tier_pro_price_annual_total">26.90 €</string>
+    <string name="subscriptions_tier_pro_billing_annual_detail">Billed annually as a single payment of %1$s</string>
     <string name="subscriptions_period_month">/ month</string>
     <string name="subscriptions_period_annual_billed">billed annually</string>
     <string name="subscriptions_feature_free_groups">1 group</string>
@@ -301,15 +305,23 @@
     <string name="subscriptions_feature_pro_unlimited_groups">Unlimited groups</string>
     <string name="subscriptions_feature_pro_members">Up to 20 members per group</string>
     <string name="subscriptions_feature_pro_ai_ocr">AI Receipt scanning &amp; OCR</string>
-    <string name="subscriptions_feature_pro_ad_free">100%% Ad-free experience</string>
-    <string name="subscriptions_feature_pro_blended_fx">Blended FX &amp; real-time conversion</string>
+    <string name="subscriptions_feature_pro_ad_free" formatted="false">100% Ad-free experience</string>
     <string name="subscriptions_feature_pro_priority_support">Priority customer support</string>
     <string name="subscriptions_cta_current_plan">Current Plan</string>
     <string name="subscriptions_cta_upgrade_pro">Upgrade to Pro</string>
-    <string name="subscriptions_cta_downgrade_free">Downgrade to Free</string>
+    <string name="subscriptions_cta_manage_subscription">Manage Subscription</string>
+    <string name="subscriptions_manage_dialog_title">Manage Subscription</string>
+    <string name="subscriptions_manage_dialog_text">Your SplitTrip Pro subscription is managed through Google Play. If you decide to cancel, you will keep all Pro benefits until your current billing period ends. You will not lose your benefits immediately.</string>
+    <string name="subscriptions_manage_dialog_confirm">Open Google Play</string>
+    <string name="subscriptions_manage_dialog_dismiss">Close</string>
     <string name="subscriptions_badge_popular">Most Popular</string>
     <string name="subscriptions_restore_purchases">Restore Purchases</string>
-    <string name="subscriptions_disclaimer">Subscriptions are billed through your Google Play account and renew automatically unless cancelled at least 24 hours before the end of the current period. (Simulated in MVP)</string>
-    <string name="subscriptions_upgrade_success">Upgraded to %1$s (Simulated)</string>
-    <string name="subscriptions_restore_success">Purchases restored successfully (Simulated)</string>
+    <string name="subscriptions_disclaimer">Subscriptions are billed through your Google Play account and renew automatically unless cancelled at least 24 hours before the end of the current period.</string>
+    <string name="subscriptions_upgrade_success">Upgraded to %1$s successfully!</string>
+    <string name="subscriptions_restore_success">Purchases restored successfully!</string>
+    <string name="subscriptions_purchase_pending">Purchase is pending. Your subscription will activate once payment is completed.</string>
+    <string name="subscriptions_purchase_already_owned">You already own SplitTrip Pro. Subscription restored!</string>
+    <string name="subscriptions_restore_none_found">No active subscriptions found to restore.</string>
+    <string name="subscriptions_billing_error">Unable to complete purchase. Please try again later.</string>
+    <string name="subscriptions_service_unavailable">Subscription options are currently unavailable. Please try again later.</string>
 </resources>

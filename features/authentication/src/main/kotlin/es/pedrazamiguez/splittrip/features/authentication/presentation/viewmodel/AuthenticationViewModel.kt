@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.domain.exception.AdminRestrictedOperationException
 import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignInAnonymouslyUseCase
@@ -105,6 +106,7 @@ class AuthenticationViewModel(
                     onLoginSuccess()
                 }
                 .onFailure { e ->
+                    Timber.e(e, "Email sign-in failed")
                     _uiState.update {
                         it.copy(
                             error = UiText.DynamicString(e.message ?: ""),
@@ -143,6 +145,13 @@ class AuthenticationViewModel(
                             )
                         }
                     } else {
+                        recordDiagnosticException(
+                            throwable = e,
+                            customKeys = mapOf(
+                                "auth_provider" to "google",
+                                "credential_stage" to "sign_in_use_case"
+                            )
+                        )
                         Timber.e(e, "Google sign-in failed")
                         _uiState.update {
                             it.copy(
@@ -169,6 +178,7 @@ class AuthenticationViewModel(
                     onLoginSuccess()
                 }
                 .onFailure { e ->
+                    Timber.e(e, "Guest sign-in failed")
                     val errorText = when (e) {
                         is AdminRestrictedOperationException -> {
                             UiText.StringResource(R.string.login_error_admin_restricted)

@@ -387,16 +387,26 @@ class AccountSecurityViewModelTest {
             }
 
         @Test
-        fun `BiometricConfirmationSuccess handles exception gracefully`() = runTest(testDispatcher) {
-            coEvery { setBiometricLockEnabledUseCase(true) } throws RuntimeException("Set error")
-            val viewModel = createViewModel()
-            advanceUntilIdle()
+        fun `BiometricConfirmationSuccess handles exception gracefully and emits error ShowTopPill`() =
+            runTest(testDispatcher) {
+                coEvery { setBiometricLockEnabledUseCase(true) } throws RuntimeException("Set error")
+                val viewModel = createViewModel()
+                advanceUntilIdle()
 
-            viewModel.onEvent(AccountSecurityUiEvent.BiometricConfirmationSuccess)
-            advanceUntilIdle()
+                val actions = mutableListOf<AccountSecurityUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
 
-            assertFalse(viewModel.uiState.value.biometricLockEnabled)
-        }
+                viewModel.onEvent(AccountSecurityUiEvent.BiometricConfirmationSuccess)
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.biometricLockEnabled)
+                assertEquals(1, actions.size)
+                val action = assertInstanceOf(AccountSecurityUiAction.ShowTopPill::class.java, actions.first())
+                val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+                assertEquals(R.string.account_security_error_prefix, message.resId)
+
+                job.cancel()
+            }
 
         @Test
         fun `ToggleBiometricLock to false calls SetBiometricLockEnabledUseCase directly and updates state`() =
@@ -412,16 +422,26 @@ class AccountSecurityViewModelTest {
             }
 
         @Test
-        fun `ToggleBiometricLock to false handles exception gracefully`() = runTest(testDispatcher) {
-            coEvery { setBiometricLockEnabledUseCase(false) } throws RuntimeException("Set error")
-            val viewModel = createViewModel()
-            advanceUntilIdle()
+        fun `ToggleBiometricLock to false handles exception gracefully and emits error ShowTopPill`() =
+            runTest(testDispatcher) {
+                coEvery { setBiometricLockEnabledUseCase(false) } throws RuntimeException("Set error")
+                val viewModel = createViewModel()
+                advanceUntilIdle()
 
-            viewModel.onEvent(AccountSecurityUiEvent.ToggleBiometricLock(false))
-            advanceUntilIdle()
+                val actions = mutableListOf<AccountSecurityUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
 
-            assertFalse(viewModel.uiState.value.biometricLockEnabled)
-        }
+                viewModel.onEvent(AccountSecurityUiEvent.ToggleBiometricLock(false))
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.biometricLockEnabled)
+                assertEquals(1, actions.size)
+                val action = assertInstanceOf(AccountSecurityUiAction.ShowTopPill::class.java, actions.first())
+                val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+                assertEquals(R.string.account_security_error_prefix, message.resId)
+
+                job.cancel()
+            }
 
         @Test
         fun `NavigateToAccountStatus emits NavigateToRoute with SETTINGS_ACCOUNT_STATUS`() = runTest(testDispatcher) {

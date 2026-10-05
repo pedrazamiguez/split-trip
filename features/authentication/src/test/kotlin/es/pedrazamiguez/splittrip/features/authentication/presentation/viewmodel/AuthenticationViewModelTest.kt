@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.domain.exception.AdminRestrictedOperationException
 import es.pedrazamiguez.splittrip.domain.exception.GoogleCollisionWithEmailPasswordException
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
@@ -11,7 +12,11 @@ import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.AuthenticationUiEvent
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.handler.AuthenticationCollisionEventHandlerImpl
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -65,6 +70,7 @@ class AuthenticationViewModelTest {
     @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkAll()
     }
 
     // ── EmailChanged / PasswordChanged / ToggleEmailForm ───────────────────
@@ -168,10 +174,14 @@ class AuthenticationViewModelTest {
             }
 
         @Test
-        fun `failure sets error in state`() = runTest(testDispatcher) {
+        fun `failure sets error in state and records diagnostic telemetry`() = runTest(testDispatcher) {
+            mockkStatic(::recordDiagnosticException)
+            every { recordDiagnosticException(any(), any()) } returns Unit
+
+            val exception = RuntimeException("Token expired")
             coEvery {
                 signInWithGoogleUseCase(any())
-            } returns Result.failure(RuntimeException("Token expired"))
+            } returns Result.failure(exception)
 
             viewModel.onEvent(
                 AuthenticationUiEvent.GoogleSignInResult("bad-token")
@@ -183,6 +193,16 @@ class AuthenticationViewModelTest {
             assertNotNull(error)
             assertTrue(error is UiText.StringResource)
             assertEquals(R.string.login_google_error, (error as UiText.StringResource).resId)
+
+            verify(exactly = 1) {
+                recordDiagnosticException(
+                    throwable = exception,
+                    customKeys = mapOf(
+                        "auth_provider" to "google",
+                        "credential_stage" to "sign_in_use_case"
+                    )
+                )
+            }
         }
     }
 
@@ -214,8 +234,11 @@ class AuthenticationViewModelTest {
     inner class CollisionAndMergeFlow {
 
         @Test
-        fun `GoogleSignInResult failure with GoogleCollisionWithEmailPasswordException shows collision dialog`() =
+        fun `GoogleSignInResult collision failure does not record telemetry`() =
             runTest(testDispatcher) {
+                mockkStatic(::recordDiagnosticException)
+                every { recordDiagnosticException(any(), any()) } returns Unit
+
                 coEvery {
                     signInWithGoogleUseCase(any())
                 } returns Result.failure(
@@ -234,6 +257,10 @@ class AuthenticationViewModelTest {
                 assertFalse(viewModel.uiState.value.isGoogleLoading)
                 assertEquals("", viewModel.uiState.value.collisionPassword)
                 assertNull(viewModel.uiState.value.mergeError)
+
+                verify(exactly = 0) {
+                    recordDiagnosticException(any(), any())
+                }
             }
 
         @Test

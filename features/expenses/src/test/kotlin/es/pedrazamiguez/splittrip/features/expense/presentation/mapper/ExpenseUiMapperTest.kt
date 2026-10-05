@@ -328,7 +328,7 @@ class ExpenseUiMapperTest {
         fun `maps dateText from createdAt`() {
             val expense = Expense(
                 id = "e10",
-                createdAt = LocalDateTime.of(2025, 1, 15, 12, 30)
+                createdAt = LocalDateTime.of(LocalDate.now().year, 1, 15, 12, 30)
             )
 
             val result = mapper.map(expense)
@@ -505,7 +505,7 @@ class ExpenseUiMapperTest {
 
         @Test
         fun `formats date text for each group`() {
-            val date = LocalDateTime.of(2025, 1, 15, 10, 0)
+            val date = LocalDateTime.of(LocalDate.now().year, 1, 15, 10, 0)
             val expenses = listOf(
                 Expense(id = "1", groupAmount = 1000, groupCurrency = "EUR", createdAt = date)
             )

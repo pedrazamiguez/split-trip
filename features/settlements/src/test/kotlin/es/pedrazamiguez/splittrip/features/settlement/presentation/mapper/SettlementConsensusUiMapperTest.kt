@@ -117,6 +117,21 @@ class SettlementConsensusUiMapperTest {
     }
 
     @Test
+    fun `payer in SUGGESTED maps Spanish string resource without truncation`() {
+        every { resourceProvider.getString(R.string.your_balance_settlement_mark_paid) } returns "He pagado"
+        val record = createRecord("s1", "user1", "user2", status = SettlementStatus.SUGGESTED)
+
+        val result = mapper.toConsensusItems(listOf(record), "user1", "creator1", emptyMap())
+
+        assertEquals(1, result.size)
+        val item = result[0]
+        assertTrue(item.isCurrentUserPayer)
+        assertTrue(item.canConfirm)
+        assertEquals("He pagado", item.confirmLabel)
+        assertTrue(item.canDispute)
+    }
+
+    @Test
     fun `payer in SUGGESTED cannot confirm or dispute for CASH`() {
         val record = createRecord("s1", "user1", "user2", status = SettlementStatus.SUGGESTED)
             .copy(
