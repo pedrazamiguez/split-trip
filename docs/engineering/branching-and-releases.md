@@ -59,7 +59,7 @@ We treat releases as a specific type of issue.
      * Publishes a GitHub Release with an automated Changelog based on merged PRs.
    * **Google Play Store Publishing (`deploy-play-store.yml`):**
      * Builds and signs the release `.aab` (Android App Bundle).
-     * Strictly verifies the production upload certificate (`01:2A:B7:5D:86:66:1D:95:C0:A2:E5:09:23:66:25:F7:C8:14:2A:EB:6F:CB:DD:CE:B0:46:6E:DC:26:20:86:0E`).
+     * Strictly verifies the release signing certificate (ensures non-debug signature and valid keystore owner).
      * Extracts recent PR summaries and generates localized release notes (`whatsnew-es-ES`, `whatsnew-en-US`).
      * Uploads the `.aab` bundle and ProGuard/R8 deobfuscation mapping (`mapping.txt`) to the target Google Play track (defaults to `internal` / *Prueba interna*).
 

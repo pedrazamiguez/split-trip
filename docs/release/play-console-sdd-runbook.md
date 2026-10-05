@@ -244,7 +244,7 @@ To generate the production-signed `.aab` for the first upload:
 1. Open GitHub Actions in the browser: **Actions → Build Release Bundle**.
 2. Click **Run workflow**, select the branch (e.g. `develop` or release branch), and click the green **Run workflow** button.
 3. Once completed (~2–3 minutes), navigate to the run summary.
-4. Verify the **Release Bundle Build Summary** table (confirms `appVersionName`, `appVersionCode`, and production SHA-256 fingerprint: `01:2A:B7:5D:86:66:1D:95:C0:A2:E5:09:23:66:25:F7:C8:14:2A:EB:6F:CB:DD:CE:B0:46:6E:DC:26:20:86:0E`).
+4. Verify the **Release Bundle Build Summary** table (confirms `appVersionName`, `appVersionCode`, and production certificate details).
 5. Download the `split-trip-release-bundle-<version>-build-<run>` ZIP artifact.
 6. Extract `app/build/outputs/bundle/release/app-release.aab` and upload to Play Console (*Pruebas internas > Crear nueva versión*).
 
