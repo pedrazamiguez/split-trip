@@ -73,6 +73,7 @@
     <string name="notification_prefs_timezone">Zona horaria</string>
     <string name="notification_prefs_no_timezones_found">No se encontraron zonas horarias</string>
     <string name="notification_prefs_reminder_time">Hora del recordatorio (HH:MM)</string>
+    <string name="notification_prefs_update_failed">Error al actualizar las preferencias de notificaciones</string>
 
     <!-- Developer Services Playground -->
     <string name="developer_services_selected_attachment">Adjunto Seleccionado</string>

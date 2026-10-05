@@ -71,6 +71,7 @@ class ForgotPasswordViewModel(
                     )
                 }
                 .onFailure { e ->
+                    Timber.e(e, "Send password reset email failed")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         emailError = if (e is IllegalArgumentException) {

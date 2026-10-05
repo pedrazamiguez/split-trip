@@ -106,6 +106,7 @@ class AuthenticationViewModel(
                     onLoginSuccess()
                 }
                 .onFailure { e ->
+                    Timber.e(e, "Email sign-in failed")
                     _uiState.update {
                         it.copy(
                             error = UiText.DynamicString(e.message ?: ""),
@@ -177,6 +178,7 @@ class AuthenticationViewModel(
                     onLoginSuccess()
                 }
                 .onFailure { e ->
+                    Timber.e(e, "Guest sign-in failed")
                     val errorText = when (e) {
                         is AdminRestrictedOperationException -> {
                             UiText.StringResource(R.string.login_error_admin_restricted)

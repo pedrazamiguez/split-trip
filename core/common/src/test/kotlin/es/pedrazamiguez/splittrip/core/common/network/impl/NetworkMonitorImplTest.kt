@@ -96,4 +96,21 @@ class NetworkMonitorImplTest {
             assertFalse(monitor.isOnline.value)
         }
     }
+
+    @Test
+    fun `registerNetworkCallback logs warning and does not crash when callback registration throws`() {
+        val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
+        every { connectivityManager.activeNetwork } returns null
+        every {
+            connectivityManager.registerDefaultNetworkCallback(any())
+        } throws SecurityException("Permission denied")
+
+        val context = mockk<Context>()
+        every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+
+        val monitor = NetworkMonitorImpl(context)
+
+        assertNotNull(monitor.isOnline)
+        assertFalse(monitor.isOnline.value)
+    }
 }

@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.core.common.network.NetworkMonitor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import timber.log.Timber
 
 class NetworkMonitorImpl
 @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
@@ -34,7 +35,8 @@ constructor(
             val activeNetwork = cm.activeNetwork ?: return false
             val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
             capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            Timber.w(e, "Failed to check initial network connectivity")
             true
         }
     }
@@ -62,8 +64,8 @@ constructor(
             }
 
             cm.registerDefaultNetworkCallback(callback)
-        } catch (_: Throwable) {
-            // Fallback if Android framework calls are unmocked in unit test environment or restricted runtime
+        } catch (e: Throwable) {
+            Timber.w(e, "Failed to register network callback")
         }
     }
 }

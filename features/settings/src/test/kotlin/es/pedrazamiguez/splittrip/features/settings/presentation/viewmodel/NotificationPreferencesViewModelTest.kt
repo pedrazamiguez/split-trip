@@ -1,16 +1,24 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.NotificationCategory
 import es.pedrazamiguez.splittrip.domain.model.NotificationPreferences
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserReminderPreferencesUseCase
+import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.NotificationPreferencesUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.NotificationPreferencesUiEvent
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.NotificationPreferencesUiState
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.NotificationPreferencesUiAction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import java.time.ZoneId
+import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,6 +32,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -37,10 +46,8 @@ class NotificationPreferencesViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var getPreferencesUseCase: GetNotificationPreferencesUseCase
     private lateinit var updatePreferenceUseCase: UpdateNotificationPreferenceUseCase
-    private lateinit var observeCurrentUserProfileUseCase:
-        es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
-    private lateinit var updateUserReminderPreferencesUseCase:
-        es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserReminderPreferencesUseCase
+    private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
+    private lateinit var updateUserReminderPreferencesUseCase: UpdateUserReminderPreferencesUseCase
     private lateinit var uiMapper: NotificationPreferencesUiMapper
     private lateinit var viewModel: NotificationPreferencesViewModel
 
@@ -61,7 +68,7 @@ class NotificationPreferencesViewModelTest {
 
     private fun createViewModel(
         prefs: NotificationPreferences = NotificationPreferences(),
-        user: es.pedrazamiguez.splittrip.domain.model.User = es.pedrazamiguez.splittrip.domain.model.User(
+        user: User = User(
             userId = "testUser",
             email = "test@test.com",
             displayName = "Test User"
@@ -71,7 +78,7 @@ class NotificationPreferencesViewModelTest {
         every { observeCurrentUserProfileUseCase() } returns flowOf(user)
         every { uiMapper.toUiState(any(), any()) } answers {
             val p = firstArg<NotificationPreferences>()
-            val u = secondArg<es.pedrazamiguez.splittrip.domain.model.User?>()
+            val u = secondArg<User?>()
             NotificationPreferencesUiState(
                 membershipEnabled = p.membershipEnabled,
                 expensesEnabled = p.expensesEnabled,
@@ -84,7 +91,7 @@ class NotificationPreferencesViewModelTest {
         every { uiMapper.formatTime(any(), any()) } answers {
             val hour = firstArg<Int>()
             val minute = secondArg<Int>()
-            String.format(java.util.Locale.ROOT, "%02d:%02d", hour, minute)
+            String.format(Locale.ROOT, "%02d:%02d", hour, minute)
         }
         return NotificationPreferencesViewModel(
             getPreferencesUseCase,
@@ -178,7 +185,7 @@ class NotificationPreferencesViewModelTest {
 
         @Test
         fun `UpdateTimezone delegates to use case`() = runTest(testDispatcher) {
-            val user = es.pedrazamiguez.splittrip.domain.model.User(
+            val user = User(
                 userId = "testUser",
                 email = "test@test.com",
                 displayName = "Test User",
@@ -201,7 +208,7 @@ class NotificationPreferencesViewModelTest {
 
         @Test
         fun `UpdateReminderTime delegates to use case`() = runTest(testDispatcher) {
-            val user = es.pedrazamiguez.splittrip.domain.model.User(
+            val user = User(
                 userId = "testUser",
                 email = "test@test.com",
                 displayName = "Test User",
@@ -225,7 +232,7 @@ class NotificationPreferencesViewModelTest {
 
         @Test
         fun `automatically saves device timezone on load if user timezone is null`() = runTest(testDispatcher) {
-            val userWithoutTimezone = es.pedrazamiguez.splittrip.domain.model.User(
+            val userWithoutTimezone = User(
                 userId = "testUser",
                 email = "test@test.com",
                 displayName = "Test User",
@@ -236,14 +243,14 @@ class NotificationPreferencesViewModelTest {
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
             advanceUntilIdle()
 
-            val expectedTimezone = java.time.ZoneId.systemDefault().id
+            val expectedTimezone = ZoneId.systemDefault().id
             coVerify { updateUserReminderPreferencesUseCase("testUser", expectedTimezone, "09:00") }
             collectJob.cancel()
         }
 
         @Test
         fun `does not overwrite timezone on load if user timezone is already saved`() = runTest(testDispatcher) {
-            val userWithTimezone = es.pedrazamiguez.splittrip.domain.model.User(
+            val userWithTimezone = User(
                 userId = "testUser",
                 email = "test@test.com",
                 displayName = "Test User",
@@ -309,6 +316,107 @@ class NotificationPreferencesViewModelTest {
 
             // ViewModel is still alive and responsive
             assertFalse(viewModel.uiState.value.isLoading)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ToggleCategory emits ShowTopPill action on use case exception`() = runTest(testDispatcher) {
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            coEvery {
+                updatePreferenceUseCase(any(), any())
+            } throws RuntimeException("Storage error")
+
+            val actions = mutableListOf<NotificationPreferencesUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.onEvent(
+                NotificationPreferencesUiEvent.ToggleCategory(
+                    NotificationCategory.MEMBERSHIP,
+                    false
+                )
+            )
+            advanceUntilIdle()
+
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(NotificationPreferencesUiAction.ShowTopPill::class.java, actions.first())
+            val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+            assertEquals(R.string.notification_prefs_update_failed, message.resId)
+
+            job.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `UpdateTimezone emits ShowTopPill action on use case exception`() = runTest(testDispatcher) {
+            val user = User(
+                userId = "testUser",
+                email = "test@test.com",
+                displayName = "Test User",
+                preferredReminderTime = "10:00"
+            )
+            viewModel = createViewModel(user = user)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            coEvery {
+                updateUserReminderPreferencesUseCase(any(), any(), any())
+            } throws RuntimeException("Network error")
+
+            val actions = mutableListOf<NotificationPreferencesUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.onEvent(
+                NotificationPreferencesUiEvent.UpdateTimezone(
+                    timezone = "Europe/London"
+                )
+            )
+            advanceUntilIdle()
+
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(NotificationPreferencesUiAction.ShowTopPill::class.java, actions.first())
+            val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+            assertEquals(R.string.notification_prefs_update_failed, message.resId)
+
+            job.cancel()
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `UpdateReminderTime emits ShowTopPill action on use case exception`() = runTest(testDispatcher) {
+            val user = User(
+                userId = "testUser",
+                email = "test@test.com",
+                displayName = "Test User",
+                timezone = "Europe/London"
+            )
+            viewModel = createViewModel(user = user)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            coEvery {
+                updateUserReminderPreferencesUseCase(any(), any(), any())
+            } throws RuntimeException("Network error")
+
+            val actions = mutableListOf<NotificationPreferencesUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+            viewModel.onEvent(
+                NotificationPreferencesUiEvent.UpdateReminderTime(
+                    hour = 10,
+                    minute = 30
+                )
+            )
+            advanceUntilIdle()
+
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(NotificationPreferencesUiAction.ShowTopPill::class.java, actions.first())
+            val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+            assertEquals(R.string.notification_prefs_update_failed, message.resId)
+
+            job.cancel()
             collectJob.cancel()
         }
     }
