@@ -124,7 +124,7 @@ class SubscriptionsUiMapperImpl(
             ctaButtonText = if (isCurrentPlan) {
                 UiText.StringResource(R.string.subscriptions_cta_current_plan)
             } else {
-                UiText.StringResource(R.string.subscriptions_cta_downgrade_free)
+                UiText.StringResource(R.string.subscriptions_cta_manage_subscription)
             },
             isCtaButtonEnabled = !isCurrentPlan,
             isHighlightedCard = false
@@ -228,10 +228,6 @@ class SubscriptionsUiMapperImpl(
             label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
             isIncluded = true,
             isHighlighted = true
-        ),
-        SubscriptionFeatureUiModel(
-            label = UiText.StringResource(R.string.subscriptions_feature_pro_blended_fx),
-            isIncluded = true
         ),
         SubscriptionFeatureUiModel(
             label = UiText.StringResource(R.string.subscriptions_feature_pro_priority_support),

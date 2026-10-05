@@ -76,8 +76,7 @@ class SubscriptionsViewModelTest {
         features = persistentListOf(),
         isCurrentPlan = true,
         ctaButtonText = UiText.StringResource(R.string.subscriptions_cta_current_plan),
-        isCtaButtonEnabled = false,
-        isHighlightedCard = false
+        isCtaButtonEnabled = false, isHighlightedCard = false
     )
 
     private val mockProPlan = SubscriptionPlanUiModel(
@@ -90,8 +89,7 @@ class SubscriptionsViewModelTest {
         features = persistentListOf(),
         isCurrentPlan = false,
         ctaButtonText = UiText.StringResource(R.string.subscriptions_cta_upgrade_pro),
-        isCtaButtonEnabled = true,
-        isHighlightedCard = true
+        isCtaButtonEnabled = true, isHighlightedCard = true
     )
 
     private val defaultTestProducts = listOf(
@@ -152,18 +150,14 @@ class SubscriptionsViewModelTest {
         every { subscriptionsUiMapper.formatPurchasePendingMessage() } returns UiText.StringResource(
             R.string.subscriptions_purchase_pending
         )
-        every { subscriptionsUiMapper.formatAlreadyOwnedMessage() } returns UiText.StringResource(
-            R.string.subscriptions_purchase_already_owned
-        )
-        every { subscriptionsUiMapper.formatNoPurchasesToRestoreMessage() } returns UiText.StringResource(
-            R.string.subscriptions_restore_none_found
-        )
-        every { subscriptionsUiMapper.formatBillingError() } returns UiText.StringResource(
-            R.string.subscriptions_billing_error
-        )
-        every { subscriptionsUiMapper.formatSubscriptionsUnavailableMessage() } returns UiText.StringResource(
-            R.string.subscriptions_service_unavailable
-        )
+        every { subscriptionsUiMapper.formatAlreadyOwnedMessage() } returns
+            UiText.StringResource(R.string.subscriptions_purchase_already_owned)
+        every { subscriptionsUiMapper.formatNoPurchasesToRestoreMessage() } returns
+            UiText.StringResource(R.string.subscriptions_restore_none_found)
+        every { subscriptionsUiMapper.formatBillingError() } returns
+            UiText.StringResource(R.string.subscriptions_billing_error)
+        every { subscriptionsUiMapper.formatSubscriptionsUnavailableMessage() } returns
+            UiText.StringResource(R.string.subscriptions_service_unavailable)
     }
 
     @AfterEach
@@ -375,42 +369,47 @@ class SubscriptionsViewModelTest {
             }
 
         @Test
-        fun `UpgradePlan for Free invokes UpdateUserTierUseCase`() = runTest(testDispatcher) {
+        fun `UpgradePlan for Free shows manage dialog and confirm emits OpenUrl`() = runTest(testDispatcher) {
             val viewModel = createViewModel()
             advanceUntilIdle()
-
             val actions = mutableListOf<SubscriptionsUiAction>()
             val job = launch { viewModel.actions.collect { actions.add(it) } }
 
             viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.FREE))
+            assertTrue(viewModel.uiState.value.showManageSubscriptionDialog)
+            viewModel.onEvent(SubscriptionsUiEvent.DismissManageSubscriptionDialog)
+            assertFalse(viewModel.uiState.value.showManageSubscriptionDialog)
+            viewModel.onEvent(SubscriptionsUiEvent.ManageSubscription)
+            assertTrue(viewModel.uiState.value.showManageSubscriptionDialog)
+            viewModel.onEvent(SubscriptionsUiEvent.ConfirmManageSubscription)
+            assertFalse(viewModel.uiState.value.showManageSubscriptionDialog)
             advanceUntilIdle()
 
-            coVerify(exactly = 1) { updateUserTierUseCase("user_123", SubscriptionTier.FREE) }
-            val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+            assertEquals(1, actions.size)
+            val action = assertInstanceOf(SubscriptionsUiAction.OpenUrl::class.java, actions.first())
+            assertTrue(action.url.contains("play.google.com"))
             job.cancel()
         }
 
         @Test
-        fun `launchBillingFlow delegates to BillingService and emits ShowTopPill on failure`() = runTest(
-            testDispatcher
-        ) {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
+        fun `launchBillingFlow delegates to BillingService and emits ShowTopPill on failure`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel()
+                advanceUntilIdle()
 
-            every {
-                billingService.launchBillingFlow(any(), any())
-            } returns Result.failure(IllegalStateException("Flow error"))
+                every { billingService.launchBillingFlow(any(), any()) } returns
+                    Result.failure(IllegalStateException("Flow error"))
 
-            val actions = mutableListOf<SubscriptionsUiAction>()
-            val job = launch { viewModel.actions.collect { actions.add(it) } }
+                val actions = mutableListOf<SubscriptionsUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
 
-            viewModel.launchBillingFlow("activity", BillingConstants.PRODUCT_ID_PRO_MONTHLY)
-            advanceUntilIdle()
+                viewModel.launchBillingFlow("activity", BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+                advanceUntilIdle()
 
-            assertEquals(1, actions.size)
-            assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
-            job.cancel()
-        }
+                assertEquals(1, actions.size)
+                assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+                job.cancel()
+            }
     }
 
     @Nested

@@ -304,11 +304,14 @@
     <string name="subscriptions_feature_pro_members">Up to 20 members per group</string>
     <string name="subscriptions_feature_pro_ai_ocr">AI Receipt scanning &amp; OCR</string>
     <string name="subscriptions_feature_pro_ad_free" formatted="false">100% Ad-free experience</string>
-    <string name="subscriptions_feature_pro_blended_fx">Blended FX &amp; real-time conversion</string>
     <string name="subscriptions_feature_pro_priority_support">Priority customer support</string>
     <string name="subscriptions_cta_current_plan">Current Plan</string>
     <string name="subscriptions_cta_upgrade_pro">Upgrade to Pro</string>
-    <string name="subscriptions_cta_downgrade_free">Downgrade to Free</string>
+    <string name="subscriptions_cta_manage_subscription">Manage Subscription</string>
+    <string name="subscriptions_manage_dialog_title">Manage Subscription</string>
+    <string name="subscriptions_manage_dialog_text">Your SplitTrip Pro subscription is managed through Google Play. If you decide to cancel, you will keep all Pro benefits until your current billing period ends. You will not lose your benefits immediately.</string>
+    <string name="subscriptions_manage_dialog_confirm">Open Google Play</string>
+    <string name="subscriptions_manage_dialog_dismiss">Close</string>
     <string name="subscriptions_badge_popular">Most Popular</string>
     <string name="subscriptions_restore_purchases">Restore Purchases</string>
     <string name="subscriptions_disclaimer">Subscriptions are billed through your Google Play account and renew automatically unless cancelled at least 24 hours before the end of the current period.</string>

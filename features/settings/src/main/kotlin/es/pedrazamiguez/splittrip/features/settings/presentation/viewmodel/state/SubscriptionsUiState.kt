@@ -12,5 +12,6 @@ data class SubscriptionsUiState(
     val currentTier: SubscriptionTier = SubscriptionTier.FREE,
     val isAnonymous: Boolean = false,
     val isLoading: Boolean = false,
-    val isProcessingAction: Boolean = false
+    val isProcessingAction: Boolean = false,
+    val showManageSubscriptionDialog: Boolean = false
 )

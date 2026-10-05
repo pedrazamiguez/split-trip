@@ -103,7 +103,7 @@ class SubscriptionsUiMapperImplTest {
     }
 
     private fun assertProPlanFeatures(features: List<SubscriptionFeatureUiModel>) {
-        assertEquals(7, features.size)
+        assertEquals(6, features.size)
         assertFeature(
             features[0],
             R.string.subscriptions_feature_pro_unlimited_groups,
@@ -136,12 +136,6 @@ class SubscriptionsUiMapperImplTest {
         )
         assertFeature(
             features[5],
-            R.string.subscriptions_feature_pro_blended_fx,
-            expectedIncluded = true,
-            expectedHighlighted = false
-        )
-        assertFeature(
-            features[6],
             R.string.subscriptions_feature_pro_priority_support,
             expectedIncluded = true,
             expectedHighlighted = false
@@ -259,7 +253,7 @@ class SubscriptionsUiMapperImplTest {
             assertFalse(freePlan.isCurrentPlan)
             assertTrue(freePlan.isCtaButtonEnabled)
             val freeCtaText = assertInstanceOf(UiText.StringResource::class.java, freePlan.ctaButtonText)
-            assertEquals(R.string.subscriptions_cta_downgrade_free, freeCtaText.resId)
+            assertEquals(R.string.subscriptions_cta_manage_subscription, freeCtaText.resId)
 
             assertTrue(proPlan.isCurrentPlan)
             assertFalse(proPlan.isCtaButtonEnabled)
