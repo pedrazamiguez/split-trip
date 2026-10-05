@@ -26,6 +26,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+private const val GOOGLE_PLAY_SUBSCRIPTIONS_URL =
+    "https://play.google.com/store/account/subscriptions?package=es.pedrazamiguez.splittrip"
+
 class SubscriptionsViewModel(
     private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
@@ -139,7 +142,14 @@ class SubscriptionsViewModel(
         when (event) {
             SubscriptionsUiEvent.LoadSubscriptions -> loadSubscriptions()
             is SubscriptionsUiEvent.SelectBillingInterval -> handleSelectBillingInterval(event.interval)
-            is SubscriptionsUiEvent.UpgradePlan -> handleUpgradePlan(event.tier)
+            is SubscriptionsUiEvent.UpgradePlan -> handlePlanAction(event.tier)
+            SubscriptionsUiEvent.ManageSubscription -> {
+                _uiState.update { it.copy(showManageSubscriptionDialog = true) }
+            }
+            SubscriptionsUiEvent.DismissManageSubscriptionDialog -> {
+                _uiState.update { it.copy(showManageSubscriptionDialog = false) }
+            }
+            SubscriptionsUiEvent.ConfirmManageSubscription -> confirmManageSubscription()
             SubscriptionsUiEvent.RestorePurchases -> handleRestorePurchases()
         }
     }
@@ -210,11 +220,11 @@ class SubscriptionsViewModel(
         }
     }
 
-    private fun handleUpgradePlan(tier: SubscriptionTier) {
+    private fun handlePlanAction(tier: SubscriptionTier) {
         if (tier == SubscriptionTier.PRO) {
             handleUpgradeToPro()
         } else {
-            handleDowngradeToFree(tier)
+            _uiState.update { it.copy(showManageSubscriptionDialog = true) }
         }
     }
 
@@ -238,23 +248,10 @@ class SubscriptionsViewModel(
         }
     }
 
-    private fun handleDowngradeToFree(tier: SubscriptionTier) {
+    private fun confirmManageSubscription() {
+        _uiState.update { it.copy(showManageSubscriptionDialog = false) }
         viewModelScope.launch {
-            _uiState.update { it.copy(isProcessingAction = true) }
-            try {
-                val user = getCurrentUserProfileUseCase()
-                if (user != null) {
-                    updateUserTierUseCase(user.userId, tier)
-                }
-                val message = subscriptionsUiMapper.formatUpgradeSuccessMessage(tier)
-                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to handle upgrade plan")
-            } finally {
-                _uiState.update { it.copy(isProcessingAction = false) }
-            }
+            _actions.send(SubscriptionsUiAction.OpenUrl(GOOGLE_PLAY_SUBSCRIPTIONS_URL))
         }
     }
 

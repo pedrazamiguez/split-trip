@@ -56,6 +56,7 @@ class SubscriptionsUiMapperImplTest {
         val freePeriod = assertInstanceOf(UiText.StringResource::class.java, freePlan.period)
         assertEquals(R.string.subscriptions_tier_free_period, freePeriod.resId)
         assertNull(freePlan.badge)
+        assertNull(freePlan.billingDetail)
         assertTrue(freePlan.isCurrentPlan)
         assertFalse(freePlan.isCtaButtonEnabled)
         assertFalse(freePlan.isHighlightedCard)
@@ -87,51 +88,54 @@ class SubscriptionsUiMapperImplTest {
         val proPrice = assertInstanceOf(UiText.StringResource::class.java, proPlan.price)
         assertEquals(R.string.subscriptions_tier_pro_price_annual, proPrice.resId)
         val proPeriod = assertInstanceOf(UiText.StringResource::class.java, proPlan.period)
-        assertEquals(R.string.subscriptions_period_annual_billed, proPeriod.resId)
+        assertEquals(R.string.subscriptions_period_month, proPeriod.resId)
+        val billingDetail = assertInstanceOf(UiText.StringResource::class.java, proPlan.billingDetail)
+        assertEquals(R.string.subscriptions_tier_pro_billing_annual_detail, billingDetail.resId)
+        assertEquals(1, billingDetail.args.size)
+        val detailArg = assertInstanceOf(UiText.StringResource::class.java, billingDetail.args[0])
+        assertEquals(R.string.subscriptions_tier_pro_price_annual_total, detailArg.resId)
         val proBadge = assertInstanceOf(UiText.StringResource::class.java, proPlan.badge)
         assertEquals(R.string.subscriptions_badge_popular, proBadge.resId)
         assertFalse(proPlan.isCurrentPlan)
         assertEquals(expectedCtaEnabled, proPlan.isCtaButtonEnabled)
         assertTrue(proPlan.isHighlightedCard)
-        assertEquals(7, proPlan.features.size)
+        assertProPlanFeatures(proPlan.features)
+    }
+
+    private fun assertProPlanFeatures(features: List<SubscriptionFeatureUiModel>) {
+        assertEquals(6, features.size)
         assertFeature(
-            proPlan.features[0],
+            features[0],
             R.string.subscriptions_feature_pro_unlimited_groups,
             expectedIncluded = true,
             expectedHighlighted = true
         )
         assertFeature(
-            proPlan.features[1],
+            features[1],
             R.string.subscriptions_feature_pro_members,
             expectedIncluded = true,
             expectedHighlighted = true
         )
         assertFeature(
-            proPlan.features[2],
+            features[2],
             R.string.subscriptions_feature_subunits,
             expectedIncluded = true,
             expectedHighlighted = true
         )
         assertFeature(
-            proPlan.features[3],
+            features[3],
             R.string.subscriptions_feature_pro_ai_ocr,
             expectedIncluded = true,
             expectedHighlighted = true
         )
         assertFeature(
-            proPlan.features[4],
+            features[4],
             R.string.subscriptions_feature_pro_ad_free,
             expectedIncluded = true,
             expectedHighlighted = true
         )
         assertFeature(
-            proPlan.features[5],
-            R.string.subscriptions_feature_pro_blended_fx,
-            expectedIncluded = true,
-            expectedHighlighted = false
-        )
-        assertFeature(
-            proPlan.features[6],
+            features[5],
             R.string.subscriptions_feature_pro_priority_support,
             expectedIncluded = true,
             expectedHighlighted = false
@@ -171,7 +175,8 @@ class SubscriptionsUiMapperImplTest {
         }
 
         @Test
-        fun `mapPlans with SubscriptionProducts formats Pro plan price dynamically with formattedPrice`() {
+        @DisplayName("formats monthly headline price dynamically with formattedPrice and null billingDetail")
+        fun `mapPlans with SubscriptionProducts formats monthly headline price`() {
             val monthlyProduct = SubscriptionProduct(
                 productId = BillingConstants.PRODUCT_ID_PRO_MONTHLY,
                 tier = SubscriptionTier.PRO,
@@ -180,32 +185,58 @@ class SubscriptionsUiMapperImplTest {
                 priceAmountMicros = 4990000L,
                 priceCurrencyCode = "USD"
             )
-            val annualProduct = SubscriptionProduct(
-                productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
-                tier = SubscriptionTier.PRO,
-                billingInterval = BillingInterval.ANNUAL,
-                formattedPrice = "$39.99",
-                priceAmountMicros = 39990000L,
-                priceCurrencyCode = "USD"
-            )
 
             val monthlyPlans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.MONTHLY,
-                products = listOf(monthlyProduct, annualProduct)
+                products = listOf(monthlyProduct)
             )
             val monthlyPro = monthlyPlans.first { it.tier == SubscriptionTier.PRO }
             val dynamicMonthlyPrice = assertInstanceOf(UiText.DynamicString::class.java, monthlyPro.price)
             assertEquals("$4.99", dynamicMonthlyPrice.value)
+            assertNull(monthlyPro.billingDetail)
+        }
+
+        @Test
+        @DisplayName("formats annual headline price as monthly equivalent and billing detail as full annual price")
+        fun `mapPlans with SubscriptionProducts formats annual headline price`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
+            val annualProduct = SubscriptionProduct(
+                productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
+                tier = SubscriptionTier.PRO,
+                billingInterval = BillingInterval.ANNUAL,
+                formattedPrice = "26,90 €",
+                priceAmountMicros = 26900000L,
+                priceCurrencyCode = "EUR"
+            )
 
             val annualPlans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = listOf(monthlyProduct, annualProduct)
+                products = listOf(annualProduct)
             )
             val annualPro = annualPlans.first { it.tier == SubscriptionTier.PRO }
             val dynamicAnnualPrice = assertInstanceOf(UiText.DynamicString::class.java, annualPro.price)
-            assertEquals("$39.99", dynamicAnnualPrice.value)
+            assertEquals("2,24\u00A0€", dynamicAnnualPrice.value)
+            val proPeriod = assertInstanceOf(UiText.StringResource::class.java, annualPro.period)
+            assertEquals(R.string.subscriptions_period_month, proPeriod.resId)
+            val billingDetail = assertInstanceOf(UiText.StringResource::class.java, annualPro.billingDetail)
+            assertEquals(R.string.subscriptions_tier_pro_billing_annual_detail, billingDetail.resId)
+            assertEquals(1, billingDetail.args.size)
+            assertEquals("26,90 €", billingDetail.args[0])
+        }
+
+        @Test
+        fun `mapPlans Pro with Monthly interval has null billingDetail`() {
+            val plans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.MONTHLY,
+                products = emptyList()
+            )
+            val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
+            assertNull(proPlan.billingDetail)
+            val proPeriod = assertInstanceOf(UiText.StringResource::class.java, proPlan.period)
+            assertEquals(R.string.subscriptions_period_month, proPeriod.resId)
         }
 
         @Test
@@ -222,7 +253,7 @@ class SubscriptionsUiMapperImplTest {
             assertFalse(freePlan.isCurrentPlan)
             assertTrue(freePlan.isCtaButtonEnabled)
             val freeCtaText = assertInstanceOf(UiText.StringResource::class.java, freePlan.ctaButtonText)
-            assertEquals(R.string.subscriptions_cta_downgrade_free, freeCtaText.resId)
+            assertEquals(R.string.subscriptions_cta_manage_subscription, freeCtaText.resId)
 
             assertTrue(proPlan.isCurrentPlan)
             assertFalse(proPlan.isCtaButtonEnabled)
