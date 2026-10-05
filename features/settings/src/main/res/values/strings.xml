@@ -74,6 +74,7 @@
     <string name="notification_prefs_timezone">Timezone</string>
     <string name="notification_prefs_no_timezones_found">No timezones found</string>
     <string name="notification_prefs_reminder_time">Reminder Time (HH:MM)</string>
+    <string name="notification_prefs_update_failed">Failed to update notification preferences</string>
 
     <!-- Developer Services Playground -->
     <string name="developer_services_selected_attachment">Selected Attachment</string>

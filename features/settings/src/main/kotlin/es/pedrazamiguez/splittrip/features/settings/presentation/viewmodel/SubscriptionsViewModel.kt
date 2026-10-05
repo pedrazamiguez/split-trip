@@ -108,7 +108,10 @@ class SubscriptionsViewModel(
                         // User canceled purchase dialog; no action needed
                     }
                     is PurchaseStatus.Error -> {
-                        Timber.w("Billing purchase update error: ${status.message}")
+                        val errorException = IllegalStateException(
+                            "Billing purchase update error: ${status.message ?: "Unknown billing error"}"
+                        )
+                        Timber.e(errorException, "Billing purchase update error: %s", status.message)
                         val message = subscriptionsUiMapper.formatBillingError()
                         _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                     }
@@ -157,7 +160,9 @@ class SubscriptionsViewModel(
     fun launchBillingFlow(activity: Any, productId: String) {
         val result = billingService.launchBillingFlow(activity, productId)
         if (result.isFailure) {
-            Timber.e(result.exceptionOrNull(), "Failed to launch billing flow for product: $productId")
+            val failureThrowable = result.exceptionOrNull()
+                ?: IllegalStateException("Failed to launch billing flow for product: $productId")
+            Timber.e(failureThrowable, "Failed to launch billing flow for product: %s", productId)
             viewModelScope.launch {
                 val message = subscriptionsUiMapper.formatBillingError()
                 _actions.send(SubscriptionsUiAction.ShowTopPill(message))

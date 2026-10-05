@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiMod
 import java.math.BigDecimal
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import timber.log.Timber
 
 /**
  * Encapsulates intra-subunit (Level 2) split recalculation logic.
@@ -113,7 +114,8 @@ class IntraSubunitSplitDelegate(
                     member
                 }
             }.toImmutableList()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to recalculate equal intra-subunit shares for entity: %s", entity.userId)
             entity.entityMembers
         }
     }
@@ -178,7 +180,8 @@ class IntraSubunitSplitDelegate(
                     }
                 }.toImmutableList()
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to recalculate exact intra-subunit shares for entity: %s", entity.userId)
             entity.entityMembers
         }
     }
@@ -216,7 +219,8 @@ class IntraSubunitSplitDelegate(
                     currencyCode = currencyCode
                 )
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to recalculate percent intra-subunit shares for entity: %s", entity.userId)
             entity.entityMembers
         }
     }
@@ -372,7 +376,8 @@ class IntraSubunitSplitDelegate(
                     entity
                 }
             }.toImmutableList()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to distribute equal entity splits for amountCents: %d", sourceAmountCents)
             null
         }
     }
@@ -407,7 +412,8 @@ class IntraSubunitSplitDelegate(
                     entity
                 }
             }.toImmutableList()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to distribute exact entity splits for amountCents: %d", sourceAmountCents)
             null
         }
     }

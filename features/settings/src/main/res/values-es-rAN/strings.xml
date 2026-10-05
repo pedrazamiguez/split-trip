@@ -61,6 +61,7 @@
     <string name="notification_prefs_timezone">Çona oraria</string>
     <string name="notification_prefs_no_timezones_found">No çe encontraron çonâ orariâ</string>
     <string name="notification_prefs_reminder_time">Ora del recordatorio (H:MM)</string>
+    <string name="notification_prefs_update_failed">Errôh al âttualiçâh lâ preferençiâ de notificaçionê</string>
     <string name="developer_services_selected_attachment">Âhhunto Çelêççionao</string>
     <string name="developer_services_no_document_selected">Ningún documento çelêççionao. Elihe una imahen (JPÊH, PNG, WÊPP, BMP) o PDF pa ehecutâh OCR.</string>
     <string name="developer_services_name">Nombre:</string>

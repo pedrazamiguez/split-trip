@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.feature
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
@@ -40,11 +42,12 @@ fun SubscriptionsFeature(
                     pillController.showPill(message = action.message.asString(context))
                 }
                 is SubscriptionsUiAction.LaunchBillingFlow -> {
-                    val activity = context as? Activity
+                    val activity = context.findActivity()
                     if (activity != null) {
                         viewModel.launchBillingFlow(activity, action.productId)
                     } else {
-                        Timber.w("Cannot launch billing flow: Host activity is null")
+                        val error = IllegalStateException("Cannot launch billing flow: Host activity is null")
+                        Timber.e(error, "Host activity is null when launching billing flow")
                     }
                 }
                 is SubscriptionsUiAction.OpenUrl -> {
@@ -75,4 +78,10 @@ fun SubscriptionsFeature(
             onDismiss = { viewModel.onEvent(SubscriptionsUiEvent.DismissManageSubscriptionDialog) }
         )
     }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

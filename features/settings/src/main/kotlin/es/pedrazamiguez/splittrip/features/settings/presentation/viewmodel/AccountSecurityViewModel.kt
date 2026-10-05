@@ -162,6 +162,11 @@ class AccountSecurityViewModel(
                     throw e
                 } catch (e: Exception) {
                     Timber.e(e, "Failed to disable biometric lock preference")
+                    val message = UiText.StringResource(
+                        R.string.account_security_error_prefix,
+                        e.message ?: "Failed to disable biometric lock"
+                    )
+                    _actions.send(AccountSecurityUiAction.ShowTopPill(message))
                 }
             }
         }
@@ -176,6 +181,11 @@ class AccountSecurityViewModel(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to enable biometric lock preference")
+                val message = UiText.StringResource(
+                    R.string.account_security_error_prefix,
+                    e.message ?: "Failed to enable biometric lock"
+                )
+                _actions.send(AccountSecurityUiAction.ShowTopPill(message))
             }
         }
     }
