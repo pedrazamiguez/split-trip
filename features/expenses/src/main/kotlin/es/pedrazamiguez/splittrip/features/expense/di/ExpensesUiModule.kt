@@ -161,7 +161,8 @@ val expensesUiModule = module {
             expenseUiMapper = get<ExpenseUiMapper>(),
             authenticationService = get<AuthenticationService>(),
             observeGroupUseCase = get<ObserveGroupUseCase>(),
-            expenseFilterService = get<ExpenseFilterService>()
+            expenseFilterService = get<ExpenseFilterService>(),
+            telemetryTracker = get<TelemetryTracker>()
         )
     }
 
@@ -260,7 +261,8 @@ val expensesUiModule = module {
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             remainderDistributionService = get<RemainderDistributionService>(),
             addExpenseUiMapper = addExpenseUiMapper,
-            submitResultDelegate = submitResultDelegate
+            submitResultDelegate = submitResultDelegate,
+            telemetryTracker = get<TelemetryTracker>()
         )
 
         val addOnExchangeRateDelegate = AddOnExchangeRateDelegate(

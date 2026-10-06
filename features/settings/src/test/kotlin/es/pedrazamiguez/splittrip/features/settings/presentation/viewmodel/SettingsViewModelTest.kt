@@ -3,12 +3,15 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import io.mockk.coEvery
+import io.mockk.coJustRun
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import java.util.Locale
@@ -44,6 +47,7 @@ class SettingsViewModelTest {
     private lateinit var getShouldShowLanguagePillUseCase: GetShouldShowLanguagePillUseCase
     private lateinit var consumeLanguagePillUseCase: ConsumeLanguagePillUseCase
     private lateinit var getAppThemeUseCase: GetAppThemeUseCase
+    private lateinit var getDiagnosticLogsUseCase: GetDiagnosticLogsUseCase
 
     @BeforeEach
     fun setUp() {
@@ -55,11 +59,13 @@ class SettingsViewModelTest {
         getShouldShowLanguagePillUseCase = mockk()
         consumeLanguagePillUseCase = mockk()
         getAppThemeUseCase = mockk()
+        getDiagnosticLogsUseCase = mockk()
 
         every { isUserAnonymousUseCase() } returns flowOf(false)
         every { getAppLanguageUseCase() } returns flowOf(null)
         every { getShouldShowLanguagePillUseCase() } returns flowOf(false)
         every { getAppThemeUseCase() } returns flowOf("system")
+        every { getDiagnosticLogsUseCase() } returns "mock logs"
     }
 
     @AfterEach
@@ -74,7 +80,8 @@ class SettingsViewModelTest {
         getAppLanguageUseCase = getAppLanguageUseCase,
         getShouldShowLanguagePillUseCase = getShouldShowLanguagePillUseCase,
         consumeLanguagePillUseCase = consumeLanguagePillUseCase,
-        getAppThemeUseCase = getAppThemeUseCase
+        getAppThemeUseCase = getAppThemeUseCase,
+        getDiagnosticLogsUseCase = getDiagnosticLogsUseCase
     )
 
     // ── currentCurrency StateFlow ───────────────────────────────────────────
@@ -284,13 +291,31 @@ class SettingsViewModelTest {
         @Test
         fun `calls ConsumeLanguagePillUseCase`() = runTest(testDispatcher) {
             every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
-            io.mockk.coJustRun { consumeLanguagePillUseCase() }
+            coJustRun { consumeLanguagePillUseCase() }
 
             val viewModel = createViewModel()
             viewModel.consumeLanguagePill()
             advanceUntilIdle()
 
-            io.mockk.coVerify(exactly = 1) { consumeLanguagePillUseCase() }
+            coVerify(exactly = 1) { consumeLanguagePillUseCase() }
+        }
+    }
+
+    // ── getDiagnosticLogs ───────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getDiagnosticLogs")
+    inner class GetDiagnosticLogs {
+
+        @Test
+        fun `delegates to GetDiagnosticLogsUseCase`() {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            every { getDiagnosticLogsUseCase() } returns "system logs"
+
+            val viewModel = createViewModel()
+            val result = viewModel.getDiagnosticLogs()
+
+            assertEquals("system logs", result)
         }
     }
 }

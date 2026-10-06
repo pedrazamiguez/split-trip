@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -50,7 +51,8 @@ class ExpensesViewModel(
     private val expenseUiMapper: ExpenseUiMapper,
     private val authenticationService: AuthenticationService,
     private val observeGroupUseCase: ObserveGroupUseCase,
-    private val expenseFilterService: ExpenseFilterService
+    private val expenseFilterService: ExpenseFilterService,
+    private val telemetryTracker: TelemetryTracker
 ) : ViewModel() {
 
     private val _scrollState = MutableStateFlow(Pair(0, 0))
@@ -283,6 +285,10 @@ class ExpensesViewModel(
         viewModelScope.launch {
             try {
                 useCases.deleteExpenseUseCase(groupId, expenseId)
+                telemetryTracker.trackEvent(
+                    "expense_deleted",
+                    mapOf("expense_id" to expenseId, "group_id" to groupId)
+                )
                 _actions.emit(
                     ExpensesUiAction.ShowDeleteSuccess(
                         UiText.StringResource(R.string.expense_deleted_successfully)

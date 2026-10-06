@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -67,6 +68,7 @@ class AddContributionViewModelTest {
     private lateinit var getContributionUseCase: GetContributionUseCase
     private lateinit var configHandler: ContributionConfigHandler
     private lateinit var submitHandler: ContributionSubmitHandler
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var viewModel: AddContributionViewModel
 
     private val testGroup = Group(
@@ -144,11 +146,14 @@ class AddContributionViewModelTest {
             getContributionUseCase = getContributionUseCase
         )
 
+        telemetryTracker = mockk(relaxed = true)
+
         submitHandler = ContributionSubmitHandler(
             addContributionUseCase = addContributionUseCase,
             updateContributionUseCase = updateContributionUseCase,
             contributionValidationService = contributionValidationService,
-            groupCurrencyProvider = { configHandler.groupCurrency }
+            groupCurrencyProvider = { configHandler.groupCurrency },
+            telemetryTracker = telemetryTracker
         )
 
         viewModel = AddContributionViewModel(

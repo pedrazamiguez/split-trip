@@ -10,8 +10,10 @@ import es.pedrazamiguez.splittrip.appcheck.createAppCheckProviderFactory
 import es.pedrazamiguez.splittrip.appcheck.getDebugTokenFromPrefs
 import es.pedrazamiguez.splittrip.appcheck.seedDebugToken
 import es.pedrazamiguez.splittrip.core.logging.LogContext
+import es.pedrazamiguez.splittrip.core.logging.buffer.RollingLogBuffer
 import es.pedrazamiguez.splittrip.core.logging.tree.DevelopmentLogcatTree
 import es.pedrazamiguez.splittrip.core.logging.tree.ProductionCrashlyticsTree
+import es.pedrazamiguez.splittrip.core.logging.tree.RollingLogTree
 import es.pedrazamiguez.splittrip.data.firebase.messaging.channel.NotificationChannelInitializer
 import es.pedrazamiguez.splittrip.di.appModule
 import es.pedrazamiguez.splittrip.di.authenticationFeatureModules
@@ -121,6 +123,8 @@ class App : Application() {
 
     private fun setupTimber() {
         val logContext = GlobalContext.get().get<LogContext>()
+        val rollingLogBuffer = GlobalContext.get().get<RollingLogBuffer>()
+        Timber.plant(RollingLogTree(rollingLogBuffer))
         if (BuildConfig.DEBUG) {
             Timber.plant(DevelopmentLogcatTree(logContext))
         } else {

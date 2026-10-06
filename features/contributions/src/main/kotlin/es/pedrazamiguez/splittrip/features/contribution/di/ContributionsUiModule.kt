@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContribut
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
@@ -56,6 +57,7 @@ val contributionsUiModule = module {
         val addContributionUiMapper = get<AddContributionUiMapper>()
         val contributionValidationService = get<ContributionValidationService>()
         val appConfigService = get<AppConfigService>()
+        val telemetryTracker = get<TelemetryTracker>()
 
         val contributionConfigHandler = ContributionConfigHandler(
             getGroupByIdUseCase = get<GetGroupByIdUseCase>(),
@@ -71,7 +73,8 @@ val contributionsUiModule = module {
             addContributionUseCase = get<AddContributionUseCase>(),
             updateContributionUseCase = get<UpdateContributionUseCase>(),
             contributionValidationService = contributionValidationService,
-            groupCurrencyProvider = { contributionConfigHandler.groupCurrency }
+            groupCurrencyProvider = { contributionConfigHandler.groupCurrency },
+            telemetryTracker = telemetryTracker
         )
 
         AddContributionViewModel(

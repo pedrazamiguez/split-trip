@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.exception.ValidationException
@@ -70,7 +71,8 @@ class CreateEditSubunitViewModel(
     private val subunitUiMapper: SubunitUiMapper,
     private val shareDistributionService: SubunitShareDistributionService,
     private val authenticationService: AuthenticationService,
-    private val featureGateService: FeatureGateService
+    private val featureGateService: FeatureGateService,
+    private val telemetryTracker: TelemetryTracker
 ) : ViewModel() {
 
     private data class InitParams(val groupId: String, val subunitId: String?)
@@ -422,6 +424,12 @@ class CreateEditSubunitViewModel(
                     .map { UiText.StringResource(R.string.subunit_updated_success) }
             } else {
                 createSubunitUseCase(params.groupId, subunit)
+                    .onSuccess {
+                        telemetryTracker.trackEvent(
+                            "subunit_created",
+                            mapOf("member_count" to subunit.memberIds.size.toString())
+                        )
+                    }
                     .map { UiText.StringResource(R.string.subunit_created_success) }
             }
 

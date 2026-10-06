@@ -19,4 +19,11 @@ class PiiSanitizerTest {
         assertEquals("Contacts: a***@b***.com, a***@c***.org.", "Contacts: a@b.com, ab@cd.org.".sanitizePii())
         assertEquals("Normal message without email.", "Normal message without email.".sanitizePii())
     }
+
+    @Test
+    fun testHashIdentifier() {
+        val hash = "user123".hashIdentifier()
+        assertEquals(64, hash.length)
+        assertEquals(hash, "user123".hashIdentifier())
+    }
 }

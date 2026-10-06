@@ -3,6 +3,7 @@
 package es.pedrazamiguez.splittrip.data.sync
 
 import es.pedrazamiguez.splittrip.core.logging.LogTag
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
@@ -146,7 +147,8 @@ internal fun syncCreateToCloud(
     updateSyncStatus: suspend (String, SyncStatus) -> Unit,
     getCurrentSyncStatus: (suspend (String) -> SyncStatus)? = null,
     entityLabel: String,
-    performanceMonitor: PerformanceMonitor
+    performanceMonitor: PerformanceMonitor,
+    telemetryTracker: TelemetryTracker? = null
 ) {
     scope.launch {
         try {
@@ -171,6 +173,14 @@ internal fun syncCreateToCloud(
             if (currentStatus == null || currentStatus == SyncStatus.PENDING_SYNC) {
                 updateSyncStatus(entityId, SyncStatus.SYNC_FAILED)
             }
+            telemetryTracker?.trackEvent(
+                "cloud_sync_failed",
+                mapOf(
+                    "entity" to entityLabel,
+                    "entity_id" to entityId,
+                    "reason" to (e.message ?: "unknown")
+                )
+            )
             Timber.tag(LogTag.SYNC).w(e, "Failed to sync %s to cloud", entityLabel)
         }
     }
@@ -187,12 +197,14 @@ internal fun syncCreateToCloud(
  * @param entityId ID of the entity being deleted.
  * @param cloudDelete Suspend function that performs the cloud deletion.
  * @param entityLabel Human-readable entity name for Timber logging.
+ * @param telemetryTracker Optional tracker for cloud sync failure telemetry.
  */
 internal fun syncDeletionToCloud(
     scope: CoroutineScope,
     entityId: String,
     cloudDelete: suspend () -> Unit,
-    entityLabel: String
+    entityLabel: String,
+    telemetryTracker: TelemetryTracker? = null
 ) {
     scope.launch {
         try {
@@ -207,6 +219,14 @@ internal fun syncDeletionToCloud(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            telemetryTracker?.trackEvent(
+                "cloud_sync_failed",
+                mapOf(
+                    "entity" to entityLabel,
+                    "entity_id" to entityId,
+                    "reason" to (e.message ?: "unknown")
+                )
+            )
             Timber.tag(LogTag.SYNC).w(e, "Failed to sync %s deletion to cloud, will retry later", entityLabel)
         }
     }

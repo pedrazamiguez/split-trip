@@ -5,4 +5,6 @@ interface TelemetryTracker {
     fun trackEvent(eventName: String, params: Map<String, Any> = emptyMap())
     fun setUserId(userId: String?)
     fun setUserProperty(name: String, value: String?)
+    fun setCustomKey(key: String, value: String)
+    fun setCustomKey(key: String, value: Boolean)
 }

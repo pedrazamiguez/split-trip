@@ -47,7 +47,7 @@ class SubmitResultDelegate(
         uiState.value.selectedCategory?.id?.let { id ->
             runCatching { saveLastUsedPreferences.setGroupLastUsedCategoryUseCase(groupId, id) }
         }
-        val eventName = if (uiState.value.isEditMode) "expense_edited" else "expense_added"
+        val eventName = if (uiState.value.isEditMode) "expense_updated" else "expense_created"
         telemetryTracker.trackEvent(
             eventName,
             mapOf(

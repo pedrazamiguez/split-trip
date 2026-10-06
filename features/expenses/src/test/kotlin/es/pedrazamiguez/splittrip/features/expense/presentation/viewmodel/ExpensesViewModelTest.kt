@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
@@ -74,6 +75,7 @@ class ExpensesViewModelTest {
     private lateinit var updateExpenseUseCase: UpdateExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var observeGroupUseCase: ObserveGroupUseCase
+    private lateinit var telemetryTracker: TelemetryTracker
     private var expenseSearchService: ExpenseSearchService = ExpenseSearchServiceImpl()
     private var expenseFilterService: ExpenseFilterService =
         ExpenseFilterServiceImpl(expenseSearchService = expenseSearchService)
@@ -137,6 +139,7 @@ class ExpensesViewModelTest {
         updateExpenseUseCase = mockk()
         authenticationService = mockk()
         observeGroupUseCase = mockk()
+        telemetryTracker = mockk(relaxed = true)
 
         stubDefaultUseCases()
         stubExpenseUiMapper()
@@ -574,6 +577,12 @@ class ExpensesViewModelTest {
 
             // Then
             coVerify(exactly = 1) { deleteExpenseUseCase(testGroupId, "expense-1") }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    "expense_deleted",
+                    mapOf("expense_id" to "expense-1", "group_id" to testGroupId)
+                )
+            }
 
             collectJob.cancel()
         }
@@ -1342,6 +1351,7 @@ class ExpensesViewModelTest {
         expenseUiMapper = expenseUiMapper,
         authenticationService = authenticationService,
         observeGroupUseCase = observeGroupUseCase,
-        expenseFilterService = expenseFilterService
+        expenseFilterService = expenseFilterService,
+        telemetryTracker = telemetryTracker
     )
 }

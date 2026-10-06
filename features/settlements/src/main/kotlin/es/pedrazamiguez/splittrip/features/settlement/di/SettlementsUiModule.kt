@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContribut
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
@@ -46,10 +47,12 @@ val settlementsUiModule = module {
         val confirmSettlementUseCase = get<ConfirmSettlementUseCase>()
         val disputeSettlementUseCase = get<DisputeSettlementUseCase>()
         val nudgeDebtorUseCase = get<NudgeDebtorUseCase>()
+        val telemetryTracker = get<TelemetryTracker>()
         YourBalanceActionDelegate(
             confirmSettlementUseCase = confirmSettlementUseCase,
             disputeSettlementUseCase = disputeSettlementUseCase,
-            nudgeDebtorUseCase = nudgeDebtorUseCase
+            nudgeDebtorUseCase = nudgeDebtorUseCase,
+            telemetryTracker = telemetryTracker
         )
     }
 
@@ -73,6 +76,7 @@ val settlementsUiModule = module {
         val disputeSettlementUseCase = get<DisputeSettlementUseCase>()
         val archiveGroupUseCase = get<ArchiveGroupUseCase>()
         val getSettlementSuggestionsUseCase = get<GetSettlementSuggestionsUseCase>()
+        val telemetryTracker = get<TelemetryTracker>()
         GroupSettlementOverviewViewModel(
             getGroupSettlementsFlowUseCase = getGroupSettlementsFlowUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
@@ -82,7 +86,8 @@ val settlementsUiModule = module {
             confirmSettlementUseCase = confirmSettlementUseCase,
             disputeSettlementUseCase = disputeSettlementUseCase,
             archiveGroupUseCase = archiveGroupUseCase,
-            getSettlementSuggestionsUseCase = getSettlementSuggestionsUseCase
+            getSettlementSuggestionsUseCase = getSettlementSuggestionsUseCase,
+            telemetryTracker = telemetryTracker
         )
     }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DisputeSettlementUseCase
@@ -42,7 +43,8 @@ class GroupSettlementOverviewViewModel(
     private val confirmSettlementUseCase: ConfirmSettlementUseCase,
     private val disputeSettlementUseCase: DisputeSettlementUseCase,
     private val archiveGroupUseCase: ArchiveGroupUseCase,
-    private val getSettlementSuggestionsUseCase: GetSettlementSuggestionsUseCase
+    private val getSettlementSuggestionsUseCase: GetSettlementSuggestionsUseCase,
+    private val telemetryTracker: TelemetryTracker
 ) : ViewModel() {
 
     private val _groupId = MutableStateFlow("")
@@ -119,6 +121,7 @@ class GroupSettlementOverviewViewModel(
             viewModelScope.launch {
                 try {
                     getSettlementSuggestionsUseCase.persistForGroup(groupId)
+                    telemetryTracker.trackEvent("settlement_initiated", mapOf("group_id" to groupId))
                 } catch (e: Exception) {
                     Timber.e(e, "Failed to persist settlement suggestions for group $groupId")
                 }
@@ -201,7 +204,12 @@ class GroupSettlementOverviewViewModel(
             var hasError = false
             for (id in settlementIds) {
                 confirmSettlementUseCase(groupId, id).fold(
-                    onSuccess = { /* continue */ },
+                    onSuccess = {
+                        telemetryTracker.trackEvent(
+                            "settlement_confirmed",
+                            mapOf("group_id" to groupId, "settlement_id" to id)
+                        )
+                    },
                     onFailure = { e ->
                         Timber.w(e, "Failed to confirm settlement $id")
                         hasError = true

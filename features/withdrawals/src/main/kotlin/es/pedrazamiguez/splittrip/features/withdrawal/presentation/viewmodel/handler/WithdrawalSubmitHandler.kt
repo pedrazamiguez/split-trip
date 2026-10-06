@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
@@ -34,7 +35,8 @@ import timber.log.Timber
 class WithdrawalSubmitHandler(
     private val addCashWithdrawalUseCase: AddCashWithdrawalUseCase,
     private val cashWithdrawalValidationService: CashWithdrawalValidationService,
-    private val exchangeRateCalculationService: ExchangeRateCalculationService
+    private val exchangeRateCalculationService: ExchangeRateCalculationService,
+    private val telemetryTracker: TelemetryTracker
 ) : AddCashWithdrawalEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddCashWithdrawalUiState>
@@ -90,6 +92,13 @@ class WithdrawalSubmitHandler(
                     notes = state.notes.trim().ifBlank { null }
                 )
                 addCashWithdrawalUseCase(groupId, withdrawal).getOrThrow()
+                telemetryTracker.trackEvent(
+                    "withdrawal_created",
+                    mapOf(
+                        "currency" to selectedCurrency.code,
+                        "has_fee" to state.hasFee.toString()
+                    )
+                )
                 onSuccess()
             } catch (e: GroupArchivedException) {
                 Timber.e(e, "Group is archived, cannot add cash withdrawal")
