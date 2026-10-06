@@ -37,7 +37,10 @@ fun ContributionDetailScreen(
                     EmptyStateView(
                         title = stringResource(R.string.contribution_detail_error_loading),
                         icon = TablerIcons.Outline.Wallet,
-                        modifier = Modifier.padding(top = topPadding)
+                        modifier = Modifier.padding(
+                            top = topPadding,
+                            bottom = bottomPadding
+                        )
                     )
                 }
                 else -> {

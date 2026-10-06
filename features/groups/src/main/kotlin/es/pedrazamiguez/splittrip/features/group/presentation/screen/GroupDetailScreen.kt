@@ -66,7 +66,10 @@ fun GroupDetailScreen(
                 EmptyStateView(
                     title = stringResource(R.string.group_detail_error_loading),
                     icon = TablerIcons.Outline.UsersGroup,
-                    modifier = Modifier.padding(top = topPadding)
+                    modifier = Modifier.padding(
+                        top = topPadding,
+                        bottom = bottomPadding
+                    )
                 )
             }
             else -> {

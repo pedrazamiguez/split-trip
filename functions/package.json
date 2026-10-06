@@ -23,7 +23,7 @@
   "dependencies": {
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
-    "firebase-admin": "^12.0.0",
+    "firebase-admin": "^13.10.0",
     "firebase-functions": "^7.3.0"
   },
   "devDependencies": {
@@ -46,6 +46,7 @@
     "js-yaml": "^4.3.2",
     "body-parser": "^1.20.6",
     "@babel/core": "^7.29.6",
-    "qs": "^6.16.0"
+    "qs": "^6.16.0",
+    "@fastify/busboy": "^3.2.2"
   }
 }

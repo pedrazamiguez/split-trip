@@ -105,7 +105,10 @@ fun ExpensesScreen(
                     EmptyStateView(
                         title = stringResource(R.string.expenses_not_found),
                         icon = TablerIcons.Outline.Receipt,
-                        modifier = Modifier.padding(top = topPadding)
+                        modifier = Modifier.padding(
+                            top = topPadding,
+                            bottom = bottomPadding
+                        )
                     )
                 }
 
@@ -164,7 +167,8 @@ fun ExpensesScreen(
                                 EmptyStateView(
                                     title = stringResource(R.string.expenses_search_empty_title),
                                     description = stringResource(R.string.expenses_search_empty_description),
-                                    icon = TablerIcons.Outline.Search
+                                    icon = TablerIcons.Outline.Search,
+                                    modifier = Modifier.padding(bottom = bottomPadding)
                                 )
                             }
 

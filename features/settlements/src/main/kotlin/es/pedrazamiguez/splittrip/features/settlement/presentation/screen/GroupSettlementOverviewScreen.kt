@@ -44,6 +44,7 @@ fun GroupSettlementOverviewScreen(
     }
 
     val topPadding = LocalTopPadding.current
+    val bottomPadding = LocalBottomPadding.current
 
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
@@ -52,13 +53,15 @@ fun GroupSettlementOverviewScreen(
         when {
             uiState.hasError -> EmptyStateView(
                 title = stringResource(R.string.settlement_overview_error_loading),
-                modifier = Modifier.padding(top = topPadding)
+                modifier = Modifier.padding(
+                    top = topPadding,
+                    bottom = bottomPadding
+                )
             )
             uiState.isUserCreator -> {
                 val activeSteps = uiState.activeSteps
                 val currentStepIndex = activeSteps.indexOf(uiState.currentStep).coerceAtLeast(0)
                 val isOnLastStep = uiState.currentStep == activeSteps.lastOrNull()
-                val bottomPadding = LocalBottomPadding.current
 
                 val isCurrentStepValid = when (uiState.currentStep) {
                     ArchiveWizardStep.CONFIRMATION -> uiState.areAllSettlementsResolved
