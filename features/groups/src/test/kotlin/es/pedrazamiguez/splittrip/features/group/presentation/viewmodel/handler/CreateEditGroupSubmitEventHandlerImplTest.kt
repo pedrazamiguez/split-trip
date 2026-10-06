@@ -311,6 +311,9 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             advanceUntilIdle()
 
             coVerify(exactly = 1) { updateGroupUseCase(match { it.id == "group-123" && it.name == "Updated Trip" }) }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent("group_updated", mapOf("group_id" to "group-123"))
+            }
         }
 
         @Test
@@ -352,13 +355,15 @@ class CreateEditGroupSubmitEventHandlerImplTest {
         }
 
         @Test
-        fun `tracks no telemetry event on group update`() = runTest(testDispatcher) {
+        fun `tracks group_updated telemetry event on group update`() = runTest(testDispatcher) {
             coEvery { updateGroupUseCase(any()) } returns Result.success(Unit)
 
             handler.handleSubmit {}
             advanceUntilIdle()
 
-            coVerify(exactly = 0) { telemetryTracker.trackEvent(any(), any()) }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent("group_updated", mapOf("group_id" to testGroup.id))
+            }
         }
 
         @Test

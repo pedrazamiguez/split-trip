@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -41,7 +42,8 @@ class SubmitEventHandler(
     private val expenseCalculatorService: ExpenseCalculatorService,
     private val remainderDistributionService: RemainderDistributionService,
     private val addExpenseUiMapper: AddExpenseUiMapper,
-    private val submitResultDelegate: SubmitResultDelegate
+    private val submitResultDelegate: SubmitResultDelegate,
+    private val telemetryTracker: TelemetryTracker
 ) : AddExpenseEventHandler {
 
     private lateinit var strategy: ExpenseFlowStrategy
@@ -85,6 +87,7 @@ class SubmitEventHandler(
         val titleValidation = expenseValidationService.validateTitle(currentState.expenseTitle)
         if (titleValidation is ValidationResult.Invalid) {
             Timber.w("submitExpense: title validation failed — length=%d", currentState.expenseTitle.length)
+            telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "title"))
             val errorText = UiText.StringResource(R.string.expense_error_title_empty)
             _uiState.update {
                 it.copy(
@@ -104,6 +107,7 @@ class SubmitEventHandler(
                 "submitExpense: amount validation failed — reason=%s",
                 amountValidation.message
             )
+            telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "amount"))
             val errorText = UiText.DynamicString(amountValidation.message)
             _uiState.update {
                 it.copy(
@@ -124,6 +128,7 @@ class SubmitEventHandler(
                 "submitExpense: due-date required but null — paymentStatus=%s",
                 currentState.selectedPaymentStatus.id
             )
+            telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "due_date"))
             val errorText = UiText.StringResource(R.string.expense_error_due_date_required)
             _uiState.update {
                 it.copy(
@@ -203,6 +208,7 @@ class SubmitEventHandler(
             }
         }.onFailure { e ->
             Timber.e(e, "submitExpense: failed to map expense to domain")
+            telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "split"))
             val errorText = UiText.DynamicString(e.message ?: "Unknown error")
             _uiState.update {
                 it.copy(

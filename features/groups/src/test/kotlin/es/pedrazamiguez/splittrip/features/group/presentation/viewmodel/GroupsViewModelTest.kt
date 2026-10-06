@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.UnresolvedSettlementsException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -62,6 +63,7 @@ class GroupsViewModelTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var archiveGroupUseCase: ArchiveGroupUseCase
     private lateinit var leaveWizardEventHandler: GroupLeaveWizardEventHandler
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var viewModel: GroupsViewModel
 
     private val testGroup1 = Group(
@@ -127,6 +129,8 @@ class GroupsViewModelTest {
         leaveWizardEventHandler = mockk(relaxed = true)
         every { leaveWizardEventHandler.wizardState } returns MutableStateFlow(LeaveWizardUiState())
 
+        telemetryTracker = mockk(relaxed = true)
+
         viewModel = createViewModel()
     }
 
@@ -138,7 +142,8 @@ class GroupsViewModelTest {
         isUserAnonymousUseCase: IsUserAnonymousUseCase = this.isUserAnonymousUseCase,
         authenticationService: AuthenticationService = this.authenticationService,
         archiveGroupUseCase: ArchiveGroupUseCase = this.archiveGroupUseCase,
-        leaveWizardEventHandler: GroupLeaveWizardEventHandler = this.leaveWizardEventHandler
+        leaveWizardEventHandler: GroupLeaveWizardEventHandler = this.leaveWizardEventHandler,
+        telemetryTracker: TelemetryTracker = this.telemetryTracker
     ): GroupsViewModel {
         return GroupsViewModel(
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
@@ -148,7 +153,8 @@ class GroupsViewModelTest {
             isUserAnonymousUseCase = isUserAnonymousUseCase,
             authenticationService = authenticationService,
             archiveGroupUseCase = archiveGroupUseCase,
-            leaveWizardEventHandler = leaveWizardEventHandler
+            leaveWizardEventHandler = leaveWizardEventHandler,
+            telemetryTracker = telemetryTracker
         )
     }
 
@@ -435,12 +441,24 @@ class GroupsViewModelTest {
 
             // Then
             coVerify(exactly = 1) { deleteGroupUseCase("group-1") }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent("group_deleted", mapOf("group_id" to "group-1"))
+            }
             assertTrue(
                 actions.any { it is GroupsUiAction.ShowDeleteSuccess },
                 "Expected ShowDeleteSuccess action"
             )
             actionsJob.cancel()
             collectJob.cancel()
+        }
+
+        @Test
+        fun `SelectGroup event tracks group_selected telemetry event`() = runTest(testDispatcher) {
+            viewModel.onEvent(GroupsUiEvent.SelectGroup("group-1"))
+
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent("group_selected", mapOf("group_id" to "group-1"))
+            }
         }
 
         @Test

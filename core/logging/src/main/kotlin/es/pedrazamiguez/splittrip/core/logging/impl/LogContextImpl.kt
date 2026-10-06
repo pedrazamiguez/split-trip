@@ -1,7 +1,7 @@
 package es.pedrazamiguez.splittrip.core.logging.impl
 
 import es.pedrazamiguez.splittrip.core.logging.LogContext
-import java.security.MessageDigest
+import es.pedrazamiguez.splittrip.core.logging.sanitizer.hashIdentifier
 import java.util.UUID
 
 class LogContextImpl(
@@ -16,15 +16,5 @@ class LogContextImpl(
     }
 
     override val userId: String
-        get() = userIdProvider()?.hashOrAnonymous() ?: "anonymous"
-
-    private fun String.hashOrAnonymous(): String {
-        return try {
-            val digest = MessageDigest.getInstance("SHA-256")
-            val hash = digest.digest(this.toByteArray(Charsets.UTF_8))
-            hash.joinToString("") { "%02x".format(it) }
-        } catch (_: Exception) {
-            "anonymous"
-        }
-    }
+        get() = userIdProvider()?.hashIdentifier() ?: "anonymous"
 }

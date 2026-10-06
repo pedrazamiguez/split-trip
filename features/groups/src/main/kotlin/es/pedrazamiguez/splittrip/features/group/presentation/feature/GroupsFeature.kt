@@ -69,6 +69,7 @@ fun GroupsFeature(
         },
         onSelectGroup = { groupId, groupName, currency ->
             if (groupId != selectedGroupId) {
+                groupsViewModel.onEvent(GroupsUiEvent.SelectGroup(groupId))
                 sharedViewModel.selectGroup(groupId, groupName, currency)
             } else {
                 sharedViewModel.selectGroup(null, null, null)

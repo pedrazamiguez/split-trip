@@ -324,4 +324,13 @@
     <string name="subscriptions_restore_none_found">No active subscriptions found to restore.</string>
     <string name="subscriptions_billing_error">Unable to complete purchase. Please try again later.</string>
     <string name="subscriptions_service_unavailable">Subscription options are currently unavailable. Please try again later.</string>
+
+    <!-- Developer Diagnostics -->
+    <string name="developer_diagnostics_title">Diagnostic Logs</string>
+    <string name="developer_diagnostics_description">Export sanitized in-memory logs for bug diagnosis and troubleshooting.</string>
+    <string name="developer_diagnostics_copy_action">Copy Diagnostics</string>
+    <string name="developer_diagnostics_copied">Diagnostic logs copied to clipboard</string>
+    <string name="settings_developer_diagnostics_title">Diagnostic Logs</string>
+    <string name="settings_developer_diagnostics_description">Copy sanitized logs for debugging</string>
 </resources>
+

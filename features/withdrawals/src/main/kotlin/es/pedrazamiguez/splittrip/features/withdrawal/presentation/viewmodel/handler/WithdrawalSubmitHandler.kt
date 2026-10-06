@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
@@ -34,7 +35,8 @@ import timber.log.Timber
 class WithdrawalSubmitHandler(
     private val addCashWithdrawalUseCase: AddCashWithdrawalUseCase,
     private val cashWithdrawalValidationService: CashWithdrawalValidationService,
-    private val exchangeRateCalculationService: ExchangeRateCalculationService
+    private val exchangeRateCalculationService: ExchangeRateCalculationService,
+    private val telemetryTracker: TelemetryTracker
 ) : AddCashWithdrawalEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddCashWithdrawalUiState>
@@ -64,32 +66,19 @@ class WithdrawalSubmitHandler(
 
         if (!validateInputs(state, amountWithdrawn, groupCurrency)) return
 
-        val deductedBaseAmount = resolveDeductedAmount(state, amountWithdrawn, groupCurrency)
-        val exchangeRate = resolveExchangeRate(state, amountWithdrawn, deductedBaseAmount)
-        val addOns = buildFeeAddOn(state, groupCurrency)
+        val withdrawal = buildCashWithdrawal(groupId, state, selectedCurrency, groupCurrency, amountWithdrawn)
 
         _uiState.update { it.copy(isLoading = true) }
         scope.launch {
             try {
-                val withdrawal = CashWithdrawal(
-                    groupId = groupId,
-                    withdrawnBy = state.selectedMemberId ?: "",
-                    withdrawalScope = state.withdrawalScope,
-                    subunitId = if (state.withdrawalScope == PayerType.SUBUNIT) {
-                        state.selectedSubunitId
-                    } else {
-                        null
-                    },
-                    amountWithdrawn = amountWithdrawn,
-                    remainingAmount = amountWithdrawn,
-                    currency = selectedCurrency.code,
-                    deductedBaseAmount = deductedBaseAmount,
-                    exchangeRate = exchangeRate,
-                    addOns = addOns,
-                    title = state.title.trim().ifBlank { null },
-                    notes = state.notes.trim().ifBlank { null }
-                )
                 addCashWithdrawalUseCase(groupId, withdrawal).getOrThrow()
+                telemetryTracker.trackEvent(
+                    "withdrawal_created",
+                    mapOf(
+                        "currency" to selectedCurrency.code,
+                        "has_fee" to state.hasFee.toString()
+                    )
+                )
                 onSuccess()
             } catch (e: GroupArchivedException) {
                 Timber.e(e, "Group is archived, cannot add cash withdrawal")
@@ -111,6 +100,37 @@ class WithdrawalSubmitHandler(
                 )
             }
         }
+    }
+
+    private fun buildCashWithdrawal(
+        groupId: String,
+        state: AddCashWithdrawalUiState,
+        selectedCurrency: CurrencyUiModel,
+        groupCurrency: CurrencyUiModel,
+        amountWithdrawn: Long
+    ): CashWithdrawal {
+        val deductedBaseAmount = resolveDeductedAmount(state, amountWithdrawn, groupCurrency)
+        val exchangeRate = resolveExchangeRate(state, amountWithdrawn, deductedBaseAmount)
+        val addOns = buildFeeAddOn(state, groupCurrency)
+
+        return CashWithdrawal(
+            groupId = groupId,
+            withdrawnBy = state.selectedMemberId ?: "",
+            withdrawalScope = state.withdrawalScope,
+            subunitId = if (state.withdrawalScope == PayerType.SUBUNIT) {
+                state.selectedSubunitId
+            } else {
+                null
+            },
+            amountWithdrawn = amountWithdrawn,
+            remainingAmount = amountWithdrawn,
+            currency = selectedCurrency.code,
+            deductedBaseAmount = deductedBaseAmount,
+            exchangeRate = exchangeRate,
+            addOns = addOns,
+            title = state.title.trim().ifBlank { null },
+            notes = state.notes.trim().ifBlank { null }
+        )
     }
 
     private fun validateInputs(

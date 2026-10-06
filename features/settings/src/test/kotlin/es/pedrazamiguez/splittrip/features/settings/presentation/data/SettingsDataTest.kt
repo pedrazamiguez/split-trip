@@ -32,6 +32,7 @@ class SettingsDataTest {
     private var privacyPolicyClickCount = 0
     private var openSourceClickCount = 0
     private var developerInfoClickCount = 0
+    private var copyDiagnosticsClickCount = 0
     private var servicesTestClickCount = 0
 
     private fun createParams(): SettingsPreferencesParams = SettingsPreferencesParams(
@@ -53,7 +54,8 @@ class SettingsDataTest {
         onContactSupportClick = { contactSupportClickCount++ },
         onPrivacyPolicyClick = { privacyPolicyClickCount++ },
         onOpenSourceClick = { openSourceClickCount++ },
-        onDeveloperInfoClick = { developerInfoClickCount++ }
+        onDeveloperInfoClick = { developerInfoClickCount++ },
+        onCopyDiagnosticsClick = { copyDiagnosticsClickCount++ }
     )
 
     @Nested
@@ -340,6 +342,9 @@ class SettingsDataTest {
             val developerItem = aboutSection.items
                 .filterIsInstance<SettingsItemModel.Standard>()
                 .first { it.titleRes == R.string.settings_about_developer_title }
+            val copyDiagnosticsItem = aboutSection.items
+                .filterIsInstance<SettingsItemModel.Standard>()
+                .first { it.titleRes == R.string.settings_developer_diagnostics_title }
 
             assertEquals(0, privacyPolicyClickCount)
             privacyItem.onClick?.invoke()
@@ -352,6 +357,10 @@ class SettingsDataTest {
             assertEquals(0, developerInfoClickCount)
             developerItem.onClick?.invoke()
             assertEquals(1, developerInfoClickCount)
+
+            assertEquals(0, copyDiagnosticsClickCount)
+            copyDiagnosticsItem.onClick?.invoke()
+            assertEquals(1, copyDiagnosticsClickCount)
         }
     }
 }

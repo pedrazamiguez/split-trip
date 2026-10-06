@@ -120,6 +120,10 @@ class CreateEditGroupSubmitEventHandlerImpl(
                         )
                     }
                     val hasError = syncMemberChanges(group, membersToAdd, membersToRemove)
+                    telemetryTracker.trackEvent(
+                        "group_updated",
+                        mapOf("group_id" to group.id)
+                    )
                     emitGroupUpdateResult(hasError)
                     onSuccess()
                 }

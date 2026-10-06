@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SendPasswordResetEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.UnlinkProviderUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
@@ -84,6 +85,7 @@ val settingsUiModule = module {
         val consumeLanguagePillUseCase = get<ConsumeLanguagePillUseCase>()
         val getAppThemeUseCase = get<GetAppThemeUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
+        val getDiagnosticLogsUseCase = get<GetDiagnosticLogsUseCase>()
         SettingsViewModel(
             signOutUseCase = signOutUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
@@ -91,7 +93,8 @@ val settingsUiModule = module {
             getShouldShowLanguagePillUseCase = getShouldShowLanguagePillUseCase,
             consumeLanguagePillUseCase = consumeLanguagePillUseCase,
             getAppThemeUseCase = getAppThemeUseCase,
-            isUserAnonymousUseCase = isUserAnonymousUseCase
+            isUserAnonymousUseCase = isUserAnonymousUseCase,
+            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase
         )
     }
 
@@ -175,10 +178,12 @@ val settingsUiModule = module {
     viewModel {
         val getDeveloperInfoUseCase = get<GetDeveloperInfoUseCase>()
         val getAppLanguageUseCase = get<GetAppLanguageUseCase>()
+        val getDiagnosticLogsUseCase = get<GetDiagnosticLogsUseCase>()
         val developerInfoUiMapper = get<DeveloperInfoUiMapper>()
         DeveloperInfoViewModel(
             getDeveloperInfoUseCase = getDeveloperInfoUseCase,
             getAppLanguageUseCase = getAppLanguageUseCase,
+            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase,
             developerInfoUiMapper = developerInfoUiMapper
         )
     }

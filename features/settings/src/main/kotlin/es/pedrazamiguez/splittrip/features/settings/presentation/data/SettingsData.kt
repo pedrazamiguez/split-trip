@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bell
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Book
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bug
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bulb
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Copy
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CurrencyEuro
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Hammer
@@ -160,11 +161,18 @@ private fun aboutSection(params: SettingsPreferencesParams) = SettingsSectionMod
         SettingsItemModel.Custom { AppVersionFeature() },
         SettingsItemModel.Custom { InstallationIdFeature() },
         SettingsItemModel.Standard(
+            icon = TablerIcons.Outline.Copy,
+            titleRes = R.string.settings_developer_diagnostics_title,
+            descriptionRes = R.string.settings_developer_diagnostics_description,
+            onClick = params.onCopyDiagnosticsClick
+        ),
+        SettingsItemModel.Standard(
             icon = TablerIcons.Outline.ShieldLock,
             titleRes = R.string.settings_about_privacy_title,
             descriptionRes = R.string.settings_about_privacy_description,
             onClick = params.onPrivacyPolicyClick
         ),
+
         SettingsItemModel.Standard(
             icon = TablerIcons.Outline.Book,
             titleRes = R.string.settings_about_libraries_title,

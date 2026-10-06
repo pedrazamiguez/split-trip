@@ -282,4 +282,10 @@
     <string name="subscriptions_restore_none_found">No çe an encontrao çûccrîççionê âttibâ pa rêttaurâh.</string>
     <string name="subscriptions_billing_error">No çe pudo completâh la compra. Por fabôh, inténtalo de nuebo mâh tarde.</string>
     <string name="subscriptions_service_unavailable">Lâ ôççionê de çûccrîççión no êttán dîpponiblê en êtte momento. Por fabôh, inténtalo mâh tarde.</string>
+    <string name="developer_diagnostics_title">Rehîttrô de diânnóttico</string>
+    <string name="developer_diagnostics_description">Êpporta rehîttrô en memoria anonimiçáô pa diânnóttico y reçoluçión de errorê.</string>
+    <string name="developer_diagnostics_copy_action">Copiâh diânnótticô</string>
+    <string name="developer_diagnostics_copied">Rehîttrô de diânnóttico copiáô ar portapapelê</string>
+    <string name="settings_developer_diagnostics_title">Rehîttrô de diânnóttico</string>
+    <string name="settings_developer_diagnostics_description">Copiâh rehîttrô anonimiçáô pa depuraçión</string>
 </resources>

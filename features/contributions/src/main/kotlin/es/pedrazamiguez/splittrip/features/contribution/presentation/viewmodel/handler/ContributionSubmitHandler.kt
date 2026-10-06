@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.extensions.toLocalDateTimeUtc
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.Contribution
@@ -25,7 +26,8 @@ class ContributionSubmitHandler(
     private val addContributionUseCase: AddContributionUseCase,
     private val updateContributionUseCase: UpdateContributionUseCase,
     private val contributionValidationService: ContributionValidationService,
-    private val groupCurrencyProvider: () -> String
+    private val groupCurrencyProvider: () -> String,
+    private val telemetryTracker: TelemetryTracker
 ) : AddContributionEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddContributionUiState>
@@ -117,6 +119,10 @@ class ContributionSubmitHandler(
                 updateContributionUseCase(groupId, contribution)
             } else {
                 addContributionUseCase(groupId, contribution)
+                telemetryTracker.trackEvent(
+                    "contribution_created",
+                    mapOf("scope" to contribution.contributionScope.name.lowercase())
+                )
             }
             _uiState.update { it.copy(isLoading = false) }
             _actions.emit(

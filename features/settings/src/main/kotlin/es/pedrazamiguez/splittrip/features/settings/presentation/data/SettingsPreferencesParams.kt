@@ -21,5 +21,6 @@ data class SettingsPreferencesParams(
     val onContactSupportClick: () -> Unit,
     val onPrivacyPolicyClick: () -> Unit,
     val onOpenSourceClick: () -> Unit,
-    val onDeveloperInfoClick: () -> Unit
+    val onDeveloperInfoClick: () -> Unit,
+    val onCopyDiagnosticsClick: () -> Unit
 )

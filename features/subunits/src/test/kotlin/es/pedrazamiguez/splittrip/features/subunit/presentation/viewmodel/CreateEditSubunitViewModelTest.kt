@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -62,6 +63,7 @@ class CreateEditSubunitViewModelTest {
     private lateinit var shareDistributionService: SubunitShareDistributionService
     private lateinit var authenticationService: AuthenticationService
     private lateinit var featureGateService: FeatureGateService
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var viewModel: CreateEditSubunitViewModel
 
     private val testGroup = Group(
@@ -107,6 +109,7 @@ class CreateEditSubunitViewModelTest {
             every { isFeatureEnabled(any(), any()) } returns flowOf(true)
             every { isActingUserPro() } returns flowOf(false)
         }
+        telemetryTracker = mockk(relaxed = true)
     }
 
     @AfterEach
@@ -124,7 +127,8 @@ class CreateEditSubunitViewModelTest {
             subunitUiMapper = subunitUiMapper,
             shareDistributionService = shareDistributionService,
             authenticationService = authenticationService,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            telemetryTracker = telemetryTracker
         )
     }
 
@@ -375,6 +379,12 @@ class CreateEditSubunitViewModelTest {
             advanceUntilIdle()
 
             coVerify { createSubunitUseCase("group-1", any()) }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    "subunit_created",
+                    mapOf("member_count" to "1")
+                )
+            }
             assertTrue(actions.any { it is CreateEditSubunitUiAction.ShowSuccess })
             assertTrue(actions.any { it is CreateEditSubunitUiAction.NavigateBack })
 

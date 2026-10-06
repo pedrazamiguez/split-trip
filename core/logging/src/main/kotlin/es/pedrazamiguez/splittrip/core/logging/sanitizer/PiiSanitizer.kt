@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.core.logging.sanitizer
 
+import java.security.MessageDigest
+
 fun String.maskEmail(): String {
     val emailRegex = """^([^@]+)@([^@]+)$""".toRegex()
     val match = emailRegex.matchEntire(this) ?: return this
@@ -32,5 +34,15 @@ fun String.sanitizePii(): String {
     val emailRegex = """\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b""".toRegex()
     return emailRegex.replace(this) { matchResult ->
         matchResult.value.maskEmail()
+    }
+}
+
+fun String.hashIdentifier(): String {
+    return try {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(this.toByteArray(Charsets.UTF_8))
+        hash.joinToString("") { "%02x".format(it) }
+    } catch (_: Exception) {
+        "anonymous"
     }
 }

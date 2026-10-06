@@ -29,6 +29,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import es.pedrazamiguez.splittrip.R
+import es.pedrazamiguez.splittrip.core.common.network.NetworkMonitor
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.biometric.BiometricPromptConfig
 import es.pedrazamiguez.splittrip.core.designsystem.biometric.BiometricPromptHelper
@@ -55,6 +56,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricLockEnabledUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliationUseCase
@@ -96,7 +98,20 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
         screenUiProviders.associateBy { it.route }
     }
 
+    val networkMonitor = remember(koin) { koin.get<NetworkMonitor>() }
+    val getSelectedGroupIdUseCase = remember(koin) { koin.get<GetSelectedGroupIdUseCase>() }
+    val isOnline by networkMonitor.isOnline.collectAsStateWithLifecycle(initialValue = true)
+    LaunchedEffect(isOnline) {
+        telemetryTracker.setCustomKey("network_online", isOnline)
+    }
+
+    val selectedGroupId by getSelectedGroupIdUseCase().collectAsStateWithLifecycle(initialValue = null)
+    LaunchedEffect(selectedGroupId) {
+        telemetryTracker.setCustomKey("selected_group_id", selectedGroupId ?: "none")
+    }
+
     val isUserLoggedIn by authenticationService.authState.collectAsStateWithLifecycle(initialValue = null)
+
     val onboardingCompleted by isOnboardingCompleteUseCase().collectAsStateWithLifecycle(
         initialValue = null
     )

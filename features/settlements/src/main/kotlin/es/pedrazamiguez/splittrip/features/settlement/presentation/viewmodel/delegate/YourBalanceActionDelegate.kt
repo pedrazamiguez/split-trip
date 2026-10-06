@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.delegate
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DisputeSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.NudgeDebtorUseCase
@@ -20,7 +21,8 @@ data class LocalUiState(
 class YourBalanceActionDelegate(
     private val confirmSettlementUseCase: ConfirmSettlementUseCase,
     private val disputeSettlementUseCase: DisputeSettlementUseCase,
-    private val nudgeDebtorUseCase: NudgeDebtorUseCase
+    private val nudgeDebtorUseCase: NudgeDebtorUseCase,
+    private val telemetryTracker: TelemetryTracker
 ) {
 
     private val _localState = MutableStateFlow(LocalUiState())
@@ -39,7 +41,12 @@ class YourBalanceActionDelegate(
         var hasError = false
         for (id in settlementIds) {
             confirmSettlementUseCase(validGroupId, id).fold(
-                onSuccess = { /* continue */ },
+                onSuccess = {
+                    telemetryTracker.trackEvent(
+                        "settlement_confirmed",
+                        mapOf("group_id" to validGroupId, "settlement_id" to id)
+                    )
+                },
                 onFailure = { e ->
                     Timber.w(e, "Failed to confirm settlement $id")
                     hasError = true

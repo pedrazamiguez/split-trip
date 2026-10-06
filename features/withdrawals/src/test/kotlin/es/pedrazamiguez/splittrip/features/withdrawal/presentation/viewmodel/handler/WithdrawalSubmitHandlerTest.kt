@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.service.CashWithdrawalValidationService
@@ -9,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.AddCashWithdrawalUseCas
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.action.AddCashWithdrawalUiAction
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.state.AddCashWithdrawalUiState
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -33,6 +35,7 @@ class WithdrawalSubmitHandlerTest {
     private lateinit var addCashWithdrawalUseCase: AddCashWithdrawalUseCase
     private lateinit var cashWithdrawalValidationService: CashWithdrawalValidationService
     private lateinit var exchangeRateCalculationService: ExchangeRateCalculationService
+    private lateinit var telemetryTracker: TelemetryTracker
 
     private lateinit var uiState: MutableStateFlow<AddCashWithdrawalUiState>
     private lateinit var actions: MutableSharedFlow<AddCashWithdrawalUiAction>
@@ -56,6 +59,7 @@ class WithdrawalSubmitHandlerTest {
         addCashWithdrawalUseCase = mockk()
         cashWithdrawalValidationService = mockk()
         exchangeRateCalculationService = mockk(relaxed = true)
+        telemetryTracker = mockk(relaxed = true)
 
         uiState = MutableStateFlow(validState)
         actions = MutableSharedFlow(extraBufferCapacity = 16)
@@ -63,7 +67,8 @@ class WithdrawalSubmitHandlerTest {
         handler = WithdrawalSubmitHandler(
             addCashWithdrawalUseCase = addCashWithdrawalUseCase,
             cashWithdrawalValidationService = cashWithdrawalValidationService,
-            exchangeRateCalculationService = exchangeRateCalculationService
+            exchangeRateCalculationService = exchangeRateCalculationService,
+            telemetryTracker = telemetryTracker
         )
 
         // Stubs — default to valid
@@ -223,6 +228,12 @@ class WithdrawalSubmitHandlerTest {
             handler.submitWithdrawal("group-1") { onSuccessCalled = true }
             advanceUntilIdle()
 
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    "withdrawal_created",
+                    mapOf("currency" to "EUR", "has_fee" to "false")
+                )
+            }
             assertTrue(onSuccessCalled)
         }
 

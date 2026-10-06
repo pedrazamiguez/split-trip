@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.UnresolvedSettlementsException
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
@@ -49,7 +50,8 @@ class GroupsViewModel(
     private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
     private val authenticationService: AuthenticationService,
     private val archiveGroupUseCase: ArchiveGroupUseCase,
-    private val leaveWizardEventHandler: GroupLeaveWizardEventHandler
+    private val leaveWizardEventHandler: GroupLeaveWizardEventHandler,
+    private val telemetryTracker: TelemetryTracker
 ) : ViewModel() {
 
     init {
@@ -192,6 +194,9 @@ class GroupsViewModel(
             }
             is GroupsUiEvent.LeaveConfirmed -> leaveWizardEventHandler.handleLeave(event.groupId)
             is GroupsUiEvent.WizardJumpToStepClicked -> leaveWizardEventHandler.handleJumpToStep(event.step)
+            is GroupsUiEvent.SelectGroup -> {
+                telemetryTracker.trackEvent("group_selected", mapOf("group_id" to event.groupId))
+            }
         }
     }
 
@@ -199,6 +204,7 @@ class GroupsViewModel(
         viewModelScope.launch {
             try {
                 deleteGroupUseCase(groupId)
+                telemetryTracker.trackEvent("group_deleted", mapOf("group_id" to groupId))
                 _actions.send(
                     GroupsUiAction.ShowDeleteSuccess(
                         UiText.StringResource(R.string.group_deleted_successfully)

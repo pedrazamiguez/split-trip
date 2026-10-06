@@ -9,8 +9,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,6 +43,8 @@ fun SettingsFeature(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val pillController = LocalTopPillController.current
+    val clipboardManager = LocalClipboardManager.current
+    val diagnosticsCopiedMsg = stringResource(R.string.developer_diagnostics_copied)
     val supportEmailProvider = koinInject<SupportEmailProvider>()
 
     val currentCurrency by settingsViewModel.currentCurrency.collectAsStateWithLifecycle()
@@ -148,6 +152,11 @@ fun SettingsFeature(
             },
             onDeveloperInfoClick = {
                 navController.navigate(Routes.SETTINGS_DEVELOPER_INFO)
+            },
+            onCopyDiagnosticsClick = {
+                val logs = settingsViewModel.getDiagnosticLogs()
+                clipboardManager.setText(AnnotatedString(logs))
+                pillController.showPill(diagnosticsCopiedMsg)
             }
         )
     }

@@ -324,4 +324,13 @@
     <string name="subscriptions_restore_none_found">No se han encontrado suscripciones activas para restaurar.</string>
     <string name="subscriptions_billing_error">No se pudo completar la compra. Por favor, inténtalo de nuevo más tarde.</string>
     <string name="subscriptions_service_unavailable">Las opciones de suscripción no están disponibles en este momento. Por favor, inténtalo más tarde.</string>
+
+    <!-- Developer Diagnostics -->
+    <string name="developer_diagnostics_title">Registros de diagnóstico</string>
+    <string name="developer_diagnostics_description">Exporta registros en memoria anonimizados para diagnóstico y resolución de errores.</string>
+    <string name="developer_diagnostics_copy_action">Copiar diagnósticos</string>
+    <string name="developer_diagnostics_copied">Registros de diagnóstico copiados al portapapeles</string>
+    <string name="settings_developer_diagnostics_title">Registros de diagnóstico</string>
+    <string name="settings_developer_diagnostics_description">Copiar registros anonimizados para depuración</string>
 </resources>
+

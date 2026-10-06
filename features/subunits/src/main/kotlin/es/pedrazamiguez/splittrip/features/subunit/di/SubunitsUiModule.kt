@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.SubunitShareDistributionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -38,6 +39,7 @@ val subunitsUiModule = module {
     }
 
     viewModel {
+        val telemetryTracker = get<TelemetryTracker>()
         SubunitManagementViewModel(
             getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>(),
             deleteSubunitUseCase = get<DeleteSubunitUseCase>(),
@@ -46,11 +48,13 @@ val subunitsUiModule = module {
             subunitUiMapper = get<SubunitUiMapper>(),
             observeGroupUseCase = get<ObserveGroupUseCase>(),
             featureGateService = get<FeatureGateService>(),
-            authenticationService = get<AuthenticationService>()
+            authenticationService = get<AuthenticationService>(),
+            telemetryTracker = telemetryTracker
         )
     }
 
     viewModel {
+        val telemetryTracker = get<TelemetryTracker>()
         CreateEditSubunitViewModel(
             createSubunitUseCase = get<CreateSubunitUseCase>(),
             updateSubunitUseCase = get<UpdateSubunitUseCase>(),
@@ -60,7 +64,8 @@ val subunitsUiModule = module {
             subunitUiMapper = get<SubunitUiMapper>(),
             shareDistributionService = get<SubunitShareDistributionService>(),
             authenticationService = get<AuthenticationService>(),
-            featureGateService = get<FeatureGateService>()
+            featureGateService = get<FeatureGateService>(),
+            telemetryTracker = telemetryTracker
         )
     }
 

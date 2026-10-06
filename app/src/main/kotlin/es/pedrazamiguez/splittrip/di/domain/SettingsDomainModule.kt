@@ -2,12 +2,15 @@ package es.pedrazamiguez.splittrip.di.domain
 
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
+import es.pedrazamiguez.splittrip.domain.repository.DiagnosticLogRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.BiometricAuthService
 import es.pedrazamiguez.splittrip.domain.service.impl.AppConfigServiceImpl
+import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.impl.GetDiagnosticLogsUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
@@ -236,7 +239,15 @@ val settingsDomainModule = module {
         )
     }
 
+    factory<GetDiagnosticLogsUseCase> {
+        val diagnosticLogRepository = get<DiagnosticLogRepository>()
+        GetDiagnosticLogsUseCaseImpl(
+            diagnosticLogRepository = diagnosticLogRepository
+        )
+    }
+
     single<AppConfigService> {
+
         AppConfigServiceImpl(
             appConfigRepository = get<AppConfigRepository>()
         )
