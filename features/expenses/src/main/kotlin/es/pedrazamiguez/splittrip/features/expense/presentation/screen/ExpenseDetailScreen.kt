@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -21,6 +22,7 @@ fun ExpenseDetailScreen(
     onConfirmPaymentTap: (() -> Unit)? = null
 ) {
     val topPadding = LocalTopPadding.current
+    val bottomPadding = LocalBottomPadding.current
 
     DeferredLoadingContainer(
         isLoading = uiState.isLoading,
@@ -31,7 +33,10 @@ fun ExpenseDetailScreen(
                 EmptyStateView(
                     title = stringResource(R.string.expense_detail_error_loading),
                     icon = TablerIcons.Outline.Receipt,
-                    modifier = Modifier.padding(top = topPadding)
+                    modifier = Modifier.padding(
+                        top = topPadding,
+                        bottom = bottomPadding
+                    )
                 )
             }
             else -> {

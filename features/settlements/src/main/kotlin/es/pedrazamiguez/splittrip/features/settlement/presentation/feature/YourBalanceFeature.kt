@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.ad.InterstitialAdManager
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
@@ -79,7 +80,10 @@ fun YourBalanceFeature(
                     icon = TablerIcons.Outline.Wallet,
                     title = stringResource(R.string.your_balance_empty_title),
                     description = stringResource(R.string.your_balance_empty_description),
-                    modifier = Modifier.fillMaxSize().padding(top = topPadding)
+                    modifier = Modifier.fillMaxSize().padding(
+                        top = topPadding,
+                        bottom = LocalBottomPadding.current
+                    )
                 )
             }
         }

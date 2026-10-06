@@ -57,7 +57,10 @@ fun SubunitManagementScreen(
                     EmptyStateView(
                         title = stringResource(R.string.subunit_empty_state),
                         icon = TablerIcons.Outline.Sitemap,
-                        modifier = Modifier.padding(top = topPadding)
+                        modifier = Modifier.padding(
+                            top = topPadding,
+                            bottom = bottomPadding
+                        )
                     )
                 }
 

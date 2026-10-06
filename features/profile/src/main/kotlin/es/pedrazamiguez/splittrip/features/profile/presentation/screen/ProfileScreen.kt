@@ -1,6 +1,10 @@
 package es.pedrazamiguez.splittrip.features.profile.presentation.screen
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.features.profile.presentation.component.GuestProfileContent
@@ -27,7 +31,11 @@ fun ProfileScreen(
             }
             uiState.hasError && uiState.profile == null -> {
                 ProfileErrorState(
-                    onRetry = { onEvent(ProfileUiEvent.LoadProfile) }
+                    onRetry = { onEvent(ProfileUiEvent.LoadProfile) },
+                    modifier = Modifier.padding(
+                        top = LocalTopPadding.current,
+                        bottom = LocalBottomPadding.current
+                    )
                 )
             }
             uiState.profile != null -> {
