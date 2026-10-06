@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LongParameterList")
 class GroupSettlementOverviewViewModel(
     private val getGroupSettlementsFlowUseCase: GetGroupSettlementsFlowUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,

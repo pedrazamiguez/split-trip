@@ -66,31 +66,11 @@ class WithdrawalSubmitHandler(
 
         if (!validateInputs(state, amountWithdrawn, groupCurrency)) return
 
-        val deductedBaseAmount = resolveDeductedAmount(state, amountWithdrawn, groupCurrency)
-        val exchangeRate = resolveExchangeRate(state, amountWithdrawn, deductedBaseAmount)
-        val addOns = buildFeeAddOn(state, groupCurrency)
+        val withdrawal = buildCashWithdrawal(groupId, state, selectedCurrency, groupCurrency, amountWithdrawn)
 
         _uiState.update { it.copy(isLoading = true) }
         scope.launch {
             try {
-                val withdrawal = CashWithdrawal(
-                    groupId = groupId,
-                    withdrawnBy = state.selectedMemberId ?: "",
-                    withdrawalScope = state.withdrawalScope,
-                    subunitId = if (state.withdrawalScope == PayerType.SUBUNIT) {
-                        state.selectedSubunitId
-                    } else {
-                        null
-                    },
-                    amountWithdrawn = amountWithdrawn,
-                    remainingAmount = amountWithdrawn,
-                    currency = selectedCurrency.code,
-                    deductedBaseAmount = deductedBaseAmount,
-                    exchangeRate = exchangeRate,
-                    addOns = addOns,
-                    title = state.title.trim().ifBlank { null },
-                    notes = state.notes.trim().ifBlank { null }
-                )
                 addCashWithdrawalUseCase(groupId, withdrawal).getOrThrow()
                 telemetryTracker.trackEvent(
                     "withdrawal_created",
@@ -120,6 +100,37 @@ class WithdrawalSubmitHandler(
                 )
             }
         }
+    }
+
+    private fun buildCashWithdrawal(
+        groupId: String,
+        state: AddCashWithdrawalUiState,
+        selectedCurrency: CurrencyUiModel,
+        groupCurrency: CurrencyUiModel,
+        amountWithdrawn: Long
+    ): CashWithdrawal {
+        val deductedBaseAmount = resolveDeductedAmount(state, amountWithdrawn, groupCurrency)
+        val exchangeRate = resolveExchangeRate(state, amountWithdrawn, deductedBaseAmount)
+        val addOns = buildFeeAddOn(state, groupCurrency)
+
+        return CashWithdrawal(
+            groupId = groupId,
+            withdrawnBy = state.selectedMemberId ?: "",
+            withdrawalScope = state.withdrawalScope,
+            subunitId = if (state.withdrawalScope == PayerType.SUBUNIT) {
+                state.selectedSubunitId
+            } else {
+                null
+            },
+            amountWithdrawn = amountWithdrawn,
+            remainingAmount = amountWithdrawn,
+            currency = selectedCurrency.code,
+            deductedBaseAmount = deductedBaseAmount,
+            exchangeRate = exchangeRate,
+            addOns = addOns,
+            title = state.title.trim().ifBlank { null },
+            notes = state.notes.trim().ifBlank { null }
+        )
     }
 
     private fun validateInputs(

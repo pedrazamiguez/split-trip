@@ -62,6 +62,7 @@ import timber.log.Timber
  * [SubunitUiMapper] (locale-aware display).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LongParameterList")
 class CreateEditSubunitViewModel(
     private val createSubunitUseCase: CreateSubunitUseCase,
     private val updateSubunitUseCase: UpdateSubunitUseCase,
