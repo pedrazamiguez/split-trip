@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.konsist
 
 import java.io.File
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -27,6 +28,16 @@ class ProguardRulesArchitectureTest {
     @DisplayName("app/proguard-rules.pro must exist")
     fun `proguard rules file must exist`() {
         assertTrue(proguardRulesFile.exists(), "Expected app/proguard-rules.pro at ${proguardRulesFile.absolutePath}")
+    }
+
+    @Test
+    @DisplayName("Class repackaging must be enabled to minimize DEX string pool")
+    fun `class repackaging must be enabled`() {
+        val rules = readProguardRules()
+        assertTrue(
+            rules.contains("-repackageclasses"),
+            "Proguard rules must enable -repackageclasses to optimize DEX string pool"
+        )
     }
 
     @Test
@@ -80,54 +91,50 @@ class ProguardRulesArchitectureTest {
     }
 
     @Test
-    @DisplayName("ViewModels must have keep rules for Koin and AndroidX reflection")
-    fun `viewmodels must have keep rules`() {
+    @DisplayName("Redundant blanket wildcard rules for libraries with consumer rules must not be present")
+    fun `redundant library wildcard keep rules must not be present`() {
         val rules = readProguardRules()
-        assertTrue(
-            rules.contains("es.pedrazamiguez.splittrip.features.**.*ViewModel"),
-            "Proguard rules must keep feature ViewModels"
+        assertFalse(
+            rules.contains("com.google.firebase.**"),
+            "Blanket keep on com.google.firebase.** must be removed in favor of AAR consumer rules"
+        )
+        assertFalse(
+            rules.contains("androidx.compose.**"),
+            "Blanket keep on androidx.compose.** must be removed in favor of Compose consumer rules"
+        )
+        assertFalse(
+            rules.contains("org.koin.**"),
+            "Blanket keep on org.koin.** must be removed in favor of Koin consumer rules"
+        )
+        assertFalse(
+            rules.contains("com.google.android.gms.**"),
+            "Blanket keep on com.google.android.gms.** must be removed in favor of Play Services consumer rules"
+        )
+        assertFalse(
+            rules.contains("coil3.**"),
+            "Blanket keep on coil3.** must be removed in favor of Coil consumer rules"
         )
     }
 
     @Test
-    @DisplayName("ML Kit classes must have keep and dontwarn rules")
-    fun `ml kit must have keep rules`() {
+    @DisplayName("Pure Kotlin domain models, services, use cases, and viewmodels must not have blanket keep rules")
+    fun `pure kotlin domain and presentation layers must not have blanket keep rules`() {
         val rules = readProguardRules()
-        assertTrue(
-            rules.contains("com.google.mlkit.**"),
-            "Proguard rules must keep ML Kit classes"
+        assertFalse(
+            rules.contains("es.pedrazamiguez.splittrip.domain.model.**"),
+            "Pure Kotlin domain models must not be kept with blanket rules"
         )
-        assertTrue(
-            rules.contains("com.google.android.gms.vision.**"),
-            "Proguard rules must keep Google Mobile Vision classes"
-        )
-    }
-
-    @Test
-    @DisplayName("Play Integrity and App Check must have keep rules")
-    fun `play integrity and app check must have keep rules`() {
-        val rules = readProguardRules()
-        assertTrue(
-            rules.contains("com.google.android.play.core.integrity.**"),
-            "Proguard rules must keep Play Core Integrity classes"
-        )
-        assertTrue(
-            rules.contains("com.google.firebase.appcheck.playintegrity.**"),
-            "Proguard rules must keep Firebase App Check Play Integrity provider"
-        )
-    }
-
-    @Test
-    @DisplayName("Domain and data services must have keep rules")
-    fun `domain and data services must have keep rules`() {
-        val rules = readProguardRules()
-        assertTrue(
+        assertFalse(
             rules.contains("es.pedrazamiguez.splittrip.domain.service.**"),
-            "Proguard rules must keep domain services"
+            "Pure Kotlin domain services must not be kept with blanket rules"
         )
-        assertTrue(
-            rules.contains("es.pedrazamiguez.splittrip.data.service.**"),
-            "Proguard rules must keep data services"
+        assertFalse(
+            rules.contains("es.pedrazamiguez.splittrip.domain.usecase.**"),
+            "Pure Kotlin use cases must not be kept with blanket rules"
+        )
+        assertFalse(
+            rules.contains("es.pedrazamiguez.splittrip.features.**.*ViewModel"),
+            "ViewModels constructed via Koin DSL must not be kept with blanket rules"
         )
     }
 }
