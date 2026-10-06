@@ -60,7 +60,10 @@ internal fun BalancesBodyContent(
                         title = stringResource(R.string.balances_empty_title),
                         description = stringResource(R.string.balances_empty_description),
                         icon = TablerIcons.Outline.Wallet,
-                        modifier = Modifier.padding(top = topPadding)
+                        modifier = Modifier.padding(
+                            top = topPadding,
+                            bottom = bottomPadding
+                        )
                     )
                 }
 

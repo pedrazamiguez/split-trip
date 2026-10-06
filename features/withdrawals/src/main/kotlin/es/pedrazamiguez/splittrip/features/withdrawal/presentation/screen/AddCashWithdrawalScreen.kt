@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
@@ -37,7 +38,10 @@ fun AddCashWithdrawalScreen(
 
             uiState.configLoadFailed -> {
                 WithdrawalConfigLoadFailedContent(
-                    modifier = Modifier.padding(top = topPadding),
+                    modifier = Modifier.padding(
+                        top = topPadding,
+                        bottom = LocalBottomPadding.current
+                    ),
                     onRetry = { onEvent(AddCashWithdrawalUiEvent.RetryLoadConfig(groupId)) }
                 )
             }

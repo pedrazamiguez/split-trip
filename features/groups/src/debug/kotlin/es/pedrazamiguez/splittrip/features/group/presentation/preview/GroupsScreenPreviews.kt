@@ -26,6 +26,19 @@ private fun GroupsScreenEmptyPreview() {
     }
 }
 
+@PreviewComplete
+@Composable
+private fun GroupsScreenAnonymousEmptyPreview() {
+    PreviewThemeWrapper {
+        GroupsScreen(
+            uiState = GroupsUiState(
+                isLoading = false,
+                isAnonymous = true
+            )
+        )
+    }
+}
+
 /** Full list: hero card for the selected group + compact items for the rest. */
 @PreviewComplete
 @Composable

@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.GroupsUiState
 
+@Suppress("CognitiveComplexMethod")
 @Composable
 internal fun GroupsScreenContent(
     uiState: GroupsUiState,
@@ -38,6 +39,7 @@ internal fun GroupsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val topPadding = LocalTopPadding.current
+    val contentTopPadding = if (uiState.isAnonymous) 0.dp else topPadding
     Column(modifier = modifier.fillMaxSize()) {
         if (uiState.isAnonymous) {
             InlineWarningBanner(
@@ -62,14 +64,17 @@ internal fun GroupsScreenContent(
                     EmptyStateView(
                         title = stringResource(R.string.groups_not_found),
                         icon = TablerIcons.Outline.UsersGroup,
-                        modifier = Modifier.padding(top = topPadding)
+                        modifier = Modifier.padding(
+                            top = contentTopPadding,
+                            bottom = bottomPadding
+                        )
                     )
                 } else {
                     GroupsListContent(
                         groups = uiState.groups,
                         selectedGroupId = selectedGroupId,
                         listState = listState,
-                        topPadding = if (uiState.isAnonymous) 0.dp else topPadding,
+                        topPadding = contentTopPadding,
                         bottomPadding = bottomPadding,
                         onGroupClicked = onGroupClicked,
                         onGroupLongClicked = onGroupLongClicked
