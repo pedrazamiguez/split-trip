@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CashWithdrawalValidationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -39,6 +40,7 @@ val withdrawalsUiModule = module {
 
     viewModel {
         val addCashWithdrawalUiMapper = get<AddCashWithdrawalUiMapper>()
+        val telemetryTracker = get<TelemetryTracker>()
 
         val configHandler = WithdrawalConfigHandler(
             getGroupExpenseConfigUseCase = get<GetGroupExpenseConfigUseCase>(),
@@ -63,7 +65,8 @@ val withdrawalsUiModule = module {
         val submitHandler = WithdrawalSubmitHandler(
             addCashWithdrawalUseCase = get<AddCashWithdrawalUseCase>(),
             cashWithdrawalValidationService = get<CashWithdrawalValidationService>(),
-            exchangeRateCalculationService = get<ExchangeRateCalculationService>()
+            exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
+            telemetryTracker = telemetryTracker
         )
 
         AddCashWithdrawalViewModel(

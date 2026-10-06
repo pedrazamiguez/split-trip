@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
@@ -56,6 +57,7 @@ class GroupSettlementOverviewViewModelTest {
     private lateinit var disputeSettlementUseCase: DisputeSettlementUseCase
     private lateinit var archiveGroupUseCase: ArchiveGroupUseCase
     private lateinit var getSettlementSuggestionsUseCase: GetSettlementSuggestionsUseCase
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var viewModel: GroupSettlementOverviewViewModel
 
     private val testGroupId = "group-123"
@@ -79,6 +81,7 @@ class GroupSettlementOverviewViewModelTest {
         disputeSettlementUseCase = mockk(relaxed = true)
         archiveGroupUseCase = mockk(relaxed = true)
         getSettlementSuggestionsUseCase = mockk(relaxed = true)
+        telemetryTracker = mockk(relaxed = true)
 
         coEvery { getSettlementSuggestionsUseCase.persistForGroup(any(), any()) } returns emptyList()
         every { getGroupSettlementsFlowUseCase(any()) } returns flowOf(emptyList())
@@ -107,7 +110,8 @@ class GroupSettlementOverviewViewModelTest {
         confirmSettlementUseCase = confirmSettlementUseCase,
         disputeSettlementUseCase = disputeSettlementUseCase,
         archiveGroupUseCase = archiveGroupUseCase,
-        getSettlementSuggestionsUseCase = getSettlementSuggestionsUseCase
+        getSettlementSuggestionsUseCase = getSettlementSuggestionsUseCase,
+        telemetryTracker = telemetryTracker
     )
 
     @Nested
@@ -155,6 +159,9 @@ class GroupSettlementOverviewViewModelTest {
             advanceUntilIdle()
 
             coVerify(exactly = 1) { getSettlementSuggestionsUseCase.persistForGroup(testGroupId) }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent("settlement_initiated", mapOf("group_id" to testGroupId))
+            }
 
             collectJob.cancel()
         }
@@ -184,6 +191,12 @@ class GroupSettlementOverviewViewModelTest {
             advanceUntilIdle()
 
             coVerify(exactly = 1) { confirmSettlementUseCase(testGroupId, "s-1") }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    "settlement_confirmed",
+                    mapOf("group_id" to testGroupId, "settlement_id" to "s-1")
+                )
+            }
             assertTrue(actions.any { it is GroupSettlementOverviewUiAction.ShowSuccess })
 
             actionsJob.cancel()

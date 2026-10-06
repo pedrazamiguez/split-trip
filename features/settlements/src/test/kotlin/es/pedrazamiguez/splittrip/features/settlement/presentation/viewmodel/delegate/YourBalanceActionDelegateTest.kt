@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.delegate
 
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DisputeSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.NudgeDebtorUseCase
@@ -22,6 +23,7 @@ class YourBalanceActionDelegateTest {
     private val confirmSettlementUseCase: ConfirmSettlementUseCase = mockk()
     private val disputeSettlementUseCase: DisputeSettlementUseCase = mockk()
     private val nudgeDebtorUseCase: NudgeDebtorUseCase = mockk()
+    private val telemetryTracker: TelemetryTracker = mockk(relaxed = true)
 
     private lateinit var delegate: YourBalanceActionDelegate
 
@@ -30,7 +32,8 @@ class YourBalanceActionDelegateTest {
         delegate = YourBalanceActionDelegate(
             confirmSettlementUseCase,
             disputeSettlementUseCase,
-            nudgeDebtorUseCase
+            nudgeDebtorUseCase,
+            telemetryTracker
         )
     }
 
@@ -42,6 +45,12 @@ class YourBalanceActionDelegateTest {
         delegate.handleConfirm("s1", "group1", isOffline = false, actions)
 
         coVerify(exactly = 1) { confirmSettlementUseCase("group1", "s1") }
+        coVerify(exactly = 1) {
+            telemetryTracker.trackEvent(
+                "settlement_confirmed",
+                mapOf("group_id" to "group1", "settlement_id" to "s1")
+            )
+        }
         val action = actions.receive()
         assertTrue(action is YourBalanceUiAction.ShowSuccess)
     }

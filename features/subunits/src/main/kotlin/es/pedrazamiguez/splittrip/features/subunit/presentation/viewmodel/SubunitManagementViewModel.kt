@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -48,7 +49,8 @@ class SubunitManagementViewModel(
     private val subunitUiMapper: SubunitUiMapper,
     private val observeGroupUseCase: ObserveGroupUseCase,
     private val featureGateService: FeatureGateService,
-    private val authenticationService: AuthenticationService
+    private val authenticationService: AuthenticationService,
+    private val telemetryTracker: TelemetryTracker
 ) : ViewModel() {
 
     private val _groupId = MutableStateFlow("")
@@ -138,6 +140,10 @@ class SubunitManagementViewModel(
         viewModelScope.launch {
             try {
                 deleteSubunitUseCase(groupId, subunitId)
+                telemetryTracker.trackEvent(
+                    "subunit_deleted",
+                    mapOf("group_id" to groupId, "subunit_id" to subunitId)
+                )
                 _actions.emit(
                     SubunitManagementUiAction.ShowSuccess(
                         UiText.StringResource(R.string.subunit_deleted_success)

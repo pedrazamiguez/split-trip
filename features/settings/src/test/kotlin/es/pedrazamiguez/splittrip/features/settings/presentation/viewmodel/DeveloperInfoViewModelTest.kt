@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.model.DeveloperInfo
+import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetDeveloperInfoUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.DeveloperInfoUiMapper
@@ -53,6 +54,7 @@ class DeveloperInfoViewModelTest {
 
     private val getDeveloperInfoUseCase: GetDeveloperInfoUseCase = mockk()
     private val getAppLanguageUseCase: GetAppLanguageUseCase = mockk()
+    private val getDiagnosticLogsUseCase: GetDiagnosticLogsUseCase = mockk()
     private val mapper = DeveloperInfoUiMapper()
 
     @BeforeEach
@@ -73,6 +75,7 @@ class DeveloperInfoViewModelTest {
         val viewModel = DeveloperInfoViewModel(
             getDeveloperInfoUseCase = getDeveloperInfoUseCase,
             getAppLanguageUseCase = getAppLanguageUseCase,
+            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase,
             developerInfoUiMapper = mapper
         )
 
@@ -86,5 +89,21 @@ class DeveloperInfoViewModelTest {
         assertEquals("© 2026 Andrés Pedraza Míguez. Todos los derechos reservados.", viewModel.uiState.value.copyright)
 
         collectJob.cancel()
+    }
+
+    @Test
+    fun `getDiagnosticLogs delegates to getDiagnosticLogsUseCase`() {
+        every { getDiagnosticLogsUseCase() } returns "system logs"
+
+        val viewModel = DeveloperInfoViewModel(
+            getDeveloperInfoUseCase = getDeveloperInfoUseCase,
+            getAppLanguageUseCase = getAppLanguageUseCase,
+            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase,
+            developerInfoUiMapper = mapper
+        )
+
+        val result = viewModel.getDiagnosticLogs()
+
+        assertEquals("system logs", result)
     }
 }

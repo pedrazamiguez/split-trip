@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -54,6 +55,7 @@ class SubunitManagementViewModelTest {
     private lateinit var observeGroupUseCase: ObserveGroupUseCase
     private lateinit var featureGateService: FeatureGateService
     private lateinit var authenticationService: AuthenticationService
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var viewModel: SubunitManagementViewModel
 
     private val testGroup = Group(
@@ -96,6 +98,7 @@ class SubunitManagementViewModelTest {
         subunitUiMapper = mockk()
         observeGroupUseCase = mockk()
         featureGateService = mockk()
+        telemetryTracker = mockk(relaxed = true)
         authenticationService = mockk {
             every { currentUserId() } returns "user-1"
         }
@@ -115,7 +118,8 @@ class SubunitManagementViewModelTest {
             subunitUiMapper = subunitUiMapper,
             observeGroupUseCase = observeGroupUseCase,
             featureGateService = featureGateService,
-            authenticationService = authenticationService
+            authenticationService = authenticationService,
+            telemetryTracker = telemetryTracker
         )
     }
 
@@ -350,6 +354,12 @@ class SubunitManagementViewModelTest {
             advanceUntilIdle()
 
             coVerify { deleteSubunitUseCase("group-1", "sub-1") }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    "subunit_deleted",
+                    mapOf("group_id" to "group-1", "subunit_id" to "sub-1")
+                )
+            }
             assertTrue(actions.any { it is SubunitManagementUiAction.ShowSuccess })
 
             collectJob.cancel()

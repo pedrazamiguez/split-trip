@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
@@ -25,6 +26,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategy
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
@@ -65,6 +67,7 @@ class SubmitEventHandlerTest {
     private lateinit var handler: SubmitEventHandler
     private lateinit var strategy: ExpenseFlowStrategy
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
+    private lateinit var telemetryTracker: TelemetryTracker
 
     /** A minimal [Expense] stub — only the fields used by adjustForIncludedAddOns matter. */
     private fun makeExpense(
@@ -91,6 +94,7 @@ class SubmitEventHandlerTest {
     fun setUp() {
         strategy = mockk(relaxed = true)
         addExpenseUiMapper = mockk(relaxed = true)
+        telemetryTracker = mockk(relaxed = true)
         val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
         val saveLastUsedPreferences = SaveLastUsedPreferencesBundle(
             setGroupLastUsedCurrencyUseCase = mockk(relaxed = true),
@@ -109,7 +113,8 @@ class SubmitEventHandlerTest {
                 saveLastUsedPreferences = saveLastUsedPreferences,
                 formattingHelper = formattingHelper,
                 telemetryTracker = mockk(relaxed = true)
-            )
+            ),
+            telemetryTracker = telemetryTracker
         ).apply {
             setStrategy(strategy)
         }
@@ -552,6 +557,7 @@ class SubmitEventHandlerTest {
             assertNotNull(stateFlow.value.error)
             assertEquals(1, actions.size)
             assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            coVerify { telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "title")) }
             collectJob.cancel()
         }
 
@@ -571,6 +577,7 @@ class SubmitEventHandlerTest {
             assertNotNull(stateFlow.value.error)
             assertEquals(1, actions.size)
             assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            coVerify { telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "amount")) }
             collectJob.cancel()
         }
 
@@ -598,6 +605,7 @@ class SubmitEventHandlerTest {
             assertNotNull(stateFlow.value.error)
             assertEquals(1, actions.size)
             assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            coVerify { telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "due_date")) }
             collectJob.cancel()
         }
 
@@ -742,6 +750,7 @@ class SubmitEventHandlerTest {
             assertNotNull(stateFlow.value.error)
             assertEquals(1, actions.size)
             assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            coVerify { telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "split")) }
             collectJob.cancel()
         }
 

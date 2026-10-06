@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AppTheme
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
@@ -29,7 +30,8 @@ class SettingsViewModel(
     private val getShouldShowLanguagePillUseCase: GetShouldShowLanguagePillUseCase,
     private val consumeLanguagePillUseCase: ConsumeLanguagePillUseCase,
     private val getAppThemeUseCase: GetAppThemeUseCase,
-    private val isUserAnonymousUseCase: IsUserAnonymousUseCase
+    private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
+    private val getDiagnosticLogsUseCase: GetDiagnosticLogsUseCase
 ) : ViewModel() {
 
     val isAnonymous: StateFlow<Boolean> = isUserAnonymousUseCase().stateIn(
@@ -107,4 +109,6 @@ class SettingsViewModel(
                 .onFailure { Timber.e(it, "Sign-out failed") }
         }
     }
+
+    fun getDiagnosticLogs(): String = getDiagnosticLogsUseCase()
 }

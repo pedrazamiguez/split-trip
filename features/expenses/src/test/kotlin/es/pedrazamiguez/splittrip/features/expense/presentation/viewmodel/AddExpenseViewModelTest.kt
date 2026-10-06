@@ -323,7 +323,8 @@ class AddExpenseViewModelTest {
                 ),
                 formattingHelper = formattingHelper,
                 telemetryTracker = mockk(relaxed = true)
-            )
+            ),
+            telemetryTracker = mockk(relaxed = true)
         )
 
         val addOnExchangeRateDelegate = AddOnExchangeRateDelegate(

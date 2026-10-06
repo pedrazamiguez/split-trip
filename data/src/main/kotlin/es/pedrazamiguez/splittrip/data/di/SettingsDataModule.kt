@@ -1,14 +1,17 @@
 package es.pedrazamiguez.splittrip.data.di
 
+import es.pedrazamiguez.splittrip.core.logging.buffer.RollingLogBuffer
 import es.pedrazamiguez.splittrip.data.billing.PlayBillingClientWrapper
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.data.repository.impl.BalancePreferenceRepositoryImpl
+import es.pedrazamiguez.splittrip.data.repository.impl.DiagnosticLogRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.GroupPreferenceRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.OnboardingPreferenceRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.UserPreferenceRepositoryImpl
 import es.pedrazamiguez.splittrip.data.service.BiometricAuthServiceImpl
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
+import es.pedrazamiguez.splittrip.domain.repository.DiagnosticLogRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
@@ -32,6 +35,11 @@ val settingsDataModule = module {
 
     single<BalancePreferenceRepository> {
         BalancePreferenceRepositoryImpl(userPreferences = get<UserPreferences>())
+    }
+
+    single<DiagnosticLogRepository> {
+        val rollingLogBuffer = get<RollingLogBuffer>()
+        DiagnosticLogRepositoryImpl(rollingLogBuffer = rollingLogBuffer)
     }
 
     single<BiometricAuthService> {

@@ -14,4 +14,5 @@ sealed interface GroupsUiEvent {
     data object NavigateToYourBalanceClicked : GroupsUiEvent
     data class LeaveConfirmed(val groupId: String) : GroupsUiEvent
     data class WizardJumpToStepClicked(val step: LeaveWizardStep) : GroupsUiEvent
+    data class SelectGroup(val groupId: String) : GroupsUiEvent
 }

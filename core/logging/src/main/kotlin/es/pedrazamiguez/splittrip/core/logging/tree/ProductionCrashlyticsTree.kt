@@ -3,13 +3,14 @@ package es.pedrazamiguez.splittrip.core.logging.tree
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import es.pedrazamiguez.splittrip.core.logging.LogContext
+import es.pedrazamiguez.splittrip.core.logging.exception.SyntheticDiagnosticException
+import es.pedrazamiguez.splittrip.core.logging.sanitizer.sanitizePii
 import timber.log.Timber
 
 class ProductionCrashlyticsTree(
-    private val logContext: LogContext
+    private val logContext: LogContext,
+    private val crashlytics: FirebaseCrashlytics = FirebaseCrashlytics.getInstance()
 ) : Timber.Tree() {
-
-    private val crashlytics = FirebaseCrashlytics.getInstance()
 
     init {
         crashlytics.setCustomKey("deviceId", logContext.deviceId)
@@ -18,13 +19,22 @@ class ProductionCrashlyticsTree(
         crashlytics.setUserId(logContext.userId)
     }
 
-    override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+    public override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         crashlytics.setUserId(logContext.userId)
 
-        if (priority < Log.WARN) return
+        if (priority < Log.INFO) return
 
-        crashlytics.log("${priorityToString(priority)}/$tag: $message")
-        t?.let { crashlytics.recordException(it) }
+        val formattedTag = tag ?: "SplitTrip"
+        val sanitizedMessage = message.sanitizePii()
+
+        crashlytics.log("${priorityToString(priority)}/$formattedTag: $sanitizedMessage")
+
+        if (priority >= Log.ERROR) {
+            val exception = t ?: SyntheticDiagnosticException("[$formattedTag] $sanitizedMessage")
+            crashlytics.recordException(exception)
+        } else if (priority == Log.WARN && t != null) {
+            crashlytics.recordException(t)
+        }
     }
 
     private fun priorityToString(priority: Int): String = when (priority) {

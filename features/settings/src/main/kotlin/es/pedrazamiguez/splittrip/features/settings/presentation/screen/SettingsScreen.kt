@@ -38,7 +38,8 @@ fun SettingsScreen(
     onContactSupportClick: () -> Unit = {},
     onPrivacyPolicyClick: () -> Unit = {},
     onOpenSourceClick: () -> Unit = {},
-    onDeveloperInfoClick: () -> Unit = {}
+    onDeveloperInfoClick: () -> Unit = {},
+    onCopyDiagnosticsClick: () -> Unit = {}
 ) {
     val preferencesParams = SettingsPreferencesParams(
         onNotificationsClick = onNotificationsClick,
@@ -59,7 +60,8 @@ fun SettingsScreen(
         onContactSupportClick = onContactSupportClick,
         onPrivacyPolicyClick = onPrivacyPolicyClick,
         onOpenSourceClick = onOpenSourceClick,
-        onDeveloperInfoClick = onDeveloperInfoClick
+        onDeveloperInfoClick = onDeveloperInfoClick,
+        onCopyDiagnosticsClick = onCopyDiagnosticsClick
     )
 
     val sections = buildSettingsSections(

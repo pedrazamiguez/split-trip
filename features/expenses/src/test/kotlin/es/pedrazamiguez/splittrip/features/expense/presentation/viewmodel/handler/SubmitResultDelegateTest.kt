@@ -108,13 +108,13 @@ class SubmitResultDelegateTest {
         }
 
         @Test
-        fun `tracks expense_added telemetry event on success when not edit mode`() = runTest {
+        fun `tracks expense_created telemetry event on success when not edit mode`() = runTest {
             uiState.value = uiState.value.copy(isEditMode = false)
             delegate.handleSuccess(uiState, "group-1") {}
 
             coVerify {
                 telemetryTracker.trackEvent(
-                    "expense_added",
+                    "expense_created",
                     mapOf(
                         "currency" to "EUR",
                         "payment_method" to "CARD",
@@ -125,13 +125,13 @@ class SubmitResultDelegateTest {
         }
 
         @Test
-        fun `tracks expense_edited telemetry event on success when edit mode`() = runTest {
+        fun `tracks expense_updated telemetry event on success when edit mode`() = runTest {
             uiState.value = uiState.value.copy(isEditMode = true)
             delegate.handleSuccess(uiState, "group-1") {}
 
             coVerify {
                 telemetryTracker.trackEvent(
-                    "expense_edited",
+                    "expense_updated",
                     mapOf(
                         "currency" to "EUR",
                         "payment_method" to "CARD",

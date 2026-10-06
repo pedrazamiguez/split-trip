@@ -1,12 +1,16 @@
 package es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.handler
 import es.pedrazamiguez.splittrip.core.common.extensions.toLocalDateTimeUtc
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.service.ContributionValidationService
 import es.pedrazamiguez.splittrip.domain.service.impl.ContributionValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AddContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.UpdateContributionUseCase
+import es.pedrazamiguez.splittrip.features.contribution.R
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.action.AddContributionUiAction
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.state.AddContributionUiState
 import io.mockk.Runs
@@ -40,6 +44,7 @@ class ContributionSubmitHandlerTest {
     private lateinit var addContributionUseCase: AddContributionUseCase
     private lateinit var updateContributionUseCase: UpdateContributionUseCase
     private lateinit var contributionValidationService: ContributionValidationService
+    private lateinit var telemetryTracker: TelemetryTracker
 
     private lateinit var uiState: MutableStateFlow<AddContributionUiState>
     private lateinit var actions: MutableSharedFlow<AddContributionUiAction>
@@ -71,6 +76,7 @@ class ContributionSubmitHandlerTest {
         addContributionUseCase = mockk()
         updateContributionUseCase = mockk()
         contributionValidationService = ContributionValidationServiceImpl()
+        telemetryTracker = mockk(relaxed = true)
 
         uiState = MutableStateFlow(validState)
         actions = MutableSharedFlow(extraBufferCapacity = 16)
@@ -79,7 +85,8 @@ class ContributionSubmitHandlerTest {
             addContributionUseCase = addContributionUseCase,
             updateContributionUseCase = updateContributionUseCase,
             contributionValidationService = contributionValidationService,
-            groupCurrencyProvider = { "EUR" }
+            groupCurrencyProvider = { "EUR" },
+            telemetryTracker = telemetryTracker
         )
     }
 
@@ -178,6 +185,9 @@ class ContributionSubmitHandlerTest {
             assertTrue(emitted.any { it is AddContributionUiAction.ShowSuccess })
             assertFalse(uiState.value.isLoading)
             coVerify(exactly = 1) { addContributionUseCase("group-1", any()) }
+            coVerify(exactly = 1) {
+                telemetryTracker.trackEvent("contribution_created", mapOf("scope" to "user"))
+            }
             collectJob.cancel()
         }
 
@@ -202,7 +212,7 @@ class ContributionSubmitHandlerTest {
 
             uiState.value = validState.copy(
                 contributionId = "existing-id",
-                originalContribution = es.pedrazamiguez.splittrip.domain.model.Contribution(
+                originalContribution = Contribution(
                     id = "existing-id",
                     groupId = "group-1",
                     userId = "user-1",
@@ -223,10 +233,9 @@ class ContributionSubmitHandlerTest {
             val successAction = emitted.filterIsInstance<AddContributionUiAction.ShowSuccess>().firstOrNull()
             assertNotNull(successAction)
 
-            val stringRes = successAction!!.message as
-                es.pedrazamiguez.splittrip.core.common.presentation.UiText.StringResource
+            val stringRes = successAction!!.message as UiText.StringResource
             assertEquals(
-                es.pedrazamiguez.splittrip.features.contribution.R.string.contribution_edit_money_success,
+                R.string.contribution_edit_money_success,
                 stringRes.resId
             )
 
