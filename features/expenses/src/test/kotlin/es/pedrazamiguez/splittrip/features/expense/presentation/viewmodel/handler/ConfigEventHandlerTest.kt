@@ -115,7 +115,8 @@ class ConfigEventHandlerTest {
             splitMapper = addExpenseSplitMapper,
             addOnMapper = AddExpenseAddOnUiMapper(),
             splitPreviewService = splitPreviewService,
-            addExpenseOptionsUiMapper = addExpenseOptionsMapper
+            addExpenseOptionsUiMapper = addExpenseOptionsMapper,
+            remainderDistributionService = remainderDistributionService
         )
 
         receiptExtractionService = mockk(relaxed = true)

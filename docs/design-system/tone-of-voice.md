@@ -62,6 +62,8 @@ All copy must align strictly with [`docs/domain/ubiquitous-language.md`](../doma
 | **Cash Outflow** | Cash withdrawal | Retirada de efectivo | *Retiro* (Latin American / retirement), *Saca* |
 | **Expense Division** | Split / Entity split | Reparto / Divisiones | *Partición*, *Prorrateo* |
 | **Extra Charges** | Add-on / Extra | Extra | *Recargo genérico*, *Plus* |
+| **Extra Mode (On top)** | On top | Adicional | *Sumado*, *Plus*, *Añadido* |
+| **Extra Mode (Included)** | Already included / Included | Ya incluido / Incluido | *Integrado*, *Dentro* |
 | **Group Companions** | Travel companions / Members | Compañeros de viaje / Miembros | *Compis*, *Amigotes*, *Peña* |
 | **Settings Subtitle** | Your preferences | Tus preferencias | *Hazla tuya*, *A tu gusto* |
 

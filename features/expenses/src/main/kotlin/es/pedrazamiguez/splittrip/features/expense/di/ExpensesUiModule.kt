@@ -131,7 +131,8 @@ val expensesUiModule = module {
             splitMapper = get<AddExpenseSplitUiMapper>(),
             addOnMapper = get<AddExpenseAddOnUiMapper>(),
             splitPreviewService = get<SplitPreviewService>(),
-            addExpenseOptionsUiMapper = get<AddExpenseOptionsUiMapper>()
+            addExpenseOptionsUiMapper = get<AddExpenseOptionsUiMapper>(),
+            remainderDistributionService = get<RemainderDistributionService>()
         )
     }
 

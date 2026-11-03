@@ -2,13 +2,16 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.extensions
 
 import es.pedrazamiguez.splittrip.core.common.R as CommonR
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Car
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Keyframes
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Theater
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -69,6 +72,22 @@ class ExpenseSubcategoryExtensionsTest {
     inner class IconVectorMapping {
 
         @Test
+        fun `maps taxi rideshare to car icon`() {
+            assertSame(
+                TablerIcons.Outline.Car,
+                ExpenseSubcategory.TAXI_RIDESHARE.toIconVector()
+            )
+        }
+
+        @Test
+        fun `TRANSPORT category and TAXI_RIDESHARE subcategory map to distinct icons`() {
+            assertNotSame(
+                ExpenseCategory.TRANSPORT.toIconVector(),
+                ExpenseSubcategory.TAXI_RIDESHARE.toIconVector()
+            )
+        }
+
+        @Test
         fun `maps private transfer to keyframes icon`() {
             assertSame(
                 TablerIcons.Outline.Keyframes,
@@ -88,6 +107,17 @@ class ExpenseSubcategoryExtensionsTest {
         fun `all subcategories return non-null icon vectors`() {
             ExpenseSubcategory.entries.forEach { subcategory ->
                 assertNotNull(subcategory.toIconVector(), "Icon for $subcategory should not be null")
+            }
+        }
+
+        @Test
+        fun `no subcategory shares the same icon vector as its parent category`() {
+            ExpenseSubcategory.entries.forEach { subcategory ->
+                assertNotSame(
+                    subcategory.parentCategory.toIconVector(),
+                    subcategory.toIconVector(),
+                    "Subcategory $subcategory must not share icon with parent ${subcategory.parentCategory}"
+                )
             }
         }
 

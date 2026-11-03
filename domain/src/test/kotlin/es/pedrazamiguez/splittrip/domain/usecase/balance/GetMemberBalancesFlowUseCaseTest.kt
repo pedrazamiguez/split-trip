@@ -1068,6 +1068,129 @@ class GetMemberBalancesFlowUseCaseTest {
             // pocketBalance is reduced by refundable: 20000 - 0 (withdrawn) - 10000 (nonCashSpent) = 10000
             assertEquals(10000L, balance.pocketBalance)
         }
+
+        @Test
+        fun `refundable expense with future dueDate populates refundable fields`() {
+            val expenses = listOf(
+                Expense(
+                    id = "exp-ref-future",
+                    sourceAmount = 10000L,
+                    groupAmount = 10000L,
+                    paymentMethod = PaymentMethod.DEBIT_CARD,
+                    paymentStatus = PaymentStatus.REFUNDABLE,
+                    dueDate = LocalDateTime.now().plusDays(3),
+                    splits = listOf(
+                        ExpenseSplit(userId = "user-1", amountCents = 10000L)
+                    )
+                )
+            )
+            val result = compute(expenses = expenses)
+            val balanceMap = result.associateBy { it.userId }
+            val balance = balanceMap["user-1"]!!
+
+            assertEquals(10000L, balance.refundableSpent)
+            assertEquals(1, balance.refundableSpentByCurrency.size)
+            assertEquals("EUR", balance.refundableSpentByCurrency[0].currency)
+            assertEquals(10000L, balance.refundableSpentByCurrency[0].amountCents)
+            assertEquals(10000L, balance.nonCashSpent)
+            assertEquals(-10000L, balance.pocketBalance)
+        }
+
+        @Test
+        fun `refundable expense with today dueDate populates refundable fields`() {
+            val expenses = listOf(
+                Expense(
+                    id = "exp-ref-today",
+                    sourceAmount = 10000L,
+                    groupAmount = 10000L,
+                    paymentMethod = PaymentMethod.DEBIT_CARD,
+                    paymentStatus = PaymentStatus.REFUNDABLE,
+                    dueDate = LocalDateTime.now(),
+                    splits = listOf(
+                        ExpenseSplit(userId = "user-1", amountCents = 10000L)
+                    )
+                )
+            )
+            val result = compute(expenses = expenses)
+            val balanceMap = result.associateBy { it.userId }
+            val balance = balanceMap["user-1"]!!
+
+            assertEquals(10000L, balance.refundableSpent)
+            assertEquals(1, balance.refundableSpentByCurrency.size)
+            assertEquals("EUR", balance.refundableSpentByCurrency[0].currency)
+            assertEquals(10000L, balance.refundableSpentByCurrency[0].amountCents)
+        }
+
+        @Test
+        fun `expired non-cash refundable expense is excluded from refundableSpent but settles normally`() {
+            val contributions = listOf(
+                Contribution(userId = "user-1", amount = 20000L)
+            )
+            val expenses = listOf(
+                Expense(
+                    id = "exp-ref-expired",
+                    sourceAmount = 10000L,
+                    groupAmount = 10000L,
+                    paymentMethod = PaymentMethod.DEBIT_CARD,
+                    paymentStatus = PaymentStatus.REFUNDABLE,
+                    dueDate = LocalDateTime.now().minusDays(2),
+                    splits = listOf(
+                        ExpenseSplit(userId = "user-1", amountCents = 10000L)
+                    )
+                )
+            )
+            val result = compute(contributions = contributions, expenses = expenses)
+            val balanceMap = result.associateBy { it.userId }
+            val balance = balanceMap["user-1"]!!
+
+            assertEquals(0L, balance.refundableSpent)
+            assertTrue(balance.refundableSpentByCurrency.isEmpty())
+            assertEquals(10000L, balance.nonCashSpent)
+            assertEquals(10000L, balance.totalSpent)
+            assertEquals(10000L, balance.pocketBalance)
+        }
+
+        @Test
+        fun `expired cash refundable expense is excluded from refundableSpent but settles cash spent`() {
+            val withdrawals = listOf(
+                CashWithdrawal(
+                    id = "wd-1",
+                    withdrawnBy = "user-1",
+                    withdrawalScope = PayerType.USER,
+                    amountWithdrawn = 10000L,
+                    remainingAmount = 5000L,
+                    deductedBaseAmount = 10000L
+                )
+            )
+            val expenses = listOf(
+                Expense(
+                    id = "exp-cash-ref",
+                    groupId = groupId,
+                    payerId = "user-1",
+                    payerType = PayerType.USER,
+                    paymentMethod = PaymentMethod.CASH,
+                    paymentStatus = PaymentStatus.REFUNDABLE,
+                    dueDate = LocalDateTime.now().minusDays(1),
+                    sourceAmount = 5000L,
+                    sourceCurrency = "EUR",
+                    groupAmount = 5000L,
+                    groupCurrency = "EUR",
+                    cashTranches = listOf(CashTranche("wd-1", 5000L)),
+                    splits = listOf(
+                        ExpenseSplit(userId = "user-1", amountCents = 5000L)
+                    )
+                )
+            )
+            val result = compute(withdrawals = withdrawals, expenses = expenses)
+            val balanceMap = result.associateBy { it.userId }
+            val balance = balanceMap["user-1"]!!
+
+            assertEquals(0L, balance.refundableSpent)
+            assertTrue(balance.refundableSpentByCurrency.isEmpty())
+            assertEquals(5000L, balance.cashSpent)
+            assertEquals(5000L, balance.totalSpent)
+            assertEquals(5000L, balance.cashInHand)
+        }
     }
 
     @Nested

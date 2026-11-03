@@ -229,7 +229,8 @@ class AddExpenseViewModelTest {
             addExpenseSplitMapper,
             AddExpenseAddOnUiMapper(),
             splitPreviewService,
-            addExpenseOptionsMapper
+            addExpenseOptionsMapper,
+            remainderDistributionService
         )
 
         every { getGroupLastUsedCurrencyUseCase(any()) } returns flowOf(null)

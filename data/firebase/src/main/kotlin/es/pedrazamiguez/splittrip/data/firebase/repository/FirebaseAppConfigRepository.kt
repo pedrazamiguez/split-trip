@@ -270,9 +270,13 @@ class FirebaseAppConfigRepository(
         private const val LANG_ES = "es"
         private const val LANG_ES_RAN = "es-rAN"
 
+        private const val DEFAULT_DEVELOPER_AVATAR_URL =
+            "https://firebasestorage.googleapis.com/v0/b/expshapp.firebasestorage.app/o/" +
+                "public%2Favatars%2Fdeveloper.webp?alt=media&token=7151f846-8346-4944-9cc7-2d4c02bf492d"
+
         val DEFAULT_DEVELOPER_INFO = DeveloperInfo(
             name = "Andrés Pedraza Míguez",
-            avatarUrl = "",
+            avatarUrl = DEFAULT_DEVELOPER_AVATAR_URL,
             githubUrl = "https://github.com/pedrazamiguez",
             splitTripRepoUrl = "https://github.com/pedrazamiguez/split-trip",
             linkedinUrl = "https://www.linkedin.com/in/pedrazamiguez",

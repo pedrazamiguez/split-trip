@@ -71,6 +71,7 @@ data class ExpenseDetailUiModel(
     val hasAddOns: Boolean = false,
     val hasIncludedAddOns: Boolean = false,
     val addOns: ImmutableList<AddOnDetailUiModel> = persistentListOf(),
+    val breakdownSummary: BreakdownSummaryUiModel? = null,
     val formattedEffectiveTotal: String? = null,
     /**
      * Formatted decomposed base cost when INCLUDED add-ons are present (equal to the

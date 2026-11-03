@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.firebase.config
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import es.pedrazamiguez.splittrip.data.firebase.repository.FirebaseAppConfigRepository
 import java.io.File
 import java.nio.charset.StandardCharsets
 import javax.xml.parsers.DocumentBuilderFactory
@@ -130,6 +131,26 @@ class RemoteConfigTemplateConsistencyTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun `developer_info_json default value matches DEFAULT_DEVELOPER_INFO in FirebaseAppConfigRepository`() {
+        val devInfoParam = templateParameters["developer_info_json"]
+        assertTrue(devInfoParam != null, "Parameter 'developer_info_json' should exist in template")
+        val devInfoJson = JsonParser.parseString(devInfoParam?.defaultValue).asJsonObject
+        val avatarUrl = devInfoJson.get("avatar_url")?.asString
+
+        assertEquals(
+            FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO.avatarUrl,
+            avatarUrl,
+            "avatar_url in template JSON should match FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO.avatarUrl"
+        )
+        assertTrue(
+            avatarUrl?.contains(
+                "/o/public%2Favatars%2Fdeveloper.webp?alt=media&token=7151f846-8346-4944-9cc7-2d4c02bf492d"
+            ) == true,
+            "avatar_url should target /o/public%2Favatars%2Fdeveloper.webp?alt=media with token"
+        )
     }
 
     private fun resolveProjectRoot(): File {

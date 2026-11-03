@@ -18,9 +18,12 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.BreakdownSummaryUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ReconstructedAmounts
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitBreakdownItemUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.Collator
 import java.util.Locale
 import kotlinx.collections.immutable.ImmutableList
@@ -31,6 +34,163 @@ internal fun buildOriginalEnteredTotal(baseGroupAmount: Long, addOns: List<AddOn
         .filter { it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT }
         .sumOf { it.groupAmountCents }
     return (baseGroupAmount + includedNonDiscountTotal).coerceAtLeast(0L)
+}
+
+internal fun resolveAddOnGroupAmountCents(addOn: AddOn): Long {
+    if (addOn.groupAmountCents > 0L) return addOn.groupAmountCents
+    if (addOn.amountCents > 0L && addOn.type == AddOnType.DISCOUNT) {
+        return BigDecimal(addOn.amountCents)
+            .multiply(addOn.exchangeRate)
+            .setScale(0, RoundingMode.HALF_UP)
+            .toLong()
+    }
+    return addOn.groupAmountCents
+}
+
+internal fun resolveIncludedBaseCostFormatted(
+    expense: Expense,
+    formattingHelper: FormattingHelper
+): String? {
+    val totalResolvedDiscountsCents = expense.addOns
+        .filter { it.type == AddOnType.DISCOUNT }
+        .sumOf { resolveAddOnGroupAmountCents(it) }
+    val hasIncludedNonDiscounts = expense.addOns.any {
+        it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT
+    }
+    return if (totalResolvedDiscountsCents > 0L || hasIncludedNonDiscounts) {
+        val baseCostCents = expense.groupAmount + totalResolvedDiscountsCents
+        formattingHelper.formatCentsWithCurrency(
+            baseCostCents,
+            expense.groupCurrency
+        )
+    } else {
+        null
+    }
+}
+
+internal fun resolveOriginalEnteredTotalFormatted(
+    expense: Expense,
+    formattingHelper: FormattingHelper
+): String? {
+    val hasIncludedNonDiscounts = expense.addOns.any {
+        it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT
+    }
+    val hasNoOnTop = expense.addOns.none { it.mode == AddOnMode.ON_TOP }
+    return if (hasIncludedNonDiscounts && hasNoOnTop) {
+        formattingHelper.formatCentsWithCurrency(
+            buildOriginalEnteredTotal(expense.groupAmount, expense.addOns),
+            expense.groupCurrency
+        )
+    } else {
+        null
+    }
+}
+
+internal fun resolvePreDiscountAmounts(expense: Expense): ReconstructedAmounts {
+    val onTopDiscounts = expense.addOns.filter {
+        it.type == AddOnType.DISCOUNT && it.mode == AddOnMode.ON_TOP
+    }
+    if (onTopDiscounts.isEmpty()) {
+        return ReconstructedAmounts(
+            sourceAmount = expense.sourceAmount,
+            groupAmount = expense.groupAmount
+        )
+    }
+
+    val totalDiscountGroupCents = onTopDiscounts.sumOf { resolveAddOnGroupAmountCents(it) }
+    val preDiscountGroupAmount = expense.groupAmount + totalDiscountGroupCents
+    val preDiscountSourceAmount = when {
+        onTopDiscounts.all { it.currency == expense.sourceCurrency } -> {
+            expense.sourceAmount + onTopDiscounts.sumOf { it.amountCents }
+        }
+        expense.groupAmount > 0L -> {
+            BigDecimal(expense.sourceAmount)
+                .multiply(BigDecimal(preDiscountGroupAmount))
+                .divide(BigDecimal(expense.groupAmount), 0, RoundingMode.HALF_UP)
+                .toLong()
+        }
+        expense.exchangeRate.compareTo(BigDecimal.ZERO) > 0 -> {
+            BigDecimal(preDiscountGroupAmount)
+                .divide(expense.exchangeRate, 0, RoundingMode.HALF_UP)
+                .toLong()
+        }
+        else -> preDiscountGroupAmount
+    }
+    return ReconstructedAmounts(
+        sourceAmount = preDiscountSourceAmount,
+        groupAmount = preDiscountGroupAmount
+    )
+}
+
+internal fun resolveEffectiveSourceAmount(expense: Expense): Long {
+    val nonDiscountSourceExtras = expense.addOns
+        .filter { it.currency == expense.sourceCurrency && it.type != AddOnType.DISCOUNT }
+        .sumOf { it.amountCents }
+    return expense.sourceAmount + nonDiscountSourceExtras
+}
+
+internal fun resolvePreExtractionAmounts(
+    expense: Expense,
+    baseAmounts: ReconstructedAmounts
+): ReconstructedAmounts {
+    val includedNonDiscounts = expense.addOns.filter {
+        it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT
+    }
+    if (includedNonDiscounts.isEmpty()) return baseAmounts
+
+    val totalIncludedGroupCents = includedNonDiscounts.sumOf { resolveAddOnGroupAmountCents(it) }
+    val enteredGroupAmount = baseAmounts.groupAmount + totalIncludedGroupCents
+
+    val enteredSourceAmount = when {
+        includedNonDiscounts.all { it.currency == expense.sourceCurrency } -> {
+            baseAmounts.sourceAmount + includedNonDiscounts.sumOf { it.amountCents }
+        }
+        baseAmounts.groupAmount > 0L -> {
+            BigDecimal(baseAmounts.sourceAmount)
+                .multiply(BigDecimal(enteredGroupAmount))
+                .divide(BigDecimal(baseAmounts.groupAmount), 0, RoundingMode.HALF_UP)
+                .toLong()
+        }
+        expense.exchangeRate.compareTo(BigDecimal.ZERO) > 0 -> {
+            BigDecimal(enteredGroupAmount)
+                .divide(expense.exchangeRate, 0, RoundingMode.HALF_UP)
+                .toLong()
+        }
+        else -> enteredGroupAmount
+    }
+    return ReconstructedAmounts(
+        sourceAmount = enteredSourceAmount,
+        groupAmount = enteredGroupAmount
+    )
+}
+
+internal fun resolveBreakdownSummary(
+    addOns: List<AddOn>,
+    formattedEffectiveTotal: String?,
+    formattedOriginalEnteredTotal: String?
+): BreakdownSummaryUiModel? {
+    val hasOnTop = addOns.any { it.mode == AddOnMode.ON_TOP }
+    return when {
+        !hasOnTop && formattedOriginalEnteredTotal != null -> {
+            BreakdownSummaryUiModel(
+                labelRes = R.string.expense_detail_breakdown_original_total,
+                formattedAmount = formattedOriginalEnteredTotal
+            )
+        }
+        formattedEffectiveTotal != null -> {
+            BreakdownSummaryUiModel(
+                labelRes = R.string.expense_review_effective_total,
+                formattedAmount = formattedEffectiveTotal
+            )
+        }
+        formattedOriginalEnteredTotal != null -> {
+            BreakdownSummaryUiModel(
+                labelRes = R.string.expense_review_effective_total,
+                formattedAmount = formattedOriginalEnteredTotal
+            )
+        }
+        else -> null
+    }
 }
 
 internal fun resolveDisplayName(

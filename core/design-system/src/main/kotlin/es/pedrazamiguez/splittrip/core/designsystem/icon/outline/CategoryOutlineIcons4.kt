@@ -383,3 +383,32 @@ val TablerIcons.Outline.Keyframes: ImageVector
     ).build().also { _Keyframes = it }
 
 private var _Keyframes: ImageVector? = null
+
+val TablerIcons.Outline.Route: ImageVector
+    get() = _Route ?: ImageVector.Builder(
+        name = "Outline.Route",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).addPath(
+        pathData = addPathNodes("M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).build().also { _Route = it }
+
+private var _Route: ImageVector? = null

@@ -94,6 +94,11 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(48L, repository.settlementNudgeRateLimitHours.value)
         assertEquals(listOf("blade", "secret"), repository.ocrSafetyFalsePositivesBlacklist.value)
         assertEquals(FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO, repository.developerInfo.value)
+        assertEquals(
+            "https://firebasestorage.googleapis.com/v0/b/expshapp.firebasestorage.app/o/" +
+                "public%2Favatars%2Fdeveloper.webp?alt=media&token=7151f846-8346-4944-9cc7-2d4c02bf492d",
+            repository.developerInfo.value.avatarUrl
+        )
         assertEquals(true, repository.adsEnabled.value)
         assertEquals(false, repository.admobTestModeEnabled.value)
         assertEquals("banner-123", repository.admobBannerAdUnitId.value)
@@ -247,6 +252,19 @@ class FirebaseAppConfigRepositoryTest {
         assertFalse(repo.admobTestModeEnabled.value)
         assertEquals("ca-app-pub-9638507020441461/2775424807", repo.admobBannerAdUnitId.value)
         assertEquals("ca-app-pub-9638507020441461/6643262487", repo.admobInterstitialAdUnitId.value)
+    }
+
+    @Test
+    fun `parseDeveloperInfo falls back to DEFAULT_DEVELOPER_INFO avatarUrl when avatar_url is omitted in JSON`() {
+        every { firebaseRemoteConfig.getString("developer_info_json") } returns """{"name": "Custom Name"}"""
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertEquals("Custom Name", repo.developerInfo.value.name)
+        assertEquals(
+            FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO.avatarUrl,
+            repo.developerInfo.value.avatarUrl
+        )
     }
 
     private fun setupMockRemoteConfigValues() {
