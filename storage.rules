@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Expose public static assets
+    match /public/avatars/{imageId} {
+      allow read: if true;
+      allow write: if false; // Restrict uploads to Firebase Console or Admin SDK
+    }
+
+    // Default rule protecting all other storage paths
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
