@@ -116,7 +116,7 @@ class ExpenseSubcategoryExtensionsTest {
                 assertNotSame(
                     subcategory.parentCategory.toIconVector(),
                     subcategory.toIconVector(),
-                    "Subcategory $subcategory should not share icon vector with parent category ${subcategory.parentCategory}"
+                    "Subcategory $subcategory must not share icon with parent ${subcategory.parentCategory}"
                 )
             }
         }
