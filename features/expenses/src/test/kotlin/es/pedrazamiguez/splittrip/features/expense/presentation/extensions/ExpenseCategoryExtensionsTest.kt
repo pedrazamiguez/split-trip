@@ -3,9 +3,9 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.extensions
 import es.pedrazamiguez.splittrip.core.common.R as CommonR
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bed
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Car
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Category
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.MasksTheater
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Route
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Run
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Shield
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ShoppingBag
@@ -75,8 +75,8 @@ class ExpenseCategoryExtensionsTest {
     inner class IconVectorMapping {
 
         @Test
-        fun `TRANSPORT maps to Car icon`() {
-            assertSame(TablerIcons.Outline.Car, ExpenseCategory.TRANSPORT.toIconVector())
+        fun `TRANSPORT maps to Route icon`() {
+            assertSame(TablerIcons.Outline.Route, ExpenseCategory.TRANSPORT.toIconVector())
         }
 
         @Test
@@ -112,6 +112,12 @@ class ExpenseCategoryExtensionsTest {
         @Test
         fun `OTHER maps to Category icon`() {
             assertSame(TablerIcons.Outline.Category, ExpenseCategory.OTHER.toIconVector())
+        }
+
+        @Test
+        fun `all categories map to distinct icon vectors`() {
+            val icons = ExpenseCategory.entries.map { it.toIconVector() }
+            assertEquals(icons.size, icons.toSet().size)
         }
 
         @Test
