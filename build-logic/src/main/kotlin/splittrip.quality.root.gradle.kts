@@ -23,11 +23,6 @@ tasks.register<JacocoReport>("jacocoMergedReport") {
     }
     dependsOn(reportTasks)
 
-    // Resolve implicit dependency validation when running ktlint/detekt alongside jacocoMergedReport
-    subprojects.forEach { sub ->
-        mustRunAfter(sub.tasks.matching { it.name.contains("ktlint") || it.name.contains("detekt") })
-    }
-
     // Execution data from all subprojects
     executionData.setFrom(
         fileTree(rootProject.projectDir) {
