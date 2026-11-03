@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.LocalDate
 
 /**
  * Distributes withdrawal deducted amounts to individual members based on scope,
@@ -143,9 +144,10 @@ internal fun attributeRemainingByScope(
  */
 internal fun attributeExpensesByPaymentMethod(
     expenses: List<Expense>,
-    addOnCalculationService: AddOnCalculationService
+    addOnCalculationService: AddOnCalculationService,
+    today: LocalDate = LocalDate.now()
 ): ExpenseResult {
-    val accumulator = ExpenseAttributionAccumulator(addOnCalculationService)
+    val accumulator = ExpenseAttributionAccumulator(addOnCalculationService, today)
     for (expense in expenses) {
         accumulator.accumulate(expense)
     }
@@ -153,7 +155,8 @@ internal fun attributeExpensesByPaymentMethod(
 }
 
 private class ExpenseAttributionAccumulator(
-    private val addOnCalculationService: AddOnCalculationService
+    private val addOnCalculationService: AddOnCalculationService,
+    private val today: LocalDate = LocalDate.now()
 ) {
     val cashResult = mutableMapOf<String, Long>()
     val nonCashResult = mutableMapOf<String, Long>()
@@ -172,7 +175,8 @@ private class ExpenseAttributionAccumulator(
     )
 
     private fun resolveDestinations(expense: Expense): List<TargetDestination> {
-        val isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE
+        val isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE &&
+            expense.dueDate?.toLocalDate()?.isBefore(today) != true
         val isCash = expense.paymentMethod == PaymentMethod.CASH
         val destinations = mutableListOf<TargetDestination>()
         if (isRefundable) {
