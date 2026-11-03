@@ -270,6 +270,20 @@ class ArchitectureTest {
         }
 
         @Test
+        @DisplayName("Feature production modules must NOT import from domain implementation packages")
+        fun `feature modules must not import from domain impl`() {
+            projectProductionScope
+                .files
+                .filter { it.hasPackage("..features..") }
+                .filter { !it.projectPath.contains("src/debug") }
+                .assertTrue { file ->
+                    file.imports.none { import ->
+                        import.name.contains(".domain.") && import.name.contains(".impl.")
+                    }
+                }
+        }
+
+        @Test
         @DisplayName("Feature modules must NOT import from other feature modules")
         fun `feature modules must not import from other features`() {
             val featurePackages = listOf(
