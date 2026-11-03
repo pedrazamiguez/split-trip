@@ -28,7 +28,7 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 
 | English | Spanish | Definition |
 | :--- | :--- | :--- |
-| **AddOnMode** | Modo de extra | Indicates if an add-on is already included in the base cost (`Included`) or applied on top of it (`OnTop`). |
+| **AddOnMode** | Modo de extra | Indicates whether an extra is applied on top of the base expense (`ON_TOP`: *"On top"* / *"Adicional"*) or embedded in the total (`INCLUDED`: *"Already included"* / *"Ya incluido"* in the editor, or *"Included"* / *"Incluido"* in badges). |
 | **AddOnType** | Tipo de extra | The specific type of the extra charge (e.g., `Tip`, `Fee`, `Surcharge`, `Discount`). |
 | **AddOnValueType** | Tipo de valor | Whether the add-on is defined as a fixed amount (`Exact`) or a percentage (`Percentage`). |
 | **AppLanguage** | Idioma de la app | Supported application languages for the user interface. |
@@ -54,4 +54,7 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
   - **Never use "My Position" / "Mi posición"**. The application addresses the traveler in a natural, respectful second person ("Tu posición", "Tus preferencias"), avoiding first-person self-labeling.
 - **Always use "Balance"**. Never use "Saldo" or "Posición neta" to keep the terminology approachable and less aggressively financial.
 - **Always use "Pocket" / "Pocket del grupo" / "Pocket virtual"**. Never use "Bote", "Bolsa", or "Cuenta" to ensure a consistent, branded, and modern concept for the group's collective pool.
+- **Always use "Adicional" for AddOnMode.ON_TOP (English: "On top")**.
+  - **Never use "Sumado"**. In previous iterations, "Sumado" was occasionally used in breakdown badges, creating inconsistency with the creation flow ("Adicional"). The canonical Spanish term across both expense creation and expense detail breakdowns is **"Adicional"** (Andalusian EPA: **"Adiçionâh"**).
+- **Always use "Ya incluido" (in form fields/selectors) or "Incluido" (in compact badges) for AddOnMode.INCLUDED (English: "Already included" / "Included")**.
 - Maintain consistency across all UI text, push notifications, error messages, and API responses.

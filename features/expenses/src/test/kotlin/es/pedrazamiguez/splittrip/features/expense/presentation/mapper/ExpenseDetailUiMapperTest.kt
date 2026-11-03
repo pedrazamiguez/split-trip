@@ -655,6 +655,26 @@ class ExpenseDetailUiMapperTest {
         }
 
         @Test
+        fun `maps modeText correctly for ON_TOP add-on`() {
+            every { resourceProvider.getString(R.string.expense_detail_addon_mode_on_top) } returns "Adicional"
+            val expense = baseExpense.copy(addOns = listOf(taxAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Adicional", result.addOns.first().modeText)
+        }
+
+        @Test
+        fun `maps modeText correctly for INCLUDED add-on`() {
+            every { resourceProvider.getString(R.string.expense_detail_addon_mode_included) } returns "Incluido"
+            val expense = baseExpense.copy(addOns = listOf(includedTipAddOn))
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Incluido", result.addOns.first().modeText)
+        }
+
+        @Test
         fun `mapAddOns resolves true group amount for ON_TOP discount when groupAmountCents is 0L`() {
             val onTopDiscountZeroed = AddOn(
                 type = AddOnType.DISCOUNT,

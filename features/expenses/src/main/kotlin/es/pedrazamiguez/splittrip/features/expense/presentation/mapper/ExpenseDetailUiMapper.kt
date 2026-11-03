@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toDetailStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnDetailUiModel
@@ -402,7 +403,7 @@ class ExpenseDetailUiMapper(
         val resolvedGroupCents = resolveAddOnGroupAmountCents(addOn)
         AddOnDetailUiModel(
             labelText = buildAddOnLabel(addOn, resourceProvider),
-            modeText = resourceProvider.getString(addOn.mode.toStringRes()),
+            modeText = resourceProvider.getString(addOn.mode.toDetailStringRes()),
             formattedAmount = formattingHelper.formatCentsWithCurrency(
                 resolvedGroupCents,
                 groupCurrency

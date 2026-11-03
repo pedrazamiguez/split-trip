@@ -80,11 +80,6 @@ internal fun BreakdownCardSection(
                     } else {
                         "+ ${addOn.formattedAmount}"
                     }
-                    val modeLabelRes = if (addOn.isIncluded) {
-                        R.string.expense_detail_addon_mode_included
-                    } else {
-                        R.string.expense_detail_addon_mode_on_top
-                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -101,7 +96,7 @@ internal fun BreakdownCardSection(
                                 color = MaterialTheme.colorScheme.surfaceContainerHigh
                             ) {
                                 Text(
-                                    text = stringResource(modeLabelRes),
+                                    text = addOn.modeText,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
