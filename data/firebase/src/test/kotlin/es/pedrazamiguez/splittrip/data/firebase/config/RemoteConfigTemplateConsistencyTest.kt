@@ -146,8 +146,10 @@ class RemoteConfigTemplateConsistencyTest {
             "avatar_url in template JSON should match FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO.avatarUrl"
         )
         assertTrue(
-            avatarUrl?.contains("/o/public%2Favatars%2Fdeveloper.webp?alt=media") == true,
-            "avatar_url should target /o/public%2Favatars%2Fdeveloper.webp?alt=media"
+            avatarUrl?.contains(
+                "/o/public%2Favatars%2Fdeveloper.webp?alt=media&token=7151f846-8346-4944-9cc7-2d4c02bf492d"
+            ) == true,
+            "avatar_url should target /o/public%2Favatars%2Fdeveloper.webp?alt=media with token"
         )
     }
 

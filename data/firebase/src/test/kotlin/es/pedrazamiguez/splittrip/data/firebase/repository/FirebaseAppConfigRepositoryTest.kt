@@ -96,7 +96,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO, repository.developerInfo.value)
         assertEquals(
             "https://firebasestorage.googleapis.com/v0/b/expshapp.firebasestorage.app/o/" +
-                "public%2Favatars%2Fdeveloper.webp?alt=media",
+                "public%2Favatars%2Fdeveloper.webp?alt=media&token=7151f846-8346-4944-9cc7-2d4c02bf492d",
             repository.developerInfo.value.avatarUrl
         )
         assertEquals(true, repository.adsEnabled.value)
