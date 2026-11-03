@@ -723,6 +723,133 @@ class GetGroupPocketBalanceFlowUseCaseTest {
             // refundableHoldAmount = 10000 (the refundable expense)
             assertEquals(10000L, result.refundableHoldAmount)
         }
+
+        @Test
+        fun `refundable expense with future dueDate populates refundableHoldAmount`() = runTest {
+            // Given: 500 contributed, one refundable expense (100) with future dueDate
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(
+                listOf(Contribution(amount = 50000L, currency = currency))
+            )
+            every { expenseRepository.getGroupExpensesFlow(groupId) } returns flowOf(
+                listOf(
+                    Expense(
+                        groupAmount = 10000L,
+                        groupCurrency = currency,
+                        paymentMethod = PaymentMethod.DEBIT_CARD,
+                        paymentStatus = PaymentStatus.REFUNDABLE,
+                        dueDate = LocalDateTime.now().plusDays(2)
+                    )
+                )
+            )
+            every { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(
+                emptyList()
+            )
+
+            // When
+            val result = useCase(groupId, currency).first()
+
+            // Then
+            assertEquals(10000L, result.totalExpenses)
+            assertEquals(40000L, result.virtualBalance)
+            assertEquals(10000L, result.refundableHoldAmount)
+        }
+
+        @Test
+        fun `refundable expense with today dueDate populates refundableHoldAmount`() = runTest {
+            // Given: 500 contributed, one refundable expense (100) with today dueDate
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(
+                listOf(Contribution(amount = 50000L, currency = currency))
+            )
+            every { expenseRepository.getGroupExpensesFlow(groupId) } returns flowOf(
+                listOf(
+                    Expense(
+                        groupAmount = 10000L,
+                        groupCurrency = currency,
+                        paymentMethod = PaymentMethod.DEBIT_CARD,
+                        paymentStatus = PaymentStatus.REFUNDABLE,
+                        dueDate = LocalDateTime.now()
+                    )
+                )
+            )
+            every { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(
+                emptyList()
+            )
+
+            // When
+            val result = useCase(groupId, currency).first()
+
+            // Then
+            assertEquals(10000L, result.totalExpenses)
+            assertEquals(40000L, result.virtualBalance)
+            assertEquals(10000L, result.refundableHoldAmount)
+        }
+
+        @Test
+        fun `past refundable expense yields zero refundableHoldAmount but settles normally`() = runTest {
+            // Given: 500 contributed, one refundable expense (100) with past dueDate
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(
+                listOf(Contribution(amount = 50000L, currency = currency))
+            )
+            every { expenseRepository.getGroupExpensesFlow(groupId) } returns flowOf(
+                listOf(
+                    Expense(
+                        groupAmount = 10000L,
+                        groupCurrency = currency,
+                        paymentMethod = PaymentMethod.DEBIT_CARD,
+                        paymentStatus = PaymentStatus.REFUNDABLE,
+                        dueDate = LocalDateTime.now().minusDays(2)
+                    )
+                )
+            )
+            every { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(
+                emptyList()
+            )
+
+            // When
+            val result = useCase(groupId, currency).first()
+
+            // Then: expired refundable expense does not hold funds, but is treated as settled spending
+            assertEquals(10000L, result.totalExpenses)
+            assertEquals(40000L, result.virtualBalance)
+            assertEquals(0L, result.refundableHoldAmount)
+        }
+
+        @Test
+        fun `multiple refundable expenses only include non-expired ones in refundableHoldAmount`() = runTest {
+            // Given: one active refundable (60) and one expired refundable (40)
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(
+                listOf(Contribution(amount = 50000L, currency = currency))
+            )
+            every { expenseRepository.getGroupExpensesFlow(groupId) } returns flowOf(
+                listOf(
+                    Expense(
+                        groupAmount = 6000L,
+                        groupCurrency = currency,
+                        paymentMethod = PaymentMethod.DEBIT_CARD,
+                        paymentStatus = PaymentStatus.REFUNDABLE,
+                        dueDate = LocalDateTime.now().plusDays(3)
+                    ),
+                    Expense(
+                        groupAmount = 4000L,
+                        groupCurrency = currency,
+                        paymentMethod = PaymentMethod.DEBIT_CARD,
+                        paymentStatus = PaymentStatus.REFUNDABLE,
+                        dueDate = LocalDateTime.now().minusDays(1)
+                    )
+                )
+            )
+            every { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(
+                emptyList()
+            )
+
+            // When
+            val result = useCase(groupId, currency).first()
+
+            // Then: only the active refundable is held, but both are included in totalExpenses
+            assertEquals(10000L, result.totalExpenses)
+            assertEquals(40000L, result.virtualBalance)
+            assertEquals(6000L, result.refundableHoldAmount)
+        }
     }
 
     @Nested

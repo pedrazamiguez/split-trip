@@ -43,7 +43,8 @@ class GetGroupPocketBalanceFlowUseCaseImpl(
 
         // Filter refundable expenses to calculate refundable hold amount
         val refundable = nonScheduled.filter { expense ->
-            expense.paymentStatus == PaymentStatus.REFUNDABLE
+            expense.paymentStatus == PaymentStatus.REFUNDABLE &&
+                expense.dueDate?.toLocalDate()?.isBefore(today) != true
         }
 
         val scheduledHoldAmount = futureScheduled.sumOf { expense ->
