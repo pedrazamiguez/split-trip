@@ -1657,4 +1657,261 @@ class ExpenseDetailUiMapperTest {
             assertNull(result.formattedGroupAmountDifference)
         }
     }
+
+    @Nested
+    inner class MixedAddOnsBreakdown {
+
+        @Test
+        fun `formattedGroupAmount formats effectiveGroupAmount when ON_TOP and INCLUDED add-ons exist`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            val includedFee = AddOn(
+                id = "addon-inc",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 370L,
+                groupAmountCents = 370L,
+                currency = "EUR"
+            )
+            val onTopFee = AddOn(
+                id = "addon-ontop",
+                type = AddOnType.FEE,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 62L,
+                groupAmountCents = 62L,
+                currency = "EUR"
+            )
+            val expense = baseExpense.copy(
+                sourceAmount = 12348L,
+                groupAmount = 12348L,
+                groupCurrency = "EUR",
+                sourceCurrency = "EUR",
+                addOns = listOf(includedFee, onTopFee)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("€127.80", result.formattedGroupAmount)
+        }
+
+        @Test
+        fun `member split rows sum to effectiveGroupAmount when add-ons exist`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            val includedFee = AddOn(
+                id = "addon-inc",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 370L,
+                groupAmountCents = 370L,
+                currency = "EUR"
+            )
+            val onTopFee = AddOn(
+                id = "addon-ontop",
+                type = AddOnType.FEE,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 62L,
+                groupAmountCents = 62L,
+                currency = "EUR"
+            )
+            val expense = baseExpense.copy(
+                sourceAmount = 12348L,
+                groupAmount = 12348L,
+                groupCurrency = "EUR",
+                sourceCurrency = "EUR",
+                addOns = listOf(includedFee, onTopFee),
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 6174L),
+                    ExpenseSplit(userId = otherUserId, amountCents = 6174L)
+                )
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals(2, result.splits.size)
+            assertEquals("€63.90", result.splits[0].formattedAmount)
+            assertEquals("€63.90", result.splits[1].formattedAmount)
+        }
+
+        @Test
+        fun `subunit group split total computes against effectiveGroupAmount`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            val includedFee = AddOn(
+                id = "addon-inc",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 370L,
+                groupAmountCents = 370L,
+                currency = "EUR"
+            )
+            val onTopFee = AddOn(
+                id = "addon-ontop",
+                type = AddOnType.FEE,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 62L,
+                groupAmountCents = 62L,
+                currency = "EUR"
+            )
+            val expense = baseExpense.copy(
+                sourceAmount = 12348L,
+                groupAmount = 12348L,
+                groupCurrency = "EUR",
+                sourceCurrency = "EUR",
+                addOns = listOf(includedFee, onTopFee),
+                splits = listOf(
+                    ExpenseSplit(userId = currentUserId, amountCents = 6174L, subunitId = "sub-1"),
+                    ExpenseSplit(userId = otherUserId, amountCents = 6174L, subunitId = "sub-1")
+                )
+            )
+
+            val result = mapper.map(
+                expense = expense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                subunitNameLookup = mapOf("sub-1" to "Subunit 1")
+            )
+
+            assertEquals(1, result.splitGroups.size)
+            assertEquals("€127.80", result.splitGroups[0].formattedTotalAmount)
+        }
+
+        @Test
+        fun `mixed INCLUDED and ON_TOP add-ons breakdown display and math consistency`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            val includedFee = AddOn(
+                id = "addon-inc",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 370L,
+                groupAmountCents = 370L,
+                currency = "EUR"
+            )
+            val onTopFee = AddOn(
+                id = "addon-ontop",
+                type = AddOnType.FEE,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 62L,
+                groupAmountCents = 62L,
+                currency = "EUR"
+            )
+            val expense = baseExpense.copy(
+                sourceAmount = 12348L,
+                groupAmount = 12348L,
+                groupCurrency = "EUR",
+                sourceCurrency = "EUR",
+                addOns = listOf(includedFee, onTopFee)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("€123.48", result.formattedIncludedBaseCost)
+            assertEquals("€127.80", result.formattedEffectiveTotal)
+            assertNull(result.formattedOriginalEnteredTotal)
+            assertNotNull(result.breakdownSummary)
+            assertEquals(R.string.expense_review_effective_total, result.breakdownSummary?.labelRes)
+            assertEquals("€127.80", result.breakdownSummary?.formattedAmount)
+            assertEquals(2, result.addOns.size)
+            assertEquals("€3.70", result.addOns[0].formattedAmount)
+            assertTrue(result.addOns[0].isIncluded)
+            assertEquals("€0.62", result.addOns[1].formattedAmount)
+            assertFalse(result.addOns[1].isIncluded)
+        }
+
+        @Test
+        fun `only INCLUDED add-on sets breakdownSummary to original total`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            val includedFee = AddOn(
+                id = "addon-inc",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 370L,
+                groupAmountCents = 370L,
+                currency = "EUR"
+            )
+            val expense = baseExpense.copy(
+                sourceAmount = 12348L,
+                groupAmount = 12348L,
+                groupCurrency = "EUR",
+                sourceCurrency = "EUR",
+                addOns = listOf(includedFee)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNotNull(result.breakdownSummary)
+            assertEquals(R.string.expense_detail_breakdown_original_total, result.breakdownSummary?.labelRes)
+            assertEquals("€127.18", result.breakdownSummary?.formattedAmount)
+        }
+
+        @Test
+        fun `only ON_TOP add-on sets breakdownSummary to effective total`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            val onTopFee = AddOn(
+                id = "addon-ontop",
+                type = AddOnType.FEE,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 62L,
+                groupAmountCents = 62L,
+                currency = "EUR"
+            )
+            val expense = baseExpense.copy(
+                sourceAmount = 12348L,
+                groupAmount = 12348L,
+                groupCurrency = "EUR",
+                sourceCurrency = "EUR",
+                addOns = listOf(onTopFee)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertNotNull(result.breakdownSummary)
+            assertEquals(R.string.expense_review_effective_total, result.breakdownSummary?.labelRes)
+            assertEquals("€124.10", result.breakdownSummary?.formattedAmount)
+        }
+
+        @Test
+        fun `breakdownSummary is null when expense has no add-ons`() {
+            val expense = baseExpense.copy(addOns = emptyList())
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+            assertNull(result.breakdownSummary)
+        }
+
+        @Test
+        fun `formattedSourceAmount reflects total foreign currency paid with INCLUDED add-on`() {
+            every { localeProvider.getCurrentLocale() } returns Locale.US
+            val alipayFee = AddOn(
+                id = "addon-alipay",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 2853L,
+                groupAmountCents = 382L,
+                currency = "CNY"
+            )
+            val expense = baseExpense.copy(
+                sourceAmount = 95100L,
+                sourceCurrency = "CNY",
+                groupAmount = 12718L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal("0.1337"),
+                addOns = listOf(alipayFee)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            val formattedSource = checkNotNull(result.formattedSourceAmount)
+            assertTrue(
+                formattedSource.contains("979.53") ||
+                    formattedSource.contains("979,53")
+            )
+        }
+    }
 }

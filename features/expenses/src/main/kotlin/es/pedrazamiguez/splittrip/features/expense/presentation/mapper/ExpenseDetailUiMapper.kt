@@ -55,6 +55,16 @@ class ExpenseDetailUiMapper(
         val splitBreakdownItems: ImmutableList<SplitBreakdownItemUiModel>
     )
 
+    private data class MappedSplit(
+        val split: ExpenseSplit,
+        val detail: SplitDetailUiModel
+    )
+
+    private data class ScheduledShiftInfo(
+        val formattedExpectedGroupAmount: String?,
+        val formattedGroupAmountDifference: String?
+    )
+
     fun map(
         expense: Expense,
         memberProfiles: Map<String, User>,
@@ -81,6 +91,12 @@ class ExpenseDetailUiMapper(
         val subunitNameLookup: Map<String, String>,
         val groupMemberIds: List<String>
     ) {
+        private val effectiveGroupAmount: Long = resolveEffectiveTotal(
+            expense.groupAmount,
+            expense.addOns,
+            addOnCalculationService
+        ) ?: expense.groupAmount
+
         @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
         fun build(): ExpenseDetailUiModel {
             val youLabel = resourceProvider.getString(R.string.you_label)
@@ -108,9 +124,17 @@ class ExpenseDetailUiMapper(
             val creatorDisplay = resolveCreatorDisplay(youLabel)
 
             val isScheduled = expense.paymentStatus == PaymentStatus.SCHEDULED
-            val (formattedExpectedGroupAmount, formattedGroupAmountDifference) =
-                buildScheduledShiftInfo()
+            val scheduledShiftInfo = buildScheduledShiftInfo()
             val placeholder = formattingHelper.formatCentsWithCurrency(0L, expense.groupCurrency)
+
+            val formattedEffectiveTotal = formatEffectiveTotal(expense, formattingHelper, addOnCalculationService)
+            val formattedIncludedBaseCost = formatIncludedBaseCost(expense, formattingHelper)
+            val formattedOriginalEnteredTotal = formatOriginalEnteredTotal(expense, formattingHelper)
+            val breakdownSummary = resolveBreakdownSummary(
+                addOns = expense.addOns,
+                formattedEffectiveTotal = formattedEffectiveTotal,
+                formattedOriginalEnteredTotal = formattedOriginalEnteredTotal
+            )
 
             return ExpenseDetailUiModel(
                 id = expense.id,
@@ -125,7 +149,7 @@ class ExpenseDetailUiMapper(
                     null
                 },
                 formattedGroupAmount = formattingHelper.formatCentsWithCurrency(
-                    expense.groupAmount,
+                    effectiveGroupAmount,
                     expense.groupCurrency
                 ),
                 groupCurrency = expense.groupCurrency,
@@ -134,8 +158,8 @@ class ExpenseDetailUiMapper(
                 formattedExchangeRate = resolveExchangeRateFormatted(expense, formattingHelper, isForeign),
                 isForeignCurrency = isForeign,
                 isScheduled = isScheduled,
-                formattedExpectedGroupAmount = formattedExpectedGroupAmount,
-                formattedGroupAmountDifference = formattedGroupAmountDifference,
+                formattedExpectedGroupAmount = scheduledShiftInfo.formattedExpectedGroupAmount,
+                formattedGroupAmountDifference = scheduledShiftInfo.formattedGroupAmountDifference,
                 formattedConfirmPaymentPlaceholder = placeholder,
                 paymentMethodText = resourceProvider.getString(expense.paymentMethod.toStringRes()),
                 paymentMethodIcon = expense.paymentMethod.toIconVector(),
@@ -179,9 +203,10 @@ class ExpenseDetailUiMapper(
                 hasAddOns = expense.addOns.isNotEmpty(),
                 hasIncludedAddOns = expense.addOns.any { it.mode == AddOnMode.INCLUDED },
                 addOns = mapAddOns(expense.addOns, expense.groupCurrency),
-                formattedEffectiveTotal = formatEffectiveTotal(expense, formattingHelper, addOnCalculationService),
-                formattedIncludedBaseCost = formatIncludedBaseCost(expense, formattingHelper),
-                formattedOriginalEnteredTotal = formatOriginalEnteredTotal(expense, formattingHelper),
+                breakdownSummary = breakdownSummary,
+                formattedEffectiveTotal = formattedEffectiveTotal,
+                formattedIncludedBaseCost = formattedIncludedBaseCost,
+                formattedOriginalEnteredTotal = formattedOriginalEnteredTotal,
                 cashTranches = mapCashTranches(
                     expense.cashTranches,
                     expense.sourceCurrency,
@@ -206,17 +231,16 @@ class ExpenseDetailUiMapper(
             )
         }
 
-        /**
-         * Calculates formatted expected amount and difference string for expenses
-         * where the actual charge shifted from the originally expected group amount.
-         * Returns (formattedExpectedGroupAmount, formattedGroupAmountDifference),
-         * both null when no shift occurred.
-         */
-        private fun buildScheduledShiftInfo(): Pair<String?, String?> {
+        private fun buildScheduledShiftInfo(): ScheduledShiftInfo {
             val hasShift = expense.paymentStatus == PaymentStatus.FINISHED &&
                 expense.expectedGroupAmount != null &&
                 expense.expectedGroupAmount != expense.groupAmount
-            if (!hasShift) return null to null
+            if (!hasShift) {
+                return ScheduledShiftInfo(
+                    formattedExpectedGroupAmount = null,
+                    formattedGroupAmountDifference = null
+                )
+            }
 
             val formattedExpected = formattingHelper.formatCentsWithCurrency(
                 expense.expectedGroupAmount!!,
@@ -228,7 +252,10 @@ class ExpenseDetailUiMapper(
                 expense.groupCurrency
             )
             val formattedDifference = if (shift >= 0) "+$formattedShiftValue" else "-$formattedShiftValue"
-            return formattedExpected to formattedDifference
+            return ScheduledShiftInfo(
+                formattedExpectedGroupAmount = formattedExpected,
+                formattedGroupAmountDifference = formattedDifference
+            )
         }
 
         private fun resolvePayerDisplay(effectivePayerId: String?, youLabel: String): MemberDisplay {
@@ -254,146 +281,117 @@ class ExpenseDetailUiMapper(
             }
         }
 
-        private fun resolveSplits() = mapSplits(
-            expense = expense,
-            memberProfiles = memberProfiles,
-            currentUserId = currentUserId,
-            subunitNameLookup = subunitNameLookup,
-            groupMemberIds = groupMemberIds
-        )
-    }
-
-    private fun mapSplits(
-        expense: Expense,
-        memberProfiles: Map<String, User>,
-        currentUserId: String?,
-        subunitNameLookup: Map<String, String>,
-        groupMemberIds: List<String>
-    ): SplitBreakdownResult {
-        val locale = localeProvider?.getCurrentLocale() ?: Locale.getDefault()
-        val rows = expense.splits.map { split ->
-            split to mapSplitRow(
-                split = split,
-                expense = expense,
-                memberProfiles = memberProfiles,
-                currentUserId = currentUserId,
-                subunitNameLookup = subunitNameLookup,
-                groupMemberIds = groupMemberIds
-            )
-        }
-        val solo = rows.filter { it.first.subunitId.isNullOrBlank() }.map { it.second }
-        val grouped = rows
-            .filter { !it.first.subunitId.isNullOrBlank() }
-            .groupBy { it.first.subunitId!! }
-            .map { (subunitId, entries) ->
-                buildSubunitGroup(
-                    subunitId = subunitId,
-                    members = entries.map { it.second },
-                    expense = expense,
-                    subunitNameLookup = subunitNameLookup,
-                    currentUserId = currentUserId,
-                    locale = locale
+        private fun resolveSplits(): SplitBreakdownResult {
+            val locale = localeProvider?.getCurrentLocale() ?: Locale.getDefault()
+            val mappedSplits = expense.splits.map { split ->
+                MappedSplit(
+                    split = split,
+                    detail = mapSplitRow(split)
                 )
             }
-        val unsortedItems = solo.map { SplitBreakdownItemUiModel.Solo(it) } +
-            grouped.map { SplitBreakdownItemUiModel.Subunit(it) }
-        val sortedBreakdownItems = sortSplitBreakdownItems(unsortedItems, currentUserId, locale)
-        val sortedSolo = sortedBreakdownItems.filterIsInstance<SplitBreakdownItemUiModel.Solo>()
-            .map { it.split }
-            .toImmutableList()
-        val sortedGrouped = sortedBreakdownItems.filterIsInstance<SplitBreakdownItemUiModel.Subunit>()
-            .map { it.group }
-            .toImmutableList()
-        return SplitBreakdownResult(sortedSolo, sortedGrouped, sortedBreakdownItems)
-    }
+            val solo = mappedSplits
+                .filter { it.split.subunitId.isNullOrBlank() }
+                .map { it.detail }
+            val grouped = mappedSplits
+                .filter { !it.split.subunitId.isNullOrBlank() }
+                .groupBy { it.split.subunitId!! }
+                .map { (subunitId, entries) ->
+                    buildSubunitGroup(
+                        subunitId = subunitId,
+                        members = entries.map { it.detail },
+                        locale = locale
+                    )
+                }
+            val unsortedItems = solo.map { SplitBreakdownItemUiModel.Solo(it) } +
+                grouped.map { SplitBreakdownItemUiModel.Subunit(it) }
+            val sortedBreakdownItems = sortSplitBreakdownItems(unsortedItems, currentUserId, locale)
+            val sortedSolo = sortedBreakdownItems.filterIsInstance<SplitBreakdownItemUiModel.Solo>()
+                .map { it.split }
+                .toImmutableList()
+            val sortedGrouped = sortedBreakdownItems.filterIsInstance<SplitBreakdownItemUiModel.Subunit>()
+                .map { it.group }
+                .toImmutableList()
+            return SplitBreakdownResult(sortedSolo, sortedGrouped, sortedBreakdownItems)
+        }
 
-    private fun buildSubunitGroup(
-        subunitId: String,
-        members: List<SplitDetailUiModel>,
-        expense: Expense,
-        subunitNameLookup: Map<String, String>,
-        currentUserId: String?,
-        locale: Locale
-    ): SubunitSplitGroupUiModel {
-        val label = subunitNameLookup[subunitId]
-            ?: resourceProvider.getString(R.string.expense_detail_subunit_fallback_label)
-        val totalSourceCents = expense.splits
-            .filter { it.subunitId == subunitId }
-            .sumOf { it.amountCents }
-        val totalGroupCents = expenseCalculatorService.computeProportionalAmount(
-            amount = totalSourceCents,
-            targetAmount = expense.groupAmount,
-            totalAmount = expense.sourceAmount
-        )
-        val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
-        val intraType = expense.splits
-            .firstOrNull { it.subunitId == subunitId }
-            ?.splitType
-            ?: SplitType.EQUAL
-        val sortedMembers = sortSubunitMembers(members, currentUserId, locale)
-        return SubunitSplitGroupUiModel(
-            subunitId = subunitId,
-            subunitLabel = label,
-            formattedTotalAmount = formattingHelper.formatCentsWithCurrency(
-                totalGroupCents,
-                expense.groupCurrency
-            ),
-            formattedSourceTotalAmount = if (isForeignCurrency) {
-                formattingHelper.formatCentsWithCurrency(totalSourceCents, expense.sourceCurrency)
+        private fun buildSubunitGroup(
+            subunitId: String,
+            members: List<SplitDetailUiModel>,
+            locale: Locale
+        ): SubunitSplitGroupUiModel {
+            val label = subunitNameLookup[subunitId]
+                ?: resourceProvider.getString(R.string.expense_detail_subunit_fallback_label)
+            val totalSourceCents = expense.splits
+                .filter { it.subunitId == subunitId }
+                .sumOf { it.amountCents }
+            val totalGroupCents = expenseCalculatorService.computeProportionalAmount(
+                amount = totalSourceCents,
+                targetAmount = effectiveGroupAmount,
+                totalAmount = expense.sourceAmount
+            )
+            val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
+            val intraType = expense.splits
+                .firstOrNull { it.subunitId == subunitId }
+                ?.splitType
+                ?: SplitType.EQUAL
+            val sortedMembers = sortSubunitMembers(members, currentUserId, locale)
+            return SubunitSplitGroupUiModel(
+                subunitId = subunitId,
+                subunitLabel = label,
+                formattedTotalAmount = formattingHelper.formatCentsWithCurrency(
+                    totalGroupCents,
+                    expense.groupCurrency
+                ),
+                formattedSourceTotalAmount = if (isForeignCurrency) {
+                    formattingHelper.formatCentsWithCurrency(totalSourceCents, expense.sourceCurrency)
+                } else {
+                    null
+                },
+                memberCount = sortedMembers.size,
+                members = sortedMembers,
+                splitTypeText = resourceProvider.getString(intraType.toStringRes())
+            )
+        }
+
+        private fun mapSplitRow(split: ExpenseSplit): SplitDetailUiModel {
+            val youLabel = resourceProvider.getString(R.string.you_label)
+            val groupAmountCents = expenseCalculatorService.computeProportionalAmount(
+                amount = split.amountCents,
+                targetAmount = effectiveGroupAmount,
+                totalAmount = expense.sourceAmount
+            )
+            val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
+            val formattedAmount = if (split.isExcluded) {
+                resourceProvider.getString(R.string.add_expense_split_member_excluded)
+            } else {
+                formattingHelper.formatCentsWithCurrency(groupAmountCents, expense.groupCurrency)
+            }
+            val formattedSourceAmount = if (isForeignCurrency && !split.isExcluded) {
+                formattingHelper.formatCentsWithCurrency(split.amountCents, expense.sourceCurrency)
             } else {
                 null
-            },
-            memberCount = sortedMembers.size,
-            members = sortedMembers,
-            splitTypeText = resourceProvider.getString(intraType.toStringRes())
-        )
-    }
-
-    private fun mapSplitRow(
-        split: ExpenseSplit,
-        expense: Expense,
-        memberProfiles: Map<String, User>,
-        currentUserId: String?,
-        subunitNameLookup: Map<String, String>,
-        groupMemberIds: List<String>
-    ): SplitDetailUiModel {
-        val youLabel = resourceProvider.getString(R.string.you_label)
-        val groupAmountCents = expenseCalculatorService.computeProportionalAmount(
-            amount = split.amountCents,
-            targetAmount = expense.groupAmount,
-            totalAmount = expense.sourceAmount
-        )
-        val isForeignCurrency = expense.sourceCurrency != expense.groupCurrency
-        val formattedAmount = if (split.isExcluded) {
-            resourceProvider.getString(R.string.add_expense_split_member_excluded)
-        } else {
-            formattingHelper.formatCentsWithCurrency(groupAmountCents, expense.groupCurrency)
+            }
+            val shareText = split.percentage?.let { pct ->
+                "${formattingHelper.formatForDisplay(pct.toPlainString(), 1)}%"
+            }
+            val resolvedName = resolveDisplayName(split.userId, memberProfiles, currentUserId, youLabel, userUiMapper)
+            val memberDisplay = if (split.userId !in groupMemberIds) {
+                MemberDisplay.Former(split.userId, resolvedName)
+            } else {
+                MemberDisplay.Active(split.userId, resolvedName)
+            }
+            return SplitDetailUiModel(
+                displayName = resolvedName,
+                formattedAmount = formattedAmount,
+                formattedSourceAmount = formattedSourceAmount,
+                shareText = shareText,
+                isCurrentUser = currentUserId != null && split.userId == currentUserId,
+                isExcluded = split.isExcluded,
+                subunitId = split.subunitId,
+                subunitLabel = split.subunitId?.let { subunitNameLookup[it] },
+                memberDisplay = memberDisplay
+            )
         }
-        val formattedSourceAmount = if (isForeignCurrency && !split.isExcluded) {
-            formattingHelper.formatCentsWithCurrency(split.amountCents, expense.sourceCurrency)
-        } else {
-            null
-        }
-        val shareText = split.percentage?.let { pct ->
-            "${formattingHelper.formatForDisplay(pct.toPlainString(), 1)}%"
-        }
-        val resolvedName = resolveDisplayName(split.userId, memberProfiles, currentUserId, youLabel, userUiMapper)
-        val memberDisplay = if (split.userId !in groupMemberIds) {
-            MemberDisplay.Former(split.userId, resolvedName)
-        } else {
-            MemberDisplay.Active(split.userId, resolvedName)
-        }
-        return SplitDetailUiModel(
-            displayName = resolvedName,
-            formattedAmount = formattedAmount,
-            formattedSourceAmount = formattedSourceAmount,
-            shareText = shareText,
-            isCurrentUser = currentUserId != null && split.userId == currentUserId,
-            isExcluded = split.isExcluded,
-            subunitId = split.subunitId,
-            subunitLabel = split.subunitId?.let { subunitNameLookup[it] },
-            memberDisplay = memberDisplay
-        )
     }
 
     private fun mapAddOns(
@@ -470,7 +468,8 @@ private fun resolveSourceAmountFormatted(
     isForeign: Boolean
 ): String? {
     return if (isForeign) {
-        formattingHelper.formatCentsWithCurrency(expense.sourceAmount, expense.sourceCurrency)
+        val effectiveSourceAmount = resolveEffectiveSourceAmount(expense)
+        formattingHelper.formatCentsWithCurrency(effectiveSourceAmount, expense.sourceCurrency)
     } else {
         null
     }

@@ -24,6 +24,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnDetailUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.BreakdownSummaryUiModel
 import kotlinx.collections.immutable.ImmutableList
 
 /**
@@ -35,9 +36,8 @@ import kotlinx.collections.immutable.ImmutableList
 @Composable
 internal fun BreakdownCardSection(
     addOns: ImmutableList<AddOnDetailUiModel>,
-    formattedEffectiveTotal: String?,
     formattedIncludedBaseCost: String?,
-    formattedOriginalEnteredTotal: String?
+    breakdownSummary: BreakdownSummaryUiModel?
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
         Row(
@@ -126,25 +126,20 @@ internal fun BreakdownCardSection(
                         }
                     }
                 }
-                val summaryLabelRes = when {
-                    formattedOriginalEnteredTotal != null -> R.string.expense_detail_breakdown_original_total
-                    else -> R.string.expense_review_effective_total
-                }
-                val summaryValue = formattedOriginalEnteredTotal ?: formattedEffectiveTotal
-                if (summaryValue != null) {
+                if (breakdownSummary != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(summaryLabelRes),
+                            text = stringResource(breakdownSummary.labelRes),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         AmountText(
-                            text = summaryValue,
+                            text = breakdownSummary.formattedAmount,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }

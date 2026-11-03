@@ -54,9 +54,8 @@ internal fun ExpenseDetailContent(
         if (expense.hasAddOns || expense.formattedIncludedBaseCost != null) {
             BreakdownCardSection(
                 addOns = expense.addOns,
-                formattedEffectiveTotal = expense.formattedEffectiveTotal,
                 formattedIncludedBaseCost = expense.formattedIncludedBaseCost,
-                formattedOriginalEnteredTotal = expense.formattedOriginalEnteredTotal
+                breakdownSummary = expense.breakdownSummary
             )
         }
 

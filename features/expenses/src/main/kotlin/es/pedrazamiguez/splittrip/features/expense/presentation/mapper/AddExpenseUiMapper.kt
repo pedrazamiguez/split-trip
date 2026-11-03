@@ -211,7 +211,8 @@ class AddExpenseUiMapper(
         memberProfiles: Map<String, User>,
         subunits: List<Subunit>
     ): AddExpenseUiState {
-        val (preDiscountSourceAmount, preDiscountGroupAmount) = resolvePreDiscountAmounts(expense)
+        val preDiscountAmounts = resolvePreDiscountAmounts(expense)
+        val enteredAmounts = resolvePreExtractionAmounts(expense, preDiscountAmounts)
 
         val groupDecimalDigits = expense.groupCurrency.let { _ ->
             currentState.groupCurrency?.decimalDigits ?: 2
@@ -220,10 +221,10 @@ class AddExpenseUiMapper(
         val sourceDecimalDigits = expense.sourceCurrency.let { code ->
             currentState.availableCurrencies.find { it.code == code }?.decimalDigits ?: 2
         }
-        val sourceAmountString = BigDecimal(preDiscountSourceAmount).movePointLeft(sourceDecimalDigits)
+        val sourceAmountString = BigDecimal(enteredAmounts.sourceAmount).movePointLeft(sourceDecimalDigits)
             .stripTrailingZeros().toPlainString()
         val calculatedGroupAmountString = BigDecimal(
-            preDiscountGroupAmount
+            enteredAmounts.groupAmount
         ).movePointLeft(groupDecimalDigits).stripTrailingZeros().toPlainString()
 
         val selectedCurrency = currentState.availableCurrencies.find { it.code == expense.sourceCurrency }
@@ -270,16 +271,17 @@ class AddExpenseUiMapper(
             paymentMethods = currentState.paymentMethods,
             groupCurrency = expense.groupCurrency,
             groupDecimalDigits = groupDecimalDigits,
-            sourceAmount = preDiscountSourceAmount
+            baseSourceAmount = preDiscountAmounts.sourceAmount,
+            enteredSourceAmount = enteredAmounts.sourceAmount
         )
 
-        val preDiscountSplits = rescaleSplitsToPreDiscount(
+        val enteredSplits = rescaleSplitsToEnteredAmount(
             splits = expense.splits,
             storedSourceAmount = expense.sourceAmount,
-            preDiscountSourceAmount = preDiscountSourceAmount
+            enteredSourceAmount = enteredAmounts.sourceAmount
         )
         val (mappedSplits, mappedEntitySplits) = mapSplitsToState(
-            expense = expense.copy(splits = preDiscountSplits),
+            expense = expense.copy(splits = enteredSplits),
             currentState = currentState,
             memberProfiles = memberProfiles,
             subunits = subunits,
@@ -340,7 +342,8 @@ class AddExpenseUiMapper(
         paymentMethods: List<PaymentMethodUiModel>,
         groupCurrency: String?,
         groupDecimalDigits: Int,
-        sourceAmount: Long
+        baseSourceAmount: Long,
+        enteredSourceAmount: Long
     ): List<AddOnUiModel> {
         return addOns.map { addOn ->
             val currencyUiModel = availableCurrencies.find { it.code == addOn.currency }
@@ -349,7 +352,12 @@ class AddExpenseUiMapper(
 
             val addOnDisplayRate = getAddOnDisplayRate(addOn.exchangeRate)
             val addOnDecimalDigits = currencyUiModel?.decimalDigits ?: 2
-            val amountInput = getAddOnAmountInput(addOn, sourceAmount, addOnDecimalDigits)
+            val amountInput = getAddOnAmountInput(
+                addOn = addOn,
+                baseSourceAmount = baseSourceAmount,
+                enteredSourceAmount = enteredSourceAmount,
+                decimalDigits = addOnDecimalDigits
+            )
             val resolvedGroupCents = resolveAddOnGroupAmountCents(addOn)
 
             AddOnUiModel(
@@ -382,23 +390,35 @@ class AddExpenseUiMapper(
         }
     }
 
-    private fun getAddOnAmountInput(addOn: AddOn, sourceAmount: Long, decimalDigits: Int): String {
+    private fun getAddOnAmountInput(
+        addOn: AddOn,
+        baseSourceAmount: Long,
+        enteredSourceAmount: Long,
+        decimalDigits: Int
+    ): String {
         if (addOn.valueType != AddOnValueType.PERCENTAGE) {
             return BigDecimal(addOn.amountCents).movePointLeft(decimalDigits).stripTrailingZeros().toPlainString()
         }
 
-        val baseCents = if (addOn.mode == AddOnMode.INCLUDED && addOn.type == AddOnType.DISCOUNT) {
-            sourceAmount + addOn.amountCents
-        } else {
-            sourceAmount
-        }
-
+        val baseCents = resolvePercentageBaseCents(addOn, baseSourceAmount, enteredSourceAmount)
         return if (baseCents > 0) {
             val pct = BigDecimal(addOn.amountCents * 100).divide(BigDecimal(baseCents), 2, RoundingMode.HALF_UP)
             pct.stripTrailingZeros().toPlainString()
         } else {
             ""
         }
+    }
+
+    private fun resolvePercentageBaseCents(
+        addOn: AddOn,
+        baseSourceAmount: Long,
+        enteredSourceAmount: Long
+    ): Long = when {
+        addOn.mode == AddOnMode.INCLUDED && addOn.type == AddOnType.DISCOUNT -> {
+            enteredSourceAmount + addOn.amountCents
+        }
+        addOn.mode == AddOnMode.INCLUDED || addOn.type == AddOnType.DISCOUNT -> baseSourceAmount
+        else -> enteredSourceAmount
     }
 
     private fun mapSplitsToState(
@@ -439,19 +459,19 @@ class AddExpenseUiMapper(
         return mappedSplits to mappedEntitySplits
     }
 
-    private fun rescaleSplitsToPreDiscount(
+    private fun rescaleSplitsToEnteredAmount(
         splits: List<ExpenseSplit>,
         storedSourceAmount: Long,
-        preDiscountSourceAmount: Long
+        enteredSourceAmount: Long
     ): List<ExpenseSplit> {
-        if (storedSourceAmount == preDiscountSourceAmount || storedSourceAmount <= 0L || splits.isEmpty()) {
+        if (storedSourceAmount == enteredSourceAmount || storedSourceAmount <= 0L || splits.isEmpty()) {
             return splits
         }
         val amounts = splits.map { it.amountCents }
         val isExcluded = splits.map { it.isExcluded }
         val rescaled = remainderDistributionService.rescaleAmounts(
             originalTotal = storedSourceAmount,
-            newTotal = preDiscountSourceAmount,
+            newTotal = enteredSourceAmount,
             amounts = amounts,
             isExcluded = isExcluded
         )
