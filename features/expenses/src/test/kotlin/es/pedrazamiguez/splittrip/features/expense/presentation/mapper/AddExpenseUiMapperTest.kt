@@ -1157,6 +1157,18 @@ class AddExpenseUiMapperTest {
         fundingSources = persistentListOf(groupFundingSource)
     )
 
+    private fun createSubmitHandler(): SubmitEventHandler = SubmitEventHandler(
+        expenseValidationService = ExpenseValidationServiceImpl(
+            ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
+        ),
+        addOnCalculationService = AddOnCalculationServiceImpl(),
+        expenseCalculatorService = ExpenseCalculatorServiceImpl(),
+        remainderDistributionService = RemainderDistributionServiceImpl(),
+        addExpenseUiMapper = mapper,
+        submitResultDelegate = mockk<SubmitResultDelegate>(relaxed = true),
+        telemetryTracker = mockk<TelemetryTracker>(relaxed = true)
+    )
+
     @Nested
     inner class MapExpenseToState {
 
@@ -1668,18 +1680,6 @@ class AddExpenseUiMapperTest {
             assertEquals(5000L, result.splits[1].amountCents)
         }
 
-        private fun createSubmitHandler(): SubmitEventHandler = SubmitEventHandler(
-            expenseValidationService = ExpenseValidationServiceImpl(
-                ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
-            ),
-            addOnCalculationService = AddOnCalculationServiceImpl(),
-            expenseCalculatorService = ExpenseCalculatorServiceImpl(),
-            remainderDistributionService = RemainderDistributionServiceImpl(),
-            addExpenseUiMapper = mapper,
-            submitResultDelegate = mockk<SubmitResultDelegate>(relaxed = true),
-            telemetryTracker = mockk<TelemetryTracker>(relaxed = true)
-        )
-
         private fun createInitialExpenseWithOnTopDiscount(): Expense {
             val discount = AddOn(
                 id = "discount-1",
@@ -1755,6 +1755,264 @@ class AddExpenseUiMapperTest {
             assertEquals(savedExpense.addOns.first().groupAmountCents, reSavedExpense.addOns.first().groupAmountCents)
             assertEquals(savedExpense.splits[0].amountCents, reSavedExpense.splits[0].amountCents)
             assertEquals(savedExpense.splits[1].amountCents, reSavedExpense.splits[1].amountCents)
+        }
+    }
+
+    @Nested
+    inner class MapExpenseToStateIdempotency {
+
+        @Test
+        fun `mapExpenseToState restores pre-extraction sourceAmount and groupAmount for INCLUDED exact fee`() {
+            val includedFee = AddOn(
+                id = "fee-1",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 1000L,
+                currency = "EUR",
+                groupAmountCents = 1000L,
+                exchangeRate = BigDecimal.ONE
+            )
+            val expense = Expense(
+                id = "exp-inc-1",
+                groupId = "group-1",
+                title = "Dinner",
+                sourceAmount = 9000L,
+                sourceCurrency = "EUR",
+                groupAmount = 9000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(includedFee),
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals("100", result.sourceAmount)
+            assertEquals("100", result.calculatedGroupAmount)
+        }
+
+        @Test
+        fun `mapExpenseToState restores pre-extraction amounts and percentage input for INCLUDED percentage fee`() {
+            val cnyUi = CurrencyUiModel(code = "CNY", displayText = "CNY (¥)", decimalDigits = 2)
+            val alipayFee = AddOn(
+                id = "fee-alipay",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.PERCENTAGE,
+                amountCents = 2853L,
+                currency = "CNY",
+                groupAmountCents = 382L,
+                exchangeRate = BigDecimal("0.1338941465")
+            )
+            val expense = Expense(
+                id = "exp-cny",
+                groupId = "group-1",
+                title = "Hotel",
+                sourceAmount = 95100L,
+                sourceCurrency = "CNY",
+                groupAmount = 12718L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal("0.1337329127"),
+                addOns = listOf(alipayFee),
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+            val state = baseEditState().copy(
+                availableCurrencies = persistentListOf(eurUi, usdUi, cnyUi)
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, state, emptyMap(), emptyList())
+
+            assertEquals("979.53", result.sourceAmount)
+            assertEquals(1, result.addOns.size)
+            assertEquals("3", result.addOns[0].amountInput)
+        }
+
+        @Test
+        fun `mapExpenseToState rescales splits to reconstructed entered amount for INCLUDED add-on`() {
+            val cnyUi = CurrencyUiModel(code = "CNY", displayText = "CNY (¥)", decimalDigits = 2)
+            val alipayFee = AddOn(
+                id = "fee-alipay",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.PERCENTAGE,
+                amountCents = 2853L,
+                currency = "CNY",
+                groupAmountCents = 382L,
+                exchangeRate = BigDecimal("0.1338941465")
+            )
+            val splits = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 47550L),
+                ExpenseSplit(userId = "user-2", amountCents = 47550L)
+            )
+            val expense = Expense(
+                id = "exp-cny-splits",
+                groupId = "group-1",
+                title = "Hotel",
+                sourceAmount = 95100L,
+                sourceCurrency = "CNY",
+                groupAmount = 12718L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal("0.1337329127"),
+                addOns = listOf(alipayFee),
+                splits = splits,
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+            val state = baseEditState().copy(
+                memberIds = persistentListOf("user-1", "user-2"),
+                availableCurrencies = persistentListOf(eurUi, usdUi, cnyUi)
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, state, emptyMap(), emptyList())
+
+            assertEquals(2, result.splits.size)
+            assertEquals(48977L, result.splits[0].amountCents)
+            assertEquals(48976L, result.splits[1].amountCents)
+        }
+
+        @Test
+        fun `mapExpenseToState restores state correctly for mixed INCLUDED fee and ON_TOP discount`() {
+            val includedFee = AddOn(
+                id = "fee-inc",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 1000L,
+                currency = "EUR",
+                groupAmountCents = 1000L,
+                exchangeRate = BigDecimal.ONE
+            )
+            val onTopDiscount = AddOn(
+                id = "disc-ontop",
+                type = AddOnType.DISCOUNT,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 2000L,
+                currency = "EUR",
+                groupAmountCents = 0L,
+                exchangeRate = BigDecimal.ONE
+            )
+            val expense = Expense(
+                id = "exp-mixed",
+                groupId = "group-1",
+                title = "Dinner",
+                sourceAmount = 7000L,
+                sourceCurrency = "EUR",
+                groupAmount = 7000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(includedFee, onTopDiscount),
+                splits = listOf(
+                    ExpenseSplit(userId = "user-1", amountCents = 3500L),
+                    ExpenseSplit(userId = "user-2", amountCents = 3500L)
+                ),
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+            val state = baseEditState().copy(
+                memberIds = persistentListOf("user-1", "user-2")
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, state, emptyMap(), emptyList())
+
+            assertEquals("100", result.sourceAmount)
+            assertEquals("100", result.calculatedGroupAmount)
+            assertEquals(2, result.splits.size)
+            assertEquals(5000L, result.splits[0].amountCents)
+            assertEquals(5000L, result.splits[1].amountCents)
+        }
+
+        private fun createInitialExpenseWithIncludedAddOn(alipayFee: AddOn): Expense = Expense(
+            id = "exp-cny",
+            groupId = "group-1",
+            title = "3 noches Chengdu",
+            sourceAmount = 97956L,
+            sourceCurrency = "CNY",
+            groupAmount = 13100L,
+            groupCurrency = "EUR",
+            exchangeRate = BigDecimal("0.1337376"),
+            addOns = listOf(alipayFee),
+            splits = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 48978L),
+                ExpenseSplit(userId = "user-2", amountCents = 48978L)
+            ),
+            paymentMethod = PaymentMethod.CREDIT_CARD,
+            paymentStatus = PaymentStatus.FINISHED,
+            splitType = SplitType.EQUAL
+        )
+
+        @Test
+        fun `mapExpenseToState is idempotent when re-submitting INCLUDED add-ons through SubmitEventHandler`() {
+            val submitHandler = createSubmitHandler()
+            val cnyUi = CurrencyUiModel(code = "CNY", displayText = "CNY (¥)", decimalDigits = 2)
+            val alipayFee = AddOn(
+                id = "fee-alipay",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.PERCENTAGE,
+                amountCents = 2856L,
+                currency = "CNY",
+                groupAmountCents = 382L,
+                exchangeRate = BigDecimal("0.133753")
+            )
+            val initialUiAddOn = AddOnUiModel(
+                id = "fee-alipay",
+                type = AddOnType.FEE,
+                mode = AddOnMode.INCLUDED,
+                valueType = AddOnValueType.PERCENTAGE,
+                amountInput = "3",
+                resolvedAmountCents = 2856L,
+                groupAmountCents = 382L,
+                currency = cnyUi
+            )
+            val initialExpense = createInitialExpenseWithIncludedAddOn(alipayFee)
+
+            // Step 1: Submit initial expense (extracts base cost and residual)
+            val savedExpense = submitHandler.adjustForIncludedAddOns(initialExpense, persistentListOf(initialUiAddOn))
+            assertEquals(95100L, savedExpense.sourceAmount)
+            assertEquals(12718L, savedExpense.groupAmount)
+            assertEquals(47550L, savedExpense.splits[0].amountCents)
+            assertEquals(47550L, savedExpense.splits[1].amountCents)
+
+            // Step 2: Open in edit mode (reconstructs entered amount)
+            val editState = mapper.mapExpenseToState(
+                expense = savedExpense,
+                contribution = null,
+                currentState = baseEditState().copy(
+                    memberIds = persistentListOf("user-1", "user-2"),
+                    availableCurrencies = persistentListOf(eurUi, usdUi, cnyUi)
+                ),
+                memberProfiles = emptyMap(),
+                subunits = emptyList()
+            )
+            assertEquals("979.56", editState.sourceAmount)
+            assertEquals("131", editState.calculatedGroupAmount)
+            assertEquals("3", editState.addOns[0].amountInput)
+            assertEquals(48978L, editState.splits[0].amountCents)
+            assertEquals(48978L, editState.splits[1].amountCents)
+
+            // Step 3: Map back to domain from edit state
+            val remappedExpenseResult = mapper.mapToDomain(editState, "group-1")
+            assertTrue(remappedExpenseResult.isSuccess)
+            val remappedExpense = remappedExpenseResult.getOrThrow()
+            assertEquals(97956L, remappedExpense.sourceAmount)
+            assertEquals(13100L, remappedExpense.groupAmount)
+
+            // Step 4: Re-submit with adjustForIncludedAddOns
+            val reSavedExpense = submitHandler.adjustForIncludedAddOns(remappedExpense, editState.addOns)
+
+            // Assert idempotency: zero exponential shrinkage on edits
+            assertEquals(savedExpense.sourceAmount, reSavedExpense.sourceAmount)
+            assertEquals(savedExpense.groupAmount, reSavedExpense.groupAmount)
+            assertEquals(savedExpense.addOns, reSavedExpense.addOns)
+            assertEquals(savedExpense.splits, reSavedExpense.splits)
         }
     }
 }
