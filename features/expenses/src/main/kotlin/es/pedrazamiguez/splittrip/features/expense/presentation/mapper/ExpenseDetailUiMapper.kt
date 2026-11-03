@@ -401,11 +401,12 @@ class ExpenseDetailUiMapper(
         groupCurrency: String
     ): ImmutableList<AddOnDetailUiModel> = addOns.map { addOn ->
         val isForeign = addOn.currency != groupCurrency
+        val resolvedGroupCents = resolveAddOnGroupAmountCents(addOn)
         AddOnDetailUiModel(
             labelText = buildAddOnLabel(addOn, resourceProvider),
             modeText = resourceProvider.getString(addOn.mode.toStringRes()),
             formattedAmount = formattingHelper.formatCentsWithCurrency(
-                addOn.groupAmountCents,
+                resolvedGroupCents,
                 groupCurrency
             ),
             formattedSourceAmount = if (isForeign) {
@@ -489,33 +490,11 @@ private fun resolveExchangeRateFormatted(
     }
 }
 
-private fun formatIncludedBaseCost(expense: Expense, formattingHelper: FormattingHelper): String? {
-    val hasIncludedNonDiscounts = expense.addOns.any {
-        it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT
-    }
-    return if (hasIncludedNonDiscounts) {
-        formattingHelper.formatCentsWithCurrency(
-            expense.groupAmount,
-            expense.groupCurrency
-        )
-    } else {
-        null
-    }
-}
+private fun formatIncludedBaseCost(expense: Expense, formattingHelper: FormattingHelper): String? =
+    resolveIncludedBaseCostFormatted(expense, formattingHelper)
 
-private fun formatOriginalEnteredTotal(expense: Expense, formattingHelper: FormattingHelper): String? {
-    val hasIncludedNonDiscounts = expense.addOns.any {
-        it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT
-    }
-    return if (hasIncludedNonDiscounts) {
-        formattingHelper.formatCentsWithCurrency(
-            buildOriginalEnteredTotal(expense.groupAmount, expense.addOns),
-            expense.groupCurrency
-        )
-    } else {
-        null
-    }
-}
+private fun formatOriginalEnteredTotal(expense: Expense, formattingHelper: FormattingHelper): String? =
+    resolveOriginalEnteredTotalFormatted(expense, formattingHelper)
 
 private fun formatEffectiveTotal(
     expense: Expense,

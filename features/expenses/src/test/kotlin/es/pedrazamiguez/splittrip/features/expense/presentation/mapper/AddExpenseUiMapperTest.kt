@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Car
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -23,7 +24,11 @@ import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
@@ -33,6 +38,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentSta
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitEventHandler
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitResultDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import io.mockk.every
 import io.mockk.mockk
@@ -93,7 +100,8 @@ class AddExpenseUiMapperTest {
             splitMapper,
             addOnMapper,
             splitPreviewService,
-            addExpenseOptionsUiMapper
+            addExpenseOptionsUiMapper,
+            remainderDistributionService
         )
     }
 
@@ -1504,6 +1512,249 @@ class AddExpenseUiMapperTest {
             assertEquals(2, result.entitySplits[0].entityMembers.size)
             assertEquals("$15.00", result.entitySplits[0].entityMembers[0].formattedAmount)
             assertEquals("15.00", result.entitySplits[0].entityMembers[0].amountInput)
+        }
+
+        @Test
+        fun `mapExpenseToState restores pre-discount sourceAmount and groupAmount for ON_TOP exact discount`() {
+            val discount = AddOn(
+                id = "discount-1",
+                type = AddOnType.DISCOUNT,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 2000L,
+                currency = "EUR",
+                groupAmountCents = 0L,
+                exchangeRate = BigDecimal.ONE
+            )
+            val expense = Expense(
+                id = "exp-1",
+                groupId = "group-1",
+                title = "Dinner",
+                sourceAmount = 8000L,
+                sourceCurrency = "EUR",
+                groupAmount = 8000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(discount),
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals("100", result.sourceAmount)
+            assertEquals("100", result.calculatedGroupAmount)
+            assertEquals(1, result.addOns.size)
+            assertEquals(2000L, result.addOns[0].groupAmountCents)
+            assertEquals("20", result.addOns[0].amountInput)
+            assertEquals("20.00", result.addOns[0].calculatedGroupAmount)
+        }
+
+        @Test
+        fun `mapExpenseToState restores pre-discount amount and input for ON_TOP percentage discount`() {
+            val discount = AddOn(
+                id = "discount-pct",
+                type = AddOnType.DISCOUNT,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.PERCENTAGE,
+                amountCents = 1000L,
+                currency = "EUR",
+                groupAmountCents = 0L,
+                exchangeRate = BigDecimal.ONE
+            )
+            val expense = Expense(
+                id = "exp-2",
+                groupId = "group-1",
+                title = "Shopping",
+                sourceAmount = 9000L,
+                sourceCurrency = "EUR",
+                groupAmount = 9000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(discount),
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals("100", result.sourceAmount)
+            assertEquals("100", result.calculatedGroupAmount)
+            assertEquals(1, result.addOns.size)
+            assertEquals("10", result.addOns[0].amountInput)
+            assertEquals(1000L, result.addOns[0].groupAmountCents)
+            assertEquals("10.00", result.addOns[0].calculatedGroupAmount)
+        }
+
+        @Test
+        fun `mapExpenseToState restores pre-discount state for cross-currency ON_TOP discount`() {
+            val thbUi = CurrencyUiModel(code = "THB", displayText = "THB (฿)", decimalDigits = 2)
+            val discount = AddOn(
+                id = "discount-foreign",
+                type = AddOnType.DISCOUNT,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 20000L,
+                currency = "THB",
+                exchangeRate = BigDecimal("0.025"),
+                groupAmountCents = 0L
+            )
+            val expense = Expense(
+                id = "exp-thb",
+                groupId = "group-1",
+                title = "Bangkok Tour",
+                sourceAmount = 80000L,
+                sourceCurrency = "THB",
+                groupAmount = 2000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal("0.025"),
+                addOns = listOf(discount),
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+            val state = baseEditState().copy(
+                availableCurrencies = persistentListOf(eurUi, usdUi, thbUi)
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, state, emptyMap(), emptyList())
+
+            assertEquals("1000", result.sourceAmount)
+            assertEquals("25", result.calculatedGroupAmount)
+            assertEquals(500L, result.addOns[0].groupAmountCents)
+        }
+
+        @Test
+        fun `mapExpenseToState rescales splits back to pre-discount sourceAmount`() {
+            val discount = AddOn(
+                id = "discount-1",
+                type = AddOnType.DISCOUNT,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 2000L,
+                currency = "EUR",
+                groupAmountCents = 0L,
+                exchangeRate = BigDecimal.ONE
+            )
+            val splits = listOf(
+                ExpenseSplit(userId = "user-1", amountCents = 4000L),
+                ExpenseSplit(userId = "user-2", amountCents = 4000L)
+            )
+            val expense = Expense(
+                id = "exp-1",
+                groupId = "group-1",
+                title = "Dinner",
+                sourceAmount = 8000L,
+                sourceCurrency = "EUR",
+                groupAmount = 8000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(discount),
+                splits = splits,
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+            val state = baseEditState().copy(
+                memberIds = persistentListOf("user-1", "user-2")
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, state, emptyMap(), emptyList())
+
+            assertEquals(2, result.splits.size)
+            assertEquals(5000L, result.splits[0].amountCents)
+            assertEquals(5000L, result.splits[1].amountCents)
+        }
+
+        private fun createSubmitHandler(): SubmitEventHandler = SubmitEventHandler(
+            expenseValidationService = ExpenseValidationServiceImpl(
+                ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
+            ),
+            addOnCalculationService = AddOnCalculationServiceImpl(),
+            expenseCalculatorService = ExpenseCalculatorServiceImpl(),
+            remainderDistributionService = RemainderDistributionServiceImpl(),
+            addExpenseUiMapper = mapper,
+            submitResultDelegate = mockk<SubmitResultDelegate>(relaxed = true),
+            telemetryTracker = mockk<TelemetryTracker>(relaxed = true)
+        )
+
+        private fun createInitialExpenseWithOnTopDiscount(): Expense {
+            val discount = AddOn(
+                id = "discount-1",
+                type = AddOnType.DISCOUNT,
+                mode = AddOnMode.ON_TOP,
+                valueType = AddOnValueType.EXACT,
+                amountCents = 2000L,
+                currency = "EUR",
+                groupAmountCents = 2000L,
+                exchangeRate = BigDecimal.ONE
+            )
+            return Expense(
+                id = "exp-1",
+                groupId = "group-1",
+                title = "Dinner",
+                sourceAmount = 10000L,
+                sourceCurrency = "EUR",
+                groupAmount = 10000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(discount),
+                splits = listOf(
+                    ExpenseSplit(userId = "user-1", amountCents = 5000L),
+                    ExpenseSplit(userId = "user-2", amountCents = 5000L)
+                ),
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                splitType = SplitType.EQUAL
+            )
+        }
+
+        @Test
+        fun `mapExpenseToState is idempotent when re-submitting with SubmitEventHandler`() {
+            val submitHandler = createSubmitHandler()
+            val initialExpense = createInitialExpenseWithOnTopDiscount()
+
+            // Step 2: First submit (bakes discount into sourceAmount/groupAmount and zeroes addOn.groupAmountCents)
+            val savedExpense = submitHandler.adjustForOnTopDiscounts(initialExpense)
+            assertEquals(8000L, savedExpense.sourceAmount)
+            assertEquals(8000L, savedExpense.groupAmount)
+            assertEquals(0L, savedExpense.addOns.first().groupAmountCents)
+            assertEquals(4000L, savedExpense.splits[0].amountCents)
+            assertEquals(4000L, savedExpense.splits[1].amountCents)
+
+            // Step 3: Open in edit mode (mapExpenseToState reverses baking)
+            val editState = mapper.mapExpenseToState(
+                expense = savedExpense,
+                contribution = null,
+                currentState = baseEditState().copy(memberIds = persistentListOf("user-1", "user-2")),
+                memberProfiles = emptyMap(),
+                subunits = emptyList()
+            )
+            assertEquals("100", editState.sourceAmount)
+            assertEquals("100", editState.calculatedGroupAmount)
+            assertEquals(2000L, editState.addOns.first().groupAmountCents)
+            assertEquals(5000L, editState.splits[0].amountCents)
+            assertEquals(5000L, editState.splits[1].amountCents)
+
+            // Step 4: Map back to domain from edit state
+            val remappedExpenseResult = mapper.mapToDomain(editState, "group-1")
+            assertTrue(remappedExpenseResult.isSuccess)
+            val remappedExpense = remappedExpenseResult.getOrThrow()
+            assertEquals(10000L, remappedExpense.sourceAmount)
+            assertEquals(10000L, remappedExpense.groupAmount)
+            assertEquals(2000L, remappedExpense.addOns.first().groupAmountCents)
+
+            // Step 5: Second submit (re-applies adjustForOnTopDiscounts)
+            val reSavedExpense = submitHandler.adjustForOnTopDiscounts(remappedExpense)
+
+            // Verify idempotency: saved amounts match original saved amounts without double subtraction
+            assertEquals(savedExpense.sourceAmount, reSavedExpense.sourceAmount)
+            assertEquals(savedExpense.groupAmount, reSavedExpense.groupAmount)
+            assertEquals(savedExpense.addOns.first().groupAmountCents, reSavedExpense.addOns.first().groupAmountCents)
+            assertEquals(savedExpense.splits[0].amountCents, reSavedExpense.splits[0].amountCents)
+            assertEquals(savedExpense.splits[1].amountCents, reSavedExpense.splits[1].amountCents)
         }
     }
 }
