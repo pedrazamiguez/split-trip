@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.BalancesDashboardDomainModel
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
@@ -21,6 +22,8 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityIt
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.MetricBreakdownItemUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.MetricScopeBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.BalancesUiAction
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandlerImpl
@@ -158,6 +161,10 @@ class BalancesViewModelTest {
         every { balancesUiMapper.mapBalance(any(), any()) } returns testBalanceUiModel
         every { balancesUiMapper.mapExtrasBreakdown(any(), any(), any(), any(), any(), any()) } returns
             persistentListOf()
+        every { balancesUiMapper.mapScheduledBreakdown(any(), any(), any(), any(), any()) } returns
+            persistentListOf()
+        every { balancesUiMapper.mapRefundableBreakdown(any(), any(), any(), any(), any()) } returns
+            persistentListOf()
         every { balancesUiMapper.mapMemberBalances(any(), any(), any(), any(), any(), any()) } returns
             persistentListOf()
         every { settlementsUiMapper.mapSettlements(any(), any(), any(), any()) } returns
@@ -267,6 +274,49 @@ class BalancesViewModelTest {
 
             collectJob.cancel()
         }
+
+        @Test
+        fun `setSelectedGroup updates state with scheduled refundable and extras breakdowns`() =
+            runTest(testDispatcher) {
+                // Given
+                val mockBreakdown = persistentListOf(
+                    MetricScopeBreakdownUiModel(
+                        scopeLabel = "Group",
+                        scopeType = PayerType.GROUP,
+                        formattedSubtotal = "€100.00",
+                        items = persistentListOf(
+                            MetricBreakdownItemUiModel(
+                                title = "Item",
+                                formattedAmount = "€100.00"
+                            )
+                        )
+                    )
+                )
+                every {
+                    balancesUiMapper.mapScheduledBreakdown(any(), any(), any(), any(), any())
+                } returns mockBreakdown
+                every {
+                    balancesUiMapper.mapRefundableBreakdown(any(), any(), any(), any(), any())
+                } returns mockBreakdown
+                every {
+                    balancesUiMapper.mapExtrasBreakdown(any(), any(), any(), any(), any(), any())
+                } returns mockBreakdown
+
+                viewModel = createViewModel()
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                // When
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                // Then
+                val state = viewModel.uiState.value
+                assertEquals(mockBreakdown, state.scheduledBreakdown)
+                assertEquals(mockBreakdown, state.refundableBreakdown)
+                assertEquals(mockBreakdown, state.extrasBreakdown)
+
+                collectJob.cancel()
+            }
 
         @Test
         fun `changing group triggers new data load`() = runTest(testDispatcher) {

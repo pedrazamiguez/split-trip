@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
@@ -36,7 +37,8 @@ val balancesUiModule = module {
         BalancesUiMapper(
             localeProvider = get<LocaleProvider>(),
             resourceProvider = get<ResourceProvider>(),
-            userUiMapper = get<UserUiMapper>()
+            userUiMapper = get<UserUiMapper>(),
+            addOnCalculationService = get<AddOnCalculationService>()
         )
     }
 

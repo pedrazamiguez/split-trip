@@ -44,7 +44,6 @@ internal fun BalancesListContent(
     onNavigateToContribution: () -> Unit,
     onNavigateToContributionDetail: (String) -> Unit,
     onNavigateToWithdrawal: () -> Unit,
-    onShowExtrasBreakdown: () -> Unit,
     onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
     LazyColumn(
@@ -68,7 +67,6 @@ internal fun BalancesListContent(
                 onBalanceAnimationComplete = { onEvent(BalancesUiEvent.BalanceAnimationComplete) },
                 onAddMoney = onNavigateToContribution,
                 onWithdrawCash = onNavigateToWithdrawal,
-                onShowExtrasBreakdown = onShowExtrasBreakdown,
                 onShowMetricInfo = onShowMetricInfo
             )
         }

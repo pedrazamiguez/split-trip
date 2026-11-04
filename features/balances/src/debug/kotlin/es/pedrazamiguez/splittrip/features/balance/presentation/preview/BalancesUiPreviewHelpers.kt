@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityItemUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakdownUiModel
@@ -27,7 +28,12 @@ fun BalanceCardPreviewHelper(
     MappedPreview(
         domain = domainBalance,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+            BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = UserUiMapper(resourceProvider),
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
         },
         transform = { mapper, domain ->
             mapper.mapBalance(domain, groupName)
@@ -45,7 +51,12 @@ fun ContributionItemPreviewHelper(
     MappedPreview(
         domain = domainContribution,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+            BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = UserUiMapper(resourceProvider),
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
         },
         transform = { mapper, domain ->
             mapper.mapContributions(
@@ -68,7 +79,12 @@ fun ContributionListPreviewHelper(
     MappedPreview(
         domain = domainContributions,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+            BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = UserUiMapper(resourceProvider),
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
         },
         transform = { mapper, domain ->
             mapper.mapContributions(
@@ -98,7 +114,12 @@ fun ActivityListPreviewHelper(
     MappedPreview(
         domain = domainContributions to domainWithdrawals,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+            BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = UserUiMapper(resourceProvider),
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
         },
         transform = { mapper, domain ->
             mapper.mapActivity(
@@ -123,7 +144,12 @@ fun CashWithdrawalItemPreviewHelper(
     MappedPreview(
         domain = domainWithdrawal,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+            BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = UserUiMapper(resourceProvider),
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
         },
         transform = { mapper, domain ->
             mapper.mapCashWithdrawals(
@@ -147,7 +173,12 @@ fun MemberBalanceItemPreviewHelper(
     MappedPreview(
         domain = domainBalance,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+            BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = UserUiMapper(resourceProvider),
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
         },
         transform = { mapper, domain ->
             mapper.mapMemberBalances(
@@ -175,7 +206,12 @@ fun MemberBalanceListPreviewHelper(
     MappedPreview(
         domain = domainBalances,
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+            BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = UserUiMapper(resourceProvider),
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
         },
         transform = { mapper, domain ->
             mapper.mapMemberBalances(
@@ -210,7 +246,12 @@ fun CashBreakdownPreviewHelper(
     MappedPreview(
         domain = Triple(memberBalance, withdrawals, groupCurrency),
         mapper = { localeProvider, resourceProvider ->
-            BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+            BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = UserUiMapper(resourceProvider),
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
         },
         transform = { mapper, (balance, wds, currency) ->
             val uiModel = mapper.mapMemberBalances(

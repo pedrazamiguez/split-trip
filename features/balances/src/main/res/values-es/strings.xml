@@ -61,6 +61,8 @@
     <string name="balances_metric_total_spent_description">Importe total gastado en el viaje hasta la fecha.\n\nIncluye todos los gastos pagados, los gastos en efectivo y los gastos reembolsables, ya que el dinero ya ha salido del bolsillo. No incluye los gastos programados futuros ni los importes de extras.</string>
     <string name="balances_metric_cash_in_hand_title">Efectivo en mano</string>
     <string name="balances_metric_cash_in_hand_description">El dinero físico retirado por los miembros que aún no se ha gastado.\n\nEl total de la cabecera muestra el valor acumulado convertido a la moneda principal del grupo, mientras que la lista inferior detalla el desglose en cada una de las monedas reales disponibles.</string>
+    <string name="balances_metric_extras_title">Extras</string>
+    <string name="balances_metric_extras_description">Cargos adicionales asociados a gastos y retiradas de efectivo en cajero, como comisiones bancarias, recargos de pago y propinas de servicio.\n\nLos extras se controlan por separado del gasto base (Total gastado) para dar visibilidad a los costes añadidos y evitar distorsionar el coste real de los bienes y servicios.</string>
 
     <!-- Contribution History -->
     <string name="balances_history_title">Actividad</string>
@@ -125,6 +127,8 @@
     <string name="balances_extras_breakdown_title">Desglose de extras</string>
     <string name="balances_extras_breakdown_cd">Ver desglose de extras</string>
     <string name="balances_extras_breakdown_empty">No hay extras registrados</string>
+    <string name="balances_scheduled_breakdown_empty">No hay gastos programados registrados</string>
+    <string name="balances_refundable_breakdown_empty">No hay gastos reembolsables registrados</string>
     <string name="balances_extras_breakdown_total">Total</string>
     <string name="balances_extras_breakdown_subtotal">Subtotal</string>
     <string name="balances_extras_add_on_fee_plural">Comisiones</string>

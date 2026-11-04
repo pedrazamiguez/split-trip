@@ -1,11 +1,15 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 
+import es.pedrazamiguez.splittrip.core.common.enums.GrammaticalGenderEnum
+import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
@@ -14,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityItemUiModel
 import io.mockk.every
@@ -38,6 +43,7 @@ class BalancesUiMapperTest {
     private lateinit var resourceProvider: ResourceProvider
 
     @BeforeEach
+    @Suppress("LongMethod")
     fun setUp() {
         localeProvider = mockk()
         resourceProvider = mockk()
@@ -47,34 +53,34 @@ class BalancesUiMapperTest {
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_personal) } returns "Personal"
         every { resourceProvider.getString(R.string.balances_withdraw_cash_scope_group) } returns "Group"
         every {
-            resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.user_pending_fallback)
+            resourceProvider.getString(DesignSystemR.string.user_pending_fallback)
         } returns "Pending member"
         every {
             resourceProvider.getString(
-                es.pedrazamiguez.splittrip.core.designsystem.R.string.self_identification_nominative
+                DesignSystemR.string.self_identification_nominative
             )
         } returns "You"
         every {
             resourceProvider.getString(
-                es.pedrazamiguez.splittrip.core.designsystem.R.string.self_identification_beneficiary
+                DesignSystemR.string.self_identification_beneficiary
             )
         } returns "For you"
         every {
-            resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.self_identification_agent)
+            resourceProvider.getString(DesignSystemR.string.self_identification_agent)
         } returns "By you"
         every {
             resourceProvider.getString(
-                es.pedrazamiguez.splittrip.core.designsystem.R.string.self_identification_recipient
+                DesignSystemR.string.self_identification_recipient
             )
         } returns "To you"
         every {
             resourceProvider.getString(
-                es.pedrazamiguez.splittrip.core.designsystem.R.string.self_identification_prepositional
+                DesignSystemR.string.self_identification_prepositional
             )
         } returns "you"
         every {
             resourceProvider.getString(
-                es.pedrazamiguez.splittrip.core.designsystem.R.string.self_identification_possessive_pronoun_feminine
+                DesignSystemR.string.self_identification_possessive_pronoun_feminine
             )
         } returns "Your"
         every { resourceProvider.getString(R.string.balances_contribution_actions_title_you, any()) } returns
@@ -83,7 +89,23 @@ class BalancesUiMapperTest {
         every { resourceProvider.getString(R.string.balances_withdrawal_actions_title_you, any()) } returns
             "You withdrew"
         every { resourceProvider.getString(R.string.balances_withdrawal_actions_title, any()) } returns "Withdrew"
-        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+        every { resourceProvider.getString(R.string.balances_member_you) } returns "You"
+        every { resourceProvider.getString(R.string.balances_extras_expense_fallback) } returns "Expense"
+        every { resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit) } returns
+            "Unknown subunit"
+        every { resourceProvider.getString(R.string.balances_extras_add_on_fee_plural) } returns "Fees"
+        every { resourceProvider.getString(R.string.balances_extras_add_on_surcharge_plural) } returns "Surcharges"
+        every { resourceProvider.getString(R.string.balances_extras_add_on_tip_plural) } returns "Tips"
+        every { resourceProvider.getString(eq(R.string.balances_extras_atm_fallback), any()) } answers {
+            val date = (args[1] as Array<*>)[0] as String
+            "ATM \u2014 $date"
+        }
+        mapper = BalancesUiMapper(
+            localeProvider = localeProvider,
+            resourceProvider = resourceProvider,
+            userUiMapper = UserUiMapper(resourceProvider),
+            addOnCalculationService = AddOnCalculationServiceImpl()
+        )
     }
 
     @Nested
@@ -1141,23 +1163,6 @@ class BalancesUiMapperTest {
     @DisplayName("mapExtrasBreakdown")
     inner class MapExtrasBreakdown {
 
-        @BeforeEach
-        fun setUpMocks() {
-            every { resourceProvider.getString(R.string.balances_extras_expense_fallback) } returns "Expense"
-            every { resourceProvider.getString(eq(R.string.balances_extras_atm_fallback), any()) } answers {
-                val date = (args[1] as Array<*>)[0] as String
-                "ATM — $date"
-            }
-            every { resourceProvider.getString(R.string.balances_extras_add_on_fee_plural) } returns "Fees"
-            every { resourceProvider.getString(R.string.balances_extras_add_on_surcharge_plural) } returns "Surcharges"
-            every { resourceProvider.getString(R.string.balances_extras_add_on_tip_plural) } returns "Tips"
-            every { resourceProvider.getString(R.string.balances_member_you) } returns "You"
-            every {
-                resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit)
-            } returns "Unknown subunit"
-            every { resourceProvider.getString(R.string.balances_contribution_scope_group) } returns "Group"
-        }
-
         @Test
         fun `returns empty list when expenses and withdrawals have no add-ons`() {
             val result = mapper.mapExtrasBreakdown(
@@ -1190,7 +1195,7 @@ class BalancesUiMapperTest {
         }
 
         @Test
-        fun `maps single expense add-on to correct type group and scope`() {
+        fun `maps single expense add-on to correct scope and type item`() {
             val expense = Expense(
                 id = "e1",
                 title = "Dinner",
@@ -1207,15 +1212,16 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(1, result.size)
-            assertEquals("Fees", result[0].typeLabel)
+            assertEquals("Group", result[0].scopeLabel)
+            assertEquals(PayerType.GROUP, result[0].scopeType)
             assertTrue(result[0].formattedSubtotal.contains("1.50"))
             assertEquals(1, result[0].items.size)
-            assertEquals("Group", result[0].items[0].parentTitle)
+            assertEquals("Fees", result[0].items[0].title)
             assertTrue(result[0].items[0].formattedAmount.contains("1.50"))
         }
 
         @Test
-        fun `maps single withdrawal add-on to correct type group and scope`() {
+        fun `maps single withdrawal add-on to correct scope and type item`() {
             val withdrawal = CashWithdrawal(
                 id = "w1",
                 title = "ATM 1",
@@ -1232,9 +1238,12 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(1, result.size)
-            assertEquals("Tips", result[0].typeLabel)
+            assertEquals("Group", result[0].scopeLabel)
+            assertEquals(PayerType.GROUP, result[0].scopeType)
             assertTrue(result[0].formattedSubtotal.contains("2.00"))
-            assertEquals("Group", result[0].items[0].parentTitle)
+            assertEquals(1, result[0].items.size)
+            assertEquals("Tips", result[0].items[0].title)
+            assertTrue(result[0].items[0].formattedAmount.contains("2.00"))
         }
 
         @Test
@@ -1262,15 +1271,15 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(1, result.size)
-            assertEquals("Fees", result[0].typeLabel)
+            assertEquals("Group", result[0].scopeLabel)
             assertTrue(result[0].formattedSubtotal.contains("4.00"))
             assertEquals(1, result[0].items.size)
-            assertEquals("Group", result[0].items[0].parentTitle)
+            assertEquals("Fees", result[0].items[0].title)
             assertTrue(result[0].items[0].formattedAmount.contains("4.00"))
         }
 
         @Test
-        fun `produces separate sections for TIP FEE and SURCHARGE`() {
+        fun `produces separate items under scope for TIP, FEE and SURCHARGE`() {
             val expense = Expense(
                 id = "e1",
                 title = "Dinner",
@@ -1291,67 +1300,20 @@ class BalancesUiMapperTest {
                 currentUserId = null
             )
 
-            assertEquals(3, result.size)
-            assertEquals("Fees", result[0].typeLabel)
-            assertEquals("Surcharges", result[1].typeLabel)
-            assertEquals("Tips", result[2].typeLabel)
-        }
-
-        @Test
-        fun `section order is FEE then SURCHARGE then TIP`() {
-            val expense = Expense(
-                id = "e1",
-                title = "Dinner",
-                addOns = listOf(
-                    AddOn(type = AddOnType.TIP, groupAmountCents = 300),
-                    AddOn(type = AddOnType.FEE, groupAmountCents = 100),
-                    AddOn(type = AddOnType.SURCHARGE, groupAmountCents = 200)
-                ),
-                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
-            )
-
-            val result = mapper.mapExtrasBreakdown(
-                expenses = listOf(expense),
-                withdrawals = emptyList(),
-                groupCurrency = "EUR",
-                memberProfiles = emptyMap(),
-                subunitsMap = emptyMap(),
-                currentUserId = null
-            )
-
-            assertEquals(3, result.size)
-            assertEquals("Fees", result[0].typeLabel)
-            assertEquals("Surcharges", result[1].typeLabel)
-            assertEquals("Tips", result[2].typeLabel)
-        }
-
-        @Test
-        fun `sub-total per section is correct sum of groupAmountCents`() {
-            val expense = Expense(
-                id = "e1",
-                title = "Dinner",
-                addOns = listOf(
-                    AddOn(type = AddOnType.FEE, groupAmountCents = 100),
-                    AddOn(type = AddOnType.FEE, groupAmountCents = 150)
-                ),
-                createdAt = LocalDateTime.of(2026, 1, 10, 12, 0)
-            )
-
-            val result = mapper.mapExtrasBreakdown(
-                expenses = listOf(expense),
-                withdrawals = emptyList(),
-                groupCurrency = "EUR",
-                memberProfiles = emptyMap(),
-                subunitsMap = emptyMap(),
-                currentUserId = null
-            )
-
             assertEquals(1, result.size)
-            assertTrue(result[0].formattedSubtotal.contains("2.50"))
+            assertEquals("Group", result[0].scopeLabel)
+            assertTrue(result[0].formattedSubtotal.contains("6.00"))
+            assertEquals(3, result[0].items.size)
+            assertEquals("Fees", result[0].items[0].title)
+            assertTrue(result[0].items[0].formattedAmount.contains("1.00"))
+            assertEquals("Surcharges", result[0].items[1].title)
+            assertTrue(result[0].items[1].formattedAmount.contains("2.00"))
+            assertEquals("Tips", result[0].items[2].title)
+            assertTrue(result[0].items[2].formattedAmount.contains("3.00"))
         }
 
         @Test
-        fun `mixes expense and withdrawal add-ons into same type bucket and groups by scope`() {
+        fun `mixes expense and withdrawal add-ons into same scope and type bucket`() {
             val expense = Expense(
                 id = "e1",
                 title = "Dinner",
@@ -1375,10 +1337,48 @@ class BalancesUiMapperTest {
             )
 
             assertEquals(1, result.size)
-            assertEquals("Fees", result[0].typeLabel)
+            assertEquals("Group", result[0].scopeLabel)
             assertTrue(result[0].formattedSubtotal.contains("3.00"))
             assertEquals(1, result[0].items.size)
-            assertEquals("Group", result[0].items[0].parentTitle)
+            assertEquals("Fees", result[0].items[0].title)
+            assertTrue(result[0].items[0].formattedAmount.contains("3.00"))
+        }
+
+        @Test
+        fun `excludes CANCELLED and future SCHEDULED expenses`() {
+            val cancelledExpense = Expense(
+                id = "e_cancel",
+                title = "Cancelled",
+                paymentStatus = PaymentStatus.CANCELLED,
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 100))
+            )
+            val futureScheduledExpense = Expense(
+                id = "e_sched",
+                title = "Scheduled",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(5),
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 200))
+            )
+            val pastScheduledExpense = Expense(
+                id = "e_past_sched",
+                title = "Past Scheduled",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().minusDays(1),
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 300))
+            )
+
+            val result = mapper.mapExtrasBreakdown(
+                expenses = listOf(cancelledExpense, futureScheduledExpense, pastScheduledExpense),
+                withdrawals = emptyList(),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertTrue(result[0].formattedSubtotal.contains("3.00"))
+            assertEquals(1, result[0].items.size)
             assertTrue(result[0].items[0].formattedAmount.contains("3.00"))
         }
 
@@ -1390,24 +1390,30 @@ class BalancesUiMapperTest {
         )
 
         @Test
-        fun `sorts groups within a section by scope biggest to smallest then alphabetically`() {
+        fun `sorts scopes canonically GROUP then SUBUNIT then USER with current user first`() {
             val expenseGroup = makeFeeExpense("e_group", "Group fee")
-            val expenseUser1 =
-                makeFeeExpense("e_user1", "Antonia fee", listOf(ExpenseSplit(userId = "u2", amountCents = 100)))
-            val expenseUser2 =
-                makeFeeExpense("e_user2", "You fee", listOf(ExpenseSplit(userId = "u1", amountCents = 100)))
+            val expenseUser1 = makeFeeExpense(
+                id = "e_user1",
+                title = "Antonia fee",
+                splits = listOf(ExpenseSplit(userId = "u2", amountCents = 100))
+            )
+            val expenseUser2 = makeFeeExpense(
+                id = "e_user2",
+                title = "You fee",
+                splits = listOf(ExpenseSplit(userId = "u1", amountCents = 100))
+            )
             val expenseSubunit1 = makeFeeExpense(
-                "e_subunit1",
-                "Golfas fee",
-                listOf(
+                id = "e_subunit1",
+                title = "Golfas fee",
+                splits = listOf(
                     ExpenseSplit(userId = "u1", amountCents = 50, subunitId = "s1"),
                     ExpenseSplit(userId = "u2", amountCents = 50, subunitId = "s1")
                 )
             )
             val expenseSubunit2 = makeFeeExpense(
-                "e_subunit2",
-                "Zsubunit fee",
-                listOf(
+                id = "e_subunit2",
+                title = "Zsubunit fee",
+                splits = listOf(
                     ExpenseSplit(userId = "u1", amountCents = 50, subunitId = "s2"),
                     ExpenseSplit(userId = "u2", amountCents = 50, subunitId = "s2")
                 )
@@ -1431,24 +1437,224 @@ class BalancesUiMapperTest {
                 currentUserId = "u1"
             )
 
+            assertEquals(5, result.size)
+
+            assertEquals("Group", result[0].scopeLabel)
+            assertEquals(PayerType.GROUP, result[0].scopeType)
+
+            assertEquals("Golfas", result[1].scopeLabel)
+            assertEquals(PayerType.SUBUNIT, result[1].scopeType)
+
+            assertEquals("Zsubunit", result[2].scopeLabel)
+            assertEquals(PayerType.SUBUNIT, result[2].scopeType)
+
+            assertEquals("You", result[3].scopeLabel)
+            assertEquals(PayerType.USER, result[3].scopeType)
+
+            assertEquals("Antonia", result[4].scopeLabel)
+            assertEquals(PayerType.USER, result[4].scopeType)
+        }
+    }
+
+    @Nested
+    @DisplayName("mapScheduledBreakdown")
+    inner class MapScheduledBreakdown {
+
+        @Test
+        fun `returns empty list when no future scheduled expenses exist`() {
+            val pastExpense = Expense(
+                id = "e1",
+                title = "Past Scheduled",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().minusDays(1),
+                groupAmount = 5000
+            )
+            val finishedExpense = Expense(
+                id = "e2",
+                title = "Finished",
+                paymentStatus = PaymentStatus.FINISHED,
+                groupAmount = 3000
+            )
+
+            val result = mapper.mapScheduledBreakdown(
+                expenses = listOf(pastExpense, finishedExpense),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `maps future scheduled expenses and includes add-ons in effective amount`() {
+            val futureExpense = Expense(
+                id = "e1",
+                title = "Rental Car",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(5),
+                groupAmount = 10000,
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 1500))
+            )
+
+            val result = mapper.mapScheduledBreakdown(
+                expenses = listOf(futureExpense),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
             assertEquals(1, result.size)
-            val feesSection = result[0]
-            assertEquals(5, feesSection.items.size)
+            assertEquals("Group", result[0].scopeLabel)
+            assertEquals(PayerType.GROUP, result[0].scopeType)
+            assertTrue(result[0].formattedSubtotal.contains("115.00"))
+            assertEquals(1, result[0].items.size)
+            assertEquals("Rental Car", result[0].items[0].title)
+            assertTrue(result[0].items[0].formattedAmount.contains("115.00"))
+        }
 
-            assertEquals("Group", feesSection.items[0].parentTitle)
-            assertEquals(PayerType.GROUP, feesSection.items[0].scopeType)
+        @Test
+        fun `groups future scheduled expenses by scope with canonical ordering`() {
+            val groupExpense = Expense(
+                id = "e_group",
+                title = "Group Villa",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(3),
+                groupAmount = 20000
+            )
+            val userExpense = Expense(
+                id = "e_user",
+                title = "Flight",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(2),
+                groupAmount = 15000,
+                splits = listOf(ExpenseSplit(userId = "u1", amountCents = 15000))
+            )
+            val subunitExpense = Expense(
+                id = "e_subunit",
+                title = "Boat Tour",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(4),
+                groupAmount = 8000,
+                splits = listOf(
+                    ExpenseSplit(userId = "u1", amountCents = 4000, subunitId = "s1"),
+                    ExpenseSplit(userId = "u2", amountCents = 4000, subunitId = "s1")
+                )
+            )
 
-            assertEquals("Golfas", feesSection.items[1].parentTitle)
-            assertEquals(PayerType.SUBUNIT, feesSection.items[1].scopeType)
+            val memberProfiles = mapOf("u1" to User(userId = "u1", email = "u1@test.com", displayName = "User 1"))
+            val subunitsMap = mapOf("s1" to Subunit(id = "s1", name = "Alpha Subunit"))
 
-            assertEquals("Zsubunit", feesSection.items[2].parentTitle)
-            assertEquals(PayerType.SUBUNIT, feesSection.items[2].scopeType)
+            val result = mapper.mapScheduledBreakdown(
+                expenses = listOf(userExpense, groupExpense, subunitExpense),
+                groupCurrency = "EUR",
+                memberProfiles = memberProfiles,
+                subunitsMap = subunitsMap,
+                currentUserId = "u1"
+            )
 
-            assertEquals("Antonia", feesSection.items[3].parentTitle)
-            assertEquals(PayerType.USER, feesSection.items[3].scopeType)
+            assertEquals(3, result.size)
+            assertEquals("Group", result[0].scopeLabel)
+            assertEquals(PayerType.GROUP, result[0].scopeType)
+            assertEquals("Alpha Subunit", result[1].scopeLabel)
+            assertEquals(PayerType.SUBUNIT, result[1].scopeType)
+            assertEquals("You", result[2].scopeLabel)
+            assertEquals(PayerType.USER, result[2].scopeType)
+        }
+    }
 
-            assertEquals("You", feesSection.items[4].parentTitle)
-            assertEquals(PayerType.USER, feesSection.items[4].scopeType)
+    @Nested
+    @DisplayName("mapRefundableBreakdown")
+    inner class MapRefundableBreakdown {
+
+        @Test
+        fun `returns empty list when no refundable expenses exist`() {
+            val finishedExpense = Expense(
+                id = "e1",
+                title = "Finished",
+                paymentStatus = PaymentStatus.FINISHED,
+                groupAmount = 3000
+            )
+
+            val result = mapper.mapRefundableBreakdown(
+                expenses = listOf(finishedExpense),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `filters active refundable expenses where dueDate is null or not before today`() {
+            val activeRefundable = Expense(
+                id = "e1",
+                title = "Hotel Deposit",
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().plusDays(2),
+                groupAmount = 5000
+            )
+            val expiredRefundable = Expense(
+                id = "e2",
+                title = "Expired Deposit",
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().minusDays(2),
+                groupAmount = 3000
+            )
+
+            val result = mapper.mapRefundableBreakdown(
+                expenses = listOf(activeRefundable, expiredRefundable),
+                groupCurrency = "EUR",
+                memberProfiles = emptyMap(),
+                subunitsMap = emptyMap(),
+                currentUserId = null
+            )
+
+            assertEquals(1, result.size)
+            assertEquals("Group", result[0].scopeLabel)
+            assertTrue(result[0].formattedSubtotal.contains("50.00"))
+            assertEquals(1, result[0].items.size)
+            assertEquals("Hotel Deposit", result[0].items[0].title)
+            assertTrue(result[0].items[0].formattedAmount.contains("50.00"))
+        }
+
+        @Test
+        fun `groups active refundable expenses by scope with canonical ordering`() {
+            val groupExpense = Expense(
+                id = "e_group",
+                title = "Hotel Deposit",
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().plusDays(5),
+                groupAmount = 10000
+            )
+            val userExpense = Expense(
+                id = "e_user",
+                title = "Equipment Deposit",
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().plusDays(3),
+                groupAmount = 4000,
+                splits = listOf(ExpenseSplit(userId = "u1", amountCents = 4000))
+            )
+
+            val memberProfiles = mapOf("u1" to User(userId = "u1", email = "u1@test.com", displayName = "User 1"))
+
+            val result = mapper.mapRefundableBreakdown(
+                expenses = listOf(userExpense, groupExpense),
+                groupCurrency = "EUR",
+                memberProfiles = memberProfiles,
+                subunitsMap = emptyMap(),
+                currentUserId = "u1"
+            )
+
+            assertEquals(2, result.size)
+            assertEquals("Group", result[0].scopeLabel)
+            assertEquals(PayerType.GROUP, result[0].scopeType)
+            assertEquals("You", result[1].scopeLabel)
+            assertEquals(PayerType.USER, result[1].scopeType)
         }
     }
 
@@ -1468,8 +1674,8 @@ class BalancesUiMapperTest {
             val mockUserUiMapper = mockk<UserUiMapper>()
             every {
                 mockUserUiMapper.mapToSelfIdentification(
-                    es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum.POSSESSIVE_PRONOUN,
-                    es.pedrazamiguez.splittrip.core.common.enums.GrammaticalGenderEnum.FEMININE
+                    SelfIdentificationContextEnum.POSSESSIVE_PRONOUN,
+                    GrammaticalGenderEnum.FEMININE
                 )
             } returns "tuya"
 
@@ -1482,7 +1688,12 @@ class BalancesUiMapperTest {
                 )
             } returns "You"
 
-            val customMapper = BalancesUiMapper(localeProvider, resourceProvider, mockUserUiMapper)
+            val customMapper = BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = mockUserUiMapper,
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
 
             val contribution = Contribution(
                 id = "c1",
@@ -1522,7 +1733,12 @@ class BalancesUiMapperTest {
                 )
             } returns "Other User"
 
-            val customMapper = BalancesUiMapper(localeProvider, resourceProvider, mockUserUiMapper)
+            val customMapper = BalancesUiMapper(
+                localeProvider = localeProvider,
+                resourceProvider = resourceProvider,
+                userUiMapper = mockUserUiMapper,
+                addOnCalculationService = AddOnCalculationServiceImpl()
+            )
 
             val contribution = Contribution(
                 id = "c1",

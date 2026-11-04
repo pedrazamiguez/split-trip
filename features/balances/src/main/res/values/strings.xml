@@ -57,6 +57,8 @@
     <string name="balances_metric_total_spent_description">Total amount spent on the trip to date.\n\nIncludes all settled expenses, cash expenses, and refundable expenses, since that money has already been spent. It does not include upcoming scheduled expenses or extras.</string>
     <string name="balances_metric_cash_in_hand_title">Cash in hand</string>
     <string name="balances_metric_cash_in_hand_description">Physical cash withdrawn by members that has not yet been spent.\n\nThe header total shows the cumulative value converted into the group\'s default currency, while the list below details the exact breakdown across each currency held.</string>
+    <string name="balances_metric_extras_title">Extras</string>
+    <string name="balances_metric_extras_description">Additional charges associated with expenses and ATM cash withdrawals, such as banking fees, payment surcharges, and service tips.\n\nExtras are tracked separately from base spending (Total spent) to provide visibility into hidden overheads and avoid distorting the core cost of goods and services.</string>
 
     <!-- Contribution History -->
     <string name="balances_history_title">Activity</string>
@@ -123,6 +125,8 @@
     <string name="balances_extras_breakdown_title">Extras breakdown</string>
     <string name="balances_extras_breakdown_cd">View extras breakdown</string>
     <string name="balances_extras_breakdown_empty">No extras recorded</string>
+    <string name="balances_scheduled_breakdown_empty">No scheduled expenses recorded</string>
+    <string name="balances_refundable_breakdown_empty">No refundable expenses recorded</string>
     <string name="balances_extras_breakdown_total">Total</string>
     <string name="balances_extras_breakdown_subtotal">Subtotal</string>
     <string name="balances_extras_add_on_fee_plural">Fees</string>
