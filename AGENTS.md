@@ -375,9 +375,11 @@ Feature development follows a 5-phase Specification-Driven Development (SDD) lif
 
 See `docs/ai/agent-roles-and-taxonomy.md` and `docs/ai/ai-ecosystem.md` for full details.
 
-## String Translations
+## String Translations & Localization
 
-When adding new string resources (e.g. in `strings.xml`), you MUST always add the corresponding Spanish translations. Andaluz translations are not needed as they are generated automatically based on the Spanish ones.
+- **Spanish (`values-es/`):** When adding new string resources (e.g. in `strings.xml`), you MUST always add the corresponding Spanish translations in `values-es/strings.xml`.
+- **Andaluz (`values-es-rAN/`):** `values-es-rAN` is for the **Andalusian (Andaluz / EPA)** dialect, **NEVER** Aragonese.
+- **Auto-generated Strings:** Strings in `values-es-rAN/strings.xml` are **automatically generated on compile** from `values-es/strings.xml` via `generateAndaluzStrings` (`make andaluz`). NEVER create, edit, or modify `values-es-rAN/strings.xml` manually.
 
 ## Workspace Resolution Protocol
 
