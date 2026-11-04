@@ -1,13 +1,15 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.screen.impl
 
+import androidx.navigation.NavController
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.features.group.R
-import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -18,11 +20,13 @@ class GroupsScreenUiProviderImplTest {
     private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase = mockk()
     private val authenticationService: AuthenticationService = mockk()
     private val featureGateService: FeatureGateService = mockk()
+    private val upgradeNavigator: UpgradeNavigator = mockk(relaxed = true)
 
     private val uiProvider = GroupsScreenUiProviderImpl(
         getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
         authenticationService = authenticationService,
-        featureGateService = featureGateService
+        featureGateService = featureGateService,
+        upgradeNavigator = upgradeNavigator
     )
 
     private val testMessage = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
@@ -38,6 +42,7 @@ class GroupsScreenUiProviderImplTest {
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             authenticationService = authenticationService,
             featureGateService = featureGateService,
+            upgradeNavigator = upgradeNavigator,
             route = "custom_route"
         )
         assertEquals("custom_route", customRouteProvider.route)
@@ -120,16 +125,10 @@ class GroupsScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick navigates to account status when blocked and user is anonymous`() {
-        every { authenticationService.isAnonymous() } returns true
-        var navigatedDestination: String? = null
+    fun `handleMainActionClick navigates to upgrade when blocked and user is not pro`() {
+        val mockNavController = mockk<NavController>(relaxed = true)
         val navigateToSubscriptions = {
-            val destination = if (authenticationService.isAnonymous()) {
-                Routes.SETTINGS_ACCOUNT_STATUS
-            } else {
-                Routes.SETTINGS_SUBSCRIPTIONS
-            }
-            navigatedDestination = destination
+            upgradeNavigator.navigateToUpgrade(mockNavController)
         }
 
         uiProvider.handleMainActionClick(
@@ -141,31 +140,6 @@ class GroupsScreenUiProviderImplTest {
             showNotification = {}
         )
 
-        assertEquals(Routes.SETTINGS_ACCOUNT_STATUS, navigatedDestination)
-    }
-
-    @Test
-    fun `handleMainActionClick navigates to subscriptions when blocked and user is registered free-tier`() {
-        every { authenticationService.isAnonymous() } returns false
-        var navigatedDestination: String? = null
-        val navigateToSubscriptions = {
-            val destination = if (authenticationService.isAnonymous()) {
-                Routes.SETTINGS_ACCOUNT_STATUS
-            } else {
-                Routes.SETTINGS_SUBSCRIPTIONS
-            }
-            navigatedDestination = destination
-        }
-
-        uiProvider.handleMainActionClick(
-            isAllowed = false,
-            isActingUserPro = false,
-            limitReachedMessage = testMessage,
-            navigateToCreateGroup = {},
-            navigateToSubscriptions = navigateToSubscriptions,
-            showNotification = {}
-        )
-
-        assertEquals(Routes.SETTINGS_SUBSCRIPTIONS, navigatedDestination)
+        verify(exactly = 1) { upgradeNavigator.navigateToUpgrade(mockNavController) }
     }
 }

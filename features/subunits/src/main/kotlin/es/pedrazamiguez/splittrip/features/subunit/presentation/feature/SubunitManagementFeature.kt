@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.features.subunit.R
 import es.pedrazamiguez.splittrip.features.subunit.presentation.screen.SubunitManagementScreen
@@ -17,11 +18,13 @@ import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.Subuni
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.action.SubunitManagementUiAction
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun SubunitManagementFeature(
     groupId: String,
-    viewModel: SubunitManagementViewModel = koinViewModel<SubunitManagementViewModel>()
+    viewModel: SubunitManagementViewModel = koinViewModel<SubunitManagementViewModel>(),
+    upgradeNavigator: UpgradeNavigator = koinInject<UpgradeNavigator>()
 ) {
     val navController = LocalTabNavController.current
     val rootNavController = LocalRootNavController.current
@@ -60,12 +63,7 @@ fun SubunitManagementFeature(
 
                 SubunitManagementUiAction.NavigateToSubscriptions -> {
                     pillController.showPill(message = proRequiredMessage)
-                    rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS)
-                }
-
-                SubunitManagementUiAction.NavigateToAccountStatus -> {
-                    pillController.showPill(message = proRequiredMessage)
-                    rootNavController.navigate(Routes.SETTINGS_ACCOUNT_STATUS)
+                    upgradeNavigator.navigateToUpgrade(rootNavController)
                 }
             }
         }

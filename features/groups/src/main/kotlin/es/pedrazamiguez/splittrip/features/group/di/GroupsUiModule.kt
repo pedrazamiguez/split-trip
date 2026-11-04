@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
@@ -249,10 +250,12 @@ val groupsUiModule = module {
         val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
         val authenticationService = get<AuthenticationService>()
         val featureGateService = get<FeatureGateService>()
+        val upgradeNavigator = get<UpgradeNavigator>()
         GroupsScreenUiProviderImpl(
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             authenticationService = authenticationService,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            upgradeNavigator = upgradeNavigator
         )
     } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class

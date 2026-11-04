@@ -1,11 +1,12 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.screen.impl
 
+import androidx.navigation.NavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
-import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
-import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -15,12 +16,12 @@ class SubunitManagementScreenUiProviderImplTest {
 
     private val observeSelectedGroupUseCase: ObserveSelectedGroupUseCase = mockk()
     private val featureGateService: FeatureGateService = mockk()
-    private val authenticationService: AuthenticationService = mockk()
+    private val upgradeNavigator: UpgradeNavigator = mockk(relaxed = true)
 
     private val uiProvider = SubunitManagementScreenUiProviderImpl(
         observeSelectedGroupUseCase = observeSelectedGroupUseCase,
         featureGateService = featureGateService,
-        authenticationService = authenticationService
+        upgradeNavigator = upgradeNavigator
     )
 
     @Test
@@ -33,7 +34,7 @@ class SubunitManagementScreenUiProviderImplTest {
         val customRouteProvider = SubunitManagementScreenUiProviderImpl(
             observeSelectedGroupUseCase = observeSelectedGroupUseCase,
             featureGateService = featureGateService,
-            authenticationService = authenticationService,
+            upgradeNavigator = upgradeNavigator,
             route = "custom_route"
         )
         assertEquals("custom_route", customRouteProvider.route)
@@ -119,16 +120,10 @@ class SubunitManagementScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick navigates to account status when creation disabled and user is anonymous`() {
-        every { authenticationService.isAnonymous() } returns true
-        var navigatedDestination: String? = null
+    fun `handleMainActionClick navigates to upgrade when creation disabled and user is not pro`() {
+        val mockNavController = mockk<NavController>(relaxed = true)
         val navigateToSubscriptions = {
-            val destination = if (authenticationService.isAnonymous()) {
-                Routes.SETTINGS_ACCOUNT_STATUS
-            } else {
-                Routes.SETTINGS_SUBSCRIPTIONS
-            }
-            navigatedDestination = destination
+            upgradeNavigator.navigateToUpgrade(mockNavController)
         }
 
         uiProvider.handleMainActionClick(
@@ -141,32 +136,6 @@ class SubunitManagementScreenUiProviderImplTest {
             showNotification = {}
         )
 
-        assertEquals(Routes.SETTINGS_ACCOUNT_STATUS, navigatedDestination)
-    }
-
-    @Test
-    fun `handleMainActionClick navigates to subscriptions when creation disabled and user is registered free-tier`() {
-        every { authenticationService.isAnonymous() } returns false
-        var navigatedDestination: String? = null
-        val navigateToSubscriptions = {
-            val destination = if (authenticationService.isAnonymous()) {
-                Routes.SETTINGS_ACCOUNT_STATUS
-            } else {
-                Routes.SETTINGS_SUBSCRIPTIONS
-            }
-            navigatedDestination = destination
-        }
-
-        uiProvider.handleMainActionClick(
-            isSubunitCreationEnabled = false,
-            isActingUserPro = false,
-            groupId = "group-1",
-            proRequiredMessage = "Pro required",
-            navigateToCreate = {},
-            navigateToSubscriptions = navigateToSubscriptions,
-            showNotification = {}
-        )
-
-        assertEquals(Routes.SETTINGS_SUBSCRIPTIONS, navigatedDestination)
+        verify(exactly = 1) { upgradeNavigator.navigateToUpgrade(mockNavController) }
     }
 }

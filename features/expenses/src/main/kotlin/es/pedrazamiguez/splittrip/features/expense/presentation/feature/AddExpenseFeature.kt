@@ -21,6 +21,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.receipt.ReceiptAttachmentHandler
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
@@ -35,6 +36,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
@@ -47,6 +49,7 @@ fun AddExpenseFeature(
     sharedViewModel: SharedViewModel = koinViewModel(
         viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
     ),
+    upgradeNavigator: UpgradeNavigator = koinInject<UpgradeNavigator>(),
     onAddExpenseSuccess: () -> Unit = {}
 ) {
     val pillController = LocalTopPillController.current
@@ -86,10 +89,7 @@ fun AddExpenseFeature(
                 AddExpenseUiAction.NavigateBack -> navController.popBackStack()
 
                 AddExpenseUiAction.NavigateToSubscriptions ->
-                    rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS)
-
-                AddExpenseUiAction.NavigateToAccountStatus ->
-                    rootNavController.navigate(Routes.SETTINGS_ACCOUNT_STATUS)
+                    upgradeNavigator.navigateToUpgrade(rootNavController)
 
                 AddExpenseUiAction.None -> Unit
             }

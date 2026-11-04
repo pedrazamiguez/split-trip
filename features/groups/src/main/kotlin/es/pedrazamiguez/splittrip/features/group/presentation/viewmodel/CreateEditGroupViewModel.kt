@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
@@ -224,7 +223,7 @@ class CreateEditGroupViewModel(
             is CreateEditGroupUiEvent.UpgradeClicked -> {
                 _uiState.update { it.copy(showUpgradeDialog = false) }
                 viewModelScope.launch {
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(getUpgradeDestinationRoute()))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToSubscriptions)
                 }
             }
             is CreateEditGroupUiEvent.DismissUpgradeDialog -> {
@@ -242,12 +241,12 @@ class CreateEditGroupViewModel(
                             UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
                         )
                     )
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(getUpgradeDestinationRoute()))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToSubscriptions)
                 }
             }
             is CreateEditGroupUiEvent.MemberCapacityUpsellClicked -> {
                 viewModelScope.launch {
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(getUpgradeDestinationRoute()))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToSubscriptions)
                 }
             }
         }
@@ -521,9 +520,6 @@ class CreateEditGroupViewModel(
             emptyList()
         }
     }
-
-    private fun getUpgradeDestinationRoute(): String =
-        if (authenticationService.isAnonymous()) Routes.SETTINGS_ACCOUNT_STATUS else Routes.SETTINGS_SUBSCRIPTIONS
 
     override fun onCleared() {
         super.onCleared()

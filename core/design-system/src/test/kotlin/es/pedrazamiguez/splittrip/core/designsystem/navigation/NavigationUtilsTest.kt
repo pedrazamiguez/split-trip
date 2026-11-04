@@ -213,6 +213,31 @@ class NavigationUtilsTest {
     }
 
     // ═════════════════════════════════════════════════════════════════════
+    //  resolveUpgradeDestination
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("resolveUpgradeDestination")
+    inner class ResolveUpgradeDestination {
+
+        @Test
+        fun `returns SETTINGS_ACCOUNT_STATUS when user is anonymous`() {
+            assertEquals(
+                Routes.SETTINGS_ACCOUNT_STATUS,
+                NavigationUtils.resolveUpgradeDestination(isAnonymous = true)
+            )
+        }
+
+        @Test
+        fun `returns SETTINGS_SUBSCRIPTIONS when user is not anonymous`() {
+            assertEquals(
+                Routes.SETTINGS_SUBSCRIPTIONS,
+                NavigationUtils.resolveUpgradeDestination(isAnonymous = false)
+            )
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
     //  filterVisibleProviders
     // ═════════════════════════════════════════════════════════════════════
 

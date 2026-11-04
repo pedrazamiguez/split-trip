@@ -216,18 +216,11 @@ class CreateEditSubunitViewModel(
                 )
             )
             if (!featureGateService.isActingUserPro().first()) {
-                _actions.emit(getUpgradeDestination())
+                _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
             }
             _actions.emit(CreateEditSubunitUiAction.NavigateBack)
         }
     }
-
-    private fun getUpgradeDestination(): CreateEditSubunitUiAction =
-        if (authenticationService.isAnonymous()) {
-            CreateEditSubunitUiAction.NavigateToAccountStatus
-        } else {
-            CreateEditSubunitUiAction.NavigateToSubscriptions
-        }
 
     fun onEvent(event: CreateEditSubunitUiEvent) {
         when (event) {
@@ -485,7 +478,7 @@ class CreateEditSubunitViewModel(
             )
             val isPro = featureGateService.isActingUserPro().first()
             if (!isPro) {
-                _actions.emit(getUpgradeDestination())
+                _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
             }
             return false
         }

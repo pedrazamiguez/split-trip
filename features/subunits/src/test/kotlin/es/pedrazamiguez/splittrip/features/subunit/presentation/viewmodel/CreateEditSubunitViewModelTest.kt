@@ -104,7 +104,6 @@ class CreateEditSubunitViewModelTest {
         shareDistributionService = SubunitShareDistributionServiceImpl()
         authenticationService = mockk {
             every { currentUserId() } returns "user-1"
-            every { isAnonymous() } returns false
         }
         featureGateService = mockk {
             every { isFeatureEnabled(any(), any()) } returns flowOf(true)
@@ -187,39 +186,11 @@ class CreateEditSubunitViewModelTest {
         }
 
         @Test
-        fun `init emits account status when creation disabled and anonymous`() = runTest(testDispatcher) {
+        fun `init emits subscriptions when creation disabled and not pro`() = runTest(testDispatcher) {
             every {
                 featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
             } returns flowOf(false)
             every { featureGateService.isActingUserPro() } returns flowOf(false)
-            every { authenticationService.isAnonymous() } returns true
-            setupDefaultMocks()
-            createViewModel()
-
-            val actions = mutableListOf<CreateEditSubunitUiAction>()
-            val collectJob = backgroundScope.launch { viewModel.actions.collect { actions.add(it) } }
-
-            viewModel.init("group-1", null)
-            advanceUntilIdle()
-
-            assertEquals(3, actions.size)
-            assertEquals(
-                CreateEditSubunitUiAction.ShowError(UiText.StringResource(R.string.subunit_error_pro_required)),
-                actions[0]
-            )
-            assertEquals(CreateEditSubunitUiAction.NavigateToAccountStatus, actions[1])
-            assertEquals(CreateEditSubunitUiAction.NavigateBack, actions[2])
-
-            collectJob.cancel()
-        }
-
-        @Test
-        fun `init emits subscriptions when creation disabled and registered`() = runTest(testDispatcher) {
-            every {
-                featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
-            } returns flowOf(false)
-            every { featureGateService.isActingUserPro() } returns flowOf(false)
-            every { authenticationService.isAnonymous() } returns false
             setupDefaultMocks()
             createViewModel()
 
@@ -455,48 +426,6 @@ class CreateEditSubunitViewModelTest {
                 errorAction?.message
             )
             assertTrue(actions.any { it is CreateEditSubunitUiAction.NavigateToSubscriptions })
-
-            collectJob.cancel()
-            actionsJob.cancel()
-        }
-
-        @Test
-        fun `save emits account status when creation disabled and anonymous`() = runTest(
-            testDispatcher
-        ) {
-            setupDefaultMocks()
-            every {
-                featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
-            } returns flowOf(false)
-            every { featureGateService.isActingUserPro() } returns flowOf(false)
-            every { authenticationService.isAnonymous() } returns true
-            createViewModel()
-
-            val actions = mutableListOf<CreateEditSubunitUiAction>()
-            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
-            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.actions.collect { actions.add(it) }
-            }
-
-            viewModel.init("group-1", null)
-            advanceUntilIdle()
-
-            viewModel.onEvent(CreateEditSubunitUiEvent.UpdateName("Family"))
-            viewModel.onEvent(CreateEditSubunitUiEvent.ToggleMember("user-3"))
-            advanceUntilIdle()
-
-            viewModel.onEvent(CreateEditSubunitUiEvent.Save)
-            advanceUntilIdle()
-
-            coVerify(exactly = 0) { createSubunitUseCase(any(), any()) }
-            assertFalse(viewModel.uiState.value.isSaving)
-            val errorAction = actions.filterIsInstance<CreateEditSubunitUiAction.ShowError>().firstOrNull()
-            assertNotNull(errorAction)
-            assertEquals(
-                UiText.StringResource(R.string.subunit_error_pro_required),
-                errorAction?.message
-            )
-            assertTrue(actions.any { it is CreateEditSubunitUiAction.NavigateToAccountStatus })
 
             collectJob.cancel()
             actionsJob.cancel()
