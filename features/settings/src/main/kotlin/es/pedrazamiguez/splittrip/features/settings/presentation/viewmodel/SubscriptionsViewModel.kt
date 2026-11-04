@@ -172,6 +172,12 @@ class SubscriptionsViewModel(
 
     private fun loadSubscriptions() {
         viewModelScope.launch {
+            val isAnon = isUserAnonymousUseCase().firstOrNull() ?: false
+            if (isAnon) {
+                _uiState.update { it.copy(isLoading = false, isAnonymous = true) }
+                _actions.send(SubscriptionsUiAction.NavigateToAccountStatus)
+                return@launch
+            }
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val queryResult = billingService.querySubscriptionProducts()
@@ -181,7 +187,6 @@ class SubscriptionsViewModel(
                         "Failed to query subscription products from billing service"
                     )
                 }
-                val isAnon = isUserAnonymousUseCase().firstOrNull() ?: false
                 val currentUser = getCurrentUserProfileUseCase()
                 val currentTier = currentUser?.tier ?: SubscriptionTier.FREE
                 val selectedInterval = _uiState.value.selectedInterval
@@ -234,6 +239,12 @@ class SubscriptionsViewModel(
     }
 
     private fun handleUpgradeToPro() {
+        if (_uiState.value.isAnonymous) {
+            viewModelScope.launch {
+                _actions.send(SubscriptionsUiAction.NavigateToAccountStatus)
+            }
+            return
+        }
         val selectedInterval = _uiState.value.selectedInterval
         val hasProduct = billingService.subscriptionProducts.value.any { it.billingInterval == selectedInterval }
         if (!hasProduct) {
@@ -261,6 +272,12 @@ class SubscriptionsViewModel(
     }
 
     private fun handleRestorePurchases() {
+        if (_uiState.value.isAnonymous) {
+            viewModelScope.launch {
+                _actions.send(SubscriptionsUiAction.NavigateToAccountStatus)
+            }
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingAction = true) }
             try {

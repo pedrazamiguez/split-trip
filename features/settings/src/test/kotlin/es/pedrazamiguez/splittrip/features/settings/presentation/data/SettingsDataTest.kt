@@ -157,6 +157,41 @@ class SettingsDataTest {
             securityItem.onClick?.invoke()
             assertEquals(1, accountSecurityClickCount)
         }
+
+        @Test
+        fun `accountSection omits subscriptions item when isAnonymous is true`() {
+            val params = createParams()
+            val sections = buildSettingsSections(
+                preferencesParams = params,
+                onServicesTestClick = { servicesTestClickCount++ },
+                isAnonymous = true
+            )
+
+            val accountSection = sections.first { it.titleRes == R.string.settings_section_account }
+            assertEquals(2, accountSection.items.size)
+
+            val item0 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[0])
+            assertEquals(R.string.settings_account_status_title, item0.titleRes)
+
+            val item1 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[1])
+            assertEquals(R.string.settings_account_security_title, item1.titleRes)
+        }
+
+        @Test
+        fun `accountSection includes subscriptions item when isAnonymous is false`() {
+            val params = createParams()
+            val sections = buildSettingsSections(
+                preferencesParams = params,
+                onServicesTestClick = { servicesTestClickCount++ },
+                isAnonymous = false
+            )
+
+            val accountSection = sections.first { it.titleRes == R.string.settings_section_account }
+            assertEquals(3, accountSection.items.size)
+
+            val item1 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[1])
+            assertEquals(R.string.settings_account_subscriptions_title, item1.titleRes)
+        }
     }
 
     @Nested
@@ -273,6 +308,40 @@ class SettingsDataTest {
             assertEquals(0, defaultCurrencyClickCount)
             currencyItem.onClick?.invoke()
             assertEquals(1, defaultCurrencyClickCount)
+        }
+
+        @Test
+        fun `preferencesSection omits notifications item when isAnonymous is true`() {
+            val params = createParams()
+            val sections = buildSettingsSections(
+                preferencesParams = params,
+                onServicesTestClick = { servicesTestClickCount++ },
+                isAnonymous = true
+            )
+
+            val preferencesSection = sections.first { it.titleRes == R.string.settings_section_preferences }
+            val hasNotifItem = preferencesSection.items
+                .filterIsInstance<SettingsItemModel.WithTrailing>()
+                .any { it.titleRes == R.string.settings_preferences_notifications_title }
+
+            assertEquals(false, hasNotifItem)
+        }
+
+        @Test
+        fun `preferencesSection includes notifications item when isAnonymous is false`() {
+            val params = createParams()
+            val sections = buildSettingsSections(
+                preferencesParams = params,
+                onServicesTestClick = { servicesTestClickCount++ },
+                isAnonymous = false
+            )
+
+            val preferencesSection = sections.first { it.titleRes == R.string.settings_section_preferences }
+            val hasNotifItem = preferencesSection.items
+                .filterIsInstance<SettingsItemModel.WithTrailing>()
+                .any { it.titleRes == R.string.settings_preferences_notifications_title }
+
+            assertEquals(true, hasNotifItem)
         }
     }
 

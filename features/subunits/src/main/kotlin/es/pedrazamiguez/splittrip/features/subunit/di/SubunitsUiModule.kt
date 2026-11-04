@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.subunit.di
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
@@ -40,6 +41,7 @@ val subunitsUiModule = module {
 
     viewModel {
         val telemetryTracker = get<TelemetryTracker>()
+        val authenticationService = get<AuthenticationService>()
         SubunitManagementViewModel(
             getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>(),
             deleteSubunitUseCase = get<DeleteSubunitUseCase>(),
@@ -48,13 +50,14 @@ val subunitsUiModule = module {
             subunitUiMapper = get<SubunitUiMapper>(),
             observeGroupUseCase = get<ObserveGroupUseCase>(),
             featureGateService = get<FeatureGateService>(),
-            authenticationService = get<AuthenticationService>(),
+            authenticationService = authenticationService,
             telemetryTracker = telemetryTracker
         )
     }
 
     viewModel {
         val telemetryTracker = get<TelemetryTracker>()
+        val authenticationService = get<AuthenticationService>()
         CreateEditSubunitViewModel(
             createSubunitUseCase = get<CreateSubunitUseCase>(),
             updateSubunitUseCase = get<UpdateSubunitUseCase>(),
@@ -63,7 +66,7 @@ val subunitsUiModule = module {
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
             subunitUiMapper = get<SubunitUiMapper>(),
             shareDistributionService = get<SubunitShareDistributionService>(),
-            authenticationService = get<AuthenticationService>(),
+            authenticationService = authenticationService,
             featureGateService = get<FeatureGateService>(),
             telemetryTracker = telemetryTracker
         )
@@ -71,9 +74,13 @@ val subunitsUiModule = module {
 
     factory { SubunitsTabGraphContributorImpl() } bind TabGraphContributor::class
     single {
+        val observeSelectedGroupUseCase = get<ObserveSelectedGroupUseCase>()
+        val featureGateService = get<FeatureGateService>()
+        val upgradeNavigator = get<UpgradeNavigator>()
         SubunitManagementScreenUiProviderImpl(
-            observeSelectedGroupUseCase = get<ObserveSelectedGroupUseCase>(),
-            featureGateService = get<FeatureGateService>()
+            observeSelectedGroupUseCase = observeSelectedGroupUseCase,
+            featureGateService = featureGateService,
+            upgradeNavigator = upgradeNavigator
         )
     } bind ScreenUiProvider::class
     single { CreateEditSubunitScreenUiProviderImpl() } bind ScreenUiProvider::class

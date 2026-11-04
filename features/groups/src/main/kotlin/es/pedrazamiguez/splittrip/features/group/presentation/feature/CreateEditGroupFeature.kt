@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestCameraPermission
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.features.group.R
@@ -23,11 +24,13 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.C
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun CreateEditGroupFeature(
     groupId: String?,
     createEditGroupViewModel: CreateEditGroupViewModel = koinViewModel<CreateEditGroupViewModel>(),
+    upgradeNavigator: UpgradeNavigator = koinInject<UpgradeNavigator>(),
     onSuccess: () -> Unit = {}
 ) {
     val state by createEditGroupViewModel.uiState.collectAsStateWithLifecycle()
@@ -55,6 +58,9 @@ fun CreateEditGroupFeature(
                 is CreateEditGroupUiAction.ShowError -> pillController.showPill(action.message.asString(context))
                 CreateEditGroupUiAction.NavigateBack -> navController.popBackStack()
                 CreateEditGroupUiAction.RequestExitConfirmation -> showExitConfirmation = true
+                CreateEditGroupUiAction.NavigateToSubscriptions -> {
+                    upgradeNavigator.navigateToUpgrade(rootNavController)
+                }
                 is CreateEditGroupUiAction.NavigateToRoute -> rootNavController.navigate(action.route)
             }
         }

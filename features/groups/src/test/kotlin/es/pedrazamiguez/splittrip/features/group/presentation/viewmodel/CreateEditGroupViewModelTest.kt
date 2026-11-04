@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -884,7 +883,7 @@ class CreateEditGroupViewModelTest {
 
                 assertFalse(viewModel.uiState.value.showUpgradeDialog)
                 assertEquals(
-                    listOf(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS)),
+                    listOf(CreateEditGroupUiAction.NavigateToSubscriptions),
                     actionsList
                 )
                 job.cancel()
@@ -949,7 +948,7 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
-        fun `onEvent LockedCoverPhotoClicked emits ShowError and NavigateToRoute with SETTINGS_SUBSCRIPTIONS`() =
+        fun `onEvent LockedCoverPhotoClicked emits ShowError and NavigateToSubscriptions`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
                 val job = launch {
@@ -964,7 +963,7 @@ class CreateEditGroupViewModelTest {
                         CreateEditGroupUiAction.ShowError(
                             UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
                         ),
-                        CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS)
+                        CreateEditGroupUiAction.NavigateToSubscriptions
                     ),
                     actionsList
                 )
@@ -972,7 +971,7 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
-        fun `onEvent MemberCapacityUpsellClicked emits NavigateToRoute with SETTINGS_SUBSCRIPTIONS`() =
+        fun `onEvent MemberCapacityUpsellClicked emits NavigateToSubscriptions`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
                 val job = launch {
@@ -983,7 +982,7 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(
-                    listOf(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS)),
+                    listOf(CreateEditGroupUiAction.NavigateToSubscriptions),
                     actionsList
                 )
                 job.cancel()

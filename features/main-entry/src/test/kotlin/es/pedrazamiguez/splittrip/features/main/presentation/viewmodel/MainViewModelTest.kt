@@ -4,6 +4,7 @@ import android.os.Bundle
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.usecase.ad.GetBannerAdUnitIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
@@ -14,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -43,6 +45,7 @@ class MainViewModelTest {
     private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
     private lateinit var shouldShowAdsUseCase: ShouldShowAdsUseCase
     private lateinit var getBannerAdUnitIdUseCase: GetBannerAdUnitIdUseCase
+    private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
 
     @BeforeEach
     fun setUp() {
@@ -53,10 +56,12 @@ class MainViewModelTest {
         observeCurrentUserProfileUseCase = mockk(relaxed = true)
         shouldShowAdsUseCase = mockk(relaxed = true)
         getBannerAdUnitIdUseCase = mockk(relaxed = true)
+        isUserAnonymousUseCase = mockk(relaxed = true)
         coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
         every { observeCurrentUserProfileUseCase() } returns flowOf(null)
         every { shouldShowAdsUseCase() } returns flowOf(false)
         every { getBannerAdUnitIdUseCase() } returns MutableStateFlow("test-banner-id")
+        every { isUserAnonymousUseCase() } returns flowOf(false)
     }
 
     @AfterEach
@@ -70,7 +75,8 @@ class MainViewModelTest {
         warmCurrencyCacheUseCase = warmCurrencyCacheUseCase,
         observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
         shouldShowAdsUseCase = shouldShowAdsUseCase,
-        getBannerAdUnitIdUseCase = getBannerAdUnitIdUseCase
+        getBannerAdUnitIdUseCase = getBannerAdUnitIdUseCase,
+        isUserAnonymousUseCase = isUserAnonymousUseCase
     )
 
     @Nested
@@ -84,6 +90,54 @@ class MainViewModelTest {
             advanceUntilIdle()
 
             // Then
+            coVerify(exactly = 1) { registerDeviceTokenUseCase() }
+        }
+
+        @Test
+        fun `skips device token registration when user is anonymous`() = runTest(testDispatcher) {
+            // Given
+            every { isUserAnonymousUseCase() } returns flowOf(true)
+
+            // When
+            createViewModel()
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 0) { registerDeviceTokenUseCase() }
+        }
+
+        @Test
+        fun `registers device token when user is not anonymous`() = runTest(testDispatcher) {
+            // Given
+            every { isUserAnonymousUseCase() } returns flowOf(false)
+
+            // When
+            createViewModel()
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { registerDeviceTokenUseCase() }
+        }
+
+        @Test
+        fun `registers device token when user transitions from anonymous to linked`() = runTest(testDispatcher) {
+            // Given
+            val isAnonymousFlow = MutableSharedFlow<Boolean>(extraBufferCapacity = 2)
+            isAnonymousFlow.tryEmit(true)
+            every { isUserAnonymousUseCase() } returns isAnonymousFlow
+
+            // When
+            createViewModel()
+            advanceUntilIdle()
+
+            // Then - skipped while anonymous
+            coVerify(exactly = 0) { registerDeviceTokenUseCase() }
+
+            // When user links account (becomes non-anonymous)
+            isAnonymousFlow.emit(false)
+            advanceUntilIdle()
+
+            // Then - now registered
             coVerify(exactly = 1) { registerDeviceTokenUseCase() }
         }
 

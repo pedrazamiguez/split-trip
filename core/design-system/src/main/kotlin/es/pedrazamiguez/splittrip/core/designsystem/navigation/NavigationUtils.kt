@@ -42,6 +42,19 @@ object NavigationUtils {
         if (onboardingCompleted == true) Routes.MAIN else Routes.ONBOARDING
 
     /**
+     * Resolves the navigation destination when a user encounters a paywall or initiates an upgrade.
+     *
+     * Anonymous guest users must first link or register an account before purchasing subscriptions,
+     * so they are directed to [Routes.SETTINGS_ACCOUNT_STATUS]. Authenticated users are directed
+     * to [Routes.SETTINGS_SUBSCRIPTIONS].
+     *
+     * @param isAnonymous Whether the acting user has an anonymous (guest) auth session.
+     * @return [Routes.SETTINGS_ACCOUNT_STATUS] if anonymous, [Routes.SETTINGS_SUBSCRIPTIONS] otherwise.
+     */
+    fun resolveUpgradeDestination(isAnonymous: Boolean): String =
+        if (isAnonymous) Routes.SETTINGS_ACCOUNT_STATUS else Routes.SETTINGS_SUBSCRIPTIONS
+
+    /**
      * Filters and sorts [NavigationProvider]s to only include tabs that should
      * be visible given the current group-selection state.
      *

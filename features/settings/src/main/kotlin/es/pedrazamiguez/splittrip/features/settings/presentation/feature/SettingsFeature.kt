@@ -102,7 +102,9 @@ fun SettingsFeature(
             onSubscriptionsClick = { navController.navigate(Routes.SETTINGS_SUBSCRIPTIONS) },
             onAccountSecurityClick = { navController.navigate(Routes.SETTINGS_SECURITY) },
             onNotificationsClick = {
-                if (hasPermission) {
+                if (isAnonymous) {
+                    navController.navigate(Routes.SETTINGS_ACCOUNT_STATUS)
+                } else if (hasPermission) {
                     navController.navigate(Routes.SETTINGS_NOTIFICATIONS)
                 } else {
                     requestPermission()
@@ -157,7 +159,8 @@ fun SettingsFeature(
                 val logs = settingsViewModel.getDiagnosticLogs()
                 clipboardManager.setText(AnnotatedString(logs))
                 pillController.showPill(diagnosticsCopiedMsg)
-            }
+            },
+            isAnonymous = isAnonymous
         )
     }
 

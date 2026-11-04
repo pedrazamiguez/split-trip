@@ -36,81 +36,101 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.model.SettingsS
  */
 fun buildSettingsSections(
     preferencesParams: SettingsPreferencesParams,
-    onServicesTestClick: () -> Unit
+    onServicesTestClick: () -> Unit,
+    isAnonymous: Boolean = false
 ): List<SettingsSectionModel> = listOf(
-    accountSection(preferencesParams),
-    preferencesSection(preferencesParams),
+    accountSection(preferencesParams, isAnonymous),
+    preferencesSection(preferencesParams, isAnonymous),
     developerSection(onServicesTestClick = onServicesTestClick),
     supportSection(preferencesParams),
     aboutSection(preferencesParams)
 )
 
-private fun accountSection(params: SettingsPreferencesParams) = SettingsSectionModel(
+private fun accountSection(params: SettingsPreferencesParams, isAnonymous: Boolean = false) = SettingsSectionModel(
     titleRes = R.string.settings_section_account,
-    items = listOf(
-        SettingsItemModel.Standard(
-            icon = TablerIcons.Outline.InfoCircle,
-            titleRes = R.string.settings_account_status_title,
-            descriptionRes = R.string.settings_account_status_description,
-            onClick = params.onAccountStatusClick
-        ),
-        SettingsItemModel.Standard(
-            icon = TablerIcons.Outline.CreditCard,
-            titleRes = R.string.settings_account_subscriptions_title,
-            descriptionRes = R.string.settings_account_subscriptions_description,
-            onClick = params.onSubscriptionsClick
-        ),
-        SettingsItemModel.Standard(
-            icon = TablerIcons.Outline.Shield,
-            titleRes = R.string.settings_account_security_title,
-            descriptionRes = R.string.settings_account_security_description,
-            onClick = params.onAccountSecurityClick
+    items = buildList {
+        add(
+            SettingsItemModel.Standard(
+                icon = TablerIcons.Outline.InfoCircle,
+                titleRes = R.string.settings_account_status_title,
+                descriptionRes = R.string.settings_account_status_description,
+                onClick = params.onAccountStatusClick
+            )
         )
-    )
+        if (!isAnonymous) {
+            add(
+                SettingsItemModel.Standard(
+                    icon = TablerIcons.Outline.CreditCard,
+                    titleRes = R.string.settings_account_subscriptions_title,
+                    descriptionRes = R.string.settings_account_subscriptions_description,
+                    onClick = params.onSubscriptionsClick
+                )
+            )
+        }
+        add(
+            SettingsItemModel.Standard(
+                icon = TablerIcons.Outline.Shield,
+                titleRes = R.string.settings_account_security_title,
+                descriptionRes = R.string.settings_account_security_description,
+                onClick = params.onAccountSecurityClick
+            )
+        )
+    }
 )
 
 private fun preferencesSection(
-    params: SettingsPreferencesParams
+    params: SettingsPreferencesParams,
+    isAnonymous: Boolean = false
 ) = SettingsSectionModel(
     titleRes = R.string.settings_section_preferences,
-    items = listOf(
-        SettingsItemModel.WithCustomDescription(
-            icon = TablerIcons.Outline.MoonStars,
-            titleRes = R.string.settings_preferences_theme_title,
-            onClick = params.onThemeClick,
-            descriptionContent = {
-                ThemeDescription(params.currentThemeCode)
-            }
-        ),
-        SettingsItemModel.WithCustomDescription(
-            icon = TablerIcons.Outline.Language,
-            titleRes = R.string.settings_preferences_language_title,
-            onClick = params.onLanguageClick,
-            descriptionContent = {
-                LanguageDescription(params.currentLanguageCode)
-            }
-        ),
-        SettingsItemModel.WithTrailing(
-            icon = TablerIcons.Outline.Bell,
-            titleRes = R.string.settings_preferences_notifications_title,
-            descriptionRes = R.string.settings_preferences_notifications_description,
-            onClick = params.onNotificationsClick,
-            trailingContent = {
-                Switch(
-                    checked = params.hasNotificationPermission,
-                    onCheckedChange = { params.onNotificationSwitchToggle() }
-                )
-            }
-        ),
-        SettingsItemModel.WithCustomDescription(
-            icon = TablerIcons.Outline.CurrencyEuro,
-            titleRes = R.string.settings_preferences_currency_title,
-            onClick = params.onDefaultCurrencyClick,
-            descriptionContent = {
-                CurrencyDescription(params.currentCurrency)
-            }
+    items = buildList {
+        add(
+            SettingsItemModel.WithCustomDescription(
+                icon = TablerIcons.Outline.MoonStars,
+                titleRes = R.string.settings_preferences_theme_title,
+                onClick = params.onThemeClick,
+                descriptionContent = {
+                    ThemeDescription(params.currentThemeCode)
+                }
+            )
         )
-    )
+        add(
+            SettingsItemModel.WithCustomDescription(
+                icon = TablerIcons.Outline.Language,
+                titleRes = R.string.settings_preferences_language_title,
+                onClick = params.onLanguageClick,
+                descriptionContent = {
+                    LanguageDescription(params.currentLanguageCode)
+                }
+            )
+        )
+        if (!isAnonymous) {
+            add(
+                SettingsItemModel.WithTrailing(
+                    icon = TablerIcons.Outline.Bell,
+                    titleRes = R.string.settings_preferences_notifications_title,
+                    descriptionRes = R.string.settings_preferences_notifications_description,
+                    onClick = params.onNotificationsClick,
+                    trailingContent = {
+                        Switch(
+                            checked = params.hasNotificationPermission,
+                            onCheckedChange = { params.onNotificationSwitchToggle() }
+                        )
+                    }
+                )
+            )
+        }
+        add(
+            SettingsItemModel.WithCustomDescription(
+                icon = TablerIcons.Outline.CurrencyEuro,
+                titleRes = R.string.settings_preferences_currency_title,
+                onClick = params.onDefaultCurrencyClick,
+                descriptionContent = {
+                    CurrencyDescription(params.currentCurrency)
+                }
+            )
+        )
+    }
 )
 
 private fun developerSection(onServicesTestClick: () -> Unit) = SettingsSectionModel(

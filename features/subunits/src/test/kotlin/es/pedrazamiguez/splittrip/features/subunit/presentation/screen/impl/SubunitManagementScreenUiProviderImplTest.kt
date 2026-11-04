@@ -1,9 +1,12 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.screen.impl
 
+import androidx.navigation.NavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -13,10 +16,12 @@ class SubunitManagementScreenUiProviderImplTest {
 
     private val observeSelectedGroupUseCase: ObserveSelectedGroupUseCase = mockk()
     private val featureGateService: FeatureGateService = mockk()
+    private val upgradeNavigator: UpgradeNavigator = mockk(relaxed = true)
 
     private val uiProvider = SubunitManagementScreenUiProviderImpl(
         observeSelectedGroupUseCase = observeSelectedGroupUseCase,
-        featureGateService = featureGateService
+        featureGateService = featureGateService,
+        upgradeNavigator = upgradeNavigator
     )
 
     @Test
@@ -29,6 +34,7 @@ class SubunitManagementScreenUiProviderImplTest {
         val customRouteProvider = SubunitManagementScreenUiProviderImpl(
             observeSelectedGroupUseCase = observeSelectedGroupUseCase,
             featureGateService = featureGateService,
+            upgradeNavigator = upgradeNavigator,
             route = "custom_route"
         )
         assertEquals("custom_route", customRouteProvider.route)
@@ -111,5 +117,25 @@ class SubunitManagementScreenUiProviderImplTest {
     @Test
     fun `shouldShowProBadge returns false when user is pro even if creation disabled`() {
         assertFalse(uiProvider.shouldShowProBadge(isSubunitCreationEnabled = false, isActingUserPro = true))
+    }
+
+    @Test
+    fun `handleMainActionClick navigates to upgrade when creation disabled and user is not pro`() {
+        val mockNavController = mockk<NavController>(relaxed = true)
+        val navigateToSubscriptions = {
+            upgradeNavigator.navigateToUpgrade(mockNavController)
+        }
+
+        uiProvider.handleMainActionClick(
+            isSubunitCreationEnabled = false,
+            isActingUserPro = false,
+            groupId = "group-1",
+            proRequiredMessage = "Pro required",
+            navigateToCreate = {},
+            navigateToSubscriptions = navigateToSubscriptions,
+            showNotification = {}
+        )
+
+        verify(exactly = 1) { upgradeNavigator.navigateToUpgrade(mockNavController) }
     }
 }

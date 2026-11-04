@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersPlus
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
@@ -31,6 +32,7 @@ class GroupsScreenUiProviderImpl(
     private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
     private val authenticationService: AuthenticationService,
     private val featureGateService: FeatureGateService,
+    private val upgradeNavigator: UpgradeNavigator,
     override val route: String = Routes.GROUPS
 ) : ScreenUiProvider {
 
@@ -82,7 +84,7 @@ class GroupsScreenUiProviderImpl(
                         isActingUserPro = isActingUserPro,
                         limitReachedMessage = limitReachedMessage,
                         navigateToCreateGroup = { tabNavController.navigate(Routes.CREATE_GROUP) },
-                        navigateToSubscriptions = { rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS) },
+                        navigateToSubscriptions = { upgradeNavigator.navigateToUpgrade(rootNavController) },
                         showNotification = { message -> pillController.showPill(message.asString(context)) }
                     )
                 },

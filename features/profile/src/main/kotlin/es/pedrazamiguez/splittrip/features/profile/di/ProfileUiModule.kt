@@ -49,6 +49,9 @@ val profileUiModule = module {
         )
     }
 
-    single { ProfileScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single {
+        val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
+        ProfileScreenUiProviderImpl(isUserAnonymousUseCase = isUserAnonymousUseCase)
+    } bind ScreenUiProvider::class
     single { EditProfileScreenUiProviderImpl() } bind ScreenUiProvider::class
 }
