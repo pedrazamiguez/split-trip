@@ -1,10 +1,10 @@
 package es.pedrazamiguez.splittrip.domain.enums
 
 enum class AddOnType {
-    TIP,
     FEE,
-    DISCOUNT,
-    SURCHARGE;
+    SURCHARGE,
+    TIP,
+    DISCOUNT;
 
     companion object {
         fun fromString(type: String): AddOnType = entries.find {

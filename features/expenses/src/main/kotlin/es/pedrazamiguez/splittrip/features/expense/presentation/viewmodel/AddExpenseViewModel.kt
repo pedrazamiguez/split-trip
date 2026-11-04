@@ -391,8 +391,8 @@ class AddExpenseViewModel(
                     event.amount
                 )
 
-            is AddExpenseUiEvent.AddOnsSectionToggled ->
-                addOnEventHandler.handleSectionToggled()
+            is AddExpenseUiEvent.AddOnExpandedToggled ->
+                addOnEventHandler.handleExpandedToggled(event.addOnId)
 
             // ── Conflict Resolution ──────────────────────────────────────
             is AddExpenseUiEvent.ResolutionAmountSelected ->

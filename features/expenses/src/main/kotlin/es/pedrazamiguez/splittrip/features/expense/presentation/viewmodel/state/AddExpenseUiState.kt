@@ -159,7 +159,6 @@ data class AddExpenseUiState(
 
     // Add-On Configuration
     val addOns: ImmutableList<AddOnUiModel> = persistentListOf(),
-    val isAddOnsSectionExpanded: Boolean = false,
     val addOnError: UiText? = null,
     /** Formatted effective total (base + ON_TOP add-ons − discounts) for display. */
     val effectiveTotal: String = "",

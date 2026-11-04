@@ -259,8 +259,26 @@
     <string name="add_expense_add_on_base_cost">Base cost: %1$s</string>
     <string name="add_expense_add_ons_expand">Expand add-ons</string>
     <string name="add_expense_add_ons_collapse">Collapse add-ons</string>
+    <string name="add_expense_add_on_item_expand">Expand extra</string>
+    <string name="add_expense_add_on_item_collapse">Collapse extra</string>
     <string name="add_expense_add_on_error_amount">Add-on amount must be greater than zero</string>
     <string name="add_expense_add_on_error_included_exceeds">Included amount must be less than the expense</string>
+
+    <!-- Add-ons Step Subtitles -->
+    <string name="add_expense_add_on_type_title">Extra type</string>
+    <string name="add_expense_add_on_mode_title">How does it affect the amount?</string>
+    <string name="add_expense_add_on_value_type_title">How is it calculated?</string>
+
+    <!-- Add-ons Dynamic Guidance -->
+    <string name="add_expense_add_on_mode_on_top_desc">Charged on top of the expense amount, increasing the total paid.</string>
+    <string name="add_expense_add_on_mode_on_top_discount_desc">Subtracted from the expense amount, reducing the total paid.</string>
+    <string name="add_expense_add_on_mode_included_desc">Already included in the entered amount; broken down from the base cost without changing the total paid.</string>
+    <string name="add_expense_add_on_value_type_exact_desc">An exact fixed amount</string>
+    <string name="add_expense_add_on_value_type_percentage_desc">Calculated as a percentage of the expense amount</string>
+    <string name="add_expense_add_on_value_type_percentage_resolved_desc">Calculated as a percentage of the expense amount (%1$s = %2$s)</string>
+
+    <!-- Add-ons Impact Breakdown -->
+    <string name="add_expense_impact_entered_amount">Entered amount</string>
 
     
     <string name="funding_source_title">Paid from</string>

@@ -7,7 +7,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.addon.AddOnItemCard
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.addon.AddOnItemEditor
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.addon.AddOnsImpactSummaryCard
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.addon.AddOnsSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
@@ -66,8 +68,7 @@ private fun AddOnsSectionEmptyPreview() {
     PreviewThemeWrapper {
         AddOnsSection(
             uiState = AddExpenseUiState(
-                addOns = persistentListOf(),
-                isAddOnsSectionExpanded = false
+                addOns = persistentListOf()
             ),
             onEvent = {}
         )
@@ -81,7 +82,6 @@ private fun AddOnsSectionWithItemsPreview() {
         AddOnsSection(
             uiState = AddExpenseUiState(
                 addOns = persistentListOf(PREVIEW_ADDON_PERCENTAGE, PREVIEW_ADDON_EXACT),
-                isAddOnsSectionExpanded = true,
                 effectiveTotal = "55.00 €",
                 includedBaseCost = "50.00 €",
                 availableCurrencies = persistentListOf(PREVIEW_CURRENCY_EUR, PREVIEW_CURRENCY_USD),
@@ -103,7 +103,6 @@ private fun AddOnItemEditorPercentagePreview() {
             paymentMethods = persistentListOf(PREVIEW_PAYMENT_METHOD_CARD, PREVIEW_PAYMENT_METHOD_CASH),
             showCurrencySelector = true,
             onEvent = {},
-            onRemove = {},
             groupCurrency = PREVIEW_CURRENCY_EUR
         )
     }
@@ -119,8 +118,59 @@ private fun AddOnItemEditorExactPreview() {
             paymentMethods = persistentListOf(PREVIEW_PAYMENT_METHOD_CARD, PREVIEW_PAYMENT_METHOD_CASH),
             showCurrencySelector = true,
             onEvent = {},
-            onRemove = {},
             groupCurrency = PREVIEW_CURRENCY_EUR
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun AddOnItemCardCollapsedPreview() {
+    PreviewThemeWrapper {
+        AddOnItemCard(
+            addOn = PREVIEW_ADDON_EXACT.copy(isExpanded = false, formattedAmount = "5,00 €"),
+            availableCurrencies = persistentListOf(PREVIEW_CURRENCY_EUR, PREVIEW_CURRENCY_USD),
+            paymentMethods = persistentListOf(PREVIEW_PAYMENT_METHOD_CARD, PREVIEW_PAYMENT_METHOD_CASH),
+            showCurrencySelector = true,
+            onEvent = {},
+            onRemove = {},
+            onToggleExpand = {},
+            groupCurrency = PREVIEW_CURRENCY_EUR
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun AddOnItemCardExpandedPreview() {
+    PreviewThemeWrapper {
+        AddOnItemCard(
+            addOn = PREVIEW_ADDON_EXACT.copy(isExpanded = true, formattedAmount = "5,00 €"),
+            availableCurrencies = persistentListOf(PREVIEW_CURRENCY_EUR, PREVIEW_CURRENCY_USD),
+            paymentMethods = persistentListOf(PREVIEW_PAYMENT_METHOD_CARD, PREVIEW_PAYMENT_METHOD_CASH),
+            showCurrencySelector = true,
+            onEvent = {},
+            onRemove = {},
+            onToggleExpand = {},
+            groupCurrency = PREVIEW_CURRENCY_EUR
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun AddOnsImpactSummaryCardPreview() {
+    PreviewThemeWrapper {
+        AddOnsImpactSummaryCard(
+            uiState = AddExpenseUiState(
+                addOns = persistentListOf(
+                    PREVIEW_ADDON_PERCENTAGE.copy(resolvedAmountCents = 250L, formattedAmount = "2,50 €"),
+                    PREVIEW_ADDON_EXACT.copy(resolvedAmountCents = 500L, formattedAmount = "5,00 €")
+                ),
+                effectiveTotal = "57.50 €",
+                includedBaseCost = "50.00 €",
+                groupCurrency = PREVIEW_CURRENCY_EUR
+            )
         )
     }
 }

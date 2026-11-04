@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ConfigEventHandler
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -27,7 +28,8 @@ class ExpenseFlowStrategyFactoryTest {
             getContributionByExpenseIdUseCase = mockk<GetContributionByExpenseIdUseCase>(relaxed = true),
             addExpenseUiMapper = mockk<AddExpenseUiMapper>(relaxed = true),
             getMemberProfilesUseCase = mockk<GetMemberProfilesUseCase>(relaxed = true),
-            getGroupSubunitsUseCase = mockk<GetGroupSubunitsUseCase>(relaxed = true)
+            getGroupSubunitsUseCase = mockk<GetGroupSubunitsUseCase>(relaxed = true),
+            addOnEventHandler = mockk<AddOnEventHandler>(relaxed = true)
         )
     }
 

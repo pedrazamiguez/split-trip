@@ -100,10 +100,11 @@ class ConfigEventHandlerTest {
         val splitPreviewService = SplitPreviewServiceImpl()
         val remainderDistributionService = RemainderDistributionServiceImpl()
 
+        val formattingHelper = FormattingHelper(localeProvider)
         val userUiMapper = mockk<UserUiMapper>(relaxed = true)
         val addExpenseSplitMapper = AddExpenseSplitUiMapper(
             localeProvider,
-            FormattingHelper(localeProvider),
+            formattingHelper,
             splitPreviewService,
             EntitySplitFlattenDelegate(splitPreviewService, remainderDistributionService),
             userUiMapper
@@ -116,7 +117,8 @@ class ConfigEventHandlerTest {
             addOnMapper = AddExpenseAddOnUiMapper(),
             splitPreviewService = splitPreviewService,
             addExpenseOptionsUiMapper = addExpenseOptionsMapper,
-            remainderDistributionService = remainderDistributionService
+            remainderDistributionService = remainderDistributionService,
+            formattingHelper = formattingHelper
         )
 
         receiptExtractionService = mockk(relaxed = true)

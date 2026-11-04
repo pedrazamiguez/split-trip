@@ -106,7 +106,6 @@ private fun AddExpenseScreenOnTopAddOnPreview() {
                         amountInput = "20"
                     )
                 ),
-                isAddOnsSectionExpanded = true,
                 effectiveTotal = "€96.00"
             )
         )
@@ -136,7 +135,6 @@ private fun AddExpenseScreenIncludedAddOnPreview() {
                         amountInput = "20"
                     )
                 ),
-                isAddOnsSectionExpanded = true,
                 includedBaseCost = "€66.67"
             )
         )

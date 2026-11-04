@@ -132,7 +132,8 @@ val expensesUiModule = module {
             addOnMapper = get<AddExpenseAddOnUiMapper>(),
             splitPreviewService = get<SplitPreviewService>(),
             addExpenseOptionsUiMapper = get<AddExpenseOptionsUiMapper>(),
-            remainderDistributionService = get<RemainderDistributionService>()
+            remainderDistributionService = get<RemainderDistributionService>(),
+            formattingHelper = get<FormattingHelper>()
         )
     }
 
@@ -285,7 +286,6 @@ val expensesUiModule = module {
             expenseCalculatorService = get<ExpenseCalculatorService>(),
             splitPreviewService = get<SplitPreviewService>(),
             formattingHelper = formattingHelper,
-            addExpenseOptionsMapper = addExpenseOptionsUiMapper,
             exchangeRateDelegate = addOnExchangeRateDelegate,
             addOnCrudDelegate = addOnCrudDelegate
         )
@@ -312,7 +312,8 @@ val expensesUiModule = module {
             getContributionByExpenseIdUseCase = get<GetContributionByExpenseIdUseCase>(),
             addExpenseUiMapper = addExpenseUiMapper,
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
-            getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>()
+            getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),
+            addOnEventHandler = addOnEventHandler
         )
 
         AddExpenseViewModel(

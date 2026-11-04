@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
@@ -58,7 +59,8 @@ class AddExpenseUiMapper(
     private val addOnMapper: AddExpenseAddOnUiMapper,
     private val splitPreviewService: SplitPreviewService,
     private val addExpenseOptionsUiMapper: AddExpenseOptionsUiMapper,
-    private val remainderDistributionService: RemainderDistributionService
+    private val remainderDistributionService: RemainderDistributionService,
+    private val formattingHelper: FormattingHelper
 ) {
 
     // ── Date Formatting ────────────────────────────────────────────────────
@@ -359,6 +361,22 @@ class AddExpenseUiMapper(
                 decimalDigits = addOnDecimalDigits
             )
             val resolvedGroupCents = resolveAddOnGroupAmountCents(addOn)
+            val groupCurrencyUiModel = availableCurrencies.find { it.code == groupCurrency }
+            val exchangeRateLabel = if (isAddOnForeign && groupCurrencyUiModel != null && currencyUiModel != null) {
+                addExpenseOptionsUiMapper.buildExchangeRateLabel(groupCurrencyUiModel, currencyUiModel)
+            } else {
+                ""
+            }
+            val groupAmountLabel = if (isAddOnForeign && groupCurrencyUiModel != null) {
+                addExpenseOptionsUiMapper.buildGroupAmountLabel(groupCurrencyUiModel)
+            } else {
+                ""
+            }
+            val formattedAmount = if (resolvedGroupCents > 0L && groupCurrency != null) {
+                formattingHelper.formatCentsWithCurrency(resolvedGroupCents, groupCurrency)
+            } else {
+                ""
+            }
 
             AddOnUiModel(
                 id = addOn.id,
@@ -371,12 +389,16 @@ class AddExpenseUiMapper(
                 displayExchangeRate = addOnDisplayRate,
                 showExchangeRateSection = isAddOnForeign,
                 isExchangeRateLocked = addOn.paymentMethod == PaymentMethod.CASH && isAddOnForeign,
+                exchangeRateLabel = exchangeRateLabel,
+                groupAmountLabel = groupAmountLabel,
                 calculatedGroupAmount = BigDecimal(
                     resolvedGroupCents
                 ).movePointLeft(groupDecimalDigits).toPlainString(),
                 groupAmountCents = resolvedGroupCents,
                 paymentMethod = paymentMethodUiModel,
-                description = addOn.description ?: ""
+                description = addOn.description ?: "",
+                isExpanded = false,
+                formattedAmount = formattedAmount
             )
         }
     }

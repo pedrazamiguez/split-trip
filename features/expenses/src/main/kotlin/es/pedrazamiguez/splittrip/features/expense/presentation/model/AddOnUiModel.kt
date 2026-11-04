@@ -86,5 +86,11 @@ data class AddOnUiModel(
     val description: String = "",
 
     /** Whether the amount input is valid. */
-    val isAmountValid: Boolean = true
+    val isAmountValid: Boolean = true,
+
+    /** Whether this add-on card is expanded in the UI. */
+    val isExpanded: Boolean = false,
+
+    /** Pre-formatted amount string in group currency for display in summary cards. */
+    val formattedAmount: String = ""
 )

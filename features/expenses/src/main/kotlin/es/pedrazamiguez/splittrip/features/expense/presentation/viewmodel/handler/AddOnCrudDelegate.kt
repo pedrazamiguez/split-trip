@@ -1,9 +1,12 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
+import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
+import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
@@ -49,12 +52,85 @@ class AddOnCrudDelegate(
             displayExchangeRate = if (isForeign) state.displayExchangeRate else "1.0",
             isExchangeRateLocked = shouldLockRate,
             isInsufficientCash = false,
+            isExpanded = true,
             exchangeRateLockedHint = if (shouldLockRate) {
                 UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
             } else {
                 null
             }
         )
+    }
+
+    /**
+     * Collapses all add-ons except the one with [expandedId], which is expanded.
+     */
+    fun collapseAllExcept(addOns: List<AddOnUiModel>, expandedId: String): List<AddOnUiModel> =
+        addOns.map { addOn ->
+            addOn.copy(isExpanded = addOn.id == expandedId)
+        }
+
+    /**
+     * Toggles expansion of [targetId] while ensuring all other add-on items are collapsed.
+     */
+    fun toggleItemExpansion(addOns: List<AddOnUiModel>, targetId: String): List<AddOnUiModel> =
+        addOns.map { addOn ->
+            if (addOn.id == targetId) {
+                addOn.copy(isExpanded = !addOn.isExpanded)
+            } else {
+                addOn.copy(isExpanded = false)
+            }
+        }
+
+    /**
+     * Derives the formatted base cost when INCLUDED add-ons are present.
+     */
+    fun computeIncludedBaseCostDisplay(
+        addOns: List<AddOnUiModel>,
+        groupAmountCents: Long,
+        groupCurrency: CurrencyUiModel,
+        addOnCalculationService: AddOnCalculationService,
+        formattingHelper: FormattingHelper
+    ): String {
+        val includedAddOns = addOns.filter { it.mode == AddOnMode.INCLUDED }
+        if (includedAddOns.isEmpty() || groupAmountCents <= 0) return ""
+
+        val (discountAddOns, nonDiscountAddOns) = includedAddOns.partition {
+            it.type == AddOnType.DISCOUNT
+        }
+
+        val includedExactCents = nonDiscountAddOns
+            .filter { it.valueType == AddOnValueType.EXACT }
+            .sumOf { it.groupAmountCents }
+
+        val includedExactDiscountCents = discountAddOns
+            .filter { it.valueType == AddOnValueType.EXACT }
+            .sumOf { it.groupAmountCents }
+
+        val totalIncludedPercentage = addOnCalculationService.sumPercentagesFromInputs(
+            nonDiscountAddOns
+                .filter { it.valueType == AddOnValueType.PERCENTAGE }
+                .map { it.amountInput }
+        )
+
+        val totalIncludedDiscountPercentage = addOnCalculationService.sumPercentagesFromInputs(
+            discountAddOns
+                .filter { it.valueType == AddOnValueType.PERCENTAGE }
+                .map { it.amountInput }
+        )
+
+        val baseCostCents = addOnCalculationService.calculateIncludedBaseCost(
+            totalAmountCents = groupAmountCents,
+            includedExactCents = includedExactCents,
+            totalIncludedPercentage = totalIncludedPercentage,
+            includedExactDiscountCents = includedExactDiscountCents,
+            totalIncludedDiscountPercentage = totalIncludedDiscountPercentage
+        )
+
+        return if (baseCostCents > 0 && baseCostCents != groupAmountCents) {
+            formattingHelper.formatCentsWithCurrency(baseCostCents, groupCurrency.code)
+        } else {
+            ""
+        }
     }
 
     /**
