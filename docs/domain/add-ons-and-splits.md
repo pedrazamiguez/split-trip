@@ -454,8 +454,7 @@ The `AddExpenseUiState` carries add-on-related display state:
 
 | Field | Purpose |
 |---|---|
-| `addOns: ImmutableList<AddOnUiModel>` | The list of add-ons in the form |
-| `isAddOnsSectionExpanded: Boolean` | Collapsible section toggle |
+| `addOns: ImmutableList<AddOnUiModel>` | The list of add-ons in the form (each carrying `isExpanded: Boolean` for per-item progressive disclosure) |
 | `effectiveTotal: String` | Formatted effective amount (shown when add-ons modify the base) |
 | `includedBaseCost: String` | Formatted derived base cost (shown when INCLUDED add-ons are present) |
 | `addOnError: UiText?` | Validation error message for the add-on section |

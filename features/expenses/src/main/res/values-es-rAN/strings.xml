@@ -223,8 +223,20 @@
     <string name="add_expense_add_on_base_cost">Côtte baçe: %1$s</string>
     <string name="add_expense_add_ons_expand">Êppandîh êttrâ</string>
     <string name="add_expense_add_ons_collapse">Contraêh êttrâ</string>
+    <string name="add_expense_add_on_item_expand">Êppandîh êttra</string>
+    <string name="add_expense_add_on_item_collapse">Contraêh êttra</string>
     <string name="add_expense_add_on_error_amount">El importe del êttra debe çêh mayôh que çero</string>
     <string name="add_expense_add_on_error_included_exceeds">El importe incluío debe çêh menôh que er gâtto</string>
+    <string name="add_expense_add_on_type_title">Tipo de êttra</string>
+    <string name="add_expense_add_on_mode_title">¿Cómo afêtta al importe?</string>
+    <string name="add_expense_add_on_value_type_title">¿Cómo çe carcula?</string>
+    <string name="add_expense_add_on_mode_on_top_desc">Çe çuma al importe der gâtto, aumentando er totâh pagao.</string>
+    <string name="add_expense_add_on_mode_on_top_discount_desc">Çe rêtta del importe der gâtto, reduçiendo er totâh pagao.</string>
+    <string name="add_expense_add_on_mode_included_desc">Ya êttá incluío en el importe introduçío; çe dêggloça der côtte baçe çin cambiâh er totâh pagao.</string>
+    <string name="add_expense_add_on_value_type_exact_desc">Una cantidá fiha êççâtta</string>
+    <string name="add_expense_add_on_value_type_percentage_desc">Carculao como un porçentahe del importe der gâtto</string>
+    <string name="add_expense_add_on_value_type_percentage_resolved_desc">Carculao como un porçentahe del importe der gâtto (%1$s = %2$s)</string>
+    <string name="add_expense_impact_entered_amount">Importe introduçío</string>
     <string name="funding_source_title">Pagao dêdde</string>
     <string name="funding_source_group_pocket">Pockêh der grupo</string>
     <string name="funding_source_my_money">Mi dinero</string>
