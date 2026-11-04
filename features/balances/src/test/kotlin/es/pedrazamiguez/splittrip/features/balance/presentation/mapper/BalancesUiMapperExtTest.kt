@@ -216,17 +216,17 @@ class BalancesUiMapperExtTest {
         }
 
         @Test
-        fun `returns agent pronoun when createdBy equals currentUserId`() {
+        fun `returns prepositional pronoun when createdBy equals currentUserId`() {
             every {
                 userUiMapper.mapToSelfIdentification(
-                    SelfIdentificationContextEnum.AGENT,
+                    SelfIdentificationContextEnum.PREPOSITIONAL,
                     GrammaticalGenderEnum.FEMININE
                 )
-            } returns "by you"
+            } returns "you"
 
             val result = resolveCreatedByDisplayName("user-1", "user-2", userProfiles, "user-1", userUiMapper)
 
-            assertEquals("by you", result)
+            assertEquals("you", result)
         }
 
         @Test
