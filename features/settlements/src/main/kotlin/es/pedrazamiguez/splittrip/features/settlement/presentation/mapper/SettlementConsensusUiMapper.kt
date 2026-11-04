@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.EphemeralSettlementIdHelper
 import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.ConsensusChipStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
@@ -96,12 +97,17 @@ class SettlementConsensusUiMapper(
         )
 
         val isCreditor = primaryRecord.settlement.toUserId == currentUserId
+        val isSuggested = primaryRecord.status == SettlementStatus.SUGGESTED ||
+            EphemeralSettlementIdHelper.isEphemeral(primaryRecord.id)
+        val canNudge = isCreditor && !isCash && !isSuggested
+
         val nudgeInfo = resolveNudgeInfo(
             records = records,
             nudgeTimestamps = nudgeTimestamps,
             rateLimitHours = rateLimitHours,
             currentTimeMillis = currentTimeMillis,
-            isCash = isCash
+            isCash = isCash,
+            isSuggested = isSuggested
         )
 
         val statusDetails = resolveStatusDetails(primaryRecord.status)
@@ -121,7 +127,7 @@ class SettlementConsensusUiMapper(
             canDispute = actions.canDispute,
             disputeReason = primaryRecord.disputeReason,
             status = primaryRecord.status,
-            canNudge = isCreditor && !isCash,
+            canNudge = canNudge,
             isNudgeRateLimited = nudgeInfo.first,
             nudgeButtonLabel = nudgeInfo.second
         )
@@ -171,17 +177,19 @@ class SettlementConsensusUiMapper(
         nudgeTimestamps: Map<String, Long>,
         rateLimitHours: Long,
         currentTimeMillis: Long,
-        isCash: Boolean
+        isCash: Boolean,
+        isSuggested: Boolean = false
     ): Pair<Boolean, String> {
+        if (isCash || isSuggested) {
+            return Pair(true, "")
+        }
         val lastNudgeTs = records.maxOfOrNull { nudgeTimestamps[it.id] ?: 0L } ?: 0L
         val rateLimitMillis = rateLimitHours * MILLIS_PER_HOUR
-        val isNudgeRateLimited = isCash || (lastNudgeTs > 0 && (currentTimeMillis - lastNudgeTs) < rateLimitMillis)
-        val nudgeButtonLabel = if (isNudgeRateLimited && !isCash) {
+        val isNudgeRateLimited = lastNudgeTs > 0 && (currentTimeMillis - lastNudgeTs) < rateLimitMillis
+        val nudgeButtonLabel = if (isNudgeRateLimited) {
             resourceProvider.getString(R.string.your_balance_settlement_reminded)
-        } else if (!isCash) {
-            resourceProvider.getString(R.string.your_balance_settlement_remind)
         } else {
-            ""
+            resourceProvider.getString(R.string.your_balance_settlement_remind)
         }
         return Pair(isNudgeRateLimited, nudgeButtonLabel)
     }

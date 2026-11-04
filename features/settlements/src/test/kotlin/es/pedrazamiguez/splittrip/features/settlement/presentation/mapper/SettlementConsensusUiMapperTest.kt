@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.EphemeralSettlementIdHelper
 import es.pedrazamiguez.splittrip.features.settlement.R
 import io.mockk.every
 import io.mockk.mockk
@@ -280,7 +281,7 @@ class SettlementConsensusUiMapperTest {
 
     @Test
     fun `toConsensusItems_whenUserIsCreditorAndNotRateLimited_setsCanNudgeTrueAndIsRateLimitedFalse`() {
-        val record = createRecord("s1", "debtor1", "creditor1")
+        val record = createRecord("s1", "debtor1", "creditor1", status = SettlementStatus.CONFIRMED_BY_PAYER)
         val now = 100_000_000L
 
         val result = mapper.toConsensusItems(
@@ -301,7 +302,7 @@ class SettlementConsensusUiMapperTest {
 
     @Test
     fun `toConsensusItems_whenUserIsCreditorAndRateLimited_setsCanNudgeTrueAndIsRateLimitedTrue`() {
-        val record = createRecord("s1", "debtor1", "creditor1")
+        val record = createRecord("s1", "debtor1", "creditor1", status = SettlementStatus.CONFIRMED_BY_PAYER)
         val now = 100_000_000L
         val lastNudgeTs = now - (12 * 3600 * 1000L) // 12 hours ago (within 24h)
 
@@ -319,6 +320,52 @@ class SettlementConsensusUiMapperTest {
         assertTrue(item.canNudge)
         assertTrue(item.isNudgeRateLimited)
         assertEquals("Reminded", item.nudgeButtonLabel)
+    }
+
+    @Test
+    fun `toConsensusItems_whenStatusIsSuggested_setsCanNudgeFalseAndNoLabel`() {
+        val record = createRecord("s1", "debtor1", "creditor1", status = SettlementStatus.SUGGESTED)
+
+        val result = mapper.toConsensusItems(
+            settlements = listOf(record),
+            currentUserId = "creditor1",
+            groupCreatorId = "creator1",
+            memberProfiles = emptyMap()
+        )
+
+        val item = result[0]
+        assertFalse(item.canNudge)
+        assertTrue(item.isNudgeRateLimited)
+        assertEquals("", item.nudgeButtonLabel)
+    }
+
+    @Test
+    fun `toConsensusItems_whenRecordIsEphemeral_setsCanNudgeFalse`() {
+        val ephemeralId = EphemeralSettlementIdHelper.createId(
+            fromUserId = "debtor1",
+            toUserId = "creditor1",
+            sourcePocket = SettlementPocketType.POCKET,
+            currency = "EUR",
+            amount = 2500L
+        )
+        val record = createRecord(
+            id = ephemeralId,
+            fromUserId = "debtor1",
+            toUserId = "creditor1",
+            status = SettlementStatus.CONFIRMED_BY_PAYER
+        )
+
+        val result = mapper.toConsensusItems(
+            settlements = listOf(record),
+            currentUserId = "creditor1",
+            groupCreatorId = "creator1",
+            memberProfiles = emptyMap()
+        )
+
+        val item = result[0]
+        assertFalse(item.canNudge)
+        assertTrue(item.isNudgeRateLimited)
+        assertEquals("", item.nudgeButtonLabel)
     }
 
     @Test
