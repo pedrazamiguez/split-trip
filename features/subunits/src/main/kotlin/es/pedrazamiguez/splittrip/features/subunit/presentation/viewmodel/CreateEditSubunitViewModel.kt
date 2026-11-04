@@ -62,7 +62,7 @@ import timber.log.Timber
  * [SubunitUiMapper] (locale-aware display).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "TooManyFunctions")
 class CreateEditSubunitViewModel(
     private val createSubunitUseCase: CreateSubunitUseCase,
     private val updateSubunitUseCase: UpdateSubunitUseCase,
@@ -195,34 +195,39 @@ class CreateEditSubunitViewModel(
 
     fun init(groupId: String, subunitId: String?) {
         val newParams = InitParams(groupId, subunitId)
-        if (newParams != _initParams.value) {
-            _initParams.value = newParams
-            if (subunitId == null) {
-                viewModelScope.launch {
-                    val isEnabled = featureGateService.isFeatureEnabled(
-                        feature = GatedFeature.SUBUNIT_CREATION,
-                        groupId = groupId
-                    ).first()
-                    if (!isEnabled) {
-                        _actions.emit(
-                            CreateEditSubunitUiAction.ShowError(
-                                UiText.StringResource(R.string.subunit_error_pro_required)
-                            )
-                        )
-                        if (!featureGateService.isActingUserPro().first()) {
-                            val action = if (authenticationService.isAnonymous()) {
-                                CreateEditSubunitUiAction.NavigateToAccountStatus
-                            } else {
-                                CreateEditSubunitUiAction.NavigateToSubscriptions
-                            }
-                            _actions.emit(action)
-                        }
-                        _actions.emit(CreateEditSubunitUiAction.NavigateBack)
-                    }
-                }
-            }
+        if (newParams == _initParams.value) return
+        _initParams.value = newParams
+        if (subunitId == null) {
+            validateCreationAllowedOnInit(groupId)
         }
     }
+
+    private fun validateCreationAllowedOnInit(groupId: String) {
+        viewModelScope.launch {
+            val isEnabled = featureGateService.isFeatureEnabled(
+                feature = GatedFeature.SUBUNIT_CREATION,
+                groupId = groupId
+            ).first()
+            if (isEnabled) return@launch
+
+            _actions.emit(
+                CreateEditSubunitUiAction.ShowError(
+                    UiText.StringResource(R.string.subunit_error_pro_required)
+                )
+            )
+            if (!featureGateService.isActingUserPro().first()) {
+                _actions.emit(getUpgradeDestination())
+            }
+            _actions.emit(CreateEditSubunitUiAction.NavigateBack)
+        }
+    }
+
+    private fun getUpgradeDestination(): CreateEditSubunitUiAction =
+        if (authenticationService.isAnonymous()) {
+            CreateEditSubunitUiAction.NavigateToAccountStatus
+        } else {
+            CreateEditSubunitUiAction.NavigateToSubscriptions
+        }
 
     fun onEvent(event: CreateEditSubunitUiEvent) {
         when (event) {
@@ -480,12 +485,7 @@ class CreateEditSubunitViewModel(
             )
             val isPro = featureGateService.isActingUserPro().first()
             if (!isPro) {
-                val action = if (authenticationService.isAnonymous()) {
-                    CreateEditSubunitUiAction.NavigateToAccountStatus
-                } else {
-                    CreateEditSubunitUiAction.NavigateToSubscriptions
-                }
-                _actions.emit(action)
+                _actions.emit(getUpgradeDestination())
             }
             return false
         }

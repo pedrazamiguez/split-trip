@@ -461,7 +461,7 @@ class CreateEditSubunitViewModelTest {
         }
 
         @Test
-        fun `save emits NavigateToAccountStatus when creation disabled and user is anonymous`() = runTest(
+        fun `save emits account status when creation disabled and anonymous`() = runTest(
             testDispatcher
         ) {
             setupDefaultMocks()
