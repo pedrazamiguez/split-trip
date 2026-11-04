@@ -80,7 +80,7 @@ fun AmountCurrencyCard(
                     }
                 ),
                 focusRequester = if (state.autoFocus) focusRequester else null,
-                moveCursorToEndOnFocus = state.autoFocus
+                moveCursorToEndOnFocus = true
             )
             CurrencySelectorField(
                 selectedCurrency = state.selectedCurrency,

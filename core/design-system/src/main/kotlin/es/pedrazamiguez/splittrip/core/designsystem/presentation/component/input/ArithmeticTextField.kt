@@ -14,9 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.rememberLocale
@@ -56,25 +58,27 @@ fun ArithmeticTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     onClick: (() -> Unit)? = null,
     focusRequester: FocusRequester? = null,
-    moveCursorToEndOnFocus: Boolean = false,
+    moveCursorToEndOnFocus: Boolean = true,
     focusable: Boolean = true,
     shape: Shape = OutlinedTextFieldDefaults.shape,
     colors: TextFieldColors = softFieldColors()
 ) {
     val fieldId = remember { Any() }
     var isFocused by remember { mutableStateOf(false) }
-    var expressionBuffer by remember { mutableStateOf(value) }
+    var textFieldValue by remember {
+        mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length)))
+    }
     var evaluationResult by remember { mutableStateOf<ExpressionResult?>(null) }
     val keyboardState = LocalArithmeticKeyboardState.current
     val locale = rememberLocale()
 
-    LaunchedEffect(expressionBuffer) {
-        evaluationResult = evaluator.evaluate(expressionBuffer)
+    LaunchedEffect(textFieldValue.text) {
+        evaluationResult = evaluator.evaluate(textFieldValue.text)
     }
 
     LaunchedEffect(value, isFocused) {
         if (!isFocused) {
-            expressionBuffer = value
+            textFieldValue = TextFieldValue(text = value, selection = TextRange(value.length))
         }
     }
 
@@ -84,9 +88,9 @@ fun ArithmeticTextField(
             val scaledValue = res.value.setScale(maxDecimalPlaces, RoundingMode.HALF_UP).stripTrailingZeros()
             val rawValue = scaledValue.toPlainString()
             onValueChange(rawValue)
-            expressionBuffer = rawValue
+            textFieldValue = TextFieldValue(text = rawValue, selection = TextRange(rawValue.length))
         } else {
-            onValueChange(expressionBuffer)
+            onValueChange(textFieldValue.text)
         }
     }
 
@@ -98,18 +102,31 @@ fun ArithmeticTextField(
         minDecimalPlaces = minDecimalPlaces
     )
 
-    LaunchedEffect(isFocused, expressionBuffer, evaluationResult) {
+    LaunchedEffect(isFocused, textFieldValue, evaluationResult) {
         if (isFocused) {
             keyboardState.value = ArithmeticKeyboardState(
                 isVisible = true,
-                expressionBuffer = expressionBuffer,
+                expressionBuffer = textFieldValue.text,
                 evaluationResult = evaluationResult,
                 maxDecimalPlaces = maxDecimalPlaces,
                 minDecimalPlaces = minDecimalPlaces,
                 owner = fieldId,
-                onClear = { expressionBuffer = "" },
+                onClear = {
+                    textFieldValue = TextFieldValue(text = "", selection = TextRange.Zero)
+                },
                 onOperatorClick = { op ->
-                    expressionBuffer += op
+                    val text = textFieldValue.text
+                    val selection = textFieldValue.selection
+                    val newText = buildString {
+                        append(text.substring(0, selection.min))
+                        append(op)
+                        append(text.substring(selection.max))
+                    }
+                    val newCursorPosition = selection.min + op.length
+                    textFieldValue = TextFieldValue(
+                        text = newText,
+                        selection = TextRange(newCursorPosition)
+                    )
                 },
                 onCommit = commitResult
             )
@@ -142,18 +159,32 @@ fun ArithmeticTextField(
         onSend = keyboardActions.onSend
     )
 
+    val currentTextFieldValue = if (isFocused) {
+        textFieldValue
+    } else {
+        TextFieldValue(
+            text = resolvedDisplayValue,
+            selection = TextRange(resolvedDisplayValue.length)
+        )
+    }
+
     StyledOutlinedTextField(
-        value = if (isFocused) expressionBuffer else resolvedDisplayValue,
-        onValueChange = {
+        value = currentTextFieldValue,
+        onValueChange = { newTfv ->
             if (isFocused) {
-                expressionBuffer = it
+                textFieldValue = newTfv
             } else {
-                onValueChange(it)
+                onValueChange(newTfv.text)
             }
         },
         modifier = modifier.onFocusChanged {
             if (it.isFocused && !isFocused) {
-                expressionBuffer = value
+                val selection = if (moveCursorToEndOnFocus) {
+                    TextRange(value.length)
+                } else {
+                    TextRange.Zero
+                }
+                textFieldValue = TextFieldValue(text = value, selection = selection)
             } else if (!it.isFocused && isFocused) {
                 commitResult()
             }
