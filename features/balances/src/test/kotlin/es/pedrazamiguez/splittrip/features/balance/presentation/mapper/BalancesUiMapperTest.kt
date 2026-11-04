@@ -906,6 +906,47 @@ class BalancesUiMapperTest {
 
             assertNull(result[0].createdByDisplayName)
         }
+
+        @Test
+        fun `contribution createdByDisplayName resolves prepositional pronoun when createdBy is current user`() {
+            val contribution = Contribution(
+                id = "c1",
+                groupId = "g1",
+                userId = "target-user",
+                createdBy = "actor-id",
+                amount = 10000,
+                currency = "EUR",
+                createdAt = LocalDateTime.of(2026, 1, 15, 10, 0)
+            )
+
+            val result = mapper.mapContributions(
+                groupCurrency = "EUR",
+                contributions = listOf(contribution),
+                currentUserId = "actor-id",
+                memberProfiles = memberProfiles
+            )
+
+            assertEquals("you", result[0].createdByDisplayName)
+        }
+
+        @Test
+        fun `withdrawal createdByDisplayName resolves prepositional pronoun when createdBy is current user`() {
+            val withdrawal = cashWithdrawal(
+                id = "cw1",
+                withdrawnBy = "target-user",
+                createdBy = "actor-id",
+                createdAt = LocalDateTime.of(2026, 1, 15, 10, 0)
+            )
+
+            val result = mapper.mapCashWithdrawals(
+                withdrawals = listOf(withdrawal),
+                groupCurrency = "EUR",
+                currentUserId = "actor-id",
+                memberProfiles = memberProfiles
+            )
+
+            assertEquals("you", result[0].createdByDisplayName)
+        }
     }
 
     @Nested
