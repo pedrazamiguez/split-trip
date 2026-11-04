@@ -85,6 +85,9 @@ class CreateEditGroupViewModelTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var viewModel: CreateEditGroupViewModel
 
+    private val currentTestUserId = "creator-user-id"
+    private val currentTestUserEmail = "creator@example.com"
+
     private val testUser1 = User(userId = "user-1", email = "alice@example.com", displayName = "Alice")
     private val testUser2 = User(userId = "user-2", email = "bob@example.com", displayName = "Bob")
 
@@ -128,7 +131,8 @@ class CreateEditGroupViewModelTest {
             every { maxMembersPerGroupPro } returns MutableStateFlow(20)
         }
         authenticationService = mockk(relaxed = true)
-        every { authenticationService.currentUserEmail() } returns testUser1.email
+        every { authenticationService.currentUserId() } returns currentTestUserId
+        every { authenticationService.currentUserEmail() } returns currentTestUserEmail
 
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
         every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
@@ -437,6 +441,26 @@ class CreateEditGroupViewModelTest {
         }
 
         @Test
+        fun `MemberSelected with current user id is ignored and not added`() = runTest(testDispatcher) {
+            onEvent(
+                CreateEditGroupUiEvent.MemberSelected(
+                    User(userId = currentTestUserId, email = "other@example.com")
+                )
+            )
+            assertTrue(viewModel.uiState.value.selectedMembers.isEmpty())
+        }
+
+        @Test
+        fun `MemberSelected with current user equivalent email is ignored and not added`() = runTest(testDispatcher) {
+            onEvent(
+                CreateEditGroupUiEvent.MemberSelected(
+                    User(userId = "other-id", email = currentTestUserEmail)
+                )
+            )
+            assertTrue(viewModel.uiState.value.selectedMembers.isEmpty())
+        }
+
+        @Test
         fun `UnregisteredMemberDisplayNameChanged updates name for pending member`() = runTest(testDispatcher) {
             val pendingUser = User(userId = "p-1", email = "pending@test.com", isPending = true)
             onEvent(CreateEditGroupUiEvent.MemberSelected(pendingUser))
@@ -540,14 +564,50 @@ class CreateEditGroupViewModelTest {
         fun `MemberSearchQueryChanged with matching current user email returns empty list`() = runTest(
             testDispatcher
         ) {
-            coEvery { searchUsersByEmailUseCase(testUser1.email) } returns Result.success(emptyList())
+            coEvery { searchUsersByEmailUseCase(currentTestUserEmail) } returns Result.success(emptyList())
 
-            onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged(testUser1.email))
+            onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged(currentTestUserEmail))
             advanceUntilIdle()
 
             val results = viewModel.uiState.value.memberSearchResults
             assertTrue(results.isEmpty())
         }
+
+        @Test
+        fun `MemberSearchQueryChanged with registered current user filters current user out`() = runTest(
+            testDispatcher
+        ) {
+            val registeredCurrentUser = User(userId = currentTestUserId, email = currentTestUserEmail)
+            coEvery {
+                searchUsersByEmailUseCase(currentTestUserEmail)
+            } returns Result.success(listOf(registeredCurrentUser))
+
+            onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged(currentTestUserEmail))
+            advanceUntilIdle()
+
+            val results = viewModel.uiState.value.memberSearchResults
+            assertTrue(results.isEmpty())
+        }
+
+        @Test
+        fun `MemberSearchQueryChanged with registered user matching current user equivalent email filters user out`() =
+            runTest(testDispatcher) {
+                every { authenticationService.currentUserEmail() } returns "pedraza.miguez@gmail.com"
+                viewModel = createViewModel()
+                viewModel.init(null)
+                advanceUntilIdle()
+
+                val registeredEquivalentUser = User(userId = "other-id", email = "pedrazamiguez@gmail.com")
+                coEvery {
+                    searchUsersByEmailUseCase("pedrazamiguez@gmail.com")
+                } returns Result.success(listOf(registeredEquivalentUser))
+
+                onEvent(CreateEditGroupUiEvent.MemberSearchQueryChanged("pedrazamiguez@gmail.com"))
+                advanceUntilIdle()
+
+                val results = viewModel.uiState.value.memberSearchResults
+                assertTrue(results.isEmpty())
+            }
 
         @Test
         fun `MemberSearchQueryChanged with equivalent Gmail address of current user returns empty list`() = runTest(
@@ -676,6 +736,76 @@ class CreateEditGroupViewModelTest {
             assertEquals("Scanned User", selected[0].displayName)
             coVerify(exactly = 0) { getMemberProfilesUseCase(any()) }
         }
+
+        @Test
+        fun `MemberScanned with current user id does not add member and emits ShowError`() =
+            runTest(testDispatcher) {
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                onEvent(CreateEditGroupUiEvent.MemberScanned(currentTestUserId, "other@example.com"))
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.selectedMembers.isEmpty())
+                assertTrue(
+                    actionsList.any {
+                        it is CreateEditGroupUiAction.ShowError &&
+                            it.message == UiText.StringResource(R.string.group_error_cannot_add_self)
+                    }
+                )
+                coVerify(exactly = 0) { getMemberProfilesUseCase(any()) }
+                job.cancel()
+            }
+
+        @Test
+        fun `MemberScanned with current user email does not add member and emits ShowError`() =
+            runTest(testDispatcher) {
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                onEvent(CreateEditGroupUiEvent.MemberScanned("other-user-id", currentTestUserEmail))
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.selectedMembers.isEmpty())
+                assertTrue(
+                    actionsList.any {
+                        it is CreateEditGroupUiAction.ShowError &&
+                            it.message == UiText.StringResource(R.string.group_error_cannot_add_self)
+                    }
+                )
+                coVerify(exactly = 0) { getMemberProfilesUseCase(any()) }
+                job.cancel()
+            }
+
+        @Test
+        fun `MemberScanned with equivalent Gmail address of current user does not add member and emits ShowError`() =
+            runTest(testDispatcher) {
+                every { authenticationService.currentUserEmail() } returns "pedraza.miguez@gmail.com"
+                viewModel = createViewModel()
+                viewModel.init(null)
+                advanceUntilIdle()
+
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                onEvent(CreateEditGroupUiEvent.MemberScanned("other-user-id", "pedrazamiguez@gmail.com"))
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.selectedMembers.isEmpty())
+                assertTrue(
+                    actionsList.any {
+                        it is CreateEditGroupUiAction.ShowError &&
+                            it.message == UiText.StringResource(R.string.group_error_cannot_add_self)
+                    }
+                )
+                job.cancel()
+            }
     }
 
     @Nested
