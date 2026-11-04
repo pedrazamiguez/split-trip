@@ -82,7 +82,7 @@ fun CurrencyConversionCard(
             groupAmountDecimalPlaces = groupAmountDecimalPlaces,
             groupAmountMinDecimalPlaces = groupAmountMinDecimalPlaces,
             focusRequester = if (state.autoFocus) focusRequester else null,
-            moveCursorToEndOnFocus = state.autoFocus
+            moveCursorToEndOnFocus = true
         )
         ConversionCardLockedHint(
             exchangeRateLockedHint = state.exchangeRateLockedHint,
@@ -131,7 +131,7 @@ private fun ConversionCardInputRow(
     groupAmountDecimalPlaces: Int,
     groupAmountMinDecimalPlaces: Int,
     focusRequester: FocusRequester? = null,
-    moveCursorToEndOnFocus: Boolean = false
+    moveCursorToEndOnFocus: Boolean = true
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -166,7 +166,8 @@ private fun ConversionCardInputRow(
             imeAction = ImeAction.Done,
             keyboardActions = KeyboardActions(
                 onDone = { onDone() }
-            )
+            ),
+            moveCursorToEndOnFocus = moveCursorToEndOnFocus
         )
     }
 }

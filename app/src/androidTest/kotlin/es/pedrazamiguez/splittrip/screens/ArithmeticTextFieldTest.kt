@@ -14,9 +14,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextInputSelection
+import androidx.compose.ui.text.TextRange
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.ArithmeticKeyboardState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.ArithmeticTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.LocalArithmeticKeyboardState
 import es.pedrazamiguez.splittrip.domain.service.calculator.impl.ExpressionCalculatorServiceImpl
 import java.util.Locale
 import org.junit.Assert.assertEquals
@@ -126,5 +130,143 @@ class ArithmeticTextFieldTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("10450").assertIsDisplayed()
+    }
+
+    @Test
+    fun operatorInsertion_placesCursorAfterOperator_andSubsequentDigitsAppendAfter() {
+        var committedValue = ""
+        var textValue by mutableStateOf("16.15")
+        val keyboardState = mutableStateOf(ArithmeticKeyboardState())
+
+        composeRule.setContent {
+            CompositionLocalProvider(LocalArithmeticKeyboardState provides keyboardState) {
+                SplitTripTheme {
+                    ArithmeticTextField(
+                        value = textValue,
+                        onValueChange = {
+                            committedValue = it
+                            textValue = it
+                        },
+                        evaluator = evaluator,
+                        modifier = Modifier.testTag("arithmetic_field")
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.waitForIdle()
+
+        keyboardState.value.onOperatorClick("×")
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("2")
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performImeAction()
+        composeRule.waitForIdle()
+
+        assertEquals("32.3", committedValue)
+    }
+
+    @Test
+    fun operatorInsertionInMiddle_insertsAtSelectionAndAdvancesCursor() {
+        var textValue by mutableStateOf("1615")
+        val keyboardState = mutableStateOf(ArithmeticKeyboardState())
+
+        composeRule.setContent {
+            CompositionLocalProvider(LocalArithmeticKeyboardState provides keyboardState) {
+                SplitTripTheme {
+                    ArithmeticTextField(
+                        value = textValue,
+                        onValueChange = { textValue = it },
+                        evaluator = evaluator,
+                        modifier = Modifier.testTag("arithmetic_field")
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performTextInputSelection(TextRange(2))
+        composeRule.waitForIdle()
+
+        keyboardState.value.onOperatorClick("+")
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("4")
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("16+415").assertIsDisplayed()
+    }
+
+    @Test
+    fun focusingPrepopulatedField_placesCursorAtEnd() {
+        var textValue by mutableStateOf("100")
+        val keyboardState = mutableStateOf(ArithmeticKeyboardState())
+
+        composeRule.setContent {
+            CompositionLocalProvider(LocalArithmeticKeyboardState provides keyboardState) {
+                SplitTripTheme {
+                    ArithmeticTextField(
+                        value = textValue,
+                        onValueChange = { textValue = it },
+                        evaluator = evaluator,
+                        modifier = Modifier.testTag("arithmetic_field")
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.waitForIdle()
+
+        keyboardState.value.onOperatorClick("+")
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("25")
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("100+25").assertIsDisplayed()
+    }
+
+    @Test
+    fun clearingExpression_resetsCursorToZero() {
+        var textValue by mutableStateOf("999")
+        val keyboardState = mutableStateOf(ArithmeticKeyboardState())
+
+        composeRule.setContent {
+            CompositionLocalProvider(LocalArithmeticKeyboardState provides keyboardState) {
+                SplitTripTheme {
+                    ArithmeticTextField(
+                        value = textValue,
+                        onValueChange = { textValue = it },
+                        evaluator = evaluator,
+                        modifier = Modifier.testTag("arithmetic_field")
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.waitForIdle()
+
+        keyboardState.value.onClear()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("42")
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("42").assertIsDisplayed()
     }
 }

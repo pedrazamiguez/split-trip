@@ -120,32 +120,14 @@ fun StyledOutlinedTextField(
     colors: TextFieldColors = softFieldColors()
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-
-    // Focus-related modifiers scoped to the inner field only (not the outer Column).
-    // The label's text is injected as a content description so TalkBack can announce
-    // the field's accessible name when `label = null` is passed to OutlinedTextField.
-    val innerModifier = Modifier
-        .fillMaxWidth()
-        .then(if (label != null) Modifier.semantics { contentDescription = label } else Modifier)
-        .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
-        .then(if (!focusable) Modifier.focusProperties { canFocus = false } else Modifier)
-
-    val supportingTextSlot: @Composable (() -> Unit)? = supportingText?.let { text ->
-        {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-
+    val innerModifier = buildInnerFieldModifier(label, focusRequester, focusable)
     val fieldConfig = TextFieldConfig(
         placeholder = placeholder,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         prefix = prefix,
         suffix = suffix,
-        supportingText = supportingTextSlot,
+        supportingText = buildSupportingText(supportingText),
         isError = isError,
         enabled = enabled,
         readOnly = readOnly,
@@ -164,65 +146,31 @@ fun StyledOutlinedTextField(
         colors = colors
     )
 
-    val isOverLimit = maxLength != null && value.length > maxLength
-    val counterColor = if (isError || isOverLimit) {
-        MaterialTheme.colorScheme.error
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
     Column(modifier = modifier) {
-        if (label != null || maxLength != null) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = MaterialTheme.spacing.ExtraSmall,
-                        end = MaterialTheme.spacing.ExtraSmall,
-                        bottom = 6.dp
-                    ),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (label != null) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = when {
-                            !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            isError -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                } else {
-                    Spacer(modifier = Modifier.width(1.dp))
-                }
-
-                if (maxLength != null) {
-                    Text(
-                        text = "${value.length} / $maxLength",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = counterColor
-                    )
-                }
-            }
-        }
+        FieldHeader(
+            label = label,
+            maxLength = maxLength,
+            currentLength = value.length,
+            enabled = enabled,
+            isError = isError
+        )
 
         when {
-            readOnly && onClick != null -> ReadOnlyClickableTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = innerModifier,
-                config = fieldConfig,
-                onClick = onClick
-            )
+            readOnly && onClick != null -> ReadOnlyClickableOverlay(onClick = onClick) {
+                CoreOutlinedTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = innerModifier,
+                    config = fieldConfig.copy(readOnly = true)
+                )
+            }
             moveCursorToEndOnFocus -> CursorToEndTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = innerModifier,
                 config = fieldConfig
             )
-            else -> StandardTextField(
+            else -> CoreOutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = innerModifier,
@@ -230,6 +178,171 @@ fun StyledOutlinedTextField(
             )
         }
     }
+}
+
+/**
+ * [TextFieldValue] overload of [StyledOutlinedTextField] that provides fine-grained control
+ * over cursor selection and text editing operations.
+ */
+@Suppress("LongMethod", "LongParameterList", "CognitiveComplexMethod", "CyclomaticComplexMethod")
+@Composable
+fun StyledOutlinedTextField(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    placeholder: String? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    prefix: @Composable (() -> Unit)? = null,
+    suffix: @Composable (() -> Unit)? = null,
+    supportingText: String? = null,
+    isError: Boolean = false,
+    maxLength: Int? = null,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    singleLine: Boolean = true,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    minLines: Int = 1,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Default,
+    capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    onClick: (() -> Unit)? = null,
+    focusRequester: FocusRequester? = null,
+    moveCursorToEndOnFocus: Boolean = false,
+    focusable: Boolean = true,
+    shape: Shape = OutlinedTextFieldDefaults.shape,
+    colors: TextFieldColors = softFieldColors()
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val innerModifier = buildInnerFieldModifier(label, focusRequester, focusable)
+    val fieldConfig = TextFieldConfig(
+        placeholder = placeholder,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        prefix = prefix,
+        suffix = suffix,
+        supportingText = buildSupportingText(supportingText),
+        isError = isError,
+        enabled = enabled,
+        readOnly = readOnly,
+        singleLine = singleLine,
+        maxLines = maxLines,
+        minLines = minLines,
+        visualTransformation = visualTransformation,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = keyboardType,
+            imeAction = imeAction,
+            capitalization = capitalization
+        ),
+        keyboardActions = keyboardActions,
+        interactionSource = interactionSource,
+        shape = shape,
+        colors = colors
+    )
+
+    Column(modifier = modifier) {
+        FieldHeader(
+            label = label,
+            maxLength = maxLength,
+            currentLength = value.text.length,
+            enabled = enabled,
+            isError = isError
+        )
+
+        val effectiveModifier = if (moveCursorToEndOnFocus) {
+            innerModifier.onFocusChanged { focusState ->
+                if (focusState.isFocused &&
+                    value.selection.start == 0 &&
+                    value.text.isNotEmpty()
+                ) {
+                    onValueChange(value.copy(selection = TextRange(value.text.length)))
+                }
+            }
+        } else {
+            innerModifier
+        }
+
+        when {
+            readOnly && onClick != null -> ReadOnlyClickableOverlay(onClick = onClick) {
+                CoreOutlinedTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = effectiveModifier,
+                    config = fieldConfig.copy(readOnly = true)
+                )
+            }
+            else -> CoreOutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = effectiveModifier,
+                config = fieldConfig
+            )
+        }
+    }
+}
+
+@Composable
+private fun FieldHeader(
+    label: String?,
+    maxLength: Int?,
+    currentLength: Int,
+    enabled: Boolean,
+    isError: Boolean
+) {
+    if (label == null && maxLength == null) return
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                start = MaterialTheme.spacing.ExtraSmall,
+                end = MaterialTheme.spacing.ExtraSmall,
+                bottom = 6.dp
+            ),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (label != null) {
+            FieldLabel(label = label, enabled = enabled, isError = isError)
+        } else {
+            Spacer(modifier = Modifier.width(1.dp))
+        }
+
+        if (maxLength != null) {
+            FieldCounter(currentLength = currentLength, maxLength = maxLength, isError = isError)
+        }
+    }
+}
+
+@Composable
+private fun FieldLabel(label: String, enabled: Boolean, isError: Boolean) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        color = when {
+            !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+            isError -> MaterialTheme.colorScheme.error
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    )
+}
+
+@Composable
+private fun FieldCounter(currentLength: Int, maxLength: Int, isError: Boolean) {
+    val isOverLimit = currentLength > maxLength
+    val counterColor = if (isError || isOverLimit) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Text(
+        text = "$currentLength / $maxLength",
+        style = MaterialTheme.typography.bodySmall,
+        color = counterColor
+    )
 }
 
 /**
@@ -262,24 +375,15 @@ private data class TextFieldConfig(
 )
 
 /**
- * Read-only variant wrapped in a clickable overlay — used for dropdown triggers.
+ * Clickable overlay for read-only fields (e.g. dropdown triggers).
  */
 @Composable
-private fun ReadOnlyClickableTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier,
-    config: TextFieldConfig,
-    onClick: () -> Unit
+private fun ReadOnlyClickableOverlay(
+    onClick: () -> Unit,
+    content: @Composable () -> Unit
 ) {
     Box {
-        CoreOutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = modifier,
-            config = config.copy(readOnly = true)
-        )
-        // Invisible overlay to capture click without ripple
+        content()
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -348,26 +452,7 @@ private fun CursorToEndTextField(
 }
 
 /**
- * Plain editable text field — the default branch.
- */
-@Composable
-private fun StandardTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier,
-    config: TextFieldConfig
-) {
-    CoreOutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
-        config = config
-    )
-}
-
-/**
- * Shared [OutlinedTextField] call used by [ReadOnlyClickableTextField] and
- * [StandardTextField] — avoids duplicating the full parameter list.
+ * Shared [OutlinedTextField] call for String inputs — avoids duplicating the full parameter list.
  */
 @Composable
 private fun CoreOutlinedTextField(
@@ -401,6 +486,55 @@ private fun CoreOutlinedTextField(
         colors = config.colors
     )
 }
+
+/**
+ * Shared [OutlinedTextField] call for [TextFieldValue] inputs — avoids duplicating the full parameter list.
+ */
+@Composable
+private fun CoreOutlinedTextField(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    modifier: Modifier,
+    config: TextFieldConfig
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        label = null,
+        placeholder = config.placeholder?.let { { Text(it) } },
+        leadingIcon = config.leadingIcon,
+        trailingIcon = config.trailingIcon,
+        prefix = config.prefix,
+        suffix = config.suffix,
+        supportingText = config.supportingText,
+        isError = config.isError,
+        enabled = config.enabled,
+        readOnly = config.readOnly,
+        singleLine = config.singleLine,
+        maxLines = config.maxLines,
+        minLines = config.minLines,
+        visualTransformation = config.visualTransformation,
+        keyboardOptions = config.keyboardOptions,
+        keyboardActions = config.keyboardActions,
+        interactionSource = config.interactionSource,
+        shape = config.shape,
+        colors = config.colors
+    )
+}
+
+private fun buildInnerFieldModifier(
+    label: String?,
+    focusRequester: FocusRequester?,
+    focusable: Boolean
+): Modifier = Modifier
+    .fillMaxWidth()
+    .then(if (label != null) Modifier.semantics { contentDescription = label } else Modifier)
+    .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+    .then(if (!focusable) Modifier.focusProperties { canFocus = false } else Modifier)
+
+private fun buildSupportingText(supportingText: String?): @Composable (() -> Unit)? =
+    supportingText?.let { text -> { Text(text = text, style = MaterialTheme.typography.bodySmall) } }
 
 /**
  * Returns the Horizon "Soft Field" colors for [StyledOutlinedTextField].
