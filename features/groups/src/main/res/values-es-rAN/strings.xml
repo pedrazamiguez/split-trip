@@ -116,6 +116,7 @@
     <string name="group_edit_save">Guardâh cambiô</string>
     <string name="group_edit_success_saved">Grupo âttualiçao corrêttamente.</string>
     <string name="group_edit_updating">Âttualiçando grupo…</string>
+    <string name="group_error_cannot_add_self">Ya erê miembro de êtte grupo</string>
     <string name="group_remove_member_error_balance">Êtte miembro tiene un balançe dîttinto de çero y no çe puede eliminâh</string>
     <string name="group_remove_member_error_admin">Er creadôh der grupo no çe puede eliminâh</string>
     <string name="group_error_remove_member_failed">Errôh al eliminâh er miembro. Inténtalo de nuebo</string>
