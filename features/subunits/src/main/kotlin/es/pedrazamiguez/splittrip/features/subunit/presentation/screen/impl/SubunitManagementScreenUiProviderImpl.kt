@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainActi
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
@@ -25,6 +26,7 @@ import es.pedrazamiguez.splittrip.features.subunit.presentation.screen.CREATE_ED
 class SubunitManagementScreenUiProviderImpl(
     private val observeSelectedGroupUseCase: ObserveSelectedGroupUseCase,
     private val featureGateService: FeatureGateService,
+    private val authenticationService: AuthenticationService,
     override val route: String = Routes.MANAGE_SUBUNITS
 ) : ScreenUiProvider {
 
@@ -65,7 +67,14 @@ class SubunitManagementScreenUiProviderImpl(
                         groupId = groupId,
                         proRequiredMessage = proRequiredMessage,
                         navigateToCreate = { targetRoute -> navController.navigate(targetRoute) },
-                        navigateToSubscriptions = { rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS) },
+                        navigateToSubscriptions = {
+                            val destination = if (authenticationService.isAnonymous()) {
+                                Routes.SETTINGS_ACCOUNT_STATUS
+                            } else {
+                                Routes.SETTINGS_SUBSCRIPTIONS
+                            }
+                            rootNavController.navigate(destination)
+                        },
                         showNotification = { message -> pillController.showPill(message) }
                     )
                 },

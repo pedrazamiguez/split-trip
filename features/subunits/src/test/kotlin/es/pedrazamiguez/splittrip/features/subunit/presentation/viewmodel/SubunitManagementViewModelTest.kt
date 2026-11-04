@@ -252,10 +252,41 @@ class SubunitManagementViewModelTest {
         }
 
         @Test
-        fun `CreateSubunit emits NavigateToSubscriptions when disabled`() = runTest(testDispatcher) {
+        fun `CreateSubunit emits NavigateToAccountStatus when disabled and user is anonymous`() = runTest(
+            testDispatcher
+        ) {
             setupDefaultMocks()
             every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(false)
             every { featureGateService.isActingUserPro() } returns flowOf(false)
+            every { authenticationService.isAnonymous() } returns true
+            createViewModel()
+
+            val actions = mutableListOf<SubunitManagementUiAction>()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { actions.add(it) }
+            }
+
+            viewModel.setGroupId("group-1")
+            advanceUntilIdle()
+
+            viewModel.onEvent(SubunitManagementUiEvent.CreateSubunit)
+            advanceUntilIdle()
+
+            assertTrue(actions.any { it is SubunitManagementUiAction.NavigateToAccountStatus })
+
+            collectJob.cancel()
+            actionsJob.cancel()
+        }
+
+        @Test
+        fun `CreateSubunit emits NavigateToSubscriptions when disabled and user is registered`() = runTest(
+            testDispatcher
+        ) {
+            setupDefaultMocks()
+            every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(false)
+            every { featureGateService.isActingUserPro() } returns flowOf(false)
+            every { authenticationService.isAnonymous() } returns false
             createViewModel()
 
             val actions = mutableListOf<SubunitManagementUiAction>()

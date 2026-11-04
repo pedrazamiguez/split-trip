@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.main.di
 
 import es.pedrazamiguez.splittrip.domain.usecase.ad.GetBannerAdUnitIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
@@ -21,13 +22,15 @@ val mainUiModule = module {
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
         val shouldShowAdsUseCase = get<ShouldShowAdsUseCase>()
         val getBannerAdUnitIdUseCase = get<GetBannerAdUnitIdUseCase>()
+        val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         MainViewModel(
             registerDeviceTokenUseCase = registerDeviceTokenUseCase,
             getGroupByIdUseCase = getGroupByIdUseCase,
             warmCurrencyCacheUseCase = warmCurrencyCacheUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
             shouldShowAdsUseCase = shouldShowAdsUseCase,
-            getBannerAdUnitIdUseCase = getBannerAdUnitIdUseCase
+            getBannerAdUnitIdUseCase = getBannerAdUnitIdUseCase,
+            isUserAnonymousUseCase = isUserAnonymousUseCase
         )
     }
 }

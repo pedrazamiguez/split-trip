@@ -62,6 +62,11 @@ fun SubunitManagementFeature(
                     pillController.showPill(message = proRequiredMessage)
                     rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS)
                 }
+
+                SubunitManagementUiAction.NavigateToAccountStatus -> {
+                    pillController.showPill(message = proRequiredMessage)
+                    rootNavController.navigate(Routes.SETTINGS_ACCOUNT_STATUS)
+                }
             }
         }
     }

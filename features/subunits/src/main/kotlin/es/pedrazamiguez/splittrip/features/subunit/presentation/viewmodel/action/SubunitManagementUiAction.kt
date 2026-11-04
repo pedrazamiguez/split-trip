@@ -8,4 +8,5 @@ sealed interface SubunitManagementUiAction {
     data class NavigateToCreateSubunit(val groupId: String) : SubunitManagementUiAction
     data class NavigateToEditSubunit(val groupId: String, val subunitId: String) : SubunitManagementUiAction
     data object NavigateToSubscriptions : SubunitManagementUiAction
+    data object NavigateToAccountStatus : SubunitManagementUiAction
 }

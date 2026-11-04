@@ -88,6 +88,9 @@ fun AddExpenseFeature(
                 AddExpenseUiAction.NavigateToSubscriptions ->
                     rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS)
 
+                AddExpenseUiAction.NavigateToAccountStatus ->
+                    rootNavController.navigate(Routes.SETTINGS_ACCOUNT_STATUS)
+
                 AddExpenseUiAction.None -> Unit
             }
         }

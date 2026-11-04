@@ -61,6 +61,11 @@ fun SubscriptionsFeature(
                 SubscriptionsUiAction.NavigateBack -> {
                     navController.popBackStack()
                 }
+                SubscriptionsUiAction.NavigateToAccountStatus -> {
+                    navController.navigate(Routes.SETTINGS_ACCOUNT_STATUS) {
+                        popUpTo(Routes.SETTINGS_SUBSCRIPTIONS) { inclusive = true }
+                    }
+                }
             }
         }
     }

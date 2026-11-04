@@ -224,7 +224,7 @@ class CreateEditGroupViewModel(
             is CreateEditGroupUiEvent.UpgradeClicked -> {
                 _uiState.update { it.copy(showUpgradeDialog = false) }
                 viewModelScope.launch {
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(getUpgradeDestinationRoute()))
                 }
             }
             is CreateEditGroupUiEvent.DismissUpgradeDialog -> {
@@ -242,12 +242,12 @@ class CreateEditGroupViewModel(
                             UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
                         )
                     )
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(getUpgradeDestinationRoute()))
                 }
             }
             is CreateEditGroupUiEvent.MemberCapacityUpsellClicked -> {
                 viewModelScope.launch {
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(getUpgradeDestinationRoute()))
                 }
             }
         }
@@ -521,6 +521,9 @@ class CreateEditGroupViewModel(
             emptyList()
         }
     }
+
+    private fun getUpgradeDestinationRoute(): String =
+        if (authenticationService.isAnonymous()) Routes.SETTINGS_ACCOUNT_STATUS else Routes.SETTINGS_SUBSCRIPTIONS
 
     override fun onCleared() {
         super.onCleared()

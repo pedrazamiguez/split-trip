@@ -891,6 +891,26 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
+        fun `onEvent UpgradeClicked emits NavigateToRoute with SETTINGS_ACCOUNT_STATUS when user is anonymous`() =
+            runTest(testDispatcher) {
+                every { authenticationService.isAnonymous() } returns true
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                viewModel.onEvent(CreateEditGroupUiEvent.UpgradeClicked) {}
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.showUpgradeDialog)
+                assertEquals(
+                    listOf(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_ACCOUNT_STATUS)),
+                    actionsList
+                )
+                job.cancel()
+            }
+
+        @Test
         fun `onEvent DismissUpgradeDialog closes upgrade dialog`() =
             runTest(testDispatcher) {
                 viewModel.onEvent(CreateEditGroupUiEvent.DismissUpgradeDialog) {}
@@ -972,6 +992,30 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
+        fun `onEvent LockedCoverPhotoClicked emits account status route for anonymous user`() =
+            runTest(testDispatcher) {
+                every { authenticationService.isAnonymous() } returns true
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                viewModel.onEvent(CreateEditGroupUiEvent.LockedCoverPhotoClicked) {}
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf(
+                        CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
+                        ),
+                        CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_ACCOUNT_STATUS)
+                    ),
+                    actionsList
+                )
+                job.cancel()
+            }
+
+        @Test
         fun `onEvent MemberCapacityUpsellClicked emits NavigateToRoute with SETTINGS_SUBSCRIPTIONS`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
@@ -984,6 +1028,25 @@ class CreateEditGroupViewModelTest {
 
                 assertEquals(
                     listOf(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS)),
+                    actionsList
+                )
+                job.cancel()
+            }
+
+        @Test
+        fun `onEvent MemberCapacityUpsellClicked emits account status for anonymous user`() =
+            runTest(testDispatcher) {
+                every { authenticationService.isAnonymous() } returns true
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                viewModel.onEvent(CreateEditGroupUiEvent.MemberCapacityUpsellClicked) {}
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_ACCOUNT_STATUS)),
                     actionsList
                 )
                 job.cancel()

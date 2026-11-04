@@ -71,9 +71,13 @@ val subunitsUiModule = module {
 
     factory { SubunitsTabGraphContributorImpl() } bind TabGraphContributor::class
     single {
+        val observeSelectedGroupUseCase = get<ObserveSelectedGroupUseCase>()
+        val featureGateService = get<FeatureGateService>()
+        val authenticationService = get<AuthenticationService>()
         SubunitManagementScreenUiProviderImpl(
-            observeSelectedGroupUseCase = get<ObserveSelectedGroupUseCase>(),
-            featureGateService = get<FeatureGateService>()
+            observeSelectedGroupUseCase = observeSelectedGroupUseCase,
+            featureGateService = featureGateService,
+            authenticationService = authenticationService
         )
     } bind ScreenUiProvider::class
     single { CreateEditSubunitScreenUiProviderImpl() } bind ScreenUiProvider::class

@@ -375,7 +375,8 @@ class AddExpenseViewModelTest {
             receiptExtractionService = mockk<ReceiptExtractionService>(relaxed = true),
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            authenticationService = authenticationService
         )
 
         val updateExpenseUseCase = mockk<UpdateExpenseUseCase>(relaxed = true)

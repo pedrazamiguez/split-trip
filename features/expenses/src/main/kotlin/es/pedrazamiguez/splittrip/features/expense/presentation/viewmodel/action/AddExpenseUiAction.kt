@@ -33,4 +33,7 @@ sealed interface AddExpenseUiAction {
 
     /** Fired when attempting to use a Pro-only feature without an active subscription. */
     data object NavigateToSubscriptions : AddExpenseUiAction
+
+    /** Fired when an anonymous user hits a Pro gate and needs to link or create an account. */
+    data object NavigateToAccountStatus : AddExpenseUiAction
 }

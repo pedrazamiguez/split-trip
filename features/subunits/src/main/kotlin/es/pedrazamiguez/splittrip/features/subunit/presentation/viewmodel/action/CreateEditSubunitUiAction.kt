@@ -8,4 +8,5 @@ sealed interface CreateEditSubunitUiAction {
     data object NavigateBack : CreateEditSubunitUiAction
     data object RequestExitConfirmation : CreateEditSubunitUiAction
     data object NavigateToSubscriptions : CreateEditSubunitUiAction
+    data object NavigateToAccountStatus : CreateEditSubunitUiAction
 }

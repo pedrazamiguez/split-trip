@@ -39,7 +39,8 @@ fun SettingsScreen(
     onPrivacyPolicyClick: () -> Unit = {},
     onOpenSourceClick: () -> Unit = {},
     onDeveloperInfoClick: () -> Unit = {},
-    onCopyDiagnosticsClick: () -> Unit = {}
+    onCopyDiagnosticsClick: () -> Unit = {},
+    isAnonymous: Boolean = false
 ) {
     val preferencesParams = SettingsPreferencesParams(
         onNotificationsClick = onNotificationsClick,
@@ -66,7 +67,8 @@ fun SettingsScreen(
 
     val sections = buildSettingsSections(
         preferencesParams = preferencesParams,
-        onServicesTestClick = onDeveloperServicesTestClick
+        onServicesTestClick = onDeveloperServicesTestClick,
+        isAnonymous = isAnonymous
     )
 
     LazyColumn(

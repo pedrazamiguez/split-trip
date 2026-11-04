@@ -123,7 +123,11 @@ class SubunitManagementViewModel(
                         )
                     )
                 } else {
-                    _actions.emit(SubunitManagementUiAction.NavigateToSubscriptions)
+                    if (authenticationService.isAnonymous()) {
+                        _actions.emit(SubunitManagementUiAction.NavigateToAccountStatus)
+                    } else {
+                        _actions.emit(SubunitManagementUiAction.NavigateToSubscriptions)
+                    }
                 }
             }
         }

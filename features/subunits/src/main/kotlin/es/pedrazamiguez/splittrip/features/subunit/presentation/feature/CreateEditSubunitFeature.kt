@@ -71,6 +71,10 @@ fun CreateEditSubunitFeature(
                 CreateEditSubunitUiAction.NavigateToSubscriptions -> {
                     rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS)
                 }
+
+                CreateEditSubunitUiAction.NavigateToAccountStatus -> {
+                    rootNavController.navigate(Routes.SETTINGS_ACCOUNT_STATUS)
+                }
             }
         }
     }

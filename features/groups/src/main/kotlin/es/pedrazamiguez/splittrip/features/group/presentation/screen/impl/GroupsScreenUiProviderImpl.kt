@@ -82,7 +82,14 @@ class GroupsScreenUiProviderImpl(
                         isActingUserPro = isActingUserPro,
                         limitReachedMessage = limitReachedMessage,
                         navigateToCreateGroup = { tabNavController.navigate(Routes.CREATE_GROUP) },
-                        navigateToSubscriptions = { rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS) },
+                        navigateToSubscriptions = {
+                            val destination = if (authenticationService.isAnonymous()) {
+                                Routes.SETTINGS_ACCOUNT_STATUS
+                            } else {
+                                Routes.SETTINGS_SUBSCRIPTIONS
+                            }
+                            rootNavController.navigate(destination)
+                        },
                         showNotification = { message -> pillController.showPill(message.asString(context)) }
                     )
                 },

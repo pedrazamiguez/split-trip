@@ -210,7 +210,12 @@ class CreateEditSubunitViewModel(
                             )
                         )
                         if (!featureGateService.isActingUserPro().first()) {
-                            _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
+                            val action = if (authenticationService.isAnonymous()) {
+                                CreateEditSubunitUiAction.NavigateToAccountStatus
+                            } else {
+                                CreateEditSubunitUiAction.NavigateToSubscriptions
+                            }
+                            _actions.emit(action)
                         }
                         _actions.emit(CreateEditSubunitUiAction.NavigateBack)
                     }
@@ -475,7 +480,12 @@ class CreateEditSubunitViewModel(
             )
             val isPro = featureGateService.isActingUserPro().first()
             if (!isPro) {
-                _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
+                val action = if (authenticationService.isAnonymous()) {
+                    CreateEditSubunitUiAction.NavigateToAccountStatus
+                } else {
+                    CreateEditSubunitUiAction.NavigateToSubscriptions
+                }
+                _actions.emit(action)
             }
             return false
         }

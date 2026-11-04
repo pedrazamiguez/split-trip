@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
@@ -54,6 +55,7 @@ class ReceiptAutoFillEventHandlerTest {
     private lateinit var formattingHelper: FormattingHelper
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
     private lateinit var featureGateService: FeatureGateService
+    private lateinit var authenticationService: AuthenticationService
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actions: MutableSharedFlow<AddExpenseUiAction>
 
@@ -84,12 +86,16 @@ class ReceiptAutoFillEventHandlerTest {
         featureGateService = mockk {
             every { isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(true)
         }
+        authenticationService = mockk {
+            every { isAnonymous() } returns false
+        }
         handler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = extractReceiptFieldsUseCase,
             receiptExtractionService = receiptExtractionService,
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            authenticationService = authenticationService
         )
         handler.setOnCurrencySelected { capturedCurrencySelections.add(it) }
         handler.setOnAmountChanged { capturedAmountChanges.add(it) }
@@ -172,6 +178,31 @@ class ReceiptAutoFillEventHandlerTest {
                 actions.replayCache
             )
         }
+
+        @Test
+        fun `handleSetAiModeActive true emits NavigateToAccountStatus for anonymous user`() = runTest {
+            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(false)
+            every { authenticationService.isAnonymous() } returns true
+            uiState.value = uiState.value.copy(
+                isAiCapable = true,
+                isAiModeActive = false,
+                currentStep = AddExpenseStep.TITLE
+            )
+
+            handler.handleSetAiModeActive(true)
+
+            assertFalse(uiState.value.isAiModeActive)
+            assertEquals(AddExpenseStep.TITLE, uiState.value.currentStep)
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowPill(
+                        UiText.StringResource(R.string.expense_autofill_pro_required)
+                    ),
+                    AddExpenseUiAction.NavigateToAccountStatus
+                ),
+                actions.replayCache
+            )
+        }
     }
 
     @Nested
@@ -211,6 +242,27 @@ class ReceiptAutoFillEventHandlerTest {
                         UiText.StringResource(R.string.expense_autofill_pro_required)
                     ),
                     AddExpenseUiAction.NavigateToSubscriptions
+                ),
+                actions.replayCache
+            )
+            coVerify(exactly = 0) { extractReceiptFieldsUseCase(any()) }
+            assertFalse(uiState.value.isAnalyzingReceipt)
+        }
+
+        @Test
+        fun `handleReceiptAttached emits NavigateToAccountStatus for anonymous user`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(false)
+            every { authenticationService.isAnonymous() } returns true
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowPill(
+                        UiText.StringResource(R.string.expense_autofill_pro_required)
+                    ),
+                    AddExpenseUiAction.NavigateToAccountStatus
                 ),
                 actions.replayCache
             )

@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
@@ -37,7 +38,8 @@ class ReceiptAutoFillEventHandler(
     private val receiptExtractionService: ReceiptExtractionService,
     private val formattingHelper: FormattingHelper,
     private val addExpenseUiMapper: AddExpenseUiMapper,
-    private val featureGateService: FeatureGateService
+    private val featureGateService: FeatureGateService,
+    private val authenticationService: AuthenticationService
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -115,7 +117,12 @@ class ReceiptAutoFillEventHandler(
                     UiText.StringResource(R.string.expense_autofill_pro_required)
                 )
             )
-            _actionsFlow.emit(AddExpenseUiAction.NavigateToSubscriptions)
+            val action = if (authenticationService.isAnonymous()) {
+                AddExpenseUiAction.NavigateToAccountStatus
+            } else {
+                AddExpenseUiAction.NavigateToSubscriptions
+            }
+            _actionsFlow.emit(action)
             return
         }
 
@@ -170,7 +177,12 @@ class ReceiptAutoFillEventHandler(
                             UiText.StringResource(R.string.expense_autofill_pro_required)
                         )
                     )
-                    _actionsFlow.emit(AddExpenseUiAction.NavigateToSubscriptions)
+                    val action = if (authenticationService.isAnonymous()) {
+                        AddExpenseUiAction.NavigateToAccountStatus
+                    } else {
+                        AddExpenseUiAction.NavigateToSubscriptions
+                    }
+                    _actionsFlow.emit(action)
                     return@launch
                 }
                 performSetAiModeActive(active = true)
