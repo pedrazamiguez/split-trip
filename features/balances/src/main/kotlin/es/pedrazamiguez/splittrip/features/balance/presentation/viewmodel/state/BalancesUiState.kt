@@ -3,9 +3,9 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityItemUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.MetricScopeBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SettlementUiModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -18,7 +18,9 @@ data class BalancesUiState(
     val cashWithdrawals: ImmutableList<CashWithdrawalUiModel> = persistentListOf(),
     val memberBalances: ImmutableList<MemberBalanceUiModel> = persistentListOf(),
     val activityItems: ImmutableList<ActivityItemUiModel> = persistentListOf(),
-    val extrasBreakdown: ImmutableList<ExtrasBreakdownUiModel> = persistentListOf(),
+    val extrasBreakdown: ImmutableList<MetricScopeBreakdownUiModel> = persistentListOf(),
+    val scheduledBreakdown: ImmutableList<MetricScopeBreakdownUiModel> = persistentListOf(),
+    val refundableBreakdown: ImmutableList<MetricScopeBreakdownUiModel> = persistentListOf(),
     val shouldAnimateBalance: Boolean = false,
     val previousBalance: String = "",
     val balanceRollingUp: Boolean = true,

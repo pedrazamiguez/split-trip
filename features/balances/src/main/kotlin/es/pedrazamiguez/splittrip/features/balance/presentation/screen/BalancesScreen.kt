@@ -10,7 +10,6 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.component.Balanc
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalancesBodyContent
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.BalancesScreenOverlays
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.ContributionDeleteDialog
-import es.pedrazamiguez.splittrip.features.balance.presentation.component.ExtrasBreakdownBottomSheet
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.WithdrawalDeleteDialog
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.BalanceMetricType
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
@@ -29,7 +28,6 @@ fun BalancesScreen(
 ) {
     var contributionPendingDelete by remember { mutableStateOf<ContributionUiModel?>(null) }
     var withdrawalPendingDelete by remember { mutableStateOf<CashWithdrawalUiModel?>(null) }
-    var showExtrasBreakdown by remember { mutableStateOf(false) }
     var selectedMetricInfo by remember { mutableStateOf<BalanceMetricType?>(null) }
 
     BalancesBodyContent(
@@ -38,7 +36,6 @@ fun BalancesScreen(
         onNavigateToContribution = onNavigateToContribution,
         onNavigateToContributionDetail = onNavigateToContributionDetail,
         onNavigateToWithdrawal = onNavigateToWithdrawal,
-        onShowExtrasBreakdown = { showExtrasBreakdown = true },
         onShowMetricInfo = { selectedMetricInfo = it },
         modifier = Modifier
     )
@@ -51,17 +48,23 @@ fun BalancesScreen(
         onWithdrawalDeleteRequested = { withdrawalPendingDelete = it }
     )
 
-    if (showExtrasBreakdown) {
-        ExtrasBreakdownBottomSheet(
-            breakdown = uiState.extrasBreakdown,
-            formattedGrandTotal = uiState.pocketBalance.formattedTotalExtras ?: "",
-            onDismiss = { showExtrasBreakdown = false }
-        )
-    }
-
     selectedMetricInfo?.let { metricType ->
+        val (breakdown, grandTotal) = when (metricType) {
+            BalanceMetricType.EXTRAS ->
+                uiState.extrasBreakdown to (uiState.pocketBalance.formattedTotalExtras.orEmpty())
+
+            BalanceMetricType.SCHEDULED ->
+                uiState.scheduledBreakdown to (uiState.pocketBalance.formattedScheduledHoldAmount.orEmpty())
+
+            BalanceMetricType.REFUNDABLE ->
+                uiState.refundableBreakdown to (uiState.pocketBalance.formattedRefundableHoldAmount.orEmpty())
+
+            else -> null to ""
+        }
         BalanceMetricInfoBottomSheet(
             metricType = metricType,
+            breakdown = breakdown,
+            formattedGrandTotal = grandTotal,
             onDismiss = { selectedMetricInfo = null }
         )
     }

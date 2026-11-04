@@ -34,5 +34,9 @@ enum class BalanceMetricType(
     CASH_IN_HAND(
         titleRes = R.string.balances_metric_cash_in_hand_title,
         descriptionRes = R.string.balances_metric_cash_in_hand_description
+    ),
+    EXTRAS(
+        titleRes = R.string.balances_metric_extras_title,
+        descriptionRes = R.string.balances_metric_extras_description
     )
 }

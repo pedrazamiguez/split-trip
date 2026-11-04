@@ -19,7 +19,6 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocke
 @Composable
 internal fun PocketBalanceStatsRow(
     balance: GroupPocketBalanceUiModel,
-    onShowExtrasBreakdown: () -> Unit,
     modifier: Modifier = Modifier,
     onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
@@ -47,7 +46,7 @@ internal fun PocketBalanceStatsRow(
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
             ExtrasStatsSection(
                 formattedTotalExtras = balance.formattedTotalExtras,
-                onShowExtrasBreakdown = onShowExtrasBreakdown
+                onShowMetricInfo = onShowMetricInfo
             )
         }
     }
