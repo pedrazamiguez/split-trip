@@ -20,10 +20,12 @@ import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.PurchaseStatus
+import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.slot
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
@@ -572,4 +575,102 @@ class PlayBillingClientWrapperTest {
             assertTrue(result.isSuccess)
             assertEquals(2, result.getOrThrow().size)
         }
+
+    @Test
+    fun `connectBillingClient times out when Play Store is unresponsive and cleans up connection`() = runTest(
+        testDispatcher
+    ) {
+        every { billingClient.isReady } returns false
+        every { billingClient.startConnection(any()) } answers {
+            // Simulate unresponsive Play Store
+        }
+
+        var result: Result<List<SubscriptionProduct>>? = null
+        val job = launch {
+            result = wrapper.querySubscriptionProducts()
+        }
+
+        advanceTimeBy(BillingConstants.BILLING_CONNECT_TIMEOUT_MS + 1000L)
+        advanceUntilIdle()
+
+        assertTrue(result?.isFailure == true)
+        verify(atLeast = 1) { billingClient.endConnection() }
+        job.cancel()
+    }
+
+    @Test
+    fun `ensureConnected deduplicates concurrent connection attempts and calls startConnection once`() = runTest(
+        testDispatcher
+    ) {
+        every { billingClient.isReady } returns false
+        val listenerSlot = slot<BillingClientStateListener>()
+        every { billingClient.startConnection(capture(listenerSlot)) } answers {
+            // Keep connection pending
+        }
+        every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
+            val listener = secondArg<ProductDetailsResponseListener>()
+            listener.onProductDetailsResponse(okResult, createMockQueryResult())
+        }
+
+        var result1: Result<List<SubscriptionProduct>>? = null
+        var result2: Result<List<SubscriptionProduct>>? = null
+
+        val job1 = launch {
+            result1 = wrapper.querySubscriptionProducts()
+        }
+        val job2 = launch {
+            result2 = wrapper.querySubscriptionProducts()
+        }
+
+        testScheduler.runCurrent()
+
+        verify(exactly = 1) { billingClient.startConnection(any()) }
+
+        every { billingClient.isReady } returns true
+        listenerSlot.captured.onBillingSetupFinished(okResult)
+        advanceUntilIdle()
+
+        assertTrue(result1?.isSuccess == true)
+        assertTrue(result2?.isSuccess == true)
+
+        job1.cancel()
+        job2.cancel()
+    }
+
+    @Test
+    fun `coroutine cancellation during connection cleans up billing client and prevents stranded state`() = runTest(
+        testDispatcher
+    ) {
+        every { billingClient.isReady } returns false
+        val listenerSlot = slot<BillingClientStateListener>()
+        every { billingClient.startConnection(capture(listenerSlot)) } answers {
+            // Keep connection pending
+        }
+
+        val jobA = launch {
+            wrapper.querySubscriptionProducts()
+        }
+        testScheduler.runCurrent()
+
+        jobA.cancel()
+        advanceUntilIdle()
+
+        verify(atLeast = 1) { billingClient.endConnection() }
+
+        // Subsequent call to querySubscriptionProducts initiates a new connection without error
+        every { billingClient.startConnection(any()) } answers {
+            val listener = firstArg<BillingClientStateListener>()
+            listener.onBillingSetupFinished(okResult)
+        }
+        every { billingClient.queryProductDetailsAsync(any<QueryProductDetailsParams>(), any()) } answers {
+            val listener = secondArg<ProductDetailsResponseListener>()
+            listener.onProductDetailsResponse(okResult, createMockQueryResult())
+        }
+        every { billingClient.isReady } returns false andThen true
+
+        val secondResult = wrapper.querySubscriptionProducts()
+        advanceUntilIdle()
+
+        assertTrue(secondResult.isSuccess)
+    }
 }

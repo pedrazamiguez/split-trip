@@ -186,6 +186,8 @@ class SubscriptionsViewModel(
                         queryResult.exceptionOrNull(),
                         "Failed to query subscription products from billing service"
                     )
+                    val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
+                    _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                 }
                 val currentUser = getCurrentUserProfileUseCase()
                 val currentTier = currentUser?.tier ?: SubscriptionTier.FREE
@@ -210,6 +212,8 @@ class SubscriptionsViewModel(
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load subscriptions")
                 _uiState.update { it.copy(isLoading = false) }
+                val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
+                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
             }
         }
     }

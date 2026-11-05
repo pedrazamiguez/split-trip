@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
@@ -25,7 +24,6 @@ import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.BillingService
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.coroutines.resume
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,9 +35,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -62,12 +57,12 @@ class PlayBillingClientWrapper(
 ) : BillingService, PurchasesUpdatedListener {
 
     private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
-    private val connectionMutex = Mutex()
     private val cachedProductDetails = ConcurrentHashMap<String, ProductDetails>()
-
-    private val billingClient: BillingClient by lazy {
-        billingClientFactory(this)
-    }
+    private val connectionCoordinator = BillingConnectionCoordinator(
+        billingClientFactory = billingClientFactory,
+        listener = this,
+        ioDispatcher = ioDispatcher
+    )
 
     private val _subscriptionProducts = MutableStateFlow<List<SubscriptionProduct>>(emptyList())
     override val subscriptionProducts: StateFlow<List<SubscriptionProduct>> = _subscriptionProducts.asStateFlow()
@@ -80,42 +75,7 @@ class PlayBillingClientWrapper(
             ?: ((appConfigRepository?.billingSimulationEnabled?.value == true) || BuildConfig.DEBUG)
     }
 
-    private suspend fun ensureConnected(): Result<Unit> = withContext(ioDispatcher) {
-        if (billingClient.isReady) {
-            return@withContext Result.success(Unit)
-        }
-        connectionMutex.withLock {
-            if (billingClient.isReady) {
-                Result.success(Unit)
-            } else {
-                connectBillingClient()
-            }
-        }
-    }
-
-    private suspend fun connectBillingClient(): Result<Unit> =
-        suspendCancellableCoroutine { continuation ->
-            billingClient.startConnection(object : BillingClientStateListener {
-                override fun onBillingSetupFinished(billingResult: BillingResult) {
-                    if (!continuation.isActive) return
-                    if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                        continuation.resume(Result.success(Unit))
-                    } else {
-                        val code = billingResult.responseCode
-                        val msg = billingResult.debugMessage
-                        continuation.resume(
-                            Result.failure(
-                                IllegalStateException("Billing setup failed: $msg (code: $code)")
-                            )
-                        )
-                    }
-                }
-
-                override fun onBillingServiceDisconnected() {
-                    Timber.w("Billing service disconnected")
-                }
-            })
-        }
+    private suspend fun ensureConnected(): Result<Unit> = connectionCoordinator.ensureConnected()
 
     override suspend fun querySubscriptionProducts(): Result<List<SubscriptionProduct>> = withContext(ioDispatcher) {
         val connectionResult = ensureConnected()
@@ -123,7 +83,8 @@ class PlayBillingClientWrapper(
             return@withContext handleQueryFailure("Billing connection failed", connectionResult.exceptionOrNull())
         }
 
-        val (billingResult, productDetailsList) = billingClient.queryProductDetails(buildProductQueryParams())
+        val (billingResult, productDetailsList) = connectionCoordinator.getClient()
+            .queryProductDetails(buildProductQueryParams())
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             val error = IllegalStateException(
                 "Query product details failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
@@ -223,7 +184,7 @@ class PlayBillingClientWrapper(
             .setProductDetailsParamsList(listOf(productDetailsParams))
             .build()
 
-        val result = billingClient.launchBillingFlow(activity, flowParams)
+        val result = getBillingClient().launchBillingFlow(activity, flowParams)
         return if (result.responseCode == BillingClient.BillingResponseCode.OK) {
             Result.success(Unit)
         } else {
@@ -246,7 +207,7 @@ class PlayBillingClientWrapper(
                                     val ackParams = AcknowledgePurchaseParams.newBuilder()
                                         .setPurchaseToken(purchase.purchaseToken)
                                         .build()
-                                    billingClient.acknowledgePurchase(ackParams)
+                                    getBillingClient().acknowledgePurchase(ackParams)
                                 }
                                 purchase.products.forEach { productId ->
                                     _purchaseUpdates.emit(
@@ -289,7 +250,7 @@ class PlayBillingClientWrapper(
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
-        val (billingResult, purchasesList) = billingClient.queryPurchasesAsync(params)
+        val (billingResult, purchasesList) = getBillingClient().queryPurchasesAsync(params)
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             val error = IllegalStateException(
                 "Query purchases failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
@@ -321,7 +282,7 @@ class PlayBillingClientWrapper(
                 val ackParams = AcknowledgePurchaseParams.newBuilder()
                     .setPurchaseToken(activeProPurchase.purchaseToken)
                     .build()
-                billingClient.acknowledgePurchase(ackParams)
+                getBillingClient().acknowledgePurchase(ackParams)
             }
             return Result.success(true)
         }
