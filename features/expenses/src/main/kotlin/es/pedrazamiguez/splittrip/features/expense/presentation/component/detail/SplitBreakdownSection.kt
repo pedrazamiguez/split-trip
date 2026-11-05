@@ -30,6 +30,8 @@ internal fun SplitBreakdownSection(
     splits: ImmutableList<SplitDetailUiModel> = persistentListOf(),
     splitGroups: ImmutableList<SubunitSplitGroupUiModel> = persistentListOf()
 ) {
+    val hasSubunits = splitBreakdownItems.any { it is SplitBreakdownItemUiModel.Subunit } || splitGroups.isNotEmpty()
+
     Column(
         modifier = Modifier.padding(top = MaterialTheme.spacing.Small),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
@@ -52,13 +54,21 @@ internal fun SplitBreakdownSection(
                 if (splitBreakdownItems.isNotEmpty()) {
                     splitBreakdownItems.forEach { item ->
                         when (item) {
-                            is SplitBreakdownItemUiModel.Solo -> SplitRow(item.split)
+                            is SplitBreakdownItemUiModel.Solo -> SplitRow(
+                                split = item.split,
+                                reserveChevronSpace = hasSubunits
+                            )
                             is SplitBreakdownItemUiModel.Subunit -> SubunitGroup(item.group)
                         }
                     }
                 } else {
                     splitGroups.forEach { group -> SubunitGroup(group) }
-                    splits.forEach { split -> SplitRow(split) }
+                    splits.forEach { split ->
+                        SplitRow(
+                            split = split,
+                            reserveChevronSpace = hasSubunits
+                        )
+                    }
                 }
             }
         }
