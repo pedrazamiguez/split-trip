@@ -20,6 +20,8 @@
         <item quantity="other">%1$d gâttô encontráô</item>
     </plurals>
     <string name="expenses_filter_section_category">Categoría</string>
+    <string name="expenses_filter_section_payment_method">Método de pago</string>
+    <string name="expenses_filter_section_payment_status">Êttao der pago</string>
     <string name="expenses_filter_subcategories_title">Çûccategoríâ</string>
     <string name="expenses_filter_section_members">Miembrô</string>
     <string name="expenses_filter_section_date_range">Rango de fexâ</string>

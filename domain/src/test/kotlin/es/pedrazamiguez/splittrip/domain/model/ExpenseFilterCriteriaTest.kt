@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.domain.model
 
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
@@ -73,6 +75,22 @@ class ExpenseFilterCriteriaTest {
         }
 
         @Test
+        fun `payment method filter flags active status and increments activeFilterCount`() {
+            val criteria = ExpenseFilterCriteria(selectedPaymentMethods = setOf(PaymentMethod.ALIPAY))
+            assertTrue(criteria.isActive)
+            assertTrue(criteria.isPaymentMethodFiltered)
+            assertEquals(1, criteria.activeFilterCount)
+        }
+
+        @Test
+        fun `payment status filter flags active status and increments activeFilterCount`() {
+            val criteria = ExpenseFilterCriteria(selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED))
+            assertTrue(criteria.isActive)
+            assertTrue(criteria.isPaymentStatusFiltered)
+            assertEquals(1, criteria.activeFilterCount)
+        }
+
+        @Test
         fun `multi-criteria computes correct activeFilterCount`() {
             val criteria = ExpenseFilterCriteria(
                 searchQuery = "dinner",
@@ -83,6 +101,21 @@ class ExpenseFilterCriteriaTest {
             )
             assertTrue(criteria.isActive)
             assertEquals(3, criteria.activeFilterCount)
+        }
+
+        @Test
+        fun `multi-criteria computes correct activeFilterCount including payment method and status`() {
+            val criteria = ExpenseFilterCriteria(
+                searchQuery = "dinner",
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedMemberIds = setOf("user_1"),
+                startDate = LocalDate.now(),
+                endDate = LocalDate.now().plusDays(1),
+                selectedPaymentMethods = setOf(PaymentMethod.ALIPAY),
+                selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED)
+            )
+            assertTrue(criteria.isActive)
+            assertEquals(5, criteria.activeFilterCount)
         }
     }
 
@@ -105,6 +138,30 @@ class ExpenseFilterCriteriaTest {
             assertFalse(cleared.isCategoryFiltered)
             assertFalse(cleared.isMemberFiltered)
             assertFalse(cleared.isDateFiltered)
+            assertEquals(0, cleared.activeFilterCount)
+        }
+
+        @Test
+        fun `clearNonSearchFilters clears payment method and payment status filters`() {
+            val criteria = ExpenseFilterCriteria(
+                searchQuery = "dinner",
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedSubcategories = setOf(ExpenseSubcategory.RESTAURANT),
+                selectedMemberIds = setOf("user_1"),
+                startDate = LocalDate.now(),
+                endDate = LocalDate.now().plusDays(2),
+                selectedPaymentMethods = setOf(PaymentMethod.ALIPAY),
+                selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED)
+            )
+            val cleared = criteria.clearNonSearchFilters()
+            assertEquals("dinner", cleared.searchQuery)
+            assertFalse(cleared.isCategoryFiltered)
+            assertFalse(cleared.isMemberFiltered)
+            assertFalse(cleared.isDateFiltered)
+            assertFalse(cleared.isPaymentMethodFiltered)
+            assertFalse(cleared.isPaymentStatusFiltered)
+            assertTrue(cleared.selectedPaymentMethods.isEmpty())
+            assertTrue(cleared.selectedPaymentStatuses.isEmpty())
             assertEquals(0, cleared.activeFilterCount)
         }
 
@@ -132,6 +189,30 @@ class ExpenseFilterCriteriaTest {
                 selectedMemberIds = setOf("user_1", "user_2"),
                 startDate = LocalDate.of(2026, 8, 1),
                 endDate = LocalDate.of(2026, 8, 15)
+            )
+
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            ObjectOutputStream(byteArrayOutputStream).use { it.writeObject(original) }
+
+            val byteArrayInputStream = ByteArrayInputStream(byteArrayOutputStream.toByteArray())
+            val deserialized = ObjectInputStream(byteArrayInputStream).use {
+                it.readObject() as ExpenseFilterCriteria
+            }
+
+            assertEquals(original, deserialized)
+        }
+
+        @Test
+        fun `serializes and deserializes criteria with payment methods and statuses`() {
+            val original = ExpenseFilterCriteria(
+                searchQuery = "flight ticket",
+                selectedCategories = setOf(ExpenseCategory.TRANSPORT),
+                selectedSubcategories = setOf(ExpenseSubcategory.INTERNATIONAL_FLIGHT),
+                selectedMemberIds = setOf("user_1", "user_2"),
+                startDate = LocalDate.of(2026, 8, 1),
+                endDate = LocalDate.of(2026, 8, 15),
+                selectedPaymentMethods = setOf(PaymentMethod.CASH, PaymentMethod.WECHAT_PAY),
+                selectedPaymentStatuses = setOf(PaymentStatus.FINISHED, PaymentStatus.CANCELLED)
             )
 
             val byteArrayOutputStream = ByteArrayOutputStream()

@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpensesFilterScreen
 import java.time.LocalDate
@@ -84,6 +86,32 @@ private fun ExpensesFilterScreenPresetDatePreview() {
         ),
         matchingExpensesCount = 3,
         today = today
+    ) { uiState ->
+        ExpensesFilterScreen(uiState = uiState)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun ExpensesFilterScreenPaymentMethodPreview() {
+    ExpensesFilterPreviewHelper(
+        draftCriteria = ExpenseFilterCriteria(
+            selectedPaymentMethods = setOf(PaymentMethod.ALIPAY, PaymentMethod.CASH)
+        ),
+        matchingExpensesCount = 2
+    ) { uiState ->
+        ExpensesFilterScreen(uiState = uiState)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun ExpensesFilterScreenPaymentStatusPreview() {
+    ExpensesFilterPreviewHelper(
+        draftCriteria = ExpenseFilterCriteria(
+            selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED, PaymentStatus.REFUNDABLE)
+        ),
+        matchingExpensesCount = 2
     ) { uiState ->
         ExpensesFilterScreen(uiState = uiState)
     }
