@@ -321,7 +321,7 @@ class ExpenseUiMapper(
     private fun resolveBadgeIcon(paymentStatus: PaymentStatus, badgeData: PaymentBadgeData?): ImageVector? {
         if (badgeData == null) return null
         return when (paymentStatus) {
-            PaymentStatus.SCHEDULED -> if (badgeData.isPassed) {
+            PaymentStatus.SCHEDULED -> if (badgeData.isPassed || badgeData.isToday) {
                 TablerIcons.Outline.CircleCheck
             } else {
                 TablerIcons.Outline.Calendar
