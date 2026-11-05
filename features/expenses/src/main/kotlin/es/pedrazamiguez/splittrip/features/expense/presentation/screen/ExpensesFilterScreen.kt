@@ -40,6 +40,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.component.dialog
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.CategoryFilterSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.DateRangeFilterSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.MemberFilterSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.PaymentMethodFilterSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.PaymentStatusFilterSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateRangePreset
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesFilterUiState
 
@@ -77,6 +79,22 @@ fun ExpensesFilterScreen(
             ) {
                 item(key = "category_section") {
                     CategoryFilterSection(
+                        criteria = uiState.draftCriteria,
+                        onCriteriaChange = onUpdateDraft,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item(key = "payment_method_section") {
+                    PaymentMethodFilterSection(
+                        criteria = uiState.draftCriteria,
+                        onCriteriaChange = onUpdateDraft,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item(key = "payment_status_section") {
+                    PaymentStatusFilterSection(
                         criteria = uiState.draftCriteria,
                         onCriteriaChange = onUpdateDraft,
                         modifier = Modifier.fillMaxWidth()

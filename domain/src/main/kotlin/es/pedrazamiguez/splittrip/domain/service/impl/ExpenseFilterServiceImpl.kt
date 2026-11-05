@@ -44,6 +44,20 @@ class ExpenseFilterServiceImpl(
             }
         }
 
+        // 5. Payment Method Filter
+        if (criteria.isPaymentMethodFiltered) {
+            candidateExpenses = candidateExpenses.filter { expense ->
+                expense.paymentMethod in criteria.selectedPaymentMethods
+            }
+        }
+
+        // 6. Payment Status Filter
+        if (criteria.isPaymentStatusFiltered) {
+            candidateExpenses = candidateExpenses.filter { expense ->
+                expense.paymentStatus in criteria.selectedPaymentStatuses
+            }
+        }
+
         return candidateExpenses
     }
 
