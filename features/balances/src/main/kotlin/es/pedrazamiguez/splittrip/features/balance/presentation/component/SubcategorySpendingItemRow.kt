@@ -67,7 +67,7 @@ fun SubcategorySpendingItemRow(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Text(
-                    text = "${item.percentageOfCategory}%",
+                    text = item.formattedPercentage,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -33,9 +33,16 @@ class CategorySpendingUiMapper(
         val icon: ImageVector,
         val amount: Long,
         val formattedAmount: String,
+        val formattedPercentage: String,
         val progress: Float,
         val subcategories: ImmutableList<SubcategorySpendingUiModel>
     )
+
+    private fun formatPercentage(amount: Long, total: Long): String {
+        if (amount <= 0L || total <= 0L) return "0%"
+        val rounded = (amount.toFloat() / total.toFloat() * 100f).roundToInt()
+        return if (rounded == 0) "<1%" else "$rounded%"
+    }
 
     private fun filterActiveNonScheduledExpenses(
         expenses: List<Expense>,
@@ -96,6 +103,7 @@ class CategorySpendingUiMapper(
                     categoryName = entry.name,
                     categoryIcon = entry.icon,
                     formattedAmount = entry.formattedAmount,
+                    formattedPercentage = entry.formattedPercentage,
                     progress = entry.progress,
                     color = ChartColors[index % ChartColors.size],
                     subcategories = entry.subcategories
@@ -113,6 +121,7 @@ class CategorySpendingUiMapper(
         .map { (category, categoryExpenses) ->
             val amount = categoryExpenses.sumOf { it.groupAmount }
             val progress = amount.toFloat() / globalTotal.toFloat()
+            val formattedPercentage = formatPercentage(amount, globalTotal)
             val subcategories = buildExpenseSubcategories(
                 categoryExpenses = categoryExpenses,
                 categoryAmount = amount,
@@ -125,6 +134,7 @@ class CategorySpendingUiMapper(
                 icon = category.toIconVector(),
                 amount = amount,
                 formattedAmount = formatCurrencyAmount(amount, groupCurrency, locale),
+                formattedPercentage = formattedPercentage,
                 progress = progress,
                 subcategories = subcategories
             )
@@ -143,16 +153,12 @@ class CategorySpendingUiMapper(
         .map { entry ->
             val subcategory = entry.key
             val subAmount = entry.value
-            val percentageOfCategory = if (categoryAmount > 0L) {
-                (subAmount.toFloat() / categoryAmount.toFloat() * 100f).roundToInt()
-            } else {
-                0
-            }
+            val formattedPercentage = formatPercentage(subAmount, categoryAmount)
             SubcategorySpendingUiModel(
                 subcategoryName = resourceProvider.getString(subcategory.toStringRes()),
                 subcategoryIcon = subcategory.toIconVector(),
                 formattedAmount = formatCurrencyAmount(subAmount, groupCurrency, locale),
-                percentageOfCategory = percentageOfCategory,
+                formattedPercentage = formattedPercentage,
                 rawAmountCents = subAmount
             )
         }
@@ -175,13 +181,13 @@ class CategorySpendingUiMapper(
             .map { entry ->
                 val addOnType = entry.key
                 val subAmount = entry.value
-                val percentageOfCategory = (subAmount.toFloat() / extrasTotalCents.toFloat() * 100f).roundToInt()
+                val formattedPercentage = formatPercentage(subAmount, extrasTotalCents)
                 val typeName = resolveAddOnTypeName(addOnType)
                 SubcategorySpendingUiModel(
                     subcategoryName = typeName,
                     subcategoryIcon = addOnType.toIconVector(),
                     formattedAmount = formatCurrencyAmount(subAmount, groupCurrency, locale),
-                    percentageOfCategory = percentageOfCategory,
+                    formattedPercentage = formattedPercentage,
                     rawAmountCents = subAmount
                 )
             }
@@ -192,6 +198,7 @@ class CategorySpendingUiMapper(
             icon = TablerIcons.Outline.ReceiptEuro,
             amount = extrasTotalCents,
             formattedAmount = formatCurrencyAmount(extrasTotalCents, groupCurrency, locale),
+            formattedPercentage = formatPercentage(extrasTotalCents, globalTotal),
             progress = extrasTotalCents.toFloat() / globalTotal.toFloat(),
             subcategories = extrasSubcategories
         )
