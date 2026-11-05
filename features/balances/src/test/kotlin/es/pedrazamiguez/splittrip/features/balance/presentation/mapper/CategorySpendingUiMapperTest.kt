@@ -2,12 +2,20 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptEuro
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.model.AddOn
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.features.balance.R
 import io.mockk.every
 import io.mockk.mockk
+import java.time.LocalDate
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -30,31 +38,31 @@ class CategorySpendingUiMapperTest {
     @Test
     fun `mapExpenses maps positive expenses and sorts them by category amount descending`() {
         val expenses = listOf(
-            mockk<Expense> {
-                every { groupAmount } returns 500L
-                every { category } returns ExpenseCategory.FOOD
-                every { subcategory } returns ExpenseSubcategory.CAFE_BREAKFAST
-            },
-            mockk<Expense> {
-                every { groupAmount } returns 1500L
-                every { category } returns ExpenseCategory.LODGING
-                every { subcategory } returns ExpenseSubcategory.HOTEL
-            },
-            mockk<Expense> {
-                every { groupAmount } returns -200L // Negative, should be filtered out
-                every { category } returns ExpenseCategory.TRANSPORT
-                every { subcategory } returns ExpenseSubcategory.TRAIN
-            },
-            mockk<Expense> {
-                every { groupAmount } returns 0L // Zero, should be filtered out
-                every { category } returns ExpenseCategory.TRANSPORT
-                every { subcategory } returns ExpenseSubcategory.BUS
-            },
-            mockk<Expense> {
-                every { groupAmount } returns 1000L
-                every { category } returns ExpenseCategory.FOOD
-                every { subcategory } returns ExpenseSubcategory.RESTAURANT
-            }
+            Expense(
+                groupAmount = 500L,
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.CAFE_BREAKFAST
+            ),
+            Expense(
+                groupAmount = 1500L,
+                category = ExpenseCategory.LODGING,
+                subcategory = ExpenseSubcategory.HOTEL
+            ),
+            Expense(
+                groupAmount = -200L, // Negative, should be filtered out
+                category = ExpenseCategory.TRANSPORT,
+                subcategory = ExpenseSubcategory.TRAIN
+            ),
+            Expense(
+                groupAmount = 0L, // Zero, should be filtered out
+                category = ExpenseCategory.TRANSPORT,
+                subcategory = ExpenseSubcategory.BUS
+            ),
+            Expense(
+                groupAmount = 1000L,
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.RESTAURANT
+            )
         )
 
         // Total positive = 500 + 1500 + 1000 = 3000
@@ -102,16 +110,16 @@ class CategorySpendingUiMapperTest {
     @Test
     fun `mapExpenses handles multiple subcategories with UNSPECIFIED correctly`() {
         val expenses = listOf(
-            mockk<Expense> {
-                every { groupAmount } returns 800L
-                every { category } returns ExpenseCategory.TRANSPORT
-                every { subcategory } returns ExpenseSubcategory.TRAIN
-            },
-            mockk<Expense> {
-                every { groupAmount } returns 200L
-                every { category } returns ExpenseCategory.TRANSPORT
-                every { subcategory } returns ExpenseSubcategory.UNSPECIFIED
-            }
+            Expense(
+                groupAmount = 800L,
+                category = ExpenseCategory.TRANSPORT,
+                subcategory = ExpenseSubcategory.TRAIN
+            ),
+            Expense(
+                groupAmount = 200L,
+                category = ExpenseCategory.TRANSPORT,
+                subcategory = ExpenseSubcategory.UNSPECIFIED
+            )
         )
 
         val result = mapper.mapExpenses(expenses, "EUR")
@@ -132,21 +140,242 @@ class CategorySpendingUiMapperTest {
     @Test
     fun `mapExpenses returns empty list when no positive expenses`() {
         val expenses = listOf(
-            mockk<Expense> {
-                every { groupAmount } returns -200L
-                every { category } returns ExpenseCategory.TRANSPORT
-                every { subcategory } returns ExpenseSubcategory.TRAIN
-            },
-            mockk<Expense> {
-                every { groupAmount } returns 0L
-                every { category } returns ExpenseCategory.FOOD
-                every { subcategory } returns ExpenseSubcategory.RESTAURANT
-            }
+            Expense(
+                groupAmount = -200L,
+                category = ExpenseCategory.TRANSPORT,
+                subcategory = ExpenseSubcategory.TRAIN
+            ),
+            Expense(
+                groupAmount = 0L,
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.RESTAURANT
+            )
         )
 
         val result = mapper.mapExpenses(expenses, "USD")
 
         assertTrue(result.isEmpty())
+    }
+
+    private fun mockExtrasResourceStrings() {
+        every { resourceProvider.getString(R.string.balances_total_extras) } returns "Extras"
+        every { resourceProvider.getString(R.string.balances_extras_add_on_fee_plural) } returns "Fees"
+        every { resourceProvider.getString(R.string.balances_extras_add_on_surcharge_plural) } returns "Surcharges"
+        every { resourceProvider.getString(R.string.balances_extras_add_on_tip_plural) } returns "Tips"
+    }
+
+    private fun createSampleExpensesWithAddOns(): List<Expense> = listOf(
+        Expense(
+            groupAmount = 1000L,
+            category = ExpenseCategory.FOOD,
+            subcategory = ExpenseSubcategory.RESTAURANT,
+            addOns = listOf(
+                AddOn(type = AddOnType.TIP, groupAmountCents = 200L)
+            )
+        ),
+        Expense(
+            groupAmount = 2000L,
+            category = ExpenseCategory.LODGING,
+            subcategory = ExpenseSubcategory.HOTEL,
+            addOns = listOf(
+                AddOn(type = AddOnType.FEE, groupAmountCents = 300L)
+            )
+        )
+    )
+
+    private fun createSampleWithdrawalsWithAddOns(): List<CashWithdrawal> = listOf(
+        CashWithdrawal(
+            amountWithdrawn = 5000L,
+            addOns = listOf(
+                AddOn(type = AddOnType.FEE, groupAmountCents = 150L),
+                AddOn(type = AddOnType.SURCHARGE, groupAmountCents = 50L)
+            )
+        )
+    )
+
+    @Test
+    fun `mapExpenses includes positive non-discount add-ons from expenses and withdrawals in Extras category`() {
+        mockExtrasResourceStrings()
+
+        val expenses = createSampleExpensesWithAddOns()
+        val withdrawals = createSampleWithdrawalsWithAddOns()
+
+        // Base expenses: Lodging = 2000L, Food = 1000L
+        // Extras: Fee (300 + 150 = 450L), Tip (200L), Surcharge (50L) -> total extras = 700L
+        // Global total = 2000 + 1000 + 700 = 3700L
+
+        val result = mapper.mapExpenses(expenses, "USD", withdrawals)
+
+        assertEquals(3, result.size)
+
+        // Slices sorted descending: Lodging (2000), Food (1000), Extras (700)
+        val lodging = result[0]
+        assertEquals("Translated Category", lodging.categoryName)
+        assertEquals(ExpenseCategory.LODGING.toIconVector(), lodging.categoryIcon)
+        assertEquals("$20.00", lodging.formattedAmount)
+        assertEquals(2000f / 3700f, lodging.progress)
+
+        val food = result[1]
+        assertEquals("Translated Category", food.categoryName)
+        assertEquals(ExpenseCategory.FOOD.toIconVector(), food.categoryIcon)
+        assertEquals("$10.00", food.formattedAmount)
+        assertEquals(1000f / 3700f, food.progress)
+
+        val extras = result[2]
+        assertEquals("Extras", extras.categoryName)
+        assertEquals(TablerIcons.Outline.ReceiptEuro, extras.categoryIcon)
+        assertEquals("$7.00", extras.formattedAmount)
+        assertEquals(700f / 3700f, extras.progress)
+        assertEquals(3, extras.subcategories.size)
+
+        // Extras subcategories sorted descending: Fee (450), Tip (200), Surcharge (50)
+        val feeSub = extras.subcategories[0]
+        assertEquals("Fees", feeSub.subcategoryName)
+        assertEquals(AddOnType.FEE.toIconVector(), feeSub.subcategoryIcon)
+        assertEquals("$4.50", feeSub.formattedAmount)
+        assertEquals(64, feeSub.percentageOfCategory) // 450 / 700 * 100 = 64.28 -> 64
+        assertEquals(450L, feeSub.rawAmountCents)
+
+        val tipSub = extras.subcategories[1]
+        assertEquals("Tips", tipSub.subcategoryName)
+        assertEquals(AddOnType.TIP.toIconVector(), tipSub.subcategoryIcon)
+        assertEquals("$2.00", tipSub.formattedAmount)
+        assertEquals(29, tipSub.percentageOfCategory) // 200 / 700 * 100 = 28.57 -> 29
+        assertEquals(200L, tipSub.rawAmountCents)
+
+        val surchargeSub = extras.subcategories[2]
+        assertEquals("Surcharges", surchargeSub.subcategoryName)
+        assertEquals(AddOnType.SURCHARGE.toIconVector(), surchargeSub.subcategoryIcon)
+        assertEquals("$0.50", surchargeSub.formattedAmount)
+        assertEquals(7, surchargeSub.percentageOfCategory) // 50 / 700 * 100 = 7.14 -> 7
+        assertEquals(50L, surchargeSub.rawAmountCents)
+    }
+
+    @Test
+    fun `mapExpenses excludes DISCOUNT add-ons from Extras category`() {
+        every { resourceProvider.getString(R.string.balances_total_extras) } returns "Extras"
+        every { resourceProvider.getString(R.string.balances_extras_add_on_tip_plural) } returns "Tips"
+
+        val expenses = listOf(
+            Expense(
+                groupAmount = 1000L,
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.RESTAURANT,
+                addOns = listOf(
+                    AddOn(type = AddOnType.TIP, groupAmountCents = 200L),
+                    AddOn(type = AddOnType.DISCOUNT, groupAmountCents = 300L)
+                )
+            )
+        )
+
+        val result = mapper.mapExpenses(expenses, "USD")
+
+        assertEquals(2, result.size)
+        val extras = result.first { it.categoryName == "Extras" }
+        assertEquals("$2.00", extras.formattedAmount)
+        assertEquals(1, extras.subcategories.size)
+        assertEquals("Tips", extras.subcategories[0].subcategoryName)
+        assertEquals(200L, extras.subcategories[0].rawAmountCents)
+    }
+
+    @Test
+    fun `mapExpenses excludes CANCELLED expenses and future SCHEDULED expenses`() {
+        val today = LocalDate.of(2026, 11, 5)
+        val expenses = listOf(
+            Expense(
+                groupAmount = 1000L,
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.RESTAURANT
+            ),
+            Expense(
+                groupAmount = 5000L,
+                category = ExpenseCategory.TRANSPORT,
+                subcategory = ExpenseSubcategory.TRAIN,
+                paymentStatus = PaymentStatus.CANCELLED,
+                addOns = listOf(AddOn(type = AddOnType.TIP, groupAmountCents = 500L))
+            ),
+            Expense(
+                groupAmount = 3000L,
+                category = ExpenseCategory.LODGING,
+                subcategory = ExpenseSubcategory.HOTEL,
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = today.plusDays(1).atStartOfDay()
+            )
+        )
+
+        val result = mapper.mapExpenses(expenses = expenses, groupCurrency = "USD", today = today)
+
+        assertEquals(1, result.size)
+        assertEquals(1000L, result[0].subcategories[0].rawAmountCents)
+        assertEquals(1.0f, result[0].progress)
+    }
+
+    @Test
+    fun `mapExpenses omits Extras category when no positive non-discount extras exist`() {
+        val expenses = listOf(
+            Expense(
+                groupAmount = 1000L,
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.RESTAURANT,
+                addOns = emptyList()
+            )
+        )
+        val withdrawals = listOf(
+            CashWithdrawal(
+                amountWithdrawn = 2000L,
+                addOns = emptyList()
+            )
+        )
+
+        val result = mapper.mapExpenses(expenses, "USD", withdrawals)
+
+        assertEquals(1, result.size)
+        assertEquals(ExpenseCategory.FOOD.toIconVector(), result[0].categoryIcon)
+    }
+
+    @Test
+    fun `calculateTotalCents computes grand total of active base expenses and non-discount extras`() {
+        val today = LocalDate.of(2026, 11, 5)
+        val expenses = listOf(
+            Expense(
+                groupAmount = 1000L,
+                addOns = listOf(
+                    AddOn(type = AddOnType.TIP, groupAmountCents = 200L),
+                    AddOn(type = AddOnType.DISCOUNT, groupAmountCents = 300L) // Excluded
+                )
+            ),
+            Expense(
+                groupAmount = 2000L,
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 300L))
+            ),
+            Expense(
+                groupAmount = 5000L,
+                paymentStatus = PaymentStatus.CANCELLED, // Excluded
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 500L)) // Excluded
+            ),
+            Expense(
+                groupAmount = 4000L,
+                paymentStatus = PaymentStatus.SCHEDULED, // Excluded
+                dueDate = today.plusDays(2).atStartOfDay(),
+                addOns = listOf(AddOn(type = AddOnType.FEE, groupAmountCents = 400L)) // Excluded
+            )
+        )
+        val withdrawals = listOf(
+            CashWithdrawal(
+                amountWithdrawn = 5000L,
+                addOns = listOf(
+                    AddOn(type = AddOnType.FEE, groupAmountCents = 150L),
+                    AddOn(type = AddOnType.SURCHARGE, groupAmountCents = 50L)
+                )
+            )
+        )
+
+        // Base = 1000 + 2000 = 3000L
+        // Extras = 200 (tip) + 300 (fee) + 150 (fee) + 50 (surcharge) = 700L
+        // Grand total = 3700L
+        val total = mapper.calculateTotalCents(expenses, withdrawals, today)
+
+        assertEquals(3700L, total)
     }
 
     @Test
