@@ -156,7 +156,7 @@ class ExpenseDetailUiMapper(
                     null
                 },
                 formattedGroupAmount = formattingHelper.formatCentsWithCurrency(
-                    effectiveGroupAmount,
+                    expense.groupAmount,
                     expense.groupCurrency
                 ),
                 groupCurrency = expense.groupCurrency,
@@ -483,8 +483,7 @@ private fun resolveSourceAmountFormatted(
     isForeign: Boolean
 ): String? {
     return if (isForeign) {
-        val effectiveSourceAmount = resolveEffectiveSourceAmount(expense)
-        formattingHelper.formatCentsWithCurrency(effectiveSourceAmount, expense.sourceCurrency)
+        formattingHelper.formatCentsWithCurrency(expense.sourceAmount, expense.sourceCurrency)
     } else {
         null
     }
