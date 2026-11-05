@@ -4,9 +4,9 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.model.PasswordRequirementStatus
-import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.UnlinkProviderUseCase
@@ -19,6 +19,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -32,7 +33,7 @@ class AccountStatusEventHandlerImpl(
     private val linkGoogleAccountUseCase: LinkGoogleAccountUseCase,
     private val linkEmailPasswordUseCase: LinkEmailPasswordUseCase,
     private val unlinkProviderUseCase: UnlinkProviderUseCase,
-    private val authenticationService: AuthenticationService,
+    private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
     private val accountStatusUiMapper: AccountStatusUiMapper,
     private val passwordValidationService: PasswordValidationService
 ) : AccountStatusEventHandler {
@@ -55,7 +56,7 @@ class AccountStatusEventHandlerImpl(
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val isAnon = authenticationService.isAnonymous()
+                val isAnon = isUserAnonymousUseCase().first()
                 val user = getCurrentUserProfileUseCase()
                 val linkedProvidersResult = getLinkedProvidersUseCase()
                 val linkedProviders = linkedProvidersResult.getOrElse { e ->

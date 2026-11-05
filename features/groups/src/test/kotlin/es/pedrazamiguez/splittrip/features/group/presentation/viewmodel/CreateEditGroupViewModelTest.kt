@@ -871,7 +871,7 @@ class CreateEditGroupViewModelTest {
     inner class UpgradeDialog {
 
         @Test
-        fun `onEvent UpgradeClicked closes dialog and emits NavigateToRoute with SETTINGS_SUBSCRIPTIONS`() =
+        fun `onEvent UpgradeClicked closes dialog and emits NavigateToSubscriptions`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
                 val job = launch {
