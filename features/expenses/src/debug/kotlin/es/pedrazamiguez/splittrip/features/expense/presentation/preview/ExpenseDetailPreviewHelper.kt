@@ -42,6 +42,7 @@ val PREVIEW_EXPENSE_DETAIL_VANILLA = Expense(
     paymentStatus = PaymentStatus.FINISHED,
     splitType = SplitType.EQUAL,
     createdBy = "user-antonio",
+    notes = "Paid with corporate card; keep receipt for tax deduction",
     splits = listOf(
         ExpenseSplit(userId = "user-antonio", amountCents = 750L),
         ExpenseSplit(userId = "user-maria", amountCents = 750L)

@@ -108,7 +108,12 @@ internal fun SubunitGroup(group: SubunitSplitGroupUiModel) {
                     .padding(top = MaterialTheme.spacing.Small, start = SUBUNIT_MEMBER_INDENT),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
-                group.members.forEach { member -> SplitRow(member) }
+                group.members.forEach { member ->
+                    SplitRow(
+                        split = member,
+                        reserveChevronSpace = true
+                    )
+                }
             }
         }
     }
