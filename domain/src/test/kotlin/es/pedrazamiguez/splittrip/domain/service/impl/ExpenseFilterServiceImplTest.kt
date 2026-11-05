@@ -454,6 +454,26 @@ class ExpenseFilterServiceImplTest {
         }
 
         @Test
+        fun `combines amount search query with category and member filters`() {
+            val expenseWithAmount = expense1.copy(
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR"
+            )
+            val expenses = listOf(expenseWithAmount, expense2, expense3)
+            val criteria = ExpenseFilterCriteria(
+                searchQuery = "50,00",
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedMemberIds = setOf("user-1")
+            )
+
+            val result = filterService.filter(expenses, criteria)
+
+            assertEquals(listOf(expenseWithAmount), result)
+        }
+
+        @Test
         fun `clearNonSearchFilters preserves search query and resets other dimensions`() {
             val criteria = ExpenseFilterCriteria(
                 searchQuery = "Dinner",

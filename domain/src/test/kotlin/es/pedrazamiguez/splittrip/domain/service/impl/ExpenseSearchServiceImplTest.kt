@@ -360,4 +360,155 @@ class ExpenseSearchServiceImplTest {
             assertEquals(listOf(e1, e3), result)
         }
     }
+
+    @Nested
+    @DisplayName("Matching by Amount")
+    inner class MatchAmount {
+
+        private val teaExpense = Expense(
+            id = "1",
+            title = "Bubble teas",
+            sourceAmount = 1600L,
+            sourceCurrency = "CNY",
+            groupAmount = 216L,
+            groupCurrency = "EUR"
+        )
+
+        private val lunchExpense = Expense(
+            id = "2",
+            title = "Ramen Lunch",
+            sourceAmount = 1000L,
+            sourceCurrency = "JPY",
+            groupAmount = 612L,
+            groupCurrency = "EUR"
+        )
+
+        private val flightExpense = Expense(
+            id = "3",
+            title = "Flight",
+            sourceAmount = 25000L,
+            sourceCurrency = "USD",
+            groupAmount = 23000L,
+            groupCurrency = "EUR"
+        )
+
+        private val expenses = listOf(teaExpense, lunchExpense, flightExpense)
+
+        @Test
+        fun `matches source amount with exact integer query`() {
+            val result = service.search(expenses, "16")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches source amount with dot decimal query`() {
+            val result = service.search(expenses, "16.0")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches source amount with comma decimal query and two decimals`() {
+            val result = service.search(expenses, "16,00")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches group amount with dot decimal query`() {
+            val result = service.search(expenses, "2.16")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches group amount with comma decimal query`() {
+            val result = service.search(expenses, "2,16")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches group amount with comma decimal query and extra trailing zeros`() {
+            val result = service.search(expenses, "2,160")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches group amount with dot decimal query and extra trailing zeros`() {
+            val result = service.search(expenses, "2.1600")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches zero decimal currency such as JPY with integer query`() {
+            val result = service.search(expenses, "1000")
+            assertEquals(listOf(lunchExpense), result)
+        }
+
+        @Test
+        fun `matches zero decimal currency such as JPY with dot decimal query`() {
+            val result = service.search(expenses, "1000.0")
+            assertEquals(listOf(lunchExpense), result)
+        }
+
+        @Test
+        fun `matches zero decimal currency such as JPY with comma decimal query`() {
+            val result = service.search(expenses, "1000,00")
+            assertEquals(listOf(lunchExpense), result)
+        }
+
+        @Test
+        fun `matches while typing with trailing dot decimal separator`() {
+            val result = service.search(expenses, "16.")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches while typing with trailing comma decimal separator`() {
+            val result = service.search(expenses, "16,")
+            assertEquals(listOf(teaExpense), result)
+        }
+
+        @Test
+        fun `matches standard two decimal currency with comma separator`() {
+            val result = service.search(expenses, "250,00")
+            assertEquals(listOf(flightExpense), result)
+        }
+
+        @Test
+        fun `non matching numeric query returns empty list`() {
+            val result = service.search(expenses, "999.99")
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `matches both when query matches text on one expense and amount on another`() {
+            val textMatchExpense = Expense(
+                id = "4",
+                title = "Dinner at 16th Street",
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR"
+            )
+            val combinedExpenses = listOf(teaExpense, textMatchExpense)
+
+            val result = service.search(combinedExpenses, "16")
+
+            assertEquals(listOf(teaExpense, textMatchExpense), result)
+        }
+
+        @Test
+        fun `safely defaults fraction digits when currency code is unknown`() {
+            val customCurrencyExpense = Expense(
+                id = "5",
+                title = "Custom Token Expense",
+                sourceAmount = 1500L,
+                sourceCurrency = "INVALID_CURRENCY_CODE",
+                groupAmount = 1500L,
+                groupCurrency = "EUR"
+            )
+
+            val result = service.search(listOf(customCurrencyExpense), "15.00")
+
+            assertEquals(listOf(customCurrencyExpense), result)
+        }
+    }
 }

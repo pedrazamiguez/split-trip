@@ -1124,6 +1124,29 @@ class ExpensesViewModelTest {
 
             collectJob.cancel()
         }
+
+        @Test
+        fun `debounced search filters expenses by amount with decimal comma`() = runTest(testDispatcher) {
+            // Given: testExpense1 has groupAmount = 5000L (50.00 EUR), testExpense2 has 2000L (20.00 EUR)
+            every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(
+                listOf(testExpense1, testExpense2)
+            )
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            // When - Type "50,00" (matches testExpense1 50.00 EUR)
+            viewModel.onEvent(ExpensesUiEvent.SearchQueryChanged("50,00"))
+            advanceTimeBy(300)
+            advanceUntilIdle()
+
+            // Then - Only testExpense1 matches
+            assertEquals(1, allExpenses().size)
+            assertEquals("expense-1", allExpenses().first().id)
+
+            collectJob.cancel()
+        }
     }
 
     @Nested
