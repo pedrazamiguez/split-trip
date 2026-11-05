@@ -251,6 +251,101 @@ class EditExpenseFlowStrategyTest {
             assertTrue(uiState.value.configLoadFailed)
             assertFalse(uiState.value.isLoading)
         }
+
+        @Test
+        fun `skips reloading when config is already loaded for same group and forceRefresh is false`() = runTest {
+            uiState.value = AddExpenseUiState(
+                isConfigLoaded = true,
+                loadedGroupId = groupId,
+                currentStep = AddExpenseStep.SPLIT,
+                expenseTitle = "Edited Title"
+            )
+
+            var onLoadedCalled = false
+            strategy.loadInitialData(
+                groupId = groupId,
+                uiState = uiState,
+                actions = actions,
+                scope = this,
+                forceRefresh = false,
+                onConfigLoaded = { onLoadedCalled = true }
+            )
+            advanceUntilIdle()
+
+            assertFalse(onLoadedCalled)
+            coVerify(exactly = 0) { configEventHandler.suspendLoadGroupConfig(any(), any()) }
+            coVerify(exactly = 0) { getExpenseByIdUseCase(any()) }
+            assertEquals(AddExpenseStep.SPLIT, uiState.value.currentStep)
+            assertEquals("Edited Title", uiState.value.expenseTitle)
+        }
+
+        @Test
+        fun `reloads when forceRefresh is true even if config is already loaded for same group`() = runTest {
+            uiState.value = AddExpenseUiState(
+                isConfigLoaded = true,
+                loadedGroupId = groupId,
+                currentStep = AddExpenseStep.SPLIT
+            )
+            val contribution = mockk<Contribution>(relaxed = true)
+            coEvery { configEventHandler.suspendLoadGroupConfig(groupId, true) } just Runs
+            coEvery { getExpenseByIdUseCase(expenseId) } returns sampleExpense
+            coEvery { getContributionByExpenseIdUseCase(groupId, expenseId) } returns contribution
+            coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
+            coEvery { getGroupSubunitsUseCase(groupId) } returns emptyList()
+            every {
+                addExpenseUiMapper.mapExpenseToState(any(), any(), any(), any(), any())
+            } returns AddExpenseUiState()
+
+            var onLoadedCalled = false
+            strategy.loadInitialData(
+                groupId = groupId,
+                uiState = uiState,
+                actions = actions,
+                scope = this,
+                forceRefresh = true,
+                onConfigLoaded = { onLoadedCalled = true }
+            )
+            advanceUntilIdle()
+
+            assertTrue(onLoadedCalled)
+            coVerify(exactly = 1) { configEventHandler.suspendLoadGroupConfig(groupId, true) }
+            coVerify(exactly = 1) { getExpenseByIdUseCase(expenseId) }
+        }
+
+        @Test
+        fun `reloads when groupId changes even if config is loaded for previous group`() = runTest {
+            val oldGroupId = "old-group"
+            val newGroupId = "new-group"
+            uiState.value = AddExpenseUiState(
+                isConfigLoaded = true,
+                loadedGroupId = oldGroupId,
+                currentStep = AddExpenseStep.SPLIT
+            )
+            val contribution = mockk<Contribution>(relaxed = true)
+            coEvery { configEventHandler.suspendLoadGroupConfig(newGroupId, false) } just Runs
+            coEvery { getExpenseByIdUseCase(expenseId) } returns sampleExpense
+            coEvery { getContributionByExpenseIdUseCase(newGroupId, expenseId) } returns contribution
+            coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
+            coEvery { getGroupSubunitsUseCase(newGroupId) } returns emptyList()
+            every {
+                addExpenseUiMapper.mapExpenseToState(any(), any(), any(), any(), any())
+            } returns AddExpenseUiState()
+
+            var onLoadedCalled = false
+            strategy.loadInitialData(
+                groupId = newGroupId,
+                uiState = uiState,
+                actions = actions,
+                scope = this,
+                forceRefresh = false,
+                onConfigLoaded = { onLoadedCalled = true }
+            )
+            advanceUntilIdle()
+
+            assertTrue(onLoadedCalled)
+            coVerify(exactly = 1) { configEventHandler.suspendLoadGroupConfig(newGroupId, false) }
+            coVerify(exactly = 1) { getExpenseByIdUseCase(expenseId) }
+        }
     }
 
     // ── saveExpense ───────────────────────────────────────────────────────────

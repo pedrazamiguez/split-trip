@@ -54,6 +54,12 @@ class EditExpenseFlowStrategy(
         onConfigLoaded: suspend () -> Unit
     ) {
         if (groupId == null) return
+
+        val currentState = uiState.value
+        val isGroupChanged = currentState.loadedGroupId != groupId
+
+        if (!forceRefresh && !isGroupChanged && currentState.isConfigLoaded) return
+
         scope.launch {
             try {
                 uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
