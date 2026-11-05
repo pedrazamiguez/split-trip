@@ -104,9 +104,10 @@ class ExpenseDetailUiMapper(
             val (soloSplits, splitGroups, splitBreakdownItems) = resolveSplits()
             val isForeign = expense.sourceCurrency != expense.groupCurrency
             val badgeData = paymentStatusBadgeUiMapper.buildBadge(expense)
+            val isScheduledSettled = badgeData?.isPassed == true || badgeData?.isToday == true
             val badgeIcon = badgeData?.let {
                 when (expense.paymentStatus) {
-                    PaymentStatus.SCHEDULED -> if (it.isPassed) {
+                    PaymentStatus.SCHEDULED -> if (isScheduledSettled) {
                         TablerIcons.Outline.CircleCheck
                     } else {
                         TablerIcons.Outline.Calendar
@@ -165,8 +166,16 @@ class ExpenseDetailUiMapper(
                 paymentMethodText = resourceProvider.getString(expense.paymentMethod.toStringRes()),
                 paymentMethodIcon = expense.paymentMethod.toIconVector(),
                 paymentStatusText = when (expense.paymentStatus) {
-                    PaymentStatus.SCHEDULED -> resourceProvider.getString(R.string.payment_status_pending)
-                    PaymentStatus.REFUNDABLE -> resourceProvider.getString(R.string.expense_detail_on_hold)
+                    PaymentStatus.SCHEDULED -> if (isScheduledSettled) {
+                        resourceProvider.getString(R.string.payment_status_finished)
+                    } else {
+                        resourceProvider.getString(R.string.payment_status_pending)
+                    }
+                    PaymentStatus.REFUNDABLE -> if (badgeData?.isPassed == true) {
+                        resourceProvider.getString(R.string.payment_status_finished)
+                    } else {
+                        resourceProvider.getString(R.string.expense_detail_on_hold)
+                    }
                     else -> resourceProvider.getString(expense.paymentStatus.toStringRes())
                 },
                 paymentStatusIcon = expense.paymentStatus.toIconVector(),

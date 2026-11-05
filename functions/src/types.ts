@@ -13,7 +13,9 @@ export enum NotificationType {
   EXPENSE_ADDED = "EXPENSE_ADDED",
   EXPENSE_UPDATED = "EXPENSE_UPDATED",
   EXPENSE_DELETED = "EXPENSE_DELETED",
+  EXPENSE_SCHEDULED_REMINDER = "EXPENSE_SCHEDULED_REMINDER",
   EXPENSE_SCHEDULED_EFFECTIVE = "EXPENSE_SCHEDULED_EFFECTIVE",
+  EXPENSE_REFUNDABLE_REMINDER = "EXPENSE_REFUNDABLE_REMINDER",
   MEMBER_ADDED = "MEMBER_ADDED",
   MEMBER_REMOVED = "MEMBER_REMOVED",
   CASH_WITHDRAWAL = "CASH_WITHDRAWAL",
@@ -151,6 +153,7 @@ export interface FcmDataPayload {
   actorName: string;
   deepLink: string;
   entityId?: string;
+  expenseId?: string;
   formattedAmount?: string;
   amountCents?: string;
   currencyCode?: string;

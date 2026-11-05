@@ -2,6 +2,11 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
@@ -1675,6 +1680,98 @@ class ExpenseDetailUiMapperTest {
             val result = mapper.map(expense, memberProfiles, currentUserId)
             assertNull(result.formattedExpectedGroupAmount)
             assertNull(result.formattedGroupAmountDifference)
+        }
+    }
+
+    @Nested
+    inner class ScheduledStatusDisplayMapping {
+
+        @Test
+        fun `scheduled with past dueDate maps to finished and CircleCheck badge`() {
+            every { resourceProvider.getString(R.string.payment_status_finished) } returns "Paid"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().minusDays(2)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.CircleCheck, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled with today dueDate maps to finished and CircleCheck badge`() {
+            every { resourceProvider.getString(R.string.payment_status_finished) } returns "Paid"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now()
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.CircleCheck, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled with future dueDate maps to pending and Calendar badge`() {
+            every { resourceProvider.getString(R.string.payment_status_pending) } returns "Pending"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(2)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Pending", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.Calendar, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled with null dueDate maps to pending and null badge`() {
+            every { resourceProvider.getString(R.string.payment_status_pending) } returns "Pending"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = null
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Pending", result.paymentStatusText)
+            assertNull(result.badgeIcon)
+        }
+    }
+
+    @Nested
+    inner class RefundableStatusDisplayMapping {
+
+        @Test
+        fun `refundable with past deadline maps to finished and Receipt badge`() {
+            every { resourceProvider.getString(R.string.payment_status_finished) } returns "Paid"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().minusDays(2)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.Receipt, result.badgeIcon)
+        }
+
+        @Test
+        fun `refundable with active deadline maps to on_hold and ReceiptRefund badge`() {
+            every { resourceProvider.getString(R.string.expense_detail_on_hold) } returns "On hold"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().plusDays(2)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("On hold", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.ReceiptRefund, result.badgeIcon)
         }
     }
 
