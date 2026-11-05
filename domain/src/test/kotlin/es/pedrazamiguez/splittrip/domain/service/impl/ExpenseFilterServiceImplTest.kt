@@ -426,10 +426,23 @@ class ExpenseFilterServiceImplTest {
     @DisplayName("Payment Method Filtering")
     inner class PaymentMethodFiltering {
 
-        private val cashExpense = expense1.copy(id = "exp-cash", paymentMethod = PaymentMethod.CASH)
-        private val cardExpense = expense2.copy(id = "exp-card", paymentMethod = PaymentMethod.CREDIT_CARD)
-        private val alipayExpense = expense3.copy(id = "exp-alipay", paymentMethod = PaymentMethod.ALIPAY)
-        private val paymentMethodExpenses = listOf(cashExpense, cardExpense, alipayExpense)
+        private val cashExpense = expense1.copy(
+            id = "exp-cash",
+            paymentMethod = PaymentMethod.CASH
+        )
+        private val cardExpense = expense2.copy(
+            id = "exp-card",
+            paymentMethod = PaymentMethod.CREDIT_CARD
+        )
+        private val alipayExpense = expense3.copy(
+            id = "exp-alipay",
+            paymentMethod = PaymentMethod.ALIPAY
+        )
+        private val paymentMethodExpenses = listOf(
+            cashExpense,
+            cardExpense,
+            alipayExpense
+        )
 
         @Test
         fun `filters expenses matching single selected payment method`() {
@@ -459,12 +472,28 @@ class ExpenseFilterServiceImplTest {
     @DisplayName("Payment Status Filtering")
     inner class PaymentStatusFiltering {
 
-        private val finishedExpense = expense1.copy(id = "exp-finished", paymentStatus = PaymentStatus.FINISHED)
-        private val scheduledExpense = expense2.copy(id = "exp-scheduled", paymentStatus = PaymentStatus.SCHEDULED)
-        private val refundableExpense = expense3.copy(id = "exp-refundable", paymentStatus = PaymentStatus.REFUNDABLE)
-        private val cancelledExpense = expense4.copy(id = "exp-cancelled", paymentStatus = PaymentStatus.CANCELLED)
-        private val paymentStatusExpenses =
-            listOf(finishedExpense, scheduledExpense, refundableExpense, cancelledExpense)
+        private val finishedExpense = expense1.copy(
+            id = "exp-finished",
+            paymentStatus = PaymentStatus.FINISHED
+        )
+        private val scheduledExpense = expense2.copy(
+            id = "exp-scheduled",
+            paymentStatus = PaymentStatus.SCHEDULED
+        )
+        private val refundableExpense = expense3.copy(
+            id = "exp-refundable",
+            paymentStatus = PaymentStatus.REFUNDABLE
+        )
+        private val cancelledExpense = expense4.copy(
+            id = "exp-cancelled",
+            paymentStatus = PaymentStatus.CANCELLED
+        )
+        private val paymentStatusExpenses = listOf(
+            finishedExpense,
+            scheduledExpense,
+            refundableExpense,
+            cancelledExpense
+        )
 
         @Test
         fun `filters expenses matching single selected payment status`() {
