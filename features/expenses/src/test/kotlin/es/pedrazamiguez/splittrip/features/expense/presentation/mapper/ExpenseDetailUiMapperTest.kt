@@ -1819,7 +1819,7 @@ class ExpenseDetailUiMapperTest {
     inner class MixedAddOnsBreakdown {
 
         @Test
-        fun `formattedGroupAmount formats effectiveGroupAmount when ON_TOP and INCLUDED add-ons exist`() {
+        fun `formattedGroupAmount formats base groupAmount when ON_TOP and INCLUDED add-ons exist`() {
             every { localeProvider.getCurrentLocale() } returns Locale.US
             val includedFee = AddOn(
                 id = "addon-inc",
@@ -1849,7 +1849,10 @@ class ExpenseDetailUiMapperTest {
 
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
-            assertEquals("€127.80", result.formattedGroupAmount)
+            // Base cost displayed in hero amount
+            assertEquals("€123.48", result.formattedGroupAmount)
+            // Effective total still reflected in breakdown summary
+            assertEquals("€127.80", result.formattedEffectiveTotal)
         }
 
         @Test
@@ -2042,7 +2045,7 @@ class ExpenseDetailUiMapperTest {
         }
 
         @Test
-        fun `formattedSourceAmount reflects total foreign currency paid with INCLUDED add-on`() {
+        fun `formattedSourceAmount reflects base sourceAmount when INCLUDED add-on is present`() {
             every { localeProvider.getCurrentLocale() } returns Locale.US
             val alipayFee = AddOn(
                 id = "addon-alipay",
@@ -2065,9 +2068,10 @@ class ExpenseDetailUiMapperTest {
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
             val formattedSource = checkNotNull(result.formattedSourceAmount)
+            // Base source cost displayed (951.00 CNY), not the effective total with fee (979.53 CNY)
             assertTrue(
-                formattedSource.contains("979.53") ||
-                    formattedSource.contains("979,53")
+                formattedSource.contains("951.00") ||
+                    formattedSource.contains("951,00")
             )
         }
     }

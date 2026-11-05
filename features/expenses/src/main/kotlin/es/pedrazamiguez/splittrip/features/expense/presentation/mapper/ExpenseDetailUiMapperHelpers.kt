@@ -122,13 +122,6 @@ internal fun resolvePreDiscountAmounts(expense: Expense): ReconstructedAmounts {
     )
 }
 
-internal fun resolveEffectiveSourceAmount(expense: Expense): Long {
-    val nonDiscountSourceExtras = expense.addOns
-        .filter { it.currency == expense.sourceCurrency && it.type != AddOnType.DISCOUNT }
-        .sumOf { it.amountCents }
-    return expense.sourceAmount + nonDiscountSourceExtras
-}
-
 internal fun resolvePreExtractionAmounts(
     expense: Expense,
     baseAmounts: ReconstructedAmounts
