@@ -20,7 +20,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AutoFillBanner
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.ZoneOffset
+import java.time.ZoneId
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +37,8 @@ class ReceiptAutoFillEventHandler(
     private val receiptExtractionService: ReceiptExtractionService,
     private val formattingHelper: FormattingHelper,
     private val addExpenseUiMapper: AddExpenseUiMapper,
-    private val featureGateService: FeatureGateService
+    private val featureGateService: FeatureGateService,
+    private val zoneIdProvider: () -> ZoneId = { ZoneId.systemDefault() }
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -267,7 +268,7 @@ class ReceiptAutoFillEventHandler(
             } else {
                 extractedDate.atStartOfDay()
             }
-            val dateMillis = localDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
+            val dateMillis = localDateTime.atZone(zoneIdProvider()).toInstant().toEpochMilli()
             val formattedDate = addExpenseUiMapper.formatExpenseDateForDisplay(dateMillis)
             _uiState.update {
                 it.copy(
