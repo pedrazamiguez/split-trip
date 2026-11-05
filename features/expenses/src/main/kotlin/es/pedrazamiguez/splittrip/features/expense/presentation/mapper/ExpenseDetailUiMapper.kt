@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
+import es.pedrazamiguez.splittrip.core.common.extensions.utcToSystemLocalDateTime
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -35,6 +36,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDet
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitBreakdownItemUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubunitSplitGroupUiModel
+import java.time.ZoneId
 import java.util.Locale
 import kotlin.math.abs
 import kotlinx.collections.immutable.ImmutableList
@@ -72,7 +74,8 @@ class ExpenseDetailUiMapper(
         currentUserId: String?,
         withdrawalLookup: Map<String, CashWithdrawal> = emptyMap(),
         subunitNameLookup: Map<String, String> = emptyMap(),
-        groupMemberIds: List<String> = emptyList()
+        groupMemberIds: List<String> = emptyList(),
+        zoneId: ZoneId = ZoneId.systemDefault()
     ): ExpenseDetailUiModel {
         return ModelBuilder(
             expense,
@@ -80,7 +83,8 @@ class ExpenseDetailUiMapper(
             currentUserId,
             withdrawalLookup,
             subunitNameLookup,
-            groupMemberIds
+            groupMemberIds,
+            zoneId
         ).build()
     }
 
@@ -90,7 +94,8 @@ class ExpenseDetailUiMapper(
         val currentUserId: String?,
         val withdrawalLookup: Map<String, CashWithdrawal>,
         val subunitNameLookup: Map<String, String>,
-        val groupMemberIds: List<String>
+        val groupMemberIds: List<String>,
+        val zoneId: ZoneId
     ) {
         private val effectiveGroupAmount: Long = resolveEffectiveTotal(
             expense.groupAmount,
@@ -104,9 +109,10 @@ class ExpenseDetailUiMapper(
             val (soloSplits, splitGroups, splitBreakdownItems) = resolveSplits()
             val isForeign = expense.sourceCurrency != expense.groupCurrency
             val badgeData = paymentStatusBadgeUiMapper.buildBadge(expense)
+            val isScheduledSettled = badgeData?.isPassed == true || badgeData?.isToday == true
             val badgeIcon = badgeData?.let {
                 when (expense.paymentStatus) {
-                    PaymentStatus.SCHEDULED -> if (it.isPassed) {
+                    PaymentStatus.SCHEDULED -> if (isScheduledSettled) {
                         TablerIcons.Outline.CircleCheck
                     } else {
                         TablerIcons.Outline.Calendar
@@ -150,7 +156,7 @@ class ExpenseDetailUiMapper(
                     null
                 },
                 formattedGroupAmount = formattingHelper.formatCentsWithCurrency(
-                    effectiveGroupAmount,
+                    expense.groupAmount,
                     expense.groupCurrency
                 ),
                 groupCurrency = expense.groupCurrency,
@@ -165,8 +171,16 @@ class ExpenseDetailUiMapper(
                 paymentMethodText = resourceProvider.getString(expense.paymentMethod.toStringRes()),
                 paymentMethodIcon = expense.paymentMethod.toIconVector(),
                 paymentStatusText = when (expense.paymentStatus) {
-                    PaymentStatus.SCHEDULED -> resourceProvider.getString(R.string.payment_status_pending)
-                    PaymentStatus.REFUNDABLE -> resourceProvider.getString(R.string.expense_detail_on_hold)
+                    PaymentStatus.SCHEDULED -> if (isScheduledSettled) {
+                        resourceProvider.getString(R.string.payment_status_finished)
+                    } else {
+                        resourceProvider.getString(R.string.payment_status_pending)
+                    }
+                    PaymentStatus.REFUNDABLE -> if (badgeData?.isPassed == true) {
+                        resourceProvider.getString(R.string.payment_status_finished)
+                    } else {
+                        resourceProvider.getString(R.string.expense_detail_on_hold)
+                    }
                     else -> resourceProvider.getString(expense.paymentStatus.toStringRes())
                 },
                 paymentStatusIcon = expense.paymentStatus.toIconVector(),
@@ -181,7 +195,7 @@ class ExpenseDetailUiMapper(
                 ),
                 payerDisplay = payerDisplay,
                 creatorDisplay = creatorDisplay,
-                dateText = formattingHelper.formatShortDate(expense.effectiveDate),
+                dateText = formattingHelper.formatShortDate(expense.effectiveDate?.utcToSystemLocalDateTime(zoneId)),
                 secondaryDateText = resolveSecondaryDateText(expense, formattingHelper),
                 secondaryDateIcon = resolveSecondaryDateIcon(expense),
                 vendorText = expense.vendor?.takeIf { it.isNotBlank() },
@@ -225,7 +239,7 @@ class ExpenseDetailUiMapper(
                     userUiMapper,
                     resourceProvider
                 ),
-                createdAtText = formattingHelper.formatShortDate(expense.createdAt),
+                createdAtText = formattingHelper.formatShortDate(expense.createdAt?.utcToSystemLocalDateTime(zoneId)),
                 syncStatus = expense.syncStatus,
                 isCancelled = expense.paymentStatus == PaymentStatus.CANCELLED,
                 isRefundable = expense.paymentStatus == PaymentStatus.REFUNDABLE && badgeData?.isPassed != true
@@ -469,8 +483,7 @@ private fun resolveSourceAmountFormatted(
     isForeign: Boolean
 ): String? {
     return if (isForeign) {
-        val effectiveSourceAmount = resolveEffectiveSourceAmount(expense)
-        formattingHelper.formatCentsWithCurrency(effectiveSourceAmount, expense.sourceCurrency)
+        formattingHelper.formatCentsWithCurrency(expense.sourceAmount, expense.sourceCurrency)
     } else {
         null
     }

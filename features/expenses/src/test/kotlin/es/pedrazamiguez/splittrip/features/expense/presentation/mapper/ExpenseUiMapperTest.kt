@@ -4,6 +4,11 @@ import es.pedrazamiguez.splittrip.core.common.R as CommonR
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
@@ -26,6 +31,7 @@ import io.mockk.every
 import io.mockk.mockk
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -338,6 +344,19 @@ class ExpenseUiMapperTest {
         }
 
         @Test
+        fun `map formats dateText in specified timezone`() {
+            val expense = Expense(
+                id = "e-tz",
+                createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+            )
+
+            val result = mapper.map(expense, zoneId = ZoneId.of("Asia/Shanghai"))
+
+            val expectedDateText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
+            assertEquals(expectedDateText, result.dateText)
+        }
+
+        @Test
         fun `maps dateText as empty when createdAt is null`() {
             val expense = Expense(id = "e11", createdAt = null)
 
@@ -573,6 +592,48 @@ class ExpenseUiMapperTest {
             // Scheduled: 5000 cents = €50.00
             assertEquals("€50.00", result[0].formattedDayScheduled)
         }
+
+        @Test
+        fun `groups expenses by local calendar date in non-UTC timezone across midnight`() {
+            val expenses = listOf(
+                Expense(
+                    id = "e-cst",
+                    title = "Breakfast in Shanghai",
+                    groupAmount = 2500,
+                    groupCurrency = "EUR",
+                    paymentStatus = PaymentStatus.FINISHED,
+                    createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+                )
+            )
+
+            val result = mapper.mapGroupedByDate(expenses, zoneId = ZoneId.of("Asia/Shanghai"))
+
+            val expectedDateText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
+            assertEquals(1, result.size)
+            assertEquals(expectedDateText, result[0].dateText)
+            assertEquals(expectedDateText, result[0].expenses[0].dateText)
+        }
+
+        @Test
+        fun `groups expenses by local calendar date in negative offset timezone across midnight`() {
+            val expenses = listOf(
+                Expense(
+                    id = "e-edt",
+                    title = "Late dinner in NYC",
+                    groupAmount = 5000,
+                    groupCurrency = "EUR",
+                    paymentStatus = PaymentStatus.FINISHED,
+                    createdAt = LocalDateTime.of(2026, 10, 28, 2, 0, 0)
+                )
+            )
+
+            val result = mapper.mapGroupedByDate(expenses, zoneId = ZoneId.of("America/New_York"))
+
+            val expectedDateText = LocalDate.of(2026, 10, 27).formatShortDate(Locale.US)
+            assertEquals(1, result.size)
+            assertEquals(expectedDateText, result[0].dateText)
+            assertEquals(expectedDateText, result[0].expenses[0].dateText)
+        }
     }
 
     // ---------- Scheduled badge ----------
@@ -682,6 +743,84 @@ class ExpenseUiMapperTest {
             assertEquals(futureDueDate.formatShortDate(Locale.US), result.badgeText)
             assertFalse(result.isBadgeUrgent)
             assertTrue(result.isRefundable)
+        }
+
+        @Test
+        fun `scheduled expense due today resolves CircleCheck badge icon`() {
+            val expense = Expense(
+                id = "e1",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now()
+            )
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.CircleCheck, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled expense with past dueDate resolves CircleCheck badge icon`() {
+            val expense = Expense(
+                id = "e2",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().minusDays(2)
+            )
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.CircleCheck, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled expense due tomorrow resolves Calendar badge icon`() {
+            val expense = Expense(
+                id = "e3",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(1)
+            )
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.Calendar, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled expense with future dueDate resolves Calendar badge icon`() {
+            val expense = Expense(
+                id = "e4",
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(5)
+            )
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.Calendar, result.badgeIcon)
+        }
+
+        @Test
+        fun `refundable expense with past deadline resolves Receipt badge icon`() {
+            val expense = Expense(
+                id = "e5",
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().minusDays(2)
+            )
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.Receipt, result.badgeIcon)
+        }
+
+        @Test
+        fun `refundable expense with future deadline resolves ReceiptRefund badge icon`() {
+            val expense = Expense(
+                id = "e6",
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().plusDays(5)
+            )
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.ReceiptRefund, result.badgeIcon)
         }
     }
 

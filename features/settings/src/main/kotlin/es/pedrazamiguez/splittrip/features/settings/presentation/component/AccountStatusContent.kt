@@ -39,7 +39,8 @@ internal fun AccountStatusContent(
     ) {
         AccountStatusHeader(
             email = uiState.email,
-            joinDateText = uiState.joinDateText
+            joinDateText = uiState.joinDateText,
+            isAnonymous = uiState.isAnonymous
         )
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
@@ -50,12 +51,14 @@ internal fun AccountStatusContent(
             onEvent = onEvent
         )
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
+        if (!uiState.isAnonymous) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))
 
-        DestructiveButton(
-            text = stringResource(R.string.account_status_delete_account_button),
-            onClick = { onEvent(AccountStatusUiEvent.ShowDeleteAccountDialog) },
-            modifier = Modifier.fillMaxWidth()
-        )
+            DestructiveButton(
+                text = stringResource(R.string.account_status_delete_account_button),
+                onClick = { onEvent(AccountStatusUiEvent.ShowDeleteAccountDialog) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }

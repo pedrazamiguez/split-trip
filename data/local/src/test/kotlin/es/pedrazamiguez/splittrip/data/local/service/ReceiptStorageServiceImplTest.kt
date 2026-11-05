@@ -4,23 +4,31 @@ import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
+import androidx.exifinterface.media.ExifInterface
 import androidx.test.core.app.ApplicationProvider
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
+import io.mockk.unmockkConstructor
+import io.mockk.verify
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.OutputStream
 import java.net.HttpURLConnection
+import java.net.URI
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,7 +83,7 @@ class ReceiptStorageServiceImplTest {
         assertTrue(attachment.localUri.startsWith("file:/"))
         assertTrue(attachment.localUri.endsWith(".pdf"))
 
-        val localFile = File(java.net.URI(attachment.localUri))
+        val localFile = File(URI(attachment.localUri))
         assertTrue(localFile.exists())
         assertEquals("Dummy PDF Content", localFile.readText())
     }
@@ -89,7 +97,7 @@ class ReceiptStorageServiceImplTest {
         // When/Then
         try {
             service.downloadAndStore(remoteUrl)
-            org.junit.Assert.fail("Expected an exception to be thrown")
+            fail("Expected an exception to be thrown")
         } catch (e: TerminalDownloadException) {
             assertEquals(404, e.responseCode)
             assertTrue(e.message?.contains("Failed to download file: HTTP 404") == true)
@@ -126,7 +134,7 @@ class ReceiptStorageServiceImplTest {
         assertEquals("application/pdf", attachment.mimeType)
         assertTrue(attachment.localUri.endsWith(".pdf"))
 
-        val copiedFile = File(java.net.URI(attachment.localUri))
+        val copiedFile = File(URI(attachment.localUri))
         assertTrue(copiedFile.exists())
         assertEquals("Mock PDF Data", copiedFile.readText())
 
@@ -163,7 +171,7 @@ class ReceiptStorageServiceImplTest {
         val mockBitmap = mockk<Bitmap>(relaxed = true)
         every { BitmapFactory.decodeFile(any(), any()) } returns mockBitmap
         every { mockBitmap.compress(any(), any(), any()) } answers {
-            val os = arg<java.io.OutputStream>(2)
+            val os = arg<OutputStream>(2)
             os.write("Compressed Lossless Webp Bytes".toByteArray())
             true
         }
@@ -176,7 +184,7 @@ class ReceiptStorageServiceImplTest {
         assertEquals("image/webp", attachment.mimeType)
         assertTrue(attachment.localUri.endsWith(".webp"))
 
-        val compressedFile = File(java.net.URI(attachment.localUri))
+        val compressedFile = File(URI(attachment.localUri))
         assertTrue(compressedFile.exists())
         assertEquals("Compressed Lossless Webp Bytes", compressedFile.readText())
 
@@ -213,7 +221,7 @@ class ReceiptStorageServiceImplTest {
         val mockBitmap = mockk<Bitmap>(relaxed = true)
         every { BitmapFactory.decodeFile(any(), any()) } returns mockBitmap
         every { mockBitmap.compress(any(), any(), any()) } answers {
-            val os = arg<java.io.OutputStream>(2)
+            val os = arg<OutputStream>(2)
             os.write("Compressed Legacy Webp Bytes".toByteArray())
             true
         }
@@ -226,7 +234,7 @@ class ReceiptStorageServiceImplTest {
         assertEquals("image/webp", attachment.mimeType)
         assertTrue(attachment.localUri.endsWith(".webp"))
 
-        val compressedFile = File(java.net.URI(attachment.localUri))
+        val compressedFile = File(URI(attachment.localUri))
         assertTrue(compressedFile.exists())
         assertEquals("Compressed Legacy Webp Bytes", compressedFile.readText())
 
@@ -328,5 +336,351 @@ class ReceiptStorageServiceImplTest {
         // Then
         assertTrue("File outside receipts directory should NOT be deleted", outsideFile.exists())
         outsideFile.delete() // clean up
+    }
+
+    @Test
+    fun copyAndCompress_imageWithExifRotation90_rotatesBitmapAndRecyclesBoth() = runTest {
+        val setup = setupImageMock("rot90", 1000, 800)
+        try {
+            mockkConstructor(ExifInterface::class)
+            every {
+                anyConstructed<ExifInterface>().getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } returns ExifInterface.ORIENTATION_ROTATE_90
+
+            val attachment = setup.localService.copyAndCompress(setup.sourceUri)
+
+            assertNotNull(attachment)
+            assertEquals("image/webp", attachment.mimeType)
+            assertTrue(attachment.localUri.endsWith(".webp"))
+            verify(exactly = 1) { setup.mockOriginalBitmap.recycle() }
+            verify(exactly = 1) { setup.mockRotatedBitmap.recycle() }
+        } finally {
+            setup.cleanUp()
+            unmockkConstructor(ExifInterface::class)
+        }
+    }
+
+    @Test
+    fun copyAndCompress_imageWithExifRotation180_rotatesBitmapAndRecyclesBoth() = runTest {
+        val setup = setupImageMock("rot180", 1000, 800)
+        try {
+            mockkConstructor(ExifInterface::class)
+            every {
+                anyConstructed<ExifInterface>().getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } returns ExifInterface.ORIENTATION_ROTATE_180
+
+            val attachment = setup.localService.copyAndCompress(setup.sourceUri)
+
+            assertNotNull(attachment)
+            assertEquals("image/webp", attachment.mimeType)
+            assertTrue(attachment.localUri.endsWith(".webp"))
+            verify(exactly = 1) { setup.mockOriginalBitmap.recycle() }
+            verify(exactly = 1) { setup.mockRotatedBitmap.recycle() }
+        } finally {
+            setup.cleanUp()
+            unmockkConstructor(ExifInterface::class)
+        }
+    }
+
+    @Test
+    fun copyAndCompress_imageWithExifRotation270_rotatesBitmapAndRecyclesBoth() = runTest {
+        val setup = setupImageMock("rot270", 800, 1000)
+        try {
+            mockkConstructor(ExifInterface::class)
+            every {
+                anyConstructed<ExifInterface>().getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } returns ExifInterface.ORIENTATION_ROTATE_270
+
+            val attachment = setup.localService.copyAndCompress(setup.sourceUri)
+
+            assertNotNull(attachment)
+            assertEquals("image/webp", attachment.mimeType)
+            assertTrue(attachment.localUri.endsWith(".webp"))
+            verify(exactly = 1) { setup.mockOriginalBitmap.recycle() }
+            verify(exactly = 1) { setup.mockRotatedBitmap.recycle() }
+        } finally {
+            setup.cleanUp()
+            unmockkConstructor(ExifInterface::class)
+        }
+    }
+
+    @Test
+    fun copyAndCompress_imageWithExifFlipHorizontal_transformsBitmapAndRecyclesBoth() = runTest {
+        val setup = setupImageMock("flip_h", 1000, 800)
+        try {
+            mockkConstructor(ExifInterface::class)
+            every {
+                anyConstructed<ExifInterface>().getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } returns ExifInterface.ORIENTATION_FLIP_HORIZONTAL
+
+            val attachment = setup.localService.copyAndCompress(setup.sourceUri)
+
+            assertNotNull(attachment)
+            assertEquals("image/webp", attachment.mimeType)
+            assertTrue(attachment.localUri.endsWith(".webp"))
+            verify(exactly = 1) { setup.mockOriginalBitmap.recycle() }
+            verify(exactly = 1) { setup.mockRotatedBitmap.recycle() }
+        } finally {
+            setup.cleanUp()
+            unmockkConstructor(ExifInterface::class)
+        }
+    }
+
+    @Test
+    fun copyAndCompress_imageWithExifNormal_doesNotInvokeCreateBitmap() = runTest {
+        val setup = setupImageMock("normal", 1000, 800)
+        try {
+            mockkConstructor(ExifInterface::class)
+            every {
+                anyConstructed<ExifInterface>().getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } returns ExifInterface.ORIENTATION_NORMAL
+
+            val attachment = setup.localService.copyAndCompress(setup.sourceUri)
+
+            assertNotNull(attachment)
+            assertEquals("image/webp", attachment.mimeType)
+            assertTrue(attachment.localUri.endsWith(".webp"))
+            verify(exactly = 0) {
+                Bitmap.createBitmap(setup.mockOriginalBitmap, any(), any(), any(), any(), any<Matrix>(), any())
+            }
+            verify(exactly = 1) { setup.mockOriginalBitmap.recycle() }
+        } finally {
+            setup.cleanUp()
+            unmockkConstructor(ExifInterface::class)
+        }
+    }
+
+    @Test
+    fun copyAndCompress_whenExifThrowsException_fallsBackGracefullyWithoutCrash() = runTest {
+        val setup = setupImageMock("exif_err", 1000, 800)
+        try {
+            mockkConstructor(ExifInterface::class)
+            every {
+                anyConstructed<ExifInterface>().getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } throws RuntimeException("corrupt EXIF")
+
+            val attachment = setup.localService.copyAndCompress(setup.sourceUri)
+
+            assertNotNull(attachment)
+            assertEquals("image/webp", attachment.mimeType)
+            assertTrue(attachment.localUri.endsWith(".webp"))
+            verify(exactly = 0) {
+                Bitmap.createBitmap(setup.mockOriginalBitmap, any(), any(), any(), any(), any<Matrix>(), any())
+            }
+            verify(exactly = 1) { setup.mockOriginalBitmap.recycle() }
+        } finally {
+            setup.cleanUp()
+            unmockkConstructor(ExifInterface::class)
+        }
+    }
+
+    @Test
+    fun copyAndCompress_whenCompressThrowsException_recyclesBitmapsInFinally() = runTest {
+        val setup = setupImageMock("compress_err", 1000, 800)
+        every { setup.mockRotatedBitmap.compress(any(), any(), any()) } throws RuntimeException("Disk write failure")
+
+        try {
+            mockkConstructor(ExifInterface::class)
+            every {
+                anyConstructed<ExifInterface>().getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } returns ExifInterface.ORIENTATION_ROTATE_90
+
+            try {
+                setup.localService.copyAndCompress(setup.sourceUri)
+                fail("Expected RuntimeException to be thrown")
+            } catch (e: RuntimeException) {
+                assertEquals("Disk write failure", e.message)
+            }
+
+            verify(exactly = 1) { setup.mockOriginalBitmap.recycle() }
+            verify(exactly = 1) { setup.mockRotatedBitmap.recycle() }
+        } finally {
+            setup.cleanUp()
+            unmockkConstructor(ExifInterface::class)
+        }
+    }
+
+    @Test
+    fun downloadAndStore_imageWithExifRotation90_rotatesBitmapAndRecyclesBoth() = runTest {
+        val remoteUrl = "https://example.com/receipt.jpg"
+        val imageData = "Fake Image Bytes".toByteArray()
+
+        every { mockConnection.responseCode } returns HttpURLConnection.HTTP_OK
+        every { mockConnection.contentType } returns "image/jpeg"
+        every { mockConnection.inputStream } returns ByteArrayInputStream(imageData)
+
+        mockkStatic(BitmapFactory::class)
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        var originalRecycled = false
+        every { mockOriginalBitmap.width } returns 1000
+        every { mockOriginalBitmap.height } returns 800
+        every { mockOriginalBitmap.recycle() } answers { originalRecycled = true }
+        every { mockOriginalBitmap.isRecycled } answers { originalRecycled }
+
+        every { BitmapFactory.decodeFile(any(), any()) } answers {
+            val opts = arg<BitmapFactory.Options>(1)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 1000
+                opts.outHeight = 800
+                null
+            } else {
+                mockOriginalBitmap
+            }
+        }
+
+        mockkStatic(Bitmap::class)
+        val mockRotatedBitmap = mockk<Bitmap>(relaxed = true)
+        var rotatedRecycled = false
+        every { mockRotatedBitmap.width } returns 800
+        every { mockRotatedBitmap.height } returns 1000
+        every { mockRotatedBitmap.recycle() } answers { rotatedRecycled = true }
+        every { mockRotatedBitmap.isRecycled } answers { rotatedRecycled }
+
+        every {
+            Bitmap.createBitmap(mockOriginalBitmap, 0, 0, 1000, 800, any(), true)
+        } returns mockRotatedBitmap
+
+        every { mockRotatedBitmap.compress(any(), any(), any()) } answers {
+            val os = arg<OutputStream>(2)
+            os.write("Compressed Rotated Webp Bytes".toByteArray())
+            true
+        }
+
+        try {
+            mockkConstructor(ExifInterface::class)
+            every {
+                anyConstructed<ExifInterface>().getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } returns ExifInterface.ORIENTATION_ROTATE_90
+
+            val attachment = service.downloadAndStore(remoteUrl)
+
+            assertNotNull(attachment)
+            assertEquals("image/webp", attachment.mimeType)
+            assertEquals(remoteUrl, attachment.remoteUrl)
+            assertTrue(attachment.localUri.endsWith(".webp"))
+            verify(exactly = 1) { mockOriginalBitmap.recycle() }
+            verify(exactly = 1) { mockRotatedBitmap.recycle() }
+        } finally {
+            unmockkConstructor(ExifInterface::class)
+        }
+    }
+
+    private fun createMockBitmaps(width: Int, height: Int): Pair<Bitmap, Bitmap> {
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        var originalRecycled = false
+        every { mockOriginalBitmap.width } returns width
+        every { mockOriginalBitmap.height } returns height
+        every { mockOriginalBitmap.recycle() } answers { originalRecycled = true }
+        every { mockOriginalBitmap.isRecycled } answers { originalRecycled }
+
+        val mockRotatedBitmap = mockk<Bitmap>(relaxed = true)
+        var rotatedRecycled = false
+        every { mockRotatedBitmap.width } returns height
+        every { mockRotatedBitmap.height } returns width
+        every { mockRotatedBitmap.recycle() } answers { rotatedRecycled = true }
+        every { mockRotatedBitmap.isRecycled } answers { rotatedRecycled }
+
+        return mockOriginalBitmap to mockRotatedBitmap
+    }
+
+    private fun setupImageMock(
+        tag: String,
+        width: Int = 1000,
+        height: Int = 800
+    ): ImageMockSetup {
+        val mockContext = mockk<Context>()
+        val mockResolver = mockk<ContentResolver>()
+        val tempFilesDir = File(context.filesDir, "filesDir_$tag").also { it.mkdirs() }
+        val tempCacheDir = File(context.cacheDir, "cacheDir_$tag").also { it.mkdirs() }
+        every { mockContext.filesDir } returns tempFilesDir
+        every { mockContext.cacheDir } returns tempCacheDir
+        every { mockContext.contentResolver } returns mockResolver
+        every { mockContext.packageName } returns "es.pedrazamiguez.splittrip"
+
+        val localService = ReceiptStorageServiceImpl(mockContext, mockConnectionFactory)
+
+        val sourceUri = "content://media/image_$tag"
+        val mockUri = mockk<Uri>(relaxed = true)
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUri) } returns mockUri
+        every { mockResolver.getType(mockUri) } returns "image/jpeg"
+        every { mockResolver.openInputStream(mockUri) } returns ByteArrayInputStream("Fake Image Data".toByteArray())
+
+        val (mockOriginalBitmap, mockRotatedBitmap) = createMockBitmaps(width, height)
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeFile(any(), any()) } answers {
+            val opts = arg<BitmapFactory.Options>(1)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = width
+                opts.outHeight = height
+                null
+            } else {
+                mockOriginalBitmap
+            }
+        }
+
+        mockkStatic(Bitmap::class)
+        every {
+            Bitmap.createBitmap(mockOriginalBitmap, 0, 0, width, height, any(), true)
+        } returns mockRotatedBitmap
+
+        every { mockRotatedBitmap.compress(any(), any(), any()) } answers {
+            val os = arg<OutputStream>(2)
+            os.write("Compressed Rotated Webp Bytes".toByteArray())
+            true
+        }
+        every { mockOriginalBitmap.compress(any(), any(), any()) } answers {
+            val os = arg<OutputStream>(2)
+            os.write("Compressed Original Webp Bytes".toByteArray())
+            true
+        }
+
+        return ImageMockSetup(
+            localService = localService,
+            sourceUri = sourceUri,
+            mockOriginalBitmap = mockOriginalBitmap,
+            mockRotatedBitmap = mockRotatedBitmap,
+            tempFilesDir = tempFilesDir,
+            tempCacheDir = tempCacheDir
+        )
+    }
+
+    private data class ImageMockSetup(
+        val localService: ReceiptStorageServiceImpl,
+        val sourceUri: String,
+        val mockOriginalBitmap: Bitmap,
+        val mockRotatedBitmap: Bitmap,
+        val tempFilesDir: File,
+        val tempCacheDir: File
+    ) {
+        fun cleanUp() {
+            tempFilesDir.deleteRecursively()
+            tempCacheDir.deleteRecursively()
+        }
     }
 }

@@ -11,8 +11,6 @@ import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceIm
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import java.math.BigDecimal
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -387,9 +385,7 @@ class ExpenseValidationServiceTest {
 
         @Test
         fun `current or past date returns Valid`() {
-            val now = LocalDateTime.now()
-                .toInstant(ZoneOffset.UTC)
-                .toEpochMilli()
+            val now = System.currentTimeMillis()
             val past = now - PAST_OFFSET_MILLIS
             assertEquals(ValidationResult.Valid, service.validateExpenseDate(now))
             assertEquals(ValidationResult.Valid, service.validateExpenseDate(past))
@@ -397,22 +393,37 @@ class ExpenseValidationServiceTest {
 
         @Test
         fun `future date within 36 hours returns Valid`() {
-            val now = LocalDateTime.now()
-                .toInstant(ZoneOffset.UTC)
-                .toEpochMilli()
+            val now = System.currentTimeMillis()
             val futureWithinGrace = now + THIRTY_FIVE_HOURS_MILLIS
             assertEquals(ValidationResult.Valid, service.validateExpenseDate(futureWithinGrace))
         }
 
         @Test
         fun `future date beyond 36 hours returns Invalid`() {
-            val now = LocalDateTime.now()
-                .toInstant(ZoneOffset.UTC)
-                .toEpochMilli()
+            val now = System.currentTimeMillis()
             val futureBeyondGrace = now + THIRTY_SEVEN_HOURS_MILLIS
             val result = service.validateExpenseDate(futureBeyondGrace)
             assertTrue(result is ValidationResult.Invalid)
             assertEquals("Expense date and time cannot be in the future", (result as ValidationResult.Invalid).message)
+        }
+
+        @Test
+        fun `validates against custom currentTimeMillisProvider instant`() {
+            val fixedNow = 1_700_000_000_000L
+            val calculatorService = ExpenseCalculatorServiceImpl()
+            val splitCalculatorFactory = ExpenseSplitCalculatorFactory(calculatorService)
+            val customService = ExpenseValidationServiceImpl(
+                splitCalculatorFactory = splitCalculatorFactory,
+                currentTimeMillisProvider = { fixedNow }
+            )
+
+            assertEquals(ValidationResult.Valid, customService.validateExpenseDate(fixedNow))
+            assertEquals(
+                ValidationResult.Valid,
+                customService.validateExpenseDate(fixedNow + THIRTY_FIVE_HOURS_MILLIS)
+            )
+            val result = customService.validateExpenseDate(fixedNow + THIRTY_SEVEN_HOURS_MILLIS)
+            assertTrue(result is ValidationResult.Invalid)
         }
     }
 

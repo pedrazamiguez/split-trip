@@ -24,9 +24,14 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.slot
 import io.mockk.unmockkStatic
 import java.util.Base64 as JavaBase64
 import java.util.Locale
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -36,6 +41,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AuthenticationServiceImplTest {
 
     private lateinit var firebaseAuth: FirebaseAuth
@@ -728,6 +734,94 @@ class AuthenticationServiceImplTest {
             // Then
             assertTrue(result.isFailure)
             assertEquals(firebaseException, result.exceptionOrNull())
+        }
+    }
+
+    @Nested
+    inner class AuthState {
+
+        @Test
+        fun `authState emits when authStateListener triggers`() = runTest {
+            val listenerSlot = slot<FirebaseAuth.AuthStateListener>()
+            every { firebaseAuth.addAuthStateListener(capture(listenerSlot)) } answers { }
+            val emissions = mutableListOf<Boolean>()
+            val job = launch {
+                service.authState.toList(emissions)
+            }
+            runCurrent()
+
+            val mockUser = mockk<FirebaseUser>()
+            val authWithUser = mockk<FirebaseAuth> { every { currentUser } returns mockUser }
+            listenerSlot.captured.onAuthStateChanged(authWithUser)
+            runCurrent()
+
+            val authWithoutUser = mockk<FirebaseAuth> { every { currentUser } returns null }
+            listenerSlot.captured.onAuthStateChanged(authWithoutUser)
+            runCurrent()
+
+            job.cancel()
+            assertEquals(listOf(true, false), emissions)
+        }
+
+        @Test
+        fun `authState emits when idTokenListener triggers`() = runTest {
+            val listenerSlot = slot<FirebaseAuth.IdTokenListener>()
+            every { firebaseAuth.addIdTokenListener(capture(listenerSlot)) } answers { }
+            val emissions = mutableListOf<Boolean>()
+            val job = launch {
+                service.authState.toList(emissions)
+            }
+            runCurrent()
+
+            val mockUser = mockk<FirebaseUser>()
+            val authWithUser = mockk<FirebaseAuth> { every { currentUser } returns mockUser }
+            listenerSlot.captured.onIdTokenChanged(authWithUser)
+            runCurrent()
+
+            job.cancel()
+            assertEquals(listOf(true), emissions)
+        }
+
+        @Test
+        fun `linkGoogleAccount triggers authState emission`() = runTest {
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            every { firebaseAuth.currentUser } returns firebaseUser
+            every { firebaseUser.linkWithCredential(any()) } returns Tasks.forResult(mockk())
+
+            val emissions = mutableListOf<Boolean>()
+            val job = launch {
+                service.authState.toList(emissions)
+            }
+            runCurrent()
+
+            service.linkGoogleAccount("google-token")
+            runCurrent()
+
+            job.cancel()
+            assertTrue(emissions.isNotEmpty())
+            assertTrue(emissions.last())
+        }
+
+        @Test
+        fun `linkEmailPassword triggers authState emission`() = runTest {
+            val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+            val credential = mockk<AuthCredential>()
+            every { EmailAuthProvider.getCredential("email@test.com", "password123") } returns credential
+            every { firebaseAuth.currentUser } returns firebaseUser
+            every { firebaseUser.linkWithCredential(credential) } returns Tasks.forResult(mockk())
+
+            val emissions = mutableListOf<Boolean>()
+            val job = launch {
+                service.authState.toList(emissions)
+            }
+            runCurrent()
+
+            service.linkEmailPassword("email@test.com", "password123")
+            runCurrent()
+
+            job.cancel()
+            assertTrue(emissions.isNotEmpty())
+            assertTrue(emissions.last())
         }
     }
 }

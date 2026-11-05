@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.usecase.ad.GetBannerAdUnitIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -25,7 +27,8 @@ class MainViewModel(
     private val warmCurrencyCacheUseCase: WarmCurrencyCacheUseCase,
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
     private val shouldShowAdsUseCase: ShouldShowAdsUseCase,
-    private val getBannerAdUnitIdUseCase: GetBannerAdUnitIdUseCase
+    private val getBannerAdUnitIdUseCase: GetBannerAdUnitIdUseCase,
+    private val isUserAnonymousUseCase: IsUserAnonymousUseCase
 ) : ViewModel() {
 
     private val bundles = ConcurrentHashMap<String, Bundle?>()
@@ -117,14 +120,20 @@ class MainViewModel(
 
     private fun ensureDeviceTokenRegistered() {
         viewModelScope.launch {
-            Timber.d("MainViewModel: starting FCM token registration")
-            registerDeviceTokenUseCase()
-                .onSuccess {
-                    Timber.i("MainViewModel: FCM token registration completed successfully")
+            isUserAnonymousUseCase().distinctUntilChanged().collect { isAnonymous ->
+                if (isAnonymous) {
+                    Timber.d("MainViewModel: user is anonymous, skipping FCM token registration")
+                    return@collect
                 }
-                .onFailure {
-                    Timber.e(it, "MainViewModel: FCM token registration FAILED")
-                }
+                Timber.d("MainViewModel: starting FCM token registration")
+                registerDeviceTokenUseCase()
+                    .onSuccess {
+                        Timber.i("MainViewModel: FCM token registration completed successfully")
+                    }
+                    .onFailure {
+                        Timber.e(it, "MainViewModel: FCM token registration FAILED")
+                    }
+            }
         }
     }
 

@@ -31,7 +31,7 @@ internal fun NotesSection(notesText: String) {
         }
         FlatCard(modifier = Modifier.fillMaxWidth()) {
             BodyText(
-                text = "\"$notesText\"",
+                text = notesText,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()

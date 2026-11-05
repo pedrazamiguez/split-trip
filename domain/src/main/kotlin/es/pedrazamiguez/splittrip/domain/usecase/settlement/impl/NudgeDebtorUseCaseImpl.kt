@@ -18,23 +18,19 @@ class NudgeDebtorUseCaseImpl(
         val currentUserId = authenticationService.currentUserId()
             ?: return Result.failure(IllegalStateException("User not authenticated"))
 
-        val (creditorId, amountCents, currency) = if (EphemeralSettlementIdHelper.isEphemeral(settlementId)) {
-            val settlement = EphemeralSettlementIdHelper.parse(settlementId)
-                ?: return Result.failure(IllegalArgumentException("Invalid ephemeral settlement ID"))
-            Triple(settlement.toUserId, settlement.amount, settlement.currency)
-        } else {
-            val settlementRecord = settlementRepository.getSettlementById(settlementId)
-                ?: return Result.failure(IllegalArgumentException("Settlement not found"))
-            Triple(
-                settlementRecord.settlement.toUserId,
-                settlementRecord.settlement.amount,
-                settlementRecord.settlement.currency
-            )
+        if (EphemeralSettlementIdHelper.isEphemeral(settlementId)) {
+            return Result.failure(IllegalArgumentException("Ephemeral settlements cannot be nudged"))
         }
 
-        if (creditorId != currentUserId) {
+        val settlementRecord = settlementRepository.getSettlementById(settlementId)
+            ?: return Result.failure(IllegalArgumentException("Settlement not found"))
+
+        if (settlementRecord.settlement.toUserId != currentUserId) {
             return Result.failure(IllegalStateException("User is not the creditor for this settlement"))
         }
+
+        val amountCents = settlementRecord.settlement.amount
+        val currency = settlementRecord.settlement.currency
 
         val lastTimestamp = settlementNudgeRepository.getLastNudgeTimestamp(settlementId)
         val rateLimitHours = appConfigService.settlementNudgeRateLimitHours.value

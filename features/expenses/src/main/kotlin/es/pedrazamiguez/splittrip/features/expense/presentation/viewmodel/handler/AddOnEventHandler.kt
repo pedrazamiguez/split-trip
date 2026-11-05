@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -14,12 +13,10 @@ import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.R
-import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import java.math.BigDecimal
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -47,7 +44,6 @@ class AddOnEventHandler(
     private val expenseCalculatorService: ExpenseCalculatorService,
     private val splitPreviewService: SplitPreviewService,
     private val formattingHelper: FormattingHelper,
-    private val addExpenseOptionsMapper: AddExpenseOptionsUiMapper,
     private val exchangeRateDelegate: AddOnExchangeRateDelegate,
     private val addOnCrudDelegate: AddOnCrudDelegate
 ) : AddExpenseEventHandler {
@@ -72,11 +68,11 @@ class AddOnEventHandler(
         val state = _uiState.value
         val newAddOn = addOnCrudDelegate.buildNewAddOn(type, state)
         val (isForeign, isCash, _) = addOnCrudDelegate.resolveAddOnCurrencyContext(state)
+        val collapsedExisting = addOnCrudDelegate.collapseAllExcept(state.addOns, newAddOn.id)
 
         _uiState.update {
             it.copy(
-                addOns = (it.addOns + newAddOn).toImmutableList(),
-                isAddOnsSectionExpanded = true,
+                addOns = (collapsedExisting + newAddOn).toImmutableList(),
                 addOnError = null
             )
         }
@@ -172,8 +168,8 @@ class AddOnEventHandler(
         val currentAddOn = state.addOns.find { it.id == addOnId } ?: return
         val isCash = exchangeRateDelegate.isCashMethod(currentAddOn.paymentMethod?.id)
 
-        val exchangeRateLabel = exchangeRateLabelOrEmpty(isForeign, groupCurrency, currency)
-        val groupAmountLabel = groupAmountLabelOrEmpty(isForeign, groupCurrency)
+        val exchangeRateLabel = addOnCrudDelegate.buildExchangeRateLabel(isForeign, groupCurrency, currency)
+        val groupAmountLabel = addOnCrudDelegate.buildGroupAmountLabel(isForeign, groupCurrency)
 
         val shouldLockRate = isForeign && isCash
 
@@ -303,9 +299,11 @@ class AddOnEventHandler(
         updateAddOn(addOnId) { it.copy(description = description) }
     }
 
-    fun handleSectionToggled() {
-        _uiState.update {
-            it.copy(isAddOnsSectionExpanded = !it.isAddOnsSectionExpanded)
+    fun handleExpandedToggled(addOnId: String) {
+        _uiState.update { state ->
+            state.copy(
+                addOns = addOnCrudDelegate.toggleItemExpansion(state.addOns, addOnId).toImmutableList()
+            )
         }
     }
 
@@ -365,10 +363,12 @@ class AddOnEventHandler(
         }
 
         // Compute base cost for INCLUDED add-ons
-        val baseCostDisplay = computeIncludedBaseCostDisplay(
+        val baseCostDisplay = addOnCrudDelegate.computeIncludedBaseCostDisplay(
             resolvedAddOns,
             groupAmountCents,
-            groupCurrency
+            groupCurrency,
+            addOnCalculationService,
+            formattingHelper
         )
 
         _uiState.update {
@@ -381,63 +381,6 @@ class AddOnEventHandler(
     }
 
     // ── Private Helpers ─────────────────────────────────────────────────
-
-    /**
-     * Derives the formatted base cost when INCLUDED add-ons are present.
-     *
-     * Separates EXACT and PERCENTAGE included add-ons — and within those,
-     * discount vs non-discount — so the domain service can apply the correct
-     * extraction formula for each type.
-     *
-     * @return A formatted currency string, or empty when there are no INCLUDED add-ons.
-     */
-    private fun computeIncludedBaseCostDisplay(
-        addOns: ImmutableList<AddOnUiModel>,
-        groupAmountCents: Long,
-        groupCurrency: CurrencyUiModel
-    ): String {
-        val includedAddOns = addOns.filter { it.mode == AddOnMode.INCLUDED }
-        if (includedAddOns.isEmpty() || groupAmountCents <= 0) return ""
-
-        val (discountAddOns, nonDiscountAddOns) = includedAddOns.partition {
-            it.type == AddOnType.DISCOUNT
-        }
-
-        val includedExactCents = nonDiscountAddOns
-            .filter { it.valueType == AddOnValueType.EXACT }
-            .sumOf { it.groupAmountCents }
-
-        val includedExactDiscountCents = discountAddOns
-            .filter { it.valueType == AddOnValueType.EXACT }
-            .sumOf { it.groupAmountCents }
-
-        val totalIncludedPercentage = addOnCalculationService.sumPercentagesFromInputs(
-            nonDiscountAddOns
-                .filter { it.valueType == AddOnValueType.PERCENTAGE }
-                .map { it.amountInput }
-        )
-
-        val totalIncludedDiscountPercentage = addOnCalculationService.sumPercentagesFromInputs(
-            discountAddOns
-                .filter { it.valueType == AddOnValueType.PERCENTAGE }
-                .map { it.amountInput }
-        )
-
-        val baseCostCents = addOnCalculationService.calculateIncludedBaseCost(
-            totalAmountCents = groupAmountCents,
-            includedExactCents = includedExactCents,
-            totalIncludedPercentage = totalIncludedPercentage,
-            includedExactDiscountCents = includedExactDiscountCents,
-            totalIncludedDiscountPercentage = totalIncludedDiscountPercentage
-        )
-
-        // Base can be < total (surcharges/tips) or > total (discounts)
-        return if (baseCostCents > 0 && baseCostCents != groupAmountCents) {
-            formattingHelper.formatCentsWithCurrency(baseCostCents, groupCurrency.code)
-        } else {
-            ""
-        }
-    }
 
     private fun updateAddOn(
         addOnId: String,
@@ -464,7 +407,7 @@ class AddOnEventHandler(
      */
     private fun resolveAddOnAmounts(addOn: AddOnUiModel, state: AddExpenseUiState): AddOnUiModel {
         if (addOn.amountInput.isBlank()) {
-            return addOn.copy(resolvedAmountCents = 0L, groupAmountCents = 0L)
+            return addOn.copy(resolvedAmountCents = 0L, groupAmountCents = 0L, formattedAmount = "")
         }
 
         val decimalDigits = addOn.currency?.decimalDigits ?: 2
@@ -475,7 +418,8 @@ class AddOnEventHandler(
             ?: return addOn.copy(
                 resolvedAmountCents = 0L,
                 groupAmountCents = 0L,
-                isAmountValid = false
+                isAmountValid = false,
+                formattedAmount = ""
             )
 
         val sourceDecimalDigits = state.selectedCurrency?.decimalDigits ?: 2
@@ -483,7 +427,9 @@ class AddOnEventHandler(
             state.sourceAmount,
             sourceDecimalDigits
         )
-        if (addOn.valueType == AddOnValueType.PERCENTAGE && sourceAmountCents <= 0) return addOn
+        if (addOn.valueType == AddOnValueType.PERCENTAGE && sourceAmountCents <= 0) {
+            return addOn.copy(resolvedAmountCents = 0L, groupAmountCents = 0L, formattedAmount = "")
+        }
 
         val resolvedCents = resolveAddOnAmountCentsForType(addOn, inputBd, decimalDigits, sourceAmountCents)
 
@@ -506,10 +452,20 @@ class AddOnEventHandler(
             addOn.calculatedGroupAmount
         }
 
+        val formattedAmount = if (groupAmountCents > 0L) {
+            formattingHelper.formatCentsWithCurrency(
+                groupAmountCents,
+                state.groupCurrency?.code.orEmpty()
+            )
+        } else {
+            ""
+        }
+
         return addOn.copy(
             resolvedAmountCents = resolvedCents,
             groupAmountCents = groupAmountCents,
-            calculatedGroupAmount = calculatedGroupAmount
+            calculatedGroupAmount = calculatedGroupAmount,
+            formattedAmount = formattedAmount
         )
     }
 
@@ -553,23 +509,6 @@ class AddOnEventHandler(
                 sourceAmountCents = sourceAmountCents
             )
         }
-    }
-
-    private fun exchangeRateLabelOrEmpty(
-        isForeign: Boolean,
-        groupCurrency: CurrencyUiModel?,
-        addOnCurrency: CurrencyUiModel?
-    ): String {
-        if (!isForeign || groupCurrency == null || addOnCurrency == null) return ""
-        return addExpenseOptionsMapper.buildExchangeRateLabel(groupCurrency, addOnCurrency)
-    }
-
-    private fun groupAmountLabelOrEmpty(
-        isForeign: Boolean,
-        groupCurrency: CurrencyUiModel?
-    ): String {
-        if (!isForeign || groupCurrency == null) return ""
-        return addExpenseOptionsMapper.buildGroupAmountLabel(groupCurrency)
     }
 
     /**

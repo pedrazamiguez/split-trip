@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceI
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -131,7 +132,6 @@ class AddOnEventHandlerTest {
             expenseCalculatorService = ExpenseCalculatorServiceImpl(),
             splitPreviewService = splitPreviewService,
             formattingHelper = formattingHelper,
-            addExpenseOptionsMapper = AddExpenseOptionsUiMapper(resourceProvider, mockk(relaxed = true)),
             exchangeRateDelegate = addOnExchangeRateDelegate,
             addOnCrudDelegate = addOnCrudDelegate
         )
@@ -185,14 +185,22 @@ class AddOnEventHandlerTest {
         }
 
         @Test
-        fun `expands the section when an add-on is added`() = runTest {
-            uiState.value = baseState.copy(isAddOnsSectionExpanded = false)
-            handler.bind(uiState, actions, this)
+        fun `handleAddOnAdded sets isExpanded=true on new item and false on existing`() =
+            runTest {
+                uiState.value = baseState.copy(
+                    addOns = kotlinx.collections.immutable.persistentListOf(
+                        AddOnUiModel(id = "existing-1", isExpanded = true)
+                    )
+                )
+                handler.bind(uiState, actions, this)
 
-            handler.handleAddOnAdded(AddOnType.FEE)
+                handler.handleAddOnAdded(AddOnType.FEE)
 
-            assertTrue(uiState.value.isAddOnsSectionExpanded)
-        }
+                val addOns = uiState.value.addOns
+                assertEquals(2, addOns.size)
+                assertFalse(addOns[0].isExpanded)
+                assertTrue(addOns[1].isExpanded)
+            }
 
         @Test
         fun `clears add-on error when a new add-on is added`() = runTest {
@@ -336,6 +344,19 @@ class AddOnEventHandlerTest {
             assertEquals("2.50", addOn.amountInput)
             assertEquals(250L, addOn.resolvedAmountCents)
             assertTrue(addOn.isAmountValid)
+        }
+
+        @Test
+        fun `resolveAddOnAmounts formats group amount into formattedAmount string`() = runTest {
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.FEE)
+            val id = uiState.value.addOns[0].id
+
+            handler.handleAmountChanged(id, "5.00")
+
+            val addOn = uiState.value.addOns[0]
+            assertTrue(addOn.formattedAmount.isNotBlank())
+            assertTrue(addOn.formattedAmount.contains("5") && addOn.formattedAmount.contains("€"))
         }
 
         @Test
@@ -486,30 +507,38 @@ class AddOnEventHandlerTest {
         }
     }
 
-    // ── Section Toggle ──────────────────────────────────────────────────
+    // ── Item Expansion Toggle ───────────────────────────────────────────
 
     @Nested
-    @DisplayName("handleSectionToggled")
-    inner class SectionToggled {
+    @DisplayName("handleExpandedToggled")
+    inner class ExpandedToggled {
 
         @Test
-        fun `toggles section expansion from false to true`() = runTest {
-            uiState.value = baseState.copy(isAddOnsSectionExpanded = false)
-            handler.bind(uiState, actions, this)
+        fun `handleExpandedToggled toggles targeted item and collapses other open items`() =
+            runTest {
+                val item1 = AddOnUiModel(id = "a1", isExpanded = false)
+                val item2 = AddOnUiModel(id = "a2", isExpanded = true)
+                uiState.value = baseState.copy(
+                    addOns = kotlinx.collections.immutable.persistentListOf(item1, item2)
+                )
+                handler.bind(uiState, actions, this)
 
-            handler.handleSectionToggled()
+                handler.handleExpandedToggled("a1")
 
-            assertTrue(uiState.value.isAddOnsSectionExpanded)
-        }
+                val addOns = uiState.value.addOns
+                assertTrue(addOns[0].isExpanded)
+                assertFalse(addOns[1].isExpanded)
+            }
 
         @Test
-        fun `toggles section expansion from true to false`() = runTest {
-            uiState.value = baseState.copy(isAddOnsSectionExpanded = true)
+        fun `handleExpandedToggled collapses targeted item if already expanded`() = runTest {
+            val item = AddOnUiModel(id = "a1", isExpanded = true)
+            uiState.value = baseState.copy(addOns = kotlinx.collections.immutable.persistentListOf(item))
             handler.bind(uiState, actions, this)
 
-            handler.handleSectionToggled()
+            handler.handleExpandedToggled("a1")
 
-            assertFalse(uiState.value.isAddOnsSectionExpanded)
+            assertFalse(uiState.value.addOns[0].isExpanded)
         }
     }
 

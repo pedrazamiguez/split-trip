@@ -230,7 +230,8 @@ class AddExpenseViewModelTest {
             AddExpenseAddOnUiMapper(),
             splitPreviewService,
             addExpenseOptionsMapper,
-            remainderDistributionService
+            remainderDistributionService,
+            formattingHelper
         )
 
         every { getGroupLastUsedCurrencyUseCase(any()) } returns flowOf(null)
@@ -347,7 +348,6 @@ class AddExpenseViewModelTest {
             expenseCalculatorService = ExpenseCalculatorServiceImpl(),
             splitPreviewService = splitPreviewService,
             formattingHelper = formattingHelper,
-            addExpenseOptionsMapper = addExpenseOptionsMapper,
             exchangeRateDelegate = addOnExchangeRateDelegate,
             addOnCrudDelegate = addOnCrudDelegate
         )
@@ -391,7 +391,8 @@ class AddExpenseViewModelTest {
             getContributionByExpenseIdUseCase = getContributionByExpenseIdUseCase,
             addExpenseUiMapper = addExpenseUiMapper,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
-            getGroupSubunitsUseCase = getGroupSubunitsUseCase
+            getGroupSubunitsUseCase = getGroupSubunitsUseCase,
+            addOnEventHandler = addOnHandler
         )
 
         viewModel = createViewModel()
@@ -1992,8 +1993,8 @@ class AddExpenseViewModelTest {
         }
 
         @Test
-        fun `AddOnsSectionToggled routes to add-on handler`() = runTest {
-            viewModel.onEvent(AddExpenseUiEvent.AddOnsSectionToggled)
+        fun `AddOnExpandedToggled routes to add-on handler`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.AddOnExpandedToggled("addon-1"))
             advanceUntilIdle()
         }
     }

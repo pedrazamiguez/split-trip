@@ -8,6 +8,9 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseSearchService
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -79,7 +82,10 @@ class ExpenseFilterServiceImplTest {
     @BeforeEach
     fun setUp() {
         searchService = ExpenseSearchServiceImpl()
-        filterService = ExpenseFilterServiceImpl(expenseSearchService = searchService)
+        filterService = ExpenseFilterServiceImpl(
+            expenseSearchService = searchService,
+            zoneIdProvider = { ZoneOffset.UTC }
+        )
     }
 
     @Nested
@@ -357,6 +363,60 @@ class ExpenseFilterServiceImplTest {
             val result = filterService.filter(listOf(expenseWithCreatedAtOnly), criteria)
 
             assertEquals(listOf(expenseWithCreatedAtOnly), result)
+        }
+
+        @Test
+        fun `matchesDateRange matches expense on local date across midnight in positive offset zone`() {
+            val shanghaiFilterService = ExpenseFilterServiceImpl(
+                expenseSearchService = searchService,
+                zoneIdProvider = { ZoneId.of("Asia/Shanghai") }
+            )
+            val expense = expense1.copy(
+                id = "exp-cst",
+                operationDate = null,
+                createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+            )
+
+            val matchingCriteria = ExpenseFilterCriteria(
+                startDate = LocalDate.of(2026, 10, 28),
+                endDate = LocalDate.of(2026, 10, 28)
+            )
+            val resultMatching = shanghaiFilterService.filter(listOf(expense), matchingCriteria)
+            assertEquals(listOf(expense), resultMatching)
+
+            val previousDayCriteria = ExpenseFilterCriteria(
+                startDate = LocalDate.of(2026, 10, 27),
+                endDate = LocalDate.of(2026, 10, 27)
+            )
+            val resultPreviousDay = shanghaiFilterService.filter(listOf(expense), previousDayCriteria)
+            assertTrue(resultPreviousDay.isEmpty())
+        }
+
+        @Test
+        fun `matchesDateRange matches expense on local date across midnight in negative offset zone`() {
+            val newYorkFilterService = ExpenseFilterServiceImpl(
+                expenseSearchService = searchService,
+                zoneIdProvider = { ZoneId.of("America/New_York") }
+            )
+            val expense = expense1.copy(
+                id = "exp-edt",
+                operationDate = null,
+                createdAt = LocalDateTime.of(2026, 10, 28, 2, 0, 0)
+            )
+
+            val previousDayCriteria = ExpenseFilterCriteria(
+                startDate = LocalDate.of(2026, 10, 27),
+                endDate = LocalDate.of(2026, 10, 27)
+            )
+            val resultPreviousDay = newYorkFilterService.filter(listOf(expense), previousDayCriteria)
+            assertEquals(listOf(expense), resultPreviousDay)
+
+            val nextDayCriteria = ExpenseFilterCriteria(
+                startDate = LocalDate.of(2026, 10, 28),
+                endDate = LocalDate.of(2026, 10, 28)
+            )
+            val resultNextDay = newYorkFilterService.filter(listOf(expense), nextDayCriteria)
+            assertTrue(resultNextDay.isEmpty())
         }
     }
 

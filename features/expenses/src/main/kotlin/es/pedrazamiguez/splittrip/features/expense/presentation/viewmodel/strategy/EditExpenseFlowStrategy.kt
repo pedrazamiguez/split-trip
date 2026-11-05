@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ConfigEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -35,7 +36,8 @@ class EditExpenseFlowStrategy(
     private val updateExpenseUseCase: UpdateExpenseUseCase,
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
-    private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase
+    private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
+    private val addOnEventHandler: AddOnEventHandler
 ) : ExpenseFlowStrategy {
 
     override val screenTitleRes: Int = R.string.edit_expense_title
@@ -52,6 +54,12 @@ class EditExpenseFlowStrategy(
         onConfigLoaded: suspend () -> Unit
     ) {
         if (groupId == null) return
+
+        val currentState = uiState.value
+        val isGroupChanged = currentState.loadedGroupId != groupId
+
+        if (!forceRefresh && !isGroupChanged && currentState.isConfigLoaded) return
+
         scope.launch {
             try {
                 uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
@@ -97,9 +105,13 @@ class EditExpenseFlowStrategy(
                         screenTitleRes = R.string.edit_expense_title,
                         submitLabelRes = R.string.edit_expense_submit_button,
                         isAiModeActive = false
-                    ).let { updatedState ->
-                        updatedState.copy(initialFormSnapshot = updatedState.toFormSnapshot())
-                    }
+                    )
+                }
+
+                addOnEventHandler.recalculateEffectiveTotal()
+
+                uiState.update { state ->
+                    state.copy(initialFormSnapshot = state.toFormSnapshot())
                 }
 
                 onConfigLoaded()

@@ -3,11 +3,14 @@ package es.pedrazamiguez.splittrip.core.designsystem.di
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.ad.InterstitialAdManager
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigatorImpl
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
@@ -38,6 +41,12 @@ val coreDesignSystemModule = module {
         InterstitialAdManager(
             appConfigRepository = get<AppConfigRepository>(),
             shouldShowAdsUseCase = get<ShouldShowAdsUseCase>()
+        )
+    }
+
+    single<UpgradeNavigator> {
+        UpgradeNavigatorImpl(
+            authenticationService = get<AuthenticationService>()
         )
     }
 

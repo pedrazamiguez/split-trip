@@ -292,8 +292,8 @@
     <string name="subscriptions_tier_pro_title">SplitTrip Pro</string>
     <string name="subscriptions_tier_pro_description">Funciones avanzadas con IA y gestión ilimitada de grupos</string>
     <string name="subscriptions_tier_pro_price_monthly">2,99 €</string>
-    <string name="subscriptions_tier_pro_price_annual">2,24 €</string>
-    <string name="subscriptions_tier_pro_price_annual_total">26,90 €</string>
+    <string name="subscriptions_tier_pro_price_annual">2,25 €</string>
+    <string name="subscriptions_tier_pro_price_annual_total">26,99 €</string>
     <string name="subscriptions_tier_pro_billing_annual_detail">Facturado anualmente en un único pago de %1$s</string>
     <string name="subscriptions_period_month">/ mes</string>
     <string name="subscriptions_period_annual_billed">facturado anualmente</string>

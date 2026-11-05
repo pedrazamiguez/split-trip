@@ -539,4 +539,32 @@ class ArchitectureTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("Navigation Constraints")
+    inner class NavigationConstraints {
+
+        @Test
+        @DisplayName("Feature presentation packages must NOT invoke AuthenticationService.isAnonymous()")
+        fun `presentation code must not invoke isAnonymous on AuthenticationService`() {
+            projectProductionScope
+                .files
+                .filter { it.hasPackage("..features..") && it.hasPackage("..presentation..") }
+                .assertTrue { file ->
+                    !file.text.contains(".isAnonymous()")
+                }
+        }
+
+        @Test
+        @DisplayName("Paywall navigation outside features.settings must not reference SETTINGS_SUBSCRIPTIONS directly")
+        fun `paywall navigation outside settings must use UpgradeNavigator`() {
+            projectProductionScope
+                .files
+                .filter { it.hasPackage("..features..") }
+                .filter { !it.hasPackage("..features.settings..") }
+                .assertTrue { file ->
+                    !file.text.contains("SETTINGS_SUBSCRIPTIONS")
+                }
+        }
+    }
 }

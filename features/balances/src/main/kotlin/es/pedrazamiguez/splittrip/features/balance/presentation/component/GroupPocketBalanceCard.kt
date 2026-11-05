@@ -31,7 +31,6 @@ fun GroupPocketBalanceCard(
     onBalanceAnimationComplete: () -> Unit = {},
     onAddMoney: () -> Unit = {},
     onWithdrawCash: () -> Unit = {},
-    onShowExtrasBreakdown: () -> Unit = {},
     onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
     Box(
@@ -61,7 +60,6 @@ fun GroupPocketBalanceCard(
 
                 PocketBalanceStatsRow(
                     balance = balance,
-                    onShowExtrasBreakdown = onShowExtrasBreakdown,
                     onShowMetricInfo = onShowMetricInfo
                 )
 

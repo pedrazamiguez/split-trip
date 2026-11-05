@@ -54,6 +54,8 @@
     <string name="balances_metric_total_spent_description">Importe totâh gâttao en er biahe âtta la fexa.\n\nIncluye tôh lô gâttô pagáô, lô gâttô en efêttibo y lô gâttô reemborçablê, ya que er dinero ya a çalío der borçiyo. No incluye lô gâttô programáô futurô ni lô importê de êttrâ.</string>
     <string name="balances_metric_cash_in_hand_title">Efêttibo en mano</string>
     <string name="balances_metric_cash_in_hand_description">Er dinero fíçico retirao por lô miembrô que aún no çe a gâttao.\n\nÊh totâh de la cabeçera muêttra er balôh acumulao combertío a la moneda prinçipâh der grupo, mientrâ que la lîtta inferiôh detaya er dêggloçe en cá una de lâ monedâ realê dîpponiblê.</string>
+    <string name="balances_metric_extras_title">Êttrâ</string>
+    <string name="balances_metric_extras_description">Cargô adiçionalê açoçiáô a gâttô y retirâh de efêttibo en cahero, como comiçionê bancariâ, recargô de pago y propinâ de çerbiçio.\n\nLô êttrâ çe controlan por çeparao der gâtto baçe (Totâh gâttao) pa dâh biçibilidá a lô côttê añadíô y ebitâh dîttorçionâh er côtte reâh de lô bienê y çerbiçiô.</string>
     <string name="balances_history_title">Âttibidá</string>
     <string name="balances_contribution_by">%1$s aportó</string>
     <string name="balances_contribution_by_you">Aportâtte</string>
@@ -102,6 +104,8 @@
     <string name="balances_extras_breakdown_title">Dêggloçe de êttrâ</string>
     <string name="balances_extras_breakdown_cd">Bêh dêggloçe de êttrâ</string>
     <string name="balances_extras_breakdown_empty">No ay êttrâ rehîttráô</string>
+    <string name="balances_scheduled_breakdown_empty">No ay gâttô programáô rehîttráô</string>
+    <string name="balances_refundable_breakdown_empty">No ay gâttô reemborçablê rehîttráô</string>
     <string name="balances_extras_breakdown_total">Totâh</string>
     <string name="balances_extras_breakdown_subtotal">Çûttotâh</string>
     <string name="balances_extras_add_on_fee_plural">Comiçionê</string>

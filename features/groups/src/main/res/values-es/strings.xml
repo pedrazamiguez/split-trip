@@ -139,6 +139,7 @@
     <string name="group_edit_updating">Actualizando grupo…</string>
 
     <!-- Group Membership Management -->
+    <string name="group_error_cannot_add_self">Ya eres miembro de este grupo</string>
     <string name="group_remove_member_error_balance">Este miembro tiene un balance distinto de cero y no se puede eliminar</string>
     <string name="group_remove_member_error_admin">El creador del grupo no se puede eliminar</string>
     <string name="group_error_remove_member_failed">Error al eliminar el miembro. Inténtalo de nuevo</string>

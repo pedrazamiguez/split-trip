@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceCashContext
 import io.mockk.every
@@ -73,7 +74,12 @@ class BalancesUiMapperMemberBalancesTest {
                 es.pedrazamiguez.splittrip.core.designsystem.R.string.self_identification_recipient
             )
         } returns "To you"
-        mapper = BalancesUiMapper(localeProvider, resourceProvider, UserUiMapper(resourceProvider))
+        mapper = BalancesUiMapper(
+            localeProvider = localeProvider,
+            resourceProvider = resourceProvider,
+            userUiMapper = UserUiMapper(resourceProvider),
+            addOnCalculationService = AddOnCalculationServiceImpl()
+        )
     }
 
     @Nested

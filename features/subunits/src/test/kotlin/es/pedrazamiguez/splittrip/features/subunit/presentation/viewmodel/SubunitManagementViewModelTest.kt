@@ -252,7 +252,9 @@ class SubunitManagementViewModelTest {
         }
 
         @Test
-        fun `CreateSubunit emits NavigateToSubscriptions when disabled`() = runTest(testDispatcher) {
+        fun `CreateSubunit emits NavigateToSubscriptions when disabled and user is not pro`() = runTest(
+            testDispatcher
+        ) {
             setupDefaultMocks()
             every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(false)
             every { featureGateService.isActingUserPro() } returns flowOf(false)

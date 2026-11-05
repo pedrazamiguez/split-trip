@@ -83,7 +83,7 @@ internal fun resolveCreatedByDisplayName(
     if (createdBy.isNullOrBlank() || createdBy == targetUserId) return null
     if (createdBy == currentUserId) {
         return userUiMapper.mapToSelfIdentification(
-            SelfIdentificationContextEnum.AGENT,
+            SelfIdentificationContextEnum.PREPOSITIONAL,
             GrammaticalGenderEnum.FEMININE
         )
     }

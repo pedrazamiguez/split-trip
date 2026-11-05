@@ -7,10 +7,8 @@ import es.pedrazamiguez.splittrip.core.common.extensions.toEpochMillisUtc
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatCurrencyAmount
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
-import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
@@ -19,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ActivityItemUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashBreakdownUiModel
@@ -26,12 +25,11 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdr
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CurrencyBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownContext
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.ExtrasBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.HeldBreakdownContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceCashContext
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
-import java.math.BigDecimal
-import java.math.RoundingMode
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.MetricScopeBreakdownUiModel
 import java.util.Locale
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -40,7 +38,8 @@ import kotlinx.collections.immutable.toImmutableList
 class BalancesUiMapper(
     private val localeProvider: LocaleProvider,
     private val resourceProvider: ResourceProvider,
-    private val userUiMapper: UserUiMapper
+    private val userUiMapper: UserUiMapper,
+    private val addOnCalculationService: AddOnCalculationService
 ) {
 
     companion object {
@@ -281,7 +280,7 @@ class BalancesUiMapper(
         memberProfiles: Map<String, User>,
         subunitsMap: Map<String, Subunit>,
         currentUserId: String?
-    ): ImmutableList<ExtrasBreakdownUiModel> {
+    ): ImmutableList<MetricScopeBreakdownUiModel> {
         val context = ExtrasBreakdownContext(
             groupCurrency = groupCurrency,
             memberProfiles = memberProfiles,
@@ -294,6 +293,52 @@ class BalancesUiMapper(
         return mapExtrasBreakdown(
             expenses = expenses,
             withdrawals = withdrawals,
+            context = context
+        )
+    }
+
+    fun mapScheduledBreakdown(
+        expenses: List<Expense>,
+        groupCurrency: String,
+        memberProfiles: Map<String, User>,
+        subunitsMap: Map<String, Subunit>,
+        currentUserId: String?
+    ): ImmutableList<MetricScopeBreakdownUiModel> {
+        val context = HeldBreakdownContext(
+            groupCurrency = groupCurrency,
+            memberProfiles = memberProfiles,
+            subunitsMap = subunitsMap,
+            currentUserId = currentUserId,
+            addOnCalculationService = addOnCalculationService,
+            locale = localeProvider.getCurrentLocale(),
+            resourceProvider = resourceProvider,
+            userUiMapper = userUiMapper
+        )
+        return mapScheduledBreakdown(
+            expenses = expenses,
+            context = context
+        )
+    }
+
+    fun mapRefundableBreakdown(
+        expenses: List<Expense>,
+        groupCurrency: String,
+        memberProfiles: Map<String, User>,
+        subunitsMap: Map<String, Subunit>,
+        currentUserId: String?
+    ): ImmutableList<MetricScopeBreakdownUiModel> {
+        val context = HeldBreakdownContext(
+            groupCurrency = groupCurrency,
+            memberProfiles = memberProfiles,
+            subunitsMap = subunitsMap,
+            currentUserId = currentUserId,
+            addOnCalculationService = addOnCalculationService,
+            locale = localeProvider.getCurrentLocale(),
+            resourceProvider = resourceProvider,
+            userUiMapper = userUiMapper
+        )
+        return mapRefundableBreakdown(
+            expenses = expenses,
             context = context
         )
     }
@@ -432,121 +477,9 @@ class BalancesUiMapper(
                 subunitsMap = cashContext.subunitsMap,
                 groupMemberIds = cashContext.groupMemberIds,
                 groupCurrency = groupCurrency,
-                locale = locale
+                locale = locale,
+                resourceProvider = resourceProvider
             )
         )
-    }
-
-    private fun mapCashBreakdown(
-        userId: String,
-        withdrawals: List<CashWithdrawal>,
-        subunitsMap: Map<String, Subunit>,
-        groupMemberIds: List<String>,
-        groupCurrency: String,
-        locale: Locale
-    ): ImmutableList<CashBreakdownUiModel> {
-        val scopeOrder = mapOf(PayerType.GROUP to 0, PayerType.SUBUNIT to 1, PayerType.USER to 2)
-        return withdrawals
-            .sortedWith(
-                compareBy<CashWithdrawal> { scopeOrder[it.withdrawalScope] ?: 3 }
-                    .thenByDescending { it.createdAt }
-            )
-            .mapNotNull { withdrawal ->
-                if (withdrawal.amountWithdrawn == 0L || withdrawal.remainingAmount <= 0L) return@mapNotNull null
-                val nativeShare = computeUserNativeShare(withdrawal, userId, groupMemberIds, subunitsMap)
-                if (nativeShare <= 0L) return@mapNotNull null
-                buildCashBreakdownEntry(
-                    withdrawal = withdrawal,
-                    nativeShare = nativeShare,
-                    userId = userId,
-                    groupMemberIds = groupMemberIds,
-                    groupCurrency = groupCurrency,
-                    locale = locale,
-                    subunitsMap = subunitsMap
-                )
-            }
-            .toImmutableList()
-    }
-
-    private fun buildCashBreakdownEntry(
-        withdrawal: CashWithdrawal,
-        nativeShare: Long,
-        userId: String,
-        groupMemberIds: List<String>,
-        groupCurrency: String,
-        locale: Locale,
-        subunitsMap: Map<String, Subunit>
-    ): CashBreakdownUiModel {
-        val groupEquivalent = BigDecimal(nativeShare)
-            .multiply(BigDecimal(withdrawal.deductedBaseAmount))
-            .divide(BigDecimal(withdrawal.amountWithdrawn), 0, RoundingMode.HALF_UP)
-            .toLong()
-        val isForeign = withdrawal.currency != groupCurrency
-        val dateText = withdrawal.createdAt?.formatShortDate(locale) ?: ""
-        val label = if (withdrawal.title.isNullOrBlank()) {
-            resourceProvider.getString(R.string.balances_cash_breakdown_atm_fallback, dateText)
-        } else {
-            withdrawal.title ?: ""
-        }
-        return CashBreakdownUiModel(
-            withdrawalLabel = label,
-            dateText = dateText,
-            formattedRate = if (isForeign) {
-                resourceProvider.getString(
-                    R.string.balances_cash_breakdown_rate,
-                    withdrawal.exchangeRate.formatForDisplay(locale, maxDecimalPlaces = 6),
-                    withdrawal.currency,
-                    groupCurrency
-                )
-            } else {
-                ""
-            },
-            formattedNativeRemaining = formatCurrencyAmount(nativeShare, withdrawal.currency, locale),
-            formattedEquivalent = if (isForeign) {
-                formatCurrencyAmount(groupEquivalent, groupCurrency, locale)
-            } else {
-                ""
-            },
-            scopeLabel = when (withdrawal.withdrawalScope) {
-                PayerType.GROUP -> resourceProvider.getString(R.string.balances_cash_breakdown_group_scope)
-                PayerType.USER -> resourceProvider.getString(R.string.balances_cash_breakdown_personal_scope)
-                PayerType.SUBUNIT -> withdrawal.subunitId?.let { subunitsMap[it]?.name }
-                    ?: resourceProvider.getString(R.string.balances_cash_breakdown_unknown_subunit)
-            },
-            isEstimatedShare = withdrawal.withdrawalScope == PayerType.GROUP,
-            formattedAddOns = formatWithdrawalAddOns(
-                withdrawal = withdrawal,
-                userId = userId,
-                groupMemberIds = groupMemberIds,
-                subunitsMap = subunitsMap,
-                groupCurrency = groupCurrency,
-                locale = locale
-            )
-        )
-    }
-
-    private fun formatWithdrawalAddOns(
-        withdrawal: CashWithdrawal,
-        userId: String,
-        groupMemberIds: List<String>,
-        subunitsMap: Map<String, Subunit>,
-        groupCurrency: String,
-        locale: Locale
-    ): String {
-        val nonDiscountAddOns = withdrawal.addOns.filter { it.type != AddOnType.DISCOUNT }
-        if (nonDiscountAddOns.isEmpty()) return ""
-        val subunit = withdrawal.subunitId?.let { subunitsMap[it] }
-        val totalUserAddOnCents = nonDiscountAddOns.sumOf { addOn ->
-            computeAddOnShare(
-                addOn = addOn,
-                scope = withdrawal.withdrawalScope,
-                withdrawnBy = withdrawal.withdrawnBy,
-                userId = userId,
-                groupMemberIds = groupMemberIds,
-                subunit = subunit
-            )
-        }
-        if (totalUserAddOnCents <= 0L) return ""
-        return formatCurrencyAmount(totalUserAddOnCents, groupCurrency, locale)
     }
 }

@@ -205,8 +205,8 @@ class SubscriptionsUiMapperImplTest {
                 productId = BillingConstants.PRODUCT_ID_PRO_ANNUAL,
                 tier = SubscriptionTier.PRO,
                 billingInterval = BillingInterval.ANNUAL,
-                formattedPrice = "26,90 €",
-                priceAmountMicros = 26900000L,
+                formattedPrice = "26,99 €",
+                priceAmountMicros = 26990000L,
                 priceCurrencyCode = "EUR"
             )
 
@@ -217,13 +217,13 @@ class SubscriptionsUiMapperImplTest {
             )
             val annualPro = annualPlans.first { it.tier == SubscriptionTier.PRO }
             val dynamicAnnualPrice = assertInstanceOf(UiText.DynamicString::class.java, annualPro.price)
-            assertEquals("2,24\u00A0€", dynamicAnnualPrice.value)
+            assertEquals("2,25\u00A0€", dynamicAnnualPrice.value)
             val proPeriod = assertInstanceOf(UiText.StringResource::class.java, annualPro.period)
             assertEquals(R.string.subscriptions_period_month, proPeriod.resId)
             val billingDetail = assertInstanceOf(UiText.StringResource::class.java, annualPro.billingDetail)
             assertEquals(R.string.subscriptions_tier_pro_billing_annual_detail, billingDetail.resId)
             assertEquals(1, billingDetail.args.size)
-            assertEquals("26,90 €", billingDetail.args[0])
+            assertEquals("26,99 €", billingDetail.args[0])
         }
 
         @Test

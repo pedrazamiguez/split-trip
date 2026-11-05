@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
+import es.pedrazamiguez.splittrip.core.common.extensions.utcToSystemLocalDate
+import es.pedrazamiguez.splittrip.core.common.extensions.utcToSystemLocalDateTime
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -29,8 +31,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDat
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentBadgeData
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.ZoneId
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -47,7 +48,8 @@ class ExpenseUiMapper(
         currentUserId: String? = null,
         pairedContributions: Map<String, Contribution> = emptyMap(),
         subunits: Map<String, Subunit> = emptyMap(),
-        groupMemberIds: List<String> = emptyList()
+        groupMemberIds: List<String> = emptyList(),
+        zoneId: ZoneId = ZoneId.systemDefault()
     ): ExpenseUiModel {
         val appLocale = localeProvider.getCurrentLocale()
         val badgeData = paymentStatusBadgeUiMapper.buildBadge(expense)
@@ -93,7 +95,7 @@ class ExpenseUiMapper(
                 paymentStatusText = resourceProvider.getString(paymentStatus.toStringRes()),
                 paidByText = resourceProvider.getString(R.string.paid_by, resolvedName),
                 creatorDisplay = creatorDisplay,
-                dateText = effectiveDate?.formatShortDate(appLocale) ?: "",
+                dateText = effectiveDate?.utcToSystemLocalDateTime(zoneId)?.formatShortDate(appLocale) ?: "",
                 badgeText = badgeData?.text,
                 badgeIcon = badgeIcon,
                 isBadgeUrgent = badgeData?.isPassed == true,
@@ -115,10 +117,11 @@ class ExpenseUiMapper(
         currentUserId: String? = null,
         pairedContributions: Map<String, Contribution> = emptyMap(),
         subunits: Map<String, Subunit> = emptyMap(),
-        groupMemberIds: List<String> = emptyList()
+        groupMemberIds: List<String> = emptyList(),
+        zoneId: ZoneId = ZoneId.systemDefault()
     ): ImmutableList<ExpenseUiModel> =
         expenses.map {
-            map(it, memberProfiles, currentUserId, pairedContributions, subunits, groupMemberIds)
+            map(it, memberProfiles, currentUserId, pairedContributions, subunits, groupMemberIds, zoneId)
         }.toImmutableList()
 
     /**
@@ -135,7 +138,8 @@ class ExpenseUiMapper(
         pairedContributions: Map<String, Contribution> = emptyMap(),
         subunits: Map<String, Subunit> = emptyMap(),
         groupMemberIds: List<String> = emptyList(),
-        today: LocalDate = LocalDate.now()
+        today: LocalDate = LocalDate.now(),
+        zoneId: ZoneId = ZoneId.systemDefault()
     ): ImmutableList<ExpenseDateGroupUiModel> {
         if (expenses.isEmpty()) return emptyList<ExpenseDateGroupUiModel>().toImmutableList()
 
@@ -143,12 +147,9 @@ class ExpenseUiMapper(
         val groupCurrencyCode = expenses.first().groupCurrency
 
         return expenses
-            .groupBy { it.effectiveDate?.toLocalDate() }
+            .groupBy { it.effectiveDate?.utcToSystemLocalDate(zoneId) }
             .map { (date, dayExpenses) ->
-                val dateText = date?.let {
-                    LocalDateTime.of(it, LocalTime.MIDNIGHT)
-                        .formatShortDate(appLocale)
-                } ?: ""
+                val dateText = date?.formatShortDate(appLocale) ?: ""
 
                 val dayTotalCents = dayExpenses
                     .filter { it.paymentStatus != PaymentStatus.CANCELLED }
@@ -187,7 +188,7 @@ class ExpenseUiMapper(
                     formattedDayTotal = formattedDayTotal,
                     formattedDayScheduled = formattedDayScheduled,
                     expenses = dayExpenses.map {
-                        map(it, memberProfiles, currentUserId, pairedContributions, subunits, groupMemberIds)
+                        map(it, memberProfiles, currentUserId, pairedContributions, subunits, groupMemberIds, zoneId)
                     }.toImmutableList()
                 )
             }
@@ -321,7 +322,7 @@ class ExpenseUiMapper(
     private fun resolveBadgeIcon(paymentStatus: PaymentStatus, badgeData: PaymentBadgeData?): ImageVector? {
         if (badgeData == null) return null
         return when (paymentStatus) {
-            PaymentStatus.SCHEDULED -> if (badgeData.isPassed) {
+            PaymentStatus.SCHEDULED -> if (badgeData.isPassed || badgeData.isToday) {
                 TablerIcons.Outline.CircleCheck
             } else {
                 TablerIcons.Outline.Calendar

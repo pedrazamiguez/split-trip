@@ -5,9 +5,9 @@ import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.model.PasswordRequirementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
-import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.UnlinkProviderUseCase
@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -61,7 +62,7 @@ class AccountStatusEventHandlerImplTest {
     private lateinit var linkEmailPasswordUseCase: LinkEmailPasswordUseCase
     private lateinit var unlinkProviderUseCase: UnlinkProviderUseCase
     private lateinit var accountStatusUiMapper: AccountStatusUiMapper
-    private lateinit var authenticationService: AuthenticationService
+    private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
     private lateinit var passwordValidationService: PasswordValidationService
 
     private lateinit var handler: AccountStatusEventHandlerImpl
@@ -85,13 +86,13 @@ class AccountStatusEventHandlerImplTest {
         linkEmailPasswordUseCase = mockk()
         unlinkProviderUseCase = mockk()
         accountStatusUiMapper = mockk()
-        authenticationService = mockk()
+        isUserAnonymousUseCase = mockk()
         passwordValidationService = mockk()
 
         stateFlow = MutableStateFlow(AccountStatusUiState())
         actionsFlow = MutableSharedFlow()
 
-        coEvery { authenticationService.isAnonymous() } returns false
+        every { isUserAnonymousUseCase() } returns flowOf(false)
         every { passwordValidationService.validate(any()) } returns PasswordRequirementStatus()
         every { passwordValidationService.isValidPassword(any()) } returns true
 
@@ -102,7 +103,7 @@ class AccountStatusEventHandlerImplTest {
             linkEmailPasswordUseCase = linkEmailPasswordUseCase,
             unlinkProviderUseCase = unlinkProviderUseCase,
             accountStatusUiMapper = accountStatusUiMapper,
-            authenticationService = authenticationService,
+            isUserAnonymousUseCase = isUserAnonymousUseCase,
             passwordValidationService = passwordValidationService
         )
 
@@ -135,6 +136,21 @@ class AccountStatusEventHandlerImplTest {
             assertEquals("June 11, 2026", state.joinDateText)
             assertEquals(1, state.linkedProviders.size)
             assertTrue(state.linkedProviders.contains(AuthProviderType.GOOGLE))
+        }
+
+        @Test
+        fun `loads account status for anonymous user correctly`() = runTest(testDispatcher) {
+            coEvery { getCurrentUserProfileUseCase() } returns null
+            every { isUserAnonymousUseCase() } returns flowOf(true)
+
+            handler.loadAccountStatus()
+            advanceUntilIdle()
+
+            val state = stateFlow.value
+            assertFalse(state.isLoading)
+            assertTrue(state.isAnonymous)
+            assertEquals("", state.email)
+            assertEquals("", state.joinDateText)
         }
 
         @Test

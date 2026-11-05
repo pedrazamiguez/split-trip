@@ -1,9 +1,11 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.delegate
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DisputeSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.NudgeDebtorUseCase
+import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.action.YourBalanceUiAction
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -161,6 +163,25 @@ class YourBalanceActionDelegateTest {
         coVerify(exactly = 1) { nudgeDebtorUseCase("group1", "s1") }
         val action = actions.receive()
         assertTrue(action is YourBalanceUiAction.ShowError)
+    }
+
+    @Test
+    fun `handleNudgeDebtor emits error when nudgeDebtorUseCase fails for ephemeral settlement`() = runTest {
+        val actions = Channel<YourBalanceUiAction>(Channel.BUFFERED)
+        val ephemeralId = "ephemeral|debtor|creditor|POCKET|EUR|1000"
+        coEvery {
+            nudgeDebtorUseCase("group1", ephemeralId)
+        } returns Result.failure(IllegalArgumentException("Ephemeral settlements cannot be nudged"))
+
+        delegate.handleNudgeDebtor(ephemeralId, "group1", isOffline = false, actions)
+
+        coVerify(exactly = 1) { nudgeDebtorUseCase("group1", ephemeralId) }
+        val action = actions.receive()
+        assertTrue(action is YourBalanceUiAction.ShowError)
+        assertEquals(
+            YourBalanceUiAction.ShowError(UiText.StringResource(R.string.your_balance_nudge_error)),
+            action
+        )
     }
 
     @Test

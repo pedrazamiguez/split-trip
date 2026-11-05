@@ -1,12 +1,14 @@
 package es.pedrazamiguez.splittrip.domain.usecase.settlement
 
 import es.pedrazamiguez.splittrip.domain.model.Settlement
+import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.repository.SettlementNudgeRepository
 import es.pedrazamiguez.splittrip.domain.repository.SettlementRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.EphemeralSettlementIdHelper
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.impl.NudgeDebtorUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -118,5 +120,23 @@ class NudgeDebtorUseCaseImplTest {
         assertFalse(result.isFailure)
         coVerify(exactly = 1) { settlementNudgeRepository.sendDebtorNudge("g1", "s1", 1000L, "EUR") }
         coVerify(exactly = 1) { settlementNudgeRepository.recordNudgeTimestamp(eq("s1"), any()) }
+    }
+
+    @Test
+    fun `invoke whenSettlementIsEphemeral returnsFailureWithoutQueryingRepository`() = runTest {
+        every { authenticationService.currentUserId() } returns "creditor1"
+        val ephemeralId = EphemeralSettlementIdHelper.createId(
+            fromUserId = "debtor1",
+            toUserId = "creditor1",
+            sourcePocket = SettlementPocketType.POCKET,
+            currency = "EUR",
+            amount = 1000L
+        )
+
+        val result = useCase("g1", ephemeralId)
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 0) { settlementRepository.getSettlementById(any()) }
+        coVerify(exactly = 0) { settlementNudgeRepository.sendDebtorNudge(any(), any(), any(), any()) }
     }
 }

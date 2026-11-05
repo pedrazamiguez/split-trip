@@ -30,7 +30,6 @@ internal fun BalancesBodyContent(
     onNavigateToContribution: () -> Unit,
     onNavigateToContributionDetail: (String) -> Unit,
     onNavigateToWithdrawal: () -> Unit,
-    onShowExtrasBreakdown: () -> Unit,
     modifier: Modifier = Modifier,
     onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
@@ -76,7 +75,6 @@ internal fun BalancesBodyContent(
                         onNavigateToContribution = onNavigateToContribution,
                         onNavigateToContributionDetail = onNavigateToContributionDetail,
                         onNavigateToWithdrawal = onNavigateToWithdrawal,
-                        onShowExtrasBreakdown = onShowExtrasBreakdown,
                         onShowMetricInfo = onShowMetricInfo
                     )
                 }

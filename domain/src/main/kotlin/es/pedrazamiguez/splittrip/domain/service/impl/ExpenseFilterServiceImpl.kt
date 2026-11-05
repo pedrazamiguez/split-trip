@@ -5,9 +5,12 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseSearchService
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 class ExpenseFilterServiceImpl(
-    private val expenseSearchService: ExpenseSearchService
+    private val expenseSearchService: ExpenseSearchService,
+    private val zoneIdProvider: () -> ZoneId = { ZoneId.systemDefault() }
 ) : ExpenseFilterService {
 
     override fun filter(expenses: List<Expense>, criteria: ExpenseFilterCriteria): List<Expense> {
@@ -82,7 +85,10 @@ class ExpenseFilterServiceImpl(
         startDate: LocalDate?,
         endDate: LocalDate?
     ): Boolean {
-        val expenseDate = expense.effectiveDate?.toLocalDate() ?: return false
+        val expenseDate = expense.effectiveDate
+            ?.atZone(ZoneOffset.UTC)
+            ?.withZoneSameInstant(zoneIdProvider())
+            ?.toLocalDate() ?: return false
         if (startDate != null && expenseDate.isBefore(startDate)) return false
         if (endDate != null && expenseDate.isAfter(endDate)) return false
         return true

@@ -24,7 +24,9 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
@@ -40,6 +42,8 @@ class AuthenticationServiceImpl(
         private val EMAIL_REGEX = Regex("\"email\"\\s*:\\s*\"([^\"]+)\"")
     }
 
+    private val authEventTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     override fun currentUserId(): String? = firebaseAuth.currentUser?.uid
 
     override fun getCurrentUserCreationTimestamp(): Long? =
@@ -48,11 +52,24 @@ class AuthenticationServiceImpl(
     override fun requireUserId(): String = currentUserId() ?: error("User not logged in")
 
     override val authState: Flow<Boolean> = callbackFlow {
-        val listener = FirebaseAuth.AuthStateListener { auth ->
+        val authListener = FirebaseAuth.AuthStateListener { auth ->
             trySend(auth.currentUser != null)
         }
-        firebaseAuth.addAuthStateListener(listener)
-        awaitClose { firebaseAuth.removeAuthStateListener(listener) }
+        val idTokenListener = FirebaseAuth.IdTokenListener { auth ->
+            trySend(auth.currentUser != null)
+        }
+        val triggerJob = launch {
+            authEventTrigger.collect {
+                trySend(firebaseAuth.currentUser != null)
+            }
+        }
+        firebaseAuth.addAuthStateListener(authListener)
+        firebaseAuth.addIdTokenListener(idTokenListener)
+        awaitClose {
+            firebaseAuth.removeAuthStateListener(authListener)
+            firebaseAuth.removeIdTokenListener(idTokenListener)
+            triggerJob.cancel()
+        }
     }
 
     override suspend fun signIn(email: String, password: String): Result<String> = runCatching {
@@ -183,12 +200,14 @@ class AuthenticationServiceImpl(
         val user = requireCurrentUser()
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         user.linkWithCredential(credential).await()
+        authEventTrigger.tryEmit(Unit)
     }
 
     override suspend fun linkEmailPassword(email: String, password: String): Result<Unit> = runCatching {
         val user = requireCurrentUser()
         val credential = EmailAuthProvider.getCredential(email.trim().lowercase(), password)
         user.linkWithCredential(credential).await()
+        authEventTrigger.tryEmit(Unit)
     }
 
     override suspend fun unlinkProvider(providerType: AuthProviderType): Result<Unit> = runCatching {
@@ -205,6 +224,7 @@ class AuthenticationServiceImpl(
             error("Cannot unlink the last remaining sign-in provider")
         }
         user.unlink(providerId).await()
+        authEventTrigger.tryEmit(Unit)
     }
 
     override suspend fun getLinkedProviders(): Result<List<AuthProviderType>> = runCatching {

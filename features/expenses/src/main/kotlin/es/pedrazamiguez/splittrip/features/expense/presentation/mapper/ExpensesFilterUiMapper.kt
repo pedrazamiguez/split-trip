@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
+import es.pedrazamiguez.splittrip.core.common.extensions.utcToSystemLocalDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
@@ -9,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateRangePreset
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -18,8 +20,11 @@ class ExpensesFilterUiMapper(
     private val userUiMapper: UserUiMapper
 ) {
 
-    fun extractDateBounds(expenses: List<Expense>): Pair<LocalDate?, LocalDate?> {
-        val dates = expenses.mapNotNull { it.effectiveDate?.toLocalDate() }
+    fun extractDateBounds(
+        expenses: List<Expense>,
+        zoneId: ZoneId = ZoneId.systemDefault()
+    ): Pair<LocalDate?, LocalDate?> {
+        val dates = expenses.mapNotNull { it.effectiveDate?.utcToSystemLocalDate(zoneId) }
         if (dates.isEmpty()) return null to null
         return dates.minOrNull() to dates.maxOrNull()
     }

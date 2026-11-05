@@ -131,8 +131,8 @@ sealed interface AddExpenseUiEvent {
         val amount: String
     ) : AddExpenseUiEvent
 
-    /** Toggles the add-ons section expansion. */
-    data object AddOnsSectionToggled : AddExpenseUiEvent
+    /** Toggles expansion of a specific add-on card in the list. */
+    data class AddOnExpandedToggled(val addOnId: String) : AddExpenseUiEvent
 
     // ── Wizard Navigation ───────────────────────────────────────────────
     data object NextStep : AddExpenseUiEvent

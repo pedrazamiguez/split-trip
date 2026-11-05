@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.component
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.rememberScrollState
@@ -19,12 +21,16 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.BalanceMetricType
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.MetricScopeBreakdownUiModel
+import kotlinx.collections.immutable.ImmutableList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BalanceMetricInfoBottomSheet(
     metricType: BalanceMetricType,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    breakdown: ImmutableList<MetricScopeBreakdownUiModel>? = null,
+    formattedGrandTotal: String = ""
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -55,6 +61,16 @@ internal fun BalanceMetricInfoBottomSheet(
             BodyText(
                 text = stringResource(metricType.descriptionRes)
             )
+
+            if (breakdown != null) {
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
+
+                MetricBreakdownContent(
+                    metricType = metricType,
+                    breakdown = breakdown,
+                    formattedGrandTotal = formattedGrandTotal
+                )
+            }
         }
     }
 }

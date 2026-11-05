@@ -171,6 +171,20 @@ class BalancesViewModel(
                             subunitsMap = subunitsMap,
                             currentUserId = currentUserId
                         ),
+                        scheduledBreakdown = balancesUiMapper.mapScheduledBreakdown(
+                            expenses = expenses,
+                            groupCurrency = currency,
+                            memberProfiles = memberProfiles,
+                            subunitsMap = subunitsMap,
+                            currentUserId = currentUserId
+                        ),
+                        refundableBreakdown = balancesUiMapper.mapRefundableBreakdown(
+                            expenses = expenses,
+                            groupCurrency = currency,
+                            memberProfiles = memberProfiles,
+                            subunitsMap = subunitsMap,
+                            currentUserId = currentUserId
+                        ),
                         shouldAnimateBalance = formattedBalance.isNotBlank() &&
                             formattedBalance != lastSeen,
                         previousBalance = lastSeen ?: "",

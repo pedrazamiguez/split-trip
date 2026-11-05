@@ -8,16 +8,14 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,25 +23,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.CaretDownFilled
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyConversionCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencyConversionCardState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencySelectorField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
@@ -56,7 +52,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMet
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import kotlinx.collections.immutable.ImmutableList
 
-@Suppress("LongMethod", "LongParameterList")
+@Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 fun AddOnItemEditor(
     addOn: AddOnUiModel,
@@ -64,77 +60,101 @@ fun AddOnItemEditor(
     paymentMethods: ImmutableList<PaymentMethodUiModel>,
     showCurrencySelector: Boolean,
     onEvent: (AddExpenseUiEvent) -> Unit,
-    onRemove: () -> Unit,
     groupCurrency: CurrencyUiModel? = null,
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(addOn.type.toStringRes()),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-
-            IconButton(
-                onClick = onRemove
+        // Section 1: Extra type
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
+            LabelText(stringResource(R.string.add_expense_add_on_type_title))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
             ) {
-                Icon(
-                    imageVector = TablerIcons.Outline.X,
-                    contentDescription = stringResource(R.string.add_expense_add_on_remove),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
+                AddOnType.entries.forEach { type ->
+                    PassportChip(
+                        label = stringResource(type.toStringRes()),
+                        selected = addOn.type == type,
+                        onClick = {
+                            onEvent(AddExpenseUiEvent.AddOnTypeChanged(addOn.id, type))
+                        }
+                    )
+                }
             }
         }
 
-        // Chip Selectors
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-            AddOnType.entries.forEach { type ->
-                PassportChip(
-                    label = stringResource(type.toStringRes()),
-                    selected = addOn.type == type,
-                    onClick = {
-                        onEvent(AddExpenseUiEvent.AddOnTypeChanged(addOn.id, type))
-                    }
-                )
+        // Section 2: Application Mode
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
+            LabelText(stringResource(R.string.add_expense_add_on_mode_title))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+            ) {
+                AddOnMode.entries.forEach { mode ->
+                    PassportChip(
+                        label = stringResource(mode.toStringRes()),
+                        selected = addOn.mode == mode,
+                        onClick = {
+                            onEvent(AddExpenseUiEvent.AddOnModeChanged(addOn.id, mode))
+                        }
+                    )
+                }
             }
+            val modeSupportingText = when (addOn.mode) {
+                AddOnMode.ON_TOP -> {
+                    if (addOn.type == AddOnType.DISCOUNT) {
+                        stringResource(R.string.add_expense_add_on_mode_on_top_discount_desc)
+                    } else {
+                        stringResource(R.string.add_expense_add_on_mode_on_top_desc)
+                    }
+                }
+                AddOnMode.INCLUDED -> stringResource(R.string.add_expense_add_on_mode_included_desc)
+            }
+            CaptionText(
+                text = modeSupportingText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-            AddOnMode.entries.forEach { mode ->
-                PassportChip(
-                    label = stringResource(mode.toStringRes()),
-                    selected = addOn.mode == mode,
-                    onClick = {
-                        onEvent(AddExpenseUiEvent.AddOnModeChanged(addOn.id, mode))
-                    }
-                )
+        // Section 3: Calculation / Value Type
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
+            LabelText(stringResource(R.string.add_expense_add_on_value_type_title))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+            ) {
+                AddOnValueType.entries.forEach { valueType ->
+                    PassportChip(
+                        label = stringResource(valueType.toStringRes()),
+                        selected = addOn.valueType == valueType,
+                        onClick = {
+                            onEvent(AddExpenseUiEvent.AddOnValueTypeChanged(addOn.id, valueType))
+                        }
+                    )
+                }
             }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-            AddOnValueType.entries.forEach { valueType ->
-                PassportChip(
-                    label = stringResource(valueType.toStringRes()),
-                    selected = addOn.valueType == valueType,
-                    onClick = {
-                        onEvent(AddExpenseUiEvent.AddOnValueTypeChanged(addOn.id, valueType))
+            val valueTypeSupportingText = when (addOn.valueType) {
+                AddOnValueType.EXACT -> stringResource(R.string.add_expense_add_on_value_type_exact_desc)
+                AddOnValueType.PERCENTAGE -> {
+                    if (addOn.amountInput.isNotBlank() && addOn.formattedAmount.isNotBlank()) {
+                        stringResource(
+                            R.string.add_expense_add_on_value_type_percentage_resolved_desc,
+                            "${addOn.amountInput}%",
+                            addOn.formattedAmount
+                        )
+                    } else {
+                        stringResource(R.string.add_expense_add_on_value_type_percentage_desc)
                     }
-                )
+                }
             }
+            CaptionText(
+                text = valueTypeSupportingText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         // Amount Input

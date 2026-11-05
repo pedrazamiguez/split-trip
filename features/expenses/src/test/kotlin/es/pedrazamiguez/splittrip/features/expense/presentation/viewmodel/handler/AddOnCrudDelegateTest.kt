@@ -323,4 +323,49 @@ class AddOnCrudDelegateTest {
             assertEquals("EUR amount", result)
         }
     }
+
+    // ── Expansion helpers ────────────────────────────────────────────────
+
+    @Nested
+    inner class ExpansionHelpers {
+
+        @Test
+        fun `buildNewAddOn sets isExpanded to true`() {
+            val state = AddExpenseUiState(groupCurrency = eurCurrency, selectedCurrency = eurCurrency)
+            val result = delegate.buildNewAddOn(AddOnType.FEE, state)
+            assertTrue(result.isExpanded)
+        }
+
+        @Test
+        fun `collapseAllExcept expands specified item and collapses all others`() {
+            val list = listOf(
+                AddOnUiModel(id = "1", isExpanded = true),
+                AddOnUiModel(id = "2", isExpanded = false),
+                AddOnUiModel(id = "3", isExpanded = true)
+            )
+
+            val result = delegate.collapseAllExcept(list, "2")
+
+            assertFalse(result[0].isExpanded)
+            assertTrue(result[1].isExpanded)
+            assertFalse(result[2].isExpanded)
+        }
+
+        @Test
+        fun `toggleItemExpansion toggles target item and collapses others`() {
+            val list = listOf(
+                AddOnUiModel(id = "1", isExpanded = true),
+                AddOnUiModel(id = "2", isExpanded = false)
+            )
+
+            val result = delegate.toggleItemExpansion(list, "2")
+
+            assertFalse(result[0].isExpanded)
+            assertTrue(result[1].isExpanded)
+
+            val collapsedAgain = delegate.toggleItemExpansion(result, "2")
+            assertFalse(collapsedAgain[0].isExpanded)
+            assertFalse(collapsedAgain[1].isExpanded)
+        }
+    }
 }

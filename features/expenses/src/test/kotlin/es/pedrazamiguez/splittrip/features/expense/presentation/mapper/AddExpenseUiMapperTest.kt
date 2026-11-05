@@ -101,7 +101,8 @@ class AddExpenseUiMapperTest {
             addOnMapper,
             splitPreviewService,
             addExpenseOptionsUiMapper,
-            remainderDistributionService
+            remainderDistributionService,
+            formattingHelper
         )
     }
 
@@ -2013,6 +2014,104 @@ class AddExpenseUiMapperTest {
             assertEquals(savedExpense.groupAmount, reSavedExpense.groupAmount)
             assertEquals(savedExpense.addOns, reSavedExpense.addOns)
             assertEquals(savedExpense.splits, reSavedExpense.splits)
+        }
+    }
+
+    @Nested
+    inner class MapExpenseToStateAddOns {
+
+        @Test
+        fun `mapExpenseToState initializes existing add-ons with isExpanded=false`() {
+            val expense = Expense(
+                id = "exp-1",
+                groupId = "group-1",
+                title = "Dinner",
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(
+                    AddOn(
+                        id = "addon-1",
+                        type = AddOnType.TIP,
+                        mode = AddOnMode.ON_TOP,
+                        valueType = AddOnValueType.EXACT,
+                        amountCents = 500L,
+                        currency = "EUR"
+                    )
+                )
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals(1, result.addOns.size)
+            assertFalse(result.addOns[0].isExpanded)
+        }
+
+        @Test
+        fun `mapExpenseToState populates exchangeRateLabel and groupAmountLabel for foreign currency add-ons`() {
+            every { resourceProvider.getString(any(), any(), any()) } returns "1 EUR = ? USD"
+            every { resourceProvider.getString(any(), any()) } returns "Amount in EUR"
+
+            val expense = Expense(
+                id = "exp-1",
+                groupId = "group-1",
+                title = "Tour",
+                sourceAmount = 10000L,
+                sourceCurrency = "EUR",
+                groupAmount = 10000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(
+                    AddOn(
+                        id = "addon-1",
+                        type = AddOnType.FEE,
+                        mode = AddOnMode.ON_TOP,
+                        valueType = AddOnValueType.EXACT,
+                        amountCents = 1000L,
+                        groupAmountCents = 900L,
+                        currency = "USD",
+                        exchangeRate = BigDecimal("0.90")
+                    )
+                )
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals(1, result.addOns.size)
+            assertTrue(result.addOns[0].exchangeRateLabel.isNotBlank())
+            assertTrue(result.addOns[0].groupAmountLabel.isNotBlank())
+        }
+
+        @Test
+        fun `mapExpenseToState populates formattedAmount for each add-on`() {
+            val expense = Expense(
+                id = "exp-1",
+                groupId = "group-1",
+                title = "Dinner",
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                addOns = listOf(
+                    AddOn(
+                        id = "addon-1",
+                        type = AddOnType.TIP,
+                        mode = AddOnMode.ON_TOP,
+                        valueType = AddOnValueType.EXACT,
+                        amountCents = 500L,
+                        groupAmountCents = 500L,
+                        currency = "EUR"
+                    )
+                )
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertEquals(1, result.addOns.size)
+            assertTrue(result.addOns[0].formattedAmount.isNotBlank())
         }
     }
 }

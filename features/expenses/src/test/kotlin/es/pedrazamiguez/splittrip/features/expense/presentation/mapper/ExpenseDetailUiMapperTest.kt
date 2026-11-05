@@ -2,7 +2,13 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
@@ -27,7 +33,9 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -156,6 +164,43 @@ class ExpenseDetailUiMapperTest {
 
             assertNotNull(result.dateText)
             assertTrue(result.dateText.isNotBlank())
+        }
+
+        @Test
+        fun `maps dateText and createdAtText in local timezone across midnight boundary`() {
+            val expense = baseExpense.copy(
+                operationDate = LocalDateTime.of(2026, 10, 27, 22, 58, 0),
+                createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+            )
+
+            val result = mapper.map(
+                expense = expense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                zoneId = ZoneId.of("Asia/Shanghai")
+            )
+
+            val expectedDateText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
+            assertEquals(expectedDateText, result.dateText)
+            assertEquals(expectedDateText, result.createdAtText)
+        }
+
+        @Test
+        fun `secondaryDateText for dueDate is not shifted across timezones`() {
+            val scheduledExpense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.of(2026, 11, 15, 0, 0, 0)
+            )
+
+            val result = mapper.map(
+                expense = scheduledExpense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                zoneId = ZoneId.of("America/New_York")
+            )
+
+            val expectedDueDateText = LocalDate.of(2026, 11, 15).formatShortDate(Locale.US)
+            assertEquals(expectedDueDateText, result.secondaryDateText)
         }
     }
 
@@ -1679,10 +1724,102 @@ class ExpenseDetailUiMapperTest {
     }
 
     @Nested
+    inner class ScheduledStatusDisplayMapping {
+
+        @Test
+        fun `scheduled with past dueDate maps to finished and CircleCheck badge`() {
+            every { resourceProvider.getString(R.string.payment_status_finished) } returns "Paid"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().minusDays(2)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.CircleCheck, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled with today dueDate maps to finished and CircleCheck badge`() {
+            every { resourceProvider.getString(R.string.payment_status_finished) } returns "Paid"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now()
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.CircleCheck, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled with future dueDate maps to pending and Calendar badge`() {
+            every { resourceProvider.getString(R.string.payment_status_pending) } returns "Pending"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.now().plusDays(2)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Pending", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.Calendar, result.badgeIcon)
+        }
+
+        @Test
+        fun `scheduled with null dueDate maps to pending and null badge`() {
+            every { resourceProvider.getString(R.string.payment_status_pending) } returns "Pending"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = null
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Pending", result.paymentStatusText)
+            assertNull(result.badgeIcon)
+        }
+    }
+
+    @Nested
+    inner class RefundableStatusDisplayMapping {
+
+        @Test
+        fun `refundable with past deadline maps to finished and Receipt badge`() {
+            every { resourceProvider.getString(R.string.payment_status_finished) } returns "Paid"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().minusDays(2)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.Receipt, result.badgeIcon)
+        }
+
+        @Test
+        fun `refundable with active deadline maps to on_hold and ReceiptRefund badge`() {
+            every { resourceProvider.getString(R.string.expense_detail_on_hold) } returns "On hold"
+            val expense = baseExpense.copy(
+                paymentStatus = PaymentStatus.REFUNDABLE,
+                dueDate = LocalDateTime.now().plusDays(2)
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("On hold", result.paymentStatusText)
+            assertEquals(TablerIcons.Outline.ReceiptRefund, result.badgeIcon)
+        }
+    }
+
+    @Nested
     inner class MixedAddOnsBreakdown {
 
         @Test
-        fun `formattedGroupAmount formats effectiveGroupAmount when ON_TOP and INCLUDED add-ons exist`() {
+        fun `formattedGroupAmount formats base groupAmount when ON_TOP and INCLUDED add-ons exist`() {
             every { localeProvider.getCurrentLocale() } returns Locale.US
             val includedFee = AddOn(
                 id = "addon-inc",
@@ -1712,7 +1849,10 @@ class ExpenseDetailUiMapperTest {
 
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
-            assertEquals("€127.80", result.formattedGroupAmount)
+            // Base cost displayed in hero amount
+            assertEquals("€123.48", result.formattedGroupAmount)
+            // Effective total still reflected in breakdown summary
+            assertEquals("€127.80", result.formattedEffectiveTotal)
         }
 
         @Test
@@ -1905,7 +2045,7 @@ class ExpenseDetailUiMapperTest {
         }
 
         @Test
-        fun `formattedSourceAmount reflects total foreign currency paid with INCLUDED add-on`() {
+        fun `formattedSourceAmount reflects base sourceAmount when INCLUDED add-on is present`() {
             every { localeProvider.getCurrentLocale() } returns Locale.US
             val alipayFee = AddOn(
                 id = "addon-alipay",
@@ -1928,9 +2068,10 @@ class ExpenseDetailUiMapperTest {
             val result = mapper.map(expense, memberProfiles, currentUserId)
 
             val formattedSource = checkNotNull(result.formattedSourceAmount)
+            // Base source cost displayed (951.00 CNY), not the effective total with fee (979.53 CNY)
             assertTrue(
-                formattedSource.contains("979.53") ||
-                    formattedSource.contains("979,53")
+                formattedSource.contains("951.00") ||
+                    formattedSource.contains("951,00")
             )
         }
     }

@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
@@ -224,7 +223,7 @@ class CreateEditGroupViewModel(
             is CreateEditGroupUiEvent.UpgradeClicked -> {
                 _uiState.update { it.copy(showUpgradeDialog = false) }
                 viewModelScope.launch {
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToSubscriptions)
                 }
             }
             is CreateEditGroupUiEvent.DismissUpgradeDialog -> {
@@ -242,12 +241,12 @@ class CreateEditGroupViewModel(
                             UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
                         )
                     )
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToSubscriptions)
                 }
             }
             is CreateEditGroupUiEvent.MemberCapacityUpsellClicked -> {
                 viewModelScope.launch {
-                    _actions.emit(CreateEditGroupUiAction.NavigateToRoute(Routes.SETTINGS_SUBSCRIPTIONS))
+                    _actions.emit(CreateEditGroupUiAction.NavigateToSubscriptions)
                 }
             }
         }
@@ -277,6 +276,8 @@ class CreateEditGroupViewModel(
     }
 
     private fun handleMemberSelected(event: CreateEditGroupUiEvent.MemberSelected) {
+        if (isCurrentUser(event.user.userId, event.user.email)) return
+
         val state = _uiState.value
         if (state.selectedMembers.any { it.userId == event.user.userId }) {
             return
@@ -330,10 +331,13 @@ class CreateEditGroupViewModel(
 
             searchUsersByEmailUseCase(query).onSuccess { users ->
                 val selectedIds = _uiState.value.selectedMembers.map { it.userId }.toSet()
-                val results = if (users.isEmpty()) {
+                val filteredUsers = users.filter { u ->
+                    u.userId !in selectedIds && !isCurrentUser(u.userId, u.email)
+                }
+                val results = if (filteredUsers.isEmpty()) {
                     getPendingUserResults(query, selectedIds)
                 } else {
-                    users.filter { u -> u.userId !in selectedIds }
+                    filteredUsers
                 }
                 _uiState.update {
                     it.copy(
@@ -434,6 +438,17 @@ class CreateEditGroupViewModel(
     }
 
     private fun handleMemberScanned(userId: String, email: String) {
+        if (isCurrentUser(userId, email)) {
+            viewModelScope.launch {
+                _actions.emit(
+                    CreateEditGroupUiAction.ShowError(
+                        UiText.StringResource(R.string.group_error_cannot_add_self)
+                    )
+                )
+            }
+            return
+        }
+
         val state = _uiState.value
         val alreadySelected = state.selectedMembers.any { it.userId == userId }
         if (alreadySelected) return
@@ -485,9 +500,16 @@ class CreateEditGroupViewModel(
         }
     }
 
+    private fun isCurrentUser(userId: String, email: String): Boolean {
+        val currentUserId = authenticationService.currentUserId()
+        val currentUserEmail = _uiState.value.currentUserEmail ?: authenticationService.currentUserEmail()
+        return (currentUserId != null && userId == currentUserId) ||
+            (currentUserEmail != null && User.areEmailsEquivalent(email, currentUserEmail))
+    }
+
     private fun getPendingUserResults(query: String, selectedIds: Set<String>): List<User> {
         val normalizedEmail = User.normalizeEmail(query)
-        val currentUserEmail = _uiState.value.currentUserEmail
+        val currentUserEmail = _uiState.value.currentUserEmail ?: authenticationService.currentUserEmail()
 
         if (currentUserEmail != null && User.areEmailsEquivalent(query, currentUserEmail)) return emptyList()
 

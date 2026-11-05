@@ -21,11 +21,15 @@ private val CHEVRON_SIZE = 18.dp
 private const val FORMER_MEMBER_ALPHA = 0.6f
 
 @Composable
-internal fun SplitRow(split: SplitDetailUiModel) {
+internal fun SplitRow(
+    split: SplitDetailUiModel,
+    modifier: Modifier = Modifier,
+    reserveChevronSpace: Boolean = false
+) {
     val isFormer = split.memberDisplay is MemberDisplay.Former
     val alphaVal = if (isFormer) FORMER_MEMBER_ALPHA else 1f
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .then(if (isFormer) Modifier.alpha(alphaVal) else Modifier),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -33,10 +37,15 @@ internal fun SplitRow(split: SplitDetailUiModel) {
     ) {
         SplitRowMemberDetails(split = split)
 
-        // Reserve trailing space to align with header's chevron icon (ExtraSmall spacing + 18dp icon)
+        val amountModifier = if (reserveChevronSpace) {
+            Modifier.padding(end = MaterialTheme.spacing.ExtraSmall + CHEVRON_SIZE)
+        } else {
+            Modifier
+        }
+
         Column(
             horizontalAlignment = Alignment.End,
-            modifier = Modifier.padding(end = MaterialTheme.spacing.ExtraSmall + CHEVRON_SIZE)
+            modifier = amountModifier
         ) {
             AmountText(
                 text = split.formattedAmount,

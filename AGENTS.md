@@ -40,6 +40,11 @@ Kotlin Android app (Jetpack Compose, Material 3) for shared travel expenses. Mul
 
 ViewModels ONLY inject UseCases, Mappers, and Domain Services. NEVER inject `Context`, `LocaleProvider`, Repositories, or other ViewModels.
 
+- **Semantic Navigation Intent:** ViewModels and feature event handlers MUST ONLY emit high-level semantic UI actions (e.g., `UiAction.NavigateToSubscriptions`, `UiAction.RequestUpgrade`, `UiAction.NavigateBack`). ViewModels must NEVER evaluate session/auth state or cross-cutting preconditions to resolve global route strings (e.g. deciding between `Routes.SETTINGS_ACCOUNT_STATUS` and `Routes.SETTINGS_SUBSCRIPTIONS`). Routing decisions belong to navigation orchestrators in `:core:design-system:navigation` (such as `UpgradeNavigator`) or feature-level orchestrators (`*Feature` composables and `ScreenUiProvider`s).
+- **Domain Service Injection Scope:** ViewModels must NOT inject domain services merely to make presentation or routing decisions. If session state or conditional branching is needed for routing, delegate to a dedicated navigator or observe a domain UseCase.
+- **Anti-Duplication of Cross-Cutting Logic:** Forbid repetitive state branching (e.g., checking `isAnonymous()` or subscription status) across multiple feature modules. Cross-cutting conditional logic must be centralized in `:core:design-system` navigators or `:domain` services/use cases.
+- **Baseline Principle:** *Linter and Konsist compliance is a necessary baseline, NOT proof of clean architecture.* Passing static checks does not justify pragmatic workarounds, duplicated conditional logic, or routing leakage into ViewModels.
+
 ## MVI Triad
 
 Every screen gets `UiState` (ImmutableList), `UiEvent` (sealed interface), and `UiAction` (side-effects via Channel/SharedFlow). Never put one-shot events in `UiState`.
@@ -111,6 +116,7 @@ Modifier.debouncedCombinedClickable(
 ## Navigation
 
 - Routes are `const val` in `core/design-system/.../Routes.kt`.
+- **Paywall & Upgrade Routing:** Paywall navigation outside `:features:settings` must strictly route through `UpgradeNavigator` (`upgradeNavigator.navigateToUpgrade(navController)` or `upgradeNavigator.getUpgradeDestination()`), and never reference `Routes.SETTINGS_SUBSCRIPTIONS` directly.
 - Two nav controllers: `LocalRootNavController` (full-screen flows) and `LocalTabNavController` (within bottom tabs). Consumed via CompositionLocals in Feature layer only.
 - Notifications: `LocalTopPillController` — top pill notifications replace snackbars. Never use `Scaffold(snackbarHost=...)` in features.
 - **Tab features** register as bottom tabs via `NavigationProvider` interface + Koin `bind`. See `GroupsNavigationProviderImpl`.
@@ -375,9 +381,11 @@ Feature development follows a 5-phase Specification-Driven Development (SDD) lif
 
 See `docs/ai/agent-roles-and-taxonomy.md` and `docs/ai/ai-ecosystem.md` for full details.
 
-## String Translations
+## String Translations & Localization
 
-When adding new string resources (e.g. in `strings.xml`), you MUST always add the corresponding Spanish translations. Andaluz translations are not needed as they are generated automatically based on the Spanish ones.
+- **Spanish (`values-es/`):** When adding new string resources (e.g. in `strings.xml`), you MUST always add the corresponding Spanish translations in `values-es/strings.xml`.
+- **Andaluz (`values-es-rAN/`):** `values-es-rAN` is for the **Andalusian (Andaluz / EPA)** dialect, **NEVER** Aragonese.
+- **Auto-generated Strings:** Strings in `values-es-rAN/strings.xml` are **automatically generated on compile** from `values-es/strings.xml` via `generateAndaluzStrings` (`make andaluz`). NEVER create, edit, or modify `values-es-rAN/strings.xml` manually.
 
 ## Workspace Resolution Protocol
 

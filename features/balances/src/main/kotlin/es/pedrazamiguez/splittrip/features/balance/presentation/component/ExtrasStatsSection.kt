@@ -22,12 +22,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.features.balance.R
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.BalanceMetricType
 
 @Composable
 internal fun ExtrasStatsSection(
     formattedTotalExtras: String,
-    onShowExtrasBreakdown: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -37,7 +38,7 @@ internal fun ExtrasStatsSection(
             modifier = Modifier.debouncedClickableNoRipple(
                 role = Role.Button,
                 onClickLabel = stringResource(R.string.balances_extras_breakdown_cd),
-                onClick = onShowExtrasBreakdown
+                onClick = { onShowMetricInfo(BalanceMetricType.EXTRAS) }
             ),
             horizontalAlignment = Alignment.End
         ) {

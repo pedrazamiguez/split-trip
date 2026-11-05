@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ConfigEventHandler
 
 /**
@@ -24,7 +25,8 @@ class ExpenseFlowStrategyFactory(
     private val getContributionByExpenseIdUseCase: GetContributionByExpenseIdUseCase,
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
-    private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase
+    private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
+    private val addOnEventHandler: AddOnEventHandler
 ) {
     fun create(expenseId: String?): ExpenseFlowStrategy {
         return if (!expenseId.isNullOrBlank()) {
@@ -36,7 +38,8 @@ class ExpenseFlowStrategyFactory(
                 updateExpenseUseCase = updateExpenseUseCase,
                 addExpenseUiMapper = addExpenseUiMapper,
                 getMemberProfilesUseCase = getMemberProfilesUseCase,
-                getGroupSubunitsUseCase = getGroupSubunitsUseCase
+                getGroupSubunitsUseCase = getGroupSubunitsUseCase,
+                addOnEventHandler = addOnEventHandler
             )
         } else {
             AddExpenseFlowStrategy(

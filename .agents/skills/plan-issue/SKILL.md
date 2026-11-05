@@ -52,6 +52,13 @@ Draft a plan that functions as a **complete, unambiguous, and actionable technic
 - Database schema updates (Room entity fields, Firestore document mappings) with exact types.
 - Control flow logic, business validation rules, and error handling expectations.
 - Specific test specifications (test class name, list of test case names with their input/output expectations and what should be mocked).
+
+### Architectural Integrity & Anti-Pattern Checklist
+Before finalizing the plan, explicitly verify:
+- **No Cross-Feature Logic Duplication:** Does the plan duplicate conditional state checking (e.g. session/auth checks) across multiple features? If so, abstract it into a reusable domain service, use case, or core navigator.
+- **Semantic Navigation Intent:** Are ViewModel actions strictly semantic (e.g., `NavigateToSubscriptions`, `RequestUpgrade`, `NavigateToDetail`)? ViewModels and event handlers must NEVER evaluate session state to resolve route strings dynamically. Routing mechanics belong to `:core:design-system:navigation` orchestrators (e.g., `UpgradeNavigator`).
+- **Domain Service Injection Scope:** Is any domain service being injected into a ViewModel merely to make a presentation or routing decision? If so, push routing decisions to dedicated navigators or inject a dedicated UseCase.
+- **Syntactic vs Architectural Cleanliness:** Linter and Konsist compliance is a necessary baseline, NOT proof of clean architecture. Never exploit a permissive rule to introduce pragmatic patches or repeated conditional branching.
 ---
 
 ## Step 3 — Present the Plan and Obtain Approval

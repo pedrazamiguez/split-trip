@@ -186,7 +186,7 @@ class CreateEditSubunitViewModelTest {
         }
 
         @Test
-        fun `init in create mode when creation disabled emits error and paywall`() = runTest(testDispatcher) {
+        fun `init emits subscriptions when creation disabled and not pro`() = runTest(testDispatcher) {
             every {
                 featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
             } returns flowOf(false)

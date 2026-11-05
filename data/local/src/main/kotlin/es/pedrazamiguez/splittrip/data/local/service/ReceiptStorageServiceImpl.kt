@@ -3,10 +3,12 @@ package es.pedrazamiguez.splittrip.data.local.service
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
+import androidx.exifinterface.media.ExifInterface
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
@@ -222,7 +224,7 @@ internal class ReceiptStorageServiceImpl(
 
     /**
      * Decodes the source bitmap with OOM-safe downsampling (max [MAX_IMAGE_DIMENSION] px on
-     * either axis) and re-encodes it as WebP.
+     * either axis), applies EXIF orientation if required, and re-encodes it as WebP.
      *
      * On API 30+ `WEBP_LOSSLESS` is used (truly lossless).
      * On API < 30 the legacy `WEBP` encoder is used at quality 100; it is not guaranteed
@@ -243,27 +245,56 @@ internal class ReceiptStorageServiceImpl(
         val inSampleSize = calculateInSampleSize(boundsOpts.outWidth, boundsOpts.outHeight)
 
         // Pass 2: decode at reduced resolution to avoid OOM on high-res photos
-        val bitmap = BitmapFactory.decodeFile(
+        val decodedBitmap = BitmapFactory.decodeFile(
             tempFile.absolutePath,
             BitmapFactory.Options().also { it.inSampleSize = inSampleSize }
         ) ?: error("Could not decode image from temporary file")
 
-        val destFile = File(dir, "$uniqueId$WEBP_EXT")
-        FileOutputStream(destFile).use { output ->
-            @Suppress("DEPRECATION") // WEBP_LOSSLESS added in API 30; WEBP used on < 30 (see KDoc)
-            val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                try {
-                    Bitmap.CompressFormat.valueOf("WEBP_LOSSLESS")
-                } catch (_: Throwable) {
-                    Bitmap.CompressFormat.WEBP
-                }
-            } else {
-                Bitmap.CompressFormat.WEBP
+        var rotatedBitmap: Bitmap? = null
+        try {
+            val matrix = getExifMatrix(tempFile)
+            rotatedBitmap = rotateBitmap(decodedBitmap, matrix)
+
+            val destFile = File(dir, "$uniqueId$WEBP_EXT")
+            val format = getWebpCompressFormat()
+            FileOutputStream(destFile).use { output ->
+                rotatedBitmap.compress(format, WEBP_QUALITY, output)
             }
-            bitmap.compress(format, WEBP_QUALITY, output)
-            bitmap.recycle()
+            return destFile to WEBP_MIME
+        } finally {
+            rotatedBitmap?.recycle()
+            if (decodedBitmap != rotatedBitmap && !decodedBitmap.isRecycled) {
+                decodedBitmap.recycle()
+            }
         }
-        return destFile to WEBP_MIME
+    }
+
+    private fun getExifMatrix(tempFile: File): Matrix? {
+        return try {
+            val exifInterface = ExifInterface(tempFile.absolutePath)
+            val orientation = exifInterface.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            buildOrientationMatrix(orientation)
+        } catch (e: Exception) {
+            Timber.w(e, "Could not read EXIF orientation from ${tempFile.absolutePath}")
+            null
+        }
+    }
+
+    private fun rotateBitmap(bitmap: Bitmap, matrix: Matrix?): Bitmap {
+        if (matrix == null) return bitmap
+        return try {
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotated != bitmap) {
+                bitmap.recycle()
+            }
+            rotated
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to rotate decoded bitmap")
+            bitmap
+        }
     }
 
     /** Streams the source content directly to a file without decoding, preserving the original bytes. */
@@ -308,11 +339,51 @@ internal class ReceiptStorageServiceImpl(
         /** Max width/height in pixels before downsampling kicks in. */
         const val MAX_IMAGE_DIMENSION = 2048
 
+        const val ROTATION_90 = 90
+        const val ROTATION_180 = 180
+        const val ROTATION_270 = 270
+
         val MIME_TO_EXT = mapOf(
             "application/pdf" to ".pdf",
             "image/jpeg" to ".jpg",
             "image/png" to ".png",
             "image/gif" to ".gif"
         )
+
+        @Suppress("DEPRECATION") // WEBP_LOSSLESS added in API 30; WEBP used on < 30 (see KDoc)
+        fun getWebpCompressFormat(): Bitmap.CompressFormat =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                try {
+                    Bitmap.CompressFormat.valueOf("WEBP_LOSSLESS")
+                } catch (_: Throwable) {
+                    Bitmap.CompressFormat.WEBP
+                }
+            } else {
+                Bitmap.CompressFormat.WEBP
+            }
+
+        fun buildOrientationMatrix(orientation: Int): Matrix? =
+            buildRotationMatrix(orientation) ?: buildFlipMatrix(orientation)
+
+        private fun buildRotationMatrix(orientation: Int): Matrix? = when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> Matrix().apply { postRotate(ROTATION_90.toFloat()) }
+            ExifInterface.ORIENTATION_ROTATE_180 -> Matrix().apply { postRotate(ROTATION_180.toFloat()) }
+            ExifInterface.ORIENTATION_ROTATE_270 -> Matrix().apply { postRotate(ROTATION_270.toFloat()) }
+            else -> null
+        }
+
+        private fun buildFlipMatrix(orientation: Int): Matrix? = when (orientation) {
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> Matrix().apply { postScale(-1f, 1f) }
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> Matrix().apply { postScale(1f, -1f) }
+            ExifInterface.ORIENTATION_TRANSPOSE -> Matrix().apply {
+                postRotate(ROTATION_90.toFloat())
+                postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_TRANSVERSE -> Matrix().apply {
+                postRotate(ROTATION_270.toFloat())
+                postScale(-1f, 1f)
+            }
+            else -> null
+        }
     }
 }

@@ -259,8 +259,26 @@
     <string name="add_expense_add_on_base_cost">Coste base: %1$s</string>
     <string name="add_expense_add_ons_expand">Expandir extras</string>
     <string name="add_expense_add_ons_collapse">Contraer extras</string>
+    <string name="add_expense_add_on_item_expand">Expandir extra</string>
+    <string name="add_expense_add_on_item_collapse">Contraer extra</string>
     <string name="add_expense_add_on_error_amount">El importe del extra debe ser mayor que cero</string>
     <string name="add_expense_add_on_error_included_exceeds">El importe incluido debe ser menor que el gasto</string>
+
+    <!-- Add-ons Step Subtitles -->
+    <string name="add_expense_add_on_type_title">Tipo de extra</string>
+    <string name="add_expense_add_on_mode_title">¿Cómo afecta al importe?</string>
+    <string name="add_expense_add_on_value_type_title">¿Cómo se calcula?</string>
+
+    <!-- Add-ons Dynamic Guidance -->
+    <string name="add_expense_add_on_mode_on_top_desc">Se suma al importe del gasto, aumentando el total pagado.</string>
+    <string name="add_expense_add_on_mode_on_top_discount_desc">Se resta del importe del gasto, reduciendo el total pagado.</string>
+    <string name="add_expense_add_on_mode_included_desc">Ya está incluido en el importe introducido; se desglosa del coste base sin cambiar el total pagado.</string>
+    <string name="add_expense_add_on_value_type_exact_desc">Una cantidad fija exacta</string>
+    <string name="add_expense_add_on_value_type_percentage_desc">Calculado como un porcentaje del importe del gasto</string>
+    <string name="add_expense_add_on_value_type_percentage_resolved_desc">Calculado como un porcentaje del importe del gasto (%1$s = %2$s)</string>
+
+    <!-- Add-ons Impact Breakdown -->
+    <string name="add_expense_impact_entered_amount">Importe introducido</string>
 
     
     <string name="funding_source_title">Pagado desde</string>

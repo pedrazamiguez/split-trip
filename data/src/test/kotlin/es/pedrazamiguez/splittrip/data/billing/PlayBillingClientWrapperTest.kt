@@ -439,6 +439,8 @@ class PlayBillingClientWrapperTest {
         assertEquals(2, products.size)
         assertEquals(BillingConstants.PRODUCT_ID_PRO_MONTHLY, products[0].productId)
         assertEquals(BillingConstants.PRODUCT_ID_PRO_ANNUAL, products[1].productId)
+        assertEquals("26,99 €", products[1].formattedPrice)
+        assertEquals(26990000L, products[1].priceAmountMicros)
         assertEquals(products, simWrapper.subscriptionProducts.value)
     }
 

@@ -194,17 +194,22 @@ class SubscriptionsViewModelTest {
         }
 
         @Test
-        fun `guest user state sets isAnonymous to true`() = runTest(testDispatcher) {
+        fun `loadSubscriptions emits NavigateToAccountStatus when user is anonymous`() = runTest(testDispatcher) {
             every { isUserAnonymousUseCase() } returns flowOf(true)
             coEvery { getCurrentUserProfileUseCase() } returns null
             userProfileFlow.tryEmit(null)
 
+            val actions = mutableListOf<SubscriptionsUiAction>()
             val viewModel = createViewModel()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
             assertFalse(state.isLoading)
             assertTrue(state.isAnonymous)
+            assertTrue(actions.contains(SubscriptionsUiAction.NavigateToAccountStatus))
+            coVerify(exactly = 0) { billingService.querySubscriptionProducts() }
+            job.cancel()
         }
 
         @Test
@@ -388,6 +393,29 @@ class SubscriptionsViewModelTest {
             assertEquals(1, actions.size)
             val action = assertInstanceOf(SubscriptionsUiAction.OpenUrl::class.java, actions.first())
             assertTrue(action.url.contains("play.google.com"))
+            job.cancel()
+        }
+
+        @Test
+        fun `onEvent UpgradePlan for PRO emits NavigateToAccountStatus when user is anonymous`() = runTest(
+            testDispatcher
+        ) {
+            every { isUserAnonymousUseCase() } returns flowOf(true)
+            coEvery { getCurrentUserProfileUseCase() } returns null
+            userProfileFlow.tryEmit(null)
+
+            val viewModel = createViewModel()
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+            advanceUntilIdle()
+            actions.clear()
+
+            viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.PRO))
+            advanceUntilIdle()
+
+            assertEquals(1, actions.size)
+            assertEquals(SubscriptionsUiAction.NavigateToAccountStatus, actions.first())
+
             job.cancel()
         }
 
@@ -588,6 +616,30 @@ class SubscriptionsViewModelTest {
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.subscriptions_billing_error, message.resId)
+
+            job.cancel()
+        }
+
+        @Test
+        fun `onEvent RestorePurchases emits NavigateToAccountStatus when user is anonymous`() = runTest(
+            testDispatcher
+        ) {
+            every { isUserAnonymousUseCase() } returns flowOf(true)
+            coEvery { getCurrentUserProfileUseCase() } returns null
+            userProfileFlow.tryEmit(null)
+
+            val viewModel = createViewModel()
+            val actions = mutableListOf<SubscriptionsUiAction>()
+            val job = launch { viewModel.actions.collect { actions.add(it) } }
+            advanceUntilIdle()
+            actions.clear()
+
+            viewModel.onEvent(SubscriptionsUiEvent.RestorePurchases)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { billingService.restorePurchases() }
+            assertEquals(1, actions.size)
+            assertEquals(SubscriptionsUiAction.NavigateToAccountStatus, actions.first())
 
             job.cancel()
         }

@@ -14,7 +14,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.features.subunit.presentation.screen.CreateEditSubunitScreen
@@ -23,12 +23,14 @@ import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.action
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.event.CreateEditSubunitUiEvent
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun CreateEditSubunitFeature(
     groupId: String,
     subunitId: String?,
-    viewModel: CreateEditSubunitViewModel = koinViewModel<CreateEditSubunitViewModel>()
+    viewModel: CreateEditSubunitViewModel = koinViewModel<CreateEditSubunitViewModel>(),
+    upgradeNavigator: UpgradeNavigator = koinInject<UpgradeNavigator>()
 ) {
     val navController = LocalTabNavController.current
     val rootNavController = LocalRootNavController.current
@@ -69,7 +71,7 @@ fun CreateEditSubunitFeature(
                 }
 
                 CreateEditSubunitUiAction.NavigateToSubscriptions -> {
-                    rootNavController.navigate(Routes.SETTINGS_SUBSCRIPTIONS)
+                    upgradeNavigator.navigateToUpgrade(rootNavController)
                 }
             }
         }
