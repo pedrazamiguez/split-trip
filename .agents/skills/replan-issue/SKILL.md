@@ -55,6 +55,13 @@ Ensure the proposed alternative complies with all architecture constraints:
 - FORBIDDEN: ViewModels injecting Context, LocaleProvider, Repositories, or other ViewModels.
 - CHECK: If any handler class exceeds ~200 lines, extract event handling into dedicated Event Handler classes.
 - CHECK: None of the modified files will exceed the 600-line hard limit.
+
+### Architectural Integrity & Anti-Pattern Checklist
+Before finalizing the plan, explicitly verify:
+- **No Cross-Feature Logic Duplication:** Does the plan duplicate conditional state checking (e.g. session/auth checks) across multiple features? If so, abstract it into a reusable domain service, use case, or core navigator.
+- **Semantic Navigation Intent:** Are ViewModel actions strictly semantic (e.g., `NavigateToSubscriptions`, `RequestUpgrade`, `NavigateToDetail`)? ViewModels and event handlers must NEVER evaluate session state to resolve route strings dynamically. Routing mechanics belong to `:core:design-system:navigation` orchestrators (e.g., `UpgradeNavigator`).
+- **Domain Service Injection Scope:** Is any domain service being injected into a ViewModel merely to make a presentation or routing decision? If so, push routing decisions to dedicated navigators or inject a dedicated UseCase.
+- **Syntactic vs Architectural Cleanliness:** Linter and Konsist compliance is a necessary baseline, NOT proof of clean architecture. Never exploit a permissive rule to introduce pragmatic patches or repeated conditional branching.
 ---
 
 ## Step 4 — Draft the revised proposal

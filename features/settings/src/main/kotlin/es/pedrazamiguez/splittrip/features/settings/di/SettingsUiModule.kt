@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.settings.di
 import android.app.Application
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
-import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
 import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
@@ -161,7 +160,7 @@ val settingsUiModule = module {
             linkGoogleAccountUseCase = get<LinkGoogleAccountUseCase>(),
             linkEmailPasswordUseCase = get<LinkEmailPasswordUseCase>(),
             unlinkProviderUseCase = get<UnlinkProviderUseCase>(),
-            authenticationService = get<AuthenticationService>(),
+            isUserAnonymousUseCase = get<IsUserAnonymousUseCase>(),
             accountStatusUiMapper = get<AccountStatusUiMapper>(),
             passwordValidationService = get<PasswordValidationService>()
         )
