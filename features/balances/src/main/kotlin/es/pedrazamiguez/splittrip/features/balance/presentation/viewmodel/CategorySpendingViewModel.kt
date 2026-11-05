@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.CategorySpendingUiMapper
@@ -31,6 +32,7 @@ import timber.log.Timber
 @OptIn(ExperimentalCoroutinesApi::class)
 class CategorySpendingViewModel(
     private val getGroupExpensesFlowUseCase: GetGroupExpensesFlowUseCase,
+    private val getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase,
     private val observeGroupUseCase: ObserveGroupUseCase,
     private val appConfigService: AppConfigService,
     private val categorySpendingUiMapper: CategorySpendingUiMapper,
@@ -47,12 +49,20 @@ class CategorySpendingViewModel(
         .flatMapLatest { groupId ->
             combine(
                 observeGroupUseCase(groupId),
-                getGroupExpensesFlowUseCase(groupId)
-            ) { group, expenses ->
+                getGroupExpensesFlowUseCase(groupId),
+                getCashWithdrawalsFlowUseCase(groupId)
+            ) { group, expenses, withdrawals ->
                 val currency = group?.currency ?: appConfigService.defaultCurrencyCode.value
-                val mappedItems = categorySpendingUiMapper.mapExpenses(expenses, currency)
+                val mappedItems = categorySpendingUiMapper.mapExpenses(
+                    expenses = expenses,
+                    groupCurrency = currency,
+                    withdrawals = withdrawals
+                )
 
-                val totalCents = expenses.filter { it.groupAmount > 0 }.sumOf { it.groupAmount }
+                val totalCents = categorySpendingUiMapper.calculateTotalCents(
+                    expenses = expenses,
+                    withdrawals = withdrawals
+                )
                 val formattedTotal = categorySpendingUiMapper.formatTotalAmount(totalCents, currency)
 
                 CategorySpendingUiState(
