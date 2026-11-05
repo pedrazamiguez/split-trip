@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
@@ -32,7 +33,9 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -161,6 +164,43 @@ class ExpenseDetailUiMapperTest {
 
             assertNotNull(result.dateText)
             assertTrue(result.dateText.isNotBlank())
+        }
+
+        @Test
+        fun `maps dateText and createdAtText in local timezone across midnight boundary`() {
+            val expense = baseExpense.copy(
+                operationDate = LocalDateTime.of(2026, 10, 27, 22, 58, 0),
+                createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+            )
+
+            val result = mapper.map(
+                expense = expense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                zoneId = ZoneId.of("Asia/Shanghai")
+            )
+
+            val expectedDateText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
+            assertEquals(expectedDateText, result.dateText)
+            assertEquals(expectedDateText, result.createdAtText)
+        }
+
+        @Test
+        fun `secondaryDateText for dueDate is not shifted across timezones`() {
+            val scheduledExpense = baseExpense.copy(
+                paymentStatus = PaymentStatus.SCHEDULED,
+                dueDate = LocalDateTime.of(2026, 11, 15, 0, 0, 0)
+            )
+
+            val result = mapper.map(
+                expense = scheduledExpense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                zoneId = ZoneId.of("America/New_York")
+            )
+
+            val expectedDueDateText = LocalDate.of(2026, 11, 15).formatShortDate(Locale.US)
+            assertEquals(expectedDueDateText, result.secondaryDateText)
         }
     }
 

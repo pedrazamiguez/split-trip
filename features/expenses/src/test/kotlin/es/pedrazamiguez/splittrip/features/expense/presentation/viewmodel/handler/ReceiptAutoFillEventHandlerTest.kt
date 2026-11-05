@@ -25,6 +25,9 @@ import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -89,7 +92,8 @@ class ReceiptAutoFillEventHandlerTest {
             receiptExtractionService = receiptExtractionService,
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            zoneIdProvider = { ZoneOffset.UTC }
         )
         handler.setOnCurrencySelected { capturedCurrencySelections.add(it) }
         handler.setOnAmountChanged { capturedAmountChanges.add(it) }
@@ -263,7 +267,7 @@ class ReceiptAutoFillEventHandlerTest {
                     amount = BigDecimal("12.50"),
                     currency = "USD",
                     date = LocalDate.of(2025, 1, 1),
-                    time = java.time.LocalTime.of(10, 30),
+                    time = LocalTime.of(10, 30),
                     vendor = "Starbucks Store",
                     category = "FOOD",
                     paymentMethod = "CASH",
@@ -297,6 +301,44 @@ class ReceiptAutoFillEventHandlerTest {
         }
 
         @Test
+        fun `handleReceiptAttached parses date and time using local timezone`() = runTest {
+            val shanghaiHandler = ReceiptAutoFillEventHandler(
+                extractReceiptFieldsUseCase = extractReceiptFieldsUseCase,
+                receiptExtractionService = receiptExtractionService,
+                formattingHelper = formattingHelper,
+                addExpenseUiMapper = addExpenseUiMapper,
+                featureGateService = featureGateService,
+                zoneIdProvider = { ZoneId.of("Asia/Shanghai") }
+            )
+            shanghaiHandler.bind(uiState, actions, TestScope(UnconfinedTestDispatcher()))
+
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Breakfast in Shanghai",
+                    amount = BigDecimal("25.00"),
+                    currency = "CNY",
+                    date = LocalDate.of(2026, 10, 28),
+                    time = LocalTime.of(6, 58),
+                    vendor = null,
+                    category = null,
+                    paymentMethod = null,
+                    notes = null,
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+            every { formattingHelper.formatCentsValue(2500L, 2) } returns "25.00"
+            every { addExpenseUiMapper.formatExpenseDateForDisplay(1793141880000L) } returns "Oct 28, 2026, 6:58 AM"
+
+            shanghaiHandler.handleReceiptAttached(attachment)
+
+            // 2026-10-28 06:58 Asia/Shanghai (UTC+8) -> 2026-10-27T22:58:00Z -> 1793141880000L
+            assertEquals(1793141880000L, uiState.value.expenseDateMillis)
+            assertEquals("Oct 28, 2026, 6:58 AM", uiState.value.formattedExpenseDate)
+        }
+
+        @Test
         fun `extracts category even when a different category is already selected`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
             coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
@@ -305,7 +347,7 @@ class ReceiptAutoFillEventHandlerTest {
                     amount = BigDecimal("45.00"),
                     currency = "EUR",
                     date = LocalDate.of(2025, 1, 1),
-                    time = java.time.LocalTime.of(19, 0),
+                    time = LocalTime.of(19, 0),
                     vendor = "Teatro Lope de Vega",
                     category = "ENTERTAINMENT",
                     paymentMethod = "CREDIT_CARD",
@@ -352,7 +394,7 @@ class ReceiptAutoFillEventHandlerTest {
                     amount = BigDecimal("12.50"),
                     currency = "USD",
                     date = LocalDate.of(2025, 1, 1),
-                    time = java.time.LocalTime.of(10, 30),
+                    time = LocalTime.of(10, 30),
                     vendor = "Starbucks Store",
                     category = "FOOD",
                     paymentMethod = "CASH",
@@ -393,7 +435,7 @@ class ReceiptAutoFillEventHandlerTest {
                     amount = BigDecimal("12.50"),
                     currency = "USD",
                     date = LocalDate.of(2025, 1, 1),
-                    time = java.time.LocalTime.of(10, 30),
+                    time = LocalTime.of(10, 30),
                     vendor = "Starbucks Store",
                     category = "FOOD",
                     paymentMethod = "CREDIT_CARD",
@@ -436,7 +478,7 @@ class ReceiptAutoFillEventHandlerTest {
                         amount = BigDecimal("12.50"),
                         currency = "EUR",
                         date = LocalDate.of(2025, 1, 1),
-                        time = java.time.LocalTime.of(10, 30),
+                        time = LocalTime.of(10, 30),
                         vendor = "Extracted Vendor",
                         category = "FOOD",
                         paymentMethod = "CREDIT_CARD",

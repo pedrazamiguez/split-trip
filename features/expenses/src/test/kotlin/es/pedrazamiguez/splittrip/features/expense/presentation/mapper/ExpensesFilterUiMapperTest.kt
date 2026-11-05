@@ -9,6 +9,7 @@ import io.mockk.every
 import io.mockk.mockk
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -76,6 +77,19 @@ class ExpensesFilterUiMapperTest {
 
             assertEquals(LocalDate.of(2026, 6, 5), minDate)
             assertEquals(LocalDate.of(2026, 6, 5), maxDate)
+        }
+
+        @Test
+        fun `extractDateBounds converts UTC dates to target timezone bounds across midnight`() {
+            val expense = Expense(
+                id = "exp-cst",
+                createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+            )
+
+            val (minDate, maxDate) = mapper.extractDateBounds(listOf(expense), zoneId = ZoneId.of("Asia/Shanghai"))
+
+            assertEquals(LocalDate.of(2026, 10, 28), minDate)
+            assertEquals(LocalDate.of(2026, 10, 28), maxDate)
         }
     }
 

@@ -1,6 +1,9 @@
 package es.pedrazamiguez.splittrip.core.common.extensions
 
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.TimeZone
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -124,6 +127,85 @@ class DateTimeExtensionsTest {
             val roundTripped = originalMillis.toLocalDateTimeUtc().toEpochMillisUtc()
 
             assertEquals(originalMillis, roundTripped)
+        }
+    }
+
+    @Nested
+    @DisplayName("utcToSystemLocalDateTime")
+    inner class UtcToSystemLocalDateTime {
+
+        @Test
+        fun `utcToSystemLocalDateTime converts UTC to positive offset timezone across midnight boundary`() {
+            val utcDateTime = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+            val shanghaiZone = ZoneId.of("Asia/Shanghai")
+
+            val result = utcDateTime.utcToSystemLocalDateTime(shanghaiZone)
+
+            assertEquals(LocalDateTime.of(2026, 10, 28, 6, 58, 0), result)
+        }
+
+        @Test
+        fun `utcToSystemLocalDateTime converts UTC to negative offset timezone across midnight boundary`() {
+            val utcDateTime = LocalDateTime.of(2026, 10, 28, 2, 0, 0)
+            val newYorkZone = ZoneId.of("America/New_York")
+
+            val result = utcDateTime.utcToSystemLocalDateTime(newYorkZone)
+
+            assertEquals(LocalDateTime.of(2026, 10, 27, 22, 0, 0), result)
+        }
+
+        @Test
+        fun `utcToSystemLocalDateTime preserves date time when zone is UTC`() {
+            val utcDateTime = LocalDateTime.of(2026, 10, 28, 12, 0, 0)
+
+            val result = utcDateTime.utcToSystemLocalDateTime(ZoneOffset.UTC)
+
+            assertEquals(LocalDateTime.of(2026, 10, 28, 12, 0, 0), result)
+        }
+
+        @Test
+        fun `utcToSystemLocalDateTime defaults to systemDefault zone when zoneId omitted`() {
+            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"))
+            val utcDateTime = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+
+            val result = utcDateTime.utcToSystemLocalDateTime()
+
+            assertEquals(LocalDateTime.of(2026, 10, 28, 6, 58, 0), result)
+        }
+    }
+
+    @Nested
+    @DisplayName("utcToSystemLocalDate")
+    inner class UtcToSystemLocalDate {
+
+        @Test
+        fun `utcToSystemLocalDate converts UTC to positive offset timezone across midnight boundary`() {
+            val utcDateTime = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+            val shanghaiZone = ZoneId.of("Asia/Shanghai")
+
+            val result = utcDateTime.utcToSystemLocalDate(shanghaiZone)
+
+            assertEquals(LocalDate.of(2026, 10, 28), result)
+        }
+
+        @Test
+        fun `utcToSystemLocalDate converts UTC to negative offset timezone across midnight boundary`() {
+            val utcDateTime = LocalDateTime.of(2026, 10, 28, 2, 0, 0)
+            val newYorkZone = ZoneId.of("America/New_York")
+
+            val result = utcDateTime.utcToSystemLocalDate(newYorkZone)
+
+            assertEquals(LocalDate.of(2026, 10, 27), result)
+        }
+
+        @Test
+        fun `utcToSystemLocalDate defaults to systemDefault zone when zoneId omitted`() {
+            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"))
+            val utcDateTime = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+
+            val result = utcDateTime.utcToSystemLocalDate()
+
+            assertEquals(LocalDate.of(2026, 10, 28), result)
         }
     }
 }

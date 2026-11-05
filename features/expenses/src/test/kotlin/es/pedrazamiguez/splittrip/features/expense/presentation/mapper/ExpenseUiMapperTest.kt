@@ -31,6 +31,7 @@ import io.mockk.every
 import io.mockk.mockk
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -343,6 +344,19 @@ class ExpenseUiMapperTest {
         }
 
         @Test
+        fun `map formats dateText in specified timezone`() {
+            val expense = Expense(
+                id = "e-tz",
+                createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+            )
+
+            val result = mapper.map(expense, zoneId = ZoneId.of("Asia/Shanghai"))
+
+            val expectedDateText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
+            assertEquals(expectedDateText, result.dateText)
+        }
+
+        @Test
         fun `maps dateText as empty when createdAt is null`() {
             val expense = Expense(id = "e11", createdAt = null)
 
@@ -577,6 +591,48 @@ class ExpenseUiMapperTest {
             assertEquals("€30.00", result[0].formattedDayTotal)
             // Scheduled: 5000 cents = €50.00
             assertEquals("€50.00", result[0].formattedDayScheduled)
+        }
+
+        @Test
+        fun `groups expenses by local calendar date in non-UTC timezone across midnight`() {
+            val expenses = listOf(
+                Expense(
+                    id = "e-cst",
+                    title = "Breakfast in Shanghai",
+                    groupAmount = 2500,
+                    groupCurrency = "EUR",
+                    paymentStatus = PaymentStatus.FINISHED,
+                    createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
+                )
+            )
+
+            val result = mapper.mapGroupedByDate(expenses, zoneId = ZoneId.of("Asia/Shanghai"))
+
+            val expectedDateText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
+            assertEquals(1, result.size)
+            assertEquals(expectedDateText, result[0].dateText)
+            assertEquals(expectedDateText, result[0].expenses[0].dateText)
+        }
+
+        @Test
+        fun `groups expenses by local calendar date in negative offset timezone across midnight`() {
+            val expenses = listOf(
+                Expense(
+                    id = "e-edt",
+                    title = "Late dinner in NYC",
+                    groupAmount = 5000,
+                    groupCurrency = "EUR",
+                    paymentStatus = PaymentStatus.FINISHED,
+                    createdAt = LocalDateTime.of(2026, 10, 28, 2, 0, 0)
+                )
+            )
+
+            val result = mapper.mapGroupedByDate(expenses, zoneId = ZoneId.of("America/New_York"))
+
+            val expectedDateText = LocalDate.of(2026, 10, 27).formatShortDate(Locale.US)
+            assertEquals(1, result.size)
+            assertEquals(expectedDateText, result[0].dateText)
+            assertEquals(expectedDateText, result[0].expenses[0].dateText)
         }
     }
 
