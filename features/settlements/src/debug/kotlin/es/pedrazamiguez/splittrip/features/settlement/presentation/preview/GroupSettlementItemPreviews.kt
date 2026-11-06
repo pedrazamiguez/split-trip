@@ -1,11 +1,11 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.preview
 
 import androidx.compose.runtime.Composable
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.features.settlement.presentation.component.GroupSettlementItem
-import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowStatusStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowUiModel
 
 private val PREVIEW_ROW_PENDING = SettlementRowUiModel(
@@ -21,7 +21,7 @@ private val PREVIEW_ROW_PENDING = SettlementRowUiModel(
     pocketTypeLabel = "Pocket",
     currencyCode = "EUR",
     statusLabel = "Pending",
-    statusChipStyle = SettlementRowStatusStyle.WARNING,
+    statusChipStyle = PassportTagStyle.WARNING,
     canCurrentUserConfirm = true,
     canCurrentUserDispute = true,
     disputedByCurrentUser = false,
@@ -41,7 +41,7 @@ private val PREVIEW_ROW_SETTLED = SettlementRowUiModel(
     pocketTypeLabel = "Pocket",
     currencyCode = "EUR",
     statusLabel = "Settled",
-    statusChipStyle = SettlementRowStatusStyle.SUCCESS,
+    statusChipStyle = PassportTagStyle.SUCCESS,
     canCurrentUserConfirm = false,
     canCurrentUserDispute = false,
     disputedByCurrentUser = false,
@@ -61,7 +61,7 @@ private val PREVIEW_ROW_DISPUTED = SettlementRowUiModel(
     pocketTypeLabel = "Pocket",
     currencyCode = "EUR",
     statusLabel = "Disputed",
-    statusChipStyle = SettlementRowStatusStyle.ERROR,
+    statusChipStyle = PassportTagStyle.ERROR,
     canCurrentUserConfirm = true,
     canCurrentUserDispute = false,
     disputedByCurrentUser = false,

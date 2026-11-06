@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
@@ -406,5 +407,27 @@ class SettlementConsensusUiMapperTest {
         assertFalse(item.canNudge)
         assertTrue(item.isNudgeRateLimited)
         assertEquals("", item.nudgeButtonLabel)
+    }
+
+    @Test
+    fun `toConsensusItems maps statusChipStyle correctly according to status`() {
+        val suggested = createRecord("s1", "user1", "user2", status = SettlementStatus.SUGGESTED)
+        val confirmed = createRecord("s2", "user1", "user2", status = SettlementStatus.CONFIRMED_BY_PAYER)
+        val disputed = createRecord("s3", "user1", "user2", status = SettlementStatus.DISPUTED)
+
+        val result = mapper.toConsensusItems(
+            settlements = listOf(suggested, confirmed, disputed),
+            currentUserId = "user1",
+            groupCreatorId = "creator1",
+            memberProfiles = emptyMap()
+        )
+
+        val itemSuggested = result.first { it.settlementId == "s1" }
+        val itemConfirmed = result.first { it.settlementId == "s2" }
+        val itemDisputed = result.first { it.settlementId == "s3" }
+
+        assertEquals(PassportTagStyle.NEUTRAL, itemSuggested.statusChipStyle)
+        assertEquals(PassportTagStyle.WARNING, itemConfirmed.statusChipStyle)
+        assertEquals(PassportTagStyle.ERROR, itemDisputed.statusChipStyle)
     }
 }

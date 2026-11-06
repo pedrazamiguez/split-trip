@@ -3,13 +3,13 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.R
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.StatusChipStyle
 import io.mockk.every
 import io.mockk.mockk
 import java.util.Locale
@@ -32,7 +32,7 @@ class SettlementsUiMapperTest {
         every { localeProvider.getCurrentLocale() } returns Locale.US
         every { resourceProvider.getString(R.string.balances_member_you) } returns "You"
         every {
-            resourceProvider.getString(es.pedrazamiguez.splittrip.core.designsystem.R.string.user_pending_fallback)
+            resourceProvider.getString(DesignR.string.user_pending_fallback)
         } returns "Pending member"
         every { resourceProvider.getString(DesignR.string.settlement_pocket_type_virtual) } returns "Virtual pocket"
         every { resourceProvider.getString(DesignR.string.settlement_pocket_type_cash) } returns "Cash"
@@ -315,6 +315,6 @@ class SettlementsUiMapperTest {
             )
         )
         assertEquals("Pending", result[0].statusLabel)
-        assertEquals(StatusChipStyle.NEUTRAL, result[0].statusChipStyle)
+        assertEquals(PassportTagStyle.NEUTRAL, result[0].statusChipStyle)
     }
 }

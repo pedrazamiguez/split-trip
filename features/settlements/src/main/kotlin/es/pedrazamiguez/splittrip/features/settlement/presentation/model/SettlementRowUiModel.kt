@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.model
 
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 
 data class SettlementRowUiModel(
@@ -15,17 +16,10 @@ data class SettlementRowUiModel(
     val pocketTypeLabel: String,
     val currencyCode: String,
     val statusLabel: String,
-    val statusChipStyle: SettlementRowStatusStyle,
+    val statusChipStyle: PassportTagStyle,
     val canCurrentUserConfirm: Boolean,
     val canCurrentUserDispute: Boolean,
     val disputedByCurrentUser: Boolean,
     val disputeReason: String? = null,
     val status: SettlementStatus
 )
-
-enum class SettlementRowStatusStyle {
-    NEUTRAL,
-    WARNING,
-    SUCCESS,
-    ERROR
-}

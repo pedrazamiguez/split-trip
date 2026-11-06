@@ -8,11 +8,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.AnimatedAmount
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
-import es.pedrazamiguez.splittrip.features.settlement.presentation.model.ConsensusChipStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
 
 @Composable
@@ -52,10 +51,9 @@ internal fun SettlementConsensusCard(
                 shouldAnimate = false,
                 style = MaterialTheme.typography.titleLarge
             )
-            PassportChip(
-                label = item.statusLabel,
-                selected = item.statusChipStyle != ConsensusChipStyle.SUGGESTED,
-                onClick = {}
+            PassportTag(
+                text = item.statusLabel,
+                style = item.statusChipStyle
             )
         }
 

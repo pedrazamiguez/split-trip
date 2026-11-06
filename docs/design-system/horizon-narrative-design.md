@@ -381,6 +381,27 @@ Used across: `CategoryChips`, `PaymentMethodChips`, `PaymentStatusChips`, `Conde
 
 > **Implementation:** `PassportChip.kt` in `core/design-system/.../component/chip/`
 
+#### 5.4.1 Passport Tag — Metadata & Status Badge Component
+
+A non-interactive display tag component designed for metadata labels, dates, categories, payment methods, and status badges:
+
+- **Shape:** `CircleShape` (full pill).
+- **Height contract:** Standardized `28.dp` height preventing layout jitter across stacked or side-by-side tags.
+- **No border:** Background tonal containers define tag boundaries (Horizon No-Line rule).
+- **Typography & Icon:** Standard `16.dp` icon size, `4.dp` spacing, `8.dp` horizontal padding, and `labelSmall` Medium typography.
+- **Semantic Styles (`PassportTagStyle`):**
+  - `PRIMARY`: `primaryContainer` / `onPrimaryContainer` (e.g., categories, scopes)
+  - `SECONDARY`: `secondaryContainer` / `onSecondaryContainer` (e.g., payment methods)
+  - `TERTIARY`: `tertiaryContainer` / `onTertiaryContainer` (e.g., pending statuses)
+  - `WARNING`: `tertiaryContainer` / `onTertiaryContainer` (e.g., awaiting confirmation)
+  - `SUCCESS`: `primaryContainer` / `onPrimaryContainer` (e.g., confirmed/settled)
+  - `ERROR`: `errorContainer` / `onErrorContainer` (e.g., disputed)
+  - `NEUTRAL`: `surfaceContainerHigh` / `onSurfaceVariant` (e.g., dates, unstyled tags, pockets)
+
+Used across: `HeroSection` (expense details), `ContributionHeroSection`, `SplitBreakdownSection`, `SubunitGroup`, `GroupSettlementItem`, `SettlementConsensusCard`.
+
+> **Implementation:** `PassportTag.kt`, `PassportTagDefaults.kt`, `PassportTagStyle.kt` in `core/design-system/.../component/chip/`
+
 ### 5.5 Glassmorphism — Atmospheric Glass-Blur
 
 Floating UI elements use a glass-blur effect to evoke the atmospheric quality of travel (clouds, water, horizons):

@@ -142,6 +142,7 @@ All components are `@Composable` functions following Material 3 design. They acc
 | Component | File | Purpose |
 |---|---|---|
 | `PassportChip` | `chip/PassportChip.kt` | Horizon Narrative signature travel chip — "collectible stamp" feel. Uses `secondaryFixedDim` (selected) / `surfaceContainerHigh` (unselected), `CircleShape`, no border (No-Line rule). Supports `leadingIcon` (checkmark) and `trailingIcon` (close/overflow). **Use instead of:** Stock `FilterChip` or `InputChip` for all selectable tags, categories, payment methods, and removable item chips. |
+| `PassportTag` | `chip/PassportTag.kt` | Standardized non-interactive metadata tag / status badge (`28.dp` height contract, `CircleShape`, borderless tonal container, `16.dp` icon, `labelSmall` font). Governed by `PassportTagStyle` (`PRIMARY`, `SECONDARY`, `TERTIARY`, `WARNING`, `SUCCESS`, `ERROR`, `NEUTRAL`). **Use instead of:** Ad-hoc category, payment method, date, or status badge chips. |
 
 ### A.10 Foundation Utilities
 

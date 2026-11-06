@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.impl
 import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
@@ -11,7 +12,6 @@ import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.GroupSettlementOverviewUiMapper
-import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowStatusStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowUiModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.archive.ArchiveWizardStep
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.state.GroupSettlementOverviewUiState
@@ -139,12 +139,12 @@ class GroupSettlementOverviewUiMapperImpl(
         }
     }
 
-    private fun resolveStatusStyle(status: SettlementStatus): SettlementRowStatusStyle {
+    private fun resolveStatusStyle(status: SettlementStatus): PassportTagStyle {
         return when (status) {
-            SettlementStatus.SUGGESTED -> SettlementRowStatusStyle.NEUTRAL
-            SettlementStatus.CONFIRMED_BY_PAYER -> SettlementRowStatusStyle.WARNING
-            SettlementStatus.DISPUTED -> SettlementRowStatusStyle.ERROR
-            SettlementStatus.RESOLVED -> SettlementRowStatusStyle.SUCCESS
+            SettlementStatus.SUGGESTED -> PassportTagStyle.NEUTRAL
+            SettlementStatus.CONFIRMED_BY_PAYER -> PassportTagStyle.WARNING
+            SettlementStatus.DISPUTED -> PassportTagStyle.ERROR
+            SettlementStatus.RESOLVED -> PassportTagStyle.SUCCESS
         }
     }
 
