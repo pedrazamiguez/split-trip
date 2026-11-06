@@ -131,9 +131,10 @@
     <string name="payment_status_pending">Pendiente</string>
     <string name="payment_status_finished">Pagado</string>
     <string name="payment_status_scheduled">Programado</string>
-    <string name="payment_status_cancelled">Cancelado</string>
+    <string name="payment_status_cancelled">Cancelado / Reembolsado</string>
     <string name="payment_status_refundable">Pagado (Reembolsable)</string>
     <string name="expense_detail_on_hold">Retenido</string>
+    <string name="expense_detail_refunded_on">Reembolsado el %s</string>
 
     
     <string name="add_expense_category_title">Categoría</string>
@@ -147,6 +148,8 @@
     <string name="add_expense_due_date_label">Fecha de vencimiento</string>
     <string name="add_expense_due_date_confirm">OK</string>
     <string name="add_expense_due_date_cancel">Cancelar</string>
+    <string name="add_expense_refund_date_title">Fecha de reembolso</string>
+    <string name="add_expense_refund_date_label">Fecha del reembolso</string>
     <string name="add_expense_receipt_title">Recibo</string>
     <string name="add_expense_receipt_attach">Adjuntar recibo</string>
     <string name="add_expense_receipt_attach_camera">Hacer foto</string>

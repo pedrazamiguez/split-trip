@@ -748,6 +748,48 @@ class ExpensesViewModelTest {
         }
 
         @Test
+        fun `CancelExpense event sets refundedAt timestamp on updated expense`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase("expense-1") } returns flowOf(testExpense1)
+            coEvery {
+                updateExpenseUseCase(
+                    groupId = testGroupId,
+                    expense = any(),
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                )
+            } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            // When
+            viewModel.onEvent(ExpensesUiEvent.CancelExpense("expense-1"))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                updateExpenseUseCase(
+                    groupId = testGroupId,
+                    expense = match {
+                        it.id == "expense-1" &&
+                            it.paymentStatus == PaymentStatus.CANCELLED &&
+                            it.refundedAt != null
+                    },
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                )
+            }
+            collectJob.cancel()
+        }
+
+        @Test
         fun `CancelExpense event emits success action when update succeeds`() = runTest(testDispatcher) {
             // Given
             every { getExpenseByIdFlowUseCase("expense-1") } returns flowOf(testExpense1)

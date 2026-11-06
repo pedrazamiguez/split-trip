@@ -131,9 +131,10 @@
     <string name="payment_status_pending">Pending</string>
     <string name="payment_status_finished">Paid</string>
     <string name="payment_status_scheduled">Scheduled</string>
-    <string name="payment_status_cancelled">Cancelled</string>
+    <string name="payment_status_cancelled">Cancelled / Refunded</string>
     <string name="payment_status_refundable">Paid (Refundable)</string>
     <string name="expense_detail_on_hold">On hold</string>
+    <string name="expense_detail_refunded_on">Refunded on %s</string>
 
     
     <string name="add_expense_category_title">Category</string>
@@ -147,6 +148,8 @@
     <string name="add_expense_due_date_label">Due date</string>
     <string name="add_expense_due_date_confirm">OK</string>
     <string name="add_expense_due_date_cancel">Cancel</string>
+    <string name="add_expense_refund_date_title">Refund date</string>
+    <string name="add_expense_refund_date_label">Date refunded</string>
     <string name="add_expense_receipt_title">Receipt</string>
     <string name="add_expense_receipt_attach">Attach receipt</string>
     <string name="add_expense_receipt_attach_camera">Take photo</string>

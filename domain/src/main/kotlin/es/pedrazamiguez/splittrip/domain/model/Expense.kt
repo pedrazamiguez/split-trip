@@ -47,6 +47,7 @@ data class Expense(
     val operationDate: LocalDateTime? = null,
     val createdAt: LocalDateTime? = null,
     val lastUpdatedAt: LocalDateTime? = null,
+    val refundedAt: LocalDateTime? = null,
     val syncStatus: SyncStatus = SyncStatus.SYNCED
 ) {
     val effectiveDate: LocalDateTime?

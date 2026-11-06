@@ -44,7 +44,9 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Locale
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -254,6 +256,53 @@ class AddExpenseUiMapperTest {
             assertTrue(result.isSuccess)
             val expense = result.getOrThrow()
             assertEquals(125000L, expense.sourceAmount)
+        }
+
+        @Test
+        fun `maps CANCELLED state to domain with refundedAt`() {
+            val refundMillis = 1700000000000L
+            val state = AddExpenseUiState(
+                expenseTitle = "Flight Refund",
+                sourceAmount = "150.00",
+                selectedCurrency = eurUi,
+                groupCurrency = eurUi,
+                displayExchangeRate = "1.0",
+                selectedPaymentMethod = creditCardPaymentMethod,
+                selectedPaymentStatus = PaymentStatusUiModel(id = "CANCELLED", displayText = "Cancelled / Refunded"),
+                refundDateMillis = refundMillis
+            )
+
+            val result = mapper.mapToDomain(state, "group-123")
+
+            assertTrue(result.isSuccess)
+            val expense = result.getOrThrow()
+            assertEquals(PaymentStatus.CANCELLED, expense.paymentStatus)
+            val expectedRefundedAt = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(refundMillis),
+                ZoneOffset.UTC
+            )
+            assertEquals(expectedRefundedAt, expense.refundedAt)
+        }
+
+        @Test
+        fun `maps non-CANCELLED state to domain with null refundedAt`() {
+            val state = AddExpenseUiState(
+                expenseTitle = "Groceries",
+                sourceAmount = "25.00",
+                selectedCurrency = eurUi,
+                groupCurrency = eurUi,
+                displayExchangeRate = "1.0",
+                selectedPaymentMethod = creditCardPaymentMethod,
+                selectedPaymentStatus = PaymentStatusUiModel(id = "FINISHED", displayText = "Paid"),
+                refundDateMillis = 1700000000000L
+            )
+
+            val result = mapper.mapToDomain(state, "group-123")
+
+            assertTrue(result.isSuccess)
+            val expense = result.getOrThrow()
+            assertEquals(PaymentStatus.FINISHED, expense.paymentStatus)
+            assertNull(expense.refundedAt)
         }
     }
 
@@ -1201,6 +1250,32 @@ class AddExpenseUiMapperTest {
             assertFalse(result.showExchangeRateSection)
             assertNull(result.receiptAttachment)
             assertFalse(result.isAiModeActive)
+        }
+
+        @Test
+        fun `maps CANCELLED expense to state with refundDateMillis and formattedRefundDate`() {
+            val refundedTime = LocalDateTime.of(2026, 5, 20, 11, 0, 0)
+            val expectedMillis = refundedTime.toInstant(ZoneOffset.UTC).toEpochMilli()
+            val expense = Expense(
+                id = "exp-cancelled",
+                groupId = "group-1",
+                title = "Concert Ticket",
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR",
+                exchangeRate = BigDecimal.ONE,
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.CANCELLED,
+                refundedAt = refundedTime,
+                splitType = SplitType.EQUAL
+            )
+
+            val result = mapper.mapExpenseToState(expense, null, baseEditState(), emptyMap(), emptyList())
+
+            assertTrue(result.showRefundDateSection)
+            assertEquals(expectedMillis, result.refundDateMillis)
+            assertTrue(result.formattedRefundDate.isNotBlank())
         }
 
         @Test

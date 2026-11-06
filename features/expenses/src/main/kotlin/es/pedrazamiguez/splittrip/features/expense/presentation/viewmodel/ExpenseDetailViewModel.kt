@@ -28,6 +28,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpenseDetailUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpenseDetailUiState
 import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -244,7 +245,8 @@ class ExpenseDetailViewModel(
             try {
                 val domainExpense = getExpenseByIdFlowUseCase(expenseUi.id).first() ?: return@launch
                 val updatedExpense = domainExpense.copy(
-                    paymentStatus = PaymentStatus.CANCELLED
+                    paymentStatus = PaymentStatus.CANCELLED,
+                    refundedAt = LocalDateTime.now()
                 )
                 updateExpenseUseCase(
                     groupId = expenseUi.groupId,

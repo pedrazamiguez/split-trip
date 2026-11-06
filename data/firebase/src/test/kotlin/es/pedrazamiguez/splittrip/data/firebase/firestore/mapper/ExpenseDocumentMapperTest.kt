@@ -197,6 +197,22 @@ class ExpenseDocumentMapperTest {
         }
 
         @Test
+        fun `maps refundedAt to timestamp in document when present`() {
+            val expense = fullExpense.copy(refundedAt = testTimestamp)
+            val document = expense.toDocument(testExpenseId, testGroupId, testUserId)
+
+            assertEquals(testFirebaseTimestamp, document.refundedAt)
+        }
+
+        @Test
+        fun `maps null refundedAt to null in document`() {
+            val expense = fullExpense.copy(refundedAt = null)
+            val document = expense.toDocument(testExpenseId, testGroupId, testUserId)
+
+            assertNull(document.refundedAt)
+        }
+
+        @Test
         fun `maps cashTranches to list of maps`() {
             val document = fullExpense.toDocument(testExpenseId, testGroupId, testUserId)
 
@@ -390,6 +406,22 @@ class ExpenseDocumentMapperTest {
             assertNull(expense.lastUpdatedAt)
             assertNull(expense.dueDate)
             assertNull(expense.effectiveDate)
+        }
+
+        @Test
+        fun `maps timestamp in document to refundedAt in domain`() {
+            val document = fullDocument.copy(refundedAt = testFirebaseTimestamp)
+            val expense = document.toDomain()
+
+            assertEquals(testTimestamp, expense.refundedAt)
+        }
+
+        @Test
+        fun `maps null timestamp in document to null refundedAt in domain`() {
+            val document = fullDocument.copy(refundedAt = null)
+            val expense = document.toDomain()
+
+            assertNull(expense.refundedAt)
         }
 
         @Test

@@ -56,6 +56,7 @@ fun Expense.toDocument(expenseId: String, groupId: String, userId: String) =
         lastUpdatedBy = userId,
         createdAt = (createdAt ?: LocalDateTime.now()).toTimestampUtc(),
         lastUpdatedAt = (lastUpdatedAt ?: LocalDateTime.now()).toTimestampUtc(),
+        refundedAt = refundedAt?.toTimestampUtc(),
         // Only include the attachment in the Firestore document once it has a remote URL.
         // The local URI is an on-device path with no meaning on other devices.
         attachments = buildReceiptAttachmentDocuments(receiptAttachment)
@@ -103,6 +104,7 @@ fun ExpenseDocument.toDomain(): Expense {
         operationDate = operationDate?.toLocalDateTimeUtc() ?: createdAt.toLocalDateTimeUtc(),
         createdAt = createdAt.toLocalDateTimeUtc(),
         lastUpdatedAt = lastUpdatedAt.toLocalDateTimeUtc(),
+        refundedAt = refundedAt.toLocalDateTimeUtc(),
         // Restore the first attachment as a ReceiptAttachment if it has a remote URL.
         // localUri is intentionally left blank — the file does not exist on this device yet.
         receiptAttachment = attachments.firstOrNull()?.let { doc ->

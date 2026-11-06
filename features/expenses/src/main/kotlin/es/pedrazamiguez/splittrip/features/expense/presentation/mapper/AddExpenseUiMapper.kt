@@ -81,6 +81,21 @@ class AddExpenseUiMapper(
     }
 
     /**
+     * Formats a refund date millis value to a locale-aware display string.
+     */
+    fun formatRefundDateForDisplay(dateMillis: Long): String {
+        val locale = localeProvider.getCurrentLocale()
+        val dateTime = LocalDateTime.ofInstant(
+            Instant.ofEpochMilli(dateMillis),
+            ZoneId.systemDefault()
+        )
+        val formatter = DateTimeFormatter
+            .ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(locale)
+        return dateTime.format(formatter)
+    }
+
+    /**
      * Formats an expense date millis value to a locale-aware display string (medium date + short time).
      */
     fun formatExpenseDateForDisplay(dateMillis: Long): String {
@@ -173,6 +188,14 @@ class AddExpenseUiMapper(
             null
         }
 
+        val refundedAt = if (paymentStatus == PaymentStatus.CANCELLED) {
+            state.refundDateMillis?.let {
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneOffset.UTC)
+            } ?: LocalDateTime.now()
+        } else {
+            null
+        }
+
         val expense = Expense(
             groupId = groupId,
             title = state.expenseTitle.trim(),
@@ -195,7 +218,8 @@ class AddExpenseUiMapper(
             splits = splits,
             payerType = payerType,
             payerId = payerId,
-            operationDate = operationDate
+            operationDate = operationDate,
+            refundedAt = refundedAt
         )
         Result.success(expense)
     } catch (e: Exception) {
@@ -247,8 +271,9 @@ class AddExpenseUiMapper(
             null
         }
         val availablePaymentStatuses = addExpenseOptionsUiMapper.mapPaymentStatuses(
-            PaymentStatus.entries,
-            expense.paymentMethod
+            statuses = PaymentStatus.entries,
+            paymentMethod = expense.paymentMethod,
+            isEditMode = true
         )
         val selectedPaymentStatus = availablePaymentStatuses.find { it.id == expense.paymentStatus.name }
 
@@ -266,6 +291,12 @@ class AddExpenseUiMapper(
         } ?: ""
 
         val dueDateMillis = expense.dueDate?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
+
+        val refundDateMillis = expense.refundedAt?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
+        val formattedRefundDate = refundDateMillis?.let {
+            formatRefundDateForDisplay(it)
+        } ?: ""
+        val isCancelled = expense.paymentStatus == PaymentStatus.CANCELLED
 
         val addOnsMapped = mapAddOnsToState(
             addOns = expense.addOns,
@@ -323,6 +354,9 @@ class AddExpenseUiMapper(
             formattedDueDate = formattedDueDate,
             showDueDateSection =
             expense.paymentStatus == PaymentStatus.SCHEDULED || expense.paymentStatus == PaymentStatus.REFUNDABLE,
+            showRefundDateSection = isCancelled,
+            refundDateMillis = refundDateMillis,
+            formattedRefundDate = formattedRefundDate,
             receiptUri = expense.receiptAttachment?.let { it.localUri.takeIf { it.isNotBlank() } ?: it.remoteUrl },
             receiptAttachment = expense.receiptAttachment,
             addOns = addOnsMapped.toImmutableList(),

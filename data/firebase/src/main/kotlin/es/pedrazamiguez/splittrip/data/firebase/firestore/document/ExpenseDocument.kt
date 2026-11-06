@@ -36,7 +36,8 @@ data class ExpenseDocument(
     val createdBy: String = "",
     val createdAt: Timestamp? = null,
     val lastUpdatedBy: String? = null,
-    val lastUpdatedAt: Timestamp? = null
+    val lastUpdatedAt: Timestamp? = null,
+    val refundedAt: Timestamp? = null
 ) {
     companion object {
         const val COLLECTION_PATH = "expenses"
