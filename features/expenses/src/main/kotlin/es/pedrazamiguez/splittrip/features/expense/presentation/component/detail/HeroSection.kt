@@ -29,6 +29,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
@@ -62,19 +64,22 @@ internal fun HeroSection(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
-                CategoryChip(
+                PassportTag(
+                    text = expense.categoryText,
                     icon = expense.category.toIconVector(),
-                    label = expense.categoryText
+                    style = PassportTagStyle.PRIMARY
                 )
                 if (expense.subcategoryText != null && expense.subcategory != ExpenseSubcategory.UNSPECIFIED) {
-                    CategoryChip(
+                    PassportTag(
+                        text = expense.subcategoryText,
                         icon = expense.subcategory.toIconVector(),
-                        label = expense.subcategoryText
+                        style = PassportTagStyle.PRIMARY
                     )
                 }
-                MethodChip(
+                PassportTag(
+                    text = expense.paymentMethodText,
                     icon = expense.paymentMethodIcon,
-                    label = expense.paymentMethodText
+                    style = PassportTagStyle.SECONDARY
                 )
             }
 
@@ -82,15 +87,27 @@ internal fun HeroSection(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
-                StatusBadgeChip(
+                PassportTag(
+                    text = expense.badgeText ?: expense.paymentStatusText,
                     icon = expense.badgeIcon ?: expense.paymentStatusIcon,
-                    label = expense.badgeText ?: expense.paymentStatusText
+                    style = PassportTagStyle.TERTIARY
                 )
-                DateChip(text = expense.dateText)
+                PassportTag(
+                    text = expense.dateText,
+                    style = PassportTagStyle.NEUTRAL
+                )
                 if (expense.formattedRefundedDate != null) {
-                    DateChip(text = expense.formattedRefundedDate, icon = TablerIcons.Outline.ReceiptRefund)
+                    PassportTag(
+                        text = expense.formattedRefundedDate,
+                        icon = TablerIcons.Outline.ReceiptRefund,
+                        style = PassportTagStyle.NEUTRAL
+                    )
                 } else if (expense.secondaryDateText != null) {
-                    DateChip(text = expense.secondaryDateText, icon = expense.secondaryDateIcon)
+                    PassportTag(
+                        text = expense.secondaryDateText,
+                        icon = expense.secondaryDateIcon,
+                        style = PassportTagStyle.NEUTRAL
+                    )
                 }
             }
         }

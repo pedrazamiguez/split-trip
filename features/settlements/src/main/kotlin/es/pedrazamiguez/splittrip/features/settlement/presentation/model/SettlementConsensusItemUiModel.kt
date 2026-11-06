@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.model
 
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 
 data class SettlementConsensusItemUiModel(
@@ -10,7 +11,7 @@ data class SettlementConsensusItemUiModel(
     val pocketTypeLabel: String,
     val directionLabel: String,
     val statusLabel: String,
-    val statusChipStyle: ConsensusChipStyle,
+    val statusChipStyle: PassportTagStyle,
     val isCurrentUserPayer: Boolean,
     val canConfirm: Boolean,
     val confirmLabel: String,
@@ -21,9 +22,3 @@ data class SettlementConsensusItemUiModel(
     val isNudgeRateLimited: Boolean = false,
     val nudgeButtonLabel: String = ""
 )
-
-enum class ConsensusChipStyle {
-    SUGGESTED,
-    IN_PROGRESS,
-    DISPUTED
-}

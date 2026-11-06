@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatCurrencyAmount
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
@@ -9,7 +10,6 @@ import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.EphemeralSettlementIdHelper
 import es.pedrazamiguez.splittrip.features.settlement.R
-import es.pedrazamiguez.splittrip.features.settlement.presentation.model.ConsensusChipStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -203,17 +203,17 @@ class SettlementConsensusUiMapper(
     private fun resolveStatusDetails(status: SettlementStatus): StatusDetails = when (status) {
         SettlementStatus.SUGGESTED -> StatusDetails(
             label = resourceProvider.getString(R.string.your_balance_settlement_status_suggested),
-            style = ConsensusChipStyle.SUGGESTED
+            style = PassportTagStyle.NEUTRAL
         )
         SettlementStatus.CONFIRMED_BY_PAYER -> StatusDetails(
             label = resourceProvider.getString(R.string.your_balance_settlement_status_confirmed_payer),
-            style = ConsensusChipStyle.IN_PROGRESS
+            style = PassportTagStyle.WARNING
         )
         SettlementStatus.DISPUTED -> StatusDetails(
             label = resourceProvider.getString(R.string.your_balance_settlement_status_disputed),
-            style = ConsensusChipStyle.DISPUTED
+            style = PassportTagStyle.ERROR
         )
-        SettlementStatus.RESOLVED -> StatusDetails(label = "", style = ConsensusChipStyle.SUGGESTED)
+        SettlementStatus.RESOLVED -> StatusDetails(label = "", style = PassportTagStyle.SUCCESS)
     }
 
     private fun resolveActionCapabilities(
@@ -259,7 +259,7 @@ class SettlementConsensusUiMapper(
         }
     }
 
-    private data class StatusDetails(val label: String, val style: ConsensusChipStyle)
+    private data class StatusDetails(val label: String, val style: PassportTagStyle)
 
     private data class ActionCapabilities(val canConfirm: Boolean, val confirmLabel: String, val canDispute: Boolean)
 

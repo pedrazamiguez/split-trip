@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -28,7 +29,6 @@ import es.pedrazamiguez.splittrip.features.group.presentation.screen.CreateEditG
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupStep
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 import es.pedrazamiguez.splittrip.features.settlement.R as SettlementR
-import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowStatusStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowUiModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.screen.GroupSettlementOverviewScreen
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.event.GroupSettlementOverviewUiEvent
@@ -171,7 +171,7 @@ class CollaborationJourneyTest {
             pocketTypeLabel = "Virtual",
             currencyCode = "EUR",
             statusLabel = "Pending",
-            statusChipStyle = SettlementRowStatusStyle.WARNING,
+            statusChipStyle = PassportTagStyle.WARNING,
             canCurrentUserConfirm = true,
             canCurrentUserDispute = false,
             disputedByCurrentUser = false,
@@ -254,7 +254,7 @@ class CollaborationJourneyTest {
             pocketTypeLabel = "Virtual",
             currencyCode = "EUR",
             statusLabel = "Pending",
-            statusChipStyle = SettlementRowStatusStyle.WARNING,
+            statusChipStyle = PassportTagStyle.WARNING,
             canCurrentUserConfirm = true,
             canCurrentUserDispute = false,
             disputedByCurrentUser = false,

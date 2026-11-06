@@ -27,6 +27,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -77,7 +79,7 @@ internal fun SubunitGroup(group: SubunitSplitGroupUiModel) {
                             text = stringResource(R.string.expense_detail_subunit_member_count, group.memberCount),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        SmallChip(text = group.splitTypeText, isPrimary = false)
+                        PassportTag(text = group.splitTypeText, style = PassportTagStyle.NEUTRAL)
                     }
                 }
             }

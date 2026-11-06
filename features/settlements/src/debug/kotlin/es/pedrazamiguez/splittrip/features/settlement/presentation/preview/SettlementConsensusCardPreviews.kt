@@ -1,11 +1,11 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.preview
 
 import androidx.compose.runtime.Composable
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.features.settlement.presentation.component.SettlementConsensusCard
-import es.pedrazamiguez.splittrip.features.settlement.presentation.model.ConsensusChipStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
 
 internal val PREVIEW_CONSENSUS_PENDING = SettlementConsensusItemUiModel(
@@ -16,7 +16,7 @@ internal val PREVIEW_CONSENSUS_PENDING = SettlementConsensusItemUiModel(
     pocketTypeLabel = "Pocket",
     directionLabel = "You owe María",
     statusLabel = "Suggested",
-    statusChipStyle = ConsensusChipStyle.SUGGESTED,
+    statusChipStyle = PassportTagStyle.NEUTRAL,
     isCurrentUserPayer = true,
     canConfirm = true,
     confirmLabel = "Mark as paid",
@@ -32,7 +32,7 @@ internal val PREVIEW_CONSENSUS_CONFIRMED = SettlementConsensusItemUiModel(
     pocketTypeLabel = "Pocket",
     directionLabel = "You owe María",
     statusLabel = "Confirmed",
-    statusChipStyle = ConsensusChipStyle.IN_PROGRESS,
+    statusChipStyle = PassportTagStyle.WARNING,
     isCurrentUserPayer = true,
     canConfirm = false,
     confirmLabel = "Mark as paid",
@@ -48,7 +48,7 @@ internal val PREVIEW_CONSENSUS_DISPUTED = SettlementConsensusItemUiModel(
     pocketTypeLabel = "Pocket",
     directionLabel = "You owe María",
     statusLabel = "Disputed",
-    statusChipStyle = ConsensusChipStyle.DISPUTED,
+    statusChipStyle = PassportTagStyle.ERROR,
     isCurrentUserPayer = true,
     canConfirm = true,
     confirmLabel = "Mark as paid",
@@ -65,7 +65,7 @@ internal val PREVIEW_CONSENSUS_RECEIVER = SettlementConsensusItemUiModel(
     pocketTypeLabel = "Pocket",
     directionLabel = "Antonio owes you",
     statusLabel = "Suggested",
-    statusChipStyle = ConsensusChipStyle.SUGGESTED,
+    statusChipStyle = PassportTagStyle.NEUTRAL,
     isCurrentUserPayer = false,
     canConfirm = true,
     confirmLabel = "Confirm receipt",
