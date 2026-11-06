@@ -64,6 +64,12 @@ internal fun ProvenanceSection(expense: ExpenseDetailUiModel) {
                 text = expense.createdAtText,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (expense.formattedRefundedDate != null) {
+                CaptionText(
+                    text = expense.formattedRefundedDate,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         SyncStatusIndicator(syncStatus = expense.syncStatus)
     }

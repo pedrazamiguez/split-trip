@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedTextAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
@@ -85,7 +87,9 @@ internal fun HeroSection(
                     label = expense.badgeText ?: expense.paymentStatusText
                 )
                 DateChip(text = expense.dateText)
-                if (expense.secondaryDateText != null) {
+                if (expense.formattedRefundedDate != null) {
+                    DateChip(text = expense.formattedRefundedDate, icon = TablerIcons.Outline.ReceiptRefund)
+                } else if (expense.secondaryDateText != null) {
                     DateChip(text = expense.secondaryDateText, icon = expense.secondaryDateIcon)
                 }
             }

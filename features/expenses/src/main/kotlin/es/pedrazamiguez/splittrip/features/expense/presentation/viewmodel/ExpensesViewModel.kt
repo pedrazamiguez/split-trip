@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpensesUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesUiState
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -315,7 +316,8 @@ class ExpensesViewModel(
                     return@launch
                 }
                 val updatedExpense = domainExpense.copy(
-                    paymentStatus = PaymentStatus.CANCELLED
+                    paymentStatus = PaymentStatus.CANCELLED,
+                    refundedAt = LocalDateTime.now()
                 )
                 useCases.updateExpenseUseCase(
                     groupId = groupId,

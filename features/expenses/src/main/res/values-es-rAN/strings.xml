@@ -121,9 +121,10 @@
     <string name="payment_status_pending">Pendiente</string>
     <string name="payment_status_finished">Pagao</string>
     <string name="payment_status_scheduled">Programao</string>
-    <string name="payment_status_cancelled">Cançelao</string>
+    <string name="payment_status_cancelled">Cançelao / Reemborçao</string>
     <string name="payment_status_refundable">Pagao (Reemborçable)</string>
     <string name="expense_detail_on_hold">Retenío</string>
+    <string name="expense_detail_refunded_on">Reemborçao el %s</string>
     <string name="add_expense_category_title">Categoría</string>
     <string name="add_expense_subcategory_title">Çûccategoría</string>
     <string name="add_expense_vendor_label">Empreça / Comerçio (ôççionâh)</string>
@@ -135,6 +136,8 @@
     <string name="add_expense_due_date_label">Fexa de bençimiento</string>
     <string name="add_expense_due_date_confirm">OK</string>
     <string name="add_expense_due_date_cancel">Cançelâh</string>
+    <string name="add_expense_refund_date_title">Fexa de reemborço</string>
+    <string name="add_expense_refund_date_label">Fexa del reemborço</string>
     <string name="add_expense_receipt_title">Reçibo</string>
     <string name="add_expense_receipt_attach">Âhhuntâh reçibo</string>
     <string name="add_expense_receipt_attach_camera">Açêh foto</string>

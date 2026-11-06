@@ -324,6 +324,9 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.DueDateSelected ->
                 formEventHandler.handleDueDateSelected(event.dateMillis)
 
+            is AddExpenseUiEvent.RefundDateSelected ->
+                formEventHandler.handleRefundDateSelected(event.dateMillis)
+
             is AddExpenseUiEvent.ExpenseDateSelected ->
                 formEventHandler.handleExpenseDateSelected(event.dateMillis)
 

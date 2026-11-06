@@ -49,6 +49,7 @@ data class ExpenseEntity(
     val operationDateMillis: Long? = null,
     val createdAtMillis: Long?,
     val lastUpdatedAtMillis: Long?,
+    val refundedAtMillis: Long? = null,
     val cashTranchesJson: String? = null,
     val addOnsJson: String? = null,
     val syncStatus: String = "SYNCED"

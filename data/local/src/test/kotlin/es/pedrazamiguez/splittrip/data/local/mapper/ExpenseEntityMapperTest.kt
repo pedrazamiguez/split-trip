@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -281,6 +282,25 @@ class ExpenseEntityMapperTest {
 
             assertEquals(SyncStatus.SYNC_FAILED, entity.toDomain().syncStatus)
         }
+
+        @Test
+        fun `maps refundedAtMillis to refundedAt when present`() {
+            val millis = 1700000000000L
+            val entity = fullEntity.copy(refundedAtMillis = millis)
+            val expectedDateTime = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(millis),
+                ZoneOffset.UTC
+            )
+
+            assertEquals(expectedDateTime, entity.toDomain().refundedAt)
+        }
+
+        @Test
+        fun `maps null refundedAtMillis to null refundedAt`() {
+            val entity = fullEntity.copy(refundedAtMillis = null)
+
+            assertNull(entity.toDomain().refundedAt)
+        }
     }
 
     @Nested
@@ -384,6 +404,22 @@ class ExpenseEntityMapperTest {
             val expense = fullExpense.copy(operationDate = null)
             val entity = expense.toEntity()
             assertNull(entity.operationDateMillis)
+        }
+
+        @Test
+        fun `maps refundedAt to refundedAtMillis when present`() {
+            val refundedAt = LocalDateTime.of(2026, 4, 10, 14, 0, 0)
+            val expectedMillis = refundedAt.toInstant(ZoneOffset.UTC).toEpochMilli()
+            val expense = fullExpense.copy(refundedAt = refundedAt)
+
+            assertEquals(expectedMillis, expense.toEntity().refundedAtMillis)
+        }
+
+        @Test
+        fun `maps null refundedAt to null refundedAtMillis`() {
+            val expense = fullExpense.copy(refundedAt = null)
+
+            assertNull(expense.toEntity().refundedAtMillis)
         }
     }
 

@@ -438,6 +438,33 @@ class ExpenseDetailViewModelTest {
             }
 
         @Test
+        fun `CancelConfirmed event sets refundedAt timestamp on updated expense`() =
+            runTest(testDispatcher) {
+                // Given
+                every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
+                coEvery { updateExpenseUseCase(any(), any(), any(), any()) } returns Result.success(Unit)
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setExpenseId(testExpenseId)
+                advanceUntilIdle()
+
+                // When
+                viewModel.onEvent(ExpenseDetailUiEvent.CancelConfirmed)
+                advanceUntilIdle()
+
+                // Then
+                coVerify(exactly = 1) {
+                    updateExpenseUseCase(
+                        groupId = testGroupId,
+                        expense = match { it.paymentStatus == PaymentStatus.CANCELLED && it.refundedAt != null },
+                        pairedContributionScope = PayerType.USER,
+                        pairedSubunitId = null
+                    )
+                }
+
+                collectJob.cancel()
+            }
+
+        @Test
         fun `CancelConfirmed emits CancelSuccess action on success`() = runTest(testDispatcher) {
             // Given
             every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)

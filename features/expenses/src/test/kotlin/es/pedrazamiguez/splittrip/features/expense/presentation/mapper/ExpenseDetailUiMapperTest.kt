@@ -202,6 +202,45 @@ class ExpenseDetailUiMapperTest {
             val expectedDueDateText = LocalDate.of(2026, 11, 15).formatShortDate(Locale.US)
             assertEquals(expectedDueDateText, result.secondaryDateText)
         }
+
+        @Test
+        fun `maps formattedRefundedDate when expense is CANCELLED and refundedAt is non-null`() {
+            every {
+                resourceProvider.getString(R.string.expense_detail_refunded_on, *anyVararg())
+            } answers {
+                val args = secondArg<Array<*>>()
+                "Refunded on " + args[0]
+            }
+
+            val refundedAt = LocalDateTime.of(2026, 10, 28, 14, 0, 0)
+            val cancelledExpense = baseExpense.copy(
+                paymentStatus = PaymentStatus.CANCELLED,
+                refundedAt = refundedAt
+            )
+
+            val result = mapper.map(cancelledExpense, memberProfiles, currentUserId, zoneId = ZoneId.of("UTC"))
+
+            val expectedFormattedDate = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
+            assertEquals("Refunded on $expectedFormattedDate", result.formattedRefundedDate)
+        }
+
+        @Test
+        fun `leaves formattedRefundedDate null when expense is not CANCELLED or refundedAt is null`() {
+            val nonCancelledExpense = baseExpense.copy(
+                paymentStatus = PaymentStatus.FINISHED,
+                refundedAt = LocalDateTime.of(2026, 10, 28, 14, 0, 0)
+            )
+            val cancelledNoDate = baseExpense.copy(
+                paymentStatus = PaymentStatus.CANCELLED,
+                refundedAt = null
+            )
+
+            val nonCancelledResult = mapper.map(nonCancelledExpense, memberProfiles, currentUserId)
+            val cancelledNoDateResult = mapper.map(cancelledNoDate, memberProfiles, currentUserId)
+
+            assertNull(nonCancelledResult.formattedRefundedDate)
+            assertNull(cancelledNoDateResult.formattedRefundedDate)
+        }
     }
 
     @Nested

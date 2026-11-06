@@ -133,6 +133,11 @@ data class AddExpenseUiState(
     val dueDateMillis: Long? = null,
     val formattedDueDate: String = "",
 
+    // Refund date
+    val showRefundDateSection: Boolean = false,
+    val refundDateMillis: Long? = null,
+    val formattedRefundDate: String = "",
+
     // Receipt image
     // receiptUri holds the stable local file:// path for Coil display after AttachReceiptUseCase runs.
     val receiptUri: String? = null,
@@ -242,6 +247,7 @@ data class AddExpenseUiState(
         receiptUri = receiptUri,
         addOns = addOns,
         dueDateMillis = dueDateMillis,
+        refundDateMillis = refundDateMillis,
         isAiModeActive = isAiModeActive,
         selectedCategory = selectedCategory,
         selectedSubcategory = selectedSubcategory,
@@ -384,6 +390,7 @@ data class AddExpenseFormSnapshot(
     val receiptUri: String?,
     val addOns: ImmutableList<AddOnUiModel>,
     val dueDateMillis: Long?,
+    val refundDateMillis: Long?,
     val isAiModeActive: Boolean,
     val selectedCategory: CategoryUiModel?,
     val selectedSubcategory: SubcategoryUiModel?,
