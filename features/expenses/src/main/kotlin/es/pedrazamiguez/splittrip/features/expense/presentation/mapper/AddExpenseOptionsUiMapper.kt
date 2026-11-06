@@ -111,16 +111,19 @@ class AddExpenseOptionsUiMapper(
      * Maps a list of [PaymentStatus] enums to UI models, filtering to only
      * user-selectable statuses (FINISHED, SCHEDULED, REFUNDABLE).
      * Excludes SCHEDULED when [paymentMethod] is CASH.
+     * Includes CANCELLED when [isEditMode] is true.
      */
     fun mapPaymentStatuses(
         statuses: List<PaymentStatus>,
-        paymentMethod: PaymentMethod? = null
+        paymentMethod: PaymentMethod? = null,
+        isEditMode: Boolean = false
     ): ImmutableList<PaymentStatusUiModel> =
         statuses
             .filter { status ->
                 when (status) {
                     PaymentStatus.FINISHED, PaymentStatus.REFUNDABLE -> true
                     PaymentStatus.SCHEDULED -> paymentMethod != PaymentMethod.CASH
+                    PaymentStatus.CANCELLED -> isEditMode
                     else -> false
                 }
             }

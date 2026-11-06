@@ -9,6 +9,7 @@ data class CategorySpendingUiModel(
     val categoryName: String,
     val categoryIcon: ImageVector,
     val formattedAmount: String,
+    val formattedPercentage: String,
     val progress: Float,
     val color: Color,
     val subcategories: ImmutableList<SubcategorySpendingUiModel> = persistentListOf()

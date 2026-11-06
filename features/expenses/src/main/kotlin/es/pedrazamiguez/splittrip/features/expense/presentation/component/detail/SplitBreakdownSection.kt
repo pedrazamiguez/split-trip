@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Scale
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -42,7 +44,7 @@ internal fun SplitBreakdownSection(
         ) {
             SectionIcon(TablerIcons.Outline.Scale)
             LabelText(text = stringResource(R.string.expense_detail_section_split))
-            SmallChip(text = splitTypeText, isPrimary = false)
+            PassportTag(text = splitTypeText, style = PassportTagStyle.NEUTRAL)
         }
         FlatCard(modifier = Modifier.fillMaxWidth()) {
             Column(

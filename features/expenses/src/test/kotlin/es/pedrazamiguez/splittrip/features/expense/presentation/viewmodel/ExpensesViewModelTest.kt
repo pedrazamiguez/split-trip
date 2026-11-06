@@ -748,6 +748,48 @@ class ExpensesViewModelTest {
         }
 
         @Test
+        fun `CancelExpense event sets refundedAt timestamp on updated expense`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase("expense-1") } returns flowOf(testExpense1)
+            coEvery {
+                updateExpenseUseCase(
+                    groupId = testGroupId,
+                    expense = any(),
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                )
+            } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            // When
+            viewModel.onEvent(ExpensesUiEvent.CancelExpense("expense-1"))
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) {
+                updateExpenseUseCase(
+                    groupId = testGroupId,
+                    expense = match {
+                        it.id == "expense-1" &&
+                            it.paymentStatus == PaymentStatus.CANCELLED &&
+                            it.refundedAt != null
+                    },
+                    pairedContributionScope = PayerType.USER,
+                    pairedSubunitId = null,
+                    preferredWithdrawalScope = null,
+                    preferredWithdrawalOwnerId = null
+                )
+            }
+            collectJob.cancel()
+        }
+
+        @Test
         fun `CancelExpense event emits success action when update succeeds`() = runTest(testDispatcher) {
             // Given
             every { getExpenseByIdFlowUseCase("expense-1") } returns flowOf(testExpense1)
@@ -1121,6 +1163,29 @@ class ExpensesViewModelTest {
             assertEquals(0, allExpenses().size)
             assertEquals(2, viewModel.uiState.value.totalExpensesCount)
             assertTrue(viewModel.uiState.value.isSearchResultEmpty)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `debounced search filters expenses by amount with decimal comma`() = runTest(testDispatcher) {
+            // Given: testExpense1 has groupAmount = 5000L (50.00 EUR), testExpense2 has 2000L (20.00 EUR)
+            every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(
+                listOf(testExpense1, testExpense2)
+            )
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            // When - Type "50,00" (matches testExpense1 50.00 EUR)
+            viewModel.onEvent(ExpensesUiEvent.SearchQueryChanged("50,00"))
+            advanceTimeBy(300)
+            advanceUntilIdle()
+
+            // Then - Only testExpense1 matches
+            assertEquals(1, allExpenses().size)
+            assertEquals("expense-1", allExpenses().first().id)
 
             collectJob.cancel()
         }

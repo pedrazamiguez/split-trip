@@ -23,6 +23,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,6 +56,7 @@ class FormEventHandlerTest {
     private val finishedStatus = PaymentStatusUiModel(id = PaymentStatus.FINISHED.name, displayText = "Finished")
     private val scheduledStatus = PaymentStatusUiModel(id = PaymentStatus.SCHEDULED.name, displayText = "Scheduled")
     private val refundableStatus = PaymentStatusUiModel(id = PaymentStatus.REFUNDABLE.name, displayText = "Refundable")
+    private val cancelledStatus = PaymentStatusUiModel(id = PaymentStatus.CANCELLED.name, displayText = "Cancelled")
     private val foodCategory = CategoryUiModel(id = "FOOD", displayText = "Food")
     private val otherCategory = CategoryUiModel(id = "OTHER", displayText = "Other")
 
@@ -65,13 +67,18 @@ class FormEventHandlerTest {
         attachReceiptUseCase = mockk(relaxed = true)
         capturedPostActions.clear()
 
-        every { addExpenseOptionsUiMapper.mapPaymentStatuses(any(), any()) } answers {
+        every { addExpenseOptionsUiMapper.mapPaymentStatuses(any(), any(), any()) } answers {
             val method = secondArg<PaymentMethod?>()
-            if (method == PaymentMethod.CASH) {
-                persistentListOf(finishedStatus, refundableStatus)
+            val isEdit = thirdArg<Boolean>()
+            val statuses = if (method == PaymentMethod.CASH) {
+                mutableListOf(finishedStatus, refundableStatus)
             } else {
-                persistentListOf(finishedStatus, scheduledStatus, refundableStatus)
+                mutableListOf(finishedStatus, scheduledStatus, refundableStatus)
             }
+            if (isEdit) {
+                statuses.add(cancelledStatus)
+            }
+            statuses.toImmutableList()
         }
 
         handler = FormEventHandler(
@@ -211,6 +218,26 @@ class FormEventHandlerTest {
             assertEquals(cashMethod, uiState.value.selectedPaymentMethod)
             val action = capturedPostActions.single() as FormPostAction.PaymentMethodChanged
             assertTrue(action.isCash)
+        }
+
+        @Test
+        fun `changing payment method preserves CANCELLED in edit mode`() = runTest {
+            uiState.value = uiState.value.copy(
+                isEditMode = true,
+                selectedPaymentMethod = cardMethod,
+                selectedPaymentStatus = cancelledStatus,
+                availablePaymentStatuses = persistentListOf(
+                    finishedStatus,
+                    scheduledStatus,
+                    refundableStatus,
+                    cancelledStatus
+                )
+            )
+
+            handler.handlePaymentMethodSelected(cashMethod.id)
+
+            assertEquals(cancelledStatus, uiState.value.selectedPaymentStatus)
+            assertTrue(uiState.value.showRefundDateSection)
         }
 
         @Test
@@ -518,6 +545,45 @@ class FormEventHandlerTest {
 
             assertEquals(before, uiState.value.selectedPaymentStatus)
         }
+
+        @Test
+        fun `selecting CANCELLED status enables refund date section and sets default`() = runTest {
+            uiState.value = uiState.value.copy(
+                availablePaymentStatuses = persistentListOf(
+                    finishedStatus,
+                    scheduledStatus,
+                    refundableStatus,
+                    cancelledStatus
+                )
+            )
+
+            handler.handlePaymentStatusSelected(PaymentStatus.CANCELLED.name)
+
+            assertEquals(cancelledStatus, uiState.value.selectedPaymentStatus)
+            assertTrue(uiState.value.showRefundDateSection)
+            assertTrue(uiState.value.refundDateMillis != null)
+        }
+
+        @Test
+        fun `selecting CANCELLED status hides dueDateSection`() = runTest {
+            uiState.value = uiState.value.copy(
+                availablePaymentStatuses = persistentListOf(
+                    finishedStatus,
+                    scheduledStatus,
+                    refundableStatus,
+                    cancelledStatus
+                ),
+                showDueDateSection = true,
+                dueDateMillis = 12345L,
+                formattedDueDate = "2026-04-01"
+            )
+
+            handler.handlePaymentStatusSelected(PaymentStatus.CANCELLED.name)
+
+            assertFalse(uiState.value.showDueDateSection)
+            assertNull(uiState.value.dueDateMillis)
+            assertEquals("", uiState.value.formattedDueDate)
+        }
     }
 
     @Nested
@@ -532,6 +598,20 @@ class FormEventHandlerTest {
             assertEquals(12345L, uiState.value.dueDateMillis)
             assertEquals("Jan 1, 2025", uiState.value.formattedDueDate)
             assertTrue(uiState.value.isDueDateValid)
+        }
+    }
+
+    @Nested
+    inner class RefundDateSelected {
+
+        @Test
+        fun `handleRefundDateSelected updates refundDateMillis and formattedRefundDate`() = runTest {
+            every { addExpenseUiMapper.formatRefundDateForDisplay(1700000000000L) } returns "Nov 14, 2023"
+
+            handler.handleRefundDateSelected(1700000000000L)
+
+            assertEquals(1700000000000L, uiState.value.refundDateMillis)
+            assertEquals("Nov 14, 2023", uiState.value.formattedRefundDate)
         }
     }
 }

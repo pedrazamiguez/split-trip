@@ -29,7 +29,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CategorySpendingUiModel
-import kotlin.math.roundToInt
 
 @Suppress("LongMethod")
 @Composable
@@ -90,14 +89,13 @@ internal fun CategorySpendingHeaderRow(
 
             Spacer(modifier = Modifier.width(MaterialTheme.spacing.Small))
 
-            val percentage = (item.progress * 100).roundToInt()
             Box(
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.extraSmall)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Text(
-                    text = "$percentage%",
+                    text = item.formattedPercentage,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

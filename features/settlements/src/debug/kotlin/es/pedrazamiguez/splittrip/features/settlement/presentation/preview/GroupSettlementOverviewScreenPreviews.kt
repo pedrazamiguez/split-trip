@@ -1,12 +1,12 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.preview
 
 import androidx.compose.runtime.Composable
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.features.settlement.presentation.component.step.archive.ArchiveConfirmationStep
 import es.pedrazamiguez.splittrip.features.settlement.presentation.component.step.archive.ArchiveSummaryStep
-import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowStatusStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowUiModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.archive.ArchiveWizardStep
 import es.pedrazamiguez.splittrip.features.settlement.presentation.screen.GroupSettlementOverviewScreen
@@ -26,7 +26,7 @@ private val PREVIEW_SETTLEMENT_ROW = SettlementRowUiModel(
     pocketTypeLabel = "Pocket",
     currencyCode = "EUR",
     statusLabel = "Pending",
-    statusChipStyle = SettlementRowStatusStyle.WARNING,
+    statusChipStyle = PassportTagStyle.WARNING,
     canCurrentUserConfirm = true,
     canCurrentUserDispute = true,
     disputedByCurrentUser = false,

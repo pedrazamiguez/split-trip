@@ -198,6 +198,7 @@ class ExpenseDetailUiMapper(
                 dateText = formattingHelper.formatShortDate(expense.effectiveDate?.utcToSystemLocalDateTime(zoneId)),
                 secondaryDateText = resolveSecondaryDateText(expense, formattingHelper),
                 secondaryDateIcon = resolveSecondaryDateIcon(expense),
+                formattedRefundedDate = resolveRefundedDateText(expense, formattingHelper, resourceProvider, zoneId),
                 vendorText = expense.vendor?.takeIf { it.isNotBlank() },
                 notesText = expense.notes?.takeIf { it.isNotBlank() },
                 badgeText = null,

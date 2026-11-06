@@ -60,6 +60,7 @@ fun ExpenseEntity.toDomain(): Expense {
         operationDate = operationDateMillis?.toLocalDateTimeUtc() ?: createdAtMillis?.toLocalDateTimeUtc(),
         createdAt = createdAtMillis?.toLocalDateTimeUtc(),
         lastUpdatedAt = lastUpdatedAtMillis?.toLocalDateTimeUtc(),
+        refundedAt = refundedAtMillis?.toLocalDateTimeUtc(),
         syncStatus = SyncStatus.fromStringOrDefault(syncStatus)
     )
 }
@@ -96,6 +97,7 @@ fun Expense.toEntity(): ExpenseEntity {
         operationDateMillis = operationDate?.toEpochMillisUtc(),
         createdAtMillis = effectiveCreatedAtMillis,
         lastUpdatedAtMillis = effectiveLastUpdatedAtMillis,
+        refundedAtMillis = refundedAt?.toEpochMillisUtc(),
         cashTranchesJson = cashTrancheConverter.fromCashTrancheList(cashTranches.ifEmpty { null }),
         addOnsJson = addOnConverter.fromAddOnList(addOns.ifEmpty { null }),
         syncStatus = syncStatus.name

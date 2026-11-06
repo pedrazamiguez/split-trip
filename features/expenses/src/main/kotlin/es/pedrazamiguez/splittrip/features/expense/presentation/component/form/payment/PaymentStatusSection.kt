@@ -41,7 +41,7 @@ internal fun PaymentStatusSection(
             },
             itemId = { it.id },
             itemLabel = { it.displayText },
-            visibleCount = 3
+            visibleCount = 4
         )
     }
 }

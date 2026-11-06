@@ -18,7 +18,7 @@ private val PREVIEW_SUBCATEGORY_ITEM = SubcategorySpendingUiModel(
     subcategoryName = "Flights",
     subcategoryIcon = TablerIcons.Outline.PlaneTilt,
     formattedAmount = "150.00 €",
-    percentageOfCategory = 100,
+    formattedPercentage = "100%",
     rawAmountCents = 15000L
 )
 
@@ -26,6 +26,7 @@ private val PREVIEW_CATEGORY_ITEM = CategorySpendingUiModel(
     categoryName = "Transport",
     categoryIcon = TablerIcons.Outline.PlaneTilt,
     formattedAmount = "150.00 €",
+    formattedPercentage = "75%",
     progress = 0.75f,
     color = Color(0xFF4CAF50),
     subcategories = persistentListOf(PREVIEW_SUBCATEGORY_ITEM)

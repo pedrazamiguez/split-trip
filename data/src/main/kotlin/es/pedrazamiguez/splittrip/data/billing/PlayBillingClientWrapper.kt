@@ -26,6 +26,8 @@ import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.BillingService
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +43,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 class PlayBillingClientWrapper(
@@ -62,12 +65,12 @@ class PlayBillingClientWrapper(
 ) : BillingService, PurchasesUpdatedListener {
 
     private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
-    private val connectionMutex = Mutex()
     private val cachedProductDetails = ConcurrentHashMap<String, ProductDetails>()
-
-    private val billingClient: BillingClient by lazy {
-        billingClientFactory(this)
-    }
+    private val connectionCoordinator = BillingConnectionCoordinator(
+        billingClientFactory = billingClientFactory,
+        listener = this,
+        ioDispatcher = ioDispatcher
+    )
 
     private val _subscriptionProducts = MutableStateFlow<List<SubscriptionProduct>>(emptyList())
     override val subscriptionProducts: StateFlow<List<SubscriptionProduct>> = _subscriptionProducts.asStateFlow()
@@ -80,42 +83,7 @@ class PlayBillingClientWrapper(
             ?: ((appConfigRepository?.billingSimulationEnabled?.value == true) || BuildConfig.DEBUG)
     }
 
-    private suspend fun ensureConnected(): Result<Unit> = withContext(ioDispatcher) {
-        if (billingClient.isReady) {
-            return@withContext Result.success(Unit)
-        }
-        connectionMutex.withLock {
-            if (billingClient.isReady) {
-                Result.success(Unit)
-            } else {
-                connectBillingClient()
-            }
-        }
-    }
-
-    private suspend fun connectBillingClient(): Result<Unit> =
-        suspendCancellableCoroutine { continuation ->
-            billingClient.startConnection(object : BillingClientStateListener {
-                override fun onBillingSetupFinished(billingResult: BillingResult) {
-                    if (!continuation.isActive) return
-                    if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                        continuation.resume(Result.success(Unit))
-                    } else {
-                        val code = billingResult.responseCode
-                        val msg = billingResult.debugMessage
-                        continuation.resume(
-                            Result.failure(
-                                IllegalStateException("Billing setup failed: $msg (code: $code)")
-                            )
-                        )
-                    }
-                }
-
-                override fun onBillingServiceDisconnected() {
-                    Timber.w("Billing service disconnected")
-                }
-            })
-        }
+    private suspend fun ensureConnected(): Result<Unit> = connectionCoordinator.ensureConnected()
 
     override suspend fun querySubscriptionProducts(): Result<List<SubscriptionProduct>> = withContext(ioDispatcher) {
         val connectionResult = ensureConnected()
@@ -123,7 +91,8 @@ class PlayBillingClientWrapper(
             return@withContext handleQueryFailure("Billing connection failed", connectionResult.exceptionOrNull())
         }
 
-        val (billingResult, productDetailsList) = billingClient.queryProductDetails(buildProductQueryParams())
+        val (billingResult, productDetailsList) = connectionCoordinator.getClient()
+            .queryProductDetails(buildProductQueryParams())
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             val error = IllegalStateException(
                 "Query product details failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
@@ -223,7 +192,7 @@ class PlayBillingClientWrapper(
             .setProductDetailsParamsList(listOf(productDetailsParams))
             .build()
 
-        val result = billingClient.launchBillingFlow(activity, flowParams)
+        val result = connectionCoordinator.getClient().launchBillingFlow(activity, flowParams)
         return if (result.responseCode == BillingClient.BillingResponseCode.OK) {
             Result.success(Unit)
         } else {
@@ -246,7 +215,7 @@ class PlayBillingClientWrapper(
                                     val ackParams = AcknowledgePurchaseParams.newBuilder()
                                         .setPurchaseToken(purchase.purchaseToken)
                                         .build()
-                                    billingClient.acknowledgePurchase(ackParams)
+                                    connectionCoordinator.getClient().acknowledgePurchase(ackParams)
                                 }
                                 purchase.products.forEach { productId ->
                                     _purchaseUpdates.emit(
@@ -289,7 +258,7 @@ class PlayBillingClientWrapper(
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
-        val (billingResult, purchasesList) = billingClient.queryPurchasesAsync(params)
+        val (billingResult, purchasesList) = connectionCoordinator.getClient().queryPurchasesAsync(params)
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             val error = IllegalStateException(
                 "Query purchases failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
@@ -321,7 +290,7 @@ class PlayBillingClientWrapper(
                 val ackParams = AcknowledgePurchaseParams.newBuilder()
                     .setPurchaseToken(activeProPurchase.purchaseToken)
                     .build()
-                billingClient.acknowledgePurchase(ackParams)
+                connectionCoordinator.getClient().acknowledgePurchase(ackParams)
             }
             return Result.success(true)
         }
@@ -371,3 +340,125 @@ private fun getMockSubscriptionProducts(): List<SubscriptionProduct> = listOf(
         offerToken = "mock_annual_token"
     )
 )
+
+private class BillingConnectionCoordinator(
+    private val billingClientFactory: (PurchasesUpdatedListener) -> BillingClient,
+    private val listener: PurchasesUpdatedListener,
+    private val ioDispatcher: CoroutineDispatcher
+) {
+    private val connectionMutex = Mutex()
+
+    @Volatile
+    private var billingClient: BillingClient? = null
+    private var activeConnectionDeferred: CompletableDeferred<Result<Unit>>? = null
+
+    val isReady: Boolean
+        get() = billingClient?.isReady == true
+
+    fun getClient(): BillingClient {
+        return billingClient ?: synchronized(this) {
+            billingClient ?: billingClientFactory(listener).also { billingClient = it }
+        }
+    }
+
+    fun reset() {
+        try {
+            billingClient?.endConnection()
+        } catch (e: Exception) {
+            Timber.w(e, "Error ending billing client connection")
+        } finally {
+            billingClient = null
+        }
+    }
+
+    suspend fun ensureConnected(): Result<Unit> = withContext(ioDispatcher) {
+        if (isReady) return@withContext Result.success(Unit)
+
+        val (deferred, isInitiator) = connectionMutex.withLock {
+            if (isReady) return@withContext Result.success(Unit)
+            getOrCreateConnectionDeferred()
+        }
+
+        if (!isInitiator) {
+            return@withContext deferred.await()
+        }
+
+        executeConnection(deferred)
+    }
+
+    private fun getOrCreateConnectionDeferred(): Pair<CompletableDeferred<Result<Unit>>, Boolean> {
+        val existing = activeConnectionDeferred
+        return if (existing != null && existing.isActive) {
+            existing to false
+        } else {
+            val newDeferred = CompletableDeferred<Result<Unit>>()
+            activeConnectionDeferred = newDeferred
+            newDeferred to true
+        }
+    }
+
+    private suspend fun executeConnection(deferred: CompletableDeferred<Result<Unit>>): Result<Unit> {
+        return try {
+            val result = connectBillingClient()
+            deferred.complete(result)
+            result
+        } catch (e: CancellationException) {
+            deferred.complete(Result.failure(e))
+            throw e
+        } catch (e: Exception) {
+            val failure = Result.failure<Unit>(e)
+            deferred.complete(failure)
+            failure
+        } finally {
+            connectionMutex.withLock {
+                if (activeConnectionDeferred === deferred) {
+                    activeConnectionDeferred = null
+                }
+            }
+        }
+    }
+
+    private suspend fun connectBillingClient(): Result<Unit> {
+        val client = getClient()
+        val timeoutMs = BillingConstants.BILLING_CONNECT_TIMEOUT_MS
+        val connectResult = withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine { continuation ->
+                continuation.invokeOnCancellation {
+                    reset()
+                }
+                client.startConnection(object : BillingClientStateListener {
+                    override fun onBillingSetupFinished(billingResult: BillingResult) {
+                        if (!continuation.isActive) return
+                        if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                            continuation.resume(Result.success(Unit))
+                        } else {
+                            val code = billingResult.responseCode
+                            val msg = billingResult.debugMessage
+                            reset()
+                            continuation.resume(
+                                Result.failure(
+                                    IllegalStateException("Billing setup failed: $msg (code: $code)")
+                                )
+                            )
+                        }
+                    }
+
+                    override fun onBillingServiceDisconnected() {
+                        Timber.w("Billing service disconnected")
+                        reset()
+                    }
+                })
+            }
+        }
+
+        return if (connectResult != null) {
+            connectResult
+        } else {
+            Timber.w("Billing connection timed out after %d ms", timeoutMs)
+            reset()
+            Result.failure(
+                IllegalStateException("Billing connection timed out after $timeoutMs ms")
+            )
+        }
+    }
+}

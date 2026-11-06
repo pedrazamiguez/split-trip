@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.domain.service.impl
 
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
@@ -421,8 +423,147 @@ class ExpenseFilterServiceImplTest {
     }
 
     @Nested
+    @DisplayName("Payment Method Filtering")
+    inner class PaymentMethodFiltering {
+
+        private val cashExpense = expense1.copy(
+            id = "exp-cash",
+            paymentMethod = PaymentMethod.CASH
+        )
+        private val cardExpense = expense2.copy(
+            id = "exp-card",
+            paymentMethod = PaymentMethod.CREDIT_CARD
+        )
+        private val alipayExpense = expense3.copy(
+            id = "exp-alipay",
+            paymentMethod = PaymentMethod.ALIPAY
+        )
+        private val paymentMethodExpenses = listOf(
+            cashExpense,
+            cardExpense,
+            alipayExpense
+        )
+
+        @Test
+        fun `filters expenses matching single selected payment method`() {
+            val criteria = ExpenseFilterCriteria(selectedPaymentMethods = setOf(PaymentMethod.CASH))
+            val result = filterService.filter(paymentMethodExpenses, criteria)
+            assertEquals(listOf(cashExpense), result)
+        }
+
+        @Test
+        fun `filters expenses matching multiple selected payment methods using OR logic`() {
+            val criteria = ExpenseFilterCriteria(
+                selectedPaymentMethods = setOf(PaymentMethod.CASH, PaymentMethod.ALIPAY)
+            )
+            val result = filterService.filter(paymentMethodExpenses, criteria)
+            assertEquals(listOf(cashExpense, alipayExpense), result)
+        }
+
+        @Test
+        fun `returns empty list when no expenses match selected payment method`() {
+            val criteria = ExpenseFilterCriteria(selectedPaymentMethods = setOf(PaymentMethod.BIZUM))
+            val result = filterService.filter(paymentMethodExpenses, criteria)
+            assertTrue(result.isEmpty())
+        }
+    }
+
+    @Nested
+    @DisplayName("Payment Status Filtering")
+    inner class PaymentStatusFiltering {
+
+        private val finishedExpense = expense1.copy(
+            id = "exp-finished",
+            paymentStatus = PaymentStatus.FINISHED
+        )
+        private val scheduledExpense = expense2.copy(
+            id = "exp-scheduled",
+            paymentStatus = PaymentStatus.SCHEDULED
+        )
+        private val refundableExpense = expense3.copy(
+            id = "exp-refundable",
+            paymentStatus = PaymentStatus.REFUNDABLE
+        )
+        private val cancelledExpense = expense4.copy(
+            id = "exp-cancelled",
+            paymentStatus = PaymentStatus.CANCELLED
+        )
+        private val paymentStatusExpenses = listOf(
+            finishedExpense,
+            scheduledExpense,
+            refundableExpense,
+            cancelledExpense
+        )
+
+        @Test
+        fun `filters expenses matching single selected payment status`() {
+            val criteria = ExpenseFilterCriteria(selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED))
+            val result = filterService.filter(paymentStatusExpenses, criteria)
+            assertEquals(listOf(scheduledExpense), result)
+        }
+
+        @Test
+        fun `filters expenses matching multiple selected payment statuses using OR logic`() {
+            val criteria = ExpenseFilterCriteria(
+                selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED, PaymentStatus.REFUNDABLE)
+            )
+            val result = filterService.filter(paymentStatusExpenses, criteria)
+            assertEquals(listOf(scheduledExpense, refundableExpense), result)
+        }
+
+        @Test
+        fun `returns empty list when no expenses match selected payment status`() {
+            val criteria = ExpenseFilterCriteria(selectedPaymentStatuses = setOf(PaymentStatus.PENDING))
+            val result = filterService.filter(paymentStatusExpenses, criteria)
+            assertTrue(result.isEmpty())
+        }
+    }
+
+    @Nested
     @DisplayName("Combined Filter Criteria (Logical AND)")
     inner class CombinedFiltering {
+
+        @Test
+        fun `combines category, payment method, payment status, and member filters using AND logic`() {
+            val matchingExpense = expense1.copy(
+                id = "exp-match",
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.RESTAURANT,
+                payerId = "user-1",
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED
+            )
+            val wrongCategory = matchingExpense.copy(
+                id = "exp-wrong-cat",
+                category = ExpenseCategory.ACTIVITIES,
+                subcategory = ExpenseSubcategory.MUSEUM_CULTURE
+            )
+            val wrongMethod = matchingExpense.copy(
+                id = "exp-wrong-method",
+                paymentMethod = PaymentMethod.CASH
+            )
+            val wrongStatus = matchingExpense.copy(
+                id = "exp-wrong-status",
+                paymentStatus = PaymentStatus.CANCELLED
+            )
+            val wrongMember = matchingExpense.copy(
+                id = "exp-wrong-member",
+                payerId = "user-3",
+                splits = listOf(ExpenseSplit(userId = "user-3", amountCents = 2500L))
+            )
+
+            val expenses = listOf(matchingExpense, wrongCategory, wrongMethod, wrongStatus, wrongMember)
+            val criteria = ExpenseFilterCriteria(
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedMemberIds = setOf("user-1"),
+                selectedPaymentMethods = setOf(PaymentMethod.CREDIT_CARD),
+                selectedPaymentStatuses = setOf(PaymentStatus.FINISHED)
+            )
+
+            val result = filterService.filter(expenses, criteria)
+
+            assertEquals(listOf(matchingExpense), result)
+        }
 
         @Test
         fun `combines search query, category, member, and date range`() {
@@ -451,6 +592,26 @@ class ExpenseFilterServiceImplTest {
             val result = filterService.filter(allExpenses, criteria)
 
             assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `combines amount search query with category and member filters`() {
+            val expenseWithAmount = expense1.copy(
+                sourceAmount = 5000L,
+                sourceCurrency = "EUR",
+                groupAmount = 5000L,
+                groupCurrency = "EUR"
+            )
+            val expenses = listOf(expenseWithAmount, expense2, expense3)
+            val criteria = ExpenseFilterCriteria(
+                searchQuery = "50,00",
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedMemberIds = setOf("user-1")
+            )
+
+            val result = filterService.filter(expenses, criteria)
+
+            assertEquals(listOf(expenseWithAmount), result)
         }
 
         @Test

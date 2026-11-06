@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.impl
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.model.Settlement
@@ -12,7 +13,6 @@ import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.GroupSettlementOverviewUiMapper
-import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowStatusStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.archive.ArchiveWizardStep
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.state.GroupSettlementOverviewUiState
 import io.mockk.every
@@ -335,10 +335,10 @@ class GroupSettlementOverviewUiMapperImplTest {
 
             val result = mapper.toUiState(listOf(suggested, confirmed, disputed, resolved), emptyMap(), currentUserId)
 
-            assertEquals(SettlementRowStatusStyle.NEUTRAL, result.pendingSettlements[0].statusChipStyle)
-            assertEquals(SettlementRowStatusStyle.WARNING, result.pendingSettlements[1].statusChipStyle)
-            assertEquals(SettlementRowStatusStyle.ERROR, result.disputedSettlements[0].statusChipStyle)
-            assertEquals(SettlementRowStatusStyle.SUCCESS, result.resolvedSettlements[0].statusChipStyle)
+            assertEquals(PassportTagStyle.NEUTRAL, result.pendingSettlements[0].statusChipStyle)
+            assertEquals(PassportTagStyle.WARNING, result.pendingSettlements[1].statusChipStyle)
+            assertEquals(PassportTagStyle.ERROR, result.disputedSettlements[0].statusChipStyle)
+            assertEquals(PassportTagStyle.SUCCESS, result.resolvedSettlements[0].statusChipStyle)
         }
 
         @Test

@@ -12,6 +12,8 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetBalancesDashboardFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
@@ -84,11 +86,18 @@ val balancesUiModule = module {
     }
 
     viewModel {
+        val getGroupExpensesFlowUseCase = get<GetGroupExpensesFlowUseCase>()
+        val getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>()
+        val observeGroupUseCase = get<ObserveGroupUseCase>()
+        val appConfigService = get<AppConfigService>()
+        val categorySpendingUiMapper = get<CategorySpendingUiMapper>()
+
         CategorySpendingViewModel(
-            getGroupExpensesFlowUseCase = get(),
-            observeGroupUseCase = get(),
-            appConfigService = get(),
-            categorySpendingUiMapper = get(),
+            getGroupExpensesFlowUseCase = getGroupExpensesFlowUseCase,
+            getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
+            observeGroupUseCase = observeGroupUseCase,
+            appConfigService = appConfigService,
+            categorySpendingUiMapper = categorySpendingUiMapper,
             computationDispatcher = Dispatchers.Default
         )
     }

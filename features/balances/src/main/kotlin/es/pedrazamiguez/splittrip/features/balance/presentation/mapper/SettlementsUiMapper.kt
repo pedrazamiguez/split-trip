@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnu
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatCurrencyAmount
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.model.Settlement
@@ -11,7 +12,6 @@ import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SettlementUiModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.StatusChipStyle
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -35,10 +35,10 @@ class SettlementsUiMapper(
         )
 
         private val STATUS_STYLE_MAP = mapOf(
-            SettlementStatus.SUGGESTED to StatusChipStyle.NEUTRAL,
-            SettlementStatus.CONFIRMED_BY_PAYER to StatusChipStyle.WARNING,
-            SettlementStatus.DISPUTED to StatusChipStyle.ERROR,
-            SettlementStatus.RESOLVED to StatusChipStyle.SUCCESS
+            SettlementStatus.SUGGESTED to PassportTagStyle.NEUTRAL,
+            SettlementStatus.CONFIRMED_BY_PAYER to PassportTagStyle.WARNING,
+            SettlementStatus.DISPUTED to PassportTagStyle.ERROR,
+            SettlementStatus.RESOLVED to PassportTagStyle.SUCCESS
         )
     }
 

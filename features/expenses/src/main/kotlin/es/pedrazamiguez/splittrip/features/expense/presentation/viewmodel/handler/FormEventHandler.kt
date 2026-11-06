@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import kotlinx.coroutines.CancellationException
@@ -118,22 +119,20 @@ class FormEventHandler(
         val selectedPaymentMethodEnum = runCatching { PaymentMethod.fromString(selectedMethod.id) }.getOrNull()
         val isCash = selectedPaymentMethodEnum == PaymentMethod.CASH
         val updatedAvailablePaymentStatuses = addExpenseOptionsUiMapper.mapPaymentStatuses(
-            PaymentStatus.entries,
-            selectedPaymentMethodEnum
+            statuses = PaymentStatus.entries,
+            paymentMethod = selectedPaymentMethodEnum,
+            isEditMode = currentState.isEditMode
         )
-        val isCurrentStatusScheduled = currentState.selectedPaymentStatus?.id == PaymentStatus.SCHEDULED.name
-        val shouldResetStatus = isCash && isCurrentStatusScheduled
-        val newSelectedPaymentStatus = if (shouldResetStatus) {
-            updatedAvailablePaymentStatuses.find { it.id == PaymentStatus.FINISHED.name }
-                ?: updatedAvailablePaymentStatuses.firstOrNull()
-        } else {
-            updatedAvailablePaymentStatuses.find { it.id == currentState.selectedPaymentStatus?.id }
-                ?: currentState.selectedPaymentStatus
-        }
+        val newSelectedPaymentStatus = resolvePaymentStatusOnMethodChange(
+            isCash = isCash,
+            currentStatus = currentState.selectedPaymentStatus,
+            availableStatuses = updatedAvailablePaymentStatuses
+        )
         val showDueDate = when (newSelectedPaymentStatus?.id) {
             PaymentStatus.SCHEDULED.name, PaymentStatus.REFUNDABLE.name -> true
             else -> false
         }
+        val isCancelled = newSelectedPaymentStatus?.id == PaymentStatus.CANCELLED.name
 
         _uiState.update {
             it.copy(
@@ -142,7 +141,10 @@ class FormEventHandler(
                 selectedPaymentStatus = newSelectedPaymentStatus,
                 showDueDateSection = showDueDate,
                 dueDateMillis = if (showDueDate) it.dueDateMillis else null,
-                formattedDueDate = if (showDueDate) it.formattedDueDate else ""
+                formattedDueDate = if (showDueDate) it.formattedDueDate else "",
+                showRefundDateSection = isCancelled,
+                refundDateMillis = if (isCancelled) it.refundDateMillis else null,
+                formattedRefundDate = if (isCancelled) it.formattedRefundDate else ""
             )
         }
 
@@ -223,14 +225,38 @@ class FormEventHandler(
             .find { it.id == statusId } ?: return
         val isScheduled = statusId == PaymentStatus.SCHEDULED.name
         val isRefundable = statusId == PaymentStatus.REFUNDABLE.name
+        val isCancelled = statusId == PaymentStatus.CANCELLED.name
         val showDueDate = isScheduled || isRefundable
+        val defaultRefundDateMillis = if (isCancelled) {
+            _uiState.value.refundDateMillis ?: System.currentTimeMillis()
+        } else {
+            null
+        }
+        val formattedRefundDate = if (defaultRefundDateMillis != null) {
+            addExpenseUiMapper.formatRefundDateForDisplay(defaultRefundDateMillis)
+        } else {
+            ""
+        }
         _uiState.update {
             it.copy(
                 selectedPaymentStatus = selectedStatus,
                 showDueDateSection = showDueDate,
                 dueDateMillis = if (showDueDate) it.dueDateMillis else null,
                 formattedDueDate = if (showDueDate) it.formattedDueDate else "",
-                isDueDateValid = true
+                isDueDateValid = true,
+                showRefundDateSection = isCancelled,
+                refundDateMillis = defaultRefundDateMillis,
+                formattedRefundDate = formattedRefundDate
+            )
+        }
+    }
+
+    fun handleRefundDateSelected(dateMillis: Long) {
+        val formattedDate = addExpenseUiMapper.formatRefundDateForDisplay(dateMillis)
+        _uiState.update {
+            it.copy(
+                refundDateMillis = dateMillis,
+                formattedRefundDate = formattedDate
             )
         }
     }
@@ -286,6 +312,19 @@ class FormEventHandler(
                         AddExpenseUiAction.ShowError(UiText.StringResource(R.string.add_expense_receipt_attach_error))
                     )
                 }
+        }
+    }
+
+    private fun resolvePaymentStatusOnMethodChange(
+        isCash: Boolean,
+        currentStatus: PaymentStatusUiModel?,
+        availableStatuses: List<PaymentStatusUiModel>
+    ): PaymentStatusUiModel? {
+        val shouldReset = isCash && currentStatus?.id == PaymentStatus.SCHEDULED.name
+        return if (shouldReset) {
+            availableStatuses.find { it.id == PaymentStatus.FINISHED.name } ?: availableStatuses.firstOrNull()
+        } else {
+            availableStatuses.find { it.id == currentStatus?.id } ?: currentStatus
         }
     }
 }

@@ -307,6 +307,20 @@ class AddExpenseOptionsUiMapperTest {
         }
 
         @Test
+        fun `excludes CANCELLED when isEditMode is false`() {
+            val result = mapper.mapPaymentStatuses(PaymentStatus.entries, isEditMode = false)
+
+            assertTrue("CANCELLED" !in result.map { it.id })
+        }
+
+        @Test
+        fun `includes CANCELLED when isEditMode is true`() {
+            val result = mapper.mapPaymentStatuses(PaymentStatus.entries, isEditMode = true)
+
+            assertTrue("CANCELLED" in result.map { it.id })
+        }
+
+        @Test
         fun `maps display text from resource provider`() {
             every { resourceProvider.getString(PaymentStatus.SCHEDULED.toStringRes()) } returns "Scheduled"
 

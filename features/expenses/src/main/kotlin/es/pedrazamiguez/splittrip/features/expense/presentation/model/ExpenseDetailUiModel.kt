@@ -46,6 +46,7 @@ data class ExpenseDetailUiModel(
     val dateText: String = "",
     val secondaryDateText: String? = null,
     val secondaryDateIcon: ImageVector? = null,
+    val formattedRefundedDate: String? = null,
     val vendorText: String? = null,
     val notesText: String? = null,
     val badgeText: String? = null,

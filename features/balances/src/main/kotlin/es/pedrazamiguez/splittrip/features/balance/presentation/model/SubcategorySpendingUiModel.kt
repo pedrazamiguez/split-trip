@@ -6,6 +6,6 @@ data class SubcategorySpendingUiModel(
     val subcategoryName: String,
     val subcategoryIcon: ImageVector,
     val formattedAmount: String,
-    val percentageOfCategory: Int,
+    val formattedPercentage: String,
     val rawAmountCents: Long
 )

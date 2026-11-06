@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import es.pedrazamiguez.splittrip.core.common.extensions.utcToSystemLocalDateTime
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
@@ -25,6 +26,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetai
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.Collator
+import java.time.ZoneId
 import java.util.Locale
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -242,6 +244,19 @@ internal fun resolveSecondaryDateIcon(expense: Expense): ImageVector? {
         PaymentStatus.REFUNDABLE -> TablerIcons.Outline.ReceiptRefund
         else -> null
     }
+}
+
+internal fun resolveRefundedDateText(
+    expense: Expense,
+    formattingHelper: FormattingHelper,
+    resourceProvider: ResourceProvider,
+    zoneId: ZoneId
+): String? {
+    if (expense.paymentStatus != PaymentStatus.CANCELLED) return null
+    val refundedAt = expense.refundedAt ?: return null
+    val localRefunded = refundedAt.utcToSystemLocalDateTime(zoneId)
+    val formattedDate = formattingHelper.formatShortDate(localRefunded)
+    return resourceProvider.getString(R.string.expense_detail_refunded_on, formattedDate)
 }
 
 internal fun resolveCreatedByText(

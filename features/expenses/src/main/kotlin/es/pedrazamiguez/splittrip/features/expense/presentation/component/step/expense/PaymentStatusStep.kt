@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.DueDateSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.RefundDateSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.PaymentStatusSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -35,6 +36,14 @@ fun PaymentStatusStep(
                 isDueDateValid = uiState.isDueDateValid,
                 dueDateMillis = uiState.dueDateMillis,
                 onDateSelected = { onEvent(AddExpenseUiEvent.DueDateSelected(it)) }
+            )
+        }
+
+        AnimatedVisibility(visible = uiState.showRefundDateSection) {
+            RefundDateSection(
+                formattedRefundDate = uiState.formattedRefundDate,
+                refundDateMillis = uiState.refundDateMillis,
+                onDateSelected = { onEvent(AddExpenseUiEvent.RefundDateSelected(it)) }
             )
         }
 

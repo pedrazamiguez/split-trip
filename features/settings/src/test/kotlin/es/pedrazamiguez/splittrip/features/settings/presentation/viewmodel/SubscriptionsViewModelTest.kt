@@ -235,6 +235,48 @@ class SubscriptionsViewModelTest {
         }
 
         @Test
+        fun `loadSubscriptions emits ShowTopPill and stops loading when query returns failure`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    billingService.querySubscriptionProducts()
+                } returns Result.failure(IllegalStateException("Billing connection timed out"))
+
+                val actions = mutableListOf<SubscriptionsUiAction>()
+                val viewModel = createViewModel()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.isLoading)
+                val topPillAction = actions.filterIsInstance<SubscriptionsUiAction.ShowTopPill>().firstOrNull()
+                assertTrue(topPillAction != null)
+                val stringRes = assertInstanceOf(UiText.StringResource::class.java, topPillAction!!.message)
+                assertEquals(R.string.subscriptions_service_unavailable, stringRes.resId)
+
+                job.cancel()
+            }
+
+        @Test
+        fun `loadSubscriptions sets isLoading false and emits ShowTopPill when query throws`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    billingService.querySubscriptionProducts()
+                } throws RuntimeException("Billing IPC crash")
+
+                val actions = mutableListOf<SubscriptionsUiAction>()
+                val viewModel = createViewModel()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.isLoading)
+                val topPillAction = actions.filterIsInstance<SubscriptionsUiAction.ShowTopPill>().firstOrNull()
+                assertTrue(topPillAction != null)
+                val stringRes = assertInstanceOf(UiText.StringResource::class.java, topPillAction!!.message)
+                assertEquals(R.string.subscriptions_service_unavailable, stringRes.resId)
+
+                job.cancel()
+            }
+
+        @Test
         fun `user profile observation updates currentTier and re-maps plans`() = runTest(testDispatcher) {
             val proUser = testUser.copy(tier = SubscriptionTier.PRO)
             val viewModel = createViewModel()

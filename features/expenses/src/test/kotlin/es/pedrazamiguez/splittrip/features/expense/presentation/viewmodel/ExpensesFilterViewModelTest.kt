@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMa
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
@@ -92,6 +93,7 @@ class ExpensesFilterViewModelTest {
         sourceAmount = 2000L,
         groupAmount = 2000L,
         paymentMethod = PaymentMethod.CASH,
+        paymentStatus = PaymentStatus.SCHEDULED,
         payerId = "user-2",
         createdBy = "user-2",
         splits = listOf(
@@ -534,6 +536,51 @@ class ExpensesFilterViewModelTest {
     }
 
     @Nested
+    @DisplayName("Payment Method and Payment Status Filtering")
+    inner class PaymentMethodAndStatusFiltering {
+
+        @Test
+        fun `updating draft with paymentMethod filter recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(
+                    selectedPaymentMethods = setOf(PaymentMethod.CASH)
+                )
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(1, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updating draft with paymentStatus filter recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(
+                    selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED)
+                )
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(1, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
+    }
+
+    @Nested
     @DisplayName("SavedStateHandle Integration")
     inner class SavedStateHandleIntegration {
         @Test
@@ -541,7 +588,9 @@ class ExpensesFilterViewModelTest {
             val criteria = ExpenseFilterCriteria(
                 searchQuery = "groceries",
                 selectedCategories = setOf(ExpenseCategory.FOOD),
-                selectedMemberIds = setOf("user-1")
+                selectedMemberIds = setOf("user-1"),
+                selectedPaymentMethods = setOf(PaymentMethod.CASH),
+                selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED)
             )
             val handle = SavedStateHandle()
             handle["initialFilterCriteria"] = criteria

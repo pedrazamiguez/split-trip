@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.domain.model.SettlementStatus
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementRowUiModel
@@ -37,24 +37,14 @@ internal fun GroupSettlementItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GroupSettlementStatusChip(
-                    label = settlement.statusLabel,
+                PassportTag(
+                    text = settlement.statusLabel,
                     style = settlement.statusChipStyle
                 )
-                Surface(
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ) {
-                    Text(
-                        text = settlement.pocketTypeLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(
-                            horizontal = MaterialTheme.spacing.Small,
-                            vertical = MaterialTheme.spacing.ExtraSmall
-                        )
-                    )
-                }
+                PassportTag(
+                    text = settlement.pocketTypeLabel,
+                    style = PassportTagStyle.NEUTRAL
+                )
             }
 
             SettlementPartyRow(settlement = settlement)
