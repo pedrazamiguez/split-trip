@@ -21,6 +21,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -38,6 +40,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
@@ -53,10 +56,11 @@ class ExpensesViewModel(
     private val authenticationService: AuthenticationService,
     private val observeGroupUseCase: ObserveGroupUseCase,
     private val expenseFilterService: ExpenseFilterService,
-    private val telemetryTracker: TelemetryTracker
+    private val telemetryTracker: TelemetryTracker,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
-    private val _scrollState = MutableStateFlow(Pair(0, 0))
+    internal var savedScrollPosition = Pair(0, 0)
     private val _selectedGroupId = MutableStateFlow<String?>(null)
     private val _refreshTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val _filterCriteria = MutableStateFlow(ExpenseFilterCriteria())
@@ -234,7 +238,8 @@ class ExpensesViewModel(
                     }
             }
         }
-        .combineWithFilterAndScroll(_filterCriteria, _scrollState)
+        .combineWithFilter(_filterCriteria)
+        .flowOn(defaultDispatcher)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(
@@ -251,7 +256,7 @@ class ExpensesViewModel(
             }
 
             is ExpensesUiEvent.ScrollPositionChanged -> {
-                _scrollState.update { event.index to event.offset }
+                savedScrollPosition = event.index to event.offset
             }
 
             is ExpensesUiEvent.DeleteExpense -> handleDeleteExpense(event.expenseId)
@@ -385,16 +390,13 @@ class ExpensesViewModel(
         data class Error(override val isGroupArchived: Boolean) : UiStateUpdate
     }
 
-    private fun Flow<ExpensesUiState>.combineWithFilterAndScroll(
-        filterCriteriaFlow: StateFlow<ExpenseFilterCriteria>,
-        scrollFlow: StateFlow<Pair<Int, Int>>
+    private fun Flow<ExpensesUiState>.combineWithFilter(
+        filterCriteriaFlow: StateFlow<ExpenseFilterCriteria>
     ): Flow<ExpensesUiState> =
-        combine(this, filterCriteriaFlow, scrollFlow) { state, criteria, scroll ->
+        combine(this, filterCriteriaFlow) { state, criteria ->
             state.copy(
                 searchQuery = criteria.searchQuery,
-                filterCriteria = criteria,
-                scrollPosition = scroll.first,
-                scrollOffset = scroll.second
+                filterCriteria = criteria
             )
         }
 

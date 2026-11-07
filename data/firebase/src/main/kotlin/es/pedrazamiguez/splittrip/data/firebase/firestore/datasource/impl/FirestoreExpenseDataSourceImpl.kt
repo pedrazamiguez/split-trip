@@ -1,11 +1,8 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl
 
-import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.Transaction
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
@@ -20,7 +17,6 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
@@ -77,36 +73,18 @@ class FirestoreExpenseDataSourceImpl(
 
     override fun getExpensesByGroupIdFlow(groupId: String): Flow<List<Expense>> = callbackFlow {
         val expensesCollection = createExpensesCollection(groupId)
-
-        val listener = createExpenseListener(expensesCollection) { snapshot ->
-            launch {
-                val cachedExpenses = loadExpensesFromCache(
-                    expensesCollection,
-                    snapshot.documents
-                )
-
-                trySend(cachedExpenses)
-
-                val cachedExpenseIds = cachedExpenses
-                    .map { it.id }
-                    .toSet()
-                val missingExpenseIds = snapshot.documents
-                    .map { it.id }
-                    .filter { it !in cachedExpenseIds }
-
-                if (missingExpenseIds.isNotEmpty()) {
-                    val serverExpenses = loadExpensesFromServer(
-                        expensesCollection,
-                        missingExpenseIds
-                    )
-                    val allExpenses = (cachedExpenses + serverExpenses).sortedByDescending {
-                        it.createdAt ?: it.lastUpdatedAt
-                    }
-                    trySend(allExpenses)
-                }
+        val listener = expensesCollection.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Timber.e(error, "Error listening to expenses")
+                return@addSnapshotListener
+            }
+            if (snapshot != null) {
+                val expenses = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(ExpenseDocument::class.java)?.toDomain()
+                }.sortedByDescending { it.createdAt ?: it.lastUpdatedAt }
+                trySend(expenses)
             }
         }
-
         awaitClose { listener.remove() }
     }
 
@@ -258,74 +236,7 @@ class FirestoreExpenseDataSourceImpl(
         .document(groupId)
         .collection(ExpenseDocument.COLLECTION_PATH)
 
-    private fun createExpenseListener(expensesCollection: CollectionReference, onUpdate: (QuerySnapshot) -> Unit) =
-        expensesCollection.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                Timber.e(
-                    error,
-                    "Error listening to expenses"
-                )
-                return@addSnapshotListener
-            }
-
-            snapshot?.let(onUpdate)
-        }
-
-    private suspend fun loadExpensesFromCache(
-        expensesCollection: CollectionReference,
-        documents: List<DocumentSnapshot>
-    ): List<Expense> = documents
-        .mapNotNull { doc ->
-            loadSingleExpenseFromCache(
-                expensesCollection,
-                doc.id
-            )
-        }
-        .sortedByDescending { it.createdAt ?: it.lastUpdatedAt }
-
-    private suspend fun loadSingleExpenseFromCache(
-        expensesCollection: CollectionReference,
-        expenseId: String
-    ): Expense? = try {
-        @Suppress("kotlin:S6518")
-        val cachedDoc = expensesCollection
-            .document(expenseId)
-            .get(Source.CACHE)
-            .await()
-
-        if (cachedDoc.exists()) {
-            cachedDoc
-                .toObject(ExpenseDocument::class.java)
-                ?.toDomain()
-        } else {
-            null
-        }
-    } catch (_: Exception) {
-        Timber.d("Cache miss for expense $expenseId")
-        null
-    }
-
-    private suspend fun loadExpensesFromServer(
-        expensesCollection: CollectionReference,
-        expenseIds: List<String>
-    ): List<Expense> = try {
-        expenseIds
-            .chunked(FIRESTORE_WHERE_IN_LIMIT)
-            .flatMap { batch ->
-                expensesCollection
-                    .whereIn(FieldPath.documentId(), batch)
-                    .get(Source.SERVER)
-                    .await()
-                    .documents
-                    .mapNotNull { it.toObject(ExpenseDocument::class.java)?.toDomain() }
-            }
-    } catch (e: Exception) {
-        Timber.e(e, "Failed to load expenses from server")
-        emptyList()
-    }
-
     private companion object {
-        const val FIRESTORE_WHERE_IN_LIMIT = 30
         const val FIELD_REMAINING_AMOUNT = "remainingAmount"
     }
 }

@@ -6,6 +6,8 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
+import es.pedrazamiguez.splittrip.domain.model.CashTranche
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
@@ -13,12 +15,12 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
-import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsByIdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdLocalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
@@ -31,6 +33,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigDecimal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
@@ -60,14 +63,14 @@ class ExpenseDetailViewModelTest {
 
     private lateinit var getExpenseByIdFlowUseCase: GetExpenseByIdFlowUseCase
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
-    private lateinit var getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase
+    private lateinit var getCashWithdrawalsByIdsUseCase: GetCashWithdrawalsByIdsUseCase
     private lateinit var getGroupSubunitsUseCase: GetGroupSubunitsUseCase
     private lateinit var deleteExpenseUseCase: DeleteExpenseUseCase
     private lateinit var downloadReceiptUseCase: DownloadReceiptUseCase
     private lateinit var updateExpenseUseCase: UpdateExpenseUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var expenseDetailUiMapper: ExpenseDetailUiMapper
-    private lateinit var observeGroupUseCase: ObserveGroupUseCase
+    private lateinit var getGroupByIdLocalUseCase: GetGroupByIdLocalUseCase
     private lateinit var exchangeRateCalculationService: ExchangeRateCalculationService
     private lateinit var remainderDistributionService: RemainderDistributionService
     private lateinit var viewModel: ExpenseDetailViewModel
@@ -127,20 +130,20 @@ class ExpenseDetailViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getExpenseByIdFlowUseCase = mockk()
         getMemberProfilesUseCase = mockk()
-        getCashWithdrawalsFlowUseCase = mockk()
+        getCashWithdrawalsByIdsUseCase = mockk()
         getGroupSubunitsUseCase = mockk()
         deleteExpenseUseCase = mockk()
         downloadReceiptUseCase = mockk(relaxed = true)
         updateExpenseUseCase = mockk()
         authenticationService = mockk()
         expenseDetailUiMapper = mockk()
-        observeGroupUseCase = mockk()
+        getGroupByIdLocalUseCase = mockk()
         exchangeRateCalculationService = mockk()
         remainderDistributionService = mockk()
 
-        every { getCashWithdrawalsFlowUseCase(any()) } returns flowOf(emptyList())
+        coEvery { getCashWithdrawalsByIdsUseCase(any()) } returns emptyList()
         coEvery { getGroupSubunitsUseCase(any()) } returns emptyList()
-        every { observeGroupUseCase(any()) } returns flowOf(testGroup)
+        coEvery { getGroupByIdLocalUseCase(any()) } returns testGroup
 
         every { authenticationService.currentUserId() } returns testUserId
         coEvery { getMemberProfilesUseCase(any()) } returns mapOf(
@@ -210,7 +213,7 @@ class ExpenseDetailViewModelTest {
             advanceUntilIdle()
 
             // Then — mapper was called once with the loaded data
-            io.mockk.verify(exactly = 1) {
+            verify(exactly = 1) {
                 expenseDetailUiMapper.map(testExpense, any(), testUserId, any(), any(), listOf(testUserId))
             }
 
@@ -276,6 +279,48 @@ class ExpenseDetailViewModelTest {
         }
 
         @Test
+        fun `loads withdrawals by IDs when expense has cash tranches`() = runTest(testDispatcher) {
+            // Given
+            val cashExpense = testExpense.copy(
+                cashTranches = listOf(CashTranche(withdrawalId = "withdrawal-1", amountConsumed = 1000L))
+            )
+            val withdrawal = CashWithdrawal(
+                id = "withdrawal-1",
+                groupId = testGroupId,
+                withdrawnBy = testUserId,
+                amountWithdrawn = 1000L
+            )
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(cashExpense)
+            coEvery { getCashWithdrawalsByIdsUseCase(listOf("withdrawal-1")) } returns listOf(withdrawal)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            advanceUntilIdle()
+
+            // Then
+            coVerify(exactly = 1) { getCashWithdrawalsByIdsUseCase(listOf("withdrawal-1")) }
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `sets isGroupArchived true when local group is archived`() = runTest(testDispatcher) {
+            // Given
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
+            coEvery { getGroupByIdLocalUseCase(testGroupId) } returns testGroup.copy(status = GroupStatus.ARCHIVED)
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            advanceUntilIdle()
+
+            // Then
+            val state = viewModel.uiState.value
+            assertTrue(state.isGroupArchived)
+            collectJob.cancel()
+        }
+
+        @Test
         fun `setExpenseId with same id does not reload`() = runTest(testDispatcher) {
             // Given
             every { getExpenseByIdFlowUseCase(testExpenseId) } returns flowOf(testExpense)
@@ -288,7 +333,7 @@ class ExpenseDetailViewModelTest {
             advanceUntilIdle()
 
             // Then — use case called only once
-            io.mockk.verify(exactly = 1) { getExpenseByIdFlowUseCase(testExpenseId) }
+            verify(exactly = 1) { getExpenseByIdFlowUseCase(testExpenseId) }
 
             collectJob.cancel()
         }
@@ -308,8 +353,8 @@ class ExpenseDetailViewModelTest {
             advanceUntilIdle()
 
             // Then — each id was loaded once
-            io.mockk.verify(exactly = 1) { getExpenseByIdFlowUseCase(testExpenseId) }
-            io.mockk.verify(exactly = 1) { getExpenseByIdFlowUseCase(otherId) }
+            verify(exactly = 1) { getExpenseByIdFlowUseCase(testExpenseId) }
+            verify(exactly = 1) { getExpenseByIdFlowUseCase(otherId) }
 
             collectJob.cancel()
         }
@@ -897,14 +942,14 @@ class ExpenseDetailViewModelTest {
     private fun createViewModel() = ExpenseDetailViewModel(
         getExpenseByIdFlowUseCase = getExpenseByIdFlowUseCase,
         getMemberProfilesUseCase = getMemberProfilesUseCase,
-        getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
+        getCashWithdrawalsByIdsUseCase = getCashWithdrawalsByIdsUseCase,
         getGroupSubunitsUseCase = getGroupSubunitsUseCase,
         deleteExpenseUseCase = deleteExpenseUseCase,
         downloadReceiptUseCase = downloadReceiptUseCase,
         updateExpenseUseCase = updateExpenseUseCase,
         authenticationService = authenticationService,
         expenseDetailUiMapper = expenseDetailUiMapper,
-        observeGroupUseCase = observeGroupUseCase,
+        getGroupByIdLocalUseCase = getGroupByIdLocalUseCase,
         exchangeRateCalculationService = exchangeRateCalculationService,
         remainderDistributionService = remainderDistributionService
     )

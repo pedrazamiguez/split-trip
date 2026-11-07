@@ -30,6 +30,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUse
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DisputeSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetBalancesDashboardFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsByIdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpenseIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
@@ -44,6 +45,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteCashWithdraw
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteContributionUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DisputeSettlementUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetBalancesDashboardFlowUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetCashWithdrawalsByIdsUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetCashWithdrawalsFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetContributionByExpenseIdUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupContributionsFlowUseCaseImpl
@@ -77,6 +79,12 @@ val balancesDomainModule = module {
 
     factory<GetCashWithdrawalsFlowUseCase> {
         GetCashWithdrawalsFlowUseCaseImpl(
+            cashWithdrawalRepository = get<CashWithdrawalRepository>()
+        )
+    }
+
+    factory<GetCashWithdrawalsByIdsUseCase> {
+        GetCashWithdrawalsByIdsUseCaseImpl(
             cashWithdrawalRepository = get<CashWithdrawalRepository>()
         )
     }

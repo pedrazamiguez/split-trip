@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
+import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashTransferDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashTransfer
@@ -18,7 +19,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 
 class CashTransferRepositoryImpl(
     private val cashTransferDao: CashTransferDao,
@@ -59,30 +59,28 @@ class CashTransferRepositoryImpl(
     override fun observeGroupCashTransfers(groupId: String): Flow<List<CashTransfer>> {
         return cashTransferDao.observeByGroupId(groupId)
             .map { entities -> entities.map { it.toDomain() } }
-            .onStart {
-                subscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
-                    subscribeAndReconcile(
-                        cloudFlow = cloudCashTransferDataSource.getGroupCashTransfersFlow(groupId),
-                        params = SyncReconciliationParams(
-                            reconcileLocal = { remoteTransfers ->
-                                cashTransferDao.replaceCashTransfersForGroup(
-                                    groupId,
-                                    remoteTransfers.map { it.toEntity(SyncStatus.SYNCED) }
-                                )
-                            },
-                            getPendingIds = { cashTransferDao.getPendingSyncCashTransferIds(groupId) },
-                            verifyOnServer = { id ->
-                                cloudCashTransferDataSource.verifyCashTransferOnServer(groupId, id)
-                            },
-                            markSynced = { id ->
-                                cashTransferDao.updateSyncStatus(id, SyncStatus.SYNCED.name)
-                            },
-                            entityLabel = "cash_transfer",
-                            logContext = "for group $groupId",
-                            performanceMonitor = performanceMonitor
-                        )
+            .trackSubscription(subscriptionTracker, groupId, syncScope) {
+                subscribeAndReconcile(
+                    cloudFlow = cloudCashTransferDataSource.getGroupCashTransfersFlow(groupId),
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { remoteTransfers ->
+                            cashTransferDao.replaceCashTransfersForGroup(
+                                groupId,
+                                remoteTransfers.map { it.toEntity(SyncStatus.SYNCED) }
+                            )
+                        },
+                        getPendingIds = { cashTransferDao.getPendingSyncCashTransferIds(groupId) },
+                        verifyOnServer = { id ->
+                            cloudCashTransferDataSource.verifyCashTransferOnServer(groupId, id)
+                        },
+                        markSynced = { id ->
+                            cashTransferDao.updateSyncStatus(id, SyncStatus.SYNCED.name)
+                        },
+                        entityLabel = "cash_transfer",
+                        logContext = "for group $groupId",
+                        performanceMonitor = performanceMonitor
                     )
-                }
+                )
             }
     }
 }

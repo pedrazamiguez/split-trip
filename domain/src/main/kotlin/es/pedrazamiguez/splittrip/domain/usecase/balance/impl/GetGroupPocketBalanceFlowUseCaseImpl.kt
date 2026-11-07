@@ -2,6 +2,9 @@ package es.pedrazamiguez.splittrip.domain.usecase.balance.impl
 
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.Contribution
+import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
@@ -21,14 +24,21 @@ class GetGroupPocketBalanceFlowUseCaseImpl(
     private val addOnCalculationService: AddOnCalculationService
 ) : GetGroupPocketBalanceFlowUseCase {
 
-    // Reactive combine operator — all branches are sequential data aggregations,
-    // not conditional logic
-    @Suppress("LongMethod")
     override operator fun invoke(groupId: String, currency: String): Flow<GroupPocketBalance> = combine(
         contributionRepository.getGroupContributionsFlow(groupId),
         expenseRepository.getGroupExpensesFlow(groupId),
         cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId)
     ) { contributions, expenses, withdrawals ->
+        calculate(contributions, expenses, withdrawals, currency)
+    }
+
+    @Suppress("LongMethod")
+    override fun calculate(
+        contributions: List<Contribution>,
+        expenses: List<Expense>,
+        withdrawals: List<CashWithdrawal>,
+        currency: String
+    ): GroupPocketBalance {
         val today = LocalDate.now()
         val totalContributions = contributions.sumOf { it.amount }
 
@@ -148,7 +158,7 @@ class GetGroupPocketBalanceFlowUseCaseImpl(
         val withdrawalExtras = withdrawalAmounts.sumOf { it.addOnDelta }
         val totalExtras = expenseExtras + withdrawalExtras
 
-        GroupPocketBalance(
+        return GroupPocketBalance(
             totalContributions = totalContributions,
             totalExpenses = totalExpenses,
             virtualBalance = totalContributions - virtualExpenses - totalWithdrawals,

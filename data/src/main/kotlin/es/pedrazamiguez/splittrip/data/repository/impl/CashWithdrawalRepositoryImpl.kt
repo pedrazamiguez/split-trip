@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.sync.syncDeletionToCloud
+import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
@@ -23,7 +24,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -93,34 +93,32 @@ class CashWithdrawalRepositoryImpl(
      */
     override fun getGroupWithdrawalsFlow(groupId: String): Flow<List<CashWithdrawal>> =
         localQueryDataSource.getWithdrawalsByGroupIdFlow(groupId)
-            .onStart {
-                subscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
-                    subscribeAndReconcile(
-                        cloudFlow = cloudCashWithdrawalDataSource
-                            .getWithdrawalsByGroupIdFlow(groupId),
-                        params = SyncReconciliationParams(
-                            reconcileLocal = { remoteWithdrawals ->
-                                localWriteDataSource.replaceWithdrawalsForGroup(
-                                    groupId,
-                                    remoteWithdrawals
-                                )
-                            },
-                            getPendingIds = {
-                                localQueryDataSource.getPendingSyncWithdrawalIds(groupId)
-                            },
-                            verifyOnServer = { id ->
-                                cloudCashWithdrawalDataSource.verifyWithdrawalOnServer(groupId, id)
-                            },
-                            markSynced = { id ->
-                                localWriteDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
-                            },
-                            entityLabel = ENTITY_LABEL,
-                            logContext = "for group $groupId",
-                            performanceMonitor = performanceMonitor,
-                            verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
-                        )
+            .trackSubscription(subscriptionTracker, groupId, syncScope) {
+                subscribeAndReconcile(
+                    cloudFlow = cloudCashWithdrawalDataSource
+                        .getWithdrawalsByGroupIdFlow(groupId),
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { remoteWithdrawals ->
+                            localWriteDataSource.replaceWithdrawalsForGroup(
+                                groupId,
+                                remoteWithdrawals
+                            )
+                        },
+                        getPendingIds = {
+                            localQueryDataSource.getPendingSyncWithdrawalIds(groupId)
+                        },
+                        verifyOnServer = { id ->
+                            cloudCashWithdrawalDataSource.verifyWithdrawalOnServer(groupId, id)
+                        },
+                        markSynced = { id ->
+                            localWriteDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
+                        },
+                        entityLabel = ENTITY_LABEL,
+                        logContext = "for group $groupId",
+                        performanceMonitor = performanceMonitor,
+                        verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
                     )
-                }
+                )
             }
 
     override suspend fun getAvailableWithdrawals(
@@ -275,6 +273,10 @@ class CashWithdrawalRepositoryImpl(
 
     override suspend fun getWithdrawalById(withdrawalId: String): CashWithdrawal? {
         return localQueryDataSource.getWithdrawalById(withdrawalId)
+    }
+
+    override suspend fun getWithdrawalsByIds(withdrawalIds: List<String>): List<CashWithdrawal> {
+        return localQueryDataSource.getWithdrawalsByIds(withdrawalIds)
     }
 
     companion object {

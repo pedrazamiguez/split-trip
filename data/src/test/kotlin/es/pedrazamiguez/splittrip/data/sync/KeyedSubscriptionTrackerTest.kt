@@ -2,10 +2,14 @@ package es.pedrazamiguez.splittrip.data.sync
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -23,174 +27,213 @@ class KeyedSubscriptionTrackerTest {
 
     @BeforeEach
     fun setUp() {
-        tracker = KeyedSubscriptionTracker()
+        tracker = KeyedSubscriptionTracker(defaultGracePeriodMs = 5_000L)
     }
 
     @Nested
-    @DisplayName("cancelAndRelaunch")
-    inner class CancelAndRelaunch {
+    @DisplayName("Reference counting & acquisition")
+    inner class AcquireAndRelease {
 
         @Test
-        fun `launches block in the given scope`() = runTest(testDispatcher) {
+        fun `single collector launches job and sets refCount to 1`() = runTest(testDispatcher) {
             val scope = CoroutineScope(testDispatcher)
-            var executed = false
+            var launchCount = 0
 
-            tracker.cancelAndRelaunch("key-1", scope) {
-                executed = true
+            tracker.acquire("key-1", scope) {
+                launchCount++
+                awaitCancellation()
             }
-            advanceUntilIdle()
+            advanceTimeBy(100)
 
-            assertTrue(executed)
+            assertTrue(tracker.isSubscribed("key-1"))
+            assertEquals(1, tracker.getSubscriberCount("key-1"))
+            assertEquals(1, launchCount)
+            tracker.cancelAll()
         }
 
         @Test
-        fun `cancels previous job for the same key`() = runTest(testDispatcher) {
+        fun `multiple concurrent collectors launch exactly one cloud job`() = runTest(testDispatcher) {
             val scope = CoroutineScope(testDispatcher)
-            var firstJobCompleted = false
-            var secondJobCompleted = false
+            var launchCount = 0
 
-            // Launch a long-running first job
-            tracker.cancelAndRelaunch("key-1", scope) {
-                try {
-                    delay(10_000)
-                    firstJobCompleted = true
-                } catch (_: Exception) {
-                    // Cancelled
-                }
+            tracker.acquire("key-1", scope) {
+                launchCount++
+                awaitCancellation()
             }
-
-            // Immediately relaunch with the same key
-            tracker.cancelAndRelaunch("key-1", scope) {
-                secondJobCompleted = true
+            tracker.acquire("key-1", scope) {
+                launchCount++
+                awaitCancellation()
             }
-            advanceUntilIdle()
+            tracker.acquire("key-1", scope) {
+                launchCount++
+                awaitCancellation()
+            }
+            advanceTimeBy(100)
 
-            assertFalse(firstJobCompleted, "First job should have been cancelled")
-            assertTrue(secondJobCompleted, "Second job should have completed")
+            assertEquals(1, launchCount, "Should launch the job exactly once")
+            assertEquals(3, tracker.getSubscriberCount("key-1"))
+            assertTrue(tracker.isSubscribed("key-1"))
+            tracker.cancelAll()
         }
 
         @Test
-        fun `independent keys do not cancel each other`() = runTest(testDispatcher) {
+        fun `collector completion retains subscription during grace period`() = runTest(testDispatcher) {
             val scope = CoroutineScope(testDispatcher)
-            var job1Completed = false
-            var job2Completed = false
+            var jobCancelled = false
 
-            tracker.cancelAndRelaunch("key-A", scope) {
-                job1Completed = true
+            tracker.acquire("key-1", scope) {
+                try {
+                    awaitCancellation()
+                } finally {
+                    jobCancelled = true
+                }
             }
+            advanceTimeBy(100)
 
-            tracker.cancelAndRelaunch("key-B", scope) {
-                job2Completed = true
-            }
-            advanceUntilIdle()
+            // Release the only subscriber
+            tracker.release("key-1", scope, gracePeriodMs = 5_000L)
 
-            assertTrue(job1Completed, "Key-A job should have completed")
-            assertTrue(job2Completed, "Key-B job should have completed")
+            // Refcount is 0, but during grace period (before 5,000ms), job is still active
+            assertEquals(0, tracker.getSubscriberCount("key-1"))
+            assertTrue(tracker.isSubscribed("key-1"))
+            assertFalse(jobCancelled)
+
+            advanceTimeBy(3_000L)
+            assertTrue(tracker.isSubscribed("key-1"))
+            assertFalse(jobCancelled)
+            tracker.cancelAll()
         }
 
         @Test
-        fun `relaunching same key replaces job without affecting other keys`() =
-            runTest(testDispatcher) {
-                val scope = CoroutineScope(testDispatcher)
-                var keyAFirstCompleted = false
-                var keyASecondCompleted = false
-                var keyBCompleted = false
-
-                tracker.cancelAndRelaunch("key-A", scope) {
-                    try {
-                        delay(10_000)
-                        keyAFirstCompleted = true
-                    } catch (_: Exception) {
-                        // Cancelled
-                    }
-                }
-
-                tracker.cancelAndRelaunch("key-B", scope) {
-                    keyBCompleted = true
-                }
-
-                // Replace key-A's job
-                tracker.cancelAndRelaunch("key-A", scope) {
-                    keyASecondCompleted = true
-                }
-                advanceUntilIdle()
-
-                assertFalse(keyAFirstCompleted, "Key-A first job should have been cancelled")
-                assertTrue(keyASecondCompleted, "Key-A second job should have completed")
-                assertTrue(keyBCompleted, "Key-B job should not have been affected")
-            }
-
-        @Test
-        fun `can relaunch after previous job completes naturally`() =
-            runTest(testDispatcher) {
-                val scope = CoroutineScope(testDispatcher)
-                var firstCompleted = false
-                var secondCompleted = false
-
-                tracker.cancelAndRelaunch("key-1", scope) {
-                    firstCompleted = true
-                }
-                advanceUntilIdle()
-
-                tracker.cancelAndRelaunch("key-1", scope) {
-                    secondCompleted = true
-                }
-                advanceUntilIdle()
-
-                assertTrue(firstCompleted, "First job should have completed")
-                assertTrue(secondCompleted, "Second job should have completed")
-            }
-
-        @Test
-        fun `cancelled job does not prevent new job from running`() =
-            runTest(testDispatcher) {
-                val scope = CoroutineScope(testDispatcher)
-                var completed = false
-
-                // Launch and cancel via relaunch
-                tracker.cancelAndRelaunch("key-1", scope) {
-                    delay(Long.MAX_VALUE)
-                }
-
-                // Cancel by relaunching
-                tracker.cancelAndRelaunch("key-1", scope) {
-                    completed = true
-                }
-                advanceUntilIdle()
-
-                assertTrue(completed, "New job should run after cancelling the previous one")
-            }
-    }
-
-    @Nested
-    @DisplayName("cancelAll")
-    inner class CancelAll {
-
-        @Test
-        fun `cancels all active jobs`() = runTest(testDispatcher) {
+        fun `re-subscribing within grace period cancels pending termination`() = runTest(testDispatcher) {
             val scope = CoroutineScope(testDispatcher)
-            var job1Completed = false
-            var job2Completed = false
+            var launchCount = 0
 
-            tracker.cancelAndRelaunch("key-1", scope) {
-                try {
-                    delay(10_000)
-                    job1Completed = true
-                } catch (_: Exception) {}
+            tracker.acquire("key-1", scope) {
+                launchCount++
+                awaitCancellation()
             }
+            advanceTimeBy(100)
 
-            tracker.cancelAndRelaunch("key-2", scope) {
-                try {
-                    delay(10_000)
-                    job2Completed = true
-                } catch (_: Exception) {}
+            // Release subscriber
+            tracker.release("key-1", scope, gracePeriodMs = 5_000L)
+            advanceTimeBy(3_000L)
+
+            // Re-acquire before grace period ends
+            tracker.acquire("key-1", scope) {
+                launchCount++
             }
+            advanceTimeBy(3_000L)
+
+            // Job should still be the original one without re-launching
+            assertEquals(1, launchCount)
+            assertEquals(1, tracker.getSubscriberCount("key-1"))
+            assertTrue(tracker.isSubscribed("key-1"))
+            tracker.cancelAll()
+        }
+
+        @Test
+        fun `expiry of grace period terminates subscription and evicts key`() = runTest(testDispatcher) {
+            val scope = CoroutineScope(testDispatcher)
+            var jobCancelled = false
+
+            tracker.acquire("key-1", scope) {
+                try {
+                    awaitCancellation()
+                } finally {
+                    jobCancelled = true
+                }
+            }
+            advanceTimeBy(100)
+
+            tracker.release("key-1", scope, gracePeriodMs = 5_000L)
+            advanceTimeBy(5_001L)
+
+            assertFalse(tracker.isSubscribed("key-1"))
+            assertEquals(0, tracker.getSubscriberCount("key-1"))
+            assertTrue(jobCancelled)
+        }
+
+        @Test
+        fun `release with 0 grace period terminates immediately`() = runTest(testDispatcher) {
+            val scope = CoroutineScope(testDispatcher)
+            var jobCancelled = false
+
+            tracker.acquire("key-1", scope) {
+                try {
+                    awaitCancellation()
+                } finally {
+                    jobCancelled = true
+                }
+            }
+            advanceTimeBy(100)
+
+            tracker.release("key-1", scope, gracePeriodMs = 0L)
+            advanceUntilIdle()
+
+            assertFalse(tracker.isSubscribed("key-1"))
+            assertTrue(jobCancelled)
+        }
+
+        @Test
+        fun `cancelAll cancels all active jobs and grace period timers`() = runTest(testDispatcher) {
+            val scope = CoroutineScope(testDispatcher)
+            var job1Cancelled = false
+            var job2Cancelled = false
+
+            tracker.acquire("key-1", scope) {
+                try {
+                    awaitCancellation()
+                } finally {
+                    job1Cancelled = true
+                }
+            }
+            tracker.acquire("key-2", scope) {
+                try {
+                    awaitCancellation()
+                } finally {
+                    job2Cancelled = true
+                }
+            }
+            advanceTimeBy(100)
 
             tracker.cancelAll()
             advanceUntilIdle()
 
-            assertFalse(job1Completed, "Job 1 should be cancelled")
-            assertFalse(job2Completed, "Job 2 should be cancelled")
+            assertFalse(tracker.isSubscribed("key-1"))
+            assertFalse(tracker.isSubscribed("key-2"))
+            assertTrue(job1Cancelled)
+            assertTrue(job2Cancelled)
+        }
+    }
+
+    @Nested
+    @DisplayName("trackSubscription extension")
+    inner class TrackSubscriptionExtension {
+
+        @Test
+        fun `trackSubscription acquires on collection and releases on completion`() = runTest(testDispatcher) {
+            val scope = CoroutineScope(testDispatcher)
+            var blockExecutionCount = 0
+
+            val flow = flowOf("item1", "item2")
+                .trackSubscription(tracker, "group-1", scope, gracePeriodMs = 1_000L) {
+                    blockExecutionCount++
+                    awaitCancellation()
+                }
+
+            val job1 = launch { flow.collect {} }
+            val job2 = launch { flow.collect {} }
+            advanceTimeBy(100)
+
+            assertEquals(1, blockExecutionCount)
+            // Both collectors finished flowOf immediately, so refCount is now 0 and grace period is running
+            assertTrue(tracker.isSubscribed("group-1"))
+
+            advanceTimeBy(1_001L)
+            assertFalse(tracker.isSubscribed("group-1"))
+            job1.cancel()
+            job2.cancel()
         }
     }
 }

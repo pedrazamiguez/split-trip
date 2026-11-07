@@ -34,6 +34,9 @@ interface CashWithdrawalDao {
     @Query("SELECT * FROM cash_withdrawals WHERE id = :withdrawalId")
     suspend fun getWithdrawalById(withdrawalId: String): CashWithdrawalEntity?
 
+    @Query("SELECT * FROM cash_withdrawals WHERE id IN (:withdrawalIds)")
+    suspend fun getWithdrawalsByIds(withdrawalIds: List<String>): List<CashWithdrawalEntity>
+
     /**
      * Fetches available (non-exhausted) withdrawals for FIFO consumption.
      * Ordered by createdAt ascending (oldest first) for FIFO ordering.
