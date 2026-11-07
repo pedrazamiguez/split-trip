@@ -21,6 +21,10 @@
     <string name="expenses_filter_section_category">Categoría</string>
     <string name="expenses_filter_section_payment_method">Método de pago</string>
     <string name="expenses_filter_section_payment_status">Estado del pago</string>
+    <string name="expenses_filter_section_attributes">Atributos</string>
+    <string name="expense_attribute_has_receipt">Con tique</string>
+    <string name="expense_attribute_has_note">Con nota</string>
+    <string name="expense_attribute_has_extras">Con extras</string>
     <string name="expenses_filter_subcategories_title">Subcategorías</string>
     <string name="expenses_filter_section_members">Miembros</string>
     <string name="expenses_filter_section_date_range">Rango de fechas</string>

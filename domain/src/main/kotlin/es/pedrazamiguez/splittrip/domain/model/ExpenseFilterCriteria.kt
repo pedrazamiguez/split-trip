@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.model
 
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
@@ -15,7 +16,8 @@ data class ExpenseFilterCriteria(
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
     val selectedPaymentMethods: Set<PaymentMethod> = emptySet(),
-    val selectedPaymentStatuses: Set<PaymentStatus> = emptySet()
+    val selectedPaymentStatuses: Set<PaymentStatus> = emptySet(),
+    val selectedAttributes: Set<ExpenseAttribute> = emptySet()
 ) : Serializable {
     val isCategoryFiltered: Boolean
         get() = selectedCategories.isNotEmpty() || selectedSubcategories.isNotEmpty()
@@ -35,6 +37,9 @@ data class ExpenseFilterCriteria(
     val isPaymentStatusFiltered: Boolean
         get() = selectedPaymentStatuses.isNotEmpty()
 
+    val isAttributeFiltered: Boolean
+        get() = selectedAttributes.isNotEmpty()
+
     /** Number of active filter dimensions excluding free-text search query. */
     val activeFilterCount: Int
         get() {
@@ -44,6 +49,7 @@ data class ExpenseFilterCriteria(
             if (isDateFiltered) count++
             if (isPaymentMethodFiltered) count++
             if (isPaymentStatusFiltered) count++
+            if (isAttributeFiltered) count++
             return count
         }
 
@@ -57,7 +63,8 @@ data class ExpenseFilterCriteria(
         startDate = null,
         endDate = null,
         selectedPaymentMethods = emptySet(),
-        selectedPaymentStatuses = emptySet()
+        selectedPaymentStatuses = emptySet(),
+        selectedAttributes = emptySet()
     )
 
     fun clearAll(): ExpenseFilterCriteria = ExpenseFilterCriteria()
