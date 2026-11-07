@@ -16,6 +16,8 @@
 
     <!-- Withdrawal Screen -->
     <string name="withdrawal_exchange_rate_title">Tipo de cambio</string>
+    <string name="withdrawal_error_invalid_exchange_rate">El tipo de cambio debe ser mayor que cero</string>
+    <string name="withdrawal_error_invalid_deducted_amount">El importe deducido debe ser mayor que cero</string>
     <string name="withdrawal_rate_label_format">1 %1$s = ? %2$s</string>
     <string name="withdrawal_deducted_label_format">en %1$s</string>
     <string name="withdrawal_error_load_config">No se pudo cargar la configuración del grupo</string>

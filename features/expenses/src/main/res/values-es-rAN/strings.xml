@@ -22,6 +22,13 @@
     <string name="expenses_filter_section_category">Categoría</string>
     <string name="expenses_filter_section_payment_method">Método de pago</string>
     <string name="expenses_filter_section_payment_status">Êttao der pago</string>
+    <string name="expenses_filter_section_attributes">Atributô</string>
+    <string name="expenses_filter_section_amount">Importe</string>
+    <string name="expenses_filter_amount_min">Mín</string>
+    <string name="expenses_filter_amount_max">Mâh</string>
+    <string name="expense_attribute_has_receipt">Con tique</string>
+    <string name="expense_attribute_has_note">Con nota</string>
+    <string name="expense_attribute_has_extras">Con êttrâ</string>
     <string name="expenses_filter_subcategories_title">Çûccategoríâ</string>
     <string name="expenses_filter_section_members">Miembrô</string>
     <string name="expenses_filter_section_date_range">Rango de fexâ</string>
@@ -56,6 +63,8 @@
     <string name="expense_field_amount">Importe</string>
     <string name="expense_field_amount_required">¿Cuánto fue?</string>
     <string name="expense_error_title_empty">¡Ey! ¿Pa qué fue êtte gâtto?</string>
+    <string name="expense_error_invalid_exchange_rate">Er tipo de cambio debe çêh mayôh que çero</string>
+    <string name="expense_error_invalid_group_amount">El importe combertío debe çêh mayôh que çero</string>
     <string name="expense_error_insufficient_cash">No tienê çufiçiente efêttibo\nNeçeçitâ %1$s pero çolo tienê %2$s dîpponible</string>
     <string name="expense_error_cash_conflict">Otro miembro acaba de uçâh êtte efêttibo. El importe dîpponible a cambiao — rebiça e inténtalo de nuebo.</string>
     <string name="add_expense_cash_conflict_resolution_title">El efêttibo a cambiao</string>

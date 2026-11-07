@@ -21,6 +21,13 @@
     <string name="expenses_filter_section_category">Categoría</string>
     <string name="expenses_filter_section_payment_method">Método de pago</string>
     <string name="expenses_filter_section_payment_status">Estado del pago</string>
+    <string name="expenses_filter_section_attributes">Atributos</string>
+    <string name="expenses_filter_section_amount">Importe</string>
+    <string name="expenses_filter_amount_min">Mín</string>
+    <string name="expenses_filter_amount_max">Máx</string>
+    <string name="expense_attribute_has_receipt">Con tique</string>
+    <string name="expense_attribute_has_note">Con nota</string>
+    <string name="expense_attribute_has_extras">Con extras</string>
     <string name="expenses_filter_subcategories_title">Subcategorías</string>
     <string name="expenses_filter_section_members">Miembros</string>
     <string name="expenses_filter_section_date_range">Rango de fechas</string>
@@ -55,6 +62,8 @@
     <string name="expense_field_amount">Importe</string>
     <string name="expense_field_amount_required">¿Cuánto fue?</string>
     <string name="expense_error_title_empty">¡Ey! ¿Para qué fue este gasto?</string>
+    <string name="expense_error_invalid_exchange_rate">El tipo de cambio debe ser mayor que cero</string>
+    <string name="expense_error_invalid_group_amount">El importe convertido debe ser mayor que cero</string>
     <string name="expense_error_insufficient_cash">No tienes suficiente efectivo\nNecesitas %1$s pero solo tienes %2$s disponible</string>
     <string name="expense_error_cash_conflict">Otro miembro acaba de usar este efectivo. El importe disponible ha cambiado — revisa e inténtalo de nuevo.</string>
 

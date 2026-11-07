@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.isValidDecimalInput
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
@@ -86,12 +87,26 @@ class WithdrawalCurrencyHandler(
     }
 
     fun handleExchangeRateChanged(rate: String) {
-        _uiState.update { it.copy(displayExchangeRate = rate, isExchangeRateError = false) }
+        val isValid = CurrencyConverter.isPositiveAmount(rate)
+        _uiState.update {
+            it.copy(
+                displayExchangeRate = rate,
+                isExchangeRateValid = isValid,
+                isExchangeRateError = false
+            )
+        }
         recalculateDeducted()
     }
 
     fun handleDeductedAmountChanged(amount: String) {
-        _uiState.update { it.copy(deductedAmount = amount, isExchangeRateError = false) }
+        val isValid = CurrencyConverter.isPositiveAmount(amount)
+        _uiState.update {
+            it.copy(
+                deductedAmount = amount,
+                isDeductedAmountValid = isValid,
+                isExchangeRateError = false
+            )
+        }
         recalculateRateFromDeducted()
     }
 
@@ -102,7 +117,7 @@ class WithdrawalCurrencyHandler(
         val state = _uiState.value
         if (!state.showExchangeRateSection) return
         if (state.displayExchangeRate.isBlank()) {
-            _uiState.update { it.copy(deductedAmount = "") }
+            _uiState.update { it.copy(deductedAmount = "", isDeductedAmountValid = false) }
             return
         }
 
@@ -114,7 +129,13 @@ class WithdrawalCurrencyHandler(
             sourceDecimalPlaces = sourceDecimalPlaces,
             targetDecimalPlaces = targetDecimalPlaces
         )
-        _uiState.update { it.copy(deductedAmount = calculatedDeducted) }
+        val isDeductedValid = CurrencyConverter.isPositiveAmount(calculatedDeducted)
+        _uiState.update {
+            it.copy(
+                deductedAmount = calculatedDeducted,
+                isDeductedAmountValid = isDeductedValid
+            )
+        }
     }
 
     /**
@@ -130,7 +151,13 @@ class WithdrawalCurrencyHandler(
             groupAmountString = state.deductedAmount,
             sourceDecimalPlaces = sourceDecimalPlaces
         )
-        _uiState.update { it.copy(displayExchangeRate = impliedRate) }
+        val isRateValid = CurrencyConverter.isPositiveAmount(impliedRate)
+        _uiState.update {
+            it.copy(
+                displayExchangeRate = impliedRate,
+                isExchangeRateValid = isRateValid
+            )
+        }
     }
 
     private fun fetchRate() {

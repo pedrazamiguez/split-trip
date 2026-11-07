@@ -37,6 +37,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.dialog.ResetFiltersConfirmationDialog
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.AmountFilterSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.AttributesFilterSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.CategoryFilterSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.DateRangeFilterSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.MemberFilterSection
@@ -96,6 +98,24 @@ fun ExpensesFilterScreen(
                 item(key = "payment_status_section") {
                     PaymentStatusFilterSection(
                         criteria = uiState.draftCriteria,
+                        onCriteriaChange = onUpdateDraft,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item(key = "attributes_section") {
+                    AttributesFilterSection(
+                        criteria = uiState.draftCriteria,
+                        onCriteriaChange = onUpdateDraft,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item(key = "amount_section") {
+                    AmountFilterSection(
+                        criteria = uiState.draftCriteria,
+                        groupCurrencies = uiState.groupCurrencies,
+                        defaultCurrency = uiState.groupCurrency,
                         onCriteriaChange = onUpdateDraft,
                         modifier = Modifier.fillMaxWidth()
                     )

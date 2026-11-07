@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
@@ -66,11 +68,14 @@ class CurrencyEventHandler(
         val selectedUiModel = currentState.availableCurrencies
             .find { it.code == currencyCode } ?: return
         val isForeign = selectedUiModel.code != currentState.groupCurrency?.code
+        val isCash = isCashPaymentMethod()
 
-        val exchangeRateLabel = if (isForeign && currentState.groupCurrency != null) {
-            addExpenseOptionsMapper.buildExchangeRateLabel(currentState.groupCurrency, selectedUiModel)
+        val exchangeRateLabel = resolveExchangeRateLabel(isForeign, currentState, selectedUiModel)
+        val isLocked = isForeign && isCash
+        val lockedHint = if (isLocked) {
+            UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
         } else {
-            ""
+            null
         }
 
         _uiState.update {
@@ -78,62 +83,66 @@ class CurrencyEventHandler(
                 selectedCurrency = selectedUiModel,
                 showExchangeRateSection = isForeign,
                 exchangeRateLabel = exchangeRateLabel,
-                // Clear the saved pre-CASH rate — it belongs to the previous currency pair
-                preCashExchangeRate = null
+                preCashExchangeRate = null,
+                isExchangeRateValid = true,
+                isGroupAmountValid = true,
+                isExchangeRateError = false,
+                isExchangeRateStale = false,
+                isExchangeRateLocked = isLocked,
+                isInsufficientCash = false,
+                displayExchangeRate = if (isForeign) it.displayExchangeRate else "1.0",
+                exchangeRateLockedHint = lockedHint
             ).withStepClamped()
         }
-        // If switching to foreign, fetch the appropriate rate; otherwise default to 1.0
-        val isCash = isCashPaymentMethod()
+
+        dispatchCurrencySideEffects(isForeign, isCash)
+        recalculateForward()
+        onRecalculate()
+    }
+
+    private fun resolveExchangeRateLabel(
+        isForeign: Boolean,
+        currentState: AddExpenseUiState,
+        selectedUiModel: CurrencyUiModel
+    ): String {
+        if (!isForeign || currentState.groupCurrency == null) return ""
+        return addExpenseOptionsMapper.buildExchangeRateLabel(currentState.groupCurrency, selectedUiModel)
+    }
+
+    private fun dispatchCurrencySideEffects(isForeign: Boolean, isCash: Boolean) {
         if (isForeign) {
-            _uiState.update {
-                it.copy(
-                    isExchangeRateError = false,
-                    isExchangeRateStale = false
-                )
-            }
             if (isCash) {
-                // Lock immediately so the fields are non-editable from the start,
-                // before the async pool probe + rate fetch completes.
-                _uiState.update {
-                    it.copy(
-                        isExchangeRateLocked = true,
-                        isInsufficientCash = false,
-                        exchangeRateLockedHint = UiText.StringResource(
-                            R.string.add_expense_cash_rate_locked_hint
-                        )
-                    )
-                }
-                // Clear stale pool state from the previous currency pair, then re-probe.
                 withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
                 fetchPoolsIfNeeded()
             } else {
                 fetchRate()
             }
-        } else {
-            _uiState.update {
-                it.copy(
-                    displayExchangeRate = "1.0",
-                    isExchangeRateLocked = false,
-                    isInsufficientCash = false,
-                    exchangeRateLockedHint = null,
-                    isExchangeRateError = false,
-                    isExchangeRateStale = false
-                )
-            }
-            // Same currency + CASH: probe pools and fetch tranche preview via callback.
-            if (isCash) fetchPoolsIfNeeded()
+        } else if (isCash) {
+            fetchPoolsIfNeeded()
         }
-        recalculateForward()
-        onRecalculate()
     }
 
     fun handleExchangeRateChanged(rate: String) {
-        _uiState.update { it.copy(displayExchangeRate = rate, isExchangeRateError = false) }
+        val isValid = CurrencyConverter.isPositiveAmount(rate)
+        _uiState.update {
+            it.copy(
+                displayExchangeRate = rate,
+                isExchangeRateValid = isValid,
+                isExchangeRateError = false
+            )
+        }
         recalculateForward()
     }
 
     fun handleGroupAmountChanged(amount: String) {
-        _uiState.update { it.copy(calculatedGroupAmount = amount, isExchangeRateError = false) }
+        val isValid = CurrencyConverter.isPositiveAmount(amount)
+        _uiState.update {
+            it.copy(
+                calculatedGroupAmount = amount,
+                isGroupAmountValid = isValid,
+                isExchangeRateError = false
+            )
+        }
         recalculateReverse()
     }
 
@@ -145,7 +154,7 @@ class CurrencyEventHandler(
     fun recalculateForward() {
         val state = _uiState.value
         if (state.displayExchangeRate.isBlank()) {
-            _uiState.update { it.copy(calculatedGroupAmount = "") }
+            _uiState.update { it.copy(calculatedGroupAmount = "", isGroupAmountValid = false) }
             return
         }
         val sourceDecimalPlaces = state.selectedCurrency?.decimalDigits ?: 2
@@ -156,7 +165,13 @@ class CurrencyEventHandler(
             sourceDecimalPlaces = sourceDecimalPlaces,
             targetDecimalPlaces = targetDecimalPlaces
         )
-        _uiState.update { it.copy(calculatedGroupAmount = calculatedAmount) }
+        val isGroupValid = CurrencyConverter.isPositiveAmount(calculatedAmount)
+        _uiState.update {
+            it.copy(
+                calculatedGroupAmount = calculatedAmount,
+                isGroupAmountValid = isGroupValid
+            )
+        }
     }
 
     /**
@@ -172,7 +187,13 @@ class CurrencyEventHandler(
             groupAmountString = state.calculatedGroupAmount,
             sourceDecimalPlaces = sourceDecimalPlaces
         )
-        _uiState.update { it.copy(displayExchangeRate = impliedDisplayRate) }
+        val isRateValid = CurrencyConverter.isPositiveAmount(impliedDisplayRate)
+        _uiState.update {
+            it.copy(
+                displayExchangeRate = impliedDisplayRate,
+                isExchangeRateValid = isRateValid
+            )
+        }
     }
 
     fun fetchRate() {
@@ -451,10 +472,13 @@ class CurrencyEventHandler(
         ) {
             return copy(isLoadingRate = false)
         }
+        val rateStr = rateResult?.rate?.stripTrailingZeros()?.toPlainString() ?: displayExchangeRate
+        val isValid = CurrencyConverter.isPositiveAmount(rateStr) && !isError
         return copy(
             isLoadingRate = false,
             isExchangeRateError = isError,
-            displayExchangeRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString() ?: displayExchangeRate,
+            displayExchangeRate = rateStr,
+            isExchangeRateValid = isValid,
             isExchangeRateStale = rateResult?.isStale ?: false
         )
     }

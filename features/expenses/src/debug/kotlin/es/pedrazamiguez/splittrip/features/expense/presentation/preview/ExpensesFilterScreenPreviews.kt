@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
@@ -9,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpensesFilterScreen
 import java.time.LocalDate
+import kotlinx.collections.immutable.persistentListOf
 
 @PreviewComplete
 @Composable
@@ -111,6 +113,48 @@ private fun ExpensesFilterScreenPaymentStatusPreview() {
         draftCriteria = ExpenseFilterCriteria(
             selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED, PaymentStatus.REFUNDABLE)
         ),
+        matchingExpensesCount = 2
+    ) { uiState ->
+        ExpensesFilterScreen(uiState = uiState)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun ExpensesFilterScreenAttributesPreview() {
+    ExpensesFilterPreviewHelper(
+        draftCriteria = ExpenseFilterCriteria(
+            selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT, ExpenseAttribute.HAS_NOTE)
+        ),
+        matchingExpensesCount = 2
+    ) { uiState ->
+        ExpensesFilterScreen(uiState = uiState)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun ExpensesFilterScreenAmountRangePreview() {
+    ExpensesFilterPreviewHelper(
+        draftCriteria = ExpenseFilterCriteria(
+            minAmount = 1000L,
+            maxAmount = 5000L
+        ),
+        matchingExpensesCount = 3
+    ) { uiState ->
+        ExpensesFilterScreen(uiState = uiState)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun ExpensesFilterScreenCurrencyFilterPreview() {
+    ExpensesFilterPreviewHelper(
+        draftCriteria = ExpenseFilterCriteria(
+            filterCurrency = "USD",
+            minAmount = 2500L
+        ),
+        groupCurrencies = persistentListOf("EUR", "USD", "GBP"),
         matchingExpensesCount = 2
     ) { uiState ->
         ExpensesFilterScreen(uiState = uiState)

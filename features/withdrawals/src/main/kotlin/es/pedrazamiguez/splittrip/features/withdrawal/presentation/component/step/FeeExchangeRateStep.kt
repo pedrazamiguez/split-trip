@@ -34,6 +34,8 @@ fun FeeExchangeRateStep(
                 groupAmountLabel = uiState.feeConvertedLabel,
                 isLoadingRate = false,
                 isExchangeRateLocked = false,
+                isGroupAmountError = !uiState.isFeeConvertedAmountValid,
+                isExchangeRateFieldError = !uiState.isFeeExchangeRateValid,
                 isExchangeRateStale = uiState.isFeeExchangeRateStale,
                 isExchangeRateError = uiState.isFeeExchangeRateError,
                 autoFocus = true

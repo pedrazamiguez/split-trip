@@ -13,6 +13,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpensesF
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpensesFilterUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpensesFilterUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesFilterUiState
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -78,6 +80,13 @@ class ExpensesFilterViewModel(
                     currentUserId = currentUserId
                 )
 
+                val groupCurrency = group?.currency ?: "EUR"
+                val groupCurrencies = if (group != null && group.extraCurrencies.isNotEmpty()) {
+                    (listOf(group.currency) + group.extraCurrencies).distinct().toImmutableList()
+                } else {
+                    persistentListOf()
+                }
+
                 val (oldestDate, newestDate) = expensesFilterUiMapper.extractDateBounds(expenses)
                 val formattedStartDate = expensesFilterUiMapper.formatFilterDate(draft.startDate)
                 val formattedEndDate = expensesFilterUiMapper.formatFilterDate(draft.endDate)
@@ -94,7 +103,9 @@ class ExpensesFilterViewModel(
                     newestExpenseDate = newestDate,
                     formattedStartDate = formattedStartDate,
                     formattedEndDate = formattedEndDate,
-                    activePreset = activePreset
+                    activePreset = activePreset,
+                    groupCurrency = groupCurrency,
+                    groupCurrencies = groupCurrencies
                 )
             }
         }

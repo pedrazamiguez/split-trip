@@ -45,7 +45,8 @@ fun ExchangeRateStep(
                 isExchangeRateLocked = uiState.isExchangeRateLocked,
                 exchangeRateLockedHint = uiState.exchangeRateLockedHint,
                 isInsufficientCash = uiState.isInsufficientCash,
-                isGroupAmountError = !uiState.isAmountValid,
+                isGroupAmountError = !uiState.isGroupAmountValid,
+                isExchangeRateFieldError = !uiState.isExchangeRateValid,
                 isExchangeRateStale = uiState.isExchangeRateStale,
                 isExchangeRateError = uiState.isExchangeRateError,
                 autoFocus = true

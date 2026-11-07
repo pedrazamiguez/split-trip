@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.model
 
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
@@ -11,6 +12,7 @@ import java.io.ObjectOutputStream
 import java.time.LocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -91,6 +93,46 @@ class ExpenseFilterCriteriaTest {
         }
 
         @Test
+        fun `attribute filter flags active status and increments activeFilterCount`() {
+            val criteria = ExpenseFilterCriteria(selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT))
+            assertTrue(criteria.isActive)
+            assertTrue(criteria.isAttributeFiltered)
+            assertEquals(1, criteria.activeFilterCount)
+        }
+
+        @Test
+        fun `minAmount filter flags active status and increments activeFilterCount`() {
+            val criteria = ExpenseFilterCriteria(minAmount = 1000L)
+            assertTrue(criteria.isActive)
+            assertTrue(criteria.isAmountFiltered)
+            assertEquals(1, criteria.activeFilterCount)
+        }
+
+        @Test
+        fun `maxAmount filter flags active status and increments activeFilterCount`() {
+            val criteria = ExpenseFilterCriteria(maxAmount = 5000L)
+            assertTrue(criteria.isActive)
+            assertTrue(criteria.isAmountFiltered)
+            assertEquals(1, criteria.activeFilterCount)
+        }
+
+        @Test
+        fun `filterCurrency filter flags active status and increments activeFilterCount`() {
+            val criteria = ExpenseFilterCriteria(filterCurrency = "USD")
+            assertTrue(criteria.isActive)
+            assertTrue(criteria.isAmountFiltered)
+            assertEquals(1, criteria.activeFilterCount)
+        }
+
+        @Test
+        fun `combined amount and currency filter increments activeFilterCount by exactly 1`() {
+            val criteria = ExpenseFilterCriteria(filterCurrency = "USD", minAmount = 1000L, maxAmount = 5000L)
+            assertTrue(criteria.isActive)
+            assertTrue(criteria.isAmountFiltered)
+            assertEquals(1, criteria.activeFilterCount)
+        }
+
+        @Test
         fun `multi-criteria computes correct activeFilterCount`() {
             val criteria = ExpenseFilterCriteria(
                 searchQuery = "dinner",
@@ -116,6 +158,38 @@ class ExpenseFilterCriteriaTest {
             )
             assertTrue(criteria.isActive)
             assertEquals(5, criteria.activeFilterCount)
+        }
+
+        @Test
+        fun `multi-criteria computes correct activeFilterCount including attributes`() {
+            val criteria = ExpenseFilterCriteria(
+                searchQuery = "dinner",
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedMemberIds = setOf("user_1"),
+                startDate = LocalDate.now(),
+                endDate = LocalDate.now().plusDays(1),
+                selectedPaymentMethods = setOf(PaymentMethod.ALIPAY),
+                selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED),
+                selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT)
+            )
+            assertTrue(criteria.isActive)
+            assertEquals(6, criteria.activeFilterCount)
+        }
+
+        @Test
+        fun `multi-criteria computes correct activeFilterCount including amount filter`() {
+            val criteria = ExpenseFilterCriteria(
+                searchQuery = "dinner",
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedMemberIds = setOf("user_1"),
+                startDate = LocalDate.now(),
+                selectedPaymentMethods = setOf(PaymentMethod.ALIPAY),
+                selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED),
+                filterCurrency = "USD",
+                minAmount = 1000L
+            )
+            assertTrue(criteria.isActive)
+            assertEquals(6, criteria.activeFilterCount)
         }
     }
 
@@ -162,6 +236,40 @@ class ExpenseFilterCriteriaTest {
             assertFalse(cleared.isPaymentStatusFiltered)
             assertTrue(cleared.selectedPaymentMethods.isEmpty())
             assertTrue(cleared.selectedPaymentStatuses.isEmpty())
+            assertEquals(0, cleared.activeFilterCount)
+        }
+
+        @Test
+        fun `clearNonSearchFilters clears attribute filters`() {
+            val criteria = ExpenseFilterCriteria(
+                searchQuery = "dinner",
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT, ExpenseAttribute.HAS_NOTE)
+            )
+            val cleared = criteria.clearNonSearchFilters()
+            assertEquals("dinner", cleared.searchQuery)
+            assertFalse(cleared.isCategoryFiltered)
+            assertFalse(cleared.isAttributeFiltered)
+            assertTrue(cleared.selectedAttributes.isEmpty())
+            assertEquals(0, cleared.activeFilterCount)
+        }
+
+        @Test
+        fun `clearNonSearchFilters clears amount range and currency filters`() {
+            val criteria = ExpenseFilterCriteria(
+                searchQuery = "dinner",
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                filterCurrency = "USD",
+                minAmount = 1000L,
+                maxAmount = 5000L
+            )
+            val cleared = criteria.clearNonSearchFilters()
+            assertEquals("dinner", cleared.searchQuery)
+            assertFalse(cleared.isCategoryFiltered)
+            assertFalse(cleared.isAmountFiltered)
+            assertNull(cleared.filterCurrency)
+            assertNull(cleared.minAmount)
+            assertNull(cleared.maxAmount)
             assertEquals(0, cleared.activeFilterCount)
         }
 
@@ -213,6 +321,44 @@ class ExpenseFilterCriteriaTest {
                 endDate = LocalDate.of(2026, 8, 15),
                 selectedPaymentMethods = setOf(PaymentMethod.CASH, PaymentMethod.WECHAT_PAY),
                 selectedPaymentStatuses = setOf(PaymentStatus.FINISHED, PaymentStatus.CANCELLED)
+            )
+
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            ObjectOutputStream(byteArrayOutputStream).use { it.writeObject(original) }
+
+            val byteArrayInputStream = ByteArrayInputStream(byteArrayOutputStream.toByteArray())
+            val deserialized = ObjectInputStream(byteArrayInputStream).use {
+                it.readObject() as ExpenseFilterCriteria
+            }
+
+            assertEquals(original, deserialized)
+        }
+
+        @Test
+        fun `serializes and deserializes criteria with attributes`() {
+            val original = ExpenseFilterCriteria(
+                searchQuery = "hotel booking",
+                selectedCategories = setOf(ExpenseCategory.LODGING),
+                selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT, ExpenseAttribute.HAS_EXTRAS)
+            )
+
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            ObjectOutputStream(byteArrayOutputStream).use { it.writeObject(original) }
+
+            val byteArrayInputStream = ByteArrayInputStream(byteArrayOutputStream.toByteArray())
+            val deserialized = ObjectInputStream(byteArrayInputStream).use {
+                it.readObject() as ExpenseFilterCriteria
+            }
+
+            assertEquals(original, deserialized)
+        }
+
+        @Test
+        fun `serializes and deserializes criteria with amount range and currency`() {
+            val original = ExpenseFilterCriteria(
+                filterCurrency = "USD",
+                minAmount = 1000L,
+                maxAmount = 5000L
             )
 
             val byteArrayOutputStream = ByteArrayOutputStream()

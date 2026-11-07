@@ -436,21 +436,7 @@ class AddOnEventHandler(
         // Convert to group currency using the add-on's own rate
         val groupAmountCents = convertAddOnToGroupCurrency(resolvedCents, addOn)
 
-        // Update the display string for the exchange rate card
-        val calculatedGroupAmount = if (addOn.showExchangeRateSection && groupAmountCents > 0) {
-            val targetDecimalPlaces = state.groupCurrency?.decimalDigits ?: 2
-            val displayValue = expenseCalculatorService.centsToBigDecimalString(
-                groupAmountCents,
-                targetDecimalPlaces
-            )
-            formattingHelper.formatForDisplay(
-                internalValue = displayValue,
-                maxDecimalPlaces = targetDecimalPlaces,
-                minDecimalPlaces = targetDecimalPlaces
-            )
-        } else {
-            addOn.calculatedGroupAmount
-        }
+        val calculatedGroupAmount = formatCalculatedGroupAmount(addOn, state, groupAmountCents)
 
         val formattedAmount = if (groupAmountCents > 0L) {
             formattingHelper.formatCentsWithCurrency(
@@ -461,11 +447,19 @@ class AddOnEventHandler(
             ""
         }
 
+        val isRateAndGroupValid = if (addOn.showExchangeRateSection) {
+            CurrencyConverter.isPositiveAmount(addOn.displayExchangeRate) &&
+                (CurrencyConverter.isPositiveAmount(calculatedGroupAmount) || groupAmountCents > 0L)
+        } else {
+            true
+        }
+
         return addOn.copy(
             resolvedAmountCents = resolvedCents,
             groupAmountCents = groupAmountCents,
             calculatedGroupAmount = calculatedGroupAmount,
-            formattedAmount = formattedAmount
+            formattedAmount = formattedAmount,
+            isAmountValid = isRateAndGroupValid
         )
     }
 
@@ -478,6 +472,26 @@ class AddOnEventHandler(
         return exchangeRateCalculationService.convertCentsToGroupCurrencyViaDisplayRate(
             amountCents,
             addOn.displayExchangeRate
+        )
+    }
+
+    private fun formatCalculatedGroupAmount(
+        addOn: AddOnUiModel,
+        state: AddExpenseUiState,
+        groupAmountCents: Long
+    ): String {
+        if (!addOn.showExchangeRateSection || groupAmountCents <= 0) {
+            return addOn.calculatedGroupAmount
+        }
+        val targetDecimalPlaces = state.groupCurrency?.decimalDigits ?: 2
+        val displayValue = expenseCalculatorService.centsToBigDecimalString(
+            groupAmountCents,
+            targetDecimalPlaces
+        )
+        return formattingHelper.formatForDisplay(
+            internalValue = displayValue,
+            maxDecimalPlaces = targetDecimalPlaces,
+            minDecimalPlaces = targetDecimalPlaces
         )
     }
 

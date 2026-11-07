@@ -811,6 +811,44 @@ class CurrencyEventHandlerTest {
         }
 
         @Test
+        fun `handleExchangeRateChanged with negative rate sets validity false and calculates zero`() = runTest {
+            uiState.value = nonCashForeignState
+            handler.bind(uiState, actions, this)
+
+            handler.handleExchangeRateChanged("-35.5")
+
+            val state = uiState.value
+            assertFalse(state.isExchangeRateValid)
+            assertEquals("-35.5", state.displayExchangeRate)
+            assertEquals("0", state.calculatedGroupAmount)
+        }
+
+        @Test
+        fun `handleGroupAmountChanged with negative amount sets validity false and calculates zero`() = runTest {
+            uiState.value = nonCashForeignState
+            handler.bind(uiState, actions, this)
+
+            handler.handleGroupAmountChanged("-28.17")
+
+            val state = uiState.value
+            assertFalse(state.isGroupAmountValid)
+            assertEquals("-28.17", state.calculatedGroupAmount)
+            assertEquals("0", state.displayExchangeRate)
+        }
+
+        @Test
+        fun `handleExchangeRateChanged with positive rate sets isExchangeRateValid true`() = runTest {
+            uiState.value = nonCashForeignState.copy(isExchangeRateValid = false)
+            handler.bind(uiState, actions, this)
+
+            handler.handleExchangeRateChanged("35.5")
+
+            val state = uiState.value
+            assertTrue(state.isExchangeRateValid)
+            assertEquals("35.5", state.displayExchangeRate)
+        }
+
+        @Test
         fun `recalculateForward leaves calculated amount empty if rate is blank`() = runTest {
             uiState.value = nonCashForeignState.copy(displayExchangeRate = "", calculatedGroupAmount = "10.00")
             handler.bind(uiState, actions, this)

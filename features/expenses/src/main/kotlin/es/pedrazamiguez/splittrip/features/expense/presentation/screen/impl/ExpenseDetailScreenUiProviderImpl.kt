@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpenseDetailViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpenseDetailUiEvent
 import org.koin.androidx.compose.koinViewModel
@@ -27,6 +28,22 @@ import org.koin.androidx.compose.koinViewModel
 class ExpenseDetailScreenUiProviderImpl(
     override val route: String = Routes.EXPENSE_DETAIL
 ) : ScreenUiProvider {
+
+    internal fun shouldShowEditAction(isGroupArchived: Boolean): Boolean = !isGroupArchived
+
+    internal fun shouldShowRefundAction(isGroupArchived: Boolean, isRefundable: Boolean): Boolean =
+        !isGroupArchived && isRefundable
+
+    internal fun shouldShowDeleteAction(isGroupArchived: Boolean): Boolean = !isGroupArchived
+
+    internal fun resolveTitleText(
+        expense: ExpenseDetailUiModel?,
+        cancelledSuffix: String
+    ): String = if (expense?.isCancelled == true) {
+        "${expense.title} ($cancelledSuffix)"
+    } else {
+        expense?.title ?: ""
+    }
 
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
@@ -42,41 +59,39 @@ class ExpenseDetailScreenUiProviderImpl(
             val expenseId = backStackEntry.arguments?.getString("expenseId")
             val expense = uiState.expense
 
-            val titleText = if (expense?.isCancelled == true) {
-                val suffix = stringResource(R.string.payment_status_cancelled)
-                "${expense.title} ($suffix)"
-            } else {
-                expense?.title ?: ""
-            }
+            val titleText = resolveTitleText(
+                expense = expense,
+                cancelledSuffix = stringResource(R.string.payment_status_cancelled)
+            )
 
             DynamicTopAppBar(
                 title = titleText,
                 subtitle = expense?.categoryText?.takeIf { it.isNotEmpty() },
                 onBack = { navController.popBackStack() },
                 actions = {
-                    if (!uiState.isGroupArchived) {
-                        if (expense?.isCancelled == false) {
-                            IconButton(
-                                onClick = {
-                                    if (expenseId != null) {
-                                        navController.navigate(Routes.editExpenseRoute(expenseId))
-                                    }
+                    if (shouldShowEditAction(uiState.isGroupArchived)) {
+                        IconButton(
+                            onClick = {
+                                if (expenseId != null) {
+                                    navController.navigate(Routes.editExpenseRoute(expenseId))
                                 }
-                            ) {
-                                Icon(
-                                    imageVector = TablerIcons.Outline.Edit,
-                                    contentDescription = stringResource(R.string.action_edit_expense)
-                                )
                             }
+                        ) {
+                            Icon(
+                                imageVector = TablerIcons.Outline.Edit,
+                                contentDescription = stringResource(R.string.action_edit_expense)
+                            )
                         }
-                        if (expense?.isRefundable == true) {
-                            IconButton(onClick = { showCancelDialog = true }) {
-                                Icon(
-                                    imageVector = TablerIcons.Outline.ReceiptRefund,
-                                    contentDescription = stringResource(R.string.expense_detail_cancel_refund)
-                                )
-                            }
+                    }
+                    if (shouldShowRefundAction(uiState.isGroupArchived, expense?.isRefundable == true)) {
+                        IconButton(onClick = { showCancelDialog = true }) {
+                            Icon(
+                                imageVector = TablerIcons.Outline.ReceiptRefund,
+                                contentDescription = stringResource(R.string.expense_detail_cancel_refund)
+                            )
                         }
+                    }
+                    if (shouldShowDeleteAction(uiState.isGroupArchived)) {
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 imageVector = TablerIcons.Outline.Trash,

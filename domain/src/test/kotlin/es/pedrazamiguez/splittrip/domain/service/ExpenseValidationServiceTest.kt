@@ -123,6 +123,64 @@ class ExpenseValidationServiceTest {
     }
 
     @Nested
+    inner class ValidateExchangeRate {
+
+        @Test
+        fun `validateExchangeRate returns Valid for positive decimal rates`() {
+            assertEquals(ValidationResult.Valid, service.validateExchangeRate("37.5"))
+            assertEquals(ValidationResult.Valid, service.validateExchangeRate("1"))
+            assertEquals(ValidationResult.Valid, service.validateExchangeRate("0.027"))
+        }
+
+        @Test
+        fun `validateExchangeRate returns Invalid for blank rates`() {
+            val empty = service.validateExchangeRate("")
+            assertTrue(empty is ValidationResult.Invalid)
+            val blank = service.validateExchangeRate("   ")
+            assertTrue(blank is ValidationResult.Invalid)
+        }
+
+        @Test
+        fun `validateExchangeRate returns Invalid for zero rates`() {
+            val zero = service.validateExchangeRate("0")
+            assertTrue(zero is ValidationResult.Invalid)
+            val zeroDecimal = service.validateExchangeRate("0.00")
+            assertTrue(zeroDecimal is ValidationResult.Invalid)
+        }
+
+        @Test
+        fun `validateExchangeRate returns Invalid for negative rates`() {
+            val negDecimal = service.validateExchangeRate("-0.134286")
+            assertTrue(negDecimal is ValidationResult.Invalid)
+            val negInt = service.validateExchangeRate("-1.5")
+            assertTrue(negInt is ValidationResult.Invalid)
+        }
+
+        @Test
+        fun `validateExchangeRate returns Invalid for unparseable input`() {
+            val result = service.validateExchangeRate("abc")
+            assertTrue(result is ValidationResult.Invalid)
+        }
+    }
+
+    @Nested
+    inner class ValidateGroupAmount {
+
+        @Test
+        fun `validateGroupAmount returns Valid for positive amounts`() {
+            assertEquals(ValidationResult.Valid, service.validateGroupAmount("10.50"))
+            assertEquals(ValidationResult.Valid, service.validateGroupAmount("100"))
+        }
+
+        @Test
+        fun `validateGroupAmount returns Invalid for non-positive or unparseable amounts`() {
+            assertTrue(service.validateGroupAmount("0") is ValidationResult.Invalid)
+            assertTrue(service.validateGroupAmount("-0.94") is ValidationResult.Invalid)
+            assertTrue(service.validateGroupAmount("abc") is ValidationResult.Invalid)
+        }
+    }
+
+    @Nested
     inner class ValidateUserCount {
 
         @Test

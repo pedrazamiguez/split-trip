@@ -80,6 +80,18 @@ object CurrencyConverter {
     }
 
     /**
+     * Checks if a string representation of an amount or rate parses to a strictly
+     * positive BigDecimal (> 0).
+     */
+    fun isPositiveAmount(amountString: String): Boolean {
+        val cleanString = amountString.trim()
+        if (cleanString.isBlank()) return false
+        val normalizedString = normalizeAmountString(cleanString)
+        val parsed = normalizedString.toBigDecimalOrNull() ?: return false
+        return parsed > BigDecimal.ZERO
+    }
+
+    /**
      * Normalizes amount string to US format (. = decimal) using simple logic:
      *
      * 1. Find the LAST separator (. or ,) → this is the decimal separator

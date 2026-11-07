@@ -23,7 +23,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         rate: BigDecimal,
         targetDecimalPlaces: Int
     ): BigDecimal {
-        if (rate.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO
+        if (sourceAmount < BigDecimal.ZERO || rate <= BigDecimal.ZERO) return BigDecimal.ZERO
         // Source * Rate = Target (e.g. 1000 THB * 0.027 = 27 EUR)
         return sourceAmount.multiply(rate).setScale(targetDecimalPlaces, RoundingMode.HALF_UP)
     }
@@ -36,7 +36,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
      * @return The implied exchange rate
      */
     override fun calculateImpliedRate(sourceAmount: BigDecimal, groupAmount: BigDecimal): BigDecimal {
-        if (sourceAmount.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO
+        if (sourceAmount <= BigDecimal.ZERO || groupAmount <= BigDecimal.ZERO) return BigDecimal.ZERO
         // Target / Source = Rate (e.g. 27.35 EUR / 1000 THB = 0.02735)
         return groupAmount.divide(sourceAmount, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
     }
@@ -63,7 +63,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         val rate = parseRate(exchangeRateString)
 
         val result = calculateGroupAmount(sourceAmount, rate, targetDecimalPlaces)
-        return result.toPlainString()
+        return result.setScale(targetDecimalPlaces, RoundingMode.HALF_UP).toPlainString()
     }
 
     /**
@@ -87,7 +87,9 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         val sourceAmount = parseAmount(sourceAmountString, sourceDecimalPlaces)
         val displayRate = parseRate(displayRateString)
 
-        if (displayRate.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO.toPlainString()
+        if (displayRate <= BigDecimal.ZERO) {
+            return BigDecimal.ZERO.toPlainString()
+        }
 
         // Convert display rate (group to source) to calculation rate (source to group)
         // If 1 EUR = 37 THB, then 1 THB = 1/37 EUR
@@ -98,7 +100,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         )
 
         val result = calculateGroupAmount(sourceAmount, calculationRate, targetDecimalPlaces)
-        return result.toPlainString()
+        return result.setScale(targetDecimalPlaces, RoundingMode.HALF_UP).toPlainString()
     }
 
     /**
@@ -120,7 +122,9 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         val sourceAmount = parseAmount(sourceAmountString, sourceDecimalPlaces)
         val targetAmount = parseAmountOrZero(groupAmountString)
 
-        if (targetAmount.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO.toPlainString()
+        if (sourceAmount <= BigDecimal.ZERO || targetAmount <= BigDecimal.ZERO) {
+            return BigDecimal.ZERO.toPlainString()
+        }
 
         // Display rate = source / target (e.g., 1000 THB / 27 EUR = 37 THB per EUR)
         val displayRate = sourceAmount.divide(
@@ -139,7 +143,7 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
      */
     override fun displayRateToCalculationRate(displayRateString: String): BigDecimal {
         val displayRate = parseRate(displayRateString)
-        if (displayRate.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO
+        if (displayRate <= BigDecimal.ZERO) return BigDecimal.ZERO
         return BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
     }
 
@@ -237,10 +241,11 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         amountCents: Long,
         displayRateString: String
     ): Long {
+        if (amountCents <= 0L) return 0L
         // For this path we need invalid/blank input to yield 0, not 1 as in parseRate()
         val normalized = CurrencyConverter.normalizeAmountString(displayRateString.trim())
         val displayRate = normalized.toBigDecimalOrNull() ?: return 0L
-        if (displayRate.compareTo(BigDecimal.ZERO) == 0) return 0L
+        if (displayRate <= BigDecimal.ZERO) return 0L
 
         val calculationRate = BigDecimal.ONE.divide(
             displayRate,
@@ -264,10 +269,10 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         if (cleanString.isBlank()) return BigDecimal.ZERO
 
         val normalizedString = CurrencyConverter.normalizeAmountString(cleanString)
+        val parsed = normalizedString.toBigDecimalOrNull() ?: return BigDecimal.ZERO
+        if (parsed <= BigDecimal.ZERO) return BigDecimal.ZERO
 
-        return normalizedString.toBigDecimalOrNull()
-            ?.setScale(decimalPlaces, RoundingMode.HALF_UP)
-            ?: BigDecimal.ZERO
+        return parsed.setScale(decimalPlaces, RoundingMode.HALF_UP)
     }
 
     /**
@@ -278,8 +283,9 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         if (cleanString.isBlank()) return BigDecimal.ONE
 
         val normalizedString = CurrencyConverter.normalizeAmountString(cleanString)
+        val parsed = normalizedString.toBigDecimalOrNull() ?: BigDecimal.ONE
 
-        return normalizedString.toBigDecimalOrNull() ?: BigDecimal.ONE
+        return if (parsed <= BigDecimal.ZERO) BigDecimal.ZERO else parsed
     }
 
     /**
@@ -290,7 +296,8 @@ class ExchangeRateCalculationServiceImpl : ExchangeRateCalculationService {
         if (cleanString.isBlank()) return BigDecimal.ZERO
 
         val normalizedString = CurrencyConverter.normalizeAmountString(cleanString)
+        val parsed = normalizedString.toBigDecimalOrNull() ?: return BigDecimal.ZERO
 
-        return normalizedString.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        return if (parsed <= BigDecimal.ZERO) BigDecimal.ZERO else parsed
     }
 }

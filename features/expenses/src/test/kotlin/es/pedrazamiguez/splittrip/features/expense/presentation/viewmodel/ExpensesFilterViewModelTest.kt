@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import es.pedrazamiguez.splittrip.core.common.enums.SelfIdentificationContextEnum
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
@@ -12,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
@@ -582,6 +584,41 @@ class ExpensesFilterViewModelTest {
     }
 
     @Nested
+    @DisplayName("Attributes Filtering")
+    inner class AttributesFiltering {
+
+        @Test
+        fun `updating draft with attributes filter recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                val expenseWithReceipt = expense1.copy(
+                    receiptAttachment = ReceiptAttachment(
+                        localUri = "file:///receipt.jpg",
+                        mimeType = "image/jpeg",
+                        capturedAtMillis = 1000L
+                    )
+                )
+                val expenses = listOf(expenseWithReceipt, expense2, expense3)
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(expenses)
+
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(
+                    selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT)
+                )
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(1, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
+    }
+
+    @Nested
     @DisplayName("SavedStateHandle Integration")
     inner class SavedStateHandleIntegration {
         @Test
@@ -591,13 +628,134 @@ class ExpensesFilterViewModelTest {
                 selectedCategories = setOf(ExpenseCategory.FOOD),
                 selectedMemberIds = setOf("user-1"),
                 selectedPaymentMethods = setOf(PaymentMethod.CASH),
-                selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED)
+                selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED),
+                selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT, ExpenseAttribute.HAS_NOTE)
             )
             val handle = SavedStateHandle()
             handle["initialFilterCriteria"] = criteria
             val retrieved = handle.get<ExpenseFilterCriteria>("initialFilterCriteria")
             assertEquals(criteria, retrieved)
         }
+
+        @Test
+        fun `SavedStateHandle preserves criteria with amount range and currency filters`() {
+            val criteria = ExpenseFilterCriteria(
+                filterCurrency = "USD",
+                minAmount = 1000L,
+                maxAmount = 5000L
+            )
+            val handle = SavedStateHandle()
+            handle["filterCriteria"] = criteria
+            val retrieved = handle.get<ExpenseFilterCriteria>("filterCriteria")
+            assertEquals(criteria, retrieved)
+        }
+    }
+
+    @Nested
+    @DisplayName("Amount Range and Currency Filtering")
+    inner class AmountRangeAndCurrencyFiltering {
+
+        @Test
+        fun `populates groupCurrency and empty groupCurrencies for single-currency group`() =
+            runTest(testDispatcher) {
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals("EUR", state.groupCurrency)
+                assertTrue(state.groupCurrencies.isEmpty())
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `populates groupCurrencies with distinct base and extra currencies for multi-currency group`() =
+            runTest(testDispatcher) {
+                val multiCurrencyGroup = testGroup.copy(
+                    currency = "EUR",
+                    extraCurrencies = listOf("USD", "GBP")
+                )
+                every { observeGroupUseCase(testGroupId) } returns flowOf(multiCurrencyGroup)
+
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals("EUR", state.groupCurrency)
+                assertEquals(listOf("EUR", "USD", "GBP"), state.groupCurrencies)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updating draft with minAmount recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(minAmount = 3000L)
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(2, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updating draft with maxAmount recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(maxAmount = 3000L)
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(2, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updating draft with filterCurrency recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                val usdExpense = expense2.copy(sourceCurrency = "USD")
+                val expensesWithUsd = listOf(expense1, usdExpense, expense3)
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(expensesWithUsd)
+
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(filterCurrency = "USD")
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(1, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
     }
 
     @Nested

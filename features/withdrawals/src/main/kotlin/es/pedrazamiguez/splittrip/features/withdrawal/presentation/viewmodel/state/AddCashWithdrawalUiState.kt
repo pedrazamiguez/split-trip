@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -68,6 +69,10 @@ data class AddCashWithdrawalUiState(
 
     // Validation
     val isAmountValid: Boolean = true,
+    val isExchangeRateValid: Boolean = true,
+    val isDeductedAmountValid: Boolean = true,
+    val isFeeExchangeRateValid: Boolean = true,
+    val isFeeConvertedAmountValid: Boolean = true,
     val error: UiText? = null,
 
     // ── Wizard ──────────────────────────────────────────────────────────
@@ -103,9 +108,22 @@ data class AddCashWithdrawalUiState(
     val isFormValid: Boolean
         get() {
             val hasAmount = withdrawalAmount.isNotBlank() && isAmountValid
-            val hasDeducted = !showExchangeRateSection || deductedAmount.isNotBlank()
-            return hasAmount && hasDeducted
+            val isExchangeValid = !showExchangeRateSection || isExchangeSectionValid()
+            val isFeeExchangeValid = !showFeeExchangeRateSection || isFeeExchangeSectionValid()
+            return hasAmount && isExchangeValid && isFeeExchangeValid
         }
+
+    private fun isExchangeSectionValid(): Boolean =
+        isExchangeRateValid &&
+            isDeductedAmountValid &&
+            CurrencyConverter.isPositiveAmount(displayExchangeRate) &&
+            CurrencyConverter.isPositiveAmount(deductedAmount)
+
+    private fun isFeeExchangeSectionValid(): Boolean =
+        isFeeExchangeRateValid &&
+            isFeeConvertedAmountValid &&
+            CurrencyConverter.isPositiveAmount(feeExchangeRate) &&
+            CurrencyConverter.isPositiveAmount(feeConvertedAmount)
 
     // ── Wizard computed properties ──────────────────────────────────────
 
@@ -167,7 +185,10 @@ data class AddCashWithdrawalUiState(
                 withdrawalAmount.isNotBlank() && isAmountValid
 
             CashWithdrawalStep.EXCHANGE_RATE ->
-                displayExchangeRate.isNotBlank() && deductedAmount.isNotBlank()
+                isExchangeRateValid &&
+                    isDeductedAmountValid &&
+                    CurrencyConverter.isPositiveAmount(displayExchangeRate) &&
+                    CurrencyConverter.isPositiveAmount(deductedAmount)
 
             CashWithdrawalStep.SCOPE -> true // radio selection always has a value
 
@@ -177,7 +198,10 @@ data class AddCashWithdrawalUiState(
                 feeAmount.isNotBlank() && isFeeAmountValid
 
             CashWithdrawalStep.FEE_EXCHANGE_RATE ->
-                feeExchangeRate.isNotBlank() && feeConvertedAmount.isNotBlank()
+                isFeeExchangeRateValid &&
+                    isFeeConvertedAmountValid &&
+                    CurrencyConverter.isPositiveAmount(feeExchangeRate) &&
+                    CurrencyConverter.isPositiveAmount(feeConvertedAmount)
 
             CashWithdrawalStep.REVIEW -> isFormValid
         }

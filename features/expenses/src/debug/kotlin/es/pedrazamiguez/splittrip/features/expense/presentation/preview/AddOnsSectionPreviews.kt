@@ -1,6 +1,14 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
@@ -93,18 +101,37 @@ private fun AddOnsSectionWithItemsPreview() {
     }
 }
 
+private const val DARK_THEME_LUMINANCE_THRESHOLD = 0.5f
+
+@Composable
+private fun previewExpandedCardColor(): Color {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < DARK_THEME_LUMINANCE_THRESHOLD
+    return if (isDark) {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLowest
+    }
+}
+
 @PreviewComplete
 @Composable
 private fun AddOnItemEditorPercentagePreview() {
     PreviewThemeWrapper {
-        AddOnItemEditor(
-            addOn = PREVIEW_ADDON_PERCENTAGE,
-            availableCurrencies = persistentListOf(PREVIEW_CURRENCY_EUR, PREVIEW_CURRENCY_USD),
-            paymentMethods = persistentListOf(PREVIEW_PAYMENT_METHOD_CARD, PREVIEW_PAYMENT_METHOD_CASH),
-            showCurrencySelector = true,
-            onEvent = {},
-            groupCurrency = PREVIEW_CURRENCY_EUR
-        )
+        FlatCard(
+            modifier = Modifier.fillMaxWidth(),
+            color = previewExpandedCardColor(),
+            ghostBorder = true
+        ) {
+            AddOnItemEditor(
+                addOn = PREVIEW_ADDON_PERCENTAGE,
+                availableCurrencies = persistentListOf(PREVIEW_CURRENCY_EUR, PREVIEW_CURRENCY_USD),
+                paymentMethods = persistentListOf(PREVIEW_PAYMENT_METHOD_CARD, PREVIEW_PAYMENT_METHOD_CASH),
+                showCurrencySelector = true,
+                onEvent = {},
+                groupCurrency = PREVIEW_CURRENCY_EUR,
+                modifier = Modifier.padding(MaterialTheme.spacing.Default)
+            )
+        }
     }
 }
 
@@ -112,14 +139,21 @@ private fun AddOnItemEditorPercentagePreview() {
 @Composable
 private fun AddOnItemEditorExactPreview() {
     PreviewThemeWrapper {
-        AddOnItemEditor(
-            addOn = PREVIEW_ADDON_EXACT,
-            availableCurrencies = persistentListOf(PREVIEW_CURRENCY_EUR, PREVIEW_CURRENCY_USD),
-            paymentMethods = persistentListOf(PREVIEW_PAYMENT_METHOD_CARD, PREVIEW_PAYMENT_METHOD_CASH),
-            showCurrencySelector = true,
-            onEvent = {},
-            groupCurrency = PREVIEW_CURRENCY_EUR
-        )
+        FlatCard(
+            modifier = Modifier.fillMaxWidth(),
+            color = previewExpandedCardColor(),
+            ghostBorder = true
+        ) {
+            AddOnItemEditor(
+                addOn = PREVIEW_ADDON_EXACT,
+                availableCurrencies = persistentListOf(PREVIEW_CURRENCY_EUR, PREVIEW_CURRENCY_USD),
+                paymentMethods = persistentListOf(PREVIEW_PAYMENT_METHOD_CARD, PREVIEW_PAYMENT_METHOD_CASH),
+                showCurrencySelector = true,
+                onEvent = {},
+                groupCurrency = PREVIEW_CURRENCY_EUR,
+                modifier = Modifier.padding(MaterialTheme.spacing.Default)
+            )
+        }
     }
 }
 

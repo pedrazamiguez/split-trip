@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
+import java.math.BigDecimal
 
 class ExpenseValidationServiceImpl(
     private val splitCalculatorFactory: ExpenseSplitCalculatorFactory,
@@ -40,6 +41,25 @@ class ExpenseValidationServiceImpl(
             )
         }
     }
+
+    override fun validateExchangeRate(rateString: String): ValidationResult {
+        val cleanString = rateString.trim()
+        if (cleanString.isBlank()) {
+            return ValidationResult.Invalid("Exchange rate cannot be empty")
+        }
+        val normalizedString = CurrencyConverter.normalizeAmountString(cleanString)
+        val parsed = normalizedString.toBigDecimalOrNull()
+            ?: return ValidationResult.Invalid("Please enter a valid exchange rate")
+
+        return if (parsed <= BigDecimal.ZERO) {
+            ValidationResult.Invalid("Exchange rate must be greater than zero")
+        } else {
+            ValidationResult.Valid
+        }
+    }
+
+    override fun validateGroupAmount(amountString: String): ValidationResult =
+        validateAmount(amountString)
 
     override fun validateUserCount(count: Int): ValidationResult = when {
         count <= 0 -> ValidationResult.Invalid("User count must be greater than zero")

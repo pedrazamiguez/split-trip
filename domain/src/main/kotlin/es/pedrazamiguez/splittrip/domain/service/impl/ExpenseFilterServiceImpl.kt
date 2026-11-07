@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
@@ -58,6 +59,20 @@ class ExpenseFilterServiceImpl(
             }
         }
 
+        // 7. Attributes Filter
+        if (criteria.isAttributeFiltered) {
+            candidateExpenses = candidateExpenses.filter { expense ->
+                matchesAttributes(expense, criteria.selectedAttributes)
+            }
+        }
+
+        // 8. Amount Range & Currency Filter
+        if (criteria.isAmountFiltered) {
+            candidateExpenses = candidateExpenses.filter { expense ->
+                matchesAmount(expense, criteria)
+            }
+        }
+
         return candidateExpenses
     }
 
@@ -106,5 +121,31 @@ class ExpenseFilterServiceImpl(
         if (startDate != null && expenseDate.isBefore(startDate)) return false
         if (endDate != null && expenseDate.isAfter(endDate)) return false
         return true
+    }
+
+    private fun matchesAttributes(
+        expense: Expense,
+        selectedAttributes: Set<ExpenseAttribute>
+    ): Boolean = selectedAttributes.all { attribute ->
+        when (attribute) {
+            ExpenseAttribute.HAS_RECEIPT -> expense.receiptAttachment != null
+            ExpenseAttribute.HAS_NOTE -> !expense.notes.isNullOrBlank()
+            ExpenseAttribute.HAS_EXTRAS -> expense.addOns.isNotEmpty()
+        }
+    }
+
+    private fun matchesAmount(expense: Expense, criteria: ExpenseFilterCriteria): Boolean {
+        val currency = criteria.filterCurrency
+        if (currency != null && !expense.sourceCurrency.equals(currency, ignoreCase = true)) {
+            return false
+        }
+        val targetAmount = if (currency != null) expense.sourceAmount else expense.groupAmount
+        return isWithinAmountBounds(targetAmount, criteria.minAmount, criteria.maxAmount)
+    }
+
+    private fun isWithinAmountBounds(amount: Long, min: Long?, max: Long?): Boolean {
+        val matchesMin = min == null || amount >= min
+        val matchesMax = max == null || amount <= max
+        return matchesMin && matchesMax
     }
 }

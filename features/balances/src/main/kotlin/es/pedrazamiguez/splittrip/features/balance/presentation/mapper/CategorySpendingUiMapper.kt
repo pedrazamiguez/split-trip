@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
 
-import androidx.compose.ui.graphics.vector.ImageVector
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.ChartColors
@@ -12,38 +11,25 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.AddOn
+import es.pedrazamiguez.splittrip.domain.model.BreakdownPercentage
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CategorySpendingUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SubcategorySpendingUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.UncoloredCategoryEntry
 import java.time.LocalDate
 import java.util.Locale
-import kotlin.math.roundToInt
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
 class CategorySpendingUiMapper(
     private val localeProvider: LocaleProvider,
-    private val resourceProvider: ResourceProvider
+    private val resourceProvider: ResourceProvider,
+    private val remainderDistributionService: RemainderDistributionService
 ) {
-    private data class UncoloredCategoryEntry(
-        val name: String,
-        val icon: ImageVector,
-        val amount: Long,
-        val formattedAmount: String,
-        val formattedPercentage: String,
-        val progress: Float,
-        val subcategories: ImmutableList<SubcategorySpendingUiModel>
-    )
-
-    private fun formatPercentage(amount: Long, total: Long): String {
-        if (amount <= 0L || total <= 0L) return "0%"
-        val rounded = (amount.toFloat() / total.toFloat() * 100f).roundToInt()
-        return if (rounded == 0) "<1%" else "$rounded%"
-    }
-
     private fun filterActiveNonScheduledExpenses(
         expenses: List<Expense>,
         today: LocalDate
@@ -90,10 +76,18 @@ class CategorySpendingUiMapper(
             locale = locale
         )
 
-        val allEntries = if (extrasEntry != null) {
+        val rawEntries = if (extrasEntry != null) {
             standardEntries + extrasEntry
         } else {
             standardEntries
+        }
+
+        val percentages = remainderDistributionService
+            .distributeBreakdownPercentages(rawEntries.map { it.amount }, globalTotal)
+            .map { it.toDisplayString() }
+
+        val allEntries = rawEntries.mapIndexed { index, entry ->
+            entry.copy(formattedPercentage = percentages[index])
         }
 
         return allEntries
@@ -121,7 +115,6 @@ class CategorySpendingUiMapper(
         .map { (category, categoryExpenses) ->
             val amount = categoryExpenses.sumOf { it.groupAmount }
             val progress = amount.toFloat() / globalTotal.toFloat()
-            val formattedPercentage = formatPercentage(amount, globalTotal)
             val subcategories = buildExpenseSubcategories(
                 categoryExpenses = categoryExpenses,
                 categoryAmount = amount,
@@ -134,7 +127,6 @@ class CategorySpendingUiMapper(
                 icon = category.toIconVector(),
                 amount = amount,
                 formattedAmount = formatCurrencyAmount(amount, groupCurrency, locale),
-                formattedPercentage = formattedPercentage,
                 progress = progress,
                 subcategories = subcategories
             )
@@ -145,24 +137,29 @@ class CategorySpendingUiMapper(
         categoryAmount: Long,
         groupCurrency: String,
         locale: Locale
-    ): ImmutableList<SubcategorySpendingUiModel> = categoryExpenses
-        .groupBy { it.subcategory }
-        .mapValues { (_, subcategoryExpenses) -> subcategoryExpenses.sumOf { it.groupAmount } }
-        .entries
-        .sortedByDescending { it.value }
-        .map { entry ->
+    ): ImmutableList<SubcategorySpendingUiModel> {
+        val sortedSubcategories = categoryExpenses
+            .groupBy { it.subcategory }
+            .mapValues { (_, subcategoryExpenses) -> subcategoryExpenses.sumOf { it.groupAmount } }
+            .entries
+            .sortedByDescending { it.value }
+
+        val percentages = remainderDistributionService
+            .distributeBreakdownPercentages(sortedSubcategories.map { it.value }, categoryAmount)
+            .map { it.toDisplayString() }
+
+        return sortedSubcategories.mapIndexed { index, entry ->
             val subcategory = entry.key
             val subAmount = entry.value
-            val formattedPercentage = formatPercentage(subAmount, categoryAmount)
             SubcategorySpendingUiModel(
                 subcategoryName = resourceProvider.getString(subcategory.toStringRes()),
                 subcategoryIcon = subcategory.toIconVector(),
                 formattedAmount = formatCurrencyAmount(subAmount, groupCurrency, locale),
-                formattedPercentage = formattedPercentage,
+                formattedPercentage = percentages[index],
                 rawAmountCents = subAmount
             )
-        }
-        .toImmutableList()
+        }.toImmutableList()
+    }
 
     private fun buildExtrasCategoryEntry(
         allExtras: List<AddOn>,
@@ -173,32 +170,34 @@ class CategorySpendingUiMapper(
     ): UncoloredCategoryEntry? {
         if (extrasTotalCents <= 0L) return null
 
-        val extrasSubcategories = allExtras
+        val sortedExtras = allExtras
             .groupBy { it.type }
             .mapValues { (_, addOns) -> addOns.sumOf { it.groupAmountCents } }
             .entries
             .sortedByDescending { it.value }
-            .map { entry ->
-                val addOnType = entry.key
-                val subAmount = entry.value
-                val formattedPercentage = formatPercentage(subAmount, extrasTotalCents)
-                val typeName = resolveAddOnTypeName(addOnType)
-                SubcategorySpendingUiModel(
-                    subcategoryName = typeName,
-                    subcategoryIcon = addOnType.toIconVector(),
-                    formattedAmount = formatCurrencyAmount(subAmount, groupCurrency, locale),
-                    formattedPercentage = formattedPercentage,
-                    rawAmountCents = subAmount
-                )
-            }
-            .toImmutableList()
+
+        val percentages = remainderDistributionService
+            .distributeBreakdownPercentages(sortedExtras.map { it.value }, extrasTotalCents)
+            .map { it.toDisplayString() }
+
+        val extrasSubcategories = sortedExtras.mapIndexed { index, entry ->
+            val addOnType = entry.key
+            val subAmount = entry.value
+            val typeName = resolveAddOnTypeName(addOnType)
+            SubcategorySpendingUiModel(
+                subcategoryName = typeName,
+                subcategoryIcon = addOnType.toIconVector(),
+                formattedAmount = formatCurrencyAmount(subAmount, groupCurrency, locale),
+                formattedPercentage = percentages[index],
+                rawAmountCents = subAmount
+            )
+        }.toImmutableList()
 
         return UncoloredCategoryEntry(
             name = resourceProvider.getString(R.string.balances_total_extras),
             icon = TablerIcons.Outline.ReceiptEuro,
             amount = extrasTotalCents,
             formattedAmount = formatCurrencyAmount(extrasTotalCents, groupCurrency, locale),
-            formattedPercentage = formatPercentage(extrasTotalCents, globalTotal),
             progress = extrasTotalCents.toFloat() / globalTotal.toFloat(),
             subcategories = extrasSubcategories
         )
@@ -235,4 +234,10 @@ class CategorySpendingUiMapper(
         if (totalCents <= 0) return ""
         return formatCurrencyAmount(totalCents, groupCurrency, localeProvider.getCurrentLocale())
     }
+}
+
+private fun BreakdownPercentage.toDisplayString(): String = when (this) {
+    BreakdownPercentage.Zero -> "0%"
+    BreakdownPercentage.SubOnePercent -> "<1%"
+    is BreakdownPercentage.Whole -> "$percent%"
 }

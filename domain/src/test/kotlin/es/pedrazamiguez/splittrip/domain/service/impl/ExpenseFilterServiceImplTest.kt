@@ -1,12 +1,15 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseSearchService
 import java.time.LocalDate
@@ -520,6 +523,235 @@ class ExpenseFilterServiceImplTest {
     }
 
     @Nested
+    @DisplayName("Expense Attribute Filtering")
+    inner class ExpenseAttributeFiltering {
+
+        private val expenseWithReceipt = expense1.copy(
+            id = "exp-receipt",
+            receiptAttachment = ReceiptAttachment(
+                localUri = "file:///receipt.jpg",
+                mimeType = "image/jpeg",
+                capturedAtMillis = 1000L
+            )
+        )
+        private val expenseWithNote = expense2.copy(
+            id = "exp-note",
+            notes = "Dinner for team"
+        )
+        private val expenseWithExtras = expense3.copy(
+            id = "exp-extras",
+            addOns = listOf(AddOn(id = "addon-1", amountCents = 200L))
+        )
+        private val expenseWithReceiptAndNote = expense1.copy(
+            id = "exp-receipt-note",
+            receiptAttachment = ReceiptAttachment(
+                localUri = "file:///receipt2.jpg",
+                mimeType = "image/jpeg",
+                capturedAtMillis = 2000L
+            ),
+            notes = "Receipt attached and noted"
+        )
+        private val expensePlain = expense4.copy(
+            id = "exp-plain",
+            receiptAttachment = null,
+            notes = null,
+            addOns = emptyList()
+        )
+        private val expenseWithBlankNote = expense1.copy(
+            id = "exp-blank-note",
+            notes = "   "
+        )
+
+        private val attributeExpenses = listOf(
+            expenseWithReceipt,
+            expenseWithNote,
+            expenseWithExtras,
+            expenseWithReceiptAndNote,
+            expensePlain,
+            expenseWithBlankNote
+        )
+
+        @Test
+        fun `filters expenses with receipt attachment when HAS_RECEIPT is selected`() {
+            val criteria = ExpenseFilterCriteria(selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT))
+            val result = filterService.filter(attributeExpenses, criteria)
+            assertEquals(listOf(expenseWithReceipt, expenseWithReceiptAndNote), result)
+        }
+
+        @Test
+        fun `filters expenses with non-blank notes when HAS_NOTE is selected`() {
+            val criteria = ExpenseFilterCriteria(selectedAttributes = setOf(ExpenseAttribute.HAS_NOTE))
+            val result = filterService.filter(attributeExpenses, criteria)
+            assertEquals(listOf(expenseWithNote, expenseWithReceiptAndNote), result)
+        }
+
+        @Test
+        fun `filters expenses with add-ons when HAS_EXTRAS is selected`() {
+            val criteria = ExpenseFilterCriteria(selectedAttributes = setOf(ExpenseAttribute.HAS_EXTRAS))
+            val result = filterService.filter(attributeExpenses, criteria)
+            assertEquals(listOf(expenseWithExtras), result)
+        }
+
+        @Test
+        fun `filters expenses matching multiple selected attributes using AND logic`() {
+            val criteria = ExpenseFilterCriteria(
+                selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT, ExpenseAttribute.HAS_NOTE)
+            )
+            val result = filterService.filter(attributeExpenses, criteria)
+            assertEquals(listOf(expenseWithReceiptAndNote), result)
+        }
+
+        @Test
+        fun `returns empty list when no expenses match selected attributes`() {
+            val criteria = ExpenseFilterCriteria(
+                selectedAttributes = setOf(
+                    ExpenseAttribute.HAS_RECEIPT,
+                    ExpenseAttribute.HAS_NOTE,
+                    ExpenseAttribute.HAS_EXTRAS
+                )
+            )
+            val result = filterService.filter(attributeExpenses, criteria)
+            assertTrue(result.isEmpty())
+        }
+    }
+
+    @Nested
+    @DisplayName("Amount Range and Currency Filtering")
+    inner class AmountRangeAndCurrencyFiltering {
+
+        private val eurExpense1 = expense1.copy(
+            id = "exp-eur-1",
+            sourceAmount = 1000L,
+            sourceCurrency = "EUR",
+            groupAmount = 1000L,
+            groupCurrency = "EUR"
+        )
+        private val eurExpense2 = expense2.copy(
+            id = "exp-eur-2",
+            sourceAmount = 2500L,
+            sourceCurrency = "EUR",
+            groupAmount = 2500L,
+            groupCurrency = "EUR"
+        )
+        private val eurExpense3 = expense3.copy(
+            id = "exp-eur-3",
+            sourceAmount = 5000L,
+            sourceCurrency = "EUR",
+            groupAmount = 5000L,
+            groupCurrency = "EUR"
+        )
+        private val usdExpense1 = expense4.copy(
+            id = "exp-usd-1",
+            sourceAmount = 1500L,
+            sourceCurrency = "USD",
+            groupAmount = 1350L,
+            groupCurrency = "EUR"
+        )
+        private val usdExpense2 = expense1.copy(
+            id = "exp-usd-2",
+            sourceAmount = 3000L,
+            sourceCurrency = "USD",
+            groupAmount = 2700L,
+            groupCurrency = "EUR"
+        )
+        private val jpyExpense = expense2.copy(
+            id = "exp-jpy",
+            sourceAmount = 6000L,
+            sourceCurrency = "JPY",
+            groupAmount = 4000L,
+            groupCurrency = "EUR"
+        )
+
+        private val multiCurrencyExpenses = listOf(eurExpense1, usdExpense1, jpyExpense)
+
+        @Test
+        fun `filters expenses by filterCurrency matching sourceCurrency`() {
+            val criteria = ExpenseFilterCriteria(filterCurrency = "USD")
+            val result = filterService.filter(multiCurrencyExpenses, criteria)
+            assertEquals(listOf(usdExpense1), result)
+        }
+
+        @Test
+        fun `filters expenses by minAmount in group currency when filterCurrency is null`() {
+            val expenses = listOf(eurExpense1, eurExpense2, eurExpense3)
+            val criteria = ExpenseFilterCriteria(minAmount = 2000L)
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(eurExpense2, eurExpense3), result)
+        }
+
+        @Test
+        fun `filters expenses by maxAmount in group currency when filterCurrency is null`() {
+            val expenses = listOf(eurExpense1, eurExpense2, eurExpense3)
+            val criteria = ExpenseFilterCriteria(maxAmount = 2500L)
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(eurExpense1, eurExpense2), result)
+        }
+
+        @Test
+        fun `filters expenses by closed range in group currency when filterCurrency is null`() {
+            val exp500 = expense1.copy(id = "exp-500", groupAmount = 500L)
+            val exp1500 = expense2.copy(id = "exp-1500", groupAmount = 1500L)
+            val exp3000 = expense3.copy(id = "exp-3000", groupAmount = 3000L)
+            val exp6000 = expense4.copy(id = "exp-6000", groupAmount = 6000L)
+            val expenses = listOf(exp500, exp1500, exp3000, exp6000)
+
+            val criteria = ExpenseFilterCriteria(minAmount = 1000L, maxAmount = 4000L)
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(exp1500, exp3000), result)
+        }
+
+        @Test
+        fun `filters expenses by sourceAmount and sourceCurrency when both currency and amount bounds specified`() {
+            val expenses = listOf(usdExpense1, usdExpense2, eurExpense2)
+            val criteria = ExpenseFilterCriteria(
+                filterCurrency = "USD",
+                minAmount = 2000L,
+                maxAmount = 4000L
+            )
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(usdExpense2), result)
+        }
+
+        @Test
+        fun `returns empty list when no expenses match amount bounds`() {
+            val expenses = listOf(eurExpense1, eurExpense2, eurExpense3)
+            val criteria = ExpenseFilterCriteria(minAmount = 10000L)
+            val result = filterService.filter(expenses, criteria)
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `combines amount filter with other dimensions using AND logic`() {
+            val matchingExpense = eurExpense2.copy(
+                category = ExpenseCategory.FOOD,
+                paymentMethod = PaymentMethod.CREDIT_CARD
+            )
+            val wrongCategory = eurExpense2.copy(
+                category = ExpenseCategory.TRANSPORT,
+                paymentMethod = PaymentMethod.CREDIT_CARD
+            )
+            val wrongMethod = eurExpense2.copy(
+                category = ExpenseCategory.FOOD,
+                paymentMethod = PaymentMethod.CASH
+            )
+            val wrongAmount = eurExpense1.copy(
+                category = ExpenseCategory.FOOD,
+                paymentMethod = PaymentMethod.CREDIT_CARD
+            )
+            val expenses = listOf(matchingExpense, wrongCategory, wrongMethod, wrongAmount)
+
+            val criteria = ExpenseFilterCriteria(
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedPaymentMethods = setOf(PaymentMethod.CREDIT_CARD),
+                minAmount = 2000L,
+                maxAmount = 3000L
+            )
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(matchingExpense), result)
+        }
+    }
+
+    @Nested
     @DisplayName("Combined Filter Criteria (Logical AND)")
     inner class CombinedFiltering {
 
@@ -558,6 +790,58 @@ class ExpenseFilterServiceImplTest {
                 selectedMemberIds = setOf("user-1"),
                 selectedPaymentMethods = setOf(PaymentMethod.CREDIT_CARD),
                 selectedPaymentStatuses = setOf(PaymentStatus.FINISHED)
+            )
+
+            val result = filterService.filter(expenses, criteria)
+
+            assertEquals(listOf(matchingExpense), result)
+        }
+
+        @Test
+        fun `combines category, payment method, payment status, member, and attribute filters using AND logic`() {
+            val matchingExpense = expense1.copy(
+                id = "exp-match",
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.RESTAURANT,
+                payerId = "user-1",
+                paymentMethod = PaymentMethod.CREDIT_CARD,
+                paymentStatus = PaymentStatus.FINISHED,
+                receiptAttachment = ReceiptAttachment(
+                    localUri = "file:///receipt.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 1000L
+                )
+            )
+            val wrongAttribute = matchingExpense.copy(
+                id = "exp-wrong-attr",
+                receiptAttachment = null
+            )
+            val wrongCategory = matchingExpense.copy(
+                id = "exp-wrong-cat",
+                category = ExpenseCategory.ACTIVITIES,
+                subcategory = ExpenseSubcategory.MUSEUM_CULTURE
+            )
+            val wrongMethod = matchingExpense.copy(
+                id = "exp-wrong-method",
+                paymentMethod = PaymentMethod.CASH
+            )
+            val wrongStatus = matchingExpense.copy(
+                id = "exp-wrong-status",
+                paymentStatus = PaymentStatus.CANCELLED
+            )
+            val wrongMember = matchingExpense.copy(
+                id = "exp-wrong-member",
+                payerId = "user-3",
+                splits = listOf(ExpenseSplit(userId = "user-3", amountCents = 2500L))
+            )
+
+            val expenses = listOf(matchingExpense, wrongAttribute, wrongCategory, wrongMethod, wrongStatus, wrongMember)
+            val criteria = ExpenseFilterCriteria(
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedMemberIds = setOf("user-1"),
+                selectedPaymentMethods = setOf(PaymentMethod.CREDIT_CARD),
+                selectedPaymentStatuses = setOf(PaymentStatus.FINISHED),
+                selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT)
             )
 
             val result = filterService.filter(expenses, criteria)

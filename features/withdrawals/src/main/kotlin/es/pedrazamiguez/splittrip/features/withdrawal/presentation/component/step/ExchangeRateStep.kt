@@ -32,6 +32,8 @@ fun ExchangeRateStep(
                 groupAmountLabel = uiState.deductedAmountLabel,
                 isLoadingRate = uiState.isLoadingRate,
                 isExchangeRateLocked = false,
+                isGroupAmountError = !uiState.isDeductedAmountValid,
+                isExchangeRateFieldError = !uiState.isExchangeRateValid,
                 isExchangeRateStale = uiState.isExchangeRateStale,
                 isExchangeRateError = uiState.isExchangeRateError,
                 autoFocus = true
