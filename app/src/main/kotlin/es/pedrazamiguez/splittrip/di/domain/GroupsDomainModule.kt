@@ -28,6 +28,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdLocalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
@@ -39,6 +40,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.impl.AddGroupMembersUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.ArchiveGroupUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.CreateGroupUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.DeleteGroupUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetGroupByIdLocalUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetGroupByIdUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetUserGroupsFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.LeaveGroupUseCaseImpl
@@ -86,6 +88,12 @@ val groupsDomainModule = module {
     factory<GetGroupByIdUseCase> {
         createLoggingProxy<GetGroupByIdUseCase>(
             GetGroupByIdUseCaseImpl(groupRepository = get<GroupRepository>()),
+            LogTag.USE_CASE
+        )
+    }
+    factory<GetGroupByIdLocalUseCase> {
+        createLoggingProxy<GetGroupByIdLocalUseCase>(
+            GetGroupByIdLocalUseCaseImpl(groupRepository = get<GroupRepository>()),
             LogTag.USE_CASE
         )
     }

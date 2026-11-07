@@ -89,4 +89,9 @@ interface CashWithdrawalRepository {
      * Fetches a single cash withdrawal by its ID.
      */
     suspend fun getWithdrawalById(withdrawalId: String): CashWithdrawal?
+
+    /**
+     * Fetches multiple cash withdrawals by their IDs from the local cache.
+     */
+    suspend fun getWithdrawalsByIds(withdrawalIds: List<String>): List<CashWithdrawal>
 }

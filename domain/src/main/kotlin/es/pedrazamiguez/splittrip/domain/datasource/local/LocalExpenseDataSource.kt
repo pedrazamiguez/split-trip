@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface LocalExpenseDataSource {
 
     fun getExpensesByGroupIdFlow(groupId: String): Flow<List<Expense>>
@@ -41,6 +42,12 @@ interface LocalExpenseDataSource {
      * and transition PENDING_SYNC items to SYNCED.
      */
     suspend fun getPendingSyncExpenseIds(groupId: String): List<String>
+
+    /**
+     * Returns expenses in a group that have a local receipt URI but no remote URL,
+     * requiring a background upload retry.
+     */
+    suspend fun getPendingReceiptExpenses(groupId: String): List<Expense>
 
     /**
      * Persists the Firebase Storage download URL for an expense's receipt.

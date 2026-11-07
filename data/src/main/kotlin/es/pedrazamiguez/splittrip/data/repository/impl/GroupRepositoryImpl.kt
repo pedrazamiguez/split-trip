@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
+import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
@@ -120,24 +121,21 @@ class GroupRepositoryImpl(
         return localGroupDataSource.getGroupById(groupId)
     }
 
-    override fun getGroupByIdFlow(groupId: String): Flow<Group?> {
-        return localGroupDataSource.getGroupByIdFlow(groupId)
-            .onStart {
-                groupSubscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
-                    try {
-                        cloudGroupDataSource.getGroupFlow(groupId).collect { remoteGroup ->
-                            if (remoteGroup != null) {
-                                localGroupDataSource.saveGroup(remoteGroup)
-                            }
+    override fun getGroupByIdFlow(groupId: String): Flow<Group?> =
+        localGroupDataSource.getGroupByIdFlow(groupId)
+            .trackSubscription(groupSubscriptionTracker, groupId, syncScope) {
+                try {
+                    cloudGroupDataSource.getGroupFlow(groupId).collect { remoteGroup ->
+                        if (remoteGroup != null) {
+                            localGroupDataSource.saveGroup(remoteGroup)
                         }
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Timber.e(e, "Error subscribing to cloud group changes for: $groupId")
                     }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Error subscribing to cloud group changes for: $groupId")
                 }
             }
-    }
 
     /**
      * Creates a group locally first, then syncs to cloud.

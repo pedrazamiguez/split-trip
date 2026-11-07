@@ -4,6 +4,19 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
+
+private val dateTimeFormatterCache = ConcurrentHashMap<Pair<String, Locale>, DateTimeFormatter>()
+
+internal fun getDateTimeFormatterCacheSize(): Int = dateTimeFormatterCache.size
+internal fun clearDateFormatterCache() {
+    dateTimeFormatterCache.clear()
+}
+
+private fun getOrCreateDateTimeFormatter(pattern: String, locale: Locale): DateTimeFormatter =
+    dateTimeFormatterCache.computeIfAbsent(pattern to locale) { (p, l) ->
+        DateTimeFormatter.ofPattern(p, l)
+    }
 
 /**
  * Formats a [LocalDateTime] to a short human-readable date string.
@@ -20,12 +33,12 @@ fun LocalDateTime.formatShortDate(
     referenceYear: Int = LocalDate.now().year
 ): String {
     val pattern = if (year == referenceYear) "d MMM" else "d MMM yyyy"
-    val formatter = DateTimeFormatter.ofPattern(pattern, locale)
+    val formatter = getOrCreateDateTimeFormatter(pattern, locale)
     return format(formatter)
 }
 
 fun LocalDateTime.formatMediumDate(locale: Locale): String {
-    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", locale)
+    val formatter = getOrCreateDateTimeFormatter("MMMM yyyy", locale)
     return format(formatter)
 }
 
@@ -44,11 +57,11 @@ fun LocalDate.formatShortDate(
     referenceYear: Int = LocalDate.now().year
 ): String {
     val pattern = if (year == referenceYear) "d MMM" else "d MMM yyyy"
-    val formatter = DateTimeFormatter.ofPattern(pattern, locale)
+    val formatter = getOrCreateDateTimeFormatter(pattern, locale)
     return format(formatter)
 }
 
 fun LocalDate.formatMediumDate(locale: Locale): String {
-    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", locale)
+    val formatter = getOrCreateDateTimeFormatter("MMMM yyyy", locale)
     return format(formatter)
 }

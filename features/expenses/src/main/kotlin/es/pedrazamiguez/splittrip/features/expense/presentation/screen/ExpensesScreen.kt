@@ -41,7 +41,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.expense.R
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.RestoreScrollEffect
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.TrackScrollEffect
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.dialog.ResetFiltersConfirmationDialog
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.DateHeaderItem
@@ -76,12 +75,8 @@ fun ExpensesScreen(
     var expenseToCancel by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var showResetFiltersDialog by remember { mutableStateOf(false) }
 
-    val listState = rememberLazyListState(
-        initialFirstVisibleItemIndex = uiState.scrollPosition,
-        initialFirstVisibleItemScrollOffset = uiState.scrollOffset
-    )
+    val listState = rememberLazyListState()
 
-    RestoreScrollEffect(listState = listState, uiState = uiState)
     TrackScrollEffect(listState = listState, onScrollPositionChanged = onScrollPositionChanged)
 
     LaunchedEffect(actions) {
@@ -185,7 +180,10 @@ fun ExpensesScreen(
                                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
                                 ) {
                                     uiState.expenseGroups.forEach { dateGroup ->
-                                        stickyHeader(key = "header-${dateGroup.dateText}") {
+                                        stickyHeader(
+                                            key = "header-${dateGroup.dateText}",
+                                            contentType = "date_header"
+                                        ) {
                                             DateHeaderItem(
                                                 dateText = dateGroup.dateText,
                                                 formattedDayTotal = dateGroup.formattedDayTotal,
@@ -193,7 +191,11 @@ fun ExpensesScreen(
                                             )
                                         }
 
-                                        items(items = dateGroup.expenses, key = { it.id }) { expense ->
+                                        items(
+                                            items = dateGroup.expenses,
+                                            key = { it.id },
+                                            contentType = { "expense_item" }
+                                        ) { expense ->
                                             ExpenseItem(
                                                 expenseUiModel = expense,
                                                 modifier = Modifier.animateItem(),

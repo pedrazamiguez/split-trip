@@ -47,6 +47,9 @@ class LocalCashWithdrawalDataSourceImpl(private val cashWithdrawalDao: CashWithd
     override suspend fun getWithdrawalById(withdrawalId: String): CashWithdrawal? =
         cashWithdrawalDao.getWithdrawalById(withdrawalId)?.toDomain()
 
+    override suspend fun getWithdrawalsByIds(withdrawalIds: List<String>): List<CashWithdrawal> =
+        cashWithdrawalDao.getWithdrawalsByIds(withdrawalIds).toDomain()
+
     override suspend fun saveWithdrawal(withdrawal: CashWithdrawal) {
         cashWithdrawalDao.insertWithdrawal(withdrawal.toEntity())
     }

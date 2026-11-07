@@ -1,11 +1,13 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
+import es.pedrazamiguez.splittrip.domain.model.Currency as DomainCurrency
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -307,7 +309,7 @@ class AmountFormatterTest {
 
         @Test
         fun `formats EUR with native symbol`() {
-            val currency = es.pedrazamiguez.splittrip.domain.model.Currency(
+            val currency = DomainCurrency(
                 code = "EUR",
                 symbol = "€",
                 defaultName = "Euro",
@@ -318,7 +320,7 @@ class AmountFormatterTest {
 
         @Test
         fun `formats USD with disambiliated native symbol`() {
-            val currency = es.pedrazamiguez.splittrip.domain.model.Currency(
+            val currency = DomainCurrency(
                 code = "USD",
                 symbol = "$",
                 defaultName = "US Dollar",
@@ -329,13 +331,62 @@ class AmountFormatterTest {
 
         @Test
         fun `formats THB falling back to model symbol`() {
-            val currency = es.pedrazamiguez.splittrip.domain.model.Currency(
+            val currency = DomainCurrency(
                 code = "THB",
                 symbol = "฿",
                 defaultName = "Thai Baht",
                 decimalDigits = 2
             )
             assertEquals("THB (฿)", currency.formatDisplay())
+        }
+    }
+
+    // ---------- Formatter Caching ----------
+
+    @Nested
+    @DisplayName("Caching & Performance")
+    inner class CachingAndPerformance {
+
+        @BeforeEach
+        fun clearCaches() {
+            clearAmountFormatterCaches()
+        }
+
+        @Test
+        fun `formats consistently and caches NumberFormat prototypes across 10000 invocations`() {
+            val testCurrencies = listOf("EUR", "USD", "JPY", "CNY")
+            val expectedResults = testCurrencies.map { curr ->
+                formatCurrencyAmount(123450, curr, usLocale)
+            }
+
+            repeat(10_000) { iteration ->
+                val currIndex = iteration % testCurrencies.size
+                val curr = testCurrencies[currIndex]
+                val formatted = formatCurrencyAmount(123450, curr, usLocale)
+                assertEquals(expectedResults[currIndex], formatted)
+            }
+
+            // Exactly 4 number formats cached for US locale with 4 currencies
+            assertEquals(4, getNumberFormatCacheSize())
+        }
+
+        @Test
+        fun `memoized resolveNativeSymbol populates cache on first lookup`() {
+            clearAmountFormatterCaches()
+            assertEquals(0, getNativeSymbolCacheSize())
+
+            val expense = Expense(groupAmount = 1000, groupCurrency = "CNY")
+            val formattedFirst = expense.formatAmount(usLocale)
+            assertTrue(getNativeSymbolCacheSize() > 0)
+
+            val initialCacheSize = getNativeSymbolCacheSize()
+            repeat(100) {
+                val formattedSubsequent = expense.formatAmount(usLocale)
+                assertEquals(formattedFirst, formattedSubsequent)
+            }
+
+            // Cache size does not grow upon subsequent lookups
+            assertEquals(initialCacheSize, getNativeSymbolCacheSize())
         }
     }
 }

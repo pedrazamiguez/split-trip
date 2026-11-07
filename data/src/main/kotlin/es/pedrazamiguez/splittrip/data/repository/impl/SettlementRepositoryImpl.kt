@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.sync.syncDeletionToCloud
+import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSettlementDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSettlementDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
@@ -16,7 +17,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -32,42 +32,40 @@ class SettlementRepositoryImpl(
 
     override fun getGroupSettlementsFlow(groupId: String): Flow<List<SettlementRecord>> =
         localSettlementDataSource.getSettlementsByGroupIdFlow(groupId)
-            .onStart {
-                subscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
-                    subscribeAndReconcile(
-                        cloudFlow = cloudSettlementDataSource.getSettlementsByGroupIdFlow(groupId),
-                        params = SyncReconciliationParams(
-                            reconcileLocal = { remoteRecords ->
-                                val legacySuggested = remoteRecords.filter { it.status == SettlementStatus.SUGGESTED }
-                                if (legacySuggested.isNotEmpty()) {
-                                    syncScope.launch {
-                                        legacySuggested.forEach { stale ->
-                                            try {
-                                                cloudSettlementDataSource.deleteSettlement(groupId, stale.id)
-                                            } catch (e: Exception) {
-                                                Timber.w(e, "Failed to cleanup legacy suggested settlement ${stale.id}")
-                                            }
+            .trackSubscription(subscriptionTracker, groupId, syncScope) {
+                subscribeAndReconcile(
+                    cloudFlow = cloudSettlementDataSource.getSettlementsByGroupIdFlow(groupId),
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { remoteRecords ->
+                            val legacySuggested = remoteRecords.filter { it.status == SettlementStatus.SUGGESTED }
+                            if (legacySuggested.isNotEmpty()) {
+                                syncScope.launch {
+                                    legacySuggested.forEach { stale ->
+                                        try {
+                                            cloudSettlementDataSource.deleteSettlement(groupId, stale.id)
+                                        } catch (e: Exception) {
+                                            Timber.w(e, "Failed to cleanup legacy suggested settlement ${stale.id}")
                                         }
                                     }
                                 }
-                                val validRecords = remoteRecords.filter { it.status != SettlementStatus.SUGGESTED }
-                                localSettlementDataSource.replaceSettlementsForGroup(groupId, validRecords)
-                            },
-                            getPendingIds = {
-                                localSettlementDataSource.getPendingSyncSettlementIds(groupId)
-                            },
-                            verifyOnServer = { id ->
-                                cloudSettlementDataSource.verifySettlementOnServer(groupId, id)
-                            },
-                            markSynced = { id ->
-                                localSettlementDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
-                            },
-                            entityLabel = ENTITY_LABEL,
-                            logContext = "for group $groupId",
-                            performanceMonitor = performanceMonitor
-                        )
+                            }
+                            val validRecords = remoteRecords.filter { it.status != SettlementStatus.SUGGESTED }
+                            localSettlementDataSource.replaceSettlementsForGroup(groupId, validRecords)
+                        },
+                        getPendingIds = {
+                            localSettlementDataSource.getPendingSyncSettlementIds(groupId)
+                        },
+                        verifyOnServer = { id ->
+                            cloudSettlementDataSource.verifySettlementOnServer(groupId, id)
+                        },
+                        markSynced = { id ->
+                            localSettlementDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
+                        },
+                        entityLabel = ENTITY_LABEL,
+                        logContext = "for group $groupId",
+                        performanceMonitor = performanceMonitor
                     )
-                }
+                )
             }
 
     override suspend fun getGroupSettlements(groupId: String): List<SettlementRecord> =

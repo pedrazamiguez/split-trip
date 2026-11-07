@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
@@ -20,6 +21,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import java.io.IOException
 import java.time.LocalDateTime
 import kotlin.coroutines.cancellation.CancellationException
@@ -28,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -452,6 +455,22 @@ class ExpenseRepositoryImplTest {
             assertNotNull(result)
             assertEquals(1, result.size)
             assertEquals(testExpense.id, result[0].id)
+        }
+
+        @Test
+        fun `multiple concurrent collectors launch exactly one cloud listener`() = runTest(testDispatcher) {
+            val localFlow = flowOf(listOf(testExpense))
+            every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns localFlow
+            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(cloudExpenses)
+
+            val flow = repository.getGroupExpensesFlow(testGroupId)
+            val job1 = launch { flow.collect {} }
+            val job2 = launch { flow.collect {} }
+            advanceUntilIdle()
+
+            verify(exactly = 1) { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) }
+            job1.cancel()
+            job2.cancel()
         }
     }
 
@@ -967,7 +986,7 @@ class ExpenseRepositoryImplTest {
             val expenseWithPendingReceipt = testExpense.copy(
                 id = expenseId,
                 syncStatus = SyncStatus.SYNCED,
-                receiptAttachment = es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment(
+                receiptAttachment = ReceiptAttachment(
                     localUri = "file:///path/to/local/file.jpg",
                     mimeType = "image/jpeg",
                     capturedAtMillis = 123456789L,
@@ -986,10 +1005,9 @@ class ExpenseRepositoryImplTest {
                 flowOf(listOf(expenseWithPendingReceipt))
             coEvery { localExpenseDataSource.replaceExpensesForGroup(testGroupId, any()) } just Runs
             coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns emptyList()
-
-            coEvery { localExpenseDataSource.getExpenseIdsByGroup(testGroupId) } returns listOf(expenseId)
-            coEvery { localExpenseDataSource.getExpenseById(expenseId) } returnsMany
-                listOf(expenseWithPendingReceipt, updatedExpense)
+            coEvery { localExpenseDataSource.getPendingReceiptExpenses(testGroupId) } returns
+                listOf(expenseWithPendingReceipt)
+            coEvery { localExpenseDataSource.getExpenseById(expenseId) } returns updatedExpense
 
             coEvery { cloudStorageDataSource.uploadReceipt(any(), any(), any()) } returns remoteUrl
             coEvery { localExpenseDataSource.updateReceiptRemoteUrl(expenseId, remoteUrl) } just Runs

@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.sync.syncDeletionToCloud
+import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
@@ -20,7 +21,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onStart
 
 class SubunitRepositoryImpl(
     private val cloudSubunitDataSource: CloudSubunitDataSource,
@@ -116,28 +116,26 @@ class SubunitRepositoryImpl(
      */
     override fun getGroupSubunitsFlow(groupId: String): Flow<List<Subunit>> =
         localSubunitDataSource.getSubunitsByGroupIdFlow(groupId)
-            .onStart {
-                subscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
-                    subscribeAndReconcile(
-                        cloudFlow = cloudSubunitDataSource.getSubunitsByGroupIdFlow(groupId),
-                        params = SyncReconciliationParams(
-                            reconcileLocal = { remoteSubunits ->
-                                localSubunitDataSource.replaceSubunitsForGroup(groupId, remoteSubunits)
-                            },
-                            getPendingIds = { localSubunitDataSource.getPendingSyncSubunitIds(groupId) },
-                            verifyOnServer = { id ->
-                                cloudSubunitDataSource.verifySubunitOnServer(groupId, id)
-                            },
-                            markSynced = { id ->
-                                localSubunitDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
-                            },
-                            entityLabel = ENTITY_LABEL,
-                            logContext = "for group $groupId",
-                            performanceMonitor = performanceMonitor,
-                            verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
-                        )
+            .trackSubscription(subscriptionTracker, groupId, syncScope) {
+                subscribeAndReconcile(
+                    cloudFlow = cloudSubunitDataSource.getSubunitsByGroupIdFlow(groupId),
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { remoteSubunits ->
+                            localSubunitDataSource.replaceSubunitsForGroup(groupId, remoteSubunits)
+                        },
+                        getPendingIds = { localSubunitDataSource.getPendingSyncSubunitIds(groupId) },
+                        verifyOnServer = { id ->
+                            cloudSubunitDataSource.verifySubunitOnServer(groupId, id)
+                        },
+                        markSynced = { id ->
+                            localSubunitDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
+                        },
+                        entityLabel = ENTITY_LABEL,
+                        logContext = "for group $groupId",
+                        performanceMonitor = performanceMonitor,
+                        verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
                     )
-                }
+                )
             }
 
     override suspend fun getSubunitById(subunitId: String): Subunit? =

@@ -79,78 +79,62 @@ interface ExpenseDao {
     @Query("UPDATE expenses SET receiptLocalUri = :localUri WHERE id = :expenseId")
     suspend fun updateReceiptLocalUri(expenseId: String, localUri: String)
 
+    @Query(
+        """
+        SELECT * FROM expenses
+        WHERE groupId = :groupId
+          AND receiptLocalUri IS NOT NULL AND receiptLocalUri != ''
+          AND (receiptRemoteUrl IS NULL OR receiptRemoteUrl = '')
+        """
+    )
+    suspend fun getExpensesWithPendingReceipts(groupId: String): List<ExpenseEntity>
+
     /**
-     * Reconciles local expenses for a group with the authoritative cloud snapshot.
+     * Replaces a group's expenses with incoming remote state, using a diff-based
+     * reconciliation strategy:
+     * - Preserves local-only receipt metadata and non-SYNCED statuses.
+     * - Only upserts entities that are new or whose properties have actually changed.
+     * - Only deletes entities that were removed from the remote set and were SYNCED.
      *
-     * Uses a merge strategy instead of destructive delete+insert:
-     * 1. Capture non-SYNCED statuses (PENDING_SYNC / SYNC_FAILED) before upsert
-     * 2. Upsert all remote expenses (adds new, updates existing — sets syncStatus to SYNCED)
-     * 3. Restore ALL non-SYNCED statuses captured in step 1
-     * 4. Delete only stale synced expenses (not in remote set AND fully synced)
-     *
-     * This preserves locally-created expenses that haven't synced to the cloud yet.
-     *
-     * **Why we always restore non-SYNCED statuses (even for items in the remote set):**
-     * Firestore's `MetadataChanges.INCLUDE` fires snapshots that include pending
-     * local writes (latency compensation). These items appear in the remote set
-     * but have NOT been confirmed by the server. If we skip restoration for items
-     * in the remote set, the upsert's default SYNCED status would overwrite
-     * PENDING_SYNC — hiding the sync indicator. The PENDING_SYNC → SYNCED
-     * transition is handled exclusively by the repository's explicit
-     * `updateSyncStatus()` call after server confirmation (via
-     * `confirmPendingSyncExpenses()` or the sync in `addExpense()`).
+     * When reconciling an unchanged snapshot, zero database writes occur, preventing
+     * unnecessary Room flow invalidations.
      */
     @Transaction
     suspend fun replaceExpensesForGroup(groupId: String, expenses: List<ExpenseEntity>) {
-        // Capture existing local expenses to preserve their local receipt URIs.
-        // Firestore documents do not contain on-device file paths, so an upsert of remote state
-        // would otherwise overwrite and wipe out localUri references.
         val existingExpenses = getExpensesByGroupId(groupId).associateBy { it.id }
         val mergedExpenses = expenses.map { remote ->
             val local = existingExpenses[remote.id]
             if (local != null) {
                 remote.copy(
-                    // receiptLocalUri is only stored on-device, so always preserve the local path.
                     receiptLocalUri = local.receiptLocalUri?.takeIf { it.isNotBlank() } ?: remote.receiptLocalUri,
-                    // For remote-backed columns, prefer the incoming remote updates, falling back
-                    // to the local cache only if the remote value is blank/null/0.
                     receiptRemoteUrl = remote.receiptRemoteUrl?.takeIf { it.isNotBlank() } ?: local.receiptRemoteUrl,
                     receiptMimeType = remote.receiptMimeType?.takeIf { it.isNotBlank() } ?: local.receiptMimeType,
                     receiptCapturedAtMillis = if (remote.receiptCapturedAtMillis != 0L) {
                         remote.receiptCapturedAtMillis
                     } else {
                         local.receiptCapturedAtMillis
-                    }
+                    },
+                    syncStatus = local.syncStatus.takeIf { it != "SYNCED" } ?: remote.syncStatus
                 )
             } else {
                 remote
             }
         }
 
-        // Step 1: Capture non-SYNCED statuses before the upsert overwrites them
-        val unsyncedStatuses = getUnsyncedExpenseStatuses(groupId)
-        val unsyncedIds = unsyncedStatuses.map { it.id }.toSet()
-
         val remoteIds = mergedExpenses.map { it.id }.toSet()
-        val localIds = getExpenseIdsByGroupId(groupId)
+        val localIds = existingExpenses.keys
 
-        // Step 2: Upsert remote expenses (sets syncStatus to SYNCED for all)
-        insertExpenses(mergedExpenses)
-
-        // Step 3: Restore ALL non-SYNCED statuses that were captured before the upsert.
-        // The upsert sets syncStatus to SYNCED for all items (including those that were
-        // PENDING_SYNC or SYNC_FAILED). We must restore their original status because:
-        // - Firestore snapshots with MetadataChanges.INCLUDE fire for pending writes
-        //   (not yet confirmed by the server), so presence in remoteIds does NOT mean synced.
-        // - The PENDING_SYNC → SYNCED transition is handled exclusively by the repository's
-        //   explicit updateSyncStatus() call after confirmed cloud write.
-        for (entry in unsyncedStatuses) {
-            updateSyncStatus(entry.id, entry.syncStatus)
+        val toUpsert = mergedExpenses.filter { merged ->
+            val existing = existingExpenses[merged.id]
+            existing == null || existing != merged
+        }
+        if (toUpsert.isNotEmpty()) {
+            insertExpenses(toUpsert)
         }
 
-        // Step 4: Remove stale expenses — only those that are NOT in the remote set
-        // AND are NOT in a non-SYNCED state (protect unsynced local data)
-        val staleIds = localIds.filter { it !in remoteIds && it !in unsyncedIds }
+        val staleIds = localIds.filter { id ->
+            id !in remoteIds && existingExpenses[id]?.syncStatus == "SYNCED"
+        }
         if (staleIds.isNotEmpty()) {
             deleteExpensesByIds(staleIds)
         }

@@ -14,12 +14,12 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
-import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsByIdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DeleteExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.DownloadReceiptUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdLocalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -41,7 +41,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -62,14 +61,14 @@ import timber.log.Timber
 class ExpenseDetailViewModel(
     private val getExpenseByIdFlowUseCase: GetExpenseByIdFlowUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
-    private val getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase,
+    private val getCashWithdrawalsByIdsUseCase: GetCashWithdrawalsByIdsUseCase,
     private val getGroupSubunitsUseCase: GetGroupSubunitsUseCase,
     private val deleteExpenseUseCase: DeleteExpenseUseCase,
     private val downloadReceiptUseCase: DownloadReceiptUseCase,
     private val updateExpenseUseCase: UpdateExpenseUseCase,
     private val authenticationService: AuthenticationService,
     private val expenseDetailUiMapper: ExpenseDetailUiMapper,
-    private val observeGroupUseCase: ObserveGroupUseCase,
+    private val getGroupByIdLocalUseCase: GetGroupByIdLocalUseCase,
     private val exchangeRateCalculationService: ExchangeRateCalculationService,
     private val remainderDistributionService: RemainderDistributionService
 ) : ViewModel() {
@@ -93,14 +92,10 @@ class ExpenseDetailViewModel(
             var cachedSubunits = emptyMap<String, String>()
 
             getExpenseByIdFlowUseCase(expenseId)
-                .flatMapLatest { expense ->
+                .map { expense ->
                     if (expense == null) {
-                        return@flatMapLatest flowOf(
-                            ExpenseDetailUiState(isLoading = false, hasError = true)
-                        )
+                        return@map ExpenseDetailUiState(isLoading = false, hasError = true)
                     }
-
-                    val groupFlow = observeGroupUseCase(expense.groupId)
 
                     val attachment = expense.receiptAttachment
                     if (shouldDownloadPdf(attachment) && !failedDownloads.contains(expense.id)) {
@@ -131,9 +126,7 @@ class ExpenseDetailViewModel(
                     if (withdrawalIds.isNotEmpty() && withdrawalIds != cachedWithdrawalIds) {
                         cachedWithdrawalIds = withdrawalIds
                         cachedWithdrawals = try {
-                            getCashWithdrawalsFlowUseCase(expense.groupId)
-                                .first()
-                                .filter { it.id in withdrawalIds }
+                            getCashWithdrawalsByIdsUseCase(withdrawalIds.toList())
                                 .associateBy { it.id }
                         } catch (e: CancellationException) {
                             throw e
@@ -167,22 +160,28 @@ class ExpenseDetailViewModel(
                         cachedSubunits = emptyMap()
                     }
 
-                    groupFlow.map { group ->
-                        val groupMemberIds = group?.members ?: emptyList()
-                        val uiModel = expenseDetailUiMapper.map(
-                            expense = expense,
-                            memberProfiles = cachedProfiles,
-                            currentUserId = currentUserId,
-                            withdrawalLookup = cachedWithdrawals,
-                            subunitNameLookup = cachedSubunits,
-                            groupMemberIds = groupMemberIds
-                        )
-                        ExpenseDetailUiState(
-                            expense = uiModel,
-                            isLoading = false,
-                            isGroupArchived = group?.status == GroupStatus.ARCHIVED
-                        )
+                    val group = try {
+                        getGroupByIdLocalUseCase(expense.groupId)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.w(e, "Failed to fetch group locally for expense $expenseId")
+                        null
                     }
+                    val groupMemberIds = group?.members ?: emptyList()
+                    val uiModel = expenseDetailUiMapper.map(
+                        expense = expense,
+                        memberProfiles = cachedProfiles,
+                        currentUserId = currentUserId,
+                        withdrawalLookup = cachedWithdrawals,
+                        subunitNameLookup = cachedSubunits,
+                        groupMemberIds = groupMemberIds
+                    )
+                    ExpenseDetailUiState(
+                        expense = uiModel,
+                        isLoading = false,
+                        isGroupArchived = group?.status == GroupStatus.ARCHIVED
+                    )
                 }
         }
         .catch { e ->

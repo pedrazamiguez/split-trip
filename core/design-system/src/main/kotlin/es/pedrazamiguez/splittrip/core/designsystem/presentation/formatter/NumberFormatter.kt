@@ -5,8 +5,28 @@ import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 private const val DEFAULT_RATE_DECIMALS = 6
+
+private val decimalFormatSymbolsCache = ConcurrentHashMap<Locale, DecimalFormatSymbols>()
+private val decimalFormatCache = ConcurrentHashMap<Pair<String, Locale>, DecimalFormat>()
+
+internal fun getDecimalFormatCacheSize(): Int = decimalFormatCache.size
+internal fun clearNumberFormatterCache() {
+    decimalFormatSymbolsCache.clear()
+    decimalFormatCache.clear()
+}
+
+private fun getDecimalFormatSymbols(locale: Locale): DecimalFormatSymbols =
+    decimalFormatSymbolsCache.computeIfAbsent(locale) { DecimalFormatSymbols.getInstance(it) }
+
+private fun getDecimalFormat(pattern: String, locale: Locale): DecimalFormat {
+    val prototype = decimalFormatCache.computeIfAbsent(pattern to locale) { (p, l) ->
+        DecimalFormat(p, getDecimalFormatSymbols(l))
+    }
+    return prototype.clone() as DecimalFormat
+}
 
 /**
  * Formats a number string from internal format (dot decimal) to locale-aware display format.
@@ -23,9 +43,8 @@ fun String.formatNumberForDisplay(
 ): String {
     val number = this.toBigDecimalOrNull() ?: return this
 
-    val symbols = DecimalFormatSymbols.getInstance(locale)
     val pattern = buildNumberPattern(maxDecimalPlaces, minDecimalPlaces)
-    val formatter = DecimalFormat(pattern, symbols)
+    val formatter = getDecimalFormat(pattern, locale)
 
     return formatter.format(number)
 }
@@ -52,9 +71,8 @@ fun BigDecimal.formatForDisplay(
     maxDecimalPlaces: Int = 2,
     minDecimalPlaces: Int = 0
 ): String {
-    val symbols = DecimalFormatSymbols.getInstance(locale)
     val pattern = buildNumberPattern(maxDecimalPlaces, minDecimalPlaces)
-    val formatter = DecimalFormat(pattern, symbols)
+    val formatter = getDecimalFormat(pattern, locale)
 
     return formatter.format(this)
 }
