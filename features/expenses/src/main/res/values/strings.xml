@@ -22,6 +22,9 @@
     <string name="expenses_filter_section_payment_method">Payment method</string>
     <string name="expenses_filter_section_payment_status">Payment status</string>
     <string name="expenses_filter_section_attributes">Attributes</string>
+    <string name="expenses_filter_section_amount">Amount</string>
+    <string name="expenses_filter_amount_min">Min</string>
+    <string name="expenses_filter_amount_max">Max</string>
     <string name="expense_attribute_has_receipt">Has receipt</string>
     <string name="expense_attribute_has_note">Has note</string>
     <string name="expense_attribute_has_extras">Has extras</string>

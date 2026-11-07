@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiM
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesFilterUiState
 import java.time.LocalDate
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 private fun buildExpenseUiMapper(localeProvider: LocaleProvider, resourceProvider: ResourceProvider): ExpenseUiMapper =
     ExpenseUiMapper(
@@ -92,6 +93,8 @@ fun ExpensesFilterPreviewHelper(
     oldestExpenseDate: LocalDate? = null,
     newestExpenseDate: LocalDate? = null,
     today: LocalDate = LocalDate.now(),
+    groupCurrency: String = "EUR",
+    groupCurrencies: ImmutableList<String> = persistentListOf(),
     content: @Composable (ExpensesFilterUiState) -> Unit
 ) {
     MappedPreview(
@@ -120,7 +123,9 @@ fun ExpensesFilterPreviewHelper(
                 newestExpenseDate = newestExpenseDate,
                 formattedStartDate = formattedStartDate,
                 formattedEndDate = formattedEndDate,
-                activePreset = activePreset
+                activePreset = activePreset,
+                groupCurrency = groupCurrency,
+                groupCurrencies = groupCurrencies
             )
         },
         content = content

@@ -66,6 +66,13 @@ class ExpenseFilterServiceImpl(
             }
         }
 
+        // 8. Amount Range & Currency Filter
+        if (criteria.isAmountFiltered) {
+            candidateExpenses = candidateExpenses.filter { expense ->
+                matchesAmount(expense, criteria)
+            }
+        }
+
         return candidateExpenses
     }
 
@@ -125,5 +132,20 @@ class ExpenseFilterServiceImpl(
             ExpenseAttribute.HAS_NOTE -> !expense.notes.isNullOrBlank()
             ExpenseAttribute.HAS_EXTRAS -> expense.addOns.isNotEmpty()
         }
+    }
+
+    private fun matchesAmount(expense: Expense, criteria: ExpenseFilterCriteria): Boolean {
+        val currency = criteria.filterCurrency
+        if (currency != null && !expense.sourceCurrency.equals(currency, ignoreCase = true)) {
+            return false
+        }
+        val targetAmount = if (currency != null) expense.sourceAmount else expense.groupAmount
+        return isWithinAmountBounds(targetAmount, criteria.minAmount, criteria.maxAmount)
+    }
+
+    private fun isWithinAmountBounds(amount: Long, min: Long?, max: Long?): Boolean {
+        val matchesMin = min == null || amount >= min
+        val matchesMax = max == null || amount <= max
+        return matchesMin && matchesMax
     }
 }

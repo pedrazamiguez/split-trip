@@ -636,6 +636,126 @@ class ExpensesFilterViewModelTest {
             val retrieved = handle.get<ExpenseFilterCriteria>("initialFilterCriteria")
             assertEquals(criteria, retrieved)
         }
+
+        @Test
+        fun `SavedStateHandle preserves criteria with amount range and currency filters`() {
+            val criteria = ExpenseFilterCriteria(
+                filterCurrency = "USD",
+                minAmount = 1000L,
+                maxAmount = 5000L
+            )
+            val handle = SavedStateHandle()
+            handle["filterCriteria"] = criteria
+            val retrieved = handle.get<ExpenseFilterCriteria>("filterCriteria")
+            assertEquals(criteria, retrieved)
+        }
+    }
+
+    @Nested
+    @DisplayName("Amount Range and Currency Filtering")
+    inner class AmountRangeAndCurrencyFiltering {
+
+        @Test
+        fun `populates groupCurrency and empty groupCurrencies for single-currency group`() =
+            runTest(testDispatcher) {
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals("EUR", state.groupCurrency)
+                assertTrue(state.groupCurrencies.isEmpty())
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `populates groupCurrencies with distinct base and extra currencies for multi-currency group`() =
+            runTest(testDispatcher) {
+                val multiCurrencyGroup = testGroup.copy(
+                    currency = "EUR",
+                    extraCurrencies = listOf("USD", "GBP")
+                )
+                every { observeGroupUseCase(testGroupId) } returns flowOf(multiCurrencyGroup)
+
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals("EUR", state.groupCurrency)
+                assertEquals(listOf("EUR", "USD", "GBP"), state.groupCurrencies)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updating draft with minAmount recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(minAmount = 3000L)
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(2, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updating draft with maxAmount recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(maxAmount = 3000L)
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(2, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updating draft with filterCurrency recalculates matchingExpensesCount dynamically`() =
+            runTest(testDispatcher) {
+                val usdExpense = expense2.copy(sourceCurrency = "USD")
+                val expensesWithUsd = listOf(expense1, usdExpense, expense3)
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(expensesWithUsd)
+
+                viewModel.setSelectedGroup(testGroupId)
+                val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect {}
+                }
+                advanceUntilIdle()
+
+                val criteria = ExpenseFilterCriteria(filterCurrency = "USD")
+                viewModel.onEvent(ExpensesFilterUiEvent.UpdateDraft(criteria))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(1, state.matchingExpensesCount)
+                assertTrue(state.canReset)
+
+                collectJob.cancel()
+            }
     }
 
     @Nested
