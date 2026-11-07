@@ -48,7 +48,7 @@ class AddExpenseAddOnUiMapper {
     private fun resolveAddOnExchangeRate(displayExchangeRate: String): BigDecimal {
         val normalizedRate = CurrencyConverter.normalizeAmountString(displayExchangeRate.trim())
         val displayRate = normalizedRate.toBigDecimalOrNull() ?: BigDecimal.ONE
-        return if (displayRate.compareTo(BigDecimal.ZERO) != 0) {
+        return if (displayRate > BigDecimal.ZERO) {
             BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
         } else {
             BigDecimal.ONE

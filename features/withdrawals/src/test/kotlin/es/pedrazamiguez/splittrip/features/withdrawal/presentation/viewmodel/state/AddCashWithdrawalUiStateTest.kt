@@ -91,6 +91,56 @@ class AddCashWithdrawalUiStateTest {
             )
             assertTrue(state.isFormValid)
         }
+
+        @Test
+        fun `returns false when foreign currency and exchange rate is non-positive`() {
+            val state = AddCashWithdrawalUiState(
+                withdrawalAmount = "100",
+                isAmountValid = true,
+                showExchangeRateSection = true,
+                deductedAmount = "95",
+                displayExchangeRate = "0"
+            )
+            assertFalse(state.isFormValid)
+        }
+
+        @Test
+        fun `returns false when foreign currency and deducted amount is non-positive`() {
+            val state = AddCashWithdrawalUiState(
+                withdrawalAmount = "100",
+                isAmountValid = true,
+                showExchangeRateSection = true,
+                deductedAmount = "-10",
+                displayExchangeRate = "1.05"
+            )
+            assertFalse(state.isFormValid)
+        }
+
+        @Test
+        fun `returns false when foreign currency and isExchangeRateValid is false`() {
+            val state = AddCashWithdrawalUiState(
+                withdrawalAmount = "100",
+                isAmountValid = true,
+                showExchangeRateSection = true,
+                deductedAmount = "95",
+                displayExchangeRate = "1.05",
+                isExchangeRateValid = false
+            )
+            assertFalse(state.isFormValid)
+        }
+
+        @Test
+        fun `returns false when foreign currency and isDeductedAmountValid is false`() {
+            val state = AddCashWithdrawalUiState(
+                withdrawalAmount = "100",
+                isAmountValid = true,
+                showExchangeRateSection = true,
+                deductedAmount = "95",
+                displayExchangeRate = "1.05",
+                isDeductedAmountValid = false
+            )
+            assertFalse(state.isFormValid)
+        }
     }
 
     // ── CashWithdrawalStep.applicableSteps ─────────────────────────────────────
@@ -500,6 +550,48 @@ class AddCashWithdrawalUiStateTest {
                 )
                 assertTrue(state.isCurrentStepValid)
             }
+
+            @Test
+            fun `returns false when exchange rate is zero or negative`() {
+                val state = AddCashWithdrawalUiState(
+                    currentStep = CashWithdrawalStep.EXCHANGE_RATE,
+                    displayExchangeRate = "0",
+                    deductedAmount = "95"
+                )
+                assertFalse(state.isCurrentStepValid)
+            }
+
+            @Test
+            fun `returns false when deducted amount is zero or negative`() {
+                val state = AddCashWithdrawalUiState(
+                    currentStep = CashWithdrawalStep.EXCHANGE_RATE,
+                    displayExchangeRate = "1.05",
+                    deductedAmount = "-10"
+                )
+                assertFalse(state.isCurrentStepValid)
+            }
+
+            @Test
+            fun `returns false when isExchangeRateValid is false`() {
+                val state = AddCashWithdrawalUiState(
+                    currentStep = CashWithdrawalStep.EXCHANGE_RATE,
+                    displayExchangeRate = "1.05",
+                    deductedAmount = "95",
+                    isExchangeRateValid = false
+                )
+                assertFalse(state.isCurrentStepValid)
+            }
+
+            @Test
+            fun `returns false when isDeductedAmountValid is false`() {
+                val state = AddCashWithdrawalUiState(
+                    currentStep = CashWithdrawalStep.EXCHANGE_RATE,
+                    displayExchangeRate = "1.05",
+                    deductedAmount = "95",
+                    isDeductedAmountValid = false
+                )
+                assertFalse(state.isCurrentStepValid)
+            }
         }
 
         @Nested
@@ -587,6 +679,48 @@ class AddCashWithdrawalUiStateTest {
                     feeConvertedAmount = "4.75"
                 )
                 assertTrue(state.isCurrentStepValid)
+            }
+
+            @Test
+            fun `returns false when fee exchange rate is zero or negative`() {
+                val state = AddCashWithdrawalUiState(
+                    currentStep = CashWithdrawalStep.FEE_EXCHANGE_RATE,
+                    feeExchangeRate = "0",
+                    feeConvertedAmount = "4.75"
+                )
+                assertFalse(state.isCurrentStepValid)
+            }
+
+            @Test
+            fun `returns false when fee converted amount is zero or negative`() {
+                val state = AddCashWithdrawalUiState(
+                    currentStep = CashWithdrawalStep.FEE_EXCHANGE_RATE,
+                    feeExchangeRate = "0.95",
+                    feeConvertedAmount = "-5"
+                )
+                assertFalse(state.isCurrentStepValid)
+            }
+
+            @Test
+            fun `returns false when isFeeExchangeRateValid is false`() {
+                val state = AddCashWithdrawalUiState(
+                    currentStep = CashWithdrawalStep.FEE_EXCHANGE_RATE,
+                    feeExchangeRate = "0.95",
+                    feeConvertedAmount = "4.75",
+                    isFeeExchangeRateValid = false
+                )
+                assertFalse(state.isCurrentStepValid)
+            }
+
+            @Test
+            fun `returns false when isFeeConvertedAmountValid is false`() {
+                val state = AddCashWithdrawalUiState(
+                    currentStep = CashWithdrawalStep.FEE_EXCHANGE_RATE,
+                    feeExchangeRate = "0.95",
+                    feeConvertedAmount = "4.75",
+                    isFeeConvertedAmountValid = false
+                )
+                assertFalse(state.isCurrentStepValid)
             }
         }
 

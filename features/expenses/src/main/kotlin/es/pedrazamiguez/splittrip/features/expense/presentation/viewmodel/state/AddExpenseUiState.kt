@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
@@ -190,6 +191,8 @@ data class AddExpenseUiState(
     val error: UiText? = null,
     val isTitleValid: Boolean = true,
     val isAmountValid: Boolean = true,
+    val isExchangeRateValid: Boolean = true,
+    val isGroupAmountValid: Boolean = true,
     val isDueDateValid: Boolean = true,
     val formattedExpenseDate: String = "",
     val isExpenseDateValid: Boolean = true,
@@ -229,7 +232,16 @@ data class AddExpenseUiState(
             isDueDateValid &&
             addOns.all { it.isAmountValid } &&
             expenseTitle.isNotBlank() &&
-            sourceAmount.isNotBlank()
+            sourceAmount.isNotBlank() &&
+            isExchangeRateSectionValid()
+
+    private fun isExchangeRateSectionValid(): Boolean {
+        if (!showExchangeRateSection) return true
+        return isExchangeRateValid &&
+            isGroupAmountValid &&
+            CurrencyConverter.isPositiveAmount(displayExchangeRate) &&
+            CurrencyConverter.isPositiveAmount(calculatedGroupAmount)
+    }
 
     // ── Dirty tracking ──────────────────────────────────────────────────
     /**
@@ -355,7 +367,10 @@ data class AddExpenseUiState(
                     (showExchangeRateSection || availableWithdrawalPools.size <= 1 || selectedWithdrawalPool != null)
 
             AddExpenseStep.EXCHANGE_RATE ->
-                displayExchangeRate.isNotBlank() && calculatedGroupAmount.isNotBlank()
+                isExchangeRateValid &&
+                    isGroupAmountValid &&
+                    CurrencyConverter.isPositiveAmount(displayExchangeRate) &&
+                    CurrencyConverter.isPositiveAmount(calculatedGroupAmount)
 
             AddExpenseStep.SPLIT -> splitError == null
 

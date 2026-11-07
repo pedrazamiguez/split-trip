@@ -76,6 +76,12 @@ class WithdrawalSubmitHandlerTest {
             cashWithdrawalValidationService.validateAmountWithdrawn(any())
         } returns CashWithdrawalValidationService.ValidationResult.Valid
         every {
+            cashWithdrawalValidationService.validateDeductedBaseAmount(any())
+        } returns CashWithdrawalValidationService.ValidationResult.Valid
+        every {
+            cashWithdrawalValidationService.validateExchangeRate(any())
+        } returns CashWithdrawalValidationService.ValidationResult.Valid
+        every {
             exchangeRateCalculationService.calculateExchangeRate(any(), any())
         } returns BigDecimal.ONE
     }
@@ -211,6 +217,116 @@ class WithdrawalSubmitHandlerTest {
             advanceUntilIdle()
 
             assertTrue(onSuccessCalled)
+        }
+
+        @Test
+        fun `sets isExchangeRateValid to false and emits error when exchange rate is invalid`() = runTest {
+            every {
+                cashWithdrawalValidationService.validateExchangeRate(any())
+            } returns CashWithdrawalValidationService.ValidationResult.Invalid(
+                CashWithdrawalValidationService.ValidationError.EXCHANGE_RATE_MUST_BE_POSITIVE
+            )
+            uiState.value = validState.copy(
+                showExchangeRateSection = true,
+                displayExchangeRate = "0",
+                deductedAmount = "100"
+            )
+
+            val emittedActions = mutableListOf<AddCashWithdrawalUiAction>()
+            val job = launch { actions.collect { emittedActions.add(it) } }
+
+            handler.bind(uiState, actions, this)
+            var onSuccessCalled = false
+            handler.submitWithdrawal("group-1") { onSuccessCalled = true }
+            advanceUntilIdle()
+            job.cancel()
+
+            assertFalse(uiState.value.isExchangeRateValid)
+            assertFalse(onSuccessCalled)
+        }
+
+        @Test
+        fun `sets isDeductedAmountValid to false and emits error when deducted base amount is invalid`() = runTest {
+            every {
+                cashWithdrawalValidationService.validateDeductedBaseAmount(any())
+            } returns CashWithdrawalValidationService.ValidationResult.Invalid(
+                CashWithdrawalValidationService.ValidationError.AMOUNT_MUST_BE_POSITIVE
+            )
+            uiState.value = validState.copy(
+                showExchangeRateSection = true,
+                displayExchangeRate = "1.5",
+                deductedAmount = "-10"
+            )
+
+            val emittedActions = mutableListOf<AddCashWithdrawalUiAction>()
+            val job = launch { actions.collect { emittedActions.add(it) } }
+
+            handler.bind(uiState, actions, this)
+            var onSuccessCalled = false
+            handler.submitWithdrawal("group-1") { onSuccessCalled = true }
+            advanceUntilIdle()
+            job.cancel()
+
+            assertFalse(uiState.value.isDeductedAmountValid)
+            assertFalse(onSuccessCalled)
+        }
+
+        @Test
+        fun `sets isFeeExchangeRateValid to false and emits error when fee exchange rate is invalid`() = runTest {
+            every {
+                cashWithdrawalValidationService.validateExchangeRate(any())
+            } returns CashWithdrawalValidationService.ValidationResult.Invalid(
+                CashWithdrawalValidationService.ValidationError.EXCHANGE_RATE_MUST_BE_POSITIVE
+            )
+            uiState.value = validState.copy(
+                hasFee = true,
+                feeAmount = "5.00",
+                feeCurrency = eurModel,
+                showFeeExchangeRateSection = true,
+                feeExchangeRate = "-1",
+                feeConvertedAmount = "5.00"
+            )
+
+            val emittedActions = mutableListOf<AddCashWithdrawalUiAction>()
+            val job = launch { actions.collect { emittedActions.add(it) } }
+
+            handler.bind(uiState, actions, this)
+            var onSuccessCalled = false
+            handler.submitWithdrawal("group-1") { onSuccessCalled = true }
+            advanceUntilIdle()
+            job.cancel()
+
+            assertFalse(uiState.value.isFeeExchangeRateValid)
+            assertFalse(onSuccessCalled)
+        }
+
+        @Test
+        fun `sets isFeeConvertedAmountValid to false and emits error when fee converted amount is invalid`() = runTest {
+            every {
+                cashWithdrawalValidationService.validateDeductedBaseAmount(any())
+            } returns CashWithdrawalValidationService.ValidationResult.Invalid(
+                CashWithdrawalValidationService.ValidationError.AMOUNT_MUST_BE_POSITIVE
+            )
+            uiState.value = validState.copy(
+                hasFee = true,
+                feeAmount = "5.00",
+                feeCurrency = eurModel,
+                showFeeExchangeRateSection = true,
+                feeExchangeRate = "1.2",
+                feeConvertedAmount = "0"
+            )
+
+            val emittedActions = mutableListOf<AddCashWithdrawalUiAction>()
+            val job = launch { actions.collect { emittedActions.add(it) } }
+
+            handler.bind(uiState, actions, this)
+            var onSuccessCalled = false
+            handler.submitWithdrawal("group-1") { onSuccessCalled = true }
+            advanceUntilIdle()
+            job.cancel()
+
+            assertFalse(uiState.value.isFeeConvertedAmountValid)
+            assertFalse(onSuccessCalled)
         }
     }
 

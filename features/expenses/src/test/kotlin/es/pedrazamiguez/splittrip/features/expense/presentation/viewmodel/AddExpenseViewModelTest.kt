@@ -10,6 +10,8 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
+import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
+import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -201,8 +203,8 @@ class AddExpenseViewModelTest {
         setGroupLastUsedCategoryUseCase = mockk()
         getMemberProfilesUseCase = mockk()
         authenticationService = mockk(relaxed = true)
-        expenseCalculatorService = mockk(relaxed = true)
-        val splitCalculatorFactory = ExpenseSplitCalculatorFactory(ExpenseCalculatorServiceImpl())
+        expenseCalculatorService = ExpenseCalculatorServiceImpl()
+        val splitCalculatorFactory = ExpenseSplitCalculatorFactory(expenseCalculatorService)
         expenseValidationService = ExpenseValidationServiceImpl(splitCalculatorFactory)
         localeProvider = mockk()
         resourceProvider = mockk(relaxed = true)
@@ -1102,6 +1104,14 @@ class AddExpenseViewModelTest {
             } returns ExchangeRateWithStaleness(
                 rate = BigDecimal("9.20"),
                 isStale = false
+            )
+            coEvery {
+                previewCashExchangeRateUseCase(any(), any(), any(), any(), any(), any(), any())
+            } returns CashRatePreviewResult.Available(
+                CashRatePreview(
+                    displayRate = BigDecimal("9.20"),
+                    groupAmountCents = 4348L
+                )
             )
 
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))

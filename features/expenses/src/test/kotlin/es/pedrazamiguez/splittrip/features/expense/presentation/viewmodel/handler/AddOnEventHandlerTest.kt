@@ -841,6 +841,44 @@ class AddOnEventHandlerTest {
         }
 
         @Test
+        fun `handleExchangeRateChanged with negative rate marks add-on isAmountValid false`() = runTest {
+            uiState.value = baseState.copy(
+                groupCurrency = eurCurrency,
+                selectedCurrency = usdCurrency,
+                displayExchangeRate = "1.10",
+                sourceAmount = "100"
+            )
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.FEE)
+            val id = uiState.value.addOns[0].id
+            handler.handleAmountChanged(id, "10")
+
+            handler.handleExchangeRateChanged(id, "-1.25")
+
+            val addOn = uiState.value.addOns[0]
+            assertFalse(addOn.isAmountValid)
+        }
+
+        @Test
+        fun `handleGroupAmountChanged with negative amount marks add-on isAmountValid false`() = runTest {
+            uiState.value = baseState.copy(
+                groupCurrency = eurCurrency,
+                selectedCurrency = usdCurrency,
+                displayExchangeRate = "1.10",
+                sourceAmount = "100"
+            )
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.FEE)
+            val id = uiState.value.addOns[0].id
+            handler.handleAmountChanged(id, "10")
+
+            handler.handleGroupAmountChanged(id, "-5.00")
+
+            val addOn = uiState.value.addOns[0]
+            assertFalse(addOn.isAmountValid)
+        }
+
+        @Test
         fun `calculatedGroupAmount updates when amount changes not only on rate change`() = runTest {
             // EUR group, USD source with 1 EUR = 1.10 USD
             uiState.value = baseState.copy(

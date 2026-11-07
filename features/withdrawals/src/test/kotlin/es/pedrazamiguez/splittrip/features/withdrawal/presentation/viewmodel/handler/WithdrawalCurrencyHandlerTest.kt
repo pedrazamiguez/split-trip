@@ -304,6 +304,26 @@ class WithdrawalCurrencyHandlerTest {
 
             assertEquals("10526.32", uiState.value.deductedAmount)
         }
+
+        @Test
+        fun `handleExchangeRateChanged with non-positive rate sets isExchangeRateValid to false`() = runTest {
+            handler.bind(uiState, actions, this)
+            handler.handleExchangeRateChanged("-1.5")
+            advanceUntilIdle()
+
+            assertFalse(uiState.value.isExchangeRateValid)
+            assertEquals("-1.5", uiState.value.displayExchangeRate)
+        }
+
+        @Test
+        fun `handleExchangeRateChanged with positive rate sets isExchangeRateValid to true`() = runTest {
+            handler.bind(uiState, actions, this)
+            handler.handleExchangeRateChanged("37.5")
+            advanceUntilIdle()
+
+            assertTrue(uiState.value.isExchangeRateValid)
+            assertEquals("37.5", uiState.value.displayExchangeRate)
+        }
     }
 
     // ── DeductedAmountChanged ─────────────────────────────────────────────
@@ -333,6 +353,26 @@ class WithdrawalCurrencyHandlerTest {
 
             // displayExchangeRate should be recalculated (formattingHelper.formatRateForDisplay stub returns "37.037")
             assertEquals("37.037", uiState.value.displayExchangeRate)
+        }
+
+        @Test
+        fun `handleDeductedAmountChanged with non-positive amount sets isDeductedAmountValid to false`() = runTest {
+            handler.bind(uiState, actions, this)
+            handler.handleDeductedAmountChanged("-27.00")
+            advanceUntilIdle()
+
+            assertFalse(uiState.value.isDeductedAmountValid)
+            assertEquals("-27.00", uiState.value.deductedAmount)
+        }
+
+        @Test
+        fun `handleDeductedAmountChanged with positive amount sets isDeductedAmountValid to true`() = runTest {
+            handler.bind(uiState, actions, this)
+            handler.handleDeductedAmountChanged("27.00")
+            advanceUntilIdle()
+
+            assertTrue(uiState.value.isDeductedAmountValid)
+            assertEquals("27.00", uiState.value.deductedAmount)
         }
     }
 

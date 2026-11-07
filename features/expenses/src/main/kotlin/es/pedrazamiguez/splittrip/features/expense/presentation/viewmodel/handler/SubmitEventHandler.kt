@@ -186,6 +186,8 @@ class SubmitEventHandler(
             return
         }
 
+        if (!validateExchangeRateAndGroupAmount(currentState)) return
+
         Timber.d("submitExpense: validations passed, mapping to domain")
         _uiState.update { it.copy(isLoading = true, error = null) }
 
@@ -443,4 +445,33 @@ class SubmitEventHandler(
         } else {
             this
         }
+
+    private fun validateExchangeRateAndGroupAmount(state: AddExpenseUiState): Boolean {
+        if (!state.showExchangeRateSection) return true
+
+        val rateValidation = expenseValidationService.validateExchangeRate(state.displayExchangeRate)
+        if (rateValidation is ValidationResult.Invalid) {
+            Timber.w("submitExpense: exchange rate validation failed — rate=%s", state.displayExchangeRate)
+            telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "exchange_rate"))
+            val errorText = UiText.StringResource(R.string.expense_error_invalid_exchange_rate)
+            _uiState.update { it.copy(isExchangeRateValid = false, error = errorText) }
+            scope.launch { _actions.emit(AddExpenseUiAction.ShowError(errorText)) }
+            return false
+        }
+
+        val groupAmountValidation =
+            expenseValidationService.validateGroupAmount(state.calculatedGroupAmount)
+        if (groupAmountValidation is ValidationResult.Invalid) {
+            Timber.w(
+                "submitExpense: group amount validation failed — groupAmount=%s",
+                state.calculatedGroupAmount
+            )
+            telemetryTracker.trackEvent("expense_validation_failed", mapOf("field" to "group_amount"))
+            val errorText = UiText.StringResource(R.string.expense_error_invalid_group_amount)
+            _uiState.update { it.copy(isGroupAmountValid = false, error = errorText) }
+            scope.launch { _actions.emit(AddExpenseUiAction.ShowError(errorText)) }
+            return false
+        }
+        return true
+    }
 }

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.isValidDecimalInput
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
@@ -117,12 +118,26 @@ class WithdrawalFeeHandler(
     }
 
     fun handleFeeExchangeRateChanged(rate: String) {
-        _uiState.update { it.copy(feeExchangeRate = rate, isFeeExchangeRateError = false) }
+        val isValid = CurrencyConverter.isPositiveAmount(rate)
+        _uiState.update {
+            it.copy(
+                feeExchangeRate = rate,
+                isFeeExchangeRateValid = isValid,
+                isFeeExchangeRateError = false
+            )
+        }
         recalculateFeeConverted()
     }
 
     fun handleFeeConvertedAmountChanged(amount: String) {
-        _uiState.update { it.copy(feeConvertedAmount = amount, isFeeExchangeRateError = false) }
+        val isValid = CurrencyConverter.isPositiveAmount(amount)
+        _uiState.update {
+            it.copy(
+                feeConvertedAmount = amount,
+                isFeeConvertedAmountValid = isValid,
+                isFeeExchangeRateError = false
+            )
+        }
         recalculateFeeRateFromConverted()
     }
 
@@ -133,7 +148,7 @@ class WithdrawalFeeHandler(
             return
         }
         if (state.feeExchangeRate.isBlank()) {
-            _uiState.update { it.copy(feeConvertedAmount = "") }
+            _uiState.update { it.copy(feeConvertedAmount = "", isFeeConvertedAmountValid = false) }
             return
         }
 
@@ -145,7 +160,13 @@ class WithdrawalFeeHandler(
             sourceDecimalPlaces = sourceDecimalPlaces,
             targetDecimalPlaces = targetDecimalPlaces
         )
-        _uiState.update { it.copy(feeConvertedAmount = calculatedConverted) }
+        val isConvertedValid = CurrencyConverter.isPositiveAmount(calculatedConverted)
+        _uiState.update {
+            it.copy(
+                feeConvertedAmount = calculatedConverted,
+                isFeeConvertedAmountValid = isConvertedValid
+            )
+        }
     }
 
     private fun recalculateFeeRateFromConverted() {
@@ -158,7 +179,13 @@ class WithdrawalFeeHandler(
             groupAmountString = state.feeConvertedAmount,
             sourceDecimalPlaces = sourceDecimalPlaces
         )
-        _uiState.update { it.copy(feeExchangeRate = impliedRate) }
+        val isRateValid = CurrencyConverter.isPositiveAmount(impliedRate)
+        _uiState.update {
+            it.copy(
+                feeExchangeRate = impliedRate,
+                isFeeExchangeRateValid = isRateValid
+            )
+        }
     }
 
     private fun fetchFeeRate(groupCurrencyCode: String, feeCurrencyCode: String) {

@@ -14,6 +14,8 @@
     <string name="withdrawal_scope_personal">Perçonâh</string>
     <string name="withdrawal_scope_group">Grupo</string>
     <string name="withdrawal_exchange_rate_title">Tipo de cambio</string>
+    <string name="withdrawal_error_invalid_exchange_rate">Er tipo de cambio debe çêh mayôh que çero</string>
+    <string name="withdrawal_error_invalid_deducted_amount">El importe deduçío debe çêh mayôh que çero</string>
     <string name="withdrawal_rate_label_format">1 %1$s = ? %2$s</string>
     <string name="withdrawal_deducted_label_format">en %1$s</string>
     <string name="withdrawal_error_load_config">No çe pudo cargâh la configuraçión der grupo</string>

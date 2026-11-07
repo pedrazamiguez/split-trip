@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.exception.ValidationException
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -126,7 +127,7 @@ class AddExpenseUiMapper(
         val normalizedDisplayRate =
             CurrencyConverter.normalizeAmountString(state.displayExchangeRate.trim())
         val displayRate = normalizedDisplayRate.toBigDecimalOrNull() ?: BigDecimal.ONE
-        val internalRate = if (displayRate.compareTo(BigDecimal.ZERO) != 0) {
+        val internalRate = if (displayRate > BigDecimal.ZERO) {
             BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
         } else {
             BigDecimal.ZERO
@@ -136,6 +137,10 @@ class AddExpenseUiMapper(
             splitPreviewService.parseAmountToCents(state.calculatedGroupAmount, groupDecimalDigits)
         } else {
             BigDecimal(sourceAmount).multiply(internalRate).setScale(0, RoundingMode.HALF_UP).toLong()
+        }
+
+        if (state.showExchangeRateSection && (internalRate <= BigDecimal.ZERO || groupAmount <= 0L)) {
+            return Result.failure(ValidationException("Invalid exchange rate or converted amount"))
         }
 
         val paymentMethod = state.selectedPaymentMethod?.let {

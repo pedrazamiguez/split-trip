@@ -56,6 +56,8 @@
     <string name="expense_field_amount">Importe</string>
     <string name="expense_field_amount_required">¿Cuánto fue?</string>
     <string name="expense_error_title_empty">¡Ey! ¿Pa qué fue êtte gâtto?</string>
+    <string name="expense_error_invalid_exchange_rate">Er tipo de cambio debe çêh mayôh que çero</string>
+    <string name="expense_error_invalid_group_amount">El importe combertío debe çêh mayôh que çero</string>
     <string name="expense_error_insufficient_cash">No tienê çufiçiente efêttibo\nNeçeçitâ %1$s pero çolo tienê %2$s dîpponible</string>
     <string name="expense_error_cash_conflict">Otro miembro acaba de uçâh êtte efêttibo. El importe dîpponible a cambiao — rebiça e inténtalo de nuebo.</string>
     <string name="add_expense_cash_conflict_resolution_title">El efêttibo a cambiao</string>
