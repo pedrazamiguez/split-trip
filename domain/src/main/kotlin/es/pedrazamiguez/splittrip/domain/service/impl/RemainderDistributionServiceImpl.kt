@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
+import es.pedrazamiguez.splittrip.domain.model.BreakdownPercentage
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -9,6 +10,12 @@ class RemainderDistributionServiceImpl : RemainderDistributionService {
     companion object {
         private val SMALLEST_PERCENT_UNIT = BigDecimal("0.01")
     }
+
+    private data class PercentageCandidate(
+        val originalIndex: Int,
+        val floor: Int,
+        val remainder: BigDecimal
+    )
 
     /**
      * Distributes [total] proportionally across the given [weights] using
@@ -142,5 +149,69 @@ class RemainderDistributionServiceImpl : RemainderDistributionService {
                 pct
             }
         }
+    }
+
+    override fun distributeBreakdownPercentages(
+        amounts: List<Long>,
+        totalCents: Long
+    ): List<BreakdownPercentage> {
+        if (amounts.isEmpty()) return emptyList()
+        if (totalCents <= 0L) return List(amounts.size) { BreakdownPercentage.Zero }
+
+        val totalBd = BigDecimal.valueOf(totalCents)
+        val hundred = BigDecimal.valueOf(100)
+        val result = Array<BreakdownPercentage>(amounts.size) { BreakdownPercentage.Zero }
+        val candidates = mutableListOf<PercentageCandidate>()
+
+        for (i in amounts.indices) {
+            val amount = amounts[i]
+            if (amount <= 0L) {
+                result[i] = BreakdownPercentage.Zero
+                continue
+            }
+            val product = BigDecimal.valueOf(amount).multiply(hundred)
+            if (product < totalBd) {
+                result[i] = BreakdownPercentage.SubOnePercent
+            } else {
+                val floor = product.divide(totalBd, 0, RoundingMode.DOWN).toInt()
+                val remainder = product.remainder(totalBd)
+                candidates.add(
+                    PercentageCandidate(
+                        originalIndex = i,
+                        floor = floor,
+                        remainder = remainder
+                    )
+                )
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            return result.toList()
+        }
+
+        val sumOfFloors = candidates.sumOf { it.floor }
+        val remainderUnits = (100 - sumOfFloors).coerceIn(0, candidates.size)
+
+        val sortedCandidates = candidates.sortedWith(
+            compareByDescending<PercentageCandidate> { it.remainder }
+                .thenBy { it.originalIndex }
+        )
+
+        val bonusIndices = sortedCandidates
+            .take(remainderUnits)
+            .filter { it.remainder > BigDecimal.ZERO }
+            .map { it.originalIndex }
+            .toSet()
+
+        for (candidate in candidates) {
+            val percentage = if (candidate.originalIndex in bonusIndices) {
+                candidate.floor + 1
+            } else {
+                candidate.floor
+            }
+            result[candidate.originalIndex] = BreakdownPercentage.Whole(percentage)
+        }
+
+        return result.toList()
     }
 }
