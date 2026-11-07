@@ -93,7 +93,8 @@ class ExpensesFilterPresetViewModelTest {
             observeGroupUseCase = observeGroupUseCase,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             authenticationService = authenticationService,
-            expensesFilterUiMapper = expensesFilterUiMapper
+            expensesFilterUiMapper = expensesFilterUiMapper,
+            defaultDispatcher = testDispatcher
         )
     }
 

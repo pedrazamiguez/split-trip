@@ -525,8 +525,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             // Then
-            assertEquals(5, viewModel.uiState.value.scrollPosition)
-            assertEquals(100, viewModel.uiState.value.scrollOffset)
+            assertEquals(Pair(5, 100), viewModel.savedScrollPosition)
             collectJob.cancel()
         }
 
@@ -549,8 +548,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             // Then - Scroll position should persist
-            assertEquals(3, viewModel.uiState.value.scrollPosition)
-            assertEquals(50, viewModel.uiState.value.scrollOffset)
+            assertEquals(Pair(3, 50), viewModel.savedScrollPosition)
             collectJob.cancel()
         }
     }
@@ -1417,6 +1415,7 @@ class ExpensesViewModelTest {
         authenticationService = authenticationService,
         observeGroupUseCase = observeGroupUseCase,
         expenseFilterService = expenseFilterService,
-        telemetryTracker = telemetryTracker
+        telemetryTracker = telemetryTracker,
+        defaultDispatcher = testDispatcher
     )
 }

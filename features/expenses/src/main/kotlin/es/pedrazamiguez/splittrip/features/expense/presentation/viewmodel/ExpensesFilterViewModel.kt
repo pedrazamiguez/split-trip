@@ -13,6 +13,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpensesF
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpensesFilterUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpensesFilterUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesFilterUiState
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -33,7 +36,8 @@ class ExpensesFilterViewModel(
     private val observeGroupUseCase: ObserveGroupUseCase,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val authenticationService: AuthenticationService,
-    private val expensesFilterUiMapper: ExpensesFilterUiMapper
+    private val expensesFilterUiMapper: ExpensesFilterUiMapper,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     private val _selectedGroupId = MutableStateFlow<String?>(null)
@@ -94,6 +98,7 @@ class ExpensesFilterViewModel(
                 )
             }
         }
+        .flowOn(defaultDispatcher)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(

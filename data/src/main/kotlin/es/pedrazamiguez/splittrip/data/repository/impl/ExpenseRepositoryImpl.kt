@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
+import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
@@ -29,7 +30,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -196,15 +196,12 @@ class ExpenseRepositoryImpl(
      */
     override fun getGroupExpensesFlow(groupId: String): Flow<List<Expense>> =
         localExpenseDataSource.getExpensesByGroupIdFlow(groupId)
-            .onStart {
-                // Cancel any previous cloud subscription for this group to prevent duplicates.
-                cloudSubscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
-                    kotlinx.coroutines.coroutineScope {
-                        launch {
-                            observeAndProcessMembershipRemovals(groupId)
-                        }
-                        subscribeToCloudChanges(groupId)
+            .trackSubscription(cloudSubscriptionTracker, groupId, syncScope) {
+                kotlinx.coroutines.coroutineScope {
+                    launch {
+                        observeAndProcessMembershipRemovals(groupId)
                     }
+                    subscribeToCloudChanges(groupId)
                 }
             }
 
@@ -290,9 +287,8 @@ class ExpenseRepositoryImpl(
      * if the initial upload was interrupted or failed.
      */
     private suspend fun retryPendingReceiptUploads(groupId: String) {
-        val expenseIds = localExpenseDataSource.getExpenseIdsByGroup(groupId)
-        for (id in expenseIds) {
-            val expense = localExpenseDataSource.getExpenseById(id) ?: continue
+        val pendingExpenses = localExpenseDataSource.getPendingReceiptExpenses(groupId)
+        for (expense in pendingExpenses) {
             scheduleReceiptUpload(expense)
         }
     }

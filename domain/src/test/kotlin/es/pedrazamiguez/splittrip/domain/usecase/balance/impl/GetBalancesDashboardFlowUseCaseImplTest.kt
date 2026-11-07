@@ -19,6 +19,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -72,10 +73,8 @@ class GetBalancesDashboardFlowUseCaseImplTest {
         val profiles = mapOf("u1" to User(userId = "u1", email = "test@test.com", displayName = "Test User"))
 
         every { groupDashboardDataSource.getDashboardSnapshotFlow("1") } returns flowOf(snapshot)
-        every { getGroupPocketBalanceFlowUseCase("1", "EUR") } returns
-            flowOf(
-                GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
-            )
+        every { getGroupPocketBalanceFlowUseCase.calculate(any(), any(), any(), "EUR") } returns
+            GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
         every { getMemberBalancesFlowUseCase.computeMemberBalances(any()) } returns
             memberBalances
         coEvery { getMemberProfilesUseCase(any()) } returns profiles
@@ -109,10 +108,8 @@ class GetBalancesDashboardFlowUseCaseImplTest {
         )
 
         every { groupDashboardDataSource.getDashboardSnapshotFlow("1") } returns flowOf(snapshot)
-        every { getGroupPocketBalanceFlowUseCase("1", "EUR") } returns
-            flowOf(
-                GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
-            )
+        every { getGroupPocketBalanceFlowUseCase.calculate(any(), any(), any(), "EUR") } returns
+            GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
         every { getMemberBalancesFlowUseCase.computeMemberBalances(any()) } returns
             memberBalances
         coEvery { getMemberProfilesUseCase(any()) } returns profiles
@@ -139,10 +136,8 @@ class GetBalancesDashboardFlowUseCaseImplTest {
         val profiles = emptyMap<String, User>()
 
         every { groupDashboardDataSource.getDashboardSnapshotFlow("1") } returns flowOf(snapshot)
-        every { getGroupPocketBalanceFlowUseCase("1", "EUR") } returns
-            flowOf(
-                GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
-            )
+        every { getGroupPocketBalanceFlowUseCase.calculate(any(), any(), any(), "EUR") } returns
+            GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
         every { getMemberBalancesFlowUseCase.computeMemberBalances(any()) } returns
             memberBalances
         coEvery { getMemberProfilesUseCase(any()) } returns profiles
@@ -172,10 +167,8 @@ class GetBalancesDashboardFlowUseCaseImplTest {
         )
 
         every { groupDashboardDataSource.getDashboardSnapshotFlow("1") } returns flowOf(snapshot1, snapshot2)
-        every { getGroupPocketBalanceFlowUseCase("1", "EUR") } returns
-            flowOf(
-                GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
-            )
+        every { getGroupPocketBalanceFlowUseCase.calculate(any(), any(), any(), "EUR") } returns
+            GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
         every { getMemberBalancesFlowUseCase.computeMemberBalances(any()) } returns
             emptyList()
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
@@ -186,5 +179,37 @@ class GetBalancesDashboardFlowUseCaseImplTest {
         assertEquals(2, results.size)
         assertEquals(0, results[0].contributions.size)
         assertEquals(1, results[1].contributions.size)
+    }
+
+    @Test
+    fun `invoke calculates pocket balance directly from snapshot without invoking secondary flow`() = runTest {
+        val group = Group(id = "1", name = "Test", currency = "EUR", status = GroupStatus.ACTIVE)
+        val snapshot = GroupDashboardReadModel(
+            group = group,
+            contributions = emptyList(),
+            withdrawals = emptyList(),
+            subunits = emptyList(),
+            expenses = emptyList(),
+            settlements = emptyList()
+        )
+
+        every { groupDashboardDataSource.getDashboardSnapshotFlow("1") } returns flowOf(snapshot)
+        every { getGroupPocketBalanceFlowUseCase.calculate(any(), any(), any(), "EUR") } returns
+            GroupPocketBalance(0L, 0L, 0L, "EUR", emptyMap(), emptyMap(), 0L, 0L, 0L, 0L)
+        every { getMemberBalancesFlowUseCase.computeMemberBalances(any()) } returns emptyList()
+        coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
+        every { getSettlementSuggestionsUseCase(any()) } returns emptyList()
+
+        useCase("1", "EUR", emptyList()).first()
+
+        verify(exactly = 1) {
+            getGroupPocketBalanceFlowUseCase.calculate(
+                contributions = snapshot.contributions,
+                expenses = snapshot.expenses,
+                withdrawals = snapshot.withdrawals,
+                currency = "EUR"
+            )
+        }
+        verify(exactly = 0) { getGroupPocketBalanceFlowUseCase(any(), any()) }
     }
 }

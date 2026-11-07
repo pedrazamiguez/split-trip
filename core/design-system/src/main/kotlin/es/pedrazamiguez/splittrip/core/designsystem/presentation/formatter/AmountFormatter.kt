@@ -8,12 +8,24 @@ import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.Currency
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Matches any Unicode "Space Separator" (category Zs):
  * U+0020 (SPACE), U+00A0 (NO-BREAK SPACE), U+202F (NARROW NO-BREAK SPACE), etc.
  */
 private val UNICODE_SPACE_REGEX = Regex("[\\p{Zs}]")
+
+private const val NO_NATIVE_SYMBOL = "__NO_NATIVE_SYMBOL__"
+private val nativeSymbolCache = ConcurrentHashMap<Currency, String>()
+private val numberFormatCache = ConcurrentHashMap<Pair<Locale, String>, NumberFormat>()
+
+internal fun getNativeSymbolCacheSize(): Int = nativeSymbolCache.size
+internal fun getNumberFormatCacheSize(): Int = numberFormatCache.size
+internal fun clearAmountFormatterCaches() {
+    nativeSymbolCache.clear()
+    numberFormatCache.clear()
+}
 
 fun Expense.formatAmount(locale: Locale): String =
     formatCurrencyAmount(amount = groupAmount, currencyCode = groupCurrency, locale = locale)
@@ -35,11 +47,14 @@ fun formatCurrencyAmount(
     val divisor = BigDecimal.TEN.pow(fractionDigits)
     val value = BigDecimal(amount).divide(divisor, fractionDigits, RoundingMode.HALF_UP)
 
-    val numberFormat = NumberFormat.getCurrencyInstance(locale).apply {
-        this.currency = currencyInstance
-        minimumFractionDigits = fractionDigits
-        maximumFractionDigits = fractionDigits
+    val template = numberFormatCache.computeIfAbsent(locale to currencyInstance.currencyCode) {
+        NumberFormat.getCurrencyInstance(locale).apply {
+            this.currency = currencyInstance
+            minimumFractionDigits = fractionDigits
+            maximumFractionDigits = fractionDigits
+        }
     }
+    val numberFormat = template.clone() as NumberFormat
 
     val formatted = numberFormat.format(value)
 
@@ -106,6 +121,16 @@ fun resolveCurrencySymbol(currencyCode: String, locale: Locale): String {
  * (e.g., "US$", "MX$", "CA$").
  */
 private fun resolveNativeSymbol(currency: Currency): String? {
+    val cached = nativeSymbolCache[currency]
+    if (cached != null) {
+        return cached.takeIf { it != NO_NATIVE_SYMBOL }
+    }
+    val resolved = resolveNativeSymbolUncached(currency)
+    nativeSymbolCache[currency] = resolved ?: NO_NATIVE_SYMBOL
+    return resolved
+}
+
+private fun resolveNativeSymbolUncached(currency: Currency): String? {
     val nativeLocale = Locale.getAvailableLocales().firstOrNull { locale ->
         locale.country.isNotEmpty() &&
             runCatching {

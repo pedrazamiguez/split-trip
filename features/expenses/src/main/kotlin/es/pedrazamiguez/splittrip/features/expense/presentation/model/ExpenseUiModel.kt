@@ -1,11 +1,13 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.model
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 
+@Immutable
 data class ExpenseUiModel(
     val id: String = "",
     val title: String = "",

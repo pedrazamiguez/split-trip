@@ -21,7 +21,7 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFactory
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
-import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsByIdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpenseIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
@@ -37,6 +37,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUs
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdLocalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
@@ -369,14 +370,14 @@ val expensesUiModule = module {
         ExpenseDetailViewModel(
             getExpenseByIdFlowUseCase = get<GetExpenseByIdFlowUseCase>(),
             getMemberProfilesUseCase = get<GetMemberProfilesUseCase>(),
-            getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>(),
+            getCashWithdrawalsByIdsUseCase = get<GetCashWithdrawalsByIdsUseCase>(),
             getGroupSubunitsUseCase = get<GetGroupSubunitsUseCase>(),
             deleteExpenseUseCase = get<DeleteExpenseUseCase>(),
             downloadReceiptUseCase = get<DownloadReceiptUseCase>(),
             updateExpenseUseCase = get<UpdateExpenseUseCase>(),
             authenticationService = get<AuthenticationService>(),
             expenseDetailUiMapper = get<ExpenseDetailUiMapper>(),
-            observeGroupUseCase = get<ObserveGroupUseCase>(),
+            getGroupByIdLocalUseCase = get<GetGroupByIdLocalUseCase>(),
             exchangeRateCalculationService = get<ExchangeRateCalculationService>(),
             remainderDistributionService = get<RemainderDistributionService>()
         )

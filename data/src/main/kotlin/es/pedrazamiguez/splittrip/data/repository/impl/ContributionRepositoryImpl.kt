@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
+import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
@@ -21,7 +22,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -172,33 +172,31 @@ class ContributionRepositoryImpl(
 
     override fun getGroupContributionsFlow(groupId: String): Flow<List<Contribution>> =
         localContributionDataSource.getContributionsByGroupIdFlow(groupId)
-            .onStart {
-                cloudSubscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
-                    subscribeAndReconcile(
-                        cloudFlow = cloudContributionDataSource
-                            .getContributionsByGroupIdFlow(groupId),
-                        params = SyncReconciliationParams(
-                            reconcileLocal = { remoteContributions ->
-                                localContributionDataSource.replaceContributionsForGroup(
-                                    groupId,
-                                    remoteContributions
-                                )
-                            },
-                            getPendingIds = {
-                                localContributionDataSource.getPendingSyncContributionIds(groupId)
-                            },
-                            verifyOnServer = { id ->
-                                cloudContributionDataSource.verifyContributionOnServer(groupId, id)
-                            },
-                            markSynced = { id ->
-                                localContributionDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
-                            },
-                            entityLabel = "contribution",
-                            logContext = "for group $groupId",
-                            performanceMonitor = performanceMonitor,
-                            verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
-                        )
+            .trackSubscription(cloudSubscriptionTracker, groupId, syncScope) {
+                subscribeAndReconcile(
+                    cloudFlow = cloudContributionDataSource
+                        .getContributionsByGroupIdFlow(groupId),
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { remoteContributions ->
+                            localContributionDataSource.replaceContributionsForGroup(
+                                groupId,
+                                remoteContributions
+                            )
+                        },
+                        getPendingIds = {
+                            localContributionDataSource.getPendingSyncContributionIds(groupId)
+                        },
+                        verifyOnServer = { id ->
+                            cloudContributionDataSource.verifyContributionOnServer(groupId, id)
+                        },
+                        markSynced = { id ->
+                            localContributionDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
+                        },
+                        entityLabel = "contribution",
+                        logContext = "for group $groupId",
+                        performanceMonitor = performanceMonitor,
+                        verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
                     )
-                }
+                )
             }
 }

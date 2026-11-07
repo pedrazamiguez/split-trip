@@ -53,6 +53,8 @@ interface LocalCashWithdrawalQueryDataSource {
 
     suspend fun getWithdrawalById(withdrawalId: String): CashWithdrawal?
 
+    suspend fun getWithdrawalsByIds(withdrawalIds: List<String>): List<CashWithdrawal>
+
     suspend fun getWithdrawalIdsByGroup(groupId: String): List<String>
 
     /**
