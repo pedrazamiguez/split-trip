@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,6 +38,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiMod
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import kotlinx.collections.immutable.ImmutableList
+
+private const val DARK_THEME_LUMINANCE_THRESHOLD = 0.5f
 
 @Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod", "CognitiveComplexMethod", "ComplexCondition")
 @Composable
@@ -164,7 +167,17 @@ fun AddOnItemCard(
             }
         }
     } else {
-        FlatCard(modifier = modifier.fillMaxWidth()) {
+        val isDark = MaterialTheme.colorScheme.surface.luminance() < DARK_THEME_LUMINANCE_THRESHOLD
+        val expandedCardColor = if (isDark) {
+            MaterialTheme.colorScheme.surfaceContainerHighest
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLowest
+        }
+        FlatCard(
+            modifier = modifier.fillMaxWidth(),
+            color = expandedCardColor,
+            ghostBorder = true
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

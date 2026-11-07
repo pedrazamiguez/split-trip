@@ -363,6 +363,8 @@ All text inputs use the **Soft Field** pattern:
 > **In wizard write-flows:** Place `StyledOutlinedTextField` directly inside `WizardStepLayout { }`. If a section title is needed, render it as a standalone `Text(style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)` above the field — **do not** wrap the pair in a `SectionCard`.
 >
 > `SectionCard` remains correct for grouping **read-only** content (e.g., review/summary steps) where the card background provides helpful visual grouping for plain `Text` rows.
+>
+> **Nested inputs in expandable containers:** When inputs must be hosted inside an expandable card or container (e.g., `AddOnItemCard`), the card container itself must elevate its background to `surfaceContainerLowest` in light mode (pure white `#FFFFFF`) or `surfaceContainerHighest` in dark mode (`#32353A`), combined with `ghostBorder = true`. This preserves standard `softFieldColors()` (`surfaceContainerLow`) across all nested fields with clear, distinct visual boundaries at rest without modifying input field defaults.
 
 ### 5.4 Passport Chip — Signature Travel Component
 
