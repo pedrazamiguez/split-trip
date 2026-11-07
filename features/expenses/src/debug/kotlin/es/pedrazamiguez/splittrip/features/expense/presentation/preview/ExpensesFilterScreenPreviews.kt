@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
@@ -110,6 +111,19 @@ private fun ExpensesFilterScreenPaymentStatusPreview() {
     ExpensesFilterPreviewHelper(
         draftCriteria = ExpenseFilterCriteria(
             selectedPaymentStatuses = setOf(PaymentStatus.SCHEDULED, PaymentStatus.REFUNDABLE)
+        ),
+        matchingExpensesCount = 2
+    ) { uiState ->
+        ExpensesFilterScreen(uiState = uiState)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun ExpensesFilterScreenAttributesPreview() {
+    ExpensesFilterPreviewHelper(
+        draftCriteria = ExpenseFilterCriteria(
+            selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT, ExpenseAttribute.HAS_NOTE)
         ),
         matchingExpensesCount = 2
     ) { uiState ->
