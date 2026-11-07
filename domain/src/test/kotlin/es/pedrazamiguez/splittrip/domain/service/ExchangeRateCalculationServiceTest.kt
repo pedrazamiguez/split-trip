@@ -510,4 +510,53 @@ class ExchangeRateCalculationServiceTest {
             "Expected internal * display ≈ 1.0, got $product"
         )
     }
+
+    // ── Non-positive and negative input handling ─────────────────────────
+
+    @Test
+    fun `calculateGroupAmount returns zero when rate is negative`() {
+        val result = service.calculateGroupAmount(BigDecimal("100.00"), BigDecimal("-0.027"))
+        assertEquals(BigDecimal.ZERO, result)
+    }
+
+    @Test
+    fun `calculateGroupAmount returns zero when source amount is negative`() {
+        val result = service.calculateGroupAmount(BigDecimal("-100.00"), BigDecimal("0.027"))
+        assertEquals(BigDecimal.ZERO, result)
+    }
+
+    @Test
+    fun `calculateImpliedRate returns zero when source amount or group amount is negative`() {
+        assertEquals(BigDecimal.ZERO, service.calculateImpliedRate(BigDecimal("-1000.00"), BigDecimal("27.35")))
+        assertEquals(BigDecimal.ZERO, service.calculateImpliedRate(BigDecimal("1000.00"), BigDecimal("-27.35")))
+    }
+
+    @Test
+    fun `calculateGroupAmountFromStrings returns zero for negative rate or negative source`() {
+        assertEquals("0.00", service.calculateGroupAmountFromStrings("-100.00", "1.5"))
+        assertEquals("0.00", service.calculateGroupAmountFromStrings("100.00", "-1.5"))
+    }
+
+    @Test
+    fun `calculateGroupAmountFromDisplayRate returns zero for negative display rate`() {
+        assertEquals("0", service.calculateGroupAmountFromDisplayRate("100.00", "-37.0"))
+    }
+
+    @Test
+    fun `calculateImpliedDisplayRateFromStrings returns zero for negative group amount or negative source`() {
+        assertEquals("0", service.calculateImpliedDisplayRateFromStrings("-1000.00", "27.35"))
+        assertEquals("0", service.calculateImpliedDisplayRateFromStrings("1000.00", "-27.35"))
+    }
+
+    @Test
+    fun `displayRateToCalculationRate returns zero for negative display rate`() {
+        assertEquals(BigDecimal.ZERO, service.displayRateToCalculationRate("-37.0"))
+        assertEquals(BigDecimal.ZERO, service.displayRateToCalculationRate("0"))
+    }
+
+    @Test
+    fun `convertCentsToGroupCurrencyViaDisplayRate returns zero for negative rate or negative amount`() {
+        assertEquals(0L, service.convertCentsToGroupCurrencyViaDisplayRate(-1000L, "37.0"))
+        assertEquals(0L, service.convertCentsToGroupCurrencyViaDisplayRate(1000L, "-37.0"))
+    }
 }

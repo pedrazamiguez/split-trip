@@ -146,6 +146,8 @@ private fun ConversionCardInputRow(
             label = state.exchangeRateLabel,
             modifier = Modifier.weight(EXCHANGE_RATE_FIELD_WEIGHT),
             readOnly = state.isExchangeRateLocked,
+            isError = state.isExchangeRateFieldError,
+            requirePositive = true,
             keyboardType = KeyboardType.Decimal,
             imeAction = ImeAction.Next,
             focusRequester = focusRequester,
@@ -161,8 +163,9 @@ private fun ConversionCardInputRow(
             label = state.groupAmountLabel,
             modifier = Modifier.weight(GROUP_AMOUNT_FIELD_WEIGHT),
             readOnly = state.isExchangeRateLocked,
-            keyboardType = KeyboardType.Decimal,
             isError = state.isGroupAmountError,
+            requirePositive = true,
+            keyboardType = KeyboardType.Decimal,
             imeAction = ImeAction.Done,
             keyboardActions = KeyboardActions(
                 onDone = { onDone() }

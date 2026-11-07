@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
@@ -232,6 +233,7 @@ class CashRateDelegate(
         }
 
         val rawRate = preview.displayRate.stripTrailingZeros().toPlainString()
+        val isRateValid = CurrencyConverter.isPositiveAmount(rawRate)
 
         return if (preview.groupAmountCents > 0) {
             // FIFO-simulated: update both rate and group amount
@@ -239,10 +241,13 @@ class CashRateDelegate(
                 preview.groupAmountCents,
                 targetDecimalDigits
             )
+            val isAmountValid = CurrencyConverter.isPositiveAmount(rawAmount)
             current.copy(
                 isLoadingRate = false,
                 displayExchangeRate = rawRate,
                 calculatedGroupAmount = rawAmount,
+                isExchangeRateValid = isRateValid,
+                isGroupAmountValid = isAmountValid,
                 isExchangeRateLocked = true,
                 isInsufficientCash = false,
                 exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint),
@@ -254,6 +259,8 @@ class CashRateDelegate(
                 isLoadingRate = false,
                 displayExchangeRate = rawRate,
                 calculatedGroupAmount = "",
+                isExchangeRateValid = isRateValid,
+                isGroupAmountValid = false,
                 isExchangeRateLocked = true,
                 isInsufficientCash = false,
                 exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint),
@@ -269,6 +276,8 @@ class CashRateDelegate(
         isLoadingRate = false,
         displayExchangeRate = if (updateRateFields) EMPTY_FIELD_PLACEHOLDER else current.displayExchangeRate,
         calculatedGroupAmount = if (updateRateFields) EMPTY_FIELD_PLACEHOLDER else current.calculatedGroupAmount,
+        isExchangeRateValid = if (updateRateFields) false else current.isExchangeRateValid,
+        isGroupAmountValid = if (updateRateFields) false else current.isGroupAmountValid,
         isExchangeRateLocked = updateRateFields || current.isExchangeRateLocked,
         isInsufficientCash = true,
         exchangeRateLockedHint = if (updateRateFields) {
@@ -286,6 +295,8 @@ class CashRateDelegate(
         isLoadingRate = false,
         displayExchangeRate = if (updateRateFields) EMPTY_FIELD_PLACEHOLDER else current.displayExchangeRate,
         calculatedGroupAmount = if (updateRateFields) EMPTY_FIELD_PLACEHOLDER else current.calculatedGroupAmount,
+        isExchangeRateValid = if (updateRateFields) false else current.isExchangeRateValid,
+        isGroupAmountValid = if (updateRateFields) false else current.isGroupAmountValid,
         isExchangeRateLocked = updateRateFields,
         isInsufficientCash = false,
         exchangeRateLockedHint = if (updateRateFields) {

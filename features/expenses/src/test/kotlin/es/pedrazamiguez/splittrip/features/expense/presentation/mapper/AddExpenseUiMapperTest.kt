@@ -184,6 +184,42 @@ class AddExpenseUiMapperTest {
         }
 
         @Test
+        fun `mapToDomain returns failure when displayExchangeRate is negative`() {
+            val state = AddExpenseUiState(
+                expenseTitle = "Coffee",
+                sourceAmount = "5.00",
+                selectedCurrency = usdUi,
+                groupCurrency = eurUi,
+                showExchangeRateSection = true,
+                displayExchangeRate = "-1.086",
+                calculatedGroupAmount = "4.60",
+                selectedPaymentMethod = debitCardPaymentMethod
+            )
+
+            val result = mapper.mapToDomain(state, "group-789")
+
+            assertTrue(result.isFailure)
+        }
+
+        @Test
+        fun `mapToDomain returns failure when groupAmount is negative`() {
+            val state = AddExpenseUiState(
+                expenseTitle = "Coffee",
+                sourceAmount = "5.00",
+                selectedCurrency = usdUi,
+                groupCurrency = eurUi,
+                showExchangeRateSection = true,
+                displayExchangeRate = "1.086",
+                calculatedGroupAmount = "-4.60",
+                selectedPaymentMethod = debitCardPaymentMethod
+            )
+
+            val result = mapper.mapToDomain(state, "group-789")
+
+            assertTrue(result.isFailure)
+        }
+
+        @Test
         fun `large amount with arithmetic submits without being divided by 1000`() {
             val state = AddExpenseUiState(
                 expenseTitle = "Hotel",

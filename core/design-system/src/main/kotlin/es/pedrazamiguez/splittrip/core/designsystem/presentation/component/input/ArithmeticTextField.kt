@@ -23,8 +23,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.rememberLocale
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.service.calculator.ExpressionCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.calculator.ExpressionResult
+import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
 
@@ -46,6 +48,7 @@ fun ArithmeticTextField(
     suffix: @Composable (() -> Unit)? = null,
     supportingText: String? = null,
     isError: Boolean = false,
+    requirePositive: Boolean = false,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     singleLine: Boolean = true,
@@ -168,6 +171,17 @@ fun ArithmeticTextField(
         )
     }
 
+    val effectiveIsError = if (requirePositive) {
+        if (isFocused) {
+            val res = evaluationResult
+            isError || (res is ExpressionResult.Success && res.value <= BigDecimal.ZERO)
+        } else {
+            isError || (value.isNotBlank() && !CurrencyConverter.isPositiveAmount(value))
+        }
+    } else {
+        isError
+    }
+
     StyledOutlinedTextField(
         value = currentTextFieldValue,
         onValueChange = { newTfv ->
@@ -197,7 +211,7 @@ fun ArithmeticTextField(
         prefix = prefix,
         suffix = suffix,
         supportingText = supportingText,
-        isError = isError,
+        isError = effectiveIsError,
         enabled = enabled,
         readOnly = readOnly,
         singleLine = singleLine,

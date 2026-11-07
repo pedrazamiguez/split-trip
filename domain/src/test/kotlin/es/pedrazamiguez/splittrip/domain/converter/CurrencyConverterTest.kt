@@ -10,6 +10,8 @@ import java.util.Locale
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -428,6 +430,44 @@ class CurrencyConverterTest {
         @Test
         fun `handles large number with mixed separators`() {
             assertEquals("123456789.12", CurrencyConverter.normalizeAmountString("123,456,789.12"))
+        }
+    }
+
+    @Nested
+    inner class IsPositiveAmountTests {
+
+        @Test
+        fun `isPositiveAmount returns true for valid positive amounts`() {
+            assertTrue(CurrencyConverter.isPositiveAmount("10.50"))
+            assertTrue(CurrencyConverter.isPositiveAmount("1"))
+            assertTrue(CurrencyConverter.isPositiveAmount("1,234.56"))
+            assertTrue(CurrencyConverter.isPositiveAmount("1.234,56"))
+        }
+
+        @Test
+        fun `isPositiveAmount returns false for zero amounts`() {
+            assertFalse(CurrencyConverter.isPositiveAmount("0"))
+            assertFalse(CurrencyConverter.isPositiveAmount("0.0"))
+            assertFalse(CurrencyConverter.isPositiveAmount("0.00"))
+        }
+
+        @Test
+        fun `isPositiveAmount returns false for negative amounts`() {
+            assertFalse(CurrencyConverter.isPositiveAmount("-0.94"))
+            assertFalse(CurrencyConverter.isPositiveAmount("-1"))
+            assertFalse(CurrencyConverter.isPositiveAmount("-1.234,56"))
+        }
+
+        @Test
+        fun `isPositiveAmount returns false for empty or blank strings`() {
+            assertFalse(CurrencyConverter.isPositiveAmount(""))
+            assertFalse(CurrencyConverter.isPositiveAmount("   "))
+        }
+
+        @Test
+        fun `isPositiveAmount returns false for invalid strings`() {
+            assertFalse(CurrencyConverter.isPositiveAmount("abc"))
+            assertFalse(CurrencyConverter.isPositiveAmount("12a34"))
         }
     }
 }

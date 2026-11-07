@@ -9,6 +9,8 @@ interface ExpenseValidationService {
     fun validateTitle(title: String): ValidationResult
     fun validateExpenseDate(dateMillis: Long): ValidationResult
     fun validateAmount(amountString: String): ValidationResult
+    fun validateExchangeRate(rateString: String): ValidationResult
+    fun validateGroupAmount(amountString: String): ValidationResult
     fun validateUserCount(count: Int): ValidationResult
     fun validateSplits(
         splitType: SplitType,

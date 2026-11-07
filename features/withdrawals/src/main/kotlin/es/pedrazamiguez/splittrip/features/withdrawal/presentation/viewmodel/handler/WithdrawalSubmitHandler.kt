@@ -137,17 +137,64 @@ class WithdrawalSubmitHandler(
         state: AddCashWithdrawalUiState,
         amountWithdrawn: Long,
         groupCurrency: CurrencyUiModel
-    ): Boolean {
+    ): Boolean = validateWithdrawalAmount(amountWithdrawn) &&
+        validateExchangeRateSection(state, amountWithdrawn, groupCurrency) &&
+        validateFeeSection(state, groupCurrency)
+
+    private fun validateWithdrawalAmount(amountWithdrawn: Long): Boolean {
         val amountValidation = cashWithdrawalValidationService.validateAmountWithdrawn(amountWithdrawn)
         if (amountValidation is CashWithdrawalValidationService.ValidationResult.Invalid) {
             _uiState.update { it.copy(isAmountValid = false) }
             return false
         }
-        if (state.hasFee && state.feeAmount.isNotBlank()) {
-            val feeCurrency = state.feeCurrency ?: groupCurrency
-            val feeAmountCents = parseAmountToSmallestUnit(state.feeAmount, feeCurrency.code)
-            if (feeAmountCents <= 0) {
-                _uiState.update { it.copy(isFeeAmountValid = false) }
+        return true
+    }
+
+    private fun validateExchangeRateSection(
+        state: AddCashWithdrawalUiState,
+        amountWithdrawn: Long,
+        groupCurrency: CurrencyUiModel
+    ): Boolean {
+        if (!state.showExchangeRateSection) return true
+        val deductedBaseAmount = resolveDeductedAmount(state, amountWithdrawn, groupCurrency)
+        val deductedValidation = cashWithdrawalValidationService.validateDeductedBaseAmount(deductedBaseAmount)
+        if (deductedValidation is CashWithdrawalValidationService.ValidationResult.Invalid) {
+            _uiState.update { it.copy(isDeductedAmountValid = false) }
+            return false
+        }
+        val exchangeRate = resolveExchangeRate(state, amountWithdrawn, deductedBaseAmount)
+        val rateValidation = cashWithdrawalValidationService.validateExchangeRate(exchangeRate)
+        if (rateValidation is CashWithdrawalValidationService.ValidationResult.Invalid) {
+            _uiState.update { it.copy(isExchangeRateValid = false) }
+            return false
+        }
+        return true
+    }
+
+    private fun validateFeeSection(
+        state: AddCashWithdrawalUiState,
+        groupCurrency: CurrencyUiModel
+    ): Boolean {
+        if (!state.hasFee || state.feeAmount.isBlank()) return true
+        val feeCurrency = state.feeCurrency ?: groupCurrency
+        val feeAmountCents = parseAmountToSmallestUnit(state.feeAmount, feeCurrency.code)
+        if (feeAmountCents <= 0) {
+            _uiState.update { it.copy(isFeeAmountValid = false) }
+            return false
+        }
+        if (state.showFeeExchangeRateSection && state.feeConvertedAmount.isNotBlank()) {
+            val groupAmountCents = parseAmountToSmallestUnit(state.feeConvertedAmount, groupCurrency.code)
+            if (groupAmountCents <= 0) {
+                _uiState.update { it.copy(isFeeConvertedAmountValid = false) }
+                return false
+            }
+            val feeRate = exchangeRateCalculationService.calculateExchangeRate(
+                amountWithdrawn = feeAmountCents,
+                deductedBaseAmount = groupAmountCents
+            )
+            val feeRateValidation = cashWithdrawalValidationService.validateExchangeRate(feeRate)
+            if (feeRateValidation is CashWithdrawalValidationService.ValidationResult.Invalid) {
+                _uiState.update { it.copy(isFeeExchangeRateValid = false) }
                 return false
             }
         }

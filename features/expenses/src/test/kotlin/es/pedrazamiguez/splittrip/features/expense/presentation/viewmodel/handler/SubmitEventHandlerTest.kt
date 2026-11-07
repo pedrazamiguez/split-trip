@@ -813,6 +813,76 @@ class SubmitEventHandlerTest {
             // Error is shown via UiAction (Snackbar), not inline
             assertNull(stateFlow.value.error)
         }
+
+        @Test
+        fun `blocks submission when exchange rate is non-positive`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val job = launch { actionsFlow.collect { actions.add(it) } }
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = AddExpenseUiState(
+                expenseTitle = "Dinner",
+                sourceAmount = "50",
+                showExchangeRateSection = true,
+                displayExchangeRate = "-1.5",
+                calculatedGroupAmount = "50.00"
+            )
+
+            handler.submitExpense("group-1") {}
+            advanceUntilIdle()
+
+            assertFalse(stateFlow.value.isExchangeRateValid)
+            assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            job.cancel()
+        }
+
+        @Test
+        fun `blocks submission when group amount is non-positive`() = runTest(testDispatcher) {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val job = launch { actionsFlow.collect { actions.add(it) } }
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = AddExpenseUiState(
+                expenseTitle = "Dinner",
+                sourceAmount = "50",
+                showExchangeRateSection = true,
+                displayExchangeRate = "1.5",
+                calculatedGroupAmount = "-10.00"
+            )
+
+            handler.submitExpense("group-1") {}
+            advanceUntilIdle()
+
+            assertFalse(stateFlow.value.isGroupAmountValid)
+            assertNotNull(stateFlow.value.error)
+            assertEquals(1, actions.size)
+            assertTrue(actions[0] is AddExpenseUiAction.ShowError)
+            job.cancel()
+        }
+
+        @Test
+        fun `proceeds when exchange rate and group amount are positive`() = runTest(testDispatcher) {
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = AddExpenseUiState(
+                expenseTitle = "Dinner",
+                sourceAmount = "50",
+                showExchangeRateSection = true,
+                displayExchangeRate = "1.5",
+                calculatedGroupAmount = "75.00"
+            )
+            val expense = makeExpense(sourceAmount = 5000L, groupAmount = 7500L)
+            every { addExpenseUiMapper.mapToDomain(any(), any()) } returns Result.success(expense)
+            coEvery { strategy.saveExpense(any(), any(), any()) } returns Result.success(Unit)
+
+            var successCalled = false
+            handler.submitExpense("group-1") { successCalled = true }
+            advanceUntilIdle()
+
+            assertTrue(successCalled)
+            assertTrue(stateFlow.value.isExchangeRateValid)
+            assertTrue(stateFlow.value.isGroupAmountValid)
+            assertNull(stateFlow.value.error)
+        }
     }
 
     companion object {

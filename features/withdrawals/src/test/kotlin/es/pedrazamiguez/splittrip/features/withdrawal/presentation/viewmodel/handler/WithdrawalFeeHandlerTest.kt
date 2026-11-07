@@ -539,6 +539,26 @@ class WithdrawalFeeHandlerTest {
         }
 
         @Test
+        fun `handleFeeExchangeRateChanged with non-positive rate sets isFeeExchangeRateValid to false`() = runTest {
+            handler.bind(uiState, actions, this)
+            handler.handleFeeExchangeRateChanged("-1.5")
+            advanceUntilIdle()
+
+            assertFalse(uiState.value.isFeeExchangeRateValid)
+            assertEquals("-1.5", uiState.value.feeExchangeRate)
+        }
+
+        @Test
+        fun `handleFeeConvertedAmountChanged with negative amount sets validity false`() = runTest {
+            handler.bind(uiState, actions, this)
+            handler.handleFeeConvertedAmountChanged("-2.70")
+            advanceUntilIdle()
+
+            assertFalse(uiState.value.isFeeConvertedAmountValid)
+            assertEquals("-2.70", uiState.value.feeConvertedAmount)
+        }
+
+        @Test
         fun `manual fee converted amount change resets error flag to false`() = runTest {
             uiState.value = baseState.copy(isFeeExchangeRateError = true, feeExchangeRate = "")
             handler.bind(uiState, actions, this)

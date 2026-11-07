@@ -42,6 +42,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
@@ -206,7 +207,8 @@ fun AddOnItemEditor(
                     isExchangeRateLocked = addOn.isExchangeRateLocked,
                     exchangeRateLockedHint = addOn.exchangeRateLockedHint,
                     isInsufficientCash = addOn.isInsufficientCash,
-                    isGroupAmountError = false
+                    isGroupAmountError = !CurrencyConverter.isPositiveAmount(addOn.calculatedGroupAmount),
+                    isExchangeRateFieldError = !CurrencyConverter.isPositiveAmount(addOn.displayExchangeRate)
                 ),
                 groupAmountDecimalPlaces = groupCurrency?.decimalDigits ?: UiConstants.DEFAULT_MAX_DECIMAL_PLACES,
                 groupAmountMinDecimalPlaces = groupCurrency?.decimalDigits ?: 0,

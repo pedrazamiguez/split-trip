@@ -139,6 +139,49 @@ class AddExpenseUiStateTest {
             )
             assertFalse(state.isFormValid)
         }
+
+        @Test
+        fun `returns false when showExchangeRateSection is true and rate is non-positive`() {
+            val state = AddExpenseUiState(
+                isTitleValid = true,
+                isAmountValid = true,
+                isDueDateValid = true,
+                expenseTitle = "Dinner",
+                sourceAmount = "50.00",
+                showExchangeRateSection = true,
+                displayExchangeRate = "0",
+                calculatedGroupAmount = "50.00"
+            )
+            assertFalse(state.isFormValid)
+        }
+
+        @Test
+        fun `returns false when showExchangeRateSection is true and group amount is non-positive`() {
+            val state = AddExpenseUiState(
+                isTitleValid = true,
+                isAmountValid = true,
+                isDueDateValid = true,
+                expenseTitle = "Dinner",
+                sourceAmount = "50.00",
+                showExchangeRateSection = true,
+                displayExchangeRate = "1.5",
+                calculatedGroupAmount = "-1.0"
+            )
+            assertFalse(state.isFormValid)
+        }
+
+        @Test
+        fun `returns false when add-on exchange rate or group amount is non-positive`() {
+            val state = AddExpenseUiState(
+                isTitleValid = true,
+                isAmountValid = true,
+                isDueDateValid = true,
+                expenseTitle = "Dinner",
+                sourceAmount = "50.00",
+                addOns = persistentListOf(AddOnUiModel(id = "addon-1", isAmountValid = false))
+            )
+            assertFalse(state.isFormValid)
+        }
     }
 
     // ── showContributionScopeStep ────────────────────────────────────────────
@@ -615,13 +658,53 @@ class AddExpenseUiStateTest {
         }
 
         @Test
-        fun `EXCHANGE_RATE step valid when both fields are not blank`() {
+        fun `EXCHANGE_RATE step valid when both fields are strictly positive`() {
             val state = AddExpenseUiState(
                 currentStep = AddExpenseStep.EXCHANGE_RATE,
                 displayExchangeRate = "37.0",
                 calculatedGroupAmount = "2.70"
             )
             assertTrue(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `EXCHANGE_RATE step invalid when displayExchangeRate is zero`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                displayExchangeRate = "0",
+                calculatedGroupAmount = "2.70"
+            )
+            assertFalse(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `EXCHANGE_RATE step invalid when displayExchangeRate is negative`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                displayExchangeRate = "-37.0",
+                calculatedGroupAmount = "2.70"
+            )
+            assertFalse(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `EXCHANGE_RATE step invalid when calculatedGroupAmount is zero`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                displayExchangeRate = "37.0",
+                calculatedGroupAmount = "0"
+            )
+            assertFalse(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `EXCHANGE_RATE step invalid when calculatedGroupAmount is negative`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                displayExchangeRate = "37.0",
+                calculatedGroupAmount = "-2.70"
+            )
+            assertFalse(state.isCurrentStepValid)
         }
 
         @Test
