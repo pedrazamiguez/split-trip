@@ -23,6 +23,9 @@
     <string name="expenses_filter_section_payment_method">Método de pago</string>
     <string name="expenses_filter_section_payment_status">Êttao der pago</string>
     <string name="expenses_filter_section_attributes">Atributô</string>
+    <string name="expenses_filter_section_amount">Importe</string>
+    <string name="expenses_filter_amount_min">Mín</string>
+    <string name="expenses_filter_amount_max">Mâh</string>
     <string name="expense_attribute_has_receipt">Con tique</string>
     <string name="expense_attribute_has_note">Con nota</string>
     <string name="expense_attribute_has_extras">Con êttrâ</string>

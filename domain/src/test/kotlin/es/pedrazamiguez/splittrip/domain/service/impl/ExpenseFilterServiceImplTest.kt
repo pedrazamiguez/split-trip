@@ -616,6 +616,142 @@ class ExpenseFilterServiceImplTest {
     }
 
     @Nested
+    @DisplayName("Amount Range and Currency Filtering")
+    inner class AmountRangeAndCurrencyFiltering {
+
+        private val eurExpense1 = expense1.copy(
+            id = "exp-eur-1",
+            sourceAmount = 1000L,
+            sourceCurrency = "EUR",
+            groupAmount = 1000L,
+            groupCurrency = "EUR"
+        )
+        private val eurExpense2 = expense2.copy(
+            id = "exp-eur-2",
+            sourceAmount = 2500L,
+            sourceCurrency = "EUR",
+            groupAmount = 2500L,
+            groupCurrency = "EUR"
+        )
+        private val eurExpense3 = expense3.copy(
+            id = "exp-eur-3",
+            sourceAmount = 5000L,
+            sourceCurrency = "EUR",
+            groupAmount = 5000L,
+            groupCurrency = "EUR"
+        )
+        private val usdExpense1 = expense4.copy(
+            id = "exp-usd-1",
+            sourceAmount = 1500L,
+            sourceCurrency = "USD",
+            groupAmount = 1350L,
+            groupCurrency = "EUR"
+        )
+        private val usdExpense2 = expense1.copy(
+            id = "exp-usd-2",
+            sourceAmount = 3000L,
+            sourceCurrency = "USD",
+            groupAmount = 2700L,
+            groupCurrency = "EUR"
+        )
+        private val jpyExpense = expense2.copy(
+            id = "exp-jpy",
+            sourceAmount = 6000L,
+            sourceCurrency = "JPY",
+            groupAmount = 4000L,
+            groupCurrency = "EUR"
+        )
+
+        private val multiCurrencyExpenses = listOf(eurExpense1, usdExpense1, jpyExpense)
+
+        @Test
+        fun `filters expenses by filterCurrency matching sourceCurrency`() {
+            val criteria = ExpenseFilterCriteria(filterCurrency = "USD")
+            val result = filterService.filter(multiCurrencyExpenses, criteria)
+            assertEquals(listOf(usdExpense1), result)
+        }
+
+        @Test
+        fun `filters expenses by minAmount in group currency when filterCurrency is null`() {
+            val expenses = listOf(eurExpense1, eurExpense2, eurExpense3)
+            val criteria = ExpenseFilterCriteria(minAmount = 2000L)
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(eurExpense2, eurExpense3), result)
+        }
+
+        @Test
+        fun `filters expenses by maxAmount in group currency when filterCurrency is null`() {
+            val expenses = listOf(eurExpense1, eurExpense2, eurExpense3)
+            val criteria = ExpenseFilterCriteria(maxAmount = 2500L)
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(eurExpense1, eurExpense2), result)
+        }
+
+        @Test
+        fun `filters expenses by closed range in group currency when filterCurrency is null`() {
+            val exp500 = expense1.copy(id = "exp-500", groupAmount = 500L)
+            val exp1500 = expense2.copy(id = "exp-1500", groupAmount = 1500L)
+            val exp3000 = expense3.copy(id = "exp-3000", groupAmount = 3000L)
+            val exp6000 = expense4.copy(id = "exp-6000", groupAmount = 6000L)
+            val expenses = listOf(exp500, exp1500, exp3000, exp6000)
+
+            val criteria = ExpenseFilterCriteria(minAmount = 1000L, maxAmount = 4000L)
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(exp1500, exp3000), result)
+        }
+
+        @Test
+        fun `filters expenses by sourceAmount and sourceCurrency when both currency and amount bounds specified`() {
+            val expenses = listOf(usdExpense1, usdExpense2, eurExpense2)
+            val criteria = ExpenseFilterCriteria(
+                filterCurrency = "USD",
+                minAmount = 2000L,
+                maxAmount = 4000L
+            )
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(usdExpense2), result)
+        }
+
+        @Test
+        fun `returns empty list when no expenses match amount bounds`() {
+            val expenses = listOf(eurExpense1, eurExpense2, eurExpense3)
+            val criteria = ExpenseFilterCriteria(minAmount = 10000L)
+            val result = filterService.filter(expenses, criteria)
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `combines amount filter with other dimensions using AND logic`() {
+            val matchingExpense = eurExpense2.copy(
+                category = ExpenseCategory.FOOD,
+                paymentMethod = PaymentMethod.CREDIT_CARD
+            )
+            val wrongCategory = eurExpense2.copy(
+                category = ExpenseCategory.TRANSPORT,
+                paymentMethod = PaymentMethod.CREDIT_CARD
+            )
+            val wrongMethod = eurExpense2.copy(
+                category = ExpenseCategory.FOOD,
+                paymentMethod = PaymentMethod.CASH
+            )
+            val wrongAmount = eurExpense1.copy(
+                category = ExpenseCategory.FOOD,
+                paymentMethod = PaymentMethod.CREDIT_CARD
+            )
+            val expenses = listOf(matchingExpense, wrongCategory, wrongMethod, wrongAmount)
+
+            val criteria = ExpenseFilterCriteria(
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                selectedPaymentMethods = setOf(PaymentMethod.CREDIT_CARD),
+                minAmount = 2000L,
+                maxAmount = 3000L
+            )
+            val result = filterService.filter(expenses, criteria)
+            assertEquals(listOf(matchingExpense), result)
+        }
+    }
+
+    @Nested
     @DisplayName("Combined Filter Criteria (Logical AND)")
     inner class CombinedFiltering {
 

@@ -18,7 +18,9 @@ data class ExpensesFilterUiState(
     val newestExpenseDate: LocalDate? = null,
     val formattedStartDate: String = "",
     val formattedEndDate: String = "",
-    val activePreset: DateRangePreset? = null
+    val activePreset: DateRangePreset? = null,
+    val groupCurrency: String = "EUR",
+    val groupCurrencies: ImmutableList<String> = persistentListOf()
 ) {
     val canReset: Boolean
         get() = draftCriteria.activeFilterCount > 0

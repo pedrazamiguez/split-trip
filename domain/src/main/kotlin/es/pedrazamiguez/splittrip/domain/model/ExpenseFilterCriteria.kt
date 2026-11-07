@@ -17,7 +17,10 @@ data class ExpenseFilterCriteria(
     val endDate: LocalDate? = null,
     val selectedPaymentMethods: Set<PaymentMethod> = emptySet(),
     val selectedPaymentStatuses: Set<PaymentStatus> = emptySet(),
-    val selectedAttributes: Set<ExpenseAttribute> = emptySet()
+    val selectedAttributes: Set<ExpenseAttribute> = emptySet(),
+    val filterCurrency: String? = null,
+    val minAmount: Long? = null,
+    val maxAmount: Long? = null
 ) : Serializable {
     val isCategoryFiltered: Boolean
         get() = selectedCategories.isNotEmpty() || selectedSubcategories.isNotEmpty()
@@ -40,6 +43,9 @@ data class ExpenseFilterCriteria(
     val isAttributeFiltered: Boolean
         get() = selectedAttributes.isNotEmpty()
 
+    val isAmountFiltered: Boolean
+        get() = filterCurrency != null || minAmount != null || maxAmount != null
+
     /** Number of active filter dimensions excluding free-text search query. */
     val activeFilterCount: Int
         get() {
@@ -50,6 +56,7 @@ data class ExpenseFilterCriteria(
             if (isPaymentMethodFiltered) count++
             if (isPaymentStatusFiltered) count++
             if (isAttributeFiltered) count++
+            if (isAmountFiltered) count++
             return count
         }
 
@@ -64,7 +71,10 @@ data class ExpenseFilterCriteria(
         endDate = null,
         selectedPaymentMethods = emptySet(),
         selectedPaymentStatuses = emptySet(),
-        selectedAttributes = emptySet()
+        selectedAttributes = emptySet(),
+        filterCurrency = null,
+        minAmount = null,
+        maxAmount = null
     )
 
     fun clearAll(): ExpenseFilterCriteria = ExpenseFilterCriteria()
