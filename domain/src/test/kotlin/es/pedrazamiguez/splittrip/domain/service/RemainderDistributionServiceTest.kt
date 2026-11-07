@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service
 
+import es.pedrazamiguez.splittrip.domain.model.BreakdownPercentage
 import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -292,6 +293,150 @@ class RemainderDistributionServiceTest {
             )
             assertEquals(1, result.size)
             assertEquals(0, BigDecimal("100.00").compareTo(result[0]))
+        }
+    }
+
+    // ── distributeBreakdownPercentages ──────────────────────────────────
+
+    @Nested
+    inner class DistributeBreakdownPercentages {
+
+        @Test
+        fun `distributeBreakdownPercentages returns empty list when amounts is empty`() {
+            val result = service.distributeBreakdownPercentages(
+                amounts = emptyList(),
+                totalCents = 1000L
+            )
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `distributeBreakdownPercentages returns all Zero when totalCents is zero or negative`() {
+            val resultZero = service.distributeBreakdownPercentages(
+                amounts = listOf(100L, 200L),
+                totalCents = 0L
+            )
+            assertEquals(listOf(BreakdownPercentage.Zero, BreakdownPercentage.Zero), resultZero)
+
+            val resultNegative = service.distributeBreakdownPercentages(
+                amounts = listOf(100L, 200L),
+                totalCents = -50L
+            )
+            assertEquals(listOf(BreakdownPercentage.Zero, BreakdownPercentage.Zero), resultNegative)
+        }
+
+        @Test
+        fun `distributeBreakdownPercentages returns Zero for individual non-positive amounts`() {
+            val result = service.distributeBreakdownPercentages(
+                amounts = listOf(0L, -50L, 1000L),
+                totalCents = 1000L
+            )
+            assertEquals(
+                listOf(
+                    BreakdownPercentage.Zero,
+                    BreakdownPercentage.Zero,
+                    BreakdownPercentage.Whole(100)
+                ),
+                result
+            )
+        }
+
+        @Test
+        fun `distributeBreakdownPercentages returns SubOnePercent for amounts strictly between 0 and 1 percent`() {
+            val result = service.distributeBreakdownPercentages(
+                amounts = listOf(5L, 9L, 10L, 990L),
+                totalCents = 1000L
+            )
+            // 5 out of 1000 is 0.5% -> SubOnePercent (< 1%)
+            // 9 out of 1000 is 0.9% -> SubOnePercent (< 1%)
+            // 10 out of 1000 is 1.0% -> Whole(1)
+            // 990 out of 1000 is 99.0% -> Whole(99)
+            assertEquals(
+                listOf(
+                    BreakdownPercentage.SubOnePercent,
+                    BreakdownPercentage.SubOnePercent,
+                    BreakdownPercentage.Whole(1),
+                    BreakdownPercentage.Whole(99)
+                ),
+                result
+            )
+        }
+
+        @Test
+        fun `distributeBreakdownPercentages correctly solves reported Compras scenario with integers summing to 100`() {
+            // Reported scenario: 168.55, 55.32, 54.60, 13.43, 2.46 out of 294.36 total
+            val result = service.distributeBreakdownPercentages(
+                amounts = listOf(16855L, 5532L, 5460L, 1343L, 246L),
+                totalCents = 29436L
+            )
+            assertEquals(
+                listOf(
+                    BreakdownPercentage.Whole(57),
+                    BreakdownPercentage.Whole(19),
+                    BreakdownPercentage.Whole(19),
+                    BreakdownPercentage.Whole(5),
+                    BreakdownPercentage.SubOnePercent
+                ),
+                result
+            )
+            val integerSum = result.filterIsInstance<BreakdownPercentage.Whole>().sumOf { it.percent }
+            assertEquals(100, integerSum)
+        }
+
+        @Test
+        fun `distributeBreakdownPercentages mitigates 101 percent cumulative rounding drift`() {
+            // 336, 336, 328 out of 1000 (33.6%, 33.6%, 32.8%)
+            // Independent rounding would give 34% + 34% + 33% = 101%
+            val result = service.distributeBreakdownPercentages(
+                amounts = listOf(336L, 336L, 328L),
+                totalCents = 1000L
+            )
+            assertEquals(
+                listOf(
+                    BreakdownPercentage.Whole(34),
+                    BreakdownPercentage.Whole(33),
+                    BreakdownPercentage.Whole(33)
+                ),
+                result
+            )
+            val integerSum = result.filterIsInstance<BreakdownPercentage.Whole>().sumOf { it.percent }
+            assertEquals(100, integerSum)
+        }
+
+        @Test
+        fun `distributeBreakdownPercentages mitigates 99 percent cumulative rounding drift`() {
+            // 3333, 3333, 3334 out of 10000 (33.33%, 33.33%, 33.34%)
+            // Independent rounding would give 33% + 33% + 33% = 99%
+            val result = service.distributeBreakdownPercentages(
+                amounts = listOf(3333L, 3333L, 3334L),
+                totalCents = 10000L
+            )
+            assertEquals(
+                listOf(
+                    BreakdownPercentage.Whole(33),
+                    BreakdownPercentage.Whole(33),
+                    BreakdownPercentage.Whole(34)
+                ),
+                result
+            )
+            val integerSum = result.filterIsInstance<BreakdownPercentage.Whole>().sumOf { it.percent }
+            assertEquals(100, integerSum)
+        }
+
+        @Test
+        fun `distributeBreakdownPercentages returns all SubOnePercent when all positive items are under 1 percent`() {
+            val result = service.distributeBreakdownPercentages(
+                amounts = listOf(10L, 20L, 30L),
+                totalCents = 10000L
+            )
+            assertEquals(
+                listOf(
+                    BreakdownPercentage.SubOnePercent,
+                    BreakdownPercentage.SubOnePercent,
+                    BreakdownPercentage.SubOnePercent
+                ),
+                result
+            )
         }
     }
 }

@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.features.balance.R
 import io.mockk.every
 import io.mockk.mockk
@@ -32,7 +33,11 @@ class CategorySpendingUiMapperTest {
     fun setup() {
         every { localeProvider.getCurrentLocale() } returns Locale.US
         every { resourceProvider.getString(any()) } answers { "Translated Category" }
-        mapper = CategorySpendingUiMapper(localeProvider, resourceProvider)
+        mapper = CategorySpendingUiMapper(
+            localeProvider = localeProvider,
+            resourceProvider = resourceProvider,
+            remainderDistributionService = RemainderDistributionServiceImpl()
+        )
     }
 
     @Test
@@ -440,12 +445,17 @@ class CategorySpendingUiMapperTest {
     }
 
     @Test
-    fun `mapExpenses formats subcategory with 0_5 percent or greater with rounded integer percentage`() {
+    fun `mapExpenses formats subcategory below 1 percent as less than 1 percent and larger as whole percentage`() {
         val expenses = listOf(
             Expense(
-                groupAmount = 99500L,
+                groupAmount = 98500L,
                 category = ExpenseCategory.FOOD,
                 subcategory = ExpenseSubcategory.RESTAURANT
+            ),
+            Expense(
+                groupAmount = 1000L,
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.GROCERIES_SUPERMARKET
             ),
             Expense(
                 groupAmount = 500L,
@@ -458,15 +468,86 @@ class CategorySpendingUiMapperTest {
 
         assertEquals(1, result.size)
         val foodCategory = result[0]
-        assertEquals(2, foodCategory.subcategories.size)
+        assertEquals(3, foodCategory.subcategories.size)
 
         val sub0 = foodCategory.subcategories[0]
         assertEquals(ExpenseSubcategory.RESTAURANT.toIconVector(), sub0.subcategoryIcon)
-        assertEquals("100%", sub0.formattedPercentage)
+        assertEquals("99%", sub0.formattedPercentage)
 
         val sub1 = foodCategory.subcategories[1]
-        assertEquals(ExpenseSubcategory.CAFE_BREAKFAST.toIconVector(), sub1.subcategoryIcon)
+        assertEquals(ExpenseSubcategory.GROCERIES_SUPERMARKET.toIconVector(), sub1.subcategoryIcon)
         assertEquals("1%", sub1.formattedPercentage)
+
+        val sub2 = foodCategory.subcategories[2]
+        assertEquals(ExpenseSubcategory.CAFE_BREAKFAST.toIconVector(), sub2.subcategoryIcon)
+        assertEquals("<1%", sub2.formattedPercentage)
+    }
+
+    @Test
+    fun `mapExpenses correctly solves reported Compras scenario with integers summing to 100`() {
+        val expenses = listOf(
+            Expense(
+                groupAmount = 16855L,
+                category = ExpenseCategory.SHOPPING,
+                subcategory = ExpenseSubcategory.SOUVENIRS_GIFTS
+            ),
+            Expense(
+                groupAmount = 5532L,
+                category = ExpenseCategory.SHOPPING,
+                subcategory = ExpenseSubcategory.CLOTHING
+            ),
+            Expense(
+                groupAmount = 5460L,
+                category = ExpenseCategory.SHOPPING,
+                subcategory = ExpenseSubcategory.PHARMACY_HEALTH
+            ),
+            Expense(
+                groupAmount = 1343L,
+                category = ExpenseCategory.SHOPPING,
+                subcategory = ExpenseSubcategory.ELECTRONICS
+            ),
+            Expense(
+                groupAmount = 246L,
+                category = ExpenseCategory.SHOPPING,
+                subcategory = ExpenseSubcategory.CONVENIENCE_STORE
+            )
+        )
+
+        val result = mapper.mapExpenses(expenses, "EUR")
+
+        assertEquals(1, result.size)
+        val shopping = result[0]
+        assertEquals(5, shopping.subcategories.size)
+        assertEquals("57%", shopping.subcategories[0].formattedPercentage)
+        assertEquals("19%", shopping.subcategories[1].formattedPercentage)
+        assertEquals("19%", shopping.subcategories[2].formattedPercentage)
+        assertEquals("5%", shopping.subcategories[3].formattedPercentage)
+        assertEquals("<1%", shopping.subcategories[4].formattedPercentage)
+    }
+
+    @Test
+    fun `mapExpenses mitigates cumulative rounding drift across categories`() {
+        val expenses101 = listOf(
+            createExpense(336L, ExpenseCategory.FOOD, ExpenseSubcategory.RESTAURANT),
+            createExpense(336L, ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL),
+            createExpense(328L, ExpenseCategory.TRANSPORT, ExpenseSubcategory.TRAIN)
+        )
+        val result101 = mapper.mapExpenses(expenses101, "USD")
+        assertEquals(3, result101.size)
+        assertEquals("34%", result101[0].formattedPercentage)
+        assertEquals("33%", result101[1].formattedPercentage)
+        assertEquals("33%", result101[2].formattedPercentage)
+
+        val expenses99 = listOf(
+            createExpense(3334L, ExpenseCategory.FOOD, ExpenseSubcategory.RESTAURANT),
+            createExpense(3333L, ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL),
+            createExpense(3333L, ExpenseCategory.TRANSPORT, ExpenseSubcategory.TRAIN)
+        )
+        val result99 = mapper.mapExpenses(expenses99, "USD")
+        assertEquals(3, result99.size)
+        assertEquals("34%", result99[0].formattedPercentage)
+        assertEquals("33%", result99[1].formattedPercentage)
+        assertEquals("33%", result99[2].formattedPercentage)
     }
 
     @Test

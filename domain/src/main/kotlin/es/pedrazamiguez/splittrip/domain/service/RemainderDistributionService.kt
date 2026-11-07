@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service
 
+import es.pedrazamiguez.splittrip.domain.model.BreakdownPercentage
 import java.math.BigDecimal
 
 interface RemainderDistributionService {
@@ -15,4 +16,8 @@ interface RemainderDistributionService {
         amounts: List<Long>,
         totalCents: Long
     ): List<BigDecimal>
+    fun distributeBreakdownPercentages(
+        amounts: List<Long>,
+        totalCents: Long
+    ): List<BreakdownPercentage>
 }
