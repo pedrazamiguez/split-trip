@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.service.PasswordValidationService
 import es.pedrazamiguez.splittrip.domain.service.SyncTeardownService
 import es.pedrazamiguez.splittrip.domain.service.impl.PasswordValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.auth.HandleSessionExpiredUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkEmailPasswordUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.LinkGoogleAccountUseCase
@@ -22,6 +23,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignUpWithEmailUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.UnlinkProviderUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.GetLinkedProvidersUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.HandleSessionExpiredUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.IsUserAnonymousUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.LinkEmailPasswordUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.auth.impl.LinkGoogleAccountUseCaseImpl
@@ -72,6 +74,18 @@ val authenticationDomainModule = module {
     factory<SignOutUseCase> {
         createLoggingProxy<SignOutUseCase>(
             SignOutUseCaseImpl(
+                unregisterDeviceTokenUseCase = get<UnregisterDeviceTokenUseCase>(),
+                localDatabaseCleaner = get<LocalDatabaseCleanerService>(),
+                authenticationService = get<AuthenticationService>(),
+                userPreferenceRepository = get<UserPreferenceRepository>(),
+                syncTeardownService = get<SyncTeardownService>()
+            ),
+            LogTag.USE_CASE
+        )
+    }
+    factory<HandleSessionExpiredUseCase> {
+        createLoggingProxy<HandleSessionExpiredUseCase>(
+            HandleSessionExpiredUseCaseImpl(
                 unregisterDeviceTokenUseCase = get<UnregisterDeviceTokenUseCase>(),
                 localDatabaseCleaner = get<LocalDatabaseCleanerService>(),
                 authenticationService = get<AuthenticationService>(),

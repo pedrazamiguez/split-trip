@@ -44,6 +44,11 @@ class AuthenticationServiceImpl(
 
     private val authEventTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
+    @Volatile
+    private var explicitSignOut: Boolean = false
+
+    override fun isExplicitSignOut(): Boolean = explicitSignOut
+
     override fun currentUserId(): String? = firebaseAuth.currentUser?.uid
 
     override fun getCurrentUserCreationTimestamp(): Long? =
@@ -51,16 +56,24 @@ class AuthenticationServiceImpl(
 
     override fun requireUserId(): String = currentUserId() ?: error("User not logged in")
 
+    private fun evaluateLoggedInState(auth: FirebaseAuth): Boolean {
+        val loggedIn = auth.currentUser != null
+        if (loggedIn) {
+            explicitSignOut = false
+        }
+        return loggedIn
+    }
+
     override val authState: Flow<Boolean> = callbackFlow {
         val authListener = FirebaseAuth.AuthStateListener { auth ->
-            trySend(auth.currentUser != null)
+            trySend(evaluateLoggedInState(auth))
         }
         val idTokenListener = FirebaseAuth.IdTokenListener { auth ->
-            trySend(auth.currentUser != null)
+            trySend(evaluateLoggedInState(auth))
         }
         val triggerJob = launch {
             authEventTrigger.collect {
-                trySend(firebaseAuth.currentUser != null)
+                trySend(evaluateLoggedInState(firebaseAuth))
             }
         }
         firebaseAuth.addAuthStateListener(authListener)
@@ -75,7 +88,7 @@ class AuthenticationServiceImpl(
     override suspend fun signIn(email: String, password: String): Result<String> = runCatching {
         performanceMonitor.traceAsync(PerformanceTraces.AUTH_SIGN_IN_EMAIL) {
             val cleanEmail = email.trim().lowercase()
-            try {
+            val uid = try {
                 firebaseAuth
                     .signInWithEmailAndPassword(
                         cleanEmail,
@@ -95,6 +108,8 @@ class AuthenticationServiceImpl(
                     throw e
                 }
             }
+            explicitSignOut = false
+            uid
         }
     }
 
@@ -125,6 +140,7 @@ class AuthenticationServiceImpl(
                     cloudUserDataSource.saveUser(user)
                 }
 
+                explicitSignOut = false
                 firebaseUser.uid
             } catch (e: FirebaseAuthUserCollisionException) {
                 throw EmailCollisionException(email, e)
@@ -133,7 +149,18 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun signOut(): Result<Unit> = runCatching {
-        firebaseAuth.signOut()
+        if (firebaseAuth.currentUser != null) {
+            explicitSignOut = true
+            var completed = false
+            try {
+                firebaseAuth.signOut()
+                completed = true
+            } finally {
+                if (!completed) {
+                    explicitSignOut = false
+                }
+            }
+        }
     }
 
     override suspend fun signInWithGoogle(idToken: String): Result<User> = runCatching {
@@ -170,6 +197,7 @@ class AuthenticationServiceImpl(
                     cloudUserDataSource.saveUser(user)
                 }
 
+                explicitSignOut = false
                 user
             } catch (e: FirebaseAuthUserCollisionException) {
                 val email = e.email ?: extractEmailFromIdToken(idToken)
@@ -239,7 +267,7 @@ class AuthenticationServiceImpl(
     }
 
     override suspend fun signInAnonymously(): Result<String> = runCatching {
-        try {
+        val uid = try {
             firebaseAuth.signInAnonymously().await().user?.uid ?: ""
         } catch (e: FirebaseAuthException) {
             if (e.errorCode == "ERROR_ADMIN_RESTRICTED_OPERATION") {
@@ -247,6 +275,8 @@ class AuthenticationServiceImpl(
             }
             throw e
         }
+        explicitSignOut = false
+        uid
     }
 
     override fun currentUserEmail(): String? = firebaseAuth.currentUser?.email

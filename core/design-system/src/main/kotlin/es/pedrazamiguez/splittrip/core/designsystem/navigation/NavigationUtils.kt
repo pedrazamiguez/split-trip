@@ -71,4 +71,33 @@ object NavigationUtils {
     ): List<NavigationProvider> = providers
         .filter { !it.requiresSelectedGroup || selectedGroup != null }
         .sortedBy { it.order }
+
+    /**
+     * Returns `true` if [route] belongs to the pre-authentication flow
+     * ([Routes.LOGIN], [Routes.REGISTER], or [Routes.FORGOT_PASSWORD]).
+     */
+    fun isAuthRoute(route: String?): Boolean =
+        route == Routes.LOGIN ||
+            route == Routes.REGISTER ||
+            route == Routes.FORGOT_PASSWORD
+
+    /**
+     * Determines whether a session-expiration teardown and feedback pill should run
+     * for an auth-state transition.
+     *
+     * Only triggers on a `true -> false` transition that was NOT initiated by an explicit
+     * user sign-out.
+     */
+    fun shouldHandleSessionExpired(
+        previousLoggedIn: Boolean?,
+        currentLoggedIn: Boolean?,
+        isExplicitSignOut: Boolean
+    ): Boolean = previousLoggedIn == true && currentLoggedIn == false && !isExplicitSignOut
+
+    /**
+     * Determines whether the root [NavHostController] should redirect to [Routes.LOGIN]
+     * following session expiration given the active [currentRoute].
+     */
+    fun shouldNavigateOnSessionExpired(currentRoute: String?): Boolean =
+        currentRoute != null && !isAuthRoute(currentRoute)
 }

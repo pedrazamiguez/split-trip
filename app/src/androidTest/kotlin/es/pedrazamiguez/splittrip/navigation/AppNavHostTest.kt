@@ -3,10 +3,12 @@ package es.pedrazamiguez.splittrip.navigation
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
@@ -16,6 +18,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.Share
 import es.pedrazamiguez.splittrip.di.FakeRegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.di.createAppNavHostTestModule
 import es.pedrazamiguez.splittrip.domain.enums.BiometricCapability
+import es.pedrazamiguez.splittrip.domain.usecase.auth.HandleSessionExpiredUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrencyUseCase
@@ -28,6 +31,8 @@ import es.pedrazamiguez.splittrip.features.onboarding.presentation.viewmodel.Onb
 import es.pedrazamiguez.splittrip.helpers.FakeNavigationProvider
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
 import es.pedrazamiguez.splittrip.navigation.AppNavHost
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,6 +40,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -102,7 +108,8 @@ class AppNavHostTest {
                 warmCurrencyCacheUseCase = mockk(relaxed = true),
                 observeCurrentUserProfileUseCase = observeCurrentUserProfile,
                 shouldShowAdsUseCase = mockk(relaxed = true),
-                getBannerAdUnitIdUseCase = mockk(relaxed = true)
+                getBannerAdUnitIdUseCase = mockk(relaxed = true),
+                isUserAnonymousUseCase = mockk(relaxed = true)
             )
         }
 
@@ -435,5 +442,124 @@ class AppNavHostTest {
             Routes.MAIN,
             navController.currentDestination?.route
         )
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  Session Expiration Guard
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun redirectsToLoginAndClearsBackStack_whenAuthStateTransitionsTrueToFalse() {
+        val navController = buildTestNavController()
+        val authState = MutableStateFlow(true)
+        val handleSessionExpiredUseCase = mockk<HandleSessionExpiredUseCase>(relaxed = true).apply {
+            coEvery { this@apply.invoke() } returns Result.success(Unit)
+        }
+        val expectedMessage = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(DesignSystemR.string.session_expired_message)
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = authState,
+                        onboardingFlow = flowOf(true),
+                        handleSessionExpiredUseCase = handleSessionExpiredUseCase
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+        assertEquals(Routes.MAIN, navController.currentDestination?.route)
+
+        authState.value = false
+        composeRule.waitForIdle()
+
+        assertEquals(Routes.LOGIN, navController.currentDestination?.route)
+        assertNull(navController.previousBackStackEntry)
+        coVerify(exactly = 1) { handleSessionExpiredUseCase() }
+        composeRule.onNodeWithText(expectedMessage).assertIsDisplayed()
+    }
+
+    @Test
+    fun doesNotTriggerSessionExpired_whenExplicitSignOut() {
+        val navController = buildTestNavController()
+        val authState = MutableStateFlow(true)
+        val handleSessionExpiredUseCase = mockk<HandleSessionExpiredUseCase>(relaxed = true).apply {
+            coEvery { this@apply.invoke() } returns Result.success(Unit)
+        }
+        val expectedMessage = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(DesignSystemR.string.session_expired_message)
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = authState,
+                        onboardingFlow = flowOf(true),
+                        isExplicitSignOut = true,
+                        handleSessionExpiredUseCase = handleSessionExpiredUseCase
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+        assertEquals(Routes.MAIN, navController.currentDestination?.route)
+
+        authState.value = false
+        composeRule.waitForIdle()
+
+        coVerify(exactly = 0) { handleSessionExpiredUseCase() }
+        composeRule.onNodeWithText(expectedMessage).assertDoesNotExist()
+    }
+
+    @Test
+    fun redirectsToLogin_whenSessionExpiresBehindBiometricAppLock() {
+        val navController = buildTestNavController()
+        val authState = MutableStateFlow(true)
+        val handleSessionExpiredUseCase = mockk<HandleSessionExpiredUseCase>(relaxed = true).apply {
+            coEvery { this@apply.invoke() } returns Result.success(Unit)
+        }
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = authState,
+                        onboardingFlow = flowOf(true),
+                        biometricLockEnabledFlow = flowOf(true),
+                        biometricCapability = BiometricCapability.AVAILABLE,
+                        handleSessionExpiredUseCase = handleSessionExpiredUseCase
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+        composeRule.onNode(hasTestTag(APP_LOCK_GATE_TEST_TAG)).assertIsDisplayed()
+
+        authState.value = false
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasTestTag(APP_LOCK_GATE_TEST_TAG)).assertDoesNotExist()
+        coVerify(exactly = 1) { handleSessionExpiredUseCase() }
+        assertEquals(Routes.LOGIN, navController.currentDestination?.route)
     }
 }

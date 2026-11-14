@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -339,6 +340,115 @@ class NavigationUtilsTest {
             )
 
             assertEquals(2, result.size)
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  isAuthRoute
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("isAuthRoute")
+    inner class IsAuthRoute {
+
+        @Test
+        fun `returns true for LOGIN, REGISTER, and FORGOT_PASSWORD`() {
+            assertTrue(NavigationUtils.isAuthRoute(Routes.LOGIN))
+            assertTrue(NavigationUtils.isAuthRoute(Routes.REGISTER))
+            assertTrue(NavigationUtils.isAuthRoute(Routes.FORGOT_PASSWORD))
+        }
+
+        @Test
+        fun `returns false for MAIN, ONBOARDING, RECONCILIATION, and null`() {
+            assertFalse(NavigationUtils.isAuthRoute(Routes.MAIN))
+            assertFalse(NavigationUtils.isAuthRoute(Routes.ONBOARDING))
+            assertFalse(NavigationUtils.isAuthRoute(Routes.RECONCILIATION))
+            assertFalse(NavigationUtils.isAuthRoute(null))
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  shouldHandleSessionExpired
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("shouldHandleSessionExpired")
+    inner class ShouldHandleSessionExpired {
+
+        @Test
+        fun `returns true when transitioning true to false and not explicit sign-out`() {
+            assertTrue(
+                NavigationUtils.shouldHandleSessionExpired(
+                    previousLoggedIn = true,
+                    currentLoggedIn = false,
+                    isExplicitSignOut = false
+                )
+            )
+        }
+
+        @Test
+        fun `returns false when transitioning true to false during explicit sign-out`() {
+            assertFalse(
+                NavigationUtils.shouldHandleSessionExpired(
+                    previousLoggedIn = true,
+                    currentLoggedIn = false,
+                    isExplicitSignOut = true
+                )
+            )
+        }
+
+        @Test
+        fun `returns false on initial null to false emission`() {
+            assertFalse(
+                NavigationUtils.shouldHandleSessionExpired(
+                    previousLoggedIn = null,
+                    currentLoggedIn = false,
+                    isExplicitSignOut = false
+                )
+            )
+        }
+
+        @Test
+        fun `returns false when staying true or transitioning false to true`() {
+            assertFalse(
+                NavigationUtils.shouldHandleSessionExpired(
+                    previousLoggedIn = true,
+                    currentLoggedIn = true,
+                    isExplicitSignOut = false
+                )
+            )
+            assertFalse(
+                NavigationUtils.shouldHandleSessionExpired(
+                    previousLoggedIn = false,
+                    currentLoggedIn = true,
+                    isExplicitSignOut = false
+                )
+            )
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  shouldNavigateOnSessionExpired
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("shouldNavigateOnSessionExpired")
+    inner class ShouldNavigateOnSessionExpired {
+
+        @Test
+        fun `returns true for MAIN, ONBOARDING, RECONCILIATION, and SETTINGS`() {
+            assertTrue(NavigationUtils.shouldNavigateOnSessionExpired(Routes.MAIN))
+            assertTrue(NavigationUtils.shouldNavigateOnSessionExpired(Routes.ONBOARDING))
+            assertTrue(NavigationUtils.shouldNavigateOnSessionExpired(Routes.RECONCILIATION))
+            assertTrue(NavigationUtils.shouldNavigateOnSessionExpired(Routes.SETTINGS))
+        }
+
+        @Test
+        fun `returns false for LOGIN, REGISTER, FORGOT_PASSWORD, and null`() {
+            assertFalse(NavigationUtils.shouldNavigateOnSessionExpired(Routes.LOGIN))
+            assertFalse(NavigationUtils.shouldNavigateOnSessionExpired(Routes.REGISTER))
+            assertFalse(NavigationUtils.shouldNavigateOnSessionExpired(Routes.FORGOT_PASSWORD))
+            assertFalse(NavigationUtils.shouldNavigateOnSessionExpired(null))
         }
     }
 }
