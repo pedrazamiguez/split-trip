@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricLockEnabled
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliationUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import io.mockk.coEvery
 import io.mockk.every
@@ -98,6 +99,12 @@ fun createAppNavHostTestModule(
     }
 
     factory<CheckPendingReconciliationUseCase> { mockk(relaxed = true) }
+
+    factory<ReconcileSubscriptionEntitlementsUseCase> {
+        mockk<ReconcileSubscriptionEntitlementsUseCase>(relaxed = true).apply {
+            coEvery { this@apply.invoke() } returns Result.success(Unit)
+        }
+    }
 
     factory<HandleSessionExpiredUseCase> { handleSessionExpiredUseCase }
 

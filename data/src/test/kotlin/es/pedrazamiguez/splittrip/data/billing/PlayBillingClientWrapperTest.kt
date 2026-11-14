@@ -42,6 +42,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -672,5 +674,189 @@ class PlayBillingClientWrapperTest {
         advanceUntilIdle()
 
         assertTrue(secondResult.isSuccess)
+    }
+
+    @Nested
+    @DisplayName("queryActivePurchases")
+    inner class QueryActivePurchases {
+
+        @Test
+        fun `queryActivePurchases returns active monthly and annual product IDs when BillingResponseCode is OK`() =
+            runTest(testDispatcher) {
+                mockSuccessfulConnection()
+                val monthlyPurchase = mockk<Purchase> {
+                    every { purchaseState } returns Purchase.PurchaseState.PURCHASED
+                    every { isAcknowledged } returns true
+                    every { purchaseToken } returns "token_m"
+                    every { products } returns listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+                }
+                val annualPurchase = mockk<Purchase> {
+                    every { purchaseState } returns Purchase.PurchaseState.PURCHASED
+                    every { isAcknowledged } returns true
+                    every { purchaseToken } returns "token_a"
+                    every { products } returns listOf(BillingConstants.PRODUCT_ID_PRO_ANNUAL)
+                }
+
+                every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+                    secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(
+                        okResult,
+                        listOf(monthlyPurchase, annualPurchase)
+                    )
+                }
+
+                val result = wrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(result.isSuccess)
+                assertEquals(
+                    listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY, BillingConstants.PRODUCT_ID_PRO_ANNUAL),
+                    result.getOrThrow()
+                )
+            }
+
+        @Test
+        fun `queryActivePurchases acknowledges unacknowledged active pro purchase and returns its product ID`() =
+            runTest(testDispatcher) {
+                mockSuccessfulConnection()
+                val purchase = mockk<Purchase> {
+                    every { purchaseState } returns Purchase.PurchaseState.PURCHASED
+                    every { isAcknowledged } returns false
+                    every { purchaseToken } returns "token_unack"
+                    every { products } returns listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+                }
+
+                every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+                    secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(okResult, listOf(purchase))
+                }
+                every { billingClient.acknowledgePurchase(any<AcknowledgePurchaseParams>(), any()) } answers {
+                    secondArg<AcknowledgePurchaseResponseListener>().onAcknowledgePurchaseResponse(okResult)
+                }
+
+                val result = wrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(result.isSuccess)
+                assertEquals(listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY), result.getOrThrow())
+                verify(exactly = 1) { billingClient.acknowledgePurchase(any<AcknowledgePurchaseParams>(), any()) }
+            }
+
+        @Test
+        fun `queryActivePurchases ignores non-PURCHASED states such as PENDING and returns empty list`() =
+            runTest(testDispatcher) {
+                mockSuccessfulConnection()
+                val pendingPurchase = mockk<Purchase> {
+                    every { purchaseState } returns Purchase.PurchaseState.PENDING
+                    every { isAcknowledged } returns false
+                    every { products } returns listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+                }
+
+                every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+                    secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(okResult, listOf(pendingPurchase))
+                }
+
+                val result = wrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(result.isSuccess)
+                assertTrue(result.getOrThrow().isEmpty())
+                verify(exactly = 0) { billingClient.acknowledgePurchase(any<AcknowledgePurchaseParams>(), any()) }
+            }
+
+        @Test
+        fun `queryActivePurchases returns empty list when Play responds OK with no active pro subscriptions`() =
+            runTest(testDispatcher) {
+                mockSuccessfulConnection()
+                every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+                    secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(okResult, emptyList())
+                }
+
+                val result = wrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(result.isSuccess)
+                assertTrue(result.getOrThrow().isEmpty())
+            }
+
+        @Test
+        fun `queryActivePurchases returns failure when connection fails and simulation is inactive`() =
+            runTest(testDispatcher) {
+                every { billingClient.isReady } returns false
+                every { billingClient.startConnection(any()) } answers {
+                    val listener = firstArg<BillingClientStateListener>()
+                    listener.onBillingSetupFinished(errorResult)
+                }
+
+                val result = wrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(result.isFailure)
+            }
+
+        @Test
+        fun `queryActivePurchases returns failure when queryPurchasesAsync is non-OK without sim`() =
+            runTest(testDispatcher) {
+                mockSuccessfulConnection()
+                every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+                    secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(errorResult, emptyList())
+                }
+
+                val result = wrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(result.isFailure)
+            }
+
+        @Test
+        fun `queryActivePurchases returns simulated monthly SKU when sim active on failure or empty`() =
+            runTest(testDispatcher) {
+                val simWrapper = createSimulationWrapper()
+                every { billingClient.isReady } returns false
+                every { billingClient.startConnection(any()) } answers {
+                    val listener = firstArg<BillingClientStateListener>()
+                    listener.onBillingSetupFinished(errorResult)
+                }
+
+                val failedConnResult = simWrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(failedConnResult.isSuccess)
+                assertEquals(listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY), failedConnResult.getOrThrow())
+
+                mockSuccessfulConnection()
+                every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+                    secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(okResult, emptyList())
+                }
+
+                val emptyListResult = simWrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(emptyListResult.isSuccess)
+                assertEquals(listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY), emptyListResult.getOrThrow())
+            }
+
+        @Test
+        fun `isSimulationActive defaults to false in debug builds when override is null and flag is false`() =
+            runTest(testDispatcher) {
+                val appConfigRepository = mockk<AppConfigRepository> {
+                    every { billingSimulationEnabled } returns MutableStateFlow(false)
+                }
+                val defaultWrapper = PlayBillingClientWrapper(
+                    context = context,
+                    appConfigRepository = appConfigRepository,
+                    ioDispatcher = testDispatcher,
+                    isSimulationOverride = null,
+                    billingClientFactory = { billingClient }
+                )
+                mockSuccessfulConnection()
+                every { billingClient.queryPurchasesAsync(any<QueryPurchasesParams>(), any()) } answers {
+                    secondArg<PurchasesResponseListener>().onQueryPurchasesResponse(okResult, emptyList())
+                }
+
+                val result = defaultWrapper.queryActivePurchases()
+                advanceUntilIdle()
+
+                assertTrue(result.isSuccess)
+                assertTrue(result.getOrThrow().isEmpty())
+            }
     }
 }
