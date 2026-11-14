@@ -19,6 +19,12 @@ interface AuthenticationService {
 
     suspend fun signOut(): Result<Unit>
 
+    /**
+     * Returns `true` if the current signed-out transition was initiated explicitly via [signOut],
+     * rather than an unexpected session revocation or expiration.
+     */
+    fun isExplicitSignOut(): Boolean
+
     suspend fun signInWithGoogle(idToken: String): Result<User>
 
     suspend fun sendPasswordResetEmail(email: String): Result<Unit>

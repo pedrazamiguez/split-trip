@@ -210,6 +210,9 @@
     <string name="currency_picker_search_placeholder">Buscar por código o nombre</string>
     <string name="currency_picker_empty">No se encontraron monedas</string>
 
+    <!-- Session Expiration -->
+    <string name="session_expired_message">Tu sesión ha caducado. Inicia sesión de nuevo.</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

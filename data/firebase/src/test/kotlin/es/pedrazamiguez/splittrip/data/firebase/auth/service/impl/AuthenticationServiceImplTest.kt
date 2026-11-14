@@ -26,6 +26,7 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import java.util.Base64 as JavaBase64
 import java.util.Locale
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,6 +36,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -822,6 +824,77 @@ class AuthenticationServiceImplTest {
             job.cancel()
             assertTrue(emissions.isNotEmpty())
             assertTrue(emissions.last())
+        }
+    }
+
+    @Nested
+    inner class SignOut {
+
+        @Test
+        fun `signOut calls firebaseAuth signOut and marks explicit sign-out when currentUser is non-null`() = runTest {
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseAuth.currentUser } returns firebaseUser
+
+            val result = service.signOut()
+
+            assertTrue(result.isSuccess)
+            verify(exactly = 1) { firebaseAuth.signOut() }
+            assertTrue(service.isExplicitSignOut())
+        }
+
+        @Test
+        fun `signOut skips firebaseAuth signOut and does not mark explicit sign-out when currentUser is null`() =
+            runTest {
+                every { firebaseAuth.currentUser } returns null
+
+                val result = service.signOut()
+
+                assertTrue(result.isSuccess)
+                verify(exactly = 0) { firebaseAuth.signOut() }
+                assertFalse(service.isExplicitSignOut())
+            }
+
+        @Test
+        fun `isExplicitSignOut resets to false when authState emits logged in`() = runTest {
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseAuth.currentUser } returns firebaseUser
+            service.signOut()
+            assertTrue(service.isExplicitSignOut())
+
+            val listenerSlot = slot<FirebaseAuth.AuthStateListener>()
+            every { firebaseAuth.addAuthStateListener(capture(listenerSlot)) } answers { }
+            val emissions = mutableListOf<Boolean>()
+            val job = launch {
+                service.authState.toList(emissions)
+            }
+            runCurrent()
+
+            val authWithUser = mockk<FirebaseAuth> { every { currentUser } returns firebaseUser }
+            listenerSlot.captured.onAuthStateChanged(authWithUser)
+            runCurrent()
+
+            job.cancel()
+            assertFalse(service.isExplicitSignOut())
+        }
+
+        @Test
+        fun `isExplicitSignOut resets to false after signIn succeeds`() = runTest {
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.uid } returns testUserId
+            every { firebaseAuth.currentUser } returns firebaseUser
+            service.signOut()
+            assertTrue(service.isExplicitSignOut())
+
+            val authResult = mockk<AuthResult>()
+            every { authResult.user } returns firebaseUser
+            every {
+                firebaseAuth.signInWithEmailAndPassword(testEmail, "password123")
+            } returns Tasks.forResult(authResult)
+
+            val result = service.signIn(testEmail, "password123")
+
+            assertTrue(result.isSuccess)
+            assertFalse(service.isExplicitSignOut())
         }
     }
 }
