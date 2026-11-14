@@ -15,6 +15,10 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -48,6 +52,7 @@ class FeatureGateServiceImplTest {
         every { appConfigRepository.maxOwnedGroupsPro } returns maxOwnedGroupsPro
         every { appConfigRepository.maxMembersPerGroupFree } returns maxMembersPerGroupFree
         every { appConfigRepository.maxMembersPerGroupPro } returns maxMembersPerGroupPro
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
 
         subscriptionGatingEnabled.value = true
         maxOwnedGroupsFree.value = 1
@@ -89,20 +94,24 @@ class FeatureGateServiceImplTest {
     @Test
     fun `isFeatureEnabled with GatedFeature AD_FREE returns true for PRO user and false for FREE user`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns false
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "user-1",
-            displayName = "Pro User",
-            email = "pro@example.com",
-            tier = SubscriptionTier.PRO
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "user-1",
+                displayName = "Pro User",
+                email = "pro@example.com",
+                tier = SubscriptionTier.PRO
+            )
         )
 
         assertTrue(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
 
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "user-2",
-            displayName = "Free User",
-            email = "free@example.com",
-            tier = SubscriptionTier.FREE
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "user-2",
+                displayName = "Free User",
+                email = "free@example.com",
+                tier = SubscriptionTier.FREE
+            )
         )
 
         assertFalse(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
@@ -137,10 +146,12 @@ class FeatureGateServiceImplTest {
     @Test
     fun `isFeatureEnabled for acting free user evaluates acting tier and group creator tier correctly`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns false
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "acting_free",
-            email = "free@test.com",
-            tier = SubscriptionTier.FREE
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "acting_free",
+                email = "free@test.com",
+                tier = SubscriptionTier.FREE
+            )
         )
 
         // User-level capability: AI Receipt Scanning is disabled for Free user
@@ -174,10 +185,12 @@ class FeatureGateServiceImplTest {
     @Test
     fun `checkLimit evaluates acting tier for owned groups and creator tier for members`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns false
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "acting_free",
-            email = "free@test.com",
-            tier = SubscriptionTier.FREE
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "acting_free",
+                email = "free@test.com",
+                tier = SubscriptionTier.FREE
+            )
         )
 
         // MAX_OWNED_GROUPS_COUNT: Free user can only own 1 group
@@ -216,10 +229,12 @@ class FeatureGateServiceImplTest {
     @Test
     fun `isFeatureEnabled and checkLimit when acting user is PRO`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns false
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "acting_pro",
-            email = "pro@test.com",
-            tier = SubscriptionTier.PRO
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "acting_pro",
+                email = "pro@test.com",
+                tier = SubscriptionTier.PRO
+            )
         )
 
         // User-level tool is enabled
@@ -247,7 +262,7 @@ class FeatureGateServiceImplTest {
     @Test
     fun `fallback to FREE when group or creator or current user profile is not found`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns false
-        coEvery { userRepository.getCurrentUserProfile() } returns null
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
 
         // Profile null -> acting user falls back to FREE
         assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
@@ -270,10 +285,12 @@ class FeatureGateServiceImplTest {
     @Test
     fun `checkLimit respects dynamic remote config changes`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns false
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "acting_pro",
-            email = "pro@test.com",
-            tier = SubscriptionTier.PRO
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "acting_pro",
+                email = "pro@test.com",
+                tier = SubscriptionTier.PRO
+            )
         )
 
         assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, 19).first())
@@ -295,10 +312,12 @@ class FeatureGateServiceImplTest {
     @Test
     fun `acting PRO in Free group enables SUBUNIT_CREATION but keeps cover creator-bound`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns false
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "acting_pro",
-            email = "pro@test.com",
-            tier = SubscriptionTier.PRO
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "acting_pro",
+                email = "pro@test.com",
+                tier = SubscriptionTier.PRO
+            )
         )
 
         val freeGroup = Group(id = "group_free", createdBy = "creator_free")
@@ -321,19 +340,88 @@ class FeatureGateServiceImplTest {
 
         // Authenticated Free user -> false
         coEvery { authenticationService.isAnonymous() } returns false
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "user_free",
-            email = "free@test.com",
-            tier = SubscriptionTier.FREE
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "user_free",
+                email = "free@test.com",
+                tier = SubscriptionTier.FREE
+            )
         )
         assertFalse(service.isActingUserPro().first())
 
         // Authenticated Pro user -> true
-        coEvery { userRepository.getCurrentUserProfile() } returns User(
-            userId = "user_pro",
-            email = "pro@test.com",
-            tier = SubscriptionTier.PRO
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(
+                userId = "user_pro",
+                email = "pro@test.com",
+                tier = SubscriptionTier.PRO
+            )
         )
         assertTrue(service.isActingUserPro().first())
     }
+
+    @Test
+    fun `isActingUserPro emits false immediately when observed user tier transitions from PRO to FREE`() = runTest {
+        val proUser = User(userId = "user-1", email = "user@test.com", tier = SubscriptionTier.PRO)
+        val profileFlow = MutableStateFlow<User?>(proUser)
+        coEvery { authenticationService.isAnonymous() } returns false
+        every { userRepository.observeCurrentUserProfile() } returns profileFlow
+
+        val emissions = mutableListOf<Boolean>()
+        val collectJob = launch {
+            service.isActingUserPro().take(2).toList(emissions)
+        }
+        testScheduler.runCurrent()
+
+        profileFlow.value = proUser.copy(tier = SubscriptionTier.FREE)
+        collectJob.join()
+
+        assertEquals(listOf(true, false), emissions)
+    }
+
+    @Test
+    fun `isFeatureEnabled AD_FREE transitions from true to false when user tier downgrades from PRO to FREE`() =
+        runTest {
+            val proUser = User(userId = "user-1", email = "user@test.com", tier = SubscriptionTier.PRO)
+            val profileFlow = MutableStateFlow<User?>(proUser)
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns profileFlow
+
+            val emissions = mutableListOf<Boolean>()
+            val collectJob = launch {
+                service.isFeatureEnabled(GatedFeature.AD_FREE).take(2).toList(emissions)
+            }
+            testScheduler.runCurrent()
+
+            profileFlow.value = proUser.copy(tier = SubscriptionTier.FREE)
+            collectJob.join()
+
+            assertEquals(listOf(true, false), emissions)
+        }
+
+    @Test
+    fun `checkLimit transitions Allowed to Blocked when groups exceed free limit on downgrade`() =
+        runTest {
+            val proUser = User(userId = "user-1", email = "user@test.com", tier = SubscriptionTier.PRO)
+            val profileFlow = MutableStateFlow<User?>(proUser)
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns profileFlow
+
+            val emissions = mutableListOf<LimitResult>()
+            val collectJob = launch {
+                service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, currentCount = 2).take(2).toList(emissions)
+            }
+            testScheduler.runCurrent()
+
+            profileFlow.value = proUser.copy(tier = SubscriptionTier.FREE)
+            collectJob.join()
+
+            assertEquals(
+                listOf(
+                    LimitResult.Allowed,
+                    LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = true)
+                ),
+                emissions
+            )
+        }
 }

@@ -16,9 +16,13 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import timber.log.Timber
 
 class UserRepositoryImpl(
@@ -186,14 +190,20 @@ class UserRepositoryImpl(
         )
     }
 
-    override fun observeCurrentUserProfile(): Flow<User?> = flow {
-        val userId = authenticationService.currentUserId()
-        if (userId != null) {
-            emitAll(localUserDataSource.observeUser(userId))
-        } else {
-            emit(null)
-        }
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeCurrentUserProfile(): Flow<User?> =
+        authenticationService.authState
+            .onStart { emit(authenticationService.currentUserId() != null) }
+            .map { isLoggedIn -> if (isLoggedIn) authenticationService.currentUserId() else null }
+            .distinctUntilChanged()
+            .flatMapLatest { userId ->
+                if (userId != null) {
+                    localUserDataSource.observeUser(userId)
+                } else {
+                    flowOf(null)
+                }
+            }
+            .distinctUntilChanged()
 
     override suspend fun deletePendingUser(userId: String): Result<Unit> = runCatching {
         localUserDataSource.deleteUser(userId)

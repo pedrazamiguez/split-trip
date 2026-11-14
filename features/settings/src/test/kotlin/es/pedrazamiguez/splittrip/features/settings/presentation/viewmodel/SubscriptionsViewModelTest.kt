@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
@@ -53,6 +54,7 @@ class SubscriptionsViewModelTest {
     private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
     private lateinit var updateUserTierUseCase: UpdateUserTierUseCase
     private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
+    private lateinit var reconcileSubscriptionEntitlementsUseCase: ReconcileSubscriptionEntitlementsUseCase
     private lateinit var subscriptionsUiMapper: SubscriptionsUiMapper
     private lateinit var billingService: BillingService
 
@@ -118,6 +120,7 @@ class SubscriptionsViewModelTest {
         observeCurrentUserProfileUseCase = mockk()
         updateUserTierUseCase = mockk(relaxed = true)
         isUserAnonymousUseCase = mockk()
+        reconcileSubscriptionEntitlementsUseCase = mockk()
         subscriptionsUiMapper = mockk()
         billingService = mockk(relaxed = true)
 
@@ -127,6 +130,7 @@ class SubscriptionsViewModelTest {
         coEvery { getCurrentUserProfileUseCase() } returns testUser
         every { observeCurrentUserProfileUseCase() } returns userProfileFlow
         every { isUserAnonymousUseCase() } returns flowOf(false)
+        coEvery { reconcileSubscriptionEntitlementsUseCase() } returns Result.success(Unit)
         coEvery { updateUserTierUseCase(any(), any()) } returns Result.success(Unit)
 
         every { billingService.subscriptionProducts } returns subscriptionProductsFlow
@@ -170,6 +174,7 @@ class SubscriptionsViewModelTest {
         observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
         updateUserTierUseCase = updateUserTierUseCase,
         isUserAnonymousUseCase = isUserAnonymousUseCase,
+        reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,
         subscriptionsUiMapper = subscriptionsUiMapper,
         billingService = billingService
     )
@@ -318,6 +323,40 @@ class SubscriptionsViewModelTest {
                     currentTier = SubscriptionTier.FREE,
                     selectedInterval = BillingInterval.ANNUAL,
                     products = listOf(product)
+                )
+            }
+        }
+
+        @Test
+        fun `loadSubscriptions invokes reconcileSubscriptionEntitlementsUseCase for non-anonymous users`() = runTest(
+            testDispatcher
+        ) {
+            createViewModel()
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { reconcileSubscriptionEntitlementsUseCase() }
+        }
+
+        @Test
+        fun `loadSubscriptions still maps cached PRO plans when reconciliation fails`() = runTest(
+            testDispatcher
+        ) {
+            val proUser = testUser.copy(tier = SubscriptionTier.PRO)
+            coEvery { getCurrentUserProfileUseCase() } returns proUser
+            userProfileFlow.tryEmit(proUser)
+            coEvery {
+                reconcileSubscriptionEntitlementsUseCase()
+            } returns Result.failure(IllegalStateException("Offline"))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(SubscriptionTier.PRO, viewModel.uiState.value.currentTier)
+            coVerify(atLeast = 1) {
+                subscriptionsUiMapper.mapPlans(
+                    currentTier = SubscriptionTier.PRO,
+                    selectedInterval = BillingInterval.ANNUAL,
+                    products = any()
                 )
             }
         }
@@ -616,11 +655,14 @@ class SubscriptionsViewModelTest {
         }
 
         @Test
-        fun `RestorePurchases with false result emits no purchases found top pill`() = runTest(testDispatcher) {
+        fun `RestorePurchases with false result reconciles and emits no purchases found top pill`() = runTest(
+            testDispatcher
+        ) {
             coEvery { billingService.restorePurchases() } returns Result.success(false)
 
             val viewModel = createViewModel()
             advanceUntilIdle()
+            coVerify(exactly = 1) { reconcileSubscriptionEntitlementsUseCase() }
 
             val actions = mutableListOf<SubscriptionsUiAction>()
             val job = launch { viewModel.actions.collect { actions.add(it) } }
@@ -629,6 +671,7 @@ class SubscriptionsViewModelTest {
             advanceUntilIdle()
 
             coVerify(exactly = 0) { updateUserTierUseCase(any(), any()) }
+            coVerify(exactly = 2) { reconcileSubscriptionEntitlementsUseCase() }
             assertFalse(viewModel.uiState.value.isProcessingAction)
             assertEquals(1, actions.size)
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
@@ -639,13 +682,16 @@ class SubscriptionsViewModelTest {
         }
 
         @Test
-        fun `RestorePurchases with failure emits error top pill`() = runTest(testDispatcher) {
+        fun `RestorePurchases with failure does not reconcile again and emits error top pill`() = runTest(
+            testDispatcher
+        ) {
             coEvery {
                 billingService.restorePurchases()
             } returns Result.failure(IllegalStateException("Billing unavailable"))
 
             val viewModel = createViewModel()
             advanceUntilIdle()
+            coVerify(exactly = 1) { reconcileSubscriptionEntitlementsUseCase() }
 
             val actions = mutableListOf<SubscriptionsUiAction>()
             val job = launch { viewModel.actions.collect { actions.add(it) } }
@@ -653,6 +699,7 @@ class SubscriptionsViewModelTest {
             viewModel.onEvent(SubscriptionsUiEvent.RestorePurchases)
             advanceUntilIdle()
 
+            coVerify(exactly = 1) { reconcileSubscriptionEntitlementsUseCase() }
             assertFalse(viewModel.uiState.value.isProcessingAction)
             assertEquals(1, actions.size)
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())

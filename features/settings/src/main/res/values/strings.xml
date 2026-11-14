@@ -124,7 +124,7 @@
     <!-- Developer services navigation tabs -->
     <string name="developer_services_tab_ocr">OCR</string>
     <string name="developer_services_tab_ai_extraction">Parser</string>
-    <string name="developer_services_tab_avatar">Avatars</string>
+    <string name="developer_services_tab_billing">Billing</string>
 
     <!-- AI Extraction tab -->
     <string name="developer_services_ai_no_receipt">Select a receipt photo or PDF to extract data using on-device AI</string>
@@ -135,9 +135,14 @@
     <string name="developer_services_ai_engine_lite_rt">LiteRT-LM (CD)</string>
     <string name="developer_services_extraction_source_lite_rt">LiteRT-LM</string>
 
-    <!-- Avatar Generation tab (placeholder) -->
-    <string name="developer_services_avatar_title">AI Avatar Generation</string>
-    <string name="developer_services_avatar_subtitle">Coming soon</string>
+    <!-- Billing tab -->
+    <string name="developer_services_billing_section_title">Subscription Tier</string>
+    <string name="developer_services_billing_current_tier">Current tier:</string>
+    <string name="developer_services_billing_reset_free">Reset tier to FREE</string>
+    <string name="developer_services_billing_set_pro">Set tier to PRO</string>
+    <string name="developer_services_billing_tier_updated">Subscription tier updated to %1$s.</string>
+    <string name="developer_services_billing_update_error">Failed to update subscription tier.</string>
+    <string name="developer_services_billing_no_user_error">No signed-in user available to update tier.</string>
 
     <!-- Language Selection -->
     <string name="settings_preferences_language_dialog_title">Select Language</string>

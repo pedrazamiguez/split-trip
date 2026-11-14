@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.preview
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
+import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.DeveloperServicesScreen
@@ -84,10 +85,31 @@ private fun DeveloperServicesScreenAiSuccessPreview() {
 
 @PreviewComplete
 @Composable
-private fun DeveloperServicesScreenAvatarPreview() {
+private fun DeveloperServicesScreenBillingFreePreview() {
     PreviewThemeWrapper {
         DeveloperServicesScreen(
-            uiState = DeveloperServicesUiState(selectedTab = DeveloperServicesTab.AvatarGen),
+            uiState = DeveloperServicesUiState(
+                selectedTab = DeveloperServicesTab.Billing,
+                currentTier = SubscriptionTier.FREE,
+                hasSignedInUser = true
+            ),
+            onSelectOcrFileClick = {},
+            onSelectReceiptForAiClick = {},
+            onEvent = {}
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun DeveloperServicesScreenBillingProPreview() {
+    PreviewThemeWrapper {
+        DeveloperServicesScreen(
+            uiState = DeveloperServicesUiState(
+                selectedTab = DeveloperServicesTab.Billing,
+                currentTier = SubscriptionTier.PRO,
+                hasSignedInUser = true
+            ),
             onSelectOcrFileClick = {},
             onSelectReceiptForAiClick = {},
             onEvent = {}

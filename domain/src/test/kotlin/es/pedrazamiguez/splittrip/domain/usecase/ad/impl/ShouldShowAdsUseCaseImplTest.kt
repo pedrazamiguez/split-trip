@@ -8,7 +8,11 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -70,4 +74,23 @@ class ShouldShowAdsUseCaseImplTest {
 
         assertFalse(result)
     }
+
+    @Test
+    fun `invoke transitions from false to true when AD_FREE flips to false on PRO to FREE downgrade`() =
+        runTest {
+            val isAdFreeFlow = MutableStateFlow(true)
+            adsEnabledFlow.value = true
+            every { featureGateService.isFeatureEnabled(GatedFeature.AD_FREE) } returns isAdFreeFlow
+
+            val emissions = mutableListOf<Boolean>()
+            val collectJob = launch {
+                useCase().take(2).toList(emissions)
+            }
+            testScheduler.runCurrent()
+
+            isAdFreeFlow.value = false
+            collectJob.join()
+
+            assertEquals(listOf(false, true), emissions)
+        }
 }
