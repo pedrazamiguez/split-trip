@@ -30,6 +30,9 @@
     <string name="group_extra_currency_search">Bûccâh moneda</string>
     <string name="group_extra_currency_search_hint">ej. ÛDD, MXN, Libra…</string>
     <string name="group_extra_currency_remove">Quitâh moneda</string>
+    <string name="group_extra_currency_locked">Moneda en uço (bloqueá)</string>
+    <string name="group_currencies_in_use_hint">Lâ monedâ uçâh en trançâççionê êççîttentê no çe pueden eliminâh</string>
+    <string name="group_remove_currency_error_in_use">%1$s çe uça en trançâççionê êççîttentê y no çe puede eliminâh</string>
     <string name="group_extra_currency_clear">Limpiâh</string>
     <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Dêccrîççión</string>
@@ -119,6 +122,9 @@
     <string name="group_error_cannot_add_self">Ya erê miembro de êtte grupo</string>
     <string name="group_remove_member_error_balance">Êtte miembro tiene un balançe dîttinto de çero y no çe puede eliminâh</string>
     <string name="group_remove_member_error_admin">Er creadôh der grupo no çe puede eliminâh</string>
+    <string name="group_remove_member_error_last_member">Un grupo debe tenêh ar menô un miembro</string>
+    <string name="group_member_locked">No çe puede eliminâh ar miembro</string>
+    <string name="group_members_locked_hint">Er creadôh der grupo y lô miembrô con balançê pendientê no çe pueden eliminâh</string>
     <string name="group_error_remove_member_failed">Errôh al eliminâh er miembro. Inténtalo de nuebo</string>
     <string name="group_edit_success_saved_with_errors">Grupo âttualiçao con argunô cambiô de miembrô pendientê</string>
     <string name="action_leave_group">Abandonâh grupo</string>

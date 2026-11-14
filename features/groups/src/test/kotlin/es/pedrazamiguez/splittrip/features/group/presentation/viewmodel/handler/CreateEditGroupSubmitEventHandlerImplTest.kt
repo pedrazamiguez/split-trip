@@ -4,6 +4,8 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveCurrencyException
+import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
@@ -13,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetNonRemovableGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
@@ -55,6 +58,7 @@ class CreateEditGroupSubmitEventHandlerImplTest {
     private lateinit var updateGroupUseCase: UpdateGroupUseCase
     private lateinit var addGroupMembersUseCase: AddGroupMembersUseCase
     private lateinit var removeGroupMemberUseCase: RemoveGroupMemberUseCase
+    private lateinit var getNonRemovableGroupMembersUseCase: GetNonRemovableGroupMembersUseCase
     private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
     private lateinit var setSelectedGroupUseCase: SetSelectedGroupUseCase
     private lateinit var getSelectedGroupIdUseCase: GetSelectedGroupIdUseCase
@@ -82,6 +86,8 @@ class CreateEditGroupSubmitEventHandlerImplTest {
         updateGroupUseCase = mockk(relaxed = true)
         addGroupMembersUseCase = mockk(relaxed = true)
         removeGroupMemberUseCase = mockk(relaxed = true)
+        getNonRemovableGroupMembersUseCase = mockk(relaxed = true)
+        coEvery { getNonRemovableGroupMembersUseCase(any()) } returns emptyMap()
         getUserGroupsFlowUseCase = mockk(relaxed = true)
         setSelectedGroupUseCase = mockk(relaxed = true)
         getSelectedGroupIdUseCase = mockk(relaxed = true) {
@@ -107,6 +113,7 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             appConfigService = appConfigService,
             addGroupMembersUseCase = addGroupMembersUseCase,
             removeGroupMemberUseCase = removeGroupMemberUseCase,
+            getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase,
             setSelectedGroupUseCase = setSelectedGroupUseCase,
             getSelectedGroupIdUseCase = getSelectedGroupIdUseCase,
             authenticationService = authenticationService
@@ -528,5 +535,153 @@ class CreateEditGroupSubmitEventHandlerImplTest {
 
             coVerify(exactly = 0) { createGroupUseCase(any(), any()) }
         }
+    }
+
+    @Nested
+    inner class GuardedEditValidation {
+
+        @BeforeEach
+        fun setUpGuardedEdit() {
+            handler.setInitialGroup(testGroup)
+        }
+
+        @Test
+        fun `does not call updateGroupUseCase or onSuccess when removed member has NON_ZERO_BALANCE`() =
+            runTest(testDispatcher) {
+                stateFlow.value = CreateEditGroupUiState(
+                    groupName = "Japan Trip",
+                    isEditMode = true,
+                    groupId = testGroup.id,
+                    selectedMembers = persistentListOf(User(userId = "user-1", email = "user1@test.com"))
+                )
+                coEvery {
+                    getNonRemovableGroupMembersUseCase(testGroup.id)
+                } returns mapOf("user-2" to CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)
+
+                var onSuccessCalled = false
+                val actions = mutableListOf<CreateEditGroupUiAction>()
+                val collectJob = launch { actionsFlow.collect { actions.add(it) } }
+
+                handler.handleSubmit { onSuccessCalled = true }
+                advanceUntilIdle()
+
+                assertFalse(onSuccessCalled)
+                coVerify(exactly = 0) { updateGroupUseCase(any()) }
+                coVerify(exactly = 0) { removeGroupMemberUseCase(any(), any()) }
+                assertTrue(
+                    actions.any {
+                        it == CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_remove_member_error_balance)
+                        )
+                    }
+                )
+                assertFalse(stateFlow.value.isLoading)
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `does not call updateGroupUseCase or onSuccess when removed member is IS_CREATOR`() =
+            runTest(testDispatcher) {
+                stateFlow.value = CreateEditGroupUiState(
+                    groupName = "Japan Trip",
+                    isEditMode = true,
+                    groupId = testGroup.id,
+                    selectedMembers = persistentListOf(User(userId = "user-1", email = "user1@test.com"))
+                )
+                coEvery {
+                    getNonRemovableGroupMembersUseCase(testGroup.id)
+                } returns mapOf("user-2" to CannotRemoveMemberException.Reason.IS_CREATOR)
+
+                var onSuccessCalled = false
+                val actions = mutableListOf<CreateEditGroupUiAction>()
+                val collectJob = launch { actionsFlow.collect { actions.add(it) } }
+
+                handler.handleSubmit { onSuccessCalled = true }
+                advanceUntilIdle()
+
+                assertFalse(onSuccessCalled)
+                coVerify(exactly = 0) { updateGroupUseCase(any()) }
+                assertTrue(
+                    actions.any {
+                        it == CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_remove_member_error_admin)
+                        )
+                    }
+                )
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `aborts onSuccess and emits ShowError when removeGroupMemberUseCase fails after updateGroup`() =
+            runTest(testDispatcher) {
+                stateFlow.value = CreateEditGroupUiState(
+                    groupName = "Japan Trip",
+                    isEditMode = true,
+                    groupId = testGroup.id,
+                    selectedMembers = persistentListOf(User(userId = "user-1", email = "user1@test.com"))
+                )
+                coEvery { getNonRemovableGroupMembersUseCase(testGroup.id) } returns emptyMap()
+                coEvery { updateGroupUseCase(any()) } returns Result.success(Unit)
+                coEvery {
+                    removeGroupMemberUseCase(testGroup.id, "user-2")
+                } returns Result.failure(
+                    CannotRemoveMemberException(CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)
+                )
+
+                var onSuccessCalled = false
+                val actions = mutableListOf<CreateEditGroupUiAction>()
+                val collectJob = launch { actionsFlow.collect { actions.add(it) } }
+
+                handler.handleSubmit { onSuccessCalled = true }
+                advanceUntilIdle()
+
+                assertFalse(onSuccessCalled)
+                assertTrue(
+                    actions.any {
+                        it == CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_remove_member_error_balance)
+                        )
+                    }
+                )
+                assertTrue(actions.none { it is CreateEditGroupUiAction.ShowSuccess })
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `aborts onSuccess and emits error when updateGroupUseCase fails with CannotRemoveCurrencyException`() =
+            runTest(testDispatcher) {
+                stateFlow.value = CreateEditGroupUiState(
+                    groupName = "Japan Trip",
+                    isEditMode = true,
+                    groupId = testGroup.id,
+                    selectedMembers = persistentListOf(
+                        User(userId = "user-1", email = "user1@test.com"),
+                        User(userId = "user-2", email = "user2@test.com")
+                    )
+                )
+                coEvery {
+                    updateGroupUseCase(any())
+                } returns Result.failure(
+                    CannotRemoveCurrencyException("USD", CannotRemoveCurrencyException.Reason.CURRENCY_IN_USE)
+                )
+
+                var onSuccessCalled = false
+                val actions = mutableListOf<CreateEditGroupUiAction>()
+                val collectJob = launch { actionsFlow.collect { actions.add(it) } }
+
+                handler.handleSubmit { onSuccessCalled = true }
+                advanceUntilIdle()
+
+                assertFalse(onSuccessCalled)
+                assertTrue(
+                    actions.any {
+                        it == CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_remove_currency_error_in_use, "USD")
+                        )
+                    }
+                )
+                assertTrue(stateFlow.value.error != null)
+                collectJob.cancel()
+            }
     }
 }
