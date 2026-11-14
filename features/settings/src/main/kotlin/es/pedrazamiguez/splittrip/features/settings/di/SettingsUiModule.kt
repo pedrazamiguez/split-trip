@@ -32,6 +32,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetBiometricLockEnabled
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserReminderPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.AccountSecurityUiMapper
@@ -133,10 +134,16 @@ val settingsUiModule = module {
         val receiptOcrService = get<ReceiptOcrService>()
         val receiptExtractionService = get<ReceiptExtractionService>()
         val aiModelResolverService = get<AiModelResolverService>()
+        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
+        val updateUserTierUseCase = get<UpdateUserTierUseCase>()
         DeveloperServicesViewModel(
             receiptOcrService = receiptOcrService,
             receiptExtractionService = receiptExtractionService,
-            aiModelResolver = aiModelResolverService
+            aiModelResolver = aiModelResolverService,
+            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
+            updateUserTierUseCase = updateUserTierUseCase
         )
     }
 
@@ -217,6 +224,7 @@ val settingsUiModule = module {
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
         val updateUserTierUseCase = get<UpdateUserTierUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
+        val reconcileSubscriptionEntitlementsUseCase = get<ReconcileSubscriptionEntitlementsUseCase>()
         val subscriptionsUiMapper = get<SubscriptionsUiMapper>()
         val billingService = get<BillingService>()
         SubscriptionsViewModel(
@@ -224,6 +232,7 @@ val settingsUiModule = module {
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
             updateUserTierUseCase = updateUserTierUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
+            reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,
             subscriptionsUiMapper = subscriptionsUiMapper,
             billingService = billingService
         )

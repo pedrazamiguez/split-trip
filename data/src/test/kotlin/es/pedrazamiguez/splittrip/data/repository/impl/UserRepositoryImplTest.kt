@@ -17,6 +17,12 @@ import io.mockk.just
 import io.mockk.mockk
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -462,5 +468,78 @@ class UserRepositoryImplTest {
             assertTrue(result.isFailure)
             coVerify(exactly = 0) { cloudUserDataSource.updateUserTier(any(), any()) }
         }
+    }
+
+    @Nested
+    inner class ObserveCurrentUserProfile {
+
+        @Test
+        fun `observeCurrentUserProfile reacts to authState logging out by emitting null`() =
+            runTest(testDispatcher) {
+                val authStateFlow = MutableSharedFlow<Boolean>()
+                every { authenticationService.authState } returns authStateFlow
+                every { authenticationService.currentUserId() } returns "user-1"
+                every { localUserDataSource.observeUser("user-1") } returns flowOf(testUser)
+
+                val emissions = mutableListOf<User?>()
+                val collectJob = launch {
+                    repository.observeCurrentUserProfile().take(2).toList(emissions)
+                }
+                advanceUntilIdle()
+
+                every { authenticationService.currentUserId() } returns null
+                authStateFlow.emit(false)
+                advanceUntilIdle()
+                collectJob.join()
+
+                assertEquals(listOf(testUser, null), emissions)
+            }
+
+        @Test
+        fun `observeCurrentUserProfile reacts to authState switching user IDs and observes new user room flow`() =
+            runTest(testDispatcher) {
+                val user2 = testUser.copy(userId = "user-2", email = "bob@example.com", displayName = "Bob")
+                val authStateFlow = MutableSharedFlow<Boolean>()
+                every { authenticationService.authState } returns authStateFlow
+                every { authenticationService.currentUserId() } returns "user-1"
+                every { localUserDataSource.observeUser("user-1") } returns flowOf(testUser)
+                every { localUserDataSource.observeUser("user-2") } returns flowOf(user2)
+
+                val emissions = mutableListOf<User?>()
+                val collectJob = launch {
+                    repository.observeCurrentUserProfile().take(2).toList(emissions)
+                }
+                advanceUntilIdle()
+
+                every { authenticationService.currentUserId() } returns "user-2"
+                authStateFlow.emit(true)
+                advanceUntilIdle()
+                collectJob.join()
+
+                assertEquals(listOf(testUser, user2), emissions)
+            }
+
+        @Test
+        fun `observeCurrentUserProfile emits updated user when Room tier changes from PRO to FREE`() =
+            runTest(testDispatcher) {
+                val proUser = testUser.copy(tier = SubscriptionTier.PRO)
+                val freeUser = testUser.copy(tier = SubscriptionTier.FREE)
+                val roomUserFlow = MutableStateFlow<User?>(proUser)
+                every { authenticationService.authState } returns flowOf(true)
+                every { authenticationService.currentUserId() } returns "user-1"
+                every { localUserDataSource.observeUser("user-1") } returns roomUserFlow
+
+                val emissions = mutableListOf<User?>()
+                val collectJob = launch {
+                    repository.observeCurrentUserProfile().take(2).toList(emissions)
+                }
+                advanceUntilIdle()
+
+                roomUserFlow.value = freeUser
+                advanceUntilIdle()
+                collectJob.join()
+
+                assertEquals(listOf(proUser, freeUser), emissions)
+            }
     }
 }
