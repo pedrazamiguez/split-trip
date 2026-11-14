@@ -34,6 +34,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.Cr
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.buildUpdatedExtraCurrencies
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.formatEventForLogging
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.loadEditGuard
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.resolveMemberRemovalBlockReason
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.toUiText
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -339,16 +340,22 @@ class CreateEditGroupViewModel(
     }
 
     private fun handleMemberRemoved(event: CreateEditGroupUiEvent.MemberRemoved) {
-        val blockReason = _uiState.value.nonRemovableMembers[event.user.userId]
+        val state = _uiState.value
+        val blockReason = resolveMemberRemovalBlockReason(
+            isEditMode = state.isEditMode,
+            selectedMembersCount = state.selectedMembers.size,
+            nonRemovableMembers = state.nonRemovableMembers,
+            userId = event.user.userId
+        )
         if (blockReason != null) {
             viewModelScope.launch {
                 _actions.emit(CreateEditGroupUiAction.ShowError(blockReason.toUiText()))
             }
             return
         }
-        _uiState.update { state ->
-            state.copy(
-                selectedMembers = state.selectedMembers
+        _uiState.update { current ->
+            current.copy(
+                selectedMembers = current.selectedMembers
                     .filter { it.userId != event.user.userId }
                     .toImmutableList(),
                 error = null

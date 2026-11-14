@@ -306,7 +306,11 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             stateFlow.value = CreateEditGroupUiState(
                 groupName = "Updated Trip",
                 isEditMode = true,
-                groupId = "group-123"
+                groupId = "group-123",
+                selectedMembers = persistentListOf(
+                    User(userId = "user-1", email = "user1@test.com"),
+                    User(userId = "user-2", email = "user2@test.com")
+                )
             )
         }
 
@@ -490,7 +494,11 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             stateFlow.value = CreateEditGroupUiState(
                 groupName = "Modified",
                 isEditMode = true,
-                groupId = testGroup.id
+                groupId = testGroup.id,
+                selectedMembers = persistentListOf(
+                    User(userId = "user-1", email = "user1@test.com"),
+                    User(userId = "user-2", email = "user2@test.com")
+                )
             )
 
             handler.handleSubmit {}
@@ -682,6 +690,71 @@ class CreateEditGroupSubmitEventHandlerImplTest {
                 )
                 assertTrue(stateFlow.value.error != null)
                 collectJob.cancel()
+            }
+
+        @Test
+        fun `does not call updateGroupUseCase or onSuccess when removing all remaining members`() =
+            runTest(testDispatcher) {
+                stateFlow.value = CreateEditGroupUiState(
+                    groupName = "Japan Trip",
+                    isEditMode = true,
+                    groupId = testGroup.id,
+                    selectedMembers = persistentListOf()
+                )
+
+                var onSuccessCalled = false
+                val actions = mutableListOf<CreateEditGroupUiAction>()
+                val collectJob = launch { actionsFlow.collect { actions.add(it) } }
+
+                handler.handleSubmit { onSuccessCalled = true }
+                advanceUntilIdle()
+
+                assertFalse(onSuccessCalled)
+                coVerify(exactly = 0) { updateGroupUseCase(any()) }
+                coVerify(exactly = 0) { removeGroupMemberUseCase(any(), any()) }
+                assertTrue(
+                    actions.any {
+                        it == CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_remove_member_error_last_member)
+                        )
+                    }
+                )
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updates initialGroup with committed removals so retry does not re-remove already removed member`() =
+            runTest(testDispatcher) {
+                handler.setInitialGroup(
+                    testGroup.copy(members = listOf("user-1", "user-2", "user-3"))
+                )
+                stateFlow.value = CreateEditGroupUiState(
+                    groupName = "Japan Trip Updated",
+                    isEditMode = true,
+                    groupId = testGroup.id,
+                    selectedMembers = persistentListOf(User(userId = "user-1", email = "user1@test.com"))
+                )
+                coEvery { updateGroupUseCase(any()) } returns Result.success(Unit)
+                coEvery { removeGroupMemberUseCase(testGroup.id, "user-2") } returns Result.success(Unit)
+                coEvery {
+                    removeGroupMemberUseCase(testGroup.id, "user-3")
+                } returnsMany listOf(
+                    Result.failure(CannotRemoveMemberException(CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)),
+                    Result.success(Unit)
+                )
+
+                var firstSuccess = false
+                handler.handleSubmit { firstSuccess = true }
+                advanceUntilIdle()
+                assertFalse(firstSuccess)
+
+                var secondSuccess = false
+                handler.handleSubmit { secondSuccess = true }
+                advanceUntilIdle()
+                assertTrue(secondSuccess)
+
+                coVerify(exactly = 1) { removeGroupMemberUseCase(testGroup.id, "user-2") }
+                coVerify(exactly = 2) { removeGroupMemberUseCase(testGroup.id, "user-3") }
             }
     }
 }

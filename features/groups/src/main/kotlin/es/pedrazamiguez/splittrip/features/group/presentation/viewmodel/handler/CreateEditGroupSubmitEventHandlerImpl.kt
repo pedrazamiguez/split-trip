@@ -97,7 +97,7 @@ class CreateEditGroupSubmitEventHandlerImpl(
                 return@launch
             }
 
-            if (membersToRemove.isNotEmpty() && !validateMemberRemovals(group.id, membersToRemove)) {
+            if (membersToRemove.isNotEmpty() && !validateMemberRemovals(group, membersToAdd, membersToRemove)) {
                 return@launch
             }
 
@@ -112,6 +112,7 @@ class CreateEditGroupSubmitEventHandlerImpl(
             updateGroupUseCase(updatedGroup)
                 .onSuccess {
                     val syncResult = syncMemberChanges(group, membersToAdd, membersToRemove)
+                    initialGroup = updatedGroup.copy(members = syncResult.committedMembers)
                     if (!syncResult.hasRemovalFailure) {
                         completeGroupUpdate(group.id, updatedGroup, syncResult.hasAddFailure, onSuccess)
                     }
@@ -161,15 +162,23 @@ class CreateEditGroupSubmitEventHandlerImpl(
     }
 
     private suspend fun validateMemberRemovals(
-        groupId: String,
+        group: Group,
+        membersToAdd: List<User>,
         membersToRemove: List<String>
     ): Boolean {
+        if (membersToAdd.isEmpty() && group.members.all { it in membersToRemove }) {
+            val errorMessage = CannotRemoveMemberException.Reason.LAST_MEMBER.toUiText()
+            _uiState.update { it.copy(isLoading = false, error = errorMessage) }
+            _actions.emit(CreateEditGroupUiAction.ShowError(errorMessage))
+            return false
+        }
+
         val nonRemovableReasons = try {
-            getNonRemovableGroupMembersUseCase(groupId)
+            getNonRemovableGroupMembersUseCase(group.id)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.e(e, "Failed to validate member removals for group $groupId")
+            Timber.e(e, "Failed to validate member removals for group ${group.id}")
             val errorMessage = UiText.StringResource(R.string.group_error_remove_member_failed)
             _uiState.update { it.copy(isLoading = false, error = errorMessage) }
             _actions.emit(CreateEditGroupUiAction.ShowError(errorMessage))
@@ -190,7 +199,8 @@ class CreateEditGroupSubmitEventHandlerImpl(
 
     private data class MemberSyncResult(
         val hasAddFailure: Boolean,
-        val hasRemovalFailure: Boolean
+        val hasRemovalFailure: Boolean,
+        val committedMembers: List<String>
     )
 
     private suspend fun syncMemberChanges(
@@ -200,8 +210,12 @@ class CreateEditGroupSubmitEventHandlerImpl(
     ): MemberSyncResult {
         var hasAddFailure = false
         var hasRemovalFailure = false
+        var committedMembers = group.members
         if (membersToAdd.isNotEmpty()) {
             addGroupMembersUseCase(group.id, membersToAdd)
+                .onSuccess {
+                    committedMembers = (committedMembers + membersToAdd.map { it.userId }).distinct()
+                }
                 .onFailure { e ->
                     Timber.e(e, "Failed to add members to group ${group.id}")
                     hasAddFailure = true
@@ -210,6 +224,9 @@ class CreateEditGroupSubmitEventHandlerImpl(
         if (membersToRemove.isNotEmpty()) {
             for (userId in membersToRemove) {
                 removeGroupMemberUseCase(group.id, userId)
+                    .onSuccess {
+                        committedMembers = committedMembers.filter { it != userId }
+                    }
                     .onFailure { e ->
                         Timber.e(e, "Failed to remove member $userId from group ${group.id}")
                         hasRemovalFailure = true
@@ -226,7 +243,8 @@ class CreateEditGroupSubmitEventHandlerImpl(
         }
         return MemberSyncResult(
             hasAddFailure = hasAddFailure,
-            hasRemovalFailure = hasRemovalFailure
+            hasRemovalFailure = hasRemovalFailure,
+            committedMembers = committedMembers
         )
     }
 

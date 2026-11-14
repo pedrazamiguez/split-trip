@@ -491,6 +491,38 @@ class CreateEditGroupViewModelTest {
                 assertEquals(currencyUiModelUSD, vm.uiState.value.selectedCurrency)
                 assertFalse(vm.uiState.value.extraCurrencies.contains(currencyUiModelJPY))
             }
+
+        @Test
+        fun `MemberRemoved blocks removing the last remaining member in edit mode and emits ShowError`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    getGroupByIdUseCase(testGroupId)
+                } returns testGroup.copy(members = listOf("user-1", "user-2"))
+                coEvery {
+                    getMemberProfilesUseCase(listOf("user-1", "user-2"))
+                } returns mapOf("user-1" to testUser1, "user-2" to testUser2)
+                coEvery { getNonRemovableGroupMembersUseCase(testGroupId) } returns emptyMap()
+
+                val vm = createViewModel()
+                val actions = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch { vm.actions.collect { actions.add(it) } }
+                vm.init(testGroupId)
+                advanceUntilIdle()
+
+                vm.onEvent(CreateEditGroupUiEvent.MemberRemoved(testUser1)) {}
+                vm.onEvent(CreateEditGroupUiEvent.MemberRemoved(testUser2)) {}
+                advanceUntilIdle()
+
+                assertEquals(listOf(testUser2), vm.uiState.value.selectedMembers.toList())
+                assertTrue(
+                    actions.any {
+                        it == CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_remove_member_error_last_member)
+                        )
+                    }
+                )
+                job.cancel()
+            }
     }
 
     @Nested
