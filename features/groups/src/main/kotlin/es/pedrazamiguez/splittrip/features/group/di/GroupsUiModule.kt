@@ -30,6 +30,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.ArchiveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupCurrenciesInUseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetNonRemovableGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
@@ -106,6 +108,7 @@ val groupsUiModule = module {
         val appConfigService = get<AppConfigService>()
         val addGroupMembersUseCase = get<AddGroupMembersUseCase>()
         val removeGroupMemberUseCase = get<RemoveGroupMemberUseCase>()
+        val getNonRemovableGroupMembersUseCase = get<GetNonRemovableGroupMembersUseCase>()
         val setSelectedGroupUseCase = get<SetSelectedGroupUseCase>()
         val getSelectedGroupIdUseCase = get<GetSelectedGroupIdUseCase>()
         val authenticationService = get<AuthenticationService>()
@@ -118,6 +121,7 @@ val groupsUiModule = module {
             appConfigService = appConfigService,
             addGroupMembersUseCase = addGroupMembersUseCase,
             removeGroupMemberUseCase = removeGroupMemberUseCase,
+            getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase,
             setSelectedGroupUseCase = setSelectedGroupUseCase,
             getSelectedGroupIdUseCase = getSelectedGroupIdUseCase,
             authenticationService = authenticationService
@@ -139,6 +143,8 @@ val groupsUiModule = module {
         val appConfigService = get<AppConfigService>()
         val authenticationService = get<AuthenticationService>()
         val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
+        val getGroupCurrenciesInUseUseCase = get<GetGroupCurrenciesInUseUseCase>()
+        val getNonRemovableGroupMembersUseCase = get<GetNonRemovableGroupMembersUseCase>()
 
         CreateEditGroupViewModel(
             navigationEventHandler = navigationEventHandler,
@@ -154,7 +160,9 @@ val groupsUiModule = module {
             featureGateService = featureGateService,
             appConfigService = appConfigService,
             authenticationService = authenticationService,
-            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase
+            getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            getGroupCurrenciesInUseUseCase = getGroupCurrenciesInUseUseCase,
+            getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase
         )
     }
 

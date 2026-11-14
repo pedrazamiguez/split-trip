@@ -2,9 +2,14 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.model.User
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
 
 data class CreateEditGroupUiState(
     val isLoading: Boolean = false,
@@ -20,10 +25,12 @@ data class CreateEditGroupUiState(
     val availableCurrencies: ImmutableList<CurrencyUiModel> = persistentListOf(),
     val selectedCurrency: CurrencyUiModel? = null,
     val extraCurrencies: ImmutableList<CurrencyUiModel> = persistentListOf(),
+    val currenciesInUse: ImmutableSet<String> = persistentSetOf(),
 
     // Member search
     val memberSearchResults: ImmutableList<User> = persistentListOf(),
     val selectedMembers: ImmutableList<User> = persistentListOf(),
+    val nonRemovableMembers: ImmutableMap<String, CannotRemoveMemberException.Reason> = persistentMapOf(),
     val isSearchingMembers: Boolean = false,
     val currentUserEmail: String? = null,
 

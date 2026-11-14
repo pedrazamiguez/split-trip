@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
@@ -18,6 +19,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrencies
 import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupCurrenciesInUseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetNonRemovableGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.RemoveGroupMemberUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
@@ -68,6 +71,8 @@ class CreateEditGroupViewModelTest {
     private lateinit var updateGroupUseCase: UpdateGroupUseCase
     private lateinit var addGroupMembersUseCase: AddGroupMembersUseCase
     private lateinit var removeGroupMemberUseCase: RemoveGroupMemberUseCase
+    private lateinit var getGroupCurrenciesInUseUseCase: GetGroupCurrenciesInUseUseCase
+    private lateinit var getNonRemovableGroupMembersUseCase: GetNonRemovableGroupMembersUseCase
     private lateinit var setSelectedGroupUseCase: SetSelectedGroupUseCase
     private lateinit var getSelectedGroupIdUseCase: GetSelectedGroupIdUseCase
     private lateinit var getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase
@@ -110,6 +115,10 @@ class CreateEditGroupViewModelTest {
         updateGroupUseCase = mockk(relaxed = true)
         addGroupMembersUseCase = mockk(relaxed = true)
         removeGroupMemberUseCase = mockk(relaxed = true)
+        getGroupCurrenciesInUseUseCase = mockk(relaxed = true)
+        getNonRemovableGroupMembersUseCase = mockk(relaxed = true)
+        coEvery { getGroupCurrenciesInUseUseCase(any()) } returns emptySet()
+        coEvery { getNonRemovableGroupMembersUseCase(any()) } returns emptyMap()
         setSelectedGroupUseCase = mockk(relaxed = true)
         getSelectedGroupIdUseCase = mockk(relaxed = true) {
             every { this@mockk.invoke() } returns flowOf(null)
@@ -158,6 +167,7 @@ class CreateEditGroupViewModelTest {
             appConfigService = appConfigService,
             addGroupMembersUseCase = addGroupMembersUseCase,
             removeGroupMemberUseCase = removeGroupMemberUseCase,
+            getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase,
             setSelectedGroupUseCase = setSelectedGroupUseCase,
             getSelectedGroupIdUseCase = getSelectedGroupIdUseCase,
             authenticationService = authenticationService
@@ -177,6 +187,8 @@ class CreateEditGroupViewModelTest {
             appConfigService = appConfigService,
             authenticationService = authenticationService,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
+            getGroupCurrenciesInUseUseCase = getGroupCurrenciesInUseUseCase,
+            getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase,
             defaultDispatcher = testDispatcher
         )
     }
@@ -287,6 +299,230 @@ class CreateEditGroupViewModelTest {
                 )
             }
         }
+
+        @Test
+        fun `init in edit mode populates currenciesInUse and nonRemovableMembers`() = runTest(testDispatcher) {
+            val nonRemovable = mapOf("user-1" to CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)
+            coEvery { getGroupCurrenciesInUseUseCase(testGroupId) } returns setOf("JPY", "USD")
+            coEvery { getNonRemovableGroupMembersUseCase(testGroupId) } returns nonRemovable
+
+            val vm = createViewModel()
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            assertEquals(setOf("JPY", "USD"), vm.uiState.value.currenciesInUse)
+            assertEquals(nonRemovable, vm.uiState.value.nonRemovableMembers)
+        }
+
+        @Test
+        fun `ExtraCurrencyToggled blocks removing currency in use and emits ShowError`() = runTest(testDispatcher) {
+            coEvery { getGroupCurrenciesInUseUseCase(testGroupId) } returns setOf("JPY", "USD")
+
+            val vm = createViewModel()
+            val actions = mutableListOf<CreateEditGroupUiAction>()
+            val job = launch { vm.actions.collect { actions.add(it) } }
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            vm.onEvent(CreateEditGroupUiEvent.ExtraCurrencyToggled("USD")) {}
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.extraCurrencies.contains(currencyUiModelUSD))
+            assertTrue(
+                actions.any {
+                    it == CreateEditGroupUiAction.ShowError(
+                        UiText.StringResource(R.string.group_remove_currency_error_in_use, "USD")
+                    )
+                }
+            )
+            job.cancel()
+        }
+
+        @Test
+        fun `ExtraCurrencyToggled allows removing unused extra currency in edit mode`() = runTest(testDispatcher) {
+            coEvery { getGroupCurrenciesInUseUseCase(testGroupId) } returns setOf("JPY")
+
+            val vm = createViewModel()
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            vm.onEvent(CreateEditGroupUiEvent.ExtraCurrencyToggled("USD")) {}
+            advanceUntilIdle()
+
+            assertFalse(vm.uiState.value.extraCurrencies.contains(currencyUiModelUSD))
+        }
+
+        @Test
+        fun `CurrencySelected preserves previous default currency in extraCurrencies when in use`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    getGroupByIdUseCase(testGroupId)
+                } returns testGroup.copy(currency = "JPY", extraCurrencies = emptyList())
+                coEvery { getGroupCurrenciesInUseUseCase(testGroupId) } returns setOf("JPY")
+
+                val vm = createViewModel()
+                vm.init(testGroupId)
+                advanceUntilIdle()
+
+                vm.onEvent(CreateEditGroupUiEvent.CurrencySelected("USD")) {}
+                advanceUntilIdle()
+
+                assertEquals(currencyUiModelUSD, vm.uiState.value.selectedCurrency)
+                assertTrue(vm.uiState.value.extraCurrencies.contains(currencyUiModelJPY))
+            }
+
+        @Test
+        fun `MemberRemoved blocks removing member with NON_ZERO_BALANCE and emits ShowError`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    getGroupByIdUseCase(testGroupId)
+                } returns testGroup.copy(members = listOf("user-1", "user-2"))
+                coEvery {
+                    getMemberProfilesUseCase(listOf("user-1", "user-2"))
+                } returns mapOf("user-1" to testUser1, "user-2" to testUser2)
+                coEvery {
+                    getNonRemovableGroupMembersUseCase(testGroupId)
+                } returns mapOf("user-1" to CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)
+
+                val vm = createViewModel()
+                val actions = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch { vm.actions.collect { actions.add(it) } }
+                vm.init(testGroupId)
+                advanceUntilIdle()
+
+                vm.onEvent(CreateEditGroupUiEvent.MemberRemoved(testUser1)) {}
+                advanceUntilIdle()
+
+                assertTrue(vm.uiState.value.selectedMembers.any { it.userId == "user-1" })
+                assertTrue(
+                    actions.any {
+                        it == CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_remove_member_error_balance)
+                        )
+                    }
+                )
+                job.cancel()
+            }
+
+        @Test
+        fun `MemberRemoved blocks removing creator and emits ShowError`() = runTest(testDispatcher) {
+            coEvery {
+                getGroupByIdUseCase(testGroupId)
+            } returns testGroup.copy(members = listOf("user-1", "user-2"))
+            coEvery {
+                getMemberProfilesUseCase(listOf("user-1", "user-2"))
+            } returns mapOf("user-1" to testUser1, "user-2" to testUser2)
+            coEvery {
+                getNonRemovableGroupMembersUseCase(testGroupId)
+            } returns mapOf("user-1" to CannotRemoveMemberException.Reason.IS_CREATOR)
+
+            val vm = createViewModel()
+            val actions = mutableListOf<CreateEditGroupUiAction>()
+            val job = launch { vm.actions.collect { actions.add(it) } }
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            vm.onEvent(CreateEditGroupUiEvent.MemberRemoved(testUser1)) {}
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.selectedMembers.any { it.userId == "user-1" })
+            assertTrue(
+                actions.any {
+                    it == CreateEditGroupUiAction.ShowError(
+                        UiText.StringResource(R.string.group_remove_member_error_admin)
+                    )
+                }
+            )
+            job.cancel()
+        }
+
+        @Test
+        fun `MemberRemoved removes member with zero balance not in nonRemovableMembers`() = runTest(testDispatcher) {
+            coEvery {
+                getGroupByIdUseCase(testGroupId)
+            } returns testGroup.copy(members = listOf("user-1", "user-2"))
+            coEvery {
+                getMemberProfilesUseCase(listOf("user-1", "user-2"))
+            } returns mapOf("user-1" to testUser1, "user-2" to testUser2)
+            coEvery {
+                getNonRemovableGroupMembersUseCase(testGroupId)
+            } returns mapOf("user-1" to CannotRemoveMemberException.Reason.IS_CREATOR)
+
+            val vm = createViewModel()
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            vm.onEvent(CreateEditGroupUiEvent.MemberRemoved(testUser2)) {}
+            advanceUntilIdle()
+
+            assertFalse(vm.uiState.value.selectedMembers.any { it.userId == "user-2" })
+            assertTrue(vm.uiState.value.selectedMembers.any { it.userId == "user-1" })
+        }
+
+        @Test
+        fun `init in edit mode falls back to empty guards when guard use cases fail`() = runTest(testDispatcher) {
+            coEvery { getGroupCurrenciesInUseUseCase(testGroupId) } throws RuntimeException("DB error")
+            coEvery { getNonRemovableGroupMembersUseCase(testGroupId) } throws RuntimeException("Balance error")
+
+            val vm = createViewModel()
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.isEditMode)
+            assertTrue(vm.uiState.value.currenciesInUse.isEmpty())
+            assertTrue(vm.uiState.value.nonRemovableMembers.isEmpty())
+        }
+
+        @Test
+        fun `CurrencySelected does not add previous default currency to extraCurrencies when not in use`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    getGroupByIdUseCase(testGroupId)
+                } returns testGroup.copy(currency = "JPY", extraCurrencies = emptyList())
+                coEvery { getGroupCurrenciesInUseUseCase(testGroupId) } returns emptySet()
+
+                val vm = createViewModel()
+                vm.init(testGroupId)
+                advanceUntilIdle()
+
+                vm.onEvent(CreateEditGroupUiEvent.CurrencySelected("USD")) {}
+                advanceUntilIdle()
+
+                assertEquals(currencyUiModelUSD, vm.uiState.value.selectedCurrency)
+                assertFalse(vm.uiState.value.extraCurrencies.contains(currencyUiModelJPY))
+            }
+
+        @Test
+        fun `MemberRemoved blocks removing the last remaining member in edit mode and emits ShowError`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    getGroupByIdUseCase(testGroupId)
+                } returns testGroup.copy(members = listOf("user-1", "user-2"))
+                coEvery {
+                    getMemberProfilesUseCase(listOf("user-1", "user-2"))
+                } returns mapOf("user-1" to testUser1, "user-2" to testUser2)
+                coEvery { getNonRemovableGroupMembersUseCase(testGroupId) } returns emptyMap()
+
+                val vm = createViewModel()
+                val actions = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch { vm.actions.collect { actions.add(it) } }
+                vm.init(testGroupId)
+                advanceUntilIdle()
+
+                vm.onEvent(CreateEditGroupUiEvent.MemberRemoved(testUser1)) {}
+                vm.onEvent(CreateEditGroupUiEvent.MemberRemoved(testUser2)) {}
+                advanceUntilIdle()
+
+                assertEquals(listOf(testUser2), vm.uiState.value.selectedMembers.toList())
+                assertTrue(
+                    actions.any {
+                        it == CreateEditGroupUiAction.ShowError(
+                            UiText.StringResource(R.string.group_remove_member_error_last_member)
+                        )
+                    }
+                )
+                job.cancel()
+            }
     }
 
     @Nested

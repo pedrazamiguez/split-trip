@@ -2,24 +2,17 @@ package es.pedrazamiguez.splittrip.domain.usecase.group
 
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
+import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.Group
-import es.pedrazamiguez.splittrip.domain.model.MemberBalance
-import es.pedrazamiguez.splittrip.domain.repository.CashTransferRepository
-import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
-import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
-import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
-import es.pedrazamiguez.splittrip.domain.repository.SettlementRepository
-import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
-import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.RemoveGroupMemberUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -27,13 +20,7 @@ import org.junit.jupiter.api.Test
 class RemoveGroupMemberUseCaseImplTest {
 
     private lateinit var groupRepository: GroupRepository
-    private lateinit var expenseRepository: ExpenseRepository
-    private lateinit var contributionRepository: ContributionRepository
-    private lateinit var cashWithdrawalRepository: CashWithdrawalRepository
-    private lateinit var subunitRepository: SubunitRepository
-    private lateinit var cashTransferRepository: CashTransferRepository
-    private lateinit var getMemberBalancesFlowUseCase: GetMemberBalancesFlowUseCase
-    private lateinit var settlementRepository: SettlementRepository
+    private lateinit var getNonRemovableGroupMembersUseCase: GetNonRemovableGroupMembersUseCase
     private lateinit var useCase: RemoveGroupMemberUseCase
 
     private val groupId = "group-123"
@@ -52,44 +39,20 @@ class RemoveGroupMemberUseCaseImplTest {
     @BeforeEach
     fun setUp() {
         groupRepository = mockk()
-        expenseRepository = mockk()
-        contributionRepository = mockk()
-        cashWithdrawalRepository = mockk()
-        subunitRepository = mockk()
-        cashTransferRepository = mockk()
-        getMemberBalancesFlowUseCase = mockk()
-        settlementRepository = mockk()
+        getNonRemovableGroupMembersUseCase = mockk()
 
         useCase = RemoveGroupMemberUseCaseImpl(
             groupRepository = groupRepository,
-            expenseRepository = expenseRepository,
-            contributionRepository = contributionRepository,
-            cashWithdrawalRepository = cashWithdrawalRepository,
-            subunitRepository = subunitRepository,
-            cashTransferRepository = cashTransferRepository,
-            getMemberBalancesFlowUseCase = getMemberBalancesFlowUseCase,
-            settlementRepository = settlementRepository
+            getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase
         )
 
         coEvery { groupRepository.getGroupById(groupId) } returns testGroup
         coEvery { groupRepository.removeMember(any(), any()) } just Runs
-
-        // Set default behaviors for new dependencies to keep existing tests passing
-        coEvery { expenseRepository.getGroupExpensesFlow(any()) } returns flowOf(emptyList())
-        coEvery { contributionRepository.getGroupContributionsFlow(any()) } returns flowOf(emptyList())
-        coEvery { cashWithdrawalRepository.getGroupWithdrawalsFlow(any()) } returns flowOf(emptyList())
-        coEvery { subunitRepository.getGroupSubunits(any()) } returns emptyList()
-        coEvery { settlementRepository.getGroupSettlements(any()) } returns emptyList()
-        coEvery { cashTransferRepository.observeGroupCashTransfers(any()) } returns flowOf(emptyList())
+        coEvery { getNonRemovableGroupMembersUseCase(groupId) } returns emptyMap()
     }
 
     @Test
-    fun `removes member when balance is zero and validation passes`() = runTest {
-        coEvery {
-            getMemberBalancesFlowUseCase.computeMemberBalances(any())
-        } returns
-            listOf(MemberBalance(userId = memberToRemove))
-
+    fun `removes member when group is active, user is member, and not in nonRemovable map`() = runTest {
         val result = useCase(groupId, memberToRemove)
 
         assertTrue(result.isSuccess)
@@ -107,60 +70,63 @@ class RemoveGroupMemberUseCaseImplTest {
     }
 
     @Test
-    fun `fails when member is the creator`() = runTest {
-        val result = useCase(groupId, creatorId)
+    fun `fails with GroupArchivedException when group is archived`() = runTest {
+        coEvery { groupRepository.getGroupById(groupId) } returns testGroup.copy(status = GroupStatus.ARCHIVED)
 
-        val exception = result.exceptionOrNull() as CannotRemoveMemberException
+        val result = useCase(groupId, memberToRemove)
+
         assertTrue(result.isFailure)
-        assertTrue(exception.reason == CannotRemoveMemberException.Reason.IS_CREATOR)
+        assertTrue(result.exceptionOrNull() is GroupArchivedException)
     }
 
     @Test
-    fun `fails when member is not in group`() = runTest {
+    fun `fails with NOT_A_MEMBER when user is not in group`() = runTest {
         val result = useCase(groupId, "non-member")
 
-        val exception = result.exceptionOrNull() as CannotRemoveMemberException
         assertTrue(result.isFailure)
-        assertTrue(exception.reason == CannotRemoveMemberException.Reason.NOT_A_MEMBER)
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
+        assertEquals(CannotRemoveMemberException.Reason.NOT_A_MEMBER, exception.reason)
     }
 
     @Test
-    fun `fails when group has only one member`() = runTest {
-        coEvery { groupRepository.getGroupById(groupId) } returns
-            testGroup.copy(members = listOf(memberToRemove), createdBy = creatorId)
-
-        val result = useCase(groupId, memberToRemove)
-
-        val exception = result.exceptionOrNull() as CannotRemoveMemberException
-        assertTrue(result.isFailure)
-        assertTrue(exception.reason == CannotRemoveMemberException.Reason.LAST_MEMBER)
-    }
-
-    @Test
-    fun `fails when member has non-zero balance`() = runTest {
+    fun `fails with IS_CREATOR when getNonRemovableGroupMembersUseCase returns IS_CREATOR`() = runTest {
         coEvery {
-            getMemberBalancesFlowUseCase.computeMemberBalances(any())
-        } returns
-            listOf(MemberBalance(userId = memberToRemove, pocketBalance = 5000))
+            getNonRemovableGroupMembersUseCase(groupId)
+        } returns mapOf(creatorId to CannotRemoveMemberException.Reason.IS_CREATOR)
 
-        val result = useCase(groupId, memberToRemove)
+        val result = useCase(groupId, creatorId)
 
-        val exception = result.exceptionOrNull() as CannotRemoveMemberException
         assertTrue(result.isFailure)
-        assertTrue(exception.reason == CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
+        assertEquals(CannotRemoveMemberException.Reason.IS_CREATOR, exception.reason)
+        coVerify(exactly = 0) { groupRepository.removeMember(any(), any()) }
     }
 
     @Test
-    fun `fails when member balance entry is not found`() = runTest {
+    fun `fails with NON_ZERO_BALANCE when getNonRemovableGroupMembersUseCase returns NON_ZERO_BALANCE`() = runTest {
         coEvery {
-            getMemberBalancesFlowUseCase.computeMemberBalances(any())
-        } returns
-            emptyList()
+            getNonRemovableGroupMembersUseCase(groupId)
+        } returns mapOf(memberToRemove to CannotRemoveMemberException.Reason.NON_ZERO_BALANCE)
 
         val result = useCase(groupId, memberToRemove)
 
-        val exception = result.exceptionOrNull() as CannotRemoveMemberException
         assertTrue(result.isFailure)
-        assertTrue(exception.reason == CannotRemoveMemberException.Reason.USER_NOT_IN_BALANCES)
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
+        assertEquals(CannotRemoveMemberException.Reason.NON_ZERO_BALANCE, exception.reason)
+        coVerify(exactly = 0) { groupRepository.removeMember(any(), any()) }
+    }
+
+    @Test
+    fun `fails with LAST_MEMBER when getNonRemovableGroupMembersUseCase returns LAST_MEMBER`() = runTest {
+        coEvery {
+            getNonRemovableGroupMembersUseCase(groupId)
+        } returns mapOf(memberToRemove to CannotRemoveMemberException.Reason.LAST_MEMBER)
+
+        val result = useCase(groupId, memberToRemove)
+
+        assertTrue(result.isFailure)
+        val exception = result.exceptionOrNull() as CannotRemoveMemberException
+        assertEquals(CannotRemoveMemberException.Reason.LAST_MEMBER, exception.reason)
+        coVerify(exactly = 0) { groupRepository.removeMember(any(), any()) }
     }
 }

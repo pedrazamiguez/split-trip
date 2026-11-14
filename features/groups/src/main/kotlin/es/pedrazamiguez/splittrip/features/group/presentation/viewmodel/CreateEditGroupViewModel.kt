@@ -6,7 +6,6 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.LogTag
-import es.pedrazamiguez.splittrip.core.logging.sanitizer.maskEmail
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
@@ -18,6 +17,8 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupCurrenciesInUseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetNonRemovableGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -30,9 +31,18 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupSubmitEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.buildUpdatedExtraCurrencies
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.formatEventForLogging
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.loadEditGuard
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.resolveMemberRemovalBlockReason
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.toUiText
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -65,6 +75,8 @@ class CreateEditGroupViewModel(
     private val appConfigService: AppConfigService,
     private val authenticationService: AuthenticationService,
     private val getUserGroupsFlowUseCase: GetUserGroupsFlowUseCase,
+    private val getGroupCurrenciesInUseUseCase: GetGroupCurrenciesInUseUseCase,
+    private val getNonRemovableGroupMembersUseCase: GetNonRemovableGroupMembersUseCase,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -254,24 +266,44 @@ class CreateEditGroupViewModel(
 
     private fun handleCurrencySelected(code: String) {
         _uiState.update { state ->
-            val selected = state.availableCurrencies.find { it.code == code } ?: return
-            val updatedExtras = state.extraCurrencies
-                .filter { it.code != code }
-                .toImmutableList()
-            state.copy(selectedCurrency = selected, extraCurrencies = updatedExtras)
+            val selected = state.availableCurrencies.find { it.code == code } ?: return@update state
+            val updatedExtras = buildUpdatedExtraCurrencies(
+                previousCurrency = state.selectedCurrency,
+                newCode = code,
+                currentExtras = state.extraCurrencies,
+                currenciesInUse = state.currenciesInUse
+            )
+            state.copy(
+                selectedCurrency = selected,
+                extraCurrencies = updatedExtras,
+                error = null
+            )
         }
     }
 
     private fun handleExtraCurrencyToggled(code: String) {
-        _uiState.update { state ->
-            val currentExtras = state.extraCurrencies
+        val state = _uiState.value
+        val isDeselecting = state.extraCurrencies.any { it.code == code }
+        if (isDeselecting && code in state.currenciesInUse) {
+            viewModelScope.launch {
+                _actions.emit(
+                    CreateEditGroupUiAction.ShowError(
+                        UiText.StringResource(R.string.group_remove_currency_error_in_use, code)
+                    )
+                )
+            }
+            return
+        }
+
+        _uiState.update { current ->
+            val currentExtras = current.extraCurrencies
             val updatedExtras = if (currentExtras.any { it.code == code }) {
                 currentExtras.filter { it.code != code }
             } else {
-                val item = state.availableCurrencies.find { it.code == code } ?: return
+                val item = current.availableCurrencies.find { it.code == code } ?: return@update current
                 currentExtras + item
             }.toImmutableList()
-            state.copy(extraCurrencies = updatedExtras)
+            current.copy(extraCurrencies = updatedExtras, error = null)
         }
     }
 
@@ -308,11 +340,25 @@ class CreateEditGroupViewModel(
     }
 
     private fun handleMemberRemoved(event: CreateEditGroupUiEvent.MemberRemoved) {
-        _uiState.update { state ->
-            state.copy(
-                selectedMembers = state.selectedMembers
+        val state = _uiState.value
+        val blockReason = resolveMemberRemovalBlockReason(
+            isEditMode = state.isEditMode,
+            selectedMembersCount = state.selectedMembers.size,
+            nonRemovableMembers = state.nonRemovableMembers,
+            userId = event.user.userId
+        )
+        if (blockReason != null) {
+            viewModelScope.launch {
+                _actions.emit(CreateEditGroupUiAction.ShowError(blockReason.toUiText()))
+            }
+            return
+        }
+        _uiState.update { current ->
+            current.copy(
+                selectedMembers = current.selectedMembers
                     .filter { it.userId != event.user.userId }
-                    .toImmutableList()
+                    .toImmutableList(),
+                error = null
             )
         }
     }
@@ -417,6 +463,20 @@ class CreateEditGroupViewModel(
             memberProfiles[memberId] ?: User(userId = memberId, email = "")
         }
 
+        val currenciesInUse = loadEditGuard(
+            fallback = persistentSetOf(),
+            errorMessage = "Failed to load currencies in use for group ${group.id}"
+        ) {
+            getGroupCurrenciesInUseUseCase(group.id).toImmutableSet()
+        }
+
+        val nonRemovableMembers = loadEditGuard(
+            fallback = persistentMapOf(),
+            errorMessage = "Failed to load non-removable members for group ${group.id}"
+        ) {
+            getNonRemovableGroupMembersUseCase(group.id).toImmutableMap()
+        }
+
         _uiState.update {
             it.copy(
                 isLoading = false,
@@ -427,7 +487,9 @@ class CreateEditGroupViewModel(
                 availableCurrencies = mappedCurrencies,
                 selectedCurrency = selectedCurrencyModel,
                 extraCurrencies = extraCurrencyModels.toImmutableList(),
+                currenciesInUse = currenciesInUse,
                 selectedMembers = memberUsers.toImmutableList(),
+                nonRemovableMembers = nonRemovableMembers,
                 imageUrl = group.mainImagePath,
                 localGroupImagePath = group.mainImagePath,
                 isLoadingCurrencies = false
@@ -529,21 +591,5 @@ class CreateEditGroupViewModel(
     companion object {
         private const val MEMBER_SEARCH_DEBOUNCE_MS = 300L
         private const val MEMBER_SEARCH_MIN_QUERY_LENGTH = 3
-    }
-}
-
-private fun formatEventForLogging(event: CreateEditGroupUiEvent): String {
-    return when (event) {
-        is CreateEditGroupUiEvent.MemberSearchQueryChanged ->
-            "MemberSearchQueryChanged(queryLength=${event.query.length})"
-        is CreateEditGroupUiEvent.MemberSelected ->
-            "MemberSelected(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
-        is CreateEditGroupUiEvent.MemberRemoved ->
-            "MemberRemoved(userId=${event.user.userId}, email=${event.user.email.maskEmail()})"
-        is CreateEditGroupUiEvent.MemberScanned ->
-            "MemberScanned(userId=${event.userId}, email=${event.email.maskEmail()})"
-        is CreateEditGroupUiEvent.UnregisteredMemberDisplayNameChanged ->
-            "UnregisteredMemberDisplayNameChanged(userId=${event.userId}, nameLength=${event.displayName.length})"
-        else -> event::class.java.simpleName
     }
 }
