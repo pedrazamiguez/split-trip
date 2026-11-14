@@ -43,11 +43,6 @@ data class AddExpenseUiState(
     val selectedCurrency: CurrencyUiModel? = null,
     val selectedPaymentMethod: PaymentMethodUiModel? = null,
     val selectedFundingSource: FundingSourceUiModel? = null,
-    /**
-     * Contextual hint displayed when "My Money" funding source is selected.
-     * Explains that the user will be reimbursed for others' shares.
-     */
-    val fundingSourceHint: UiText? = null,
     val selectedCategory: CategoryUiModel? = null,
     val selectedSubcategory: SubcategoryUiModel? = null,
     val selectedPaymentStatus: PaymentStatusUiModel? = null,
@@ -276,7 +271,7 @@ data class AddExpenseUiState(
 
     // ── Wizard computed properties ──────────────────────────────────────
 
-    /** True when the contribution scope step should be shown (funding source = "My Money"). */
+    /** True when the contribution scope step should be shown (funding source = "Your Money"). */
     val showContributionScopeStep: Boolean
         get() = selectedFundingSource?.id == PayerType.USER.name
 

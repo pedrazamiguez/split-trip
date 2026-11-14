@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.model.CashTranchePreview
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.WithdrawalPoolOption
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toFundingSourceDescriptionRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toFundingSourceStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
@@ -78,7 +79,9 @@ class AddExpenseOptionsUiMapper(
             .map { payerType ->
                 FundingSourceUiModel(
                     id = payerType.name,
-                    displayText = resourceProvider.getString(payerType.toFundingSourceStringRes())
+                    displayText = resourceProvider.getString(payerType.toFundingSourceStringRes()),
+                    description = resourceProvider.getString(payerType.toFundingSourceDescriptionRes()),
+                    icon = payerType.toIconVector()
                 )
             }.toImmutableList()
 

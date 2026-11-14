@@ -105,7 +105,9 @@ val expensesDomainModule = module {
         GetGroupExpenseConfigUseCaseImpl(
             groupRepository = get<GroupRepository>(),
             currencyRepository = get<CurrencyRepository>(),
-            subunitRepository = get<SubunitRepository>()
+            subunitRepository = get<SubunitRepository>(),
+            contributionRepository = get<ContributionRepository>(),
+            cashWithdrawalRepository = get<CashWithdrawalRepository>()
         )
     }
     factory { AddOnResolverFactory() }

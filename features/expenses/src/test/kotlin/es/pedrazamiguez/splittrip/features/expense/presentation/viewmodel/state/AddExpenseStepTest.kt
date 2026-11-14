@@ -242,8 +242,8 @@ class AddExpenseStepTest {
         }
 
         @Test
-        fun `CONTRIBUTION_SCOPE is not optional`() {
-            assertFalse(AddExpenseStep.CONTRIBUTION_SCOPE.isOptional)
+        fun `CONTRIBUTION_SCOPE is optional`() {
+            assertTrue(AddExpenseStep.CONTRIBUTION_SCOPE.isOptional)
         }
 
         @Test
@@ -279,15 +279,15 @@ class AddExpenseStepTest {
     inner class MinimumViablePath {
 
         @Test
-        fun `mandatory non-review steps are TITLE PAYMENT_METHOD AMOUNT and CONTRIBUTION_SCOPE`() {
-            // TITLE, PAYMENT_METHOD, AMOUNT are always-shown mandatory steps.
-            // CONTRIBUTION_SCOPE is also mandatory when shown (conditional on FUNDING_SOURCE=MY_MONEY).
+        fun `mandatory non-review steps are TITLE PAYMENT_METHOD and AMOUNT`() {
+            // TITLE, PAYMENT_METHOD, and AMOUNT are always-shown mandatory steps.
+            // CONTRIBUTION_SCOPE is optional and defaults to PayerType.USER ("For you").
             val mandatoryNonReview = AddExpenseStep.entries.filter { !it.isOptional && !it.isReview }
-            assertEquals(4, mandatoryNonReview.size)
+            assertEquals(3, mandatoryNonReview.size)
             assertTrue(mandatoryNonReview.contains(AddExpenseStep.TITLE))
             assertTrue(mandatoryNonReview.contains(AddExpenseStep.PAYMENT_METHOD))
             assertTrue(mandatoryNonReview.contains(AddExpenseStep.AMOUNT))
-            assertTrue(mandatoryNonReview.contains(AddExpenseStep.CONTRIBUTION_SCOPE))
+            assertFalse(mandatoryNonReview.contains(AddExpenseStep.CONTRIBUTION_SCOPE))
         }
 
         @Test
@@ -298,16 +298,14 @@ class AddExpenseStepTest {
         }
 
         @Test
-        fun `all steps after AMOUNT and before REVIEW are optional except CONTRIBUTION_SCOPE`() {
+        fun `all steps after AMOUNT and before REVIEW are optional`() {
             // Every step strictly between AMOUNT and REVIEW must be optional
-            // unless it is the conditional CONTRIBUTION_SCOPE step
             val steps = AddExpenseStep.entries.toList()
             val amountIdx = steps.indexOf(AddExpenseStep.AMOUNT)
             val reviewIdx = steps.indexOf(AddExpenseStep.REVIEW)
             val middle = steps.subList(amountIdx + 1, reviewIdx)
             val mandatoryMiddle = middle.filter { !it.isOptional }
-            // Only CONTRIBUTION_SCOPE should be mandatory in this range
-            assertEquals(listOf(AddExpenseStep.CONTRIBUTION_SCOPE), mandatoryMiddle)
+            assertTrue(mandatoryMiddle.isEmpty())
         }
 
         @Test

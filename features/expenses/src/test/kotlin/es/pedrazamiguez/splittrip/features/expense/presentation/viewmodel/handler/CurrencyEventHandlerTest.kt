@@ -61,7 +61,7 @@ class CurrencyEventHandlerTest {
     private val debitCardPaymentMethod = PaymentMethodUiModel(id = "DEBIT_CARD", displayText = "Debit Card")
 
     private val groupFundingSource = FundingSourceUiModel(id = "GROUP", displayText = "Group Pocket")
-    private val userFundingSource = FundingSourceUiModel(id = "USER", displayText = "My Money")
+    private val userFundingSource = FundingSourceUiModel(id = "USER", displayText = "Your Money")
 
     /** Initial state simulating a CASH + foreign-currency scenario. */
     private val cashForeignState = AddExpenseUiState(

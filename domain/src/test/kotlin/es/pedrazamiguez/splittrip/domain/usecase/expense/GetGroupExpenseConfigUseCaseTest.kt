@@ -1,27 +1,58 @@
 package es.pedrazamiguez.splittrip.domain.usecase.expense
 
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
+import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.GetGroupExpenseConfigUseCaseImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class GetGroupExpenseConfigUseCaseTest {
 
-    private val groupRepository = mockk<GroupRepository>()
-    private val currencyRepository = mockk<CurrencyRepository>()
-    private val subunitRepository = mockk<SubunitRepository> {
-        coEvery { getGroupSubunits(any()) } returns emptyList()
+    private lateinit var groupRepository: GroupRepository
+    private lateinit var currencyRepository: CurrencyRepository
+    private lateinit var subunitRepository: SubunitRepository
+    private lateinit var contributionRepository: ContributionRepository
+    private lateinit var cashWithdrawalRepository: CashWithdrawalRepository
+    private lateinit var useCase: GetGroupExpenseConfigUseCaseImpl
+
+    @BeforeEach
+    fun setUp() {
+        groupRepository = mockk()
+        currencyRepository = mockk()
+        subunitRepository = mockk {
+            coEvery { getGroupSubunits(any()) } returns emptyList()
+        }
+        contributionRepository = mockk {
+            every { getGroupContributionsFlow(any()) } returns flowOf(emptyList())
+        }
+        cashWithdrawalRepository = mockk {
+            every { getGroupWithdrawalsFlow(any()) } returns flowOf(emptyList())
+        }
+        useCase = GetGroupExpenseConfigUseCaseImpl(
+            groupRepository = groupRepository,
+            currencyRepository = currencyRepository,
+            subunitRepository = subunitRepository,
+            contributionRepository = contributionRepository,
+            cashWithdrawalRepository = cashWithdrawalRepository
+        )
     }
-    private val useCase = GetGroupExpenseConfigUseCaseImpl(groupRepository, currencyRepository, subunitRepository)
 
     private val testCurrencies = listOf(
         Currency("EUR", "€", "Euro", 2),
@@ -190,5 +221,116 @@ class GetGroupExpenseConfigUseCaseTest {
 
         // Then
         coVerify { currencyRepository.getCurrencies(false) }
+    }
+
+    @Nested
+    inner class PocketActivityDetection {
+
+        private val groupId = "group-123"
+        private val group = Group(
+            id = groupId,
+            name = "Test Group",
+            currency = "EUR",
+            extraCurrencies = emptyList()
+        )
+
+        @BeforeEach
+        fun setUpGroupAndCurrencies() {
+            coEvery { groupRepository.getGroupById(groupId) } returns group
+            coEvery { currencyRepository.getCurrencies(any()) } returns testCurrencies
+        }
+
+        @Test
+        fun `hasManualPocketContributions is false when no contributions and no withdrawals exist`() = runTest {
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(emptyList())
+            every { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(emptyList())
+
+            val config = useCase(groupId).getOrThrow()
+
+            assertFalse(config.hasManualPocketContributions)
+        }
+
+        @Test
+        fun `hasManualPocketContributions is false when only expense-linked contributions exist`() = runTest {
+            val expenseLinked = Contribution(
+                id = "c-1",
+                groupId = groupId,
+                linkedExpenseId = "exp-1",
+                linkedSettlementId = null
+            )
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(listOf(expenseLinked))
+
+            val config = useCase(groupId).getOrThrow()
+
+            assertFalse(config.hasManualPocketContributions)
+        }
+
+        @Test
+        fun `hasManualPocketContributions is false when only settlement-linked contributions exist`() = runTest {
+            val settlementLinked = Contribution(
+                id = "c-2",
+                groupId = groupId,
+                linkedExpenseId = null,
+                linkedSettlementId = "settle-1"
+            )
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(listOf(settlementLinked))
+
+            val config = useCase(groupId).getOrThrow()
+
+            assertFalse(config.hasManualPocketContributions)
+        }
+
+        @Test
+        fun `hasManualPocketContributions is true when at least one manual contribution exists`() = runTest {
+            val manual = Contribution(
+                id = "c-3",
+                groupId = groupId,
+                linkedExpenseId = null,
+                linkedSettlementId = null
+            )
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(listOf(manual))
+
+            val config = useCase(groupId).getOrThrow()
+
+            assertTrue(config.hasManualPocketContributions)
+        }
+
+        @Test
+        fun `hasManualPocketContributions is true when mix of linked and manual contributions exist`() = runTest {
+            val expenseLinked = Contribution(
+                id = "c-1",
+                groupId = groupId,
+                linkedExpenseId = "exp-1",
+                linkedSettlementId = null
+            )
+            val manual = Contribution(
+                id = "c-2",
+                groupId = groupId,
+                linkedExpenseId = null,
+                linkedSettlementId = null
+            )
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns
+                flowOf(listOf(expenseLinked, manual))
+
+            val config = useCase(groupId).getOrThrow()
+
+            assertTrue(config.hasManualPocketContributions)
+        }
+
+        @Test
+        fun `hasManualPocketContributions is true with a cash withdrawal`() = runTest {
+            val withdrawal = CashWithdrawal(
+                id = "w-1",
+                groupId = groupId,
+                amountWithdrawn = 10000L,
+                remainingAmount = 10000L
+            )
+            every { contributionRepository.getGroupContributionsFlow(groupId) } returns flowOf(emptyList())
+            every { cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId) } returns flowOf(listOf(withdrawal))
+
+            val config = useCase(groupId).getOrThrow()
+
+            assertTrue(config.hasManualPocketContributions)
+        }
     }
 }

@@ -252,9 +252,11 @@
     <string name="add_expense_add_on_value_type_percentage_resolved_desc">Carculao como un porçentahe del importe der gâtto (%1$s = %2$s)</string>
     <string name="add_expense_impact_entered_amount">Importe introduçío</string>
     <string name="funding_source_title">Pagao dêdde</string>
+    <string name="funding_source_subtitle">Elihe çi êtte pago çale der pockêh der grupo o de tu propio dinero.</string>
     <string name="funding_source_group_pocket">Pockêh der grupo</string>
-    <string name="funding_source_my_money">Mi dinero</string>
-    <string name="funding_source_my_money_hint">Çe te reemborçará la parte de lô demâh</string>
+    <string name="funding_source_group_pocket_description">Er dinero compartío que er grupo a reunío con aportaçionê prebiâ en er pockêh birtuâh. Úçalo çi pagâ con eçô fondô.</string>
+    <string name="funding_source_your_money">Tu dinero</string>
+    <string name="funding_source_your_money_description">Pagâ con tu propio dinero. SplîTTrîh rehîttra er gâtto y reparte la parte de cá uno pa que te lo reemborçen dêppuêh.</string>
     <string name="expense_wizard_step_funding_source">Orihen</string>
     <string name="expense_review_funding_source">Pagao dêdde</string>
     <string name="expense_contribution_scope_title">¿A quién çe le acredita?</string>

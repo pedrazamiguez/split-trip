@@ -12,8 +12,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizar
  *   4. exchange rate (conditional: foreign currency selected; optional — defaults to last-used/fetched rate)
  *   5. split among members (conditional: group has >1 member; optional — defaults to equal split)
  *   6. category (always, optional — may be skipped)
- *   7. funding source (always, optional — defaults to "Group Pocket")
- *   8. contribution scope (conditional: funding source = "My Money"; mandatory when shown)
+ *   7. funding source (always, optional — defaults based on group pocket activity)
+ *   8. contribution scope (conditional: funding source = "Your Money"; optional — defaults to "For you")
  *   9. vendor + notes (always, optional — may be skipped)
  *  10. payment status / scheduling (always, optional — defaults to "Paid")
  *  11. receipt (always, optional — may be skipped)
@@ -62,16 +62,16 @@ enum class AddExpenseStep(
     CATEGORY(isOptional = true),
 
     /**
-     * Funding source — always shown ("Group Pocket" or "My Money").
-     * Optional: defaults to "Group Pocket" when skipped.
+     * Funding source — always shown ("Group Pocket" or "Your Money").
+     * Optional: defaults to "Your Money" when no manual pocket activity exists, or "Group Pocket" otherwise.
      */
     FUNDING_SOURCE(isOptional = true),
 
     /**
-     * Contribution scope — only when funding source is "My Money" (USER).
-     * Mandatory when shown: the user must choose a scope explicitly.
+     * Contribution scope — only when funding source is "Your Money" (USER).
+     * Optional: defaults to USER ("For you") when skipped.
      */
-    CONTRIBUTION_SCOPE,
+    CONTRIBUTION_SCOPE(isOptional = true),
 
     /** Vendor and optional notes — optional, may be skipped. */
     VENDOR_NOTES(isOptional = true),
@@ -95,7 +95,7 @@ enum class AddExpenseStep(
         /**
          * Returns the ordered list of steps applicable to the current form state.
          *
-         * @param showContributionScopeStep `true` when funding source is "My Money" (USER).
+         * @param showContributionScopeStep `true` when funding source is "Your Money" (USER).
          * @param showExchangeRateSection `true` when a foreign currency is selected.
          * @param hasSplit `true` when the group has more than one member.
          */

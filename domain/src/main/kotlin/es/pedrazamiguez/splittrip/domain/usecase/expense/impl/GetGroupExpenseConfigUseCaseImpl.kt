@@ -1,15 +1,20 @@
 package es.pedrazamiguez.splittrip.domain.usecase.expense.impl
 
 import es.pedrazamiguez.splittrip.domain.model.GroupExpenseConfig
+import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
+import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
+import kotlinx.coroutines.flow.first
 
 class GetGroupExpenseConfigUseCaseImpl(
     private val groupRepository: GroupRepository,
     private val currencyRepository: CurrencyRepository,
-    private val subunitRepository: SubunitRepository
+    private val subunitRepository: SubunitRepository,
+    private val contributionRepository: ContributionRepository,
+    private val cashWithdrawalRepository: CashWithdrawalRepository
 ) : GetGroupExpenseConfigUseCase {
 
     /**
@@ -41,11 +46,18 @@ class GetGroupExpenseConfigUseCaseImpl(
             // Fetch subunits for subunit-aware splitting (one-shot read, no cloud side-effects)
             val subunits = subunitRepository.getGroupSubunits(groupId)
 
+            val contributions = contributionRepository.getGroupContributionsFlow(groupId).first()
+            val withdrawals = cashWithdrawalRepository.getGroupWithdrawalsFlow(groupId).first()
+            val hasManualPocketContributions =
+                contributions.any { it.linkedExpenseId == null && it.linkedSettlementId == null } ||
+                    withdrawals.isNotEmpty()
+
             GroupExpenseConfig(
                 group = group,
                 groupCurrency = groupCurrency,
                 availableCurrencies = availableCurrencies,
-                subunits = subunits
+                subunits = subunits,
+                hasManualPocketContributions = hasManualPocketContributions
             )
         }
 }
