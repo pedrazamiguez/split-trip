@@ -165,5 +165,6 @@
     <string name="currency_picker_title">Çelêççionâh moneda</string>
     <string name="currency_picker_search_placeholder">Bûccâh por código o nombre</string>
     <string name="currency_picker_empty">No çe encontraron monedâ</string>
+    <string name="session_expired_message">Tu çeçión a caducao. Iniçia çeçión de nuebo.</string>
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

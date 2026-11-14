@@ -210,6 +210,9 @@
     <string name="currency_picker_search_placeholder">Search by currency code or name</string>
     <string name="currency_picker_empty">No currencies found</string>
 
+    <!-- Session Expiration -->
+    <string name="session_expired_message">Your session has expired. Please sign in again.</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

@@ -37,6 +37,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.SessionExpirationGuard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.ArithmeticOperatorBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.LocalArithmeticKeyboardState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.BrandedLoadingScreen
@@ -53,6 +54,7 @@ import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.HandleSessionExpiredUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricLockEnabledUseCase
@@ -88,6 +90,7 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val getBiometricLockEnabledUseCase = remember(koin) { koin.get<GetBiometricLockEnabledUseCase>() }
     val getBiometricCapabilityUseCase = remember(koin) { koin.get<GetBiometricCapabilityUseCase>() }
     val authenticationService = remember(koin) { koin.get<AuthenticationService>() }
+    val handleSessionExpiredUseCase = remember(koin) { koin.get<HandleSessionExpiredUseCase>() }
     val warmCurrencyCacheUseCase = remember(koin) { koin.get<WarmCurrencyCacheUseCase>() }
     val userPreferenceRepository = remember(koin) { koin.get<UserPreferenceRepository>() }
     val checkPendingReconciliationUseCase = remember(koin) { koin.get<CheckPendingReconciliationUseCase>() }
@@ -214,15 +217,26 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     }
 
     val pillController = rememberTopPillController()
+    val isBiometricPreferenceLoaded = isUserLoggedIn != true ||
+        onboardingCompleted != true ||
+        biometricLockEnabled != null
+    val isNavHostReady = stableStartDestination.value != null && isBiometricPreferenceLoaded && !isAppLocked
 
     CompositionLocalProvider(
         LocalRootNavController provides navController,
         LocalTopPillController provides pillController
     ) {
+        SessionExpirationGuard(
+            isUserLoggedIn = isUserLoggedIn,
+            isExplicitSignOut = { authenticationService.isExplicitSignOut() },
+            isNavHostReady = isNavHostReady,
+            stableStartDestination = stableStartDestination.value,
+            navController = navController,
+            pillController = pillController,
+            onHandleSessionExpired = { handleSessionExpiredUseCase() }
+        )
+
         Box(modifier = Modifier.fillMaxSize()) {
-            val isBiometricPreferenceLoaded = isUserLoggedIn != true ||
-                onboardingCompleted != true ||
-                biometricLockEnabled != null
             DeferredLoadingContainer(
                 isLoading = stableStartDestination.value == null || !isBiometricPreferenceLoaded,
                 loadingContent = {

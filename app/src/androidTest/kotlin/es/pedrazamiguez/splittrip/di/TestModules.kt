@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.domain.enums.BiometricCapability
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.usecase.auth.HandleSessionExpiredUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricCapabilityUseCase
@@ -48,12 +49,15 @@ fun createAppNavHostTestModule(
     authStateFlow: Flow<Boolean> = MutableStateFlow(false),
     onboardingFlow: Flow<Boolean> = flowOf(false),
     biometricLockEnabledFlow: Flow<Boolean> = flowOf(false),
-    biometricCapability: BiometricCapability = BiometricCapability.AVAILABLE
+    biometricCapability: BiometricCapability = BiometricCapability.AVAILABLE,
+    isExplicitSignOut: Boolean = false,
+    handleSessionExpiredUseCase: HandleSessionExpiredUseCase = createDefaultHandleSessionExpiredUseCase()
 ) = module {
     // ── Domain services ───────────────────────────────────────────────
     single<AuthenticationService> {
         mockk<AuthenticationService>(relaxed = true).apply {
             every { authState } returns authStateFlow
+            every { isExplicitSignOut() } returns isExplicitSignOut
         }
     }
 
@@ -95,9 +99,16 @@ fun createAppNavHostTestModule(
 
     factory<CheckPendingReconciliationUseCase> { mockk(relaxed = true) }
 
+    factory<HandleSessionExpiredUseCase> { handleSessionExpiredUseCase }
+
     // ── Currency cache warm-up (fire-and-forget, no-op in tests) ────
     factory<WarmCurrencyCacheUseCase> { mockk(relaxed = true) }
 
     // ── Deep link holder for cold start replay ──────────────────────
     single { DeepLinkHolder() }
 }
+
+private fun createDefaultHandleSessionExpiredUseCase(): HandleSessionExpiredUseCase =
+    mockk<HandleSessionExpiredUseCase>(relaxed = true).apply {
+        coEvery { this@apply.invoke() } returns Result.success(Unit)
+    }
