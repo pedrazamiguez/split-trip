@@ -20,7 +20,7 @@
     <string name="balances_total_extras">Extras</string>
     <string name="balances_error_loading">No se pudieron cargar los balances</string>
     <string name="balances_empty_title">Sin actividad todavía</string>
-    <string name="balances_empty_description">Añade una aportación al pocket del grupo para empezar</string>
+    <string name="balances_empty_description">Registra gastos pagados de tu bolsillo para ver quién debe a quién, o añade una aportación si compartís un pocket común.</string>
 
     <!-- Member Balances -->
     <string name="balances_member_balances_title">Balances por miembro</string>
@@ -140,5 +140,9 @@
     <!-- Main Action -->
     <string name="balances_filter">Filtrar balances</string>
     <string name="balances_your_balance_title">Tu balance</string>
+
+    <!-- Category Spending -->
+    <string name="balances_category_spending_empty_title">Sin gastos todavía</string>
+    <string name="balances_category_spending_empty_description">Los gastos registrados en este grupo aparecerán aquí desglosados por categoría.</string>
 
 </resources>

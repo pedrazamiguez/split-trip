@@ -53,8 +53,8 @@ fun CategorySpendingScreen(
             item {
                 if (uiState.items.isEmpty()) {
                     EmptyStateView(
-                        title = stringResource(R.string.balances_empty_title),
-                        description = stringResource(R.string.balances_empty_description),
+                        title = stringResource(R.string.balances_category_spending_empty_title),
+                        description = stringResource(R.string.balances_category_spending_empty_description),
                         icon = TablerIcons.Outline.Receipt
                     )
                 } else {

@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Onboarding Screen -->
-    <string name="onboarding_welcome_title">¿Listo para viajar sin líos?</string>
-    <string name="onboarding_welcome_subtitle">Comparte gastos con tu grupo sin conversaciones incómodas sobre dinero</string>
+    <string name="onboarding_welcome_title">Viaja en grupo sin hojas de cálculo</string>
+    <string name="onboarding_welcome_subtitle">Registra gastos de tu bolsillo en segundos o comparte un Pocket del grupo</string>
     <string name="onboarding_complete_button">¡Empezamos!</string>
     <string name="onboarding_next_button">Siguiente</string>
     <string name="onboarding_back_button">Atrás</string>
     <string name="onboarding_skip_button">Saltar</string>
-    <string name="onboarding_step_trips_title">Viajes y grupos</string>
-    <string name="onboarding_step_trips_description">Organiza los gastos del viaje con tus amigos, gestiona múltiples divisas y mantén las cuentas claras de principio a fin.</string>
-    <string name="onboarding_step_split_title">Reparto inteligente</string>
-    <string name="onboarding_step_split_description">Divide los gastos a tu manera: a partes iguales, importes exactos, porcentajes o subunidades para parejas y familias. Adjunta tickets para un registro transparente.</string>
-    <string name="onboarding_step_cash_title">Efectivo y Pocket</string>
-    <string name="onboarding_step_cash_description">Controla el efectivo físico compartido junto con los pagos con tarjeta. Registra retiradas y aportaciones al pocket con conversión de divisas automática.</string>
+    <string name="onboarding_step_trips_title">Viajes sin hojas de cálculo</string>
+    <string name="onboarding_step_trips_description">Olvídate de hacer cuentas a mano o cambiar divisas en notas aparte. Organiza los gastos del grupo en cualquier moneda con conversión automática de principio a fin.</string>
+    <string name="onboarding_step_split_title">Registro rápido y reparto inteligente</string>
+    <string name="onboarding_step_split_description">Apunta un gasto en 3 pasos con valores por defecto. Personaliza el reparto (igual, exacto, porcentaje o subunidades para parejas y familias), extras y recibos solo cuando los necesites.</string>
+    <string name="onboarding_step_cash_title">Tu dinero o Pocket del grupo</string>
+    <string name="onboarding_step_cash_description">Paga de tu bolsillo con Tu dinero como en cualquier divisor de gastos, o reúne fondos en el Pocket del grupo para controlar retiradas en cajeros y comisiones en varias divisas.</string>
     <string name="onboarding_step_notifications_title">Notificaciones en tiempo real</string>
     <string name="onboarding_step_notifications_description">Entérate al instante de nuevos gastos compartidos, deudas por consenso y confirmaciones de pago.</string>
     <string name="onboarding_enable_notifications_button">Activar notificaciones</string>
     <string name="onboarding_notifications_enabled">Notificaciones activadas</string>
     <string name="onboarding_step_settle_title">Consenso y acuerdos de pago</string>
-    <string name="onboarding_step_settle_description">Conoce tu saldo exacto en cualquier momento. Salda cuentas fácilmente con confirmación mutua para que todos estén de acuerdo.</string>
+    <string name="onboarding_step_settle_description">Consulta Tu balance en cualquier momento para ver quién debe a quién y tu parte del pocket. Salda deudas con confirmación mutua para que todos estéis de acuerdo.</string>
 
     <!-- Reconciliation Screen -->
     <string name="reconciliation_title">¡Te estábamos esperando!</string>

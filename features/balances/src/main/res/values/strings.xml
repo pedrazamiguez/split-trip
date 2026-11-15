@@ -16,7 +16,7 @@
     <string name="balances_total_extras">Extras</string>
     <string name="balances_error_loading">Failed to load balances</string>
     <string name="balances_empty_title">No activity yet</string>
-    <string name="balances_empty_description">Add a contribution to the group pocket to get started</string>
+    <string name="balances_empty_description">Log expenses paid out of pocket to see who owes whom, or add a contribution if your group shares a common pocket.</string>
 
     <!-- Member Balances -->
     <string name="balances_member_balances_title">Member balances</string>
@@ -143,6 +143,8 @@
     <string name="balances_category_spending_title">Category spending</string>
     <string name="balances_category_expand">Show subcategories for %1$s</string>
     <string name="balances_category_collapse">Hide subcategories for %1$s</string>
+    <string name="balances_category_spending_empty_title">No spending yet</string>
+    <string name="balances_category_spending_empty_description">Expenses logged in this group will appear here broken down by category.</string>
 
 </resources>
 
