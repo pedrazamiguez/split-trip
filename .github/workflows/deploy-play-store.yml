@@ -28,6 +28,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      issues: read
     env:
       OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
@@ -85,40 +86,53 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p distribution/whatsnew
+          cleanup() {
+            rm -f /tmp/pr_develop.json /tmp/pr_main.json /tmp/commit_prs.json /tmp/pr_body.md /tmp/issue_body.md
+          }
+          trap cleanup EXIT
 
           CURRENT_VERSION="${{ steps.version_extractor.outputs.VERSION_NAME }}"
-          LATEST_TAG=$(git tag -l "v*" | grep -v "v${CURRENT_VERSION}" | sort -V | tail -n 1)
+          LATEST_TAG=$(git tag -l "v*" --merged HEAD | grep -Fxv "v${CURRENT_VERSION}" | sort -V | tail -n 1 || true)
 
           if [ -n "$LATEST_TAG" ]; then
-            SEARCH_FILTER="merged:>$(git show -s --format=%cI $(git rev-list -n 1 $LATEST_TAG))"
+            TAG_DATE=$(git show -s --format=%cI "$(git rev-list -n 1 "$LATEST_TAG")")
+            SEARCH_FILTER="merged:>${TAG_DATE}"
           else
             SEARCH_FILTER=""
           fi
 
-          # Query merged PRs between tags
-          SEARCH_QUERY="is:pr is:merged base:develop $SEARCH_FILTER"
-          PRS_JSON=$(gh pr list --search "$SEARCH_QUERY" --json number,title,labels --limit 20 2>/dev/null || echo "[]")
+          gh pr list --search "is:pr is:merged base:develop $SEARCH_FILTER" --json number,title,labels,mergedAt --limit 100 > /tmp/pr_develop.json 2>/dev/null || echo "[]" > /tmp/pr_develop.json
+          gh pr list --search "is:pr is:merged base:main $SEARCH_FILTER" --json number,title,labels,mergedAt --limit 100 > /tmp/pr_main.json 2>/dev/null || echo "[]" > /tmp/pr_main.json
 
-          # Extract concise summary lines (strip issue codes like [SPLTRP-xxxx])
-          BULLETS=$(echo "$PRS_JSON" | jq -r '.[] | "- " + (.title | sub("\\[(SPLTRP|EXSHAPP)-[0-9]{4}\\]:?\\s*"; ""))' | head -n 5)
+          HEAD_SHA=$(git rev-parse HEAD)
+          gh api "repos/${{ github.repository }}/commits/${HEAD_SHA}/pulls" > /tmp/commit_prs.json 2>/dev/null || echo "[]" > /tmp/commit_prs.json
 
-          if [ -z "$BULLETS" ]; then
-            BULLETS="- Performance improvements and bug fixes."
-            BULLETS_ES="- Mejoras de rendimiento y corrección de errores."
+          ISSUE_NUMBER=$(python3 scripts/generate_play_store_whatsnew.py \
+            --print-linked-issue \
+            --pr-json-file /tmp/commit_prs.json \
+            --pr-body-file /tmp/pr_body.md \
+            --commit-message "$(git log -1 --pretty=%B)")
+
+          if [ -n "$ISSUE_NUMBER" ]; then
+            gh api "repos/${{ github.repository }}/issues/${ISSUE_NUMBER}" --jq '.body // ""' > /tmp/issue_body.md 2>/dev/null || : > /tmp/issue_body.md
           else
-            BULLETS_ES="$BULLETS"
+            : > /tmp/issue_body.md
           fi
 
-          # Google Play enforces strict 500 characters maximum per whatsnew file
-          echo "$BULLETS" | head -c 490 > distribution/whatsnew/whatsnew-en-US
-          echo "$BULLETS_ES" | head -c 490 > distribution/whatsnew/whatsnew-es-ES
+          python3 scripts/generate_play_store_whatsnew.py \
+            --whatsnew-dir distribution/whatsnew \
+            --develop-prs-file /tmp/pr_develop.json \
+            --main-prs-file /tmp/pr_main.json \
+            --pr-body-file /tmp/pr_body.md \
+            --issue-body-file /tmp/issue_body.md \
+            --github-output "$GITHUB_OUTPUT"
 
           echo "Release Notes (en-US):"
           cat distribution/whatsnew/whatsnew-en-US
           echo ""
           echo "Release Notes (es-ES):"
           cat distribution/whatsnew/whatsnew-es-ES
+          echo ""
 
       - name: Decode Google Services configuration
         env:
@@ -233,3 +247,5 @@ jobs:
           echo "| **Target Track** | \`${{ steps.track_resolver.outputs.TRACK }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Artifact** | \`app-release.aab\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Deobfuscation Mapping** | Uploaded (\`mapping.txt\`) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Release Notes (en-US)** | \`${{ steps.release_notes.outputs.EN_SOURCE }}\` (\`${{ steps.release_notes.outputs.EN_LENGTH }}\` chars) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Release Notes (es-ES)** | \`${{ steps.release_notes.outputs.ES_SOURCE }}\` (\`${{ steps.release_notes.outputs.ES_LENGTH }}\` chars) |" >> $GITHUB_STEP_SUMMARY

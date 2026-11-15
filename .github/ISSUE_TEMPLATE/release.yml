@@ -23,5 +23,10 @@ body:
     id: notes
     attributes:
       label: Release Notes / Context
-      description: Any specific notes for this release (optional).
-      placeholder: Summary of changes...
+      description: Optional curated Google Play Store release notes (max 500 chars per locale). Leave blank to auto-generate from user-facing PRs (`feature`, `bug`, `enhancement`, `hotfix`) with localized Spanish summaries.
+      placeholder: |
+        #### en-US
+        - Highlighted user-facing changes in English.
+
+        #### es-ES
+        - Cambios destacados para los usuarios en español.
