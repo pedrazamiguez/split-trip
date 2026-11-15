@@ -207,7 +207,7 @@ When the user taps a different chip, `AddExpenseViewModel` routes `WithdrawalPoo
 ```
 ┌─────────────────────────────────────────────────────┐
 │ Choose cash source:                                 │
-│  ● My personal cash  (฿ 800 available)              │
+│  ● Your personal cash  (฿ 800 available)            │
 │  ○ Group cash        (฿ 5,000 available)            │
 └─────────────────────────────────────────────────────┘
 ```

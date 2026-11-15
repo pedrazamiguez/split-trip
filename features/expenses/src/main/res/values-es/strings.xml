@@ -296,14 +296,14 @@
     <string name="add_expense_impact_entered_amount">Importe introducido</string>
 
     
-    <string name="funding_source_title">Pagado desde</string>
+    <string name="funding_source_title">Pagado con</string>
     <string name="funding_source_subtitle">Elige si este pago sale del pocket del grupo o de tu propio dinero.</string>
     <string name="funding_source_group_pocket">Pocket del grupo</string>
     <string name="funding_source_group_pocket_description">El dinero compartido que el grupo ha reunido con aportaciones previas en el pocket virtual. Úsalo si pagas con esos fondos.</string>
     <string name="funding_source_your_money">Tu dinero</string>
     <string name="funding_source_your_money_description">Pagas con tu propio dinero. SplitTrip registra el gasto y reparte la parte de cada uno para que te lo reembolsen después.</string>
     <string name="expense_wizard_step_funding_source">Origen</string>
-    <string name="expense_review_funding_source">Pagado desde</string>
+    <string name="expense_review_funding_source">Pagado con</string>
 
     
     <string name="expense_contribution_scope_title">¿A quién se le acredita?</string>
@@ -320,7 +320,7 @@
     <string name="expense_add_ons_label">Extras</string>
 
     
-    <string name="expense_paid_by_me">Pagado por mí</string>
+    <string name="expense_paid_by_me">Pagado por ti</string>
     <string name="expense_paid_by_member">Pagado por %1$s</string>
     <string name="expense_paid_for_scope">Pagado para %1$s</string>
     <string name="expense_paid_by_member_for_scope">Pagado por %1$s para %2$s</string>
@@ -363,7 +363,7 @@
 
     
     <string name="add_expense_cash_pool_selection_title">Usar efectivo de</string>
-    <string name="add_expense_cash_pool_personal">Mi efectivo personal</string>
+    <string name="add_expense_cash_pool_personal">Tu efectivo personal</string>
     <string name="add_expense_cash_pool_group">Efectivo del grupo</string>
     <string name="add_expense_cash_pool_subunit">Efectivo de %1$s</string>
     <string name="add_expense_cash_pool_subunit_generic">Efectivo de subunidad</string>

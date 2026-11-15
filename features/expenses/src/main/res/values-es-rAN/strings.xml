@@ -252,14 +252,14 @@
     <string name="add_expense_add_on_value_type_percentage_desc">Carculao como un porçentahe del importe der gâtto</string>
     <string name="add_expense_add_on_value_type_percentage_resolved_desc">Carculao como un porçentahe del importe der gâtto (%1$s = %2$s)</string>
     <string name="add_expense_impact_entered_amount">Importe introduçío</string>
-    <string name="funding_source_title">Pagao dêdde</string>
+    <string name="funding_source_title">Pagao con</string>
     <string name="funding_source_subtitle">Elihe çi êtte pago çale der pockêh der grupo o de tu propio dinero.</string>
     <string name="funding_source_group_pocket">Pockêh der grupo</string>
     <string name="funding_source_group_pocket_description">Er dinero compartío que er grupo a reunío con aportaçionê prebiâ en er pockêh birtuâh. Úçalo çi pagâ con eçô fondô.</string>
     <string name="funding_source_your_money">Tu dinero</string>
     <string name="funding_source_your_money_description">Pagâ con tu propio dinero. SplîTTrîh rehîttra er gâtto y reparte la parte de cá uno pa que te lo reemborçen dêppuêh.</string>
     <string name="expense_wizard_step_funding_source">Orihen</string>
-    <string name="expense_review_funding_source">Pagao dêdde</string>
+    <string name="expense_review_funding_source">Pagao con</string>
     <string name="expense_contribution_scope_title">¿A quién çe le acredita?</string>
     <string name="expense_contribution_scope_for_group">Pa tó er grupo</string>
     <string name="expense_contribution_scope_for_you">Pa ti</string>
@@ -270,7 +270,7 @@
     <string name="expense_review_scope_group">Grupo</string>
     <string name="expense_has_add_ons">Er gâtto tiene êttrâ</string>
     <string name="expense_add_ons_label">Êttrâ</string>
-    <string name="expense_paid_by_me">Pagao por mí</string>
+    <string name="expense_paid_by_me">Pagao por ti</string>
     <string name="expense_paid_by_member">Pagao por %1$s</string>
     <string name="expense_paid_for_scope">Pagao pa %1$s</string>
     <string name="expense_paid_by_member_for_scope">Pagao por %1$s pa %2$s</string>
@@ -305,7 +305,7 @@
     <string name="expense_scope_subunit">gâtto de çubunidá</string>
     <string name="expense_scope_personal">gâtto perçonâh</string>
     <string name="add_expense_cash_pool_selection_title">Uçâh efêttibo de</string>
-    <string name="add_expense_cash_pool_personal">Mi efêttibo perçonâh</string>
+    <string name="add_expense_cash_pool_personal">Tu efêttibo perçonâh</string>
     <string name="add_expense_cash_pool_group">Efêttibo der grupo</string>
     <string name="add_expense_cash_pool_subunit">Efêttibo de %1$s</string>
     <string name="add_expense_cash_pool_subunit_generic">Efêttibo de çubunidá</string>

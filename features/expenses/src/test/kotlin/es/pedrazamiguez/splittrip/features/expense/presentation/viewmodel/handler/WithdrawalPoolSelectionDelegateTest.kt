@@ -52,7 +52,7 @@ class WithdrawalPoolSelectionDelegateTest {
     private val userPoolUi = WithdrawalPoolOptionUiModel(
         scope = PayerType.USER,
         ownerId = "user-1",
-        displayLabel = "My personal cash"
+        displayLabel = "Your personal cash"
     )
     private val subunitPoolUi = WithdrawalPoolOptionUiModel(
         scope = PayerType.SUBUNIT,
