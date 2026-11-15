@@ -2,12 +2,15 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.AddExpenseScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -206,6 +209,34 @@ private fun AddExpenseScreenReviewStepPreview() {
                 exchangeRateLabel = "1 EUR = X THB",
                 groupAmountLabel = "Cost in EUR",
                 currentStep = AddExpenseStep.REVIEW
+            )
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun AddExpenseScreenContributionScopeStepPreview() {
+    PreviewThemeWrapper {
+        AddExpenseScreen(
+            groupId = "group-1",
+            uiState = AddExpenseUiState(
+                isConfigLoaded = true,
+                groupName = "Thai 2.0",
+                expenseTitle = "Dinner at Pad Thai place",
+                sourceAmount = "80",
+                availableCurrencies = PREVIEW_CURRENCIES,
+                selectedCurrency = CurrencyUiModel("EUR", "EUR - Euro", 2),
+                groupCurrency = CurrencyUiModel("EUR", "EUR - Euro", 2),
+                selectedFundingSource = FundingSourceUiModel(
+                    id = PayerType.USER.name,
+                    displayText = "Your Money"
+                ),
+                contributionScope = PayerType.USER,
+                contributionSubunitOptions = persistentListOf(
+                    SubunitOptionUiModel(id = "subunit-1", name = "Couple")
+                ),
+                currentStep = AddExpenseStep.CONTRIBUTION_SCOPE
             )
         )
     }

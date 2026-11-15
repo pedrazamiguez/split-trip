@@ -306,11 +306,11 @@
     <string name="expense_review_funding_source">Pagado con</string>
 
     
-    <string name="expense_contribution_scope_title">¿A quién se le acredita?</string>
+    <string name="expense_contribution_scope_title">¿Para quién es este pago?</string>
     <string name="expense_contribution_scope_for_group">Para todo el grupo</string>
     <string name="expense_contribution_scope_for_you">Para ti</string>
     <string name="expense_contribution_scope_for_subunit">Para %1$s</string>
-    <string name="expense_wizard_step_contribution_scope">Crédito</string>
+    <string name="expense_wizard_step_contribution_scope">Pagado para</string>
     <string name="expense_review_contribution_scope">Pagado para</string>
     <string name="expense_review_scope_personal">Personal</string>
     <string name="expense_review_scope_group">Grupo</string>
