@@ -486,12 +486,17 @@ class AddExpenseViewModel(
     }
 
     /**
-     * Jumps directly from the current optional step to the REVIEW step.
+     * Jumps directly from [AddExpenseUiState.currentStep] to the REVIEW step when
+     * [AddExpenseUiState.canSkipToReview] permits.
      * Records the departure step so [navigatePrevious] can return to it.
      */
     private fun navigateToReview() {
         val state = _uiState.value
-        val reviewStep = wizardNavigator.navigateToReview(state.currentStep, state.applicableSteps) ?: return
+        val reviewStep = wizardNavigator.navigateToReview(
+            currentStep = state.currentStep,
+            applicableSteps = state.applicableSteps,
+            allowSkip = state.canSkipToReview
+        ) ?: return
         _uiState.update { it.copy(currentStep = reviewStep, jumpedFromStep = state.currentStep) }
     }
 

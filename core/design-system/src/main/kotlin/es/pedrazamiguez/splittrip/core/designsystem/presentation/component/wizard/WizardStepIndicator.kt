@@ -1,16 +1,13 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -74,7 +71,8 @@ private const val DASH_ON_INTERVAL = 4f
 private const val DASH_OFF_INTERVAL = 4f
 
 /**
- * Horizontal step indicator for a multi-step wizard.
+ * Horizontal step indicator for a multi-step wizard, dedicated solely to step
+ * progress and step-circle navigation.
  *
  * When the number of steps exceeds [MAX_VISIBLE_STEPS], the indicator becomes
  * horizontally scrollable and smoothly auto-centres the current step.
@@ -84,24 +82,16 @@ private const val DASH_OFF_INTERVAL = 4f
  * @param currentStepIndex     Zero-based index of the currently active step.
  * @param optionalStepIndices  Zero-based indices of steps that are optional (shown with
  *                             a dashed border when not yet completed).
- * @param skipToReviewLabel    When non-null **and** [onSkipToReview] is also non-null, a
- *                             "Skip to Review" text link is rendered below the step row.
- *                             Typically provided only when the current step is optional.
- *                             If either value is null, the link is hidden gracefully.
- * @param onSkipToReview       Callback invoked when the skip link is tapped. Both this
- *                             and [skipToReviewLabel] must be non-null for the link to
- *                             appear.
- * @param onStepClicked        Optional callback invoked when a **completed** step circle
+ * @param allowForwardJumps    When `true` (e.g. edit flows), allows tapping future steps too.
+ * @param onStepClicked        Optional callback invoked when a tappable step circle
  *                             is tapped, with the zero-based index of the tapped step.
  *                             When `null` (the default) all circles are non-interactive
  *                             and existing callers continue to work unchanged.
- *                             Current and future steps are never tappable regardless of
- *                             this parameter.
  *
  * **Detekt note:** `LongMethod` and `CognitiveComplexMethod` are suppressed here. The body
- * hosts an `AnimatedContent` + `AnimatedVisibility` block — both Compose DSL contracts that
- * require inline lambdas. Length and cognitive-complexity scores are structural artefacts of
- * the Compose animation API, not a sign of semantic complexity.
+ * hosts an `AnimatedContent` block — a Compose DSL contract that requires inline lambdas.
+ * Length and cognitive-complexity scores are structural artefacts of the Compose animation
+ * API, not a sign of semantic complexity.
  */
 @Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
@@ -110,8 +100,6 @@ fun WizardStepIndicator(
     currentStepIndex: Int,
     modifier: Modifier = Modifier,
     optionalStepIndices: Set<Int> = emptySet(),
-    skipToReviewLabel: String? = null,
-    onSkipToReview: (() -> Unit)? = null,
     allowForwardJumps: Boolean = false,
     onStepClicked: ((stepIndex: Int) -> Unit)? = null
 ) {
@@ -163,30 +151,6 @@ fun WizardStepIndicator(
                         optionalStepIndices = optionalStepIndices,
                         allowForwardJumps = allowForwardJumps,
                         onStepClicked = onStepClicked
-                    )
-                }
-            }
-
-            // ── Skip-to-review link ──────────────────────────────────────
-            AnimatedVisibility(
-                visible = skipToReviewLabel != null && onSkipToReview != null,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                if (skipToReviewLabel != null && onSkipToReview != null) {
-                    Text(
-                        text = skipToReviewLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .debouncedClickable(
-                                role = Role.Button,
-                                onClick = onSkipToReview
-                            )
-                            .padding(vertical = 6.dp)
                     )
                 }
             }

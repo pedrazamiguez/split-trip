@@ -71,6 +71,7 @@ fun ExpenseWizard(
     val nextLabel = stringResource(R.string.expense_wizard_next)
     val submitLabel = stringResource(uiState.submitLabelRes)
     val skipToReviewLabel = stringResource(R.string.expense_wizard_skip_to_review)
+    val optionalDefaultsHint = stringResource(R.string.expense_wizard_skip_defaults_hint)
 
     val bottomPadding = LocalBottomPadding.current
 
@@ -98,7 +99,6 @@ fun ExpenseWizard(
         ExpenseWizardBody(
             uiState = uiState,
             orderedLabels = orderedLabels,
-            skipToReviewLabel = skipToReviewLabel,
             onEvent = onEvent,
             modifier = Modifier.fillMaxSize()
         )
@@ -111,7 +111,9 @@ fun ExpenseWizard(
                 isLoading = uiState.isLoading,
                 backLabel = backLabel,
                 nextLabel = nextLabel,
-                submitLabel = submitLabel
+                submitLabel = submitLabel,
+                skipToReviewLabel = if (uiState.canSkipToReview) skipToReviewLabel else null,
+                optionalDefaultsHint = if (uiState.canSkipToReview) optionalDefaultsHint else null
             ),
             onBack = { onEvent(AddExpenseUiEvent.PreviousStep) },
             onNext = { onEvent(AddExpenseUiEvent.NextStep) },
@@ -124,6 +126,11 @@ fun ExpenseWizard(
                     uiState.isLoading
                 )
                 onEvent(AddExpenseUiEvent.SubmitAddExpense(groupId))
+            },
+            onSkipToReview = if (uiState.canSkipToReview) {
+                { onEvent(AddExpenseUiEvent.JumpToReview) }
+            } else {
+                null
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)

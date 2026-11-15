@@ -20,8 +20,9 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wiza
  * ```
  *
  * **`navigateToReview` integration note:** [navigateToReview] returns the target
- * review step only. The caller is responsible for also recording the departure
- * step in state (`jumpedFromStep = state.currentStep`).
+ * review step only when skipping is permitted (`allowSkip = true` and not already on
+ * the review step). The caller is responsible for also recording the departure step
+ * in state (`jumpedFromStep = state.currentStep`).
  *
  * **`jumpToStep` integration note:** [jumpToStep] enforces that only a step strictly
  * before the caller's `currentStep` can be targeted — rejecting the current and future
@@ -74,11 +75,18 @@ class WizardNavigator {
     }
 
     /**
-     * Returns the review step from [applicableSteps] when [currentStep] is optional
-     * (i.e. the user may skip ahead to review), or `null` when the jump is not allowed.
+     * Returns the review step from [applicableSteps] when skipping is permitted
+     * ([allowSkip] is `true` and [currentStep] is not already the review step), or
+     * `null` when the jump is not allowed.
+     *
+     * By default [allowSkip] mirrors `currentStep.isOptional`, preserving standard
+     * optional-step skipping for callers that do not pass an explicit flag. Callers
+     * with richer domain preconditions (e.g. `AddExpenseViewModel` fast-tracking from
+     * `AMOUNT`) may pass `allowSkip = state.canSkipToReview`.
      *
      * Returns `null` when:
-     * - [currentStep] is not optional (`isOptional == false`), or
+     * - [allowSkip] is `false`,
+     * - [currentStep] is already the review step (`isReview == true`), or
      * - no step with `isReview == true` exists in [applicableSteps].
      *
      * **ViewModel integration note:** When a non-null step is returned the caller
@@ -87,9 +95,10 @@ class WizardNavigator {
      */
     fun <S : WizardStep> navigateToReview(
         currentStep: S,
-        applicableSteps: List<S>
+        applicableSteps: List<S>,
+        allowSkip: Boolean = currentStep.isOptional
     ): S? {
-        if (!currentStep.isOptional) return null
+        if (!allowSkip || currentStep.isReview) return null
         return applicableSteps.firstOrNull { it.isReview }
     }
 

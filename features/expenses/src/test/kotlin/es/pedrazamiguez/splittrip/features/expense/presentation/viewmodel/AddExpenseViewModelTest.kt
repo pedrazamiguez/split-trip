@@ -1802,6 +1802,85 @@ class AddExpenseViewModelTest {
         }
 
         @Test
+        fun `JumpToReview on AMOUNT jumps to REVIEW when same-currency amount is valid`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Dinner"))
+            val amountIndex = viewModel.uiState.value.applicableSteps.indexOf(AddExpenseStep.AMOUNT)
+            repeat(amountIndex) { viewModel.onEvent(AddExpenseUiEvent.NextStep) }
+            assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+
+            viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("25.00"))
+            assertTrue(viewModel.uiState.value.canSkipToReview)
+
+            viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+
+            assertEquals(AddExpenseStep.REVIEW, viewModel.uiState.value.currentStep)
+            assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.jumpedFromStep)
+
+            viewModel.onEvent(AddExpenseUiEvent.PreviousStep)
+
+            assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+            assertNull(viewModel.uiState.value.jumpedFromStep)
+        }
+
+        @Test
+        fun `JumpToReview on AMOUNT is ignored when amount is blank or foreign currency awaits EXCHANGE_RATE`() =
+            runTest {
+                coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+                coEvery {
+                    getExchangeRateUseCase("EUR", "USD")
+                } returns ExchangeRateWithStaleness(rate = BigDecimal("1.08"), isStale = false)
+                viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+                advanceUntilIdle()
+                viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Dinner"))
+
+                val amountIndex = viewModel.uiState.value.applicableSteps.indexOf(AddExpenseStep.AMOUNT)
+                repeat(amountIndex) { viewModel.onEvent(AddExpenseUiEvent.NextStep) }
+                assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+
+                // Case 1: Blank amount
+                assertFalse(viewModel.uiState.value.canSkipToReview)
+                viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+                assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+                assertNull(viewModel.uiState.value.jumpedFromStep)
+
+                // Case 2: Valid amount but foreign currency awaits EXCHANGE_RATE
+                viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("25.00"))
+                viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("USD"))
+                advanceUntilIdle()
+                assertTrue(viewModel.uiState.value.showExchangeRateSection)
+                assertFalse(viewModel.uiState.value.canSkipToReview)
+
+                viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+                assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+                assertNull(viewModel.uiState.value.jumpedFromStep)
+            }
+
+        @Test
+        fun `JumpToReview on EXCHANGE_RATE navigates to REVIEW and records jumpedFromStep when valid`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            coEvery {
+                getExchangeRateUseCase("EUR", "USD")
+            } returns ExchangeRateWithStaleness(rate = BigDecimal("1.08"), isStale = false)
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Dinner"))
+
+            val amountIndex = viewModel.uiState.value.applicableSteps.indexOf(AddExpenseStep.AMOUNT)
+            repeat(amountIndex) { viewModel.onEvent(AddExpenseUiEvent.NextStep) }
+            viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("25.00"))
+            viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("USD"))
+            advanceUntilIdle()
+            viewModel.onEvent(AddExpenseUiEvent.NextStep)
+            assertEquals(AddExpenseStep.EXCHANGE_RATE, viewModel.uiState.value.currentStep)
+            assertTrue(viewModel.uiState.value.canSkipToReview)
+
+            viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+
+            assertEquals(AddExpenseStep.REVIEW, viewModel.uiState.value.currentStep)
+            assertEquals(AddExpenseStep.EXCHANGE_RATE, viewModel.uiState.value.jumpedFromStep)
+        }
+
+        @Test
         fun `sequential PreviousStep after jump-back clears jumpedFromStep`() = runTest {
             // Navigate to an optional step and jump to Review
             val steps = viewModel.uiState.value.applicableSteps

@@ -18,7 +18,6 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 internal fun ExpenseWizardBody(
     uiState: AddExpenseUiState,
     orderedLabels: List<String>,
-    skipToReviewLabel: String,
     onEvent: (AddExpenseUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -29,12 +28,6 @@ internal fun ExpenseWizardBody(
             stepLabels = orderedLabels,
             currentStepIndex = uiState.currentStepIndex,
             optionalStepIndices = uiState.optionalStepIndices,
-            skipToReviewLabel = if (uiState.canSkipToReview) skipToReviewLabel else null,
-            onSkipToReview = if (uiState.canSkipToReview) {
-                { onEvent(AddExpenseUiEvent.JumpToReview) }
-            } else {
-                null
-            },
             allowForwardJumps = uiState.isEditMode,
             onStepClicked = { onEvent(AddExpenseUiEvent.JumpToStep(it)) }
         )
