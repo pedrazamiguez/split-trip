@@ -19,7 +19,7 @@
     <string name="balances_total_extras">Êttrâ</string>
     <string name="balances_error_loading">No çe pudieron cargâh lô balançê</string>
     <string name="balances_empty_title">Çin âttibidá todabía</string>
-    <string name="balances_empty_description">Añade una aportaçión ar pockêh der grupo pa empeçâh</string>
+    <string name="balances_empty_description">Rehîttra gâttô pagáô de tu borçiyo pa bêh quién debe a quién, o añade una aportaçión çi compartîh un pockêh común.</string>
     <string name="balances_member_balances_title">Balançê por miembro</string>
     <string name="balances_member_you">Tú</string>
     <string name="balances_member_contributed_label">Aportao</string>
@@ -115,4 +115,6 @@
     <string name="balances_extras_atm_fallback">Cahero — %1$s</string>
     <string name="balances_filter">Firtrâh balançê</string>
     <string name="balances_your_balance_title">Tu balançe</string>
+    <string name="balances_category_spending_empty_title">Çin gâttô todabía</string>
+    <string name="balances_category_spending_empty_description">Lô gâttô rehîttráô en êtte grupo apareçerán aquí dêggloçáô por categoría.</string>
 </resources>
