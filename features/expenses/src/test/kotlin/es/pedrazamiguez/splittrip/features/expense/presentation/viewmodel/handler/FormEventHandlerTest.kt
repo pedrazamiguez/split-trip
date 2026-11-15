@@ -52,7 +52,7 @@ class FormEventHandlerTest {
     private val cashMethod = PaymentMethodUiModel(id = PaymentMethod.CASH.name, displayText = "Cash")
     private val cardMethod = PaymentMethodUiModel(id = PaymentMethod.CREDIT_CARD.name, displayText = "Credit Card")
     private val groupSource = FundingSourceUiModel(id = PayerType.GROUP.name, displayText = "Group Pocket")
-    private val userSource = FundingSourceUiModel(id = PayerType.USER.name, displayText = "My Money")
+    private val userSource = FundingSourceUiModel(id = PayerType.USER.name, displayText = "Your Money")
     private val finishedStatus = PaymentStatusUiModel(id = PaymentStatus.FINISHED.name, displayText = "Finished")
     private val scheduledStatus = PaymentStatusUiModel(id = PaymentStatus.SCHEDULED.name, displayText = "Scheduled")
     private val refundableStatus = PaymentStatusUiModel(id = PaymentStatus.REFUNDABLE.name, displayText = "Refundable")
@@ -332,23 +332,21 @@ class FormEventHandlerTest {
             handler.handleFundingSourceSelected(PayerType.GROUP.name)
 
             assertEquals(groupSource, uiState.value.selectedFundingSource)
-            assertNull(uiState.value.fundingSourceHint)
             val action = capturedPostActions.single() as FormPostAction.FundingSourceChanged
             assertTrue(action.isGroupPocket)
         }
 
         @Test
-        fun `selects USER funding source with hint`() = runTest {
+        fun `selects USER funding source`() = runTest {
             handler.handleFundingSourceSelected(PayerType.USER.name)
 
             assertEquals(userSource, uiState.value.selectedFundingSource)
-            assertTrue(uiState.value.fundingSourceHint is UiText.StringResource)
             val action = capturedPostActions.single() as FormPostAction.FundingSourceChanged
             assertFalse(action.isGroupPocket)
         }
 
         @Test
-        fun `resets contribution scope when switching away from My Money`() = runTest {
+        fun `resets contribution scope when switching away from Your Money`() = runTest {
             uiState.value = uiState.value.copy(
                 selectedFundingSource = userSource,
                 contributionScope = PayerType.GROUP,
@@ -362,7 +360,7 @@ class FormEventHandlerTest {
         }
 
         @Test
-        fun `preserves contribution scope when staying on My Money`() = runTest {
+        fun `preserves contribution scope when staying on Your Money`() = runTest {
             uiState.value = uiState.value.copy(
                 selectedFundingSource = userSource,
                 contributionScope = PayerType.SUBUNIT,

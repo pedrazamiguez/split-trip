@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Qrcode
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
@@ -102,6 +103,8 @@ fun <T> AsyncSearchableChipSelector(
     helperText: String? = null,
     noResultsText: String? = null,
     chipRemoveContentDescription: String? = null,
+    chipLockedContentDescription: String? = null,
+    isItemRemovable: (T) -> Boolean = { true },
     clearSearchContentDescription: String? = null,
     searchIcon: ImageVector = TablerIcons.Outline.Search,
     minQueryLength: Int = 3,
@@ -153,7 +156,9 @@ fun <T> AsyncSearchableChipSelector(
                 selectedItems = selectedItems,
                 itemKey = itemKey,
                 itemDisplayText = itemDisplayText,
+                isItemRemovable = isItemRemovable,
                 chipRemoveContentDescription = chipRemoveContentDescription,
+                chipLockedContentDescription = chipLockedContentDescription,
                 onItemRemoved = onItemRemoved
             )
         }
@@ -211,7 +216,9 @@ private fun <T> AsyncSelectedChipsRow(
     selectedItems: List<T>,
     itemKey: (T) -> Any,
     itemDisplayText: (T) -> String,
+    isItemRemovable: (T) -> Boolean,
     chipRemoveContentDescription: String?,
+    chipLockedContentDescription: String?,
     onItemRemoved: (T) -> Unit
 ) {
     FlowRow(
@@ -221,14 +228,19 @@ private fun <T> AsyncSelectedChipsRow(
     ) {
         selectedItems.forEach { item ->
             key(itemKey(item)) {
+                val removable = isItemRemovable(item)
                 PassportChip(
                     label = itemDisplayText(item),
                     selected = true,
                     onClick = { onItemRemoved(item) },
                     trailingIcon = {
                         Icon(
-                            imageVector = TablerIcons.Outline.X,
-                            contentDescription = chipRemoveContentDescription,
+                            imageVector = if (removable) TablerIcons.Outline.X else TablerIcons.Outline.Lock,
+                            contentDescription = if (removable) {
+                                chipRemoveContentDescription
+                            } else {
+                                chipLockedContentDescription
+                            },
                             modifier = Modifier.size(18.dp)
                         )
                     }

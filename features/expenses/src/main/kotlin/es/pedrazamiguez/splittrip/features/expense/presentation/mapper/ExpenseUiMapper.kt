@@ -223,7 +223,7 @@ class ExpenseUiMapper(
      * Builds scope-aware funding source info for out-of-pocket expenses.
      *
      * Uses the paired contribution's scope when available to determine:
-     * - The display text (e.g., "Paid by me", "Paid for Cantalobos")
+     * - The display text (e.g., "Paid by you", "Paid for Cantalobos")
      * - Whether the scope is SUBUNIT or GROUP (for icon selection)
      *
      * Falls back to simple payer name when no paired contribution exists.

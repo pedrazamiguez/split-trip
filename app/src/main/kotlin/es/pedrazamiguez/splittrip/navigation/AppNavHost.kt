@@ -62,6 +62,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliationUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.features.authentication.navigation.loginGraph
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
@@ -94,6 +95,9 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val warmCurrencyCacheUseCase = remember(koin) { koin.get<WarmCurrencyCacheUseCase>() }
     val userPreferenceRepository = remember(koin) { koin.get<UserPreferenceRepository>() }
     val checkPendingReconciliationUseCase = remember(koin) { koin.get<CheckPendingReconciliationUseCase>() }
+    val reconcileSubscriptionEntitlementsUseCase = remember(koin) {
+        koin.get<ReconcileSubscriptionEntitlementsUseCase>()
+    }
     val deepLinkHolder = remember(koin) { koin.get<DeepLinkHolder>() }
     val scope = rememberCoroutineScope()
 
@@ -234,6 +238,11 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
             navController = navController,
             pillController = pillController,
             onHandleSessionExpired = { handleSessionExpiredUseCase() }
+        )
+
+        SubscriptionReconciliationEffect(
+            isUserLoggedIn = isUserLoggedIn,
+            onReconcile = { reconcileSubscriptionEntitlementsUseCase() }
         )
 
         Box(modifier = Modifier.fillMaxSize()) {

@@ -43,11 +43,6 @@ data class AddExpenseUiState(
     val selectedCurrency: CurrencyUiModel? = null,
     val selectedPaymentMethod: PaymentMethodUiModel? = null,
     val selectedFundingSource: FundingSourceUiModel? = null,
-    /**
-     * Contextual hint displayed when "My Money" funding source is selected.
-     * Explains that the user will be reimbursed for others' shares.
-     */
-    val fundingSourceHint: UiText? = null,
     val selectedCategory: CategoryUiModel? = null,
     val selectedSubcategory: SubcategoryUiModel? = null,
     val selectedPaymentStatus: PaymentStatusUiModel? = null,
@@ -276,7 +271,7 @@ data class AddExpenseUiState(
 
     // ── Wizard computed properties ──────────────────────────────────────
 
-    /** True when the contribution scope step should be shown (funding source = "My Money"). */
+    /** True when the contribution scope step should be shown (funding source = "Your Money"). */
     val showContributionScopeStep: Boolean
         get() = selectedFundingSource?.id == PayerType.USER.name
 
@@ -312,10 +307,46 @@ data class AddExpenseUiState(
     val isOnOptionalStep: Boolean
         get() = currentStep.isOptional
 
-    /** Whether the user can skip to the review step from the current step. */
+    /**
+     * Whether the user can fast-track directly to the review step from [currentStep].
+     *
+     * Returns `true` when:
+     * - Not already on [AddExpenseStep.REVIEW].
+     * - No non-optional, non-review step remains ahead in [applicableSteps]
+     *   (protects mandatory `TITLE`, `PAYMENT_METHOD`, and `AMOUNT`, including when
+     *   AI receipt mode moves `RECEIPT` to index 0).
+     * - On [AddExpenseStep.AMOUNT]: [isCurrentStepValid] is `true`, no exchange rate
+     *   input is needed (`!showExchangeRateSection`), and no rate preview fetch is in flight.
+     * - On [AddExpenseStep.EXCHANGE_RATE]: [isCurrentStepValid] is `true` and `!isLoadingRate`.
+     * - On optional steps: [currentStep.isOptional], [isCurrentStepValid], and if
+     *   [showExchangeRateSection] is `true`, [AddExpenseStep.EXCHANGE_RATE] is not still
+     *   ahead (prevents skipping past rate verification on `CONTRIBUTION_SCOPE`).
+     */
     val canSkipToReview: Boolean
-        get() = currentStep.isOptional &&
-            applicableSteps.indexOf(currentStep) > applicableSteps.indexOf(AddExpenseStep.AMOUNT)
+        get() {
+            if (currentStep.isReview) return false
+            val currentIndex = applicableSteps.indexOf(currentStep)
+            if (currentIndex < 0) return false
+
+            val hasMandatoryStepAhead = applicableSteps
+                .drop(currentIndex + 1)
+                .any { !it.isOptional && !it.isReview }
+            if (hasMandatoryStepAhead) return false
+
+            return when (currentStep) {
+                AddExpenseStep.AMOUNT ->
+                    isCurrentStepValid && !showExchangeRateSection && !isLoadingRate
+
+                AddExpenseStep.EXCHANGE_RATE ->
+                    isCurrentStepValid && !isLoadingRate
+
+                else -> {
+                    val exchangeRateAhead = showExchangeRateSection &&
+                        applicableSteps.indexOf(AddExpenseStep.EXCHANGE_RATE) > currentIndex
+                    currentStep.isOptional && isCurrentStepValid && !exchangeRateAhead
+                }
+            }
+        }
 
     /**
      * Zero-based indices of optional steps within [applicableSteps].

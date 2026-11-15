@@ -65,7 +65,7 @@ class ExpenseUiMapperTest {
             val varargs = it.invocation.args[1] as Array<*>
             "Paid by ${varargs[0]}"
         }
-        every { resourceProvider.getString(R.string.expense_paid_by_me) } returns "Paid by me"
+        every { resourceProvider.getString(R.string.expense_paid_by_me) } returns "Paid by you"
         every { resourceProvider.getString(R.string.expense_paid_for_scope, *anyVararg()) } answers {
             val varargs = it.invocation.args[1] as Array<*>
             "Paid for ${varargs[0]}"
@@ -936,13 +936,13 @@ class ExpenseUiMapperTest {
         )
 
         @Test
-        fun `USER scope with current user shows Paid by me`() {
+        fun `USER scope with current user shows Paid by you`() {
             val expense = oopExpense(currentUserId)
             val contributions = userScopeContribution(expense.id, currentUserId)
 
             val result = mapper.map(expense, profiles, currentUserId, contributions, subunits)
 
-            assertEquals("Paid by me", result.fundingSourceText)
+            assertEquals("Paid by you", result.fundingSourceText)
             assertFalse(result.isSubunitScope)
             assertFalse(result.isGroupScope)
         }
@@ -1025,7 +1025,7 @@ class ExpenseUiMapperTest {
 
             val result = mapper.map(expense, profiles, currentUserId, contributions, subunits)
 
-            assertEquals("Paid by me", result.fundingSourceText)
+            assertEquals("Paid by you", result.fundingSourceText)
         }
 
         @Test

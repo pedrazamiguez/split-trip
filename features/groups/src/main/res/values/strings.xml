@@ -32,6 +32,9 @@
     <string name="group_extra_currency_search">Search currency</string>
     <string name="group_extra_currency_search_hint">e.g. USD, EUR, Pound…</string>
     <string name="group_extra_currency_remove">Remove currency</string>
+    <string name="group_extra_currency_locked">Currency in use (locked)</string>
+    <string name="group_currencies_in_use_hint">Currencies referenced by existing transactions cannot be removed</string>
+    <string name="group_remove_currency_error_in_use">%1$s is used in existing transactions and cannot be removed</string>
     <string name="group_extra_currency_clear">Clear</string>
     <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Description</string>
@@ -141,6 +144,9 @@
     <string name="group_error_cannot_add_self">You are already a member of this group</string>
     <string name="group_remove_member_error_balance">This member has a non-zero balance and cannot be removed</string>
     <string name="group_remove_member_error_admin">The group creator cannot be removed</string>
+    <string name="group_remove_member_error_last_member">A group must have at least one member</string>
+    <string name="group_member_locked">Member cannot be removed</string>
+    <string name="group_members_locked_hint">The group creator and members with unsettled balances cannot be removed</string>
     <string name="group_error_remove_member_failed">Failed to remove member. Please try again</string>
     <string name="group_edit_success_saved_with_errors">Group updated with some member changes pending</string>
 

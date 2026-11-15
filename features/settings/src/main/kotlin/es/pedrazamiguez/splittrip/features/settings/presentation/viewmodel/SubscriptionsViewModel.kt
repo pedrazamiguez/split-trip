@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.SubscriptionsUiAction
@@ -34,6 +35,7 @@ class SubscriptionsViewModel(
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
     private val updateUserTierUseCase: UpdateUserTierUseCase,
     private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
+    private val reconcileSubscriptionEntitlementsUseCase: ReconcileSubscriptionEntitlementsUseCase,
     private val subscriptionsUiMapper: SubscriptionsUiMapper,
     private val billingService: BillingService
 ) : ViewModel() {
@@ -189,6 +191,10 @@ class SubscriptionsViewModel(
                     val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
                     _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                 }
+                reconcileSubscriptionEntitlementsUseCase()
+                    .onFailure { error ->
+                        Timber.w(error, "Best-effort entitlement reconciliation failed on subscriptions load")
+                    }
                 val currentUser = getCurrentUserProfileUseCase()
                 val currentTier = currentUser?.tier ?: SubscriptionTier.FREE
                 val selectedInterval = _uiState.value.selectedInterval
@@ -314,6 +320,10 @@ class SubscriptionsViewModel(
             val message = subscriptionsUiMapper.formatRestorePurchasesSuccessMessage()
             _actions.send(SubscriptionsUiAction.ShowTopPill(message))
         } else {
+            reconcileSubscriptionEntitlementsUseCase()
+                .onFailure { error ->
+                    Timber.w(error, "Best-effort entitlement reconciliation failed during restore")
+                }
             val message = subscriptionsUiMapper.formatNoPurchasesToRestoreMessage()
             _actions.send(SubscriptionsUiAction.ShowTopPill(message))
         }

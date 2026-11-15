@@ -164,11 +164,6 @@ class FormEventHandler(
         _uiState.update {
             it.copy(
                 selectedFundingSource = selectedSource,
-                fundingSourceHint = if (isUserMoney) {
-                    UiText.StringResource(R.string.funding_source_my_money_hint)
-                } else {
-                    null
-                },
                 contributionScope = if (isUserMoney) it.contributionScope else PayerType.USER,
                 selectedContributionSubunitId = if (isUserMoney) {
                     it.selectedContributionSubunitId

@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.badge.ProBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.AsyncSearchableChipSelector
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
@@ -118,9 +119,17 @@ fun GroupMembersStep(
             helperText = stringResource(R.string.group_member_search_helper),
             noResultsText = stringResource(R.string.group_member_search_no_results),
             chipRemoveContentDescription = stringResource(R.string.group_member_remove),
+            chipLockedContentDescription = stringResource(R.string.group_member_locked),
+            isItemRemovable = { it.userId !in uiState.nonRemovableMembers },
             clearSearchContentDescription = stringResource(R.string.group_member_clear_search),
             onScannerClick = onScannerClick,
             scannerContentDescription = stringResource(R.string.scanner_content_description)
         )
+        if (uiState.isEditMode && uiState.nonRemovableMembers.isNotEmpty()) {
+            SecondaryBodyText(
+                text = stringResource(R.string.group_members_locked_hint),
+                maxLines = Int.MAX_VALUE
+            )
+        }
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency.CurrencySelectorField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.SearchableChipSelector
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
@@ -52,9 +53,17 @@ fun GroupCurrencyStep(
                 searchPlaceholder = stringResource(R.string.group_extra_currency_search_hint),
                 helperText = stringResource(R.string.group_field_extra_currencies_hint),
                 chipRemoveContentDescription = stringResource(R.string.group_extra_currency_remove),
+                chipLockedContentDescription = stringResource(R.string.group_extra_currency_locked),
+                isItemRemovable = { it.code !in uiState.currenciesInUse },
                 clearSearchContentDescription = stringResource(R.string.group_extra_currency_clear),
                 keyboardCapitalization = KeyboardCapitalization.Characters
             )
+            if (uiState.isEditMode && uiState.currenciesInUse.isNotEmpty()) {
+                SecondaryBodyText(
+                    text = stringResource(R.string.group_currencies_in_use_hint),
+                    maxLines = Int.MAX_VALUE
+                )
+            }
         }
     }
 }

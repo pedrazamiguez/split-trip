@@ -228,6 +228,7 @@
     <string name="expense_wizard_step_add_ons">Add-ons</string>
     <string name="expense_wizard_step_review">Review</string>
     <string name="expense_wizard_skip_to_review">Skip to Review →</string>
+    <string name="expense_wizard_skip_defaults_hint">Optional steps use smart defaults (Equal split · Paid today)</string>
 
     
     <string name="expense_review_title">Review your expense</string>
@@ -295,19 +296,21 @@
     <string name="add_expense_impact_entered_amount">Entered amount</string>
 
     
-    <string name="funding_source_title">Paid from</string>
+    <string name="funding_source_title">Paid with</string>
+    <string name="funding_source_subtitle">Choose whether this payment comes from the group\'s shared pocket or your own money.</string>
     <string name="funding_source_group_pocket">Group Pocket</string>
-    <string name="funding_source_my_money">My Money</string>
-    <string name="funding_source_my_money_hint">You\'ll be reimbursed for others\' shares</string>
+    <string name="funding_source_group_pocket_description">The group\'s shared pool of money collected from member contributions. Use this when paying from money set aside by the group.</string>
+    <string name="funding_source_your_money">Your Money</string>
+    <string name="funding_source_your_money_description">You pay with your own money. SplitTrip tracks everyone\'s share so you\'re reimbursed later.</string>
     <string name="expense_wizard_step_funding_source">Source</string>
-    <string name="expense_review_funding_source">Paid from</string>
+    <string name="expense_review_funding_source">Paid with</string>
 
     
-    <string name="expense_contribution_scope_title">Who gets credit?</string>
+    <string name="expense_contribution_scope_title">Who is this payment for?</string>
     <string name="expense_contribution_scope_for_group">For the whole group</string>
     <string name="expense_contribution_scope_for_you">For you</string>
     <string name="expense_contribution_scope_for_subunit">For %1$s</string>
-    <string name="expense_wizard_step_contribution_scope">Credit</string>
+    <string name="expense_wizard_step_contribution_scope">Paid for</string>
     <string name="expense_review_contribution_scope">Paid for</string>
     <string name="expense_review_scope_personal">Personal</string>
     <string name="expense_review_scope_group">Group</string>
@@ -317,7 +320,7 @@
     <string name="expense_add_ons_label">Extras</string>
 
     
-    <string name="expense_paid_by_me">Paid by me</string>
+    <string name="expense_paid_by_me">Paid by you</string>
     <string name="expense_paid_by_member">Paid by %1$s</string>
     <string name="expense_paid_for_scope">Paid for %1$s</string>
     <string name="expense_paid_by_member_for_scope">Paid by %1$s for %2$s</string>
@@ -360,7 +363,7 @@
 
     
     <string name="add_expense_cash_pool_selection_title">Draw cash from</string>
-    <string name="add_expense_cash_pool_personal">My personal cash</string>
+    <string name="add_expense_cash_pool_personal">Your personal cash</string>
     <string name="add_expense_cash_pool_group">Group cash</string>
     <string name="add_expense_cash_pool_subunit">%1$s cash</string>
     <string name="add_expense_cash_pool_subunit_generic">Subunit cash</string>

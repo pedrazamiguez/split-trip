@@ -1360,6 +1360,32 @@ class ExpenseDetailUiMapperTest {
 
             assertNotNull(result.fundingSourceText)
         }
+
+        @Test
+        fun `fundingSourceText uses expense_paid_by_me when payer is current user`() {
+            every { resourceProvider.getString(R.string.expense_paid_by_me) } returns "Paid by you"
+            val expense = baseExpense.copy(
+                payerType = PayerType.USER,
+                payerId = currentUserId
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid by you", result.fundingSourceText)
+        }
+
+        @Test
+        fun `fundingSourceText uses expense_paid_by_member when payer is another member`() {
+            every { resourceProvider.getString(R.string.expense_paid_by_member, "Bob") } returns "Paid by Bob"
+            val expense = baseExpense.copy(
+                payerType = PayerType.USER,
+                payerId = otherUserId
+            )
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("Paid by Bob", result.fundingSourceText)
+        }
     }
 
     @Nested

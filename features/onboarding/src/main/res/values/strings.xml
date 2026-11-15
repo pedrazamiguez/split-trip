@@ -1,23 +1,23 @@
 <resources>
     <!-- Onboarding Screen -->
-    <string name="onboarding_welcome_title">Ready to travel smart?</string>
-    <string name="onboarding_welcome_subtitle">Split expenses with your crew without the awkward money talks</string>
+    <string name="onboarding_welcome_title">Travel together, minus the spreadsheets</string>
+    <string name="onboarding_welcome_subtitle">Log out-of-pocket expenses in seconds or pool cash into a shared Group Pocket</string>
     <string name="onboarding_complete_button">Let\'s start!</string>
     <string name="onboarding_next_button">Next</string>
     <string name="onboarding_back_button">Back</string>
     <string name="onboarding_skip_button">Skip</string>
-    <string name="onboarding_step_trips_title">Trips &amp; Groups</string>
-    <string name="onboarding_step_trips_description">Organise travel expenses with your friends, manage multiple currencies, and keep everyone on the same page from takeoff to touchdown.</string>
-    <string name="onboarding_step_split_title">Smart Splitting</string>
-    <string name="onboarding_step_split_description">Split expenses your way: equally, by exact amounts, percentages, or subunits for couples and families. Attach receipts to keep a clear paper trail.</string>
-    <string name="onboarding_step_cash_title">Cash in Hand &amp; Pocket</string>
-    <string name="onboarding_step_cash_description">Track shared physical cash alongside card expenses. Log cash withdrawals and pocket contributions with automatic multi-currency conversion.</string>
+    <string name="onboarding_step_trips_title">Trips Without Spreadsheets</string>
+    <string name="onboarding_step_trips_description">Forget manual currency math and messy notes. Organise group expenses across any currency with automatic conversion from takeoff to touchdown.</string>
+    <string name="onboarding_step_split_title">Quick Log, Smart Splits</string>
+    <string name="onboarding_step_split_description">Log an expense in 3 quick steps using smart defaults. Customise splits (equal, exact, percentage, or family subunits), extras, and receipts only when you need them.</string>
+    <string name="onboarding_step_cash_title">Your Money or Group Pocket</string>
+    <string name="onboarding_step_cash_description">Pay with Your Money out of pocket like any splitter, or pool funds into a shared Group Pocket to track ATM cash withdrawals and multi-currency fees.</string>
     <string name="onboarding_step_notifications_title">Real-Time Notifications</string>
     <string name="onboarding_step_notifications_description">Stay up to date on shared expenses, consensus debts, and settlement confirmations in real time.</string>
     <string name="onboarding_enable_notifications_button">Enable Notifications</string>
     <string name="onboarding_notifications_enabled">Notifications enabled</string>
     <string name="onboarding_step_settle_title">Consensus &amp; Settlements</string>
-    <string name="onboarding_step_settle_description">Know your exact balance at any moment. Settle up seamlessly with peer confirmation so everyone agrees before a debt is marked paid.</string>
+    <string name="onboarding_step_settle_description">Check Your Position at any moment to see who owes whom and your pocket share. Settle debts with mutual confirmation so everyone agrees.</string>
 
     <!-- Reconciliation Screen -->
     <string name="reconciliation_title">We were waiting for you!</string>

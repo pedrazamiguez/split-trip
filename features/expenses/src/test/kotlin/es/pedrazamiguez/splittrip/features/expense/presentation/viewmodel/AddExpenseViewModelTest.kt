@@ -450,6 +450,62 @@ class AddExpenseViewModelTest {
         }
 
         @Test
+        fun `defaults fundingSource to USER when no pocket activity`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(
+                configEur.copy(hasManualPocketContributions = false)
+            )
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(PayerType.USER.name, state.selectedFundingSource?.id)
+            assertEquals(PayerType.USER, state.contributionScope)
+        }
+
+        @Test
+        fun `defaults fundingSource to GROUP when group has manual pocket contributions`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(
+                configEur.copy(hasManualPocketContributions = true)
+            )
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            assertEquals(PayerType.GROUP.name, viewModel.uiState.value.selectedFundingSource?.id)
+        }
+
+        @Test
+        fun `skips from CONTRIBUTION_SCOPE to REVIEW with USER funding`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(
+                configEur.copy(hasManualPocketContributions = false)
+            )
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            assertEquals(PayerType.USER.name, viewModel.uiState.value.selectedFundingSource?.id)
+            assertTrue(viewModel.uiState.value.applicableSteps.contains(AddExpenseStep.CONTRIBUTION_SCOPE))
+
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Dinner"))
+            viewModel.onEvent(AddExpenseUiEvent.NextStep)
+            viewModel.onEvent(AddExpenseUiEvent.NextStep)
+            viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("10.00"))
+            advanceUntilIdle()
+            while (viewModel.uiState.value.currentStep != AddExpenseStep.CONTRIBUTION_SCOPE &&
+                viewModel.uiState.value.canGoNext
+            ) {
+                viewModel.onEvent(AddExpenseUiEvent.NextStep)
+            }
+            assertEquals(AddExpenseStep.CONTRIBUTION_SCOPE, viewModel.uiState.value.currentStep)
+            assertTrue(viewModel.uiState.value.canSkipToReview)
+
+            viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+            assertEquals(AddExpenseStep.REVIEW, viewModel.uiState.value.currentStep)
+            assertEquals(PayerType.USER, viewModel.uiState.value.contributionScope)
+        }
+
+        @Test
         fun `does not reload config for same group on subsequent calls`() = runTest {
             // Given
             coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(
@@ -1539,13 +1595,13 @@ class AddExpenseViewModelTest {
     inner class FundingSourceScopeReset {
 
         @Test
-        fun `resets contribution scope to USER when switching away from My Money`() = runTest {
+        fun `resets contribution scope to USER when switching away from Your Money`() = runTest {
             coEvery { getGroupExpenseConfigUseCase(any(), any()) } returns
                 Result.success(configEur)
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
             advanceUntilIdle()
 
-            // Select My Money (USER) as funding source
+            // Select Your Money (USER) as funding source
             viewModel.onEvent(AddExpenseUiEvent.FundingSourceSelected("USER"))
             // Set scope to GROUP
             viewModel.onEvent(
@@ -1564,13 +1620,13 @@ class AddExpenseViewModelTest {
         }
 
         @Test
-        fun `preserves contribution scope when staying on My Money`() = runTest {
+        fun `preserves contribution scope when staying on Your Money`() = runTest {
             coEvery { getGroupExpenseConfigUseCase(any(), any()) } returns
                 Result.success(configEur)
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
             advanceUntilIdle()
 
-            // Select My Money
+            // Select Your Money
             viewModel.onEvent(AddExpenseUiEvent.FundingSourceSelected("USER"))
             // Set scope to SUBUNIT
             viewModel.onEvent(
@@ -1580,7 +1636,7 @@ class AddExpenseViewModelTest {
                 )
             )
 
-            // Re-select My Money (same funding source) — scope should be preserved
+            // Re-select Your Money (same funding source) — scope should be preserved
             viewModel.onEvent(AddExpenseUiEvent.FundingSourceSelected("USER"))
 
             assertEquals(PayerType.SUBUNIT, viewModel.uiState.value.contributionScope)
@@ -1743,6 +1799,85 @@ class AddExpenseViewModelTest {
             // Then — Should stay on TITLE
             assertEquals(AddExpenseStep.TITLE, viewModel.uiState.value.currentStep)
             assertNull(viewModel.uiState.value.jumpedFromStep)
+        }
+
+        @Test
+        fun `JumpToReview on AMOUNT jumps to REVIEW when same-currency amount is valid`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Dinner"))
+            val amountIndex = viewModel.uiState.value.applicableSteps.indexOf(AddExpenseStep.AMOUNT)
+            repeat(amountIndex) { viewModel.onEvent(AddExpenseUiEvent.NextStep) }
+            assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+
+            viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("25.00"))
+            assertTrue(viewModel.uiState.value.canSkipToReview)
+
+            viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+
+            assertEquals(AddExpenseStep.REVIEW, viewModel.uiState.value.currentStep)
+            assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.jumpedFromStep)
+
+            viewModel.onEvent(AddExpenseUiEvent.PreviousStep)
+
+            assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+            assertNull(viewModel.uiState.value.jumpedFromStep)
+        }
+
+        @Test
+        fun `JumpToReview on AMOUNT is ignored when amount is blank or foreign currency awaits EXCHANGE_RATE`() =
+            runTest {
+                coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+                coEvery {
+                    getExchangeRateUseCase("EUR", "USD")
+                } returns ExchangeRateWithStaleness(rate = BigDecimal("1.08"), isStale = false)
+                viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+                advanceUntilIdle()
+                viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Dinner"))
+
+                val amountIndex = viewModel.uiState.value.applicableSteps.indexOf(AddExpenseStep.AMOUNT)
+                repeat(amountIndex) { viewModel.onEvent(AddExpenseUiEvent.NextStep) }
+                assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+
+                // Case 1: Blank amount
+                assertFalse(viewModel.uiState.value.canSkipToReview)
+                viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+                assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+                assertNull(viewModel.uiState.value.jumpedFromStep)
+
+                // Case 2: Valid amount but foreign currency awaits EXCHANGE_RATE
+                viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("25.00"))
+                viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("USD"))
+                advanceUntilIdle()
+                assertTrue(viewModel.uiState.value.showExchangeRateSection)
+                assertFalse(viewModel.uiState.value.canSkipToReview)
+
+                viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+                assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+                assertNull(viewModel.uiState.value.jumpedFromStep)
+            }
+
+        @Test
+        fun `JumpToReview on EXCHANGE_RATE navigates to REVIEW and records jumpedFromStep when valid`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            coEvery {
+                getExchangeRateUseCase("EUR", "USD")
+            } returns ExchangeRateWithStaleness(rate = BigDecimal("1.08"), isStale = false)
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Dinner"))
+
+            val amountIndex = viewModel.uiState.value.applicableSteps.indexOf(AddExpenseStep.AMOUNT)
+            repeat(amountIndex) { viewModel.onEvent(AddExpenseUiEvent.NextStep) }
+            viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("25.00"))
+            viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("USD"))
+            advanceUntilIdle()
+            viewModel.onEvent(AddExpenseUiEvent.NextStep)
+            assertEquals(AddExpenseStep.EXCHANGE_RATE, viewModel.uiState.value.currentStep)
+            assertTrue(viewModel.uiState.value.canSkipToReview)
+
+            viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+
+            assertEquals(AddExpenseStep.REVIEW, viewModel.uiState.value.currentStep)
+            assertEquals(AddExpenseStep.EXCHANGE_RATE, viewModel.uiState.value.jumpedFromStep)
         }
 
         @Test

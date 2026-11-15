@@ -50,7 +50,7 @@ data class ExpenseUiModel(
     val isOutOfPocket: Boolean = false,
     /**
      * Resolved funding source text for out-of-pocket expenses.
-     * Scope-aware: e.g., "Paid by me", "Paid by María", "Paid for Cantalobos",
+     * Scope-aware: e.g., "Paid by you", "Paid by María", "Paid for Cantalobos",
      * "Paid by María for everyone". Null when the expense is group-funded.
      */
     val fundingSourceText: String? = null,

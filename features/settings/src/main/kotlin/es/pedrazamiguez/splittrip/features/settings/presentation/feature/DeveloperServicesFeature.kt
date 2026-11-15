@@ -4,19 +4,24 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.receipt.ReceiptAttachmentHandler
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.DeveloperServicesScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesTab
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiEvent
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.DeveloperServicesUiAction
+import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -25,6 +30,17 @@ fun DeveloperServicesFeature(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val topPillController = LocalTopPillController.current
+
+    LaunchedEffect(Unit) {
+        viewModel.actions.collectLatest { action ->
+            when (action) {
+                is DeveloperServicesUiAction.ShowTopPill -> {
+                    topPillController.showPill(message = action.message.asString(context))
+                }
+            }
+        }
+    }
 
     var showReceiptSheet by remember { mutableStateOf(false) }
     // Track which tab triggered the sheet so we know what to do after file selection.

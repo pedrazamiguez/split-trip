@@ -36,6 +36,7 @@ class OnboardingScreenTest {
     @Test
     fun rendersOnboardingScreen_firstStep_showsNextAndSkipButtons() {
         val firstStepTitle = context.getString(R.string.onboarding_step_trips_title)
+        val firstStepDescription = context.getString(R.string.onboarding_step_trips_description)
         val nextButtonText = context.getString(R.string.onboarding_next_button)
         val skipButtonText = context.getString(R.string.onboarding_skip_button)
 
@@ -52,14 +53,58 @@ class OnboardingScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText(firstStepTitle).assertIsDisplayed()
+        composeRule.onNodeWithText(firstStepDescription).assertIsDisplayed()
         composeRule.onNodeWithText(nextButtonText).assertIsDisplayed()
         composeRule.onNodeWithText(skipButtonText).assertIsDisplayed()
+    }
+
+    @Test
+    fun rendersOnboardingScreen_smartSplittingStep_displaysQuickAndCustomSplitCopy() {
+        val stepTitle = context.getString(R.string.onboarding_step_split_title)
+        val stepDescription = context.getString(R.string.onboarding_step_split_description)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                OnboardingScreen(
+                    uiState = OnboardingUiState(
+                        currentStep = OnboardingStep.SMART_SPLITTING
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(stepTitle).assertIsDisplayed()
+        composeRule.onNodeWithText(stepDescription).assertIsDisplayed()
+    }
+
+    @Test
+    fun rendersOnboardingScreen_cashAndPocketStep_displaysYourMoneyAndPocketContrast() {
+        val stepTitle = context.getString(R.string.onboarding_step_cash_title)
+        val stepDescription = context.getString(R.string.onboarding_step_cash_description)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                OnboardingScreen(
+                    uiState = OnboardingUiState(
+                        currentStep = OnboardingStep.CASH_AND_POCKET
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(stepTitle).assertIsDisplayed()
+        composeRule.onNodeWithText(stepDescription).assertIsDisplayed()
     }
 
     @Test
     fun rendersOnboardingScreen_lastStep_showsCompleteButton() {
         val completeButtonText = context.getString(R.string.onboarding_complete_button)
         val lastStepTitle = context.getString(R.string.onboarding_step_settle_title)
+        val lastStepDescription = context.getString(R.string.onboarding_step_settle_description)
 
         composeRule.setContent {
             SplitTripTheme {
@@ -74,6 +119,7 @@ class OnboardingScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText(lastStepTitle).assertIsDisplayed()
+        composeRule.onNodeWithText(lastStepDescription).assertIsDisplayed()
         composeRule.onNodeWithText(completeButtonText).assertIsDisplayed()
     }
 

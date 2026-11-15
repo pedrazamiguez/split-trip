@@ -127,6 +127,20 @@ class WizardNavigatorTest {
         }
 
         @Test
+        @DisplayName("returns non-optional jumpedFromStep and clears flag when stepping back from review")
+        fun `returns non-optional jumpedFromStep when stepping back from review`() {
+            // When
+            val result = navigator.navigatePrevious(
+                currentStep = FakeStep.REVIEW,
+                jumpedFromStep = FakeStep.FIRST,
+                applicableSteps = allSteps
+            )
+
+            // Then
+            assertEquals(WizardNavigator.NavigationResult.JumpBack(FakeStep.FIRST), result)
+        }
+
+        @Test
         @DisplayName(
             "returns sequential Step (not JumpBack) when jumpedFromStep is set but current step is not the review step"
         )
@@ -199,6 +213,48 @@ class WizardNavigatorTest {
             val result = navigator.navigateToReview(
                 currentStep = FakeStep.OPTIONAL,
                 applicableSteps = stepsWithoutReview
+            )
+
+            // Then
+            assertNull(result)
+        }
+
+        @Test
+        @DisplayName("returns review step when current step is not optional and allowSkip is true")
+        fun `returns review step when current step is not optional and allowSkip is true`() {
+            // When
+            val result = navigator.navigateToReview(
+                currentStep = FakeStep.FIRST,
+                applicableSteps = allSteps,
+                allowSkip = true
+            )
+
+            // Then
+            assertEquals(FakeStep.REVIEW, result)
+        }
+
+        @Test
+        @DisplayName("returns null when current step is optional and allowSkip is false")
+        fun `returns null when current step is optional and allowSkip is false`() {
+            // When
+            val result = navigator.navigateToReview(
+                currentStep = FakeStep.OPTIONAL,
+                applicableSteps = allSteps,
+                allowSkip = false
+            )
+
+            // Then
+            assertNull(result)
+        }
+
+        @Test
+        @DisplayName("returns null when current step is already review even if allowSkip is true")
+        fun `returns null when current step is already review even if allowSkip is true`() {
+            // When
+            val result = navigator.navigateToReview(
+                currentStep = FakeStep.REVIEW,
+                applicableSteps = allSteps,
+                allowSkip = true
             )
 
             // Then

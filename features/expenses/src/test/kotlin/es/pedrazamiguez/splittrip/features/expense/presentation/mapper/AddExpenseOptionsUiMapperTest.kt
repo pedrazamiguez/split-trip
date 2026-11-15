@@ -2,6 +2,9 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
@@ -14,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.model.CashTranchePreview
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.WithdrawalPoolOption
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toFundingSourceDescriptionRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toFundingSourceStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import io.mockk.every
@@ -370,17 +374,25 @@ class AddExpenseOptionsUiMapperTest {
         }
 
         @Test
-        fun `maps display text from resource provider`() {
+        fun `maps display text description and icon from resource provider`() {
             every { resourceProvider.getString(PayerType.GROUP.toFundingSourceStringRes()) } returns "Group Pocket"
-            every { resourceProvider.getString(PayerType.USER.toFundingSourceStringRes()) } returns "My Money"
+            every { resourceProvider.getString(PayerType.USER.toFundingSourceStringRes()) } returns "Your Money"
+            every { resourceProvider.getString(PayerType.GROUP.toFundingSourceDescriptionRes()) } returns
+                "Shared group pocket funds"
+            every { resourceProvider.getString(PayerType.USER.toFundingSourceDescriptionRes()) } returns
+                "Paid with your own money"
 
             val result = mapper.mapFundingSources(listOf(PayerType.GROUP, PayerType.USER))
 
             assertEquals(2, result.size)
             assertEquals("GROUP", result[0].id)
             assertEquals("Group Pocket", result[0].displayText)
+            assertEquals("Shared group pocket funds", result[0].description)
+            assertEquals(TablerIcons.Outline.UsersGroup, result[0].icon)
             assertEquals("USER", result[1].id)
-            assertEquals("My Money", result[1].displayText)
+            assertEquals("Your Money", result[1].displayText)
+            assertEquals("Paid with your own money", result[1].description)
+            assertEquals(TablerIcons.Outline.User, result[1].icon)
         }
 
         @Test
@@ -540,7 +552,7 @@ class AddExpenseOptionsUiMapperTest {
         fun setupPoolStrings() {
             every {
                 resourceProvider.getString(R.string.add_expense_cash_pool_personal)
-            } returns "My personal cash"
+            } returns "Your personal cash"
 
             every {
                 resourceProvider.getString(R.string.add_expense_cash_pool_group)
@@ -569,7 +581,7 @@ class AddExpenseOptionsUiMapperTest {
             assertEquals(1, result.size)
             assertEquals(PayerType.USER, result[0].scope)
             assertEquals("user-1", result[0].ownerId)
-            assertEquals("My personal cash", result[0].displayLabel)
+            assertEquals("Your personal cash", result[0].displayLabel)
         }
 
         @Test

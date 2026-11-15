@@ -33,6 +33,9 @@
     <string name="group_extra_currency_search">Buscar moneda</string>
     <string name="group_extra_currency_search_hint">ej. USD, MXN, Libra…</string>
     <string name="group_extra_currency_remove">Quitar moneda</string>
+    <string name="group_extra_currency_locked">Moneda en uso (bloqueada)</string>
+    <string name="group_currencies_in_use_hint">Las monedas usadas en transacciones existentes no se pueden eliminar</string>
+    <string name="group_remove_currency_error_in_use">%1$s se usa en transacciones existentes y no se puede eliminar</string>
     <string name="group_extra_currency_clear">Limpiar</string>
     <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Descripción</string>
@@ -142,6 +145,9 @@
     <string name="group_error_cannot_add_self">Ya eres miembro de este grupo</string>
     <string name="group_remove_member_error_balance">Este miembro tiene un balance distinto de cero y no se puede eliminar</string>
     <string name="group_remove_member_error_admin">El creador del grupo no se puede eliminar</string>
+    <string name="group_remove_member_error_last_member">Un grupo debe tener al menos un miembro</string>
+    <string name="group_member_locked">No se puede eliminar al miembro</string>
+    <string name="group_members_locked_hint">El creador del grupo y los miembros con balances pendientes no se pueden eliminar</string>
     <string name="group_error_remove_member_failed">Error al eliminar el miembro. Inténtalo de nuevo</string>
     <string name="group_edit_success_saved_with_errors">Grupo actualizado con algunos cambios de miembros pendientes</string>
 

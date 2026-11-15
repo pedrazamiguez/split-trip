@@ -325,17 +325,19 @@ fun LabelText(
  * Use for timestamps, status badges, helper text beneath form fields, and
  * any supplementary annotation that must be present but visually subordinate.
  *
- * @param text     Text content to display.
- * @param modifier Modifier applied to the underlying [Text].
- * @param color    Overrides the default `onSurfaceVariant` colour.
- * @param maxLines Defaults to 1 with ellipsis.
+ * @param text      Text content to display.
+ * @param modifier  Modifier applied to the underlying [Text].
+ * @param color     Overrides the default `onSurfaceVariant` colour.
+ * @param maxLines  Defaults to 1 with ellipsis.
+ * @param textAlign Text alignment within the layout bounds.
  */
 @Composable
 fun CaptionText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    maxLines: Int = 1
+    maxLines: Int = 1,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     Text(
         text = text,
@@ -344,7 +346,8 @@ fun CaptionText(
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Medium,
         maxLines = maxLines,
-        overflow = overflowFor(maxLines)
+        overflow = overflowFor(maxLines),
+        textAlign = textAlign
     )
 }
 

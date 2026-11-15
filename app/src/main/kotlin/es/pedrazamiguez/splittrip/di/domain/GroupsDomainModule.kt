@@ -30,6 +30,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.CreateGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.DeleteGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdLocalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupCurrenciesInUseUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.GetNonRemovableGroupMembersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.LeaveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
@@ -42,6 +44,8 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.impl.CreateGroupUseCaseIm
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.DeleteGroupUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetGroupByIdLocalUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetGroupByIdUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetGroupCurrenciesInUseUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetNonRemovableGroupMembersUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.GetUserGroupsFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.LeaveGroupUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.ObserveGroupUseCaseImpl
@@ -103,9 +107,38 @@ val groupsDomainModule = module {
             LogTag.USE_CASE
         )
     }
+    factory<GetGroupCurrenciesInUseUseCase> {
+        createLoggingProxy<GetGroupCurrenciesInUseUseCase>(
+            GetGroupCurrenciesInUseUseCaseImpl(
+                expenseRepository = get<ExpenseRepository>(),
+                contributionRepository = get<ContributionRepository>(),
+                cashWithdrawalRepository = get<CashWithdrawalRepository>(),
+                cashTransferRepository = get<CashTransferRepository>()
+            ),
+            LogTag.USE_CASE
+        )
+    }
+    factory<GetNonRemovableGroupMembersUseCase> {
+        createLoggingProxy<GetNonRemovableGroupMembersUseCase>(
+            GetNonRemovableGroupMembersUseCaseImpl(
+                groupRepository = get<GroupRepository>(),
+                expenseRepository = get<ExpenseRepository>(),
+                contributionRepository = get<ContributionRepository>(),
+                cashWithdrawalRepository = get<CashWithdrawalRepository>(),
+                subunitRepository = get<SubunitRepository>(),
+                cashTransferRepository = get<CashTransferRepository>(),
+                getMemberBalancesFlowUseCase = get<GetMemberBalancesFlowUseCase>(),
+                settlementRepository = get<SettlementRepository>()
+            ),
+            LogTag.USE_CASE
+        )
+    }
     factory<UpdateGroupUseCase> {
         createLoggingProxy<UpdateGroupUseCase>(
-            UpdateGroupUseCaseImpl(groupRepository = get<GroupRepository>()),
+            UpdateGroupUseCaseImpl(
+                groupRepository = get<GroupRepository>(),
+                getGroupCurrenciesInUseUseCase = get<GetGroupCurrenciesInUseUseCase>()
+            ),
             LogTag.USE_CASE
         )
     }
@@ -148,13 +181,7 @@ val groupsDomainModule = module {
         createLoggingProxy<RemoveGroupMemberUseCase>(
             RemoveGroupMemberUseCaseImpl(
                 groupRepository = get<GroupRepository>(),
-                expenseRepository = get<ExpenseRepository>(),
-                contributionRepository = get<ContributionRepository>(),
-                cashWithdrawalRepository = get<CashWithdrawalRepository>(),
-                subunitRepository = get<SubunitRepository>(),
-                settlementRepository = get<SettlementRepository>(),
-                cashTransferRepository = get<CashTransferRepository>(),
-                getMemberBalancesFlowUseCase = get<GetMemberBalancesFlowUseCase>()
+                getNonRemovableGroupMembersUseCase = get<GetNonRemovableGroupMembersUseCase>()
             ),
             LogTag.USE_CASE
         )

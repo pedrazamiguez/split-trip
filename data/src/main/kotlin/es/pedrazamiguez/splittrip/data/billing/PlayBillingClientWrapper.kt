@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
@@ -16,7 +15,6 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
-import es.pedrazamiguez.splittrip.data.BuildConfig
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
@@ -25,9 +23,7 @@ import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.BillingService
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,11 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 class PlayBillingClientWrapper(
@@ -79,14 +71,11 @@ class PlayBillingClientWrapper(
     override val purchaseUpdates: Flow<PurchaseStatus> = _purchaseUpdates.asSharedFlow()
 
     private fun isSimulationActive(): Boolean {
-        return isSimulationOverride
-            ?: ((appConfigRepository?.billingSimulationEnabled?.value == true) || BuildConfig.DEBUG)
+        return isSimulationOverride ?: (appConfigRepository?.billingSimulationEnabled?.value == true)
     }
 
-    private suspend fun ensureConnected(): Result<Unit> = connectionCoordinator.ensureConnected()
-
     override suspend fun querySubscriptionProducts(): Result<List<SubscriptionProduct>> = withContext(ioDispatcher) {
-        val connectionResult = ensureConnected()
+        val connectionResult = connectionCoordinator.ensureConnected()
         if (connectionResult.isFailure) {
             return@withContext handleQueryFailure("Billing connection failed", connectionResult.exceptionOrNull())
         }
@@ -211,12 +200,7 @@ class PlayBillingClientWrapper(
                     purchases.orEmpty().forEach { purchase ->
                         when (purchase.purchaseState) {
                             Purchase.PurchaseState.PURCHASED -> {
-                                if (!purchase.isAcknowledged) {
-                                    val ackParams = AcknowledgePurchaseParams.newBuilder()
-                                        .setPurchaseToken(purchase.purchaseToken)
-                                        .build()
-                                    connectionCoordinator.getClient().acknowledgePurchase(ackParams)
-                                }
+                                acknowledgeIfNeeded(connectionCoordinator.getClient(), purchase)
                                 purchase.products.forEach { productId ->
                                     _purchaseUpdates.emit(
                                         PurchaseStatus.Success(
@@ -245,11 +229,19 @@ class PlayBillingClientWrapper(
         }
     }
 
+    override suspend fun queryActivePurchases(): Result<List<String>> = withContext(ioDispatcher) {
+        queryAndAcknowledgeActiveProPurchases()
+    }
+
     override suspend fun restorePurchases(): Result<Boolean> = withContext(ioDispatcher) {
-        val connectionResult = ensureConnected()
+        queryAndAcknowledgeActiveProPurchases().map { it.isNotEmpty() }
+    }
+
+    private suspend fun queryAndAcknowledgeActiveProPurchases(): Result<List<String>> {
+        val connectionResult = connectionCoordinator.ensureConnected()
         if (connectionResult.isFailure) {
-            return@withContext handleRestoreFailure(
-                "Restore purchases connection failed",
+            return handleActivePurchasesFailure(
+                "Connection failed during active purchase query",
                 connectionResult.exceptionOrNull()
             )
         }
@@ -258,49 +250,63 @@ class PlayBillingClientWrapper(
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
-        val (billingResult, purchasesList) = connectionCoordinator.getClient().queryPurchasesAsync(params)
-        if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-            val error = IllegalStateException(
-                "Query purchases failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})"
-            )
-            return@withContext handleRestoreFailure("Query purchases failed", error)
+        val (billingResult, purchasesList) = try {
+            connectionCoordinator.getClient().queryPurchasesAsync(params)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return handleActivePurchasesFailure("queryPurchasesAsync threw an exception", e)
         }
 
-        processRestoredPurchases(purchasesList)
+        if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+            return handleActivePurchasesFailure(
+                "queryPurchasesAsync failed: ${billingResult.debugMessage} (code: ${billingResult.responseCode})",
+                null
+            )
+        }
+
+        val activeProProductIds = collectAndAcknowledgeProPurchases(purchasesList)
+        return when {
+            activeProProductIds.isNotEmpty() -> Result.success(activeProProductIds)
+            isSimulationActive() -> {
+                Timber.i("No live Pro purchase found but simulation is active; returning simulated Pro.")
+                Result.success(listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY))
+            }
+            else -> Result.success(emptyList())
+        }
     }
 
-    private fun handleRestoreFailure(reason: String, error: Throwable?): Result<Boolean> {
+    private suspend fun collectAndAcknowledgeProPurchases(purchasesList: List<Purchase>?): List<String> {
+        val activeProductIds = LinkedHashSet<String>()
+        purchasesList.orEmpty().forEach { purchase ->
+            if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
+                val matchedProIds = purchase.products.filter { it in BillingConstants.PRO_PRODUCT_IDS }
+                if (matchedProIds.isNotEmpty()) {
+                    acknowledgeIfNeeded(connectionCoordinator.getClient(), purchase)
+                    activeProductIds.addAll(matchedProIds)
+                }
+            }
+        }
+        return activeProductIds.toList()
+    }
+
+    private fun handleActivePurchasesFailure(reason: String, error: Throwable?): Result<List<String>> {
         return if (isSimulationActive()) {
-            Timber.i("$reason but simulation is active; restoring simulated Pro.")
-            Result.success(true)
+            Timber.i("$reason but simulation is active; returning simulated Pro.")
+            Result.success(listOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY))
         } else {
+            Timber.w(error, reason)
             Result.failure(error ?: IllegalStateException(reason))
         }
     }
+}
 
-    private suspend fun processRestoredPurchases(purchasesList: List<Purchase>?): Result<Boolean> {
-        val proProductIds = setOf(BillingConstants.PRODUCT_ID_PRO_MONTHLY, BillingConstants.PRODUCT_ID_PRO_ANNUAL)
-        val activeProPurchase = purchasesList.orEmpty().firstOrNull { purchase ->
-            purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
-                purchase.products.any { it in proProductIds }
-        }
-
-        if (activeProPurchase != null) {
-            if (!activeProPurchase.isAcknowledged) {
-                val ackParams = AcknowledgePurchaseParams.newBuilder()
-                    .setPurchaseToken(activeProPurchase.purchaseToken)
-                    .build()
-                connectionCoordinator.getClient().acknowledgePurchase(ackParams)
-            }
-            return Result.success(true)
-        }
-
-        if (isSimulationActive()) {
-            Timber.i("No live Pro purchase found but simulation is active; restoring simulated Pro.")
-            return Result.success(true)
-        }
-
-        return Result.success(false)
+private suspend fun acknowledgeIfNeeded(billingClient: BillingClient, purchase: Purchase) {
+    if (!purchase.isAcknowledged) {
+        val ackParams = AcknowledgePurchaseParams.newBuilder()
+            .setPurchaseToken(purchase.purchaseToken)
+            .build()
+        billingClient.acknowledgePurchase(ackParams)
     }
 }
 
@@ -340,125 +346,3 @@ private fun getMockSubscriptionProducts(): List<SubscriptionProduct> = listOf(
         offerToken = "mock_annual_token"
     )
 )
-
-private class BillingConnectionCoordinator(
-    private val billingClientFactory: (PurchasesUpdatedListener) -> BillingClient,
-    private val listener: PurchasesUpdatedListener,
-    private val ioDispatcher: CoroutineDispatcher
-) {
-    private val connectionMutex = Mutex()
-
-    @Volatile
-    private var billingClient: BillingClient? = null
-    private var activeConnectionDeferred: CompletableDeferred<Result<Unit>>? = null
-
-    val isReady: Boolean
-        get() = billingClient?.isReady == true
-
-    fun getClient(): BillingClient {
-        return billingClient ?: synchronized(this) {
-            billingClient ?: billingClientFactory(listener).also { billingClient = it }
-        }
-    }
-
-    fun reset() {
-        try {
-            billingClient?.endConnection()
-        } catch (e: Exception) {
-            Timber.w(e, "Error ending billing client connection")
-        } finally {
-            billingClient = null
-        }
-    }
-
-    suspend fun ensureConnected(): Result<Unit> = withContext(ioDispatcher) {
-        if (isReady) return@withContext Result.success(Unit)
-
-        val (deferred, isInitiator) = connectionMutex.withLock {
-            if (isReady) return@withContext Result.success(Unit)
-            getOrCreateConnectionDeferred()
-        }
-
-        if (!isInitiator) {
-            return@withContext deferred.await()
-        }
-
-        executeConnection(deferred)
-    }
-
-    private fun getOrCreateConnectionDeferred(): Pair<CompletableDeferred<Result<Unit>>, Boolean> {
-        val existing = activeConnectionDeferred
-        return if (existing != null && existing.isActive) {
-            existing to false
-        } else {
-            val newDeferred = CompletableDeferred<Result<Unit>>()
-            activeConnectionDeferred = newDeferred
-            newDeferred to true
-        }
-    }
-
-    private suspend fun executeConnection(deferred: CompletableDeferred<Result<Unit>>): Result<Unit> {
-        return try {
-            val result = connectBillingClient()
-            deferred.complete(result)
-            result
-        } catch (e: CancellationException) {
-            deferred.complete(Result.failure(e))
-            throw e
-        } catch (e: Exception) {
-            val failure = Result.failure<Unit>(e)
-            deferred.complete(failure)
-            failure
-        } finally {
-            connectionMutex.withLock {
-                if (activeConnectionDeferred === deferred) {
-                    activeConnectionDeferred = null
-                }
-            }
-        }
-    }
-
-    private suspend fun connectBillingClient(): Result<Unit> {
-        val client = getClient()
-        val timeoutMs = BillingConstants.BILLING_CONNECT_TIMEOUT_MS
-        val connectResult = withTimeoutOrNull(timeoutMs) {
-            suspendCancellableCoroutine { continuation ->
-                continuation.invokeOnCancellation {
-                    reset()
-                }
-                client.startConnection(object : BillingClientStateListener {
-                    override fun onBillingSetupFinished(billingResult: BillingResult) {
-                        if (!continuation.isActive) return
-                        if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                            continuation.resume(Result.success(Unit))
-                        } else {
-                            val code = billingResult.responseCode
-                            val msg = billingResult.debugMessage
-                            reset()
-                            continuation.resume(
-                                Result.failure(
-                                    IllegalStateException("Billing setup failed: $msg (code: $code)")
-                                )
-                            )
-                        }
-                    }
-
-                    override fun onBillingServiceDisconnected() {
-                        Timber.w("Billing service disconnected")
-                        reset()
-                    }
-                })
-            }
-        }
-
-        return if (connectResult != null) {
-            connectResult
-        } else {
-            Timber.w("Billing connection timed out after %d ms", timeoutMs)
-            reset()
-            Result.failure(
-                IllegalStateException("Billing connection timed out after $timeoutMs ms")
-            )
-        }
-    }
-}

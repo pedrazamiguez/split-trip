@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
@@ -193,7 +194,7 @@ class AddExpenseUiStateTest {
         @Test
         fun `returns true when funding source is USER`() {
             val state = AddExpenseUiState(
-                selectedFundingSource = FundingSourceUiModel(id = PayerType.USER.name, displayText = "My Money")
+                selectedFundingSource = FundingSourceUiModel(id = PayerType.USER.name, displayText = "Your Money")
             )
             assertTrue(state.showContributionScopeStep)
         }
@@ -254,7 +255,7 @@ class AddExpenseUiStateTest {
             val state = AddExpenseUiState(
                 selectedFundingSource = FundingSourceUiModel(
                     id = PayerType.USER.name,
-                    displayText = "My Money"
+                    displayText = "Your Money"
                 )
             )
             assertTrue(state.applicableSteps.contains(AddExpenseStep.CONTRIBUTION_SCOPE))
@@ -282,7 +283,7 @@ class AddExpenseUiStateTest {
             val state = AddExpenseUiState(
                 selectedFundingSource = FundingSourceUiModel(
                     id = PayerType.USER.name,
-                    displayText = "My Money"
+                    displayText = "Your Money"
                 )
             )
             val steps = state.applicableSteps
@@ -494,9 +495,201 @@ class AddExpenseUiStateTest {
         }
 
         @Test
-        fun `returns false when on CONTRIBUTION_SCOPE`() {
+        fun `returns true when on CONTRIBUTION_SCOPE`() {
             val state = AddExpenseUiState(currentStep = AddExpenseStep.CONTRIBUTION_SCOPE)
-            assertFalse(state.isOnOptionalStep)
+            assertTrue(state.isOnOptionalStep)
+        }
+    }
+
+    // ── canSkipToReview ───────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("canSkipToReview")
+    inner class CanSkipToReview {
+
+        @Test
+        fun `returns true when on CONTRIBUTION_SCOPE with USER funding source`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.CONTRIBUTION_SCOPE,
+                selectedFundingSource = FundingSourceUiModel(
+                    id = PayerType.USER.name,
+                    displayText = "Your Money"
+                )
+            )
+            assertTrue(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns true when on FUNDING_SOURCE with USER funding source`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.FUNDING_SOURCE,
+                selectedFundingSource = FundingSourceUiModel(
+                    id = PayerType.USER.name,
+                    displayText = "Your Money"
+                )
+            )
+            assertTrue(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on AMOUNT when sourceAmount is blank`() {
+            val state = AddExpenseUiState(currentStep = AddExpenseStep.AMOUNT)
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false when on TITLE`() {
+            val state = AddExpenseUiState(currentStep = AddExpenseStep.TITLE)
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false when on PAYMENT_METHOD`() {
+            val state = AddExpenseUiState(currentStep = AddExpenseStep.PAYMENT_METHOD)
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false when on REVIEW`() {
+            val state = AddExpenseUiState(currentStep = AddExpenseStep.REVIEW)
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns true on AMOUNT when same currency and amount is valid`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "50.00",
+                isAmountValid = true,
+                showExchangeRateSection = false
+            )
+            assertTrue(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on AMOUNT when isAmountValid is false`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "0",
+                isAmountValid = false
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on AMOUNT when isInsufficientCash is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "50.00",
+                isAmountValid = true,
+                isInsufficientCash = true
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on AMOUNT when isLoadingRate is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "50.00",
+                isAmountValid = true,
+                isLoadingRate = true
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on AMOUNT when showExchangeRateSection is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "50.00",
+                isAmountValid = true,
+                showExchangeRateSection = true
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns true on EXCHANGE_RATE when rate and amounts are valid`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                showExchangeRateSection = true,
+                sourceAmount = "50.00",
+                displayExchangeRate = "1.08",
+                calculatedGroupAmount = "54.00",
+                isExchangeRateValid = true,
+                isGroupAmountValid = true
+            )
+            assertTrue(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on EXCHANGE_RATE when isLoadingRate is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                showExchangeRateSection = true,
+                sourceAmount = "50.00",
+                displayExchangeRate = "1.08",
+                calculatedGroupAmount = "54.00",
+                isLoadingRate = true
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on EXCHANGE_RATE when isExchangeRateValid is false`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                showExchangeRateSection = true,
+                sourceAmount = "50.00",
+                displayExchangeRate = "0",
+                calculatedGroupAmount = "0",
+                isExchangeRateValid = false
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on EXCHANGE_RATE when isGroupAmountValid is false`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                showExchangeRateSection = true,
+                sourceAmount = "50.00",
+                displayExchangeRate = "1.08",
+                calculatedGroupAmount = "0",
+                isGroupAmountValid = false
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on SPLIT when splitError is present`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.SPLIT,
+                splitError = UiText.DynamicString("error")
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns true on CATEGORY when no mandatory or exchange rate step is ahead`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.CATEGORY,
+                sourceAmount = "50.00"
+            )
+            assertTrue(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns true on FUNDING_SOURCE with GROUP funding source`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.FUNDING_SOURCE,
+                selectedFundingSource = FundingSourceUiModel(
+                    id = PayerType.GROUP.name,
+                    displayText = "Group Pot"
+                )
+            )
+            assertTrue(state.canSkipToReview)
         }
     }
 

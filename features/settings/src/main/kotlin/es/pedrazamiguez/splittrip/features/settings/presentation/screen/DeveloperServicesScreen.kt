@@ -8,14 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.EmailStamp
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
-import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.navigation.SERVICE_TABS
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.AiExtractionTabContent
+import es.pedrazamiguez.splittrip.features.settings.presentation.component.BillingTabContent
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.OcrTabContent
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesTab
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiEvent
@@ -24,12 +20,12 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Devel
 private fun DeveloperServicesTab.toNavId() = when (this) {
     DeveloperServicesTab.Ocr -> "ocr"
     DeveloperServicesTab.AiExtraction -> "ai_extraction"
-    DeveloperServicesTab.AvatarGen -> "avatar_gen"
+    DeveloperServicesTab.Billing -> "billing"
 }
 
 private fun String.toDeveloperServicesTab() = when (this) {
     "ai_extraction" -> DeveloperServicesTab.AiExtraction
-    "avatar_gen" -> DeveloperServicesTab.AvatarGen
+    "billing" -> DeveloperServicesTab.Billing
     else -> DeveloperServicesTab.Ocr
 }
 
@@ -58,13 +54,11 @@ fun DeveloperServicesScreen(
                     onSelectReceiptForAiClick = onSelectReceiptForAiClick,
                     onEvent = onEvent
                 )
-                DeveloperServicesTab.AvatarGen -> {
-                    EmptyStateView(
-                        icon = TablerIcons.Outline.EmailStamp,
-                        title = stringResource(R.string.developer_services_avatar_title),
-                        description = stringResource(R.string.developer_services_avatar_subtitle)
-                    )
-                }
+                DeveloperServicesTab.Billing -> BillingTabContent(
+                    uiState = uiState,
+                    onEvent = onEvent,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
 

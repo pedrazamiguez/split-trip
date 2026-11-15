@@ -8,15 +8,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.features.expense.R
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.CondensedChips
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import kotlinx.collections.immutable.ImmutableList
 
 /**
- * Funding source selection using condensed chips.
- * Allows the user to choose between "Group Pocket" and "My Money".
+ * Funding source selection using Horizon Narrative option cards.
+ * Allows the user to choose between "Group Pocket" and "Your Money" with
+ * always-visible plain-language descriptions for both options.
  */
 @Composable
 internal fun FundingSourceSection(
@@ -31,18 +32,29 @@ internal fun FundingSourceSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        SectionHeadingText(text = stringResource(R.string.funding_source_title))
+        Column(
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+        ) {
+            SectionHeadingText(text = stringResource(R.string.funding_source_title))
+            SecondaryBodyText(
+                text = stringResource(R.string.funding_source_subtitle),
+                maxLines = Int.MAX_VALUE
+            )
+        }
 
-        CondensedChips(
-            items = fundingSources,
-            selectedId = selectedFundingSource?.id,
-            onItemSelected = { sourceId ->
-                onFundingSourceSelected(sourceId)
-                focusManager.clearFocus()
-            },
-            itemId = { it.id },
-            itemLabel = { it.displayText },
-            visibleCount = 2
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        ) {
+            fundingSources.forEach { source ->
+                FundingSourceOptionCard(
+                    option = source,
+                    isSelected = source.id == selectedFundingSource?.id,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onFundingSourceSelected(source.id)
+                    }
+                )
+            }
+        }
     }
 }
