@@ -260,11 +260,11 @@
     <string name="funding_source_your_money_description">Pagâ con tu propio dinero. SplîTTrîh rehîttra er gâtto y reparte la parte de cá uno pa que te lo reemborçen dêppuêh.</string>
     <string name="expense_wizard_step_funding_source">Orihen</string>
     <string name="expense_review_funding_source">Pagao con</string>
-    <string name="expense_contribution_scope_title">¿A quién çe le acredita?</string>
+    <string name="expense_contribution_scope_title">¿Pa quién êh êtte pago?</string>
     <string name="expense_contribution_scope_for_group">Pa tó er grupo</string>
     <string name="expense_contribution_scope_for_you">Pa ti</string>
     <string name="expense_contribution_scope_for_subunit">Pa %1$s</string>
-    <string name="expense_wizard_step_contribution_scope">Crédito</string>
+    <string name="expense_wizard_step_contribution_scope">Pagao pa</string>
     <string name="expense_review_contribution_scope">Pagao pa</string>
     <string name="expense_review_scope_personal">Perçonâh</string>
     <string name="expense_review_scope_group">Grupo</string>
