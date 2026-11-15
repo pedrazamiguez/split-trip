@@ -15,8 +15,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.rememberWizardNavBarPadding
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.step.AmountStep
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.step.AtmFeeStep
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.step.DetailsStep
@@ -34,6 +34,8 @@ internal fun WizardStepContent(
     onEvent: (AddCashWithdrawalUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val navBarPadding = rememberWizardNavBarPadding(hasSkipToReview = uiState.isOnOptionalStep)
+
     AnimatedContent(
         targetState = uiState.currentStep,
         modifier = modifier,
@@ -53,7 +55,7 @@ internal fun WizardStepContent(
                 .fillMaxSize()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = bottomPadding + UiConstants.WIZARD_NAV_BAR_HEIGHT)
+                .padding(bottom = bottomPadding + navBarPadding)
         ) {
             val nextStep = { onEvent(AddCashWithdrawalUiEvent.NextStep) }
             when (step) {

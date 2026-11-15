@@ -101,12 +101,12 @@ All components are `@Composable` functions following Material 3 design. They acc
 | Component | File | Purpose |
 |---|---|---|
 | `WizardStepLayout` | `wizard/WizardStepLayout.kt` | Container for a single wizard step: title, content slot, and consistent padding. **Use for:** Multi-step form screens (e.g., Add Expense wizard). |
-| `WizardStepIndicator` | `wizard/WizardStepIndicator.kt` | Animated step dots/labels showing progress through wizard steps. Supports optional step indices (dashed-border visual), and a "Skip to Review" link. **Use for:** Top of wizard screens to show current step. |
-| `WizardNavigationBar` | `wizard/WizardNavigationBar.kt` | Bottom bar with Back/Next/Submit buttons. Configured via `WizardNavigationBarConfig`. **Use for:** Wizard step navigation controls. |
+| `WizardStepIndicator` | `wizard/WizardStepIndicator.kt` | Animated step dots/labels showing progress through wizard steps. Supports optional step indices (dashed-border visual) and step-circle tap navigation. **Use for:** Top of wizard screens to show current step. |
+| `WizardNavigationBar` | `wizard/WizardNavigationBar.kt` | Bottom bar with Back/Next/Submit buttons and an optional fast-track "Skip to Review" pill (plus optional smart-defaults hint) above the action row. Configured via `WizardNavigationBarConfig` and `onSkipToReview`. **Use for:** Wizard step navigation controls (reserve `UiConstants.WIZARD_NAV_BAR_HEIGHT` or `UiConstants.WIZARD_NAV_BAR_WITH_SKIP_HEIGHT` bottom scroll padding). |
 | `WizardSkipStrategy` | `wizard/WizardSkipStrategy.kt` | Enum classifying wizard steps as `REQUIRED` or `OPTIONAL`. Used as documentation/reference; feature step enums use `isOptional: Boolean`. |
 
 **Configuration class:**
-- `WizardNavigationBarConfig` — data class defining button labels, visibility, and enabled state for each wizard navigation button.
+- `WizardNavigationBarConfig` — data class defining button labels, visibility, enabled state, and optional fast-track `"Skip to Review"` label + smart-defaults hint for the navigation bar.
 
 ### A.6 Form
 

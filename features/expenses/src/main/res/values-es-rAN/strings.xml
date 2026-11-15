@@ -202,6 +202,7 @@
     <string name="expense_wizard_step_add_ons">Êttrâ</string>
     <string name="expense_wizard_step_review">Reçumen</string>
     <string name="expense_wizard_skip_to_review">Îh al reçumen →</string>
+    <string name="expense_wizard_skip_defaults_hint">Lô paçô ôççionalê uçan balorê por defêtto (Reparto iguâh · Pagao oy)</string>
     <string name="expense_review_title">Rebiça tu gâtto</string>
     <string name="expense_review_none">–</string>
     <string name="expense_review_title_label">Conçêtto</string>

@@ -228,6 +228,7 @@
     <string name="expense_wizard_step_add_ons">Add-ons</string>
     <string name="expense_wizard_step_review">Review</string>
     <string name="expense_wizard_skip_to_review">Skip to Review →</string>
+    <string name="expense_wizard_skip_defaults_hint">Optional steps use smart defaults (Equal split · Paid today)</string>
 
     
     <string name="expense_review_title">Review your expense</string>

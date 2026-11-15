@@ -72,12 +72,6 @@ internal fun WithdrawalWizard(
                 stepLabels = orderedLabels,
                 currentStepIndex = uiState.currentStepIndex,
                 optionalStepIndices = uiState.optionalStepIndices,
-                skipToReviewLabel = if (uiState.isOnOptionalStep) skipToReviewLabel else null,
-                onSkipToReview = if (uiState.isOnOptionalStep) {
-                    { onEvent(AddCashWithdrawalUiEvent.JumpToReview) }
-                } else {
-                    null
-                },
                 onStepClicked = { onEvent(AddCashWithdrawalUiEvent.JumpToStep(it)) }
             )
 
@@ -96,11 +90,17 @@ internal fun WithdrawalWizard(
                 isLoading = uiState.isLoading,
                 backLabel = backLabel,
                 nextLabel = nextLabel,
-                submitLabel = submitLabel
+                submitLabel = submitLabel,
+                skipToReviewLabel = if (uiState.isOnOptionalStep) skipToReviewLabel else null
             ),
             onBack = { onEvent(AddCashWithdrawalUiEvent.PreviousStep) },
             onNext = { onEvent(AddCashWithdrawalUiEvent.NextStep) },
             onSubmit = { onEvent(AddCashWithdrawalUiEvent.SubmitWithdrawal(groupId)) },
+            onSkipToReview = if (uiState.isOnOptionalStep) {
+                { onEvent(AddCashWithdrawalUiEvent.JumpToReview) }
+            } else {
+                null
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = bottomPadding)

@@ -228,6 +228,7 @@
     <string name="expense_wizard_step_add_ons">Extras</string>
     <string name="expense_wizard_step_review">Resumen</string>
     <string name="expense_wizard_skip_to_review">Ir al resumen →</string>
+    <string name="expense_wizard_skip_defaults_hint">Los pasos opcionales usan valores por defecto (Reparto igual · Pagado hoy)</string>
 
     
     <string name="expense_review_title">Revisa tu gasto</string>
