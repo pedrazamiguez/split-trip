@@ -1166,7 +1166,7 @@ class AddExpenseUiMapperTest {
                 displayExchangeRate = "1.0",
                 calculatedGroupAmount = "",
                 selectedPaymentMethod = cashPaymentMethod,
-                selectedFundingSource = FundingSourceUiModel(id = "USER", displayText = "My Money"),
+                selectedFundingSource = FundingSourceUiModel(id = "USER", displayText = "Your Money"),
                 currentUserId = "user-42"
             )
 
@@ -1188,7 +1188,7 @@ class AddExpenseUiMapperTest {
                 displayExchangeRate = "1.0",
                 calculatedGroupAmount = "",
                 selectedPaymentMethod = cashPaymentMethod,
-                selectedFundingSource = FundingSourceUiModel(id = "USER", displayText = "My Money"),
+                selectedFundingSource = FundingSourceUiModel(id = "USER", displayText = "Your Money"),
                 currentUserId = null
             )
 

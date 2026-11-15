@@ -14,7 +14,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 /**
  * Wizard step for selecting the contribution scope of an out-of-pocket expense.
  *
- * Only shown when the funding source is "My Money" (USER). Lets the user choose
+ * Only shown when the funding source is "Your Money" (USER). Lets the user choose
  * who gets credit for the paired contribution: Personal / Subunit / Group.
  * Auto-advances on GROUP or USER selections; SUBUNIT requires a sub-picker.
  */

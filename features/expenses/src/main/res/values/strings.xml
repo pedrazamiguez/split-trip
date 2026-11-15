@@ -296,9 +296,11 @@
 
     
     <string name="funding_source_title">Paid from</string>
+    <string name="funding_source_subtitle">Choose whether this payment comes from the group\'s shared pocket or your own money.</string>
     <string name="funding_source_group_pocket">Group Pocket</string>
-    <string name="funding_source_my_money">My Money</string>
-    <string name="funding_source_my_money_hint">You\'ll be reimbursed for others\' shares</string>
+    <string name="funding_source_group_pocket_description">The group\'s shared pool of money collected from member contributions. Use this when paying from money set aside by the group.</string>
+    <string name="funding_source_your_money">Your Money</string>
+    <string name="funding_source_your_money_description">You pay with your own money. SplitTrip tracks everyone\'s share so you\'re reimbursed later.</string>
     <string name="expense_wizard_step_funding_source">Source</string>
     <string name="expense_review_funding_source">Paid from</string>
 

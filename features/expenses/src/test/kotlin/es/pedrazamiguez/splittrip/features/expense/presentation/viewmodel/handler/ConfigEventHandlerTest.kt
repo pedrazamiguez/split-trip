@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
@@ -412,7 +413,23 @@ class ConfigEventHandlerTest {
         }
 
         @Test
-        fun `selects GROUP as default funding source`() = runTest {
+        fun `selects USER as default funding source when group has no manual pocket contributions`() = runTest {
+            handler.bind(uiState, actions, this)
+
+            handler.loadGroupConfig("group-1")
+            advanceUntilIdle()
+
+            val selectedFundingSource = uiState.value.selectedFundingSource
+            assertNotNull(selectedFundingSource)
+            assertEquals("USER", selectedFundingSource!!.id)
+            assertEquals(PayerType.USER, uiState.value.contributionScope)
+        }
+
+        @Test
+        fun `selects GROUP as default funding source when group has manual pocket contributions`() = runTest {
+            coEvery {
+                getGroupExpenseConfigUseCase("group-1", false)
+            } returns Result.success(testConfig.copy(hasManualPocketContributions = true))
             handler.bind(uiState, actions, this)
 
             handler.loadGroupConfig("group-1")

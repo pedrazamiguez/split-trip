@@ -296,9 +296,11 @@
 
     
     <string name="funding_source_title">Pagado desde</string>
+    <string name="funding_source_subtitle">Elige si este pago sale del pocket del grupo o de tu propio dinero.</string>
     <string name="funding_source_group_pocket">Pocket del grupo</string>
-    <string name="funding_source_my_money">Mi dinero</string>
-    <string name="funding_source_my_money_hint">Se te reembolsará la parte de los demás</string>
+    <string name="funding_source_group_pocket_description">El dinero compartido que el grupo ha reunido con aportaciones previas en el pocket virtual. Úsalo si pagas con esos fondos.</string>
+    <string name="funding_source_your_money">Tu dinero</string>
+    <string name="funding_source_your_money_description">Pagas con tu propio dinero. SplitTrip registra el gasto y reparte la parte de cada uno para que te lo reembolsen después.</string>
     <string name="expense_wizard_step_funding_source">Origen</string>
     <string name="expense_review_funding_source">Pagado desde</string>
 

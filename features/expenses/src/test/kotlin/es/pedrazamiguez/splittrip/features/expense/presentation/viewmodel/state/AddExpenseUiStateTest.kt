@@ -193,7 +193,7 @@ class AddExpenseUiStateTest {
         @Test
         fun `returns true when funding source is USER`() {
             val state = AddExpenseUiState(
-                selectedFundingSource = FundingSourceUiModel(id = PayerType.USER.name, displayText = "My Money")
+                selectedFundingSource = FundingSourceUiModel(id = PayerType.USER.name, displayText = "Your Money")
             )
             assertTrue(state.showContributionScopeStep)
         }
@@ -254,7 +254,7 @@ class AddExpenseUiStateTest {
             val state = AddExpenseUiState(
                 selectedFundingSource = FundingSourceUiModel(
                     id = PayerType.USER.name,
-                    displayText = "My Money"
+                    displayText = "Your Money"
                 )
             )
             assertTrue(state.applicableSteps.contains(AddExpenseStep.CONTRIBUTION_SCOPE))
@@ -282,7 +282,7 @@ class AddExpenseUiStateTest {
             val state = AddExpenseUiState(
                 selectedFundingSource = FundingSourceUiModel(
                     id = PayerType.USER.name,
-                    displayText = "My Money"
+                    displayText = "Your Money"
                 )
             )
             val steps = state.applicableSteps
@@ -494,9 +494,46 @@ class AddExpenseUiStateTest {
         }
 
         @Test
-        fun `returns false when on CONTRIBUTION_SCOPE`() {
+        fun `returns true when on CONTRIBUTION_SCOPE`() {
             val state = AddExpenseUiState(currentStep = AddExpenseStep.CONTRIBUTION_SCOPE)
-            assertFalse(state.isOnOptionalStep)
+            assertTrue(state.isOnOptionalStep)
+        }
+    }
+
+    // ── canSkipToReview ───────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("canSkipToReview")
+    inner class CanSkipToReview {
+
+        @Test
+        fun `returns true when on CONTRIBUTION_SCOPE with USER funding source`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.CONTRIBUTION_SCOPE,
+                selectedFundingSource = FundingSourceUiModel(
+                    id = PayerType.USER.name,
+                    displayText = "Your Money"
+                )
+            )
+            assertTrue(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns true when on FUNDING_SOURCE with USER funding source`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.FUNDING_SOURCE,
+                selectedFundingSource = FundingSourceUiModel(
+                    id = PayerType.USER.name,
+                    displayText = "Your Money"
+                )
+            )
+            assertTrue(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false when on AMOUNT`() {
+            val state = AddExpenseUiState(currentStep = AddExpenseStep.AMOUNT)
+            assertFalse(state.canSkipToReview)
         }
     }
 

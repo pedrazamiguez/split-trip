@@ -1,13 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.FundingSourceSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -15,8 +9,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 
 /**
  * Step 3: Funding source selection.
- * Always shown — determines whether the expense is paid from the group pocket or personal money.
- * Shows a contextual hint when "My Money" is selected.
+ * Always shown — determines whether the expense is paid from "Group Pocket" or "Your Money".
+ * Both options display persistent descriptions so users understand each choice before tapping.
  * Auto-advances to the next step after a selection is made.
  */
 @Composable
@@ -35,15 +29,5 @@ fun FundingSourceStep(
                 onAutoAdvance()
             }
         )
-
-        AnimatedVisibility(visible = uiState.fundingSourceHint != null) {
-            uiState.fundingSourceHint?.let { hint ->
-                SecondaryBodyText(
-                    text = hint.asString(),
-                    maxLines = Int.MAX_VALUE,
-                    modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraSmall)
-                )
-            }
-        }
     }
 }

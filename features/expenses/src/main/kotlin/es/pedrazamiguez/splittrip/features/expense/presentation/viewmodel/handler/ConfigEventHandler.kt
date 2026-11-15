@@ -339,9 +339,7 @@ class ConfigEventHandler(
                 ?: mappedSplitTypes.firstOrNull()
 
         val mappedFundingSources = addExpenseOptionsMapper.mapFundingSources(PayerType.entries)
-        val defaultFundingSource =
-            mappedFundingSources.find { it.id == PayerType.GROUP.name }
-                ?: mappedFundingSources.firstOrNull()
+        val defaultFundingSource = resolveDefaultFundingSource(config, mappedFundingSources)
 
         return ConfigDefaults(
             mappedCurrencies = mappedCurrencies,
@@ -421,6 +419,19 @@ class ConfigEventHandler(
         val recent = recentIds.mapNotNull { id -> items.find { idSelector(it) == id } }
         val rest = items.filter { idSelector(it) !in recentIdSet }
         return (recent + rest).toImmutableList()
+    }
+
+    private fun resolveDefaultFundingSource(
+        config: GroupExpenseConfig,
+        mappedFundingSources: List<FundingSourceUiModel>
+    ): FundingSourceUiModel? {
+        val defaultPayerType = if (config.hasManualPocketContributions) {
+            PayerType.GROUP
+        } else {
+            PayerType.USER
+        }
+        return mappedFundingSources.find { it.id == defaultPayerType.name }
+            ?: mappedFundingSources.firstOrNull()
     }
 
     /**
