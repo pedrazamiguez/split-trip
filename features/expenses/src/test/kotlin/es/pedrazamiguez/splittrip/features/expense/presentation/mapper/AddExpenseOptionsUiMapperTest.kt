@@ -552,7 +552,7 @@ class AddExpenseOptionsUiMapperTest {
         fun setupPoolStrings() {
             every {
                 resourceProvider.getString(R.string.add_expense_cash_pool_personal)
-            } returns "My personal cash"
+            } returns "Your personal cash"
 
             every {
                 resourceProvider.getString(R.string.add_expense_cash_pool_group)
@@ -581,7 +581,7 @@ class AddExpenseOptionsUiMapperTest {
             assertEquals(1, result.size)
             assertEquals(PayerType.USER, result[0].scope)
             assertEquals("user-1", result[0].ownerId)
-            assertEquals("My personal cash", result[0].displayLabel)
+            assertEquals("Your personal cash", result[0].displayLabel)
         }
 
         @Test

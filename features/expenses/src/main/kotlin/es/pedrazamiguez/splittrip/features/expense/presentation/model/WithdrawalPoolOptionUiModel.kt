@@ -5,7 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 /**
  * UI model representing a selectable cash withdrawal pool in the pool-selection widget.
  *
- * Shown in the Exchange Rate step when multiple pools (e.g. "My personal cash" + "Group cash")
+ * Shown in the Exchange Rate step when multiple pools (e.g. "Your personal cash" + "Group cash")
  * hold available funds for the current expense's currency, allowing the user to explicitly
  * choose which pool funds the expense instead of the default FIFO priority.
  *
@@ -13,7 +13,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
  * @param ownerId      The userId for USER-scoped pools, the subunitId for SUBUNIT-scoped pools,
  *                     or null for GROUP-scoped pools.
  * @param displayLabel Human-readable label shown in the selection UI
- *                     (e.g. "My personal cash", "Group cash", or the subunit name).
+ *                     (e.g. "Your personal cash", "Group cash", or the subunit name).
  */
 data class WithdrawalPoolOptionUiModel(
     val scope: PayerType,
