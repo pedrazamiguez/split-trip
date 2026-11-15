@@ -60,7 +60,7 @@ We treat releases as a specific type of issue.
    * **Google Play Store Publishing (`deploy-play-store.yml`):**
      * Builds and signs the release `.aab` (Android App Bundle).
      * Strictly verifies the release signing certificate (ensures non-debug signature and valid keystore owner).
-     * Extracts recent PR summaries and generates localized release notes (`whatsnew-es-ES`, `whatsnew-en-US`).
+     * Resolves and generates localized release notes (`whatsnew-es-ES`, `whatsnew-en-US`) via `scripts/generate_play_store_whatsnew.py`, filtering out internal `sync`/`config`/`release` PRs and enforcing Google Play's 500-character limit.
      * Uploads the `.aab` bundle and ProGuard/R8 deobfuscation mapping (`mapping.txt`) to the target Google Play track (defaults to `internal` / *Prueba interna*).
 
 ### Phase 3: Sync Back (Backmerge)
@@ -112,6 +112,21 @@ You can build and deploy to any track on demand directly from GitHub Actions:
    * `beta`
    * `production`
 4. Click **Run workflow**. The pipeline will compile, sign, verify, and upload the `.aab` and deobfuscation mappings to the chosen track.
+
+### Localized Release Notes (`whatsnew`) & Override Precedence
+
+Google Play release notes (`distribution/whatsnew/whatsnew-en-US` and `distribution/whatsnew/whatsnew-es-ES`, max 500 characters each) are resolved per locale by `scripts/generate_play_store_whatsnew.py` using the following precedence:
+
+1. **Committed Curated Files:** Non-empty `distribution/whatsnew/whatsnew-en-US` or `distribution/whatsnew/whatsnew-es-ES` committed in the repository.
+2. **Release / Hotfix PR Body:** Explicit `#### en-US` / `#### es-ES` sections (or `### Release Notes`) in the merged PR description.
+3. **Release / Hotfix Issue Body:** Explicit `#### en-US` / `#### es-ES` sections under `### Release Notes / Context` in the linked issue.
+4. **Automated Extraction from User-Facing PRs:**
+   * Queries PRs merged into both `develop` and `main` since the previous release tag.
+   * Strictly excludes internal PRs (`sync`, `config`, `release`, or titles starting with `Sync:`) and includes only user-facing labels (`feature`, `bug`, `enhancement`, `hotfix`).
+   * `en-US` receives cleaned PR title bullets (`[SPLTRP-XXXX]` prefixes stripped); `es-ES` receives localized Spanish category summary bullets (never raw English PR titles).
+5. **Bilingual Fallbacks:** When only internal/maintenance commits exist:
+   * `whatsnew-en-US`: `- Bug fixes and performance improvements.`
+   * `whatsnew-es-ES`: `- Corrección de errores y mejoras de rendimiento.`
 
 ---
 

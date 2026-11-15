@@ -48,6 +48,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
+      - name: Run Release Notes Script Unit Tests
+        run: python3 -m unittest scripts/test_generate_play_store_whatsnew.py -v
+
       - name: Lint, Test, and Build
         run: ./gradlew lintDebug testDebugUnitTest assembleDebug
 
