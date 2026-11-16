@@ -14,8 +14,8 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wiza
  * @param skipToReviewLabel    Optional localised label for the fast-track "Skip to Review"
  *                             pill rendered above the Back/Next row when non-null alongside
  *                             `onSkipToReview` and `!isOnLastStep`.
- * @param optionalDefaultsHint Optional supporting caption rendered inside the fast-track
- *                             pill explaining pre-applied smart defaults on skipped steps.
+ * @param optionalDefaultsHint Optional supporting caption rendered directly below the
+ *                             fast-track pill explaining pre-applied smart defaults on skipped steps.
  */
 data class WizardNavigationBarConfig(
     val canGoNext: Boolean,
