@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.10,<3.15"
 # dependencies = [
 #     "fastembed>=0.5.0",
 #     "numpy>=1.26.0",
