@@ -39,7 +39,7 @@
     <!-- Wizard Navigation -->
     <string name="withdrawal_wizard_next">Siguiente</string>
     <string name="withdrawal_wizard_back">Atrás</string>
-    <string name="withdrawal_wizard_skip_to_review">Ir al resumen →</string>
+    <string name="withdrawal_wizard_skip_to_review">Ir al resumen</string>
     <string name="withdrawal_wizard_step_amount">Importe</string>
     <string name="withdrawal_wizard_step_exchange_rate">Tipo</string>
     <string name="withdrawal_wizard_step_scope">Ámbito</string>

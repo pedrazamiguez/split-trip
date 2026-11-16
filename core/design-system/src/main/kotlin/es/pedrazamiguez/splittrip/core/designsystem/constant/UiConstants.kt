@@ -25,8 +25,8 @@ object UiConstants {
      * Height reserved for [WizardNavigationBar] when the fast-track "Skip to Review"
      * pill (and optional smart-defaults hint) is visible above the Back / Next buttons.
      *
-     * Calculated from base [WIZARD_NAV_BAR_HEIGHT] (80 dp) + fast-track pill (~68 dp
-     * including optional 2-line caption) + spacing gap (8 dp) + safety buffer (4 dp).
+     * Calculated from base [WIZARD_NAV_BAR_HEIGHT] (80 dp) + fast-track pill (48 dp) +
+     * hint gap (4 dp) + single-line caption (16 dp) + section gap (8 dp) + safety buffer (4 dp).
      */
     val WIZARD_NAV_BAR_WITH_SKIP_HEIGHT: Dp = 160.dp
 

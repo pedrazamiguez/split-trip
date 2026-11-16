@@ -102,11 +102,11 @@ All components are `@Composable` functions following Material 3 design. They acc
 |---|---|---|
 | `WizardStepLayout` | `wizard/WizardStepLayout.kt` | Container for a single wizard step: title, content slot, and consistent padding. **Use for:** Multi-step form screens (e.g., Add Expense wizard). |
 | `WizardStepIndicator` | `wizard/WizardStepIndicator.kt` | Animated step dots/labels showing progress through wizard steps. Supports optional step indices (dashed-border visual) and step-circle tap navigation. **Use for:** Top of wizard screens to show current step. |
-| `WizardNavigationBar` | `wizard/WizardNavigationBar.kt` | Bottom bar with Back/Next/Submit buttons and an optional fast-track "Skip to Review" pill (plus optional smart-defaults hint) above the action row. Configured via `WizardNavigationBarConfig` and `onSkipToReview`. **Use for:** Wizard step navigation controls (reserve `UiConstants.WIZARD_NAV_BAR_HEIGHT` or `UiConstants.WIZARD_NAV_BAR_WITH_SKIP_HEIGHT` bottom scroll padding). |
+| `WizardNavigationBar` | `wizard/WizardNavigationBar.kt` | Bottom bar with Back/Next/Submit buttons and an optional fast-track "Skip to Review" tonal pill (with an optional smart-defaults `CaptionText` directly below it) above the action row. Configured via `WizardNavigationBarConfig` and `onSkipToReview`. **Use for:** Wizard step navigation controls (reserve `UiConstants.WIZARD_NAV_BAR_HEIGHT` or `UiConstants.WIZARD_NAV_BAR_WITH_SKIP_HEIGHT` bottom scroll padding). |
 | `WizardSkipStrategy` | `wizard/WizardSkipStrategy.kt` | Enum classifying wizard steps as `REQUIRED` or `OPTIONAL`. Used as documentation/reference; feature step enums use `isOptional: Boolean`. |
 
 **Configuration class:**
-- `WizardNavigationBarConfig` — data class defining button labels, visibility, enabled state, and optional fast-track `"Skip to Review"` label + smart-defaults hint for the navigation bar.
+- `WizardNavigationBarConfig` — data class defining button labels, visibility, enabled state, and optional fast-track `"Skip to Review"` label + smart-defaults caption rendered below the pill for the navigation bar.
 
 ### A.6 Form
 

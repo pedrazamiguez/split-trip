@@ -6,16 +6,19 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,8 +27,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -35,13 +39,16 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowLeft
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowRight
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.ButtonContentRow
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 
 private val FAST_TRACK_SHADOW_ELEVATION = 2.dp
-private val FAST_TRACK_MIN_HEIGHT = 44.dp
-private const val HINT_CONTENT_ALPHA = 0.85f
+private val FAST_TRACK_PILL_HEIGHT = 48.dp
+private const val FAST_TRACK_CONTAINER_ALPHA = 0.12f
+private const val DISABLED_CONTAINER_ALPHA = 0.12f
+private const val DISABLED_CONTENT_ALPHA = 0.38f
 private const val HINT_MAX_LINES = 2
 
 /**
@@ -51,9 +58,10 @@ private const val HINT_MAX_LINES = 2
  * component can be reused across any feature (AddCashWithdrawal, AddExpense, etc.).
  *
  * Adapts automatically between Back/Next and Back/Submit on the last step, and renders an
- * optional fast-track "Skip to Review" pill above the button row when
+ * optional fast-track "Skip to Review" [CircleShape] tonal pill above the button row when
  * [WizardNavigationBarConfig.skipToReviewLabel] and [onSkipToReview] are non-null and
- * `!config.isOnLastStep`.
+ * `!config.isOnLastStep`. When [WizardNavigationBarConfig.optionalDefaultsHint] is non-null,
+ * a subtle [CaptionText] defaults hint is rendered directly below the pill.
  *
  * **Positioning:** This bar is designed to be placed as a fixed-bottom overlay
  * inside a `Box(Modifier.align(BottomCenter))` in the wizard orchestrator.
@@ -63,8 +71,8 @@ private const val HINT_MAX_LINES = 2
  * when the fast-track pill is visible) so the last items are not obscured.
  *
  * All buttons delegate to the design-system's canonical button components
- * ([SecondaryButton], [GradientButton]) which provide consistent height, pill shape,
- * and platform shadow across the app.
+ * ([SecondaryButton], [GradientButton], [ButtonContentRow]) which provide consistent
+ * pill geometry, typography, and tonal hierarchy across the app.
  *
  * @param config         Combined state and labels for the navigation bar.
  * @param onBack         Called when the Back button is tapped.
@@ -141,49 +149,81 @@ private fun WizardFastTrackSection(
         enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
         exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut()
     ) {
-        Box(modifier = Modifier.padding(bottom = MaterialTheme.spacing.Small)) {
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shadowElevation = FAST_TRACK_SHADOW_ELEVATION,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.small)
-                        .debouncedClickable(
-                            enabled = enabled,
-                            role = Role.Button,
-                            onClick = onSkipToReview
-                        )
-                        .heightIn(min = FAST_TRACK_MIN_HEIGHT)
-                        .padding(
-                            horizontal = MaterialTheme.spacing.Default,
-                            vertical = MaterialTheme.spacing.Medium
-                        )
-                ) {
-                    displayedLabel?.let { label ->
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    displayedHint?.let { hint ->
-                        CaptionText(
-                            text = hint,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = HINT_CONTENT_ALPHA),
-                            maxLines = HINT_MAX_LINES,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = MaterialTheme.spacing.Small),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+        ) {
+            displayedLabel?.let { label ->
+                WizardFastTrackPill(
+                    label = label,
+                    enabled = enabled,
+                    onClick = onSkipToReview
+                )
             }
+            displayedHint?.let { hint ->
+                CaptionText(
+                    text = hint,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = HINT_MAX_LINES,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WizardFastTrackPill(
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val containerColor = if (enabled) {
+        colorScheme.primary.copy(alpha = FAST_TRACK_CONTAINER_ALPHA).compositeOver(colorScheme.surface)
+    } else {
+        colorScheme.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA).compositeOver(colorScheme.surface)
+    }
+    val contentColor = if (enabled) {
+        colorScheme.primary
+    } else {
+        colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
+    }
+    val shadowElevation = if (enabled && !isSystemInDarkTheme()) {
+        FAST_TRACK_SHADOW_ELEVATION
+    } else {
+        0.dp
+    }
+
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(FAST_TRACK_PILL_HEIGHT)
+            .shadow(elevation = shadowElevation, shape = CircleShape)
+            .clip(CircleShape)
+            .background(color = containerColor, shape = CircleShape)
+            .debouncedClickable(
+                interactionSource = interactionSource,
+                indication = ripple(color = contentColor),
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick
+            )
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.ExtraLarge),
+            contentAlignment = Alignment.Center
+        ) {
+            ButtonContentRow(
+                text = label,
+                contentColor = contentColor,
+                trailingIcon = TablerIcons.Outline.ArrowRight
+            )
         }
     }
 }

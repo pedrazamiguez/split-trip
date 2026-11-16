@@ -38,7 +38,7 @@
     <!-- Wizard Navigation -->
     <string name="withdrawal_wizard_next">Next</string>
     <string name="withdrawal_wizard_back">Back</string>
-    <string name="withdrawal_wizard_skip_to_review">Skip to Review →</string>
+    <string name="withdrawal_wizard_skip_to_review">Skip to Review</string>
     <string name="withdrawal_wizard_step_amount">Amount</string>
     <string name="withdrawal_wizard_step_exchange_rate">Rate</string>
     <string name="withdrawal_wizard_step_scope">Scope</string>
