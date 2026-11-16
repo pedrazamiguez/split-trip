@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -45,6 +46,7 @@ private val OPTION_ICON_SIZE = 20.dp
 private val CHECK_ICON_SIZE = 20.dp
 private const val COLOR_ANIMATION_DURATION_MS = 200
 private const val TITLE_MAX_LINES = 2
+private const val SELECTED_CONTAINER_ALPHA = 0.12f
 
 private data class FundingSourceCardColors(
     val container: Color,
@@ -60,7 +62,7 @@ private fun fundingSourceCardColors(
     colorScheme: ColorScheme
 ): FundingSourceCardColors = if (isSelected) {
     FundingSourceCardColors(
-        container = colorScheme.surfaceContainerHighest,
+        container = colorScheme.primary.copy(alpha = SELECTED_CONTAINER_ALPHA).compositeOver(colorScheme.surface),
         iconContainer = colorScheme.primaryContainer,
         iconTint = colorScheme.onPrimaryContainer,
         title = colorScheme.primary,

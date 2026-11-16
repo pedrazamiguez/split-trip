@@ -5,46 +5,50 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
+import es.pedrazamiguez.splittrip.core.designsystem.preview.MappedPreview
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
-import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemes
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.FundingSourceSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.FundingSourceStep
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
-import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.ImmutableList
 
-private val PREVIEW_GROUP_POCKET_SOURCE = FundingSourceUiModel(
-    id = PayerType.GROUP.name,
-    displayText = "Group Pocket",
-    description = "The group's shared pool of money collected from member contributions. " +
-        "Use this when paying from money set aside by the group.",
-    icon = TablerIcons.Outline.UsersGroup
-)
+private val PREVIEW_PAYER_TYPES = listOf(PayerType.GROUP, PayerType.USER)
 
-private val PREVIEW_YOUR_MONEY_SOURCE = FundingSourceUiModel(
-    id = PayerType.USER.name,
-    displayText = "Your Money",
-    description = "You pay with your own money. SplitTrip tracks everyone's share so you're reimbursed later.",
-    icon = TablerIcons.Outline.User
-)
-
-private val PREVIEW_FUNDING_SOURCES = persistentListOf(
-    PREVIEW_GROUP_POCKET_SOURCE,
-    PREVIEW_YOUR_MONEY_SOURCE
-)
+@Composable
+private fun FundingSourcePreviewHelper(
+    selectedPayerType: PayerType,
+    content: @Composable (
+        fundingSources: ImmutableList<FundingSourceUiModel>,
+        selectedFundingSource: FundingSourceUiModel?
+    ) -> Unit
+) {
+    MappedPreview(
+        domain = PREVIEW_PAYER_TYPES,
+        mapper = { localeProvider, resourceProvider ->
+            AddExpenseOptionsUiMapper(
+                resourceProvider = resourceProvider,
+                formattingHelper = FormattingHelper(localeProvider)
+            )
+        },
+        transform = { mapper, payerTypes -> mapper.mapFundingSources(payerTypes) }
+    ) { fundingSources ->
+        val selectedFundingSource = fundingSources.firstOrNull { it.id == selectedPayerType.name }
+        content(fundingSources, selectedFundingSource)
+    }
+}
 
 @PreviewThemes
 @Composable
 private fun FundingSourceSectionGroupPocketSelectedPreview() {
-    PreviewThemeWrapper {
+    FundingSourcePreviewHelper(selectedPayerType = PayerType.GROUP) { fundingSources, selectedFundingSource ->
         FundingSourceSection(
-            fundingSources = PREVIEW_FUNDING_SOURCES,
-            selectedFundingSource = PREVIEW_GROUP_POCKET_SOURCE,
+            fundingSources = fundingSources,
+            selectedFundingSource = selectedFundingSource,
             onFundingSourceSelected = {},
             modifier = Modifier.padding(MaterialTheme.spacing.Default)
         )
@@ -54,10 +58,10 @@ private fun FundingSourceSectionGroupPocketSelectedPreview() {
 @PreviewThemes
 @Composable
 private fun FundingSourceSectionYourMoneySelectedPreview() {
-    PreviewThemeWrapper {
+    FundingSourcePreviewHelper(selectedPayerType = PayerType.USER) { fundingSources, selectedFundingSource ->
         FundingSourceSection(
-            fundingSources = PREVIEW_FUNDING_SOURCES,
-            selectedFundingSource = PREVIEW_YOUR_MONEY_SOURCE,
+            fundingSources = fundingSources,
+            selectedFundingSource = selectedFundingSource,
             onFundingSourceSelected = {},
             modifier = Modifier.padding(MaterialTheme.spacing.Default)
         )
@@ -67,11 +71,11 @@ private fun FundingSourceSectionYourMoneySelectedPreview() {
 @PreviewComplete
 @Composable
 private fun FundingSourceStepGroupPocketSelectedPreview() {
-    PreviewThemeWrapper {
+    FundingSourcePreviewHelper(selectedPayerType = PayerType.GROUP) { fundingSources, selectedFundingSource ->
         FundingSourceStep(
             uiState = AddExpenseUiState(
-                fundingSources = PREVIEW_FUNDING_SOURCES,
-                selectedFundingSource = PREVIEW_GROUP_POCKET_SOURCE
+                fundingSources = fundingSources,
+                selectedFundingSource = selectedFundingSource
             ),
             onEvent = {}
         )
@@ -81,11 +85,11 @@ private fun FundingSourceStepGroupPocketSelectedPreview() {
 @PreviewComplete
 @Composable
 private fun FundingSourceStepYourMoneySelectedPreview() {
-    PreviewThemeWrapper {
+    FundingSourcePreviewHelper(selectedPayerType = PayerType.USER) { fundingSources, selectedFundingSource ->
         FundingSourceStep(
             uiState = AddExpenseUiState(
-                fundingSources = PREVIEW_FUNDING_SOURCES,
-                selectedFundingSource = PREVIEW_YOUR_MONEY_SOURCE
+                fundingSources = fundingSources,
+                selectedFundingSource = selectedFundingSource
             ),
             onEvent = {}
         )
