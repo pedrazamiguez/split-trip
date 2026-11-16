@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
@@ -21,6 +22,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -33,6 +35,7 @@ private const val GOOGLE_PLAY_SUBSCRIPTIONS_URL =
 class SubscriptionsViewModel(
     private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
+    private val observeProAllowlistAccessUseCase: ObserveProAllowlistAccessUseCase,
     private val updateUserTierUseCase: UpdateUserTierUseCase,
     private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
     private val reconcileSubscriptionEntitlementsUseCase: ReconcileSubscriptionEntitlementsUseCase,
@@ -47,29 +50,45 @@ class SubscriptionsViewModel(
     val actions = _actions.receiveAsFlow()
 
     init {
-        observeUserProfile()
+        observeSubscriptionProfile()
         observeBillingProducts()
         observePurchaseUpdates()
         loadSubscriptions()
     }
 
-    private fun observeUserProfile() {
+    private fun observeSubscriptionProfile() {
         viewModelScope.launch {
-            observeCurrentUserProfileUseCase().collect { user ->
+            var wasAllowlistedPro = false
+            combine(
+                observeCurrentUserProfileUseCase(),
+                observeProAllowlistAccessUseCase()
+            ) { user, isAllowlistedPro ->
+                user to isAllowlistedPro
+            }.collect { (user, isAllowlistedPro) ->
                 if (user != null) {
+                    val effectiveTier = if (isAllowlistedPro) SubscriptionTier.PRO else user.tier
                     val selectedInterval = _uiState.value.selectedInterval
                     val products = billingService.subscriptionProducts.value
                     val plans = subscriptionsUiMapper.mapPlans(
-                        currentTier = user.tier,
+                        currentTier = effectiveTier,
                         selectedInterval = selectedInterval,
                         products = products
                     )
                     _uiState.update {
                         it.copy(
-                            currentTier = user.tier,
+                            currentTier = effectiveTier,
+                            isAllowlistedPro = isAllowlistedPro,
                             plans = plans
                         )
                     }
+                }
+                val wasRevoked = wasAllowlistedPro && !isAllowlistedPro
+                wasAllowlistedPro = isAllowlistedPro
+                if (wasRevoked) {
+                    reconcileSubscriptionEntitlementsUseCase()
+                        .onFailure { error ->
+                            Timber.w(error, "Best-effort entitlement reconciliation failed on allowlist revocation")
+                        }
                 }
             }
         }
@@ -148,9 +167,7 @@ class SubscriptionsViewModel(
             SubscriptionsUiEvent.LoadSubscriptions -> loadSubscriptions()
             is SubscriptionsUiEvent.SelectBillingInterval -> handleSelectBillingInterval(event.interval)
             is SubscriptionsUiEvent.UpgradePlan -> handlePlanAction(event.tier)
-            SubscriptionsUiEvent.ManageSubscription -> {
-                _uiState.update { it.copy(showManageSubscriptionDialog = true) }
-            }
+            SubscriptionsUiEvent.ManageSubscription -> handleManageSubscription()
             SubscriptionsUiEvent.DismissManageSubscriptionDialog -> {
                 _uiState.update { it.copy(showManageSubscriptionDialog = false) }
             }
@@ -196,7 +213,12 @@ class SubscriptionsViewModel(
                         Timber.w(error, "Best-effort entitlement reconciliation failed on subscriptions load")
                     }
                 val currentUser = getCurrentUserProfileUseCase()
-                val currentTier = currentUser?.tier ?: SubscriptionTier.FREE
+                val isAllowlistedPro = observeProAllowlistAccessUseCase().firstOrNull() ?: false
+                val currentTier = if (isAllowlistedPro) {
+                    SubscriptionTier.PRO
+                } else {
+                    currentUser?.tier ?: SubscriptionTier.FREE
+                }
                 val selectedInterval = _uiState.value.selectedInterval
                 val products = billingService.subscriptionProducts.value
                 val plans = subscriptionsUiMapper.mapPlans(
@@ -210,6 +232,7 @@ class SubscriptionsViewModel(
                         isLoading = false,
                         isAnonymous = isAnon,
                         currentTier = currentTier,
+                        isAllowlistedPro = isAllowlistedPro,
                         plans = plans
                     )
                 }
@@ -244,7 +267,25 @@ class SubscriptionsViewModel(
         if (tier == SubscriptionTier.PRO) {
             handleUpgradeToPro()
         } else {
+            handleManageSubscription()
+        }
+    }
+
+    private fun handleManageSubscription() {
+        if (!_uiState.value.isAllowlistedPro) {
             _uiState.update { it.copy(showManageSubscriptionDialog = true) }
+            return
+        }
+        viewModelScope.launch {
+            val hasActivePlayPro = billingService.queryActivePurchases()
+                .getOrDefault(emptyList())
+                .any { it in BillingConstants.PRO_PRODUCT_IDS }
+            if (hasActivePlayPro) {
+                _uiState.update { it.copy(showManageSubscriptionDialog = true) }
+            } else {
+                val message = subscriptionsUiMapper.formatComplimentaryProMessage()
+                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+            }
         }
     }
 
@@ -252,6 +293,13 @@ class SubscriptionsViewModel(
         if (_uiState.value.isAnonymous) {
             viewModelScope.launch {
                 _actions.send(SubscriptionsUiAction.NavigateToAccountStatus)
+            }
+            return
+        }
+        if (_uiState.value.isAllowlistedPro) {
+            viewModelScope.launch {
+                val message = subscriptionsUiMapper.formatComplimentaryProMessage()
+                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
             }
             return
         }

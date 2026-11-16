@@ -23,4 +23,6 @@ class AppConfigServiceImpl(
     override val settlementNudgeRateLimitHours: StateFlow<Long> = appConfigRepository.settlementNudgeRateLimitHours
     override val developerAllowlistEmailHashes: StateFlow<Set<String>> =
         appConfigRepository.developerAllowlistEmailHashes
+    override val proAllowlistEmailHashes: StateFlow<Set<String>> =
+        appConfigRepository.proAllowlistEmailHashes
 }

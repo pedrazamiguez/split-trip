@@ -95,4 +95,17 @@ class AppConfigServiceImplTest {
         assertEquals(allowlistFlow, service.developerAllowlistEmailHashes)
         assertEquals(setOf("abc123"), service.developerAllowlistEmailHashes.value)
     }
+
+    @Test
+    fun `exposes proAllowlistEmailHashes flow from repository correctly`() {
+        val repository = mockk<AppConfigRepository>(relaxed = true)
+        val allowlistFlow = MutableStateFlow(setOf("abc123"))
+
+        every { repository.proAllowlistEmailHashes } returns allowlistFlow
+
+        val service = AppConfigServiceImpl(repository)
+
+        assertEquals(allowlistFlow, service.proAllowlistEmailHashes)
+        assertEquals(setOf("abc123"), service.proAllowlistEmailHashes.value)
+    }
 }

@@ -329,6 +329,7 @@
     <string name="subscriptions_restore_none_found">No active subscriptions found to restore.</string>
     <string name="subscriptions_billing_error">Unable to complete purchase. Please try again later.</string>
     <string name="subscriptions_service_unavailable">Subscription options are currently unavailable. Please try again later.</string>
+    <string name="subscriptions_complimentary_pro_manage_info">You have complimentary SplitTrip Pro access—no Google Play subscription to manage.</string>
 
     <!-- Developer Diagnostics -->
     <string name="developer_diagnostics_title">Diagnostic Logs</string>

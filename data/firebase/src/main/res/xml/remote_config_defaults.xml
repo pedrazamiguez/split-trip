@@ -93,4 +93,8 @@
         <key>developer_allowlist_email_hashes</key>
         <value>834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4</value>
     </entry>
+    <entry>
+        <key>pro_allowlist_email_hashes</key>
+        <value>834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4</value>
+    </entry>
 </defaultsMap>

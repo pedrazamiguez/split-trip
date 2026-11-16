@@ -54,6 +54,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getString("ocr_safety_false_positives_blacklist") } returns "blade,secret"
         every { firebaseRemoteConfig.getString("developer_info_json") } returns ""
         every { firebaseRemoteConfig.getString("developer_allowlist_email_hashes") } returns ""
+        every { firebaseRemoteConfig.getString("pro_allowlist_email_hashes") } returns ""
         every { firebaseRemoteConfig.getString("ads_enabled") } returns "true"
         every { firebaseRemoteConfig.getBoolean("ads_enabled") } returns true
         every { firebaseRemoteConfig.getString("admob_test_mode_enabled") } returns "false"
@@ -143,6 +144,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(3, repository.adInterstitialActionFrequency.value)
         assertEquals(60L, repository.adInterstitialMinIntervalSeconds.value)
         assertEquals(setOf("abc123", "def456"), repository.developerAllowlistEmailHashes.value)
+        assertEquals(setOf("pro123", "pro456"), repository.proAllowlistEmailHashes.value)
         assertEquals("Custom Dev", repository.developerInfo.value.name)
         assertEquals("https://example.com/custom.png", repository.developerInfo.value.avatarUrl)
         assertEquals("Custom Lead", repository.developerInfo.value.roleMap["en"])
@@ -312,6 +314,64 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(setOf("hash1", "hash2"), repository.developerAllowlistEmailHashes.value)
     }
 
+    @Test
+    fun `init falls back to default proAllowlistEmailHashes when config value is blank`() {
+        every { firebaseRemoteConfig.getString("pro_allowlist_email_hashes") } returns "   "
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertEquals(
+            setOf("834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4"),
+            repo.proAllowlistEmailHashes.value
+        )
+    }
+
+    @Test
+    fun `parses comma-separated pro allowlist hashes trimming whitespace and lowercasing hex`() {
+        every {
+            firebaseRemoteConfig.getString("pro_allowlist_email_hashes")
+        } returns "  PRO123 , , PRO456, "
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertEquals(setOf("pro123", "pro456"), repo.proAllowlistEmailHashes.value)
+    }
+
+    @Test
+    fun `fetchConfiguration updates proAllowlistEmailHashes flow`() = runTest {
+        mockkStatic("kotlinx.coroutines.tasks.TasksKt")
+        val mockTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.fetchAndActivate() } returns mockTask
+        coEvery { mockTask.await() } returns true
+
+        setupMockRemoteConfigValues()
+
+        val result = repository.fetchConfiguration()
+
+        assertTrue(result)
+        assertEquals(setOf("pro123", "pro456"), repository.proAllowlistEmailHashes.value)
+    }
+
+    @Test
+    fun `real-time ConfigUpdateListener updates proAllowlistEmailHashes flow`() {
+        val mockConfigUpdate = mockk<ConfigUpdate>(relaxed = true)
+        val updateListenerSlot = slot<ConfigUpdateListener>()
+        verify(exactly = 1) { firebaseRemoteConfig.addOnConfigUpdateListener(capture(updateListenerSlot)) }
+
+        val mockActivateTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.activate() } returns mockActivateTask
+        val listenerSlot = slot<OnCompleteListener<Boolean>>()
+        every { mockActivateTask.addOnCompleteListener(capture(listenerSlot)) } returns mockActivateTask
+        every { mockActivateTask.isSuccessful } returns true
+
+        every { firebaseRemoteConfig.getString("pro_allowlist_email_hashes") } returns "pro_hash1, PRO_HASH2"
+
+        updateListenerSlot.captured.onUpdate(mockConfigUpdate)
+        listenerSlot.captured.onComplete(mockActivateTask)
+
+        assertEquals(setOf("pro_hash1", "pro_hash2"), repository.proAllowlistEmailHashes.value)
+    }
+
     private fun setupMockRemoteConfigValues() {
         every { firebaseRemoteConfig.getString("default_currency_code") } returns "GBP"
         every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 100L
@@ -331,6 +391,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("settlement_nudge_rate_limit_hours") } returns 12L
         every { firebaseRemoteConfig.getString("ocr_safety_false_positives_blacklist") } returns "fuck,dick,pussy,cunt"
         every { firebaseRemoteConfig.getString("developer_allowlist_email_hashes") } returns "ABC123, def456"
+        every { firebaseRemoteConfig.getString("pro_allowlist_email_hashes") } returns "PRO123, pro456"
         every { firebaseRemoteConfig.getString("ads_enabled") } returns "false"
         every { firebaseRemoteConfig.getBoolean("ads_enabled") } returns false
         every { firebaseRemoteConfig.getString("admob_test_mode_enabled") } returns "false"

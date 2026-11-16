@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.service
 
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
@@ -24,19 +25,21 @@ internal class FeatureGateServiceImpl(
     override fun isFeatureEnabled(feature: GatedFeature, groupId: String?): Flow<Boolean> =
         combine(
             appConfigRepository.subscriptionGatingEnabled,
-            observeActingUserTier()
-        ) { gatingEnabled, actingTier ->
+            observeActingUserTier(),
+            appConfigRepository.proAllowlistEmailHashes
+        ) { gatingEnabled, actingTier, allowlistHashes ->
             if (!gatingEnabled) {
                 true
             } else {
                 val effectiveTier = when (feature) {
                     GatedFeature.AI_RECEIPT_SCANNING,
                     GatedFeature.AD_FREE -> actingTier
-                    GatedFeature.GROUP_COVER_UPLOAD -> resolveGroupCreatorTier(groupId, actingTier)
+                    GatedFeature.GROUP_COVER_UPLOAD ->
+                        resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
                     GatedFeature.SUBUNIT_CREATION -> if (actingTier == SubscriptionTier.PRO) {
                         SubscriptionTier.PRO
                     } else {
-                        resolveGroupCreatorTier(groupId, actingTier)
+                        resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
                     }
                 }
                 effectiveTier == SubscriptionTier.PRO
@@ -59,35 +62,36 @@ internal class FeatureGateServiceImpl(
         return combine(
             appConfigRepository.subscriptionGatingEnabled,
             observeActingUserTier(),
+            appConfigRepository.proAllowlistEmailHashes,
             freeLimitFlow,
             proLimitFlow
-        ) { gatingEnabled, actingTier, freeLimit, proLimit ->
-            evaluateLimit(
-                gatingEnabled = gatingEnabled,
-                limit = limit,
-                currentCount = currentCount,
-                groupId = groupId,
-                actingTier = actingTier,
-                freeLimit = freeLimit,
-                proLimit = proLimit
-            )
+        ) { gatingEnabled, actingTier, allowlistHashes, freeLimit, proLimit ->
+            if (!gatingEnabled) {
+                LimitResult.Allowed
+            } else {
+                val effectiveTier = when (limit) {
+                    GatedLimit.MAX_OWNED_GROUPS_COUNT -> actingTier
+                    GatedLimit.MAX_MEMBERS_PER_GROUP ->
+                        resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
+                }
+                evaluateLimit(
+                    limit = limit,
+                    currentCount = currentCount,
+                    effectiveTier = effectiveTier,
+                    freeLimit = freeLimit,
+                    proLimit = proLimit
+                )
+            }
         }.distinctUntilChanged()
     }
 
-    private suspend fun evaluateLimit(
-        gatingEnabled: Boolean,
+    private fun evaluateLimit(
         limit: GatedLimit,
         currentCount: Int,
-        groupId: String?,
-        actingTier: SubscriptionTier,
+        effectiveTier: SubscriptionTier,
         freeLimit: Int,
         proLimit: Int
     ): LimitResult {
-        if (!gatingEnabled) return LimitResult.Allowed
-        val effectiveTier = when (limit) {
-            GatedLimit.MAX_OWNED_GROUPS_COUNT -> actingTier
-            GatedLimit.MAX_MEMBERS_PER_GROUP -> resolveGroupCreatorTier(groupId, actingTier)
-        }
         val maxAllowed = if (effectiveTier == SubscriptionTier.PRO) proLimit else freeLimit
         return if (currentCount >= maxAllowed) {
             LimitResult.Blocked(limit, upgradeRequired = effectiveTier != SubscriptionTier.PRO)
@@ -97,31 +101,38 @@ internal class FeatureGateServiceImpl(
     }
 
     private fun observeActingUserTier(): Flow<SubscriptionTier> =
-        userRepository.observeCurrentUserProfile()
-            .map { profile ->
-                if (authenticationService.isAnonymous()) {
-                    SubscriptionTier.FREE
-                } else {
-                    profile?.tier ?: SubscriptionTier.FREE
-                }
+        combine(
+            userRepository.observeCurrentUserProfile(),
+            appConfigRepository.proAllowlistEmailHashes
+        ) { profile, allowlistHashes ->
+            if (authenticationService.isAnonymous()) {
+                SubscriptionTier.FREE
+            } else if (
+                profile?.tier == SubscriptionTier.PRO ||
+                User.isEmailInAllowlist(profile?.email, allowlistHashes)
+            ) {
+                SubscriptionTier.PRO
+            } else {
+                SubscriptionTier.FREE
             }
-            .distinctUntilChanged()
+        }.distinctUntilChanged()
 
     private suspend fun resolveGroupCreatorTier(
         groupId: String?,
-        fallbackTier: SubscriptionTier
+        fallbackTier: SubscriptionTier,
+        proAllowlistEmailHashes: Set<String>
     ): SubscriptionTier {
-        if (groupId != null) {
-            val group = runCatching { groupRepository.getGroupById(groupId) }.getOrNull()
-            if (group != null && group.createdBy.isNotBlank()) {
-                val creator = runCatching {
-                    userRepository.getUsersByIds(listOf(group.createdBy))[group.createdBy]
-                }.getOrNull()
-                if (creator != null) {
-                    return creator.tier
-                }
-            }
+        if (groupId == null) return fallbackTier
+        val group = runCatching { groupRepository.getGroupById(groupId) }.getOrNull() ?: return fallbackTier
+        if (group.createdBy.isBlank()) return fallbackTier
+        val creator = runCatching {
+            userRepository.getUsersByIds(listOf(group.createdBy))[group.createdBy]
+        }.getOrNull() ?: return fallbackTier
+        val isAllowlisted = !creator.isPending && User.isEmailInAllowlist(creator.email, proAllowlistEmailHashes)
+        return if (creator.tier == SubscriptionTier.PRO || isAllowlisted) {
+            SubscriptionTier.PRO
+        } else {
+            creator.tier
         }
-        return fallbackTier
     }
 }
