@@ -51,6 +51,7 @@ class ReconcileSubscriptionEntitlementsUseCaseTest {
 
         proAllowlistFlow.value = emptySet()
         every { authenticationService.isAnonymous() } returns false
+        every { authenticationService.currentUserEmail() } returns null
         every { appConfigService.proAllowlistEmailHashes } returns proAllowlistFlow
 
         useCase = ReconcileSubscriptionEntitlementsUseCaseImpl(
@@ -224,5 +225,19 @@ class ReconcileSubscriptionEntitlementsUseCaseTest {
             assertTrue(secondResult.isSuccess)
             coVerify(exactly = 1) { billingService.queryActivePurchases() }
             coVerify(exactly = 1) { updateUserTierUseCase("user-1", SubscriptionTier.FREE) }
+        }
+
+    @Test
+    fun `skips Play query when PRO user has blank cached email but currentUserEmail is in proAllowlistEmailHashes`() =
+        runTest {
+            proAllowlistFlow.value = setOf(User.hashEmail("user@example.com"))
+            every { authenticationService.currentUserEmail() } returns "user@example.com"
+            coEvery { userRepository.getCurrentUserProfile() } returns proUser.copy(email = "")
+
+            val result = useCase()
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 0) { billingService.queryActivePurchases() }
+            coVerify(exactly = 0) { updateUserTierUseCase(any(), any()) }
         }
 }

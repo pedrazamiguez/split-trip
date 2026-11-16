@@ -179,9 +179,13 @@ class AuthenticationServiceImpl(
                 val isNewUser = authResult.additionalUserInfo?.isNewUser == true
                 checkPostSignInGoogleCollision(canonicalEmail, firebaseUser, isNewUser, idToken)
 
+                val resolvedEmail = resolveFirebaseUserEmail(firebaseUser)?.let(User::normalizeEmail)
+                    ?: googleEmail
+                    ?: ""
+
                 val user = User(
                     userId = firebaseUser.uid,
-                    email = firebaseUser.email ?: "",
+                    email = resolvedEmail,
                     displayName = firebaseUser.displayName,
                     profileImagePath = firebaseUser.photoUrl?.toString(),
                     createdAt = firebaseUser.metadata?.creationTimestamp?.toLocalDateTimeUtc()
@@ -279,7 +283,12 @@ class AuthenticationServiceImpl(
         uid
     }
 
-    override fun currentUserEmail(): String? = firebaseAuth.currentUser?.email
+    override fun currentUserEmail(): String? =
+        firebaseAuth.currentUser?.let(::resolveFirebaseUserEmail)
+
+    private fun resolveFirebaseUserEmail(firebaseUser: FirebaseUser): String? =
+        firebaseUser.email?.takeIf(String::isNotBlank)
+            ?: firebaseUser.providerData.firstNotNullOfOrNull { it.email?.takeIf(String::isNotBlank) }
 
     override fun currentUserDisplayName(): String? = firebaseAuth.currentUser?.displayName
 

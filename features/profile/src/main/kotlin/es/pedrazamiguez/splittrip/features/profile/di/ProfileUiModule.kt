@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.service.UserValidationService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserProfileUseCase
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUiMapper
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.impl.ProfileUiMapperImpl
@@ -26,11 +27,13 @@ val profileUiModule = module {
     viewModel {
         val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        val observeProAllowlistAccessUseCase = get<ObserveProAllowlistAccessUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         val profileUiMapper = get<ProfileUiMapper>()
         ProfileViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
             profileUiMapper = profileUiMapper
         )

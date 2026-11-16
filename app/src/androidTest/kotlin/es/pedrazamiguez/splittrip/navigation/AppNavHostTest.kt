@@ -25,6 +25,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrenc
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.AuthenticationViewModel
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
 import es.pedrazamiguez.splittrip.features.onboarding.presentation.viewmodel.OnboardingViewModel
@@ -102,11 +103,15 @@ class AppNavHostTest {
             val observeCurrentUserProfile = mockk<ObserveCurrentUserProfileUseCase>().apply {
                 every { this@apply.invoke() } returns flowOf(null)
             }
+            val observeProAllowlistAccess = mockk<ObserveProAllowlistAccessUseCase>().apply {
+                every { this@apply.invoke() } returns flowOf(false)
+            }
             MainViewModel(
                 registerDeviceTokenUseCase = FakeRegisterDeviceTokenUseCase(),
                 getGroupByIdUseCase = mockk(relaxed = true),
                 warmCurrencyCacheUseCase = mockk(relaxed = true),
                 observeCurrentUserProfileUseCase = observeCurrentUserProfile,
+                observeProAllowlistAccessUseCase = observeProAllowlistAccess,
                 shouldShowAdsUseCase = mockk(relaxed = true),
                 getBannerAdUnitIdUseCase = mockk(relaxed = true),
                 isUserAnonymousUseCase = mockk(relaxed = true)

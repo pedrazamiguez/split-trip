@@ -6,14 +6,14 @@ import es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiM
 
 class ProfileUiMapperImpl : ProfileUiMapper {
 
-    override fun toProfileUiModel(user: User): ProfileUiModel = with(user) {
+    override fun toProfileUiModel(user: User, isAllowlistedPro: Boolean): ProfileUiModel = with(user) {
         ProfileUiModel(
             userId = userId,
             displayName = displayName ?: email,
             email = email,
             profileImageUrl = profileImagePath,
             bio = bio ?: "",
-            isPro = isPro
+            isPro = isPro || isAllowlistedPro
         )
     }
 }

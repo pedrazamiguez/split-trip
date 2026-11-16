@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.features.main.presentation.viewmodel
 
 import android.os.Bundle
+import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.usecase.ad.GetBannerAdUnitIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
@@ -9,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -43,6 +46,7 @@ class MainViewModelTest {
     private lateinit var getGroupByIdUseCase: GetGroupByIdUseCase
     private lateinit var warmCurrencyCacheUseCase: WarmCurrencyCacheUseCase
     private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
+    private lateinit var observeProAllowlistAccessUseCase: ObserveProAllowlistAccessUseCase
     private lateinit var shouldShowAdsUseCase: ShouldShowAdsUseCase
     private lateinit var getBannerAdUnitIdUseCase: GetBannerAdUnitIdUseCase
     private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
@@ -54,11 +58,13 @@ class MainViewModelTest {
         getGroupByIdUseCase = mockk(relaxed = true)
         warmCurrencyCacheUseCase = mockk(relaxed = true)
         observeCurrentUserProfileUseCase = mockk(relaxed = true)
+        observeProAllowlistAccessUseCase = mockk(relaxed = true)
         shouldShowAdsUseCase = mockk(relaxed = true)
         getBannerAdUnitIdUseCase = mockk(relaxed = true)
         isUserAnonymousUseCase = mockk(relaxed = true)
         coEvery { registerDeviceTokenUseCase() } returns Result.success(Unit)
         every { observeCurrentUserProfileUseCase() } returns flowOf(null)
+        every { observeProAllowlistAccessUseCase() } returns flowOf(false)
         every { shouldShowAdsUseCase() } returns flowOf(false)
         every { getBannerAdUnitIdUseCase() } returns MutableStateFlow("test-banner-id")
         every { isUserAnonymousUseCase() } returns flowOf(false)
@@ -74,6 +80,7 @@ class MainViewModelTest {
         getGroupByIdUseCase = getGroupByIdUseCase,
         warmCurrencyCacheUseCase = warmCurrencyCacheUseCase,
         observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+        observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
         shouldShowAdsUseCase = shouldShowAdsUseCase,
         getBannerAdUnitIdUseCase = getBannerAdUnitIdUseCase,
         isUserAnonymousUseCase = isUserAnonymousUseCase
@@ -520,6 +527,85 @@ class MainViewModelTest {
 
             // Then
             assertEquals("custom-banner-id", viewModel.bannerAdUnitId.value)
+        }
+    }
+
+    @Nested
+    @DisplayName("pro status")
+    inner class ProStatus {
+
+        private val freeUser = User(
+            userId = "user-free",
+            email = "free@example.com",
+            tier = SubscriptionTier.FREE
+        )
+
+        private val proUser = User(
+            userId = "user-pro",
+            email = "pro@example.com",
+            tier = SubscriptionTier.PRO
+        )
+
+        @Test
+        fun `isProUser is false when user is Free and not allowlisted`() = runTest(testDispatcher) {
+            every { observeCurrentUserProfileUseCase() } returns flowOf(freeUser)
+            every { observeProAllowlistAccessUseCase() } returns flowOf(false)
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.isProUser.collect {} }
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.isProUser.value)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `isProUser is true when user tier is PRO and not allowlisted`() = runTest(testDispatcher) {
+            every { observeCurrentUserProfileUseCase() } returns flowOf(proUser)
+            every { observeProAllowlistAccessUseCase() } returns flowOf(false)
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.isProUser.collect {} }
+            advanceUntilIdle()
+
+            assertEquals(true, viewModel.isProUser.value)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `isProUser is true when user tier is FREE and allowlisted`() = runTest(testDispatcher) {
+            every { observeCurrentUserProfileUseCase() } returns flowOf(freeUser)
+            every { observeProAllowlistAccessUseCase() } returns flowOf(true)
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.isProUser.collect {} }
+            advanceUntilIdle()
+
+            assertEquals(true, viewModel.isProUser.value)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `isProUser updates reactively when allowlist access toggles`() = runTest(testDispatcher) {
+            val allowlistFlow = MutableStateFlow(false)
+            every { observeCurrentUserProfileUseCase() } returns flowOf(freeUser)
+            every { observeProAllowlistAccessUseCase() } returns allowlistFlow
+
+            val viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.isProUser.collect {} }
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.isProUser.value)
+
+            allowlistFlow.value = true
+            advanceUntilIdle()
+            assertEquals(true, viewModel.isProUser.value)
+
+            allowlistFlow.value = false
+            advanceUntilIdle()
+            assertEquals(false, viewModel.isProUser.value)
+
+            collectJob.cancel()
         }
     }
 }

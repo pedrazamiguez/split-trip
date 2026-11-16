@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
@@ -21,6 +22,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.features.main.presentation.screen.MainScreen
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
 import es.pedrazamiguez.splittrip.helpers.FakeNavigationProvider
@@ -114,6 +116,12 @@ class MainScreenTest {
         val observeCurrentUserProfile = mockk<ObserveCurrentUserProfileUseCase>().apply {
             every { this@apply.invoke() } returns flowOf(null)
         }
+        val observeProAllowlistAccess = mockk<ObserveProAllowlistAccessUseCase>().apply {
+            every { this@apply.invoke() } returns flowOf(false)
+        }
+        val isUserAnonymous = mockk<IsUserAnonymousUseCase>().apply {
+            every { this@apply.invoke() } returns flowOf(false)
+        }
         val getGroupById = mockk<GetGroupByIdUseCase>().apply {
             coEvery { this@apply.invoke(any()) } returns Group(
                 id = "group-123",
@@ -126,8 +134,10 @@ class MainScreenTest {
             getGroupByIdUseCase = getGroupById,
             warmCurrencyCacheUseCase = mockk(relaxed = true),
             observeCurrentUserProfileUseCase = observeCurrentUserProfile,
+            observeProAllowlistAccessUseCase = observeProAllowlistAccess,
             shouldShowAdsUseCase = mockk(relaxed = true),
-            getBannerAdUnitIdUseCase = mockk(relaxed = true)
+            getBannerAdUnitIdUseCase = mockk(relaxed = true),
+            isUserAnonymousUseCase = isUserAnonymous
         )
     }
 

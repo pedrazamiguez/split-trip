@@ -55,6 +55,7 @@ class FeatureGateServiceImplTest {
         every { appConfigRepository.maxMembersPerGroupPro } returns maxMembersPerGroupPro
         every { appConfigRepository.proAllowlistEmailHashes } returns proAllowlistEmailHashes
         every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
+        every { authenticationService.currentUserEmail() } returns null
 
         subscriptionGatingEnabled.value = true
         maxOwnedGroupsFree.value = 1
@@ -550,5 +551,22 @@ class FeatureGateServiceImplTest {
 
             assertEquals(listOf(true, false), actingEmissions)
             assertEquals(listOf(true, false), groupEmissions)
+        }
+
+    @Test
+    fun `allowlisted FREE user with blank cached email receives PRO entitlements via currentUserEmail fallback`() =
+        runTest {
+            val user = User(
+                userId = "user-vip",
+                email = "",
+                tier = SubscriptionTier.FREE
+            )
+            proAllowlistEmailHashes.value = setOf(User.hashEmail("vip@example.com"))
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { authenticationService.currentUserEmail() } returns "vip@example.com"
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(user)
+
+            assertTrue(service.isActingUserPro().first())
+            assertTrue(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
         }
 }
