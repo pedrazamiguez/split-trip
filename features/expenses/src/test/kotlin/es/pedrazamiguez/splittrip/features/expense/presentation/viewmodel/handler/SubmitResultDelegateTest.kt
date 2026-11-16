@@ -225,6 +225,53 @@ class SubmitResultDelegateTest {
             }
 
         @Test
+        fun `InsufficientCashException emits formatted error when preview already flagged isNoCashAvailable`() =
+            runTest {
+                every { formattingHelper.formatCentsWithCurrency(5000L, "EUR") } returns "€50.00"
+                every { formattingHelper.formatCentsWithCurrency(0L, "EUR") } returns "€0.00"
+
+                val state = uiState.value.copy(isNoCashAvailable = true, isInsufficientCash = false)
+                val actions = mutableListOf<AddExpenseUiAction>()
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    actionsFlow.collect { actions.add(it) }
+                }
+
+                delegate.handleFailure(
+                    error = InsufficientCashException(requiredCents = 5000L, availableCents = 0L),
+                    uiState = uiState,
+                    actionsFlow = actionsFlow,
+                    currentState = state
+                )
+
+                assertEquals(1, actions.size)
+                val action = actions[0] as AddExpenseUiAction.ShowError
+                val resource = action.message as UiText.StringResource
+                assertEquals(R.string.expense_error_insufficient_cash, resource.resId)
+            }
+
+        @Test
+        fun `InsufficientCashException with 0 availableCents emits conflict resolution with null amounts`() =
+            runTest {
+                val state = uiState.value.copy(isNoCashAvailable = false, isInsufficientCash = false)
+                val actions = mutableListOf<AddExpenseUiAction>()
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    actionsFlow.collect { actions.add(it) }
+                }
+
+                delegate.handleFailure(
+                    error = InsufficientCashException(requiredCents = 5000L, availableCents = 0L),
+                    uiState = uiState,
+                    actionsFlow = actionsFlow,
+                    currentState = state
+                )
+
+                assertEquals(1, actions.size)
+                val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+                assertNull(action.availableAmountForInput)
+                assertNull(action.availableAmountDisplay)
+            }
+
+        @Test
         fun `CashConflictException emits conflict resolution with null amounts`() = runTest {
             val actions = mutableListOf<AddExpenseUiAction>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -366,6 +413,25 @@ class SubmitResultDelegateTest {
 
             delegate.emitCashConflictResolution(
                 availableCents = null,
+                actionsFlow = actionsFlow,
+                currentState = uiState.value
+            )
+
+            assertEquals(1, actions.size)
+            val action = actions[0] as AddExpenseUiAction.ShowCashConflictResolution
+            assertNull(action.availableAmountForInput)
+            assertNull(action.availableAmountDisplay)
+        }
+
+        @Test
+        fun `emits null amounts when availableCents is zero`() = runTest {
+            val actions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actionsFlow.collect { actions.add(it) }
+            }
+
+            delegate.emitCashConflictResolution(
+                availableCents = 0L,
                 actionsFlow = actionsFlow,
                 currentState = uiState.value
             )

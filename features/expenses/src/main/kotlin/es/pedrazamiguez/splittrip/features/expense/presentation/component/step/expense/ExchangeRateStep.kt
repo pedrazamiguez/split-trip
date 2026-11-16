@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.curre
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.CashTrancheFundedFromSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.NoCashAvailableBanner
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.WithdrawalPoolSelectorSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -44,7 +45,7 @@ fun ExchangeRateStep(
                 isLoadingRate = uiState.isLoadingRate,
                 isExchangeRateLocked = uiState.isExchangeRateLocked,
                 exchangeRateLockedHint = uiState.exchangeRateLockedHint,
-                isInsufficientCash = uiState.isInsufficientCash,
+                isInsufficientCash = uiState.isInsufficientCash || uiState.isNoCashAvailable,
                 isGroupAmountError = !uiState.isGroupAmountValid,
                 isExchangeRateFieldError = !uiState.isExchangeRateValid,
                 isExchangeRateStale = uiState.isExchangeRateStale,
@@ -69,7 +70,10 @@ fun ExchangeRateStep(
             )
         }
 
-        if (uiState.cashTranchePreviews.isNotEmpty()) {
+        if (uiState.isNoCashAvailable) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
+            NoCashAvailableBanner(currencyCode = uiState.selectedCurrency?.code)
+        } else if (uiState.cashTranchePreviews.isNotEmpty()) {
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
             CashTrancheFundedFromSection(tranches = uiState.cashTranchePreviews)
         }
