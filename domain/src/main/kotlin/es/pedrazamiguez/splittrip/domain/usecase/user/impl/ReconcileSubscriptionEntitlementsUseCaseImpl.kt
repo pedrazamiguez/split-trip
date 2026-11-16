@@ -34,8 +34,9 @@ class ReconcileSubscriptionEntitlementsUseCaseImpl(
 
     private fun isComplimentaryAllowlistedUser(user: User): Boolean {
         if (authenticationService.isAnonymous()) return false
+        val email = user.email.takeIf(String::isNotBlank) ?: authenticationService.currentUserEmail()
         return User.isEmailInAllowlist(
-            email = user.email,
+            email = email,
             allowlistHashes = appConfigService.proAllowlistEmailHashes.value
         )
     }
