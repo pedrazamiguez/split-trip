@@ -121,10 +121,10 @@ doctor: ## Check that required files and tools are present
 		printf "  $(YELLOW)⚠️   Pre-commit hook not installed$(NC) — run 'make hooks'\n"; \
 	fi
 	@# ─── AI Taxonomy ──────────────────────────────────────────────
-	@if [ -d ".agents/rules" ] && [ $$(ls -1 .agents/rules/*.md 2>/dev/null | wc -l) -ge 15 ]; then \
-		printf "  $(GREEN)✅  .agents/rules/ present with enough files$(NC)\n"; \
+	@if [ -f "AGENTS.md" ] && [ -f ".agents/rules/graphify.md" ]; then \
+		printf "  $(GREEN)✅  AGENTS.md and .agents/rules/graphify.md present$(NC)\n"; \
 	else \
-		printf "  $(YELLOW)⚠️   .agents/rules/ missing or incomplete$(NC)\n"; \
+		printf "  $(YELLOW)⚠️   AGENTS.md or .agents/rules/graphify.md missing$(NC)\n"; \
 	fi
 	@if [ -d ".agents/skills" ]; then \
 		printf "  $(GREEN)✅  .agents/skills/ present$(NC)\n"; \
@@ -186,17 +186,21 @@ doctor: ## Check that required files and tools are present
 	else \
 		printf "  $(YELLOW)⚠️   SplitTrip RAG index missing$(NC) — run 'make rag-index' or 'make ai-setup'\n"; \
 	fi
-	@# opencode.jsonc has entries
+	@# opencode.jsonc has entries (only checked when OpenCode config exists)
 	@OPENCODE_CFG="$${HOME}/.config/opencode/opencode.jsonc"; \
-	if [ -f "$$OPENCODE_CFG" ] && grep -q "codebase-memory-mcp" "$$OPENCODE_CFG" 2>/dev/null; then \
-		printf "  $(GREEN)✅  opencode.jsonc has codebase-memory-mcp entry$(NC)\n"; \
+	if [ ! -f "$$OPENCODE_CFG" ]; then \
+		printf "  $(YELLOW)⚠️   opencode.jsonc not found — skipping OpenCode MCP checks$(NC)\n"; \
 	else \
-		printf "  $(YELLOW)⚠️   opencode.jsonc missing codebase-memory-mcp entry$(NC) — run 'make ai-setup'\n"; \
-	fi; \
-	if [ -f "$$OPENCODE_CFG" ] && grep -q "splittrip-rag" "$$OPENCODE_CFG" 2>/dev/null; then \
-		printf "  $(GREEN)✅  opencode.jsonc has splittrip-rag entry$(NC)\n"; \
-	else \
-		printf "  $(YELLOW)⚠️   opencode.jsonc missing splittrip-rag entry$(NC) — run 'make ai-setup'\n"; \
+		if grep -q "codebase-memory-mcp" "$$OPENCODE_CFG" 2>/dev/null; then \
+			printf "  $(GREEN)✅  opencode.jsonc has codebase-memory-mcp entry$(NC)\n"; \
+		else \
+			printf "  $(YELLOW)⚠️   opencode.jsonc missing codebase-memory-mcp entry$(NC) — run 'make ai-setup'\n"; \
+		fi; \
+		if grep -q "splittrip-rag" "$$OPENCODE_CFG" 2>/dev/null; then \
+			printf "  $(GREEN)✅  opencode.jsonc has splittrip-rag entry$(NC)\n"; \
+		else \
+			printf "  $(YELLOW)⚠️   opencode.jsonc missing splittrip-rag entry$(NC) — run 'make ai-setup'\n"; \
+		fi; \
 	fi
 	@# Gemini MCP config has entries
 	@GEMINI_CFG="$${HOME}/.gemini/config/mcp_config.json"; \
