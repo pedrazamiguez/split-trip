@@ -53,6 +53,7 @@ fun SettingsFeature(
     val shouldShowLanguagePill by settingsViewModel.shouldShowLanguagePill.collectAsStateWithLifecycle()
     val currentThemeCode by settingsViewModel.currentThemeCode.collectAsStateWithLifecycle()
     val isAnonymous by settingsViewModel.isAnonymous.collectAsStateWithLifecycle()
+    val isDeveloperModeEnabled by settingsViewModel.isDeveloperModeEnabled.collectAsStateWithLifecycle()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -132,7 +133,9 @@ fun SettingsFeature(
             onThemeClick = { navController.navigate(Routes.SETTINGS_THEME) },
             onLogoutClick = { showLogoutDialog = true },
             onDeveloperServicesTestClick = {
-                navController.navigate(Routes.SETTINGS_DEVELOPER_SERVICES)
+                if (isDeveloperModeEnabled) {
+                    navController.navigate(Routes.SETTINGS_DEVELOPER_SERVICES)
+                }
             },
             onBugReportClick = {
                 sendSupportEmail(supportEmailProvider.buildBugReportEmail())
@@ -160,7 +163,8 @@ fun SettingsFeature(
                 clipboardManager.setText(AnnotatedString(logs))
                 pillController.showPill(diagnosticsCopiedMsg)
             },
-            isAnonymous = isAnonymous
+            isAnonymous = isAnonymous,
+            isDeveloperModeEnabled = isDeveloperModeEnabled
         )
     }
 

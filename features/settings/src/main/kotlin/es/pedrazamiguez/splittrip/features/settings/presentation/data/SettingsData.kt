@@ -37,14 +37,17 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.model.SettingsS
 fun buildSettingsSections(
     preferencesParams: SettingsPreferencesParams,
     onServicesTestClick: () -> Unit,
-    isAnonymous: Boolean = false
-): List<SettingsSectionModel> = listOf(
-    accountSection(preferencesParams, isAnonymous),
-    preferencesSection(preferencesParams, isAnonymous),
-    developerSection(onServicesTestClick = onServicesTestClick),
-    supportSection(preferencesParams),
-    aboutSection(preferencesParams)
-)
+    isAnonymous: Boolean = false,
+    isDeveloperModeEnabled: Boolean = false
+): List<SettingsSectionModel> = buildList {
+    add(accountSection(preferencesParams, isAnonymous))
+    add(preferencesSection(preferencesParams, isAnonymous))
+    if (isDeveloperModeEnabled) {
+        add(developerSection(onServicesTestClick = onServicesTestClick))
+    }
+    add(supportSection(preferencesParams))
+    add(aboutSection(preferencesParams))
+}
 
 private fun accountSection(params: SettingsPreferencesParams, isAnonymous: Boolean = false) = SettingsSectionModel(
     titleRes = R.string.settings_section_account,

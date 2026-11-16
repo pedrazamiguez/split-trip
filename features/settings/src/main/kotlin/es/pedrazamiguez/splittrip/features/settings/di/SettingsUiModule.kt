@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricLockEnabled
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetDeveloperInfoUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetBiometricLockEnabledUseCase
@@ -86,6 +87,7 @@ val settingsUiModule = module {
         val getAppThemeUseCase = get<GetAppThemeUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         val getDiagnosticLogsUseCase = get<GetDiagnosticLogsUseCase>()
+        val observeDeveloperAccessUseCase = get<ObserveDeveloperAccessUseCase>()
         SettingsViewModel(
             signOutUseCase = signOutUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
@@ -94,7 +96,8 @@ val settingsUiModule = module {
             consumeLanguagePillUseCase = consumeLanguagePillUseCase,
             getAppThemeUseCase = getAppThemeUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
-            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase
+            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase,
+            observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
         )
     }
 
@@ -137,13 +140,15 @@ val settingsUiModule = module {
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
         val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
         val updateUserTierUseCase = get<UpdateUserTierUseCase>()
+        val observeDeveloperAccessUseCase = get<ObserveDeveloperAccessUseCase>()
         DeveloperServicesViewModel(
             receiptOcrService = receiptOcrService,
             receiptExtractionService = receiptExtractionService,
             aiModelResolver = aiModelResolverService,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-            updateUserTierUseCase = updateUserTierUseCase
+            updateUserTierUseCase = updateUserTierUseCase,
+            observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
         )
     }
 

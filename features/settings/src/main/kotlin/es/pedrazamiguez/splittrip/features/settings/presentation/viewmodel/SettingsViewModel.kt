@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,10 +32,20 @@ class SettingsViewModel(
     private val consumeLanguagePillUseCase: ConsumeLanguagePillUseCase,
     private val getAppThemeUseCase: GetAppThemeUseCase,
     private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
-    private val getDiagnosticLogsUseCase: GetDiagnosticLogsUseCase
+    private val getDiagnosticLogsUseCase: GetDiagnosticLogsUseCase,
+    private val observeDeveloperAccessUseCase: ObserveDeveloperAccessUseCase
 ) : ViewModel() {
 
     val isAnonymous: StateFlow<Boolean> = isUserAnonymousUseCase().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(
+            stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
+            replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
+        ),
+        initialValue = false
+    )
+
+    val isDeveloperModeEnabled: StateFlow<Boolean> = observeDeveloperAccessUseCase().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(
             stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,

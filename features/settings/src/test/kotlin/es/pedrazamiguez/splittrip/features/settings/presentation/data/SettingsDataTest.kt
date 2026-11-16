@@ -63,11 +63,28 @@ class SettingsDataTest {
     inner class BuildSettingsSections {
 
         @Test
-        fun `builds all five sections in expected order`() {
+        fun `builds four sections without developer section by default when isDeveloperModeEnabled is false`() {
             val params = createParams()
             val sections = buildSettingsSections(
                 preferencesParams = params,
                 onServicesTestClick = { servicesTestClickCount++ }
+            )
+
+            assertEquals(4, sections.size)
+            assertEquals(R.string.settings_section_account, sections[0].titleRes)
+            assertEquals(R.string.settings_section_preferences, sections[1].titleRes)
+            assertEquals(R.string.settings_section_support, sections[2].titleRes)
+            assertEquals(R.string.settings_section_about, sections[3].titleRes)
+            assertEquals(false, sections.any { it.titleRes == R.string.settings_section_developer })
+        }
+
+        @Test
+        fun `builds all five sections in expected order when isDeveloperModeEnabled is true`() {
+            val params = createParams()
+            val sections = buildSettingsSections(
+                preferencesParams = params,
+                onServicesTestClick = { servicesTestClickCount++ },
+                isDeveloperModeEnabled = true
             )
 
             assertEquals(5, sections.size)
@@ -203,7 +220,8 @@ class SettingsDataTest {
             val params = createParams()
             val sections = buildSettingsSections(
                 preferencesParams = params,
-                onServicesTestClick = { servicesTestClickCount++ }
+                onServicesTestClick = { servicesTestClickCount++ },
+                isDeveloperModeEnabled = true
             )
 
             val developerSection = sections.first { it.titleRes == R.string.settings_section_developer }
@@ -220,7 +238,8 @@ class SettingsDataTest {
             val params = createParams()
             val sections = buildSettingsSections(
                 preferencesParams = params,
-                onServicesTestClick = { servicesTestClickCount++ }
+                onServicesTestClick = { servicesTestClickCount++ },
+                isDeveloperModeEnabled = true
             )
 
             val developerSection = sections.first { it.titleRes == R.string.settings_section_developer }

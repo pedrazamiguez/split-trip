@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
@@ -17,6 +18,7 @@ import io.mockk.mockk
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -48,6 +50,7 @@ class SettingsViewModelTest {
     private lateinit var consumeLanguagePillUseCase: ConsumeLanguagePillUseCase
     private lateinit var getAppThemeUseCase: GetAppThemeUseCase
     private lateinit var getDiagnosticLogsUseCase: GetDiagnosticLogsUseCase
+    private lateinit var observeDeveloperAccessUseCase: ObserveDeveloperAccessUseCase
 
     @BeforeEach
     fun setUp() {
@@ -60,12 +63,14 @@ class SettingsViewModelTest {
         consumeLanguagePillUseCase = mockk()
         getAppThemeUseCase = mockk()
         getDiagnosticLogsUseCase = mockk()
+        observeDeveloperAccessUseCase = mockk()
 
         every { isUserAnonymousUseCase() } returns flowOf(false)
         every { getAppLanguageUseCase() } returns flowOf(null)
         every { getShouldShowLanguagePillUseCase() } returns flowOf(false)
         every { getAppThemeUseCase() } returns flowOf("system")
         every { getDiagnosticLogsUseCase() } returns "mock logs"
+        every { observeDeveloperAccessUseCase() } returns flowOf(false)
     }
 
     @AfterEach
@@ -81,7 +86,8 @@ class SettingsViewModelTest {
         getShouldShowLanguagePillUseCase = getShouldShowLanguagePillUseCase,
         consumeLanguagePillUseCase = consumeLanguagePillUseCase,
         getAppThemeUseCase = getAppThemeUseCase,
-        getDiagnosticLogsUseCase = getDiagnosticLogsUseCase
+        getDiagnosticLogsUseCase = getDiagnosticLogsUseCase,
+        observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
     )
 
     // ── currentCurrency StateFlow ───────────────────────────────────────────
@@ -317,5 +323,73 @@ class SettingsViewModelTest {
 
             assertEquals("system logs", result)
         }
+    }
+
+    // ── isDeveloperModeEnabled StateFlow ────────────────────────────────────
+
+    @Nested
+    @DisplayName("isDeveloperModeEnabled")
+    inner class IsDeveloperModeEnabled {
+
+        @Test
+        fun `isDeveloperModeEnabled defaults to false before flow emits`() = runTest(testDispatcher) {
+            every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+            every { observeDeveloperAccessUseCase() } returns flowOf(true)
+
+            val viewModel = createViewModel()
+
+            assertFalse(viewModel.isDeveloperModeEnabled.value)
+        }
+
+        @Test
+        fun `isDeveloperModeEnabled emits true when ObserveDeveloperAccessUseCase emits true`() =
+            runTest(testDispatcher) {
+                every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+                every { observeDeveloperAccessUseCase() } returns flowOf(true)
+
+                val viewModel = createViewModel()
+                val collectJob = launch { viewModel.isDeveloperModeEnabled.collect {} }
+                advanceUntilIdle()
+
+                assertTrue(viewModel.isDeveloperModeEnabled.value)
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `isDeveloperModeEnabled emits false when ObserveDeveloperAccessUseCase emits false`() =
+            runTest(testDispatcher) {
+                every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+                every { observeDeveloperAccessUseCase() } returns flowOf(false)
+
+                val viewModel = createViewModel()
+                val collectJob = launch { viewModel.isDeveloperModeEnabled.collect {} }
+                advanceUntilIdle()
+
+                assertFalse(viewModel.isDeveloperModeEnabled.value)
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `isDeveloperModeEnabled updates reactively when ObserveDeveloperAccessUseCase changes`() =
+            runTest(testDispatcher) {
+                val accessFlow = MutableStateFlow(false)
+                every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
+                every { observeDeveloperAccessUseCase() } returns accessFlow
+
+                val viewModel = createViewModel()
+                val collectJob = launch { viewModel.isDeveloperModeEnabled.collect {} }
+                advanceUntilIdle()
+                assertFalse(viewModel.isDeveloperModeEnabled.value)
+
+                accessFlow.value = true
+                advanceUntilIdle()
+                assertTrue(viewModel.isDeveloperModeEnabled.value)
+
+                accessFlow.value = false
+                advanceUntilIdle()
+                assertFalse(viewModel.isDeveloperModeEnabled.value)
+
+                collectJob.cancel()
+            }
     }
 }
