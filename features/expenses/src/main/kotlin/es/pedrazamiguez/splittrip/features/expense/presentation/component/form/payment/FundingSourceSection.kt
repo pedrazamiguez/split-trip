@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -30,7 +31,7 @@ internal fun FundingSourceSection(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
@@ -43,7 +44,8 @@ internal fun FundingSourceSection(
         }
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+            modifier = Modifier.selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
         ) {
             fundingSources.forEach { source ->
                 FundingSourceOptionCard(
