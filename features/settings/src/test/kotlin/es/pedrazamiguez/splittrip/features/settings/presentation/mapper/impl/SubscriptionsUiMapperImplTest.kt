@@ -381,5 +381,13 @@ class SubscriptionsUiMapperImplTest {
             assertEquals(R.string.subscriptions_service_unavailable, res.resId)
             assertTrue(res.args.isEmpty())
         }
+
+        @Test
+        fun `formatComplimentaryProMessage returns complimentary pro info string resource`() {
+            val result = mapper.formatComplimentaryProMessage()
+            val res = assertInstanceOf(UiText.StringResource::class.java, result)
+            assertEquals(R.string.subscriptions_complimentary_pro_manage_info, res.resId)
+            assertTrue(res.args.isEmpty())
+        }
     }
 }

@@ -49,5 +49,10 @@ data class User(
         }
 
         fun generatePendingUserId(email: String): String = "pending_${hashEmail(email)}"
+
+        fun isEmailInAllowlist(email: String?, allowlistHashes: Set<String>): Boolean {
+            if (email.isNullOrBlank() || allowlistHashes.isEmpty()) return false
+            return hashEmail(email) in allowlistHashes
+        }
     }
 }

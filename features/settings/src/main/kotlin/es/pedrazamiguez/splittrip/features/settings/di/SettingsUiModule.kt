@@ -33,6 +33,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetBiometricLockEnabled
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserReminderPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
@@ -227,6 +228,7 @@ val settingsUiModule = module {
     viewModel {
         val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        val observeProAllowlistAccessUseCase = get<ObserveProAllowlistAccessUseCase>()
         val updateUserTierUseCase = get<UpdateUserTierUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         val reconcileSubscriptionEntitlementsUseCase = get<ReconcileSubscriptionEntitlementsUseCase>()
@@ -235,6 +237,7 @@ val settingsUiModule = module {
         SubscriptionsViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
             updateUserTierUseCase = updateUserTierUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
             reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,

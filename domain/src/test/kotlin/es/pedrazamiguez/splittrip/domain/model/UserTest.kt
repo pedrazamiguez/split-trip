@@ -95,4 +95,32 @@ class UserTest {
         val user = User(userId = "1", email = "test@example.com", tier = SubscriptionTier.FREE)
         assertFalse(user.isPro)
     }
+
+    @Test
+    fun `isEmailInAllowlist returns false when email is null or blank`() {
+        val allowlist = setOf(User.hashEmail("pro@example.com"))
+
+        assertFalse(User.isEmailInAllowlist(null, allowlist))
+        assertFalse(User.isEmailInAllowlist("", allowlist))
+        assertFalse(User.isEmailInAllowlist("   ", allowlist))
+    }
+
+    @Test
+    fun `isEmailInAllowlist returns false when allowlistHashes is empty`() {
+        assertFalse(User.isEmailInAllowlist("pro@example.com", emptySet()))
+    }
+
+    @Test
+    fun `isEmailInAllowlist returns true when normalized email hash is in allowlist ignoring case and whitespace`() {
+        val allowlist = setOf(User.hashEmail("pro@example.com"))
+
+        assertTrue(User.isEmailInAllowlist("  PRO@Example.COM  ", allowlist))
+    }
+
+    @Test
+    fun `isEmailInAllowlist returns false when email hash is not in allowlist`() {
+        val allowlist = setOf(User.hashEmail("pro@example.com"))
+
+        assertFalse(User.isEmailInAllowlist("other@example.com", allowlist))
+    }
 }

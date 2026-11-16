@@ -92,6 +92,10 @@ class FirebaseAppConfigRepository(
     override val developerAllowlistEmailHashes: StateFlow<Set<String>> =
         _developerAllowlistEmailHashes.asStateFlow()
 
+    private val _proAllowlistEmailHashes = MutableStateFlow(DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES)
+    override val proAllowlistEmailHashes: StateFlow<Set<String>> =
+        _proAllowlistEmailHashes.asStateFlow()
+
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         updateFlowsFromConfig()
@@ -205,6 +209,9 @@ class FirebaseAppConfigRepository(
 
         val aiLimitPro = remoteConfig.getLong("ai_receipt_monthly_limit_pro").toInt()
         _aiReceiptMonthlyLimitPro.value = if (aiLimitPro > 0) aiLimitPro else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO
+
+        val proAllowlistStr = remoteConfig.getString("pro_allowlist_email_hashes")
+        _proAllowlistEmailHashes.value = parseAllowlistHashes(proAllowlistStr, DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES)
     }
 
     private fun updateSubscriptionFlags() {
@@ -233,11 +240,12 @@ class FirebaseAppConfigRepository(
         val developerInfoJson = remoteConfig.getString("developer_info_json")
         _developerInfo.value = parseDeveloperInfo(developerInfoJson)
         val allowlistStr = remoteConfig.getString("developer_allowlist_email_hashes")
-        _developerAllowlistEmailHashes.value = parseAllowlistHashes(allowlistStr)
+        _developerAllowlistEmailHashes.value =
+            parseAllowlistHashes(allowlistStr, DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES)
     }
 
-    private fun parseAllowlistHashes(raw: String): Set<String> {
-        if (raw.isBlank()) return DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES
+    private fun parseAllowlistHashes(raw: String, default: Set<String>): Set<String> {
+        if (raw.isBlank()) return default
         return raw.split(",")
             .map { it.trim().lowercase() }
             .filter { it.isNotEmpty() }
@@ -279,9 +287,12 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-9638507020441461/6643262487"
         private const val DEFAULT_INTERSTITIAL_ACTION_FREQUENCY = 2
         private const val DEFAULT_INTERSTITIAL_MIN_INTERVAL_SECONDS = 90L
-        private val DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES: Set<String> = setOf(
+        private const val DEFAULT_ALLOWLIST_OWNER_EMAIL_HASH =
             "834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4"
-        )
+        private val DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES: Set<String> =
+            setOf(DEFAULT_ALLOWLIST_OWNER_EMAIL_HASH)
+        private val DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES: Set<String> =
+            setOf(DEFAULT_ALLOWLIST_OWNER_EMAIL_HASH)
 
         private const val LANG_EN = "en"
         private const val LANG_ES = "es"

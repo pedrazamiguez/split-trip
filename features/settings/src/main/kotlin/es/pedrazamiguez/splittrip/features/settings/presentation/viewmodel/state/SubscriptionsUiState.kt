@@ -10,6 +10,7 @@ data class SubscriptionsUiState(
     val selectedInterval: BillingInterval = BillingInterval.ANNUAL,
     val plans: ImmutableList<SubscriptionPlanUiModel> = persistentListOf(),
     val currentTier: SubscriptionTier = SubscriptionTier.FREE,
+    val isAllowlistedPro: Boolean = false,
     val isAnonymous: Boolean = false,
     val isLoading: Boolean = false,
     val isProcessingAction: Boolean = false,
