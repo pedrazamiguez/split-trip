@@ -31,7 +31,7 @@
     <string name="withdrawal_details_notes_hint">Añade una nota…</string>
     <string name="withdrawal_wizard_next">Çigiente</string>
     <string name="withdrawal_wizard_back">Atrâh</string>
-    <string name="withdrawal_wizard_skip_to_review">Îh al reçumen →</string>
+    <string name="withdrawal_wizard_skip_to_review">Îh al reçumen</string>
     <string name="withdrawal_wizard_step_amount">Importe</string>
     <string name="withdrawal_wizard_step_exchange_rate">Tipo</string>
     <string name="withdrawal_wizard_step_scope">Ámbito</string>

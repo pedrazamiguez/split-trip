@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
 import es.pedrazamiguez.splittrip.features.settings.R
@@ -52,6 +53,7 @@ class SubscriptionsViewModelTest {
 
     private lateinit var getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase
     private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
+    private lateinit var observeProAllowlistAccessUseCase: ObserveProAllowlistAccessUseCase
     private lateinit var updateUserTierUseCase: UpdateUserTierUseCase
     private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
     private lateinit var reconcileSubscriptionEntitlementsUseCase: ReconcileSubscriptionEntitlementsUseCase
@@ -59,6 +61,7 @@ class SubscriptionsViewModelTest {
     private lateinit var billingService: BillingService
 
     private val userProfileFlow = MutableSharedFlow<User?>(replay = 1)
+    private val proAllowlistAccessFlow = MutableStateFlow(false)
     private val subscriptionProductsFlow = MutableStateFlow<List<SubscriptionProduct>>(emptyList())
     private val purchaseUpdatesFlow = MutableSharedFlow<PurchaseStatus>()
 
@@ -118,6 +121,7 @@ class SubscriptionsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getCurrentUserProfileUseCase = mockk()
         observeCurrentUserProfileUseCase = mockk()
+        observeProAllowlistAccessUseCase = mockk()
         updateUserTierUseCase = mockk(relaxed = true)
         isUserAnonymousUseCase = mockk()
         reconcileSubscriptionEntitlementsUseCase = mockk()
@@ -125,10 +129,12 @@ class SubscriptionsViewModelTest {
         billingService = mockk(relaxed = true)
 
         userProfileFlow.tryEmit(testUser)
+        proAllowlistAccessFlow.value = false
         subscriptionProductsFlow.value = defaultTestProducts
 
         coEvery { getCurrentUserProfileUseCase() } returns testUser
         every { observeCurrentUserProfileUseCase() } returns userProfileFlow
+        every { observeProAllowlistAccessUseCase() } returns proAllowlistAccessFlow
         every { isUserAnonymousUseCase() } returns flowOf(false)
         coEvery { reconcileSubscriptionEntitlementsUseCase() } returns Result.success(Unit)
         coEvery { updateUserTierUseCase(any(), any()) } returns Result.success(Unit)
@@ -162,6 +168,8 @@ class SubscriptionsViewModelTest {
             UiText.StringResource(R.string.subscriptions_billing_error)
         every { subscriptionsUiMapper.formatSubscriptionsUnavailableMessage() } returns
             UiText.StringResource(R.string.subscriptions_service_unavailable)
+        every { subscriptionsUiMapper.formatComplimentaryProMessage() } returns
+            UiText.StringResource(R.string.subscriptions_complimentary_pro_manage_info)
     }
 
     @AfterEach
@@ -172,6 +180,7 @@ class SubscriptionsViewModelTest {
     private fun createViewModel(): SubscriptionsViewModel = SubscriptionsViewModel(
         getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
         observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+        observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
         updateUserTierUseCase = updateUserTierUseCase,
         isUserAnonymousUseCase = isUserAnonymousUseCase,
         reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,
@@ -732,5 +741,101 @@ class SubscriptionsViewModelTest {
 
             job.cancel()
         }
+    }
+
+    @Nested
+    @DisplayName("Complimentary Pro allowlist")
+    inner class ComplimentaryProAllowlist {
+
+        @Test
+        fun `allowlisted FREE user displays PRO as active tier and maps plans with PRO as current plan`() =
+            runTest(testDispatcher) {
+                proAllowlistAccessFlow.value = true
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(SubscriptionTier.PRO, state.currentTier)
+                assertTrue(state.isAllowlistedPro)
+                coVerify(atLeast = 1) {
+                    subscriptionsUiMapper.mapPlans(
+                        currentTier = SubscriptionTier.PRO,
+                        selectedInterval = BillingInterval.ANNUAL,
+                        products = any()
+                    )
+                }
+            }
+
+        @Test
+        fun `allowlist status updates reactively when access flips false to true and back`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                assertEquals(SubscriptionTier.FREE, viewModel.uiState.value.currentTier)
+                assertFalse(viewModel.uiState.value.isAllowlistedPro)
+                coVerify(exactly = 1) { reconcileSubscriptionEntitlementsUseCase() }
+
+                proAllowlistAccessFlow.value = true
+                advanceUntilIdle()
+
+                assertEquals(SubscriptionTier.PRO, viewModel.uiState.value.currentTier)
+                assertTrue(viewModel.uiState.value.isAllowlistedPro)
+
+                proAllowlistAccessFlow.value = false
+                advanceUntilIdle()
+
+                assertEquals(SubscriptionTier.FREE, viewModel.uiState.value.currentTier)
+                assertFalse(viewModel.uiState.value.isAllowlistedPro)
+                coVerify(exactly = 2) { reconcileSubscriptionEntitlementsUseCase() }
+            }
+
+        @Test
+        fun `ManageSubscription for allowlisted user without Play purchase emits ShowTopPill`() =
+            runTest(testDispatcher) {
+                proAllowlistAccessFlow.value = true
+                coEvery { billingService.queryActivePurchases() } returns Result.success(emptyList())
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                val actions = mutableListOf<SubscriptionsUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+                viewModel.onEvent(SubscriptionsUiEvent.ManageSubscription)
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.showManageSubscriptionDialog)
+                assertEquals(1, actions.size)
+                val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+                val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
+                assertEquals(R.string.subscriptions_complimentary_pro_manage_info, message.resId)
+
+                job.cancel()
+            }
+
+        @Test
+        fun `ManageSubscription for allowlisted user with active Play purchase opens ManageSubscriptionDialog`() =
+            runTest(testDispatcher) {
+                proAllowlistAccessFlow.value = true
+                coEvery {
+                    billingService.queryActivePurchases()
+                } returns Result.success(listOf(BillingConstants.PRODUCT_ID_PRO_ANNUAL))
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                val actions = mutableListOf<SubscriptionsUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+                viewModel.onEvent(SubscriptionsUiEvent.ManageSubscription)
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.showManageSubscriptionDialog)
+                assertTrue(actions.isEmpty())
+
+                job.cancel()
+            }
     }
 }

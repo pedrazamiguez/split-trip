@@ -23,6 +23,8 @@ private object DefaultAppConfigService : AppConfigService {
     override val extractedDateMaxFutureDays: StateFlow<Int> = MutableStateFlow(30)
     override val supportEmailAddress: StateFlow<String> = MutableStateFlow("support@splittrip.eu")
     override val settlementNudgeRateLimitHours: StateFlow<Long> = MutableStateFlow(24L)
+    override val developerAllowlistEmailHashes: StateFlow<Set<String>> = MutableStateFlow(emptySet())
+    override val proAllowlistEmailHashes: StateFlow<Set<String>> = MutableStateFlow(emptySet())
 }
 
 /**

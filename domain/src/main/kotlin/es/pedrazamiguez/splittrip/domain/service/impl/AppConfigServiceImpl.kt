@@ -21,4 +21,8 @@ class AppConfigServiceImpl(
     override val extractedDateMaxFutureDays: StateFlow<Int> = appConfigRepository.extractedDateMaxFutureDays
     override val supportEmailAddress: StateFlow<String> = appConfigRepository.supportEmailAddress
     override val settlementNudgeRateLimitHours: StateFlow<Long> = appConfigRepository.settlementNudgeRateLimitHours
+    override val developerAllowlistEmailHashes: StateFlow<Set<String>> =
+        appConfigRepository.developerAllowlistEmailHashes
+    override val proAllowlistEmailHashes: StateFlow<Set<String>> =
+        appConfigRepository.proAllowlistEmailHashes
 }

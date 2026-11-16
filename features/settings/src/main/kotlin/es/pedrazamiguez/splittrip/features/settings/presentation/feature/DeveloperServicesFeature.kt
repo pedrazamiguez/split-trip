@@ -11,7 +11,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.receipt.ReceiptAttachmentHandler
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
@@ -26,9 +28,11 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun DeveloperServicesFeature(
+    navController: NavHostController = LocalRootNavController.current,
     viewModel: DeveloperServicesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isDeveloperAccessGranted by viewModel.isDeveloperAccessGranted.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val topPillController = LocalTopPillController.current
 
@@ -38,41 +42,46 @@ fun DeveloperServicesFeature(
                 is DeveloperServicesUiAction.ShowTopPill -> {
                     topPillController.showPill(message = action.message.asString(context))
                 }
+                is DeveloperServicesUiAction.NavigateBack -> {
+                    navController.popBackStack()
+                }
             }
         }
     }
 
-    var showReceiptSheet by remember { mutableStateOf(false) }
-    // Track which tab triggered the sheet so we know what to do after file selection.
-    var activeTabAtSheetOpen by remember { mutableStateOf<DeveloperServicesTab>(DeveloperServicesTab.Ocr) }
+    if (isDeveloperAccessGranted == true) {
+        var showReceiptSheet by remember { mutableStateOf(false) }
+        // Track which tab triggered the sheet so we know what to do after file selection.
+        var activeTabAtSheetOpen by remember { mutableStateOf<DeveloperServicesTab>(DeveloperServicesTab.Ocr) }
 
-    ReceiptAttachmentHandler(
-        showSheet = showReceiptSheet,
-        onDismissSheet = { showReceiptSheet = false },
-        onReceiptSelected = { uriString ->
-            val uri = Uri.parse(uriString)
-            val name = getFileName(context, uri)
-            val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
-            viewModel.onEvent(DeveloperServicesUiEvent.FileSelected(uriString, name, mimeType))
-            if (activeTabAtSheetOpen is DeveloperServicesTab.AiExtraction) {
-                viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+        ReceiptAttachmentHandler(
+            showSheet = showReceiptSheet,
+            onDismissSheet = { showReceiptSheet = false },
+            onReceiptSelected = { uriString ->
+                val uri = Uri.parse(uriString)
+                val name = getFileName(context, uri)
+                val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+                viewModel.onEvent(DeveloperServicesUiEvent.FileSelected(uriString, name, mimeType))
+                if (activeTabAtSheetOpen is DeveloperServicesTab.AiExtraction) {
+                    viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+                }
             }
-        }
-    )
-
-    FeatureScaffold(currentRoute = Routes.SETTINGS_DEVELOPER_SERVICES) {
-        DeveloperServicesScreen(
-            uiState = uiState,
-            onSelectOcrFileClick = {
-                activeTabAtSheetOpen = DeveloperServicesTab.Ocr
-                showReceiptSheet = true
-            },
-            onSelectReceiptForAiClick = {
-                activeTabAtSheetOpen = DeveloperServicesTab.AiExtraction
-                showReceiptSheet = true
-            },
-            onEvent = viewModel::onEvent
         )
+
+        FeatureScaffold(currentRoute = Routes.SETTINGS_DEVELOPER_SERVICES) {
+            DeveloperServicesScreen(
+                uiState = uiState,
+                onSelectOcrFileClick = {
+                    activeTabAtSheetOpen = DeveloperServicesTab.Ocr
+                    showReceiptSheet = true
+                },
+                onSelectReceiptForAiClick = {
+                    activeTabAtSheetOpen = DeveloperServicesTab.AiExtraction
+                    showReceiptSheet = true
+                },
+                onEvent = viewModel::onEvent
+            )
+        }
     }
 }
 

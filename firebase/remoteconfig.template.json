@@ -59,6 +59,13 @@
           },
           "description": "Monthly quota of AI receipt scans allocated to Pro users.",
           "valueType": "NUMBER"
+        },
+        "pro_allowlist_email_hashes": {
+          "defaultValue": {
+            "value": "834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4"
+          },
+          "description": "Comma-separated lowercase SHA-256 hex digests of normalized emails granted complimentary Pro entitlements.",
+          "valueType": "STRING"
         }
       }
     },
@@ -182,6 +189,18 @@
           },
           "description": "Minimum cooldown duration in seconds between interstitial ad impressions.",
           "valueType": "NUMBER"
+        }
+      }
+    },
+    "Developer": {
+      "description": "Developer tooling access control and internal configuration.",
+      "parameters": {
+        "developer_allowlist_email_hashes": {
+          "defaultValue": {
+            "value": "834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4"
+          },
+          "description": "Comma-separated lowercase SHA-256 hex digests of normalized emails allowed to access Developer Services in non-debug builds.",
+          "valueType": "STRING"
         }
       }
     }

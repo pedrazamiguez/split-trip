@@ -80,55 +80,8 @@ class SubscriptionsUiMapperImpl(
         return UiText.StringResource(R.string.subscriptions_service_unavailable)
     }
 
-    private fun createFreePlan(isCurrentPlan: Boolean): SubscriptionPlanUiModel {
-        val features = listOf(
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_free_groups),
-                isIncluded = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_free_members),
-                isIncluded = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_free_standard_calc),
-                isIncluded = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_free_multi_currency),
-                isIncluded = true
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_subunits),
-                isIncluded = false
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_pro_ai_ocr),
-                isIncluded = false
-            ),
-            SubscriptionFeatureUiModel(
-                label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
-                isIncluded = false
-            )
-        ).toImmutableList()
-
-        return SubscriptionPlanUiModel(
-            tier = SubscriptionTier.FREE,
-            title = UiText.StringResource(R.string.subscriptions_tier_free_title),
-            description = UiText.StringResource(R.string.subscriptions_tier_free_description),
-            price = UiText.StringResource(R.string.subscriptions_tier_free_price),
-            period = UiText.StringResource(R.string.subscriptions_tier_free_period),
-            badge = null,
-            features = features,
-            isCurrentPlan = isCurrentPlan,
-            ctaButtonText = if (isCurrentPlan) {
-                UiText.StringResource(R.string.subscriptions_cta_current_plan)
-            } else {
-                UiText.StringResource(R.string.subscriptions_cta_manage_subscription)
-            },
-            isCtaButtonEnabled = !isCurrentPlan,
-            isHighlightedCard = false
-        )
+    override fun formatComplimentaryProMessage(): UiText {
+        return UiText.StringResource(R.string.subscriptions_complimentary_pro_manage_info)
     }
 
     private fun createProPlan(
@@ -202,36 +155,87 @@ class SubscriptionsUiMapperImpl(
             UiText.StringResource(R.string.subscriptions_tier_pro_price_annual_total)
         )
     }
+}
 
-    private fun createProPlanFeatures(): ImmutableList<SubscriptionFeatureUiModel> = listOf(
+private fun createFreePlan(isCurrentPlan: Boolean): SubscriptionPlanUiModel {
+    val features = listOf(
         SubscriptionFeatureUiModel(
-            label = UiText.StringResource(R.string.subscriptions_feature_pro_unlimited_groups),
-            isIncluded = true,
-            isHighlighted = true
+            label = UiText.StringResource(R.string.subscriptions_feature_free_groups),
+            isIncluded = true
         ),
         SubscriptionFeatureUiModel(
-            label = UiText.StringResource(R.string.subscriptions_feature_pro_members),
-            isIncluded = true,
-            isHighlighted = true
+            label = UiText.StringResource(R.string.subscriptions_feature_free_members),
+            isIncluded = true
+        ),
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_free_standard_calc),
+            isIncluded = true
+        ),
+        SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_free_multi_currency),
+            isIncluded = true
         ),
         SubscriptionFeatureUiModel(
             label = UiText.StringResource(R.string.subscriptions_feature_subunits),
-            isIncluded = true,
-            isHighlighted = true
+            isIncluded = false
         ),
         SubscriptionFeatureUiModel(
             label = UiText.StringResource(R.string.subscriptions_feature_pro_ai_ocr),
-            isIncluded = true,
-            isHighlighted = true
+            isIncluded = false
         ),
         SubscriptionFeatureUiModel(
             label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
-            isIncluded = true,
-            isHighlighted = true
-        ),
-        SubscriptionFeatureUiModel(
-            label = UiText.StringResource(R.string.subscriptions_feature_pro_priority_support),
-            isIncluded = true
+            isIncluded = false
         )
     ).toImmutableList()
+
+    return SubscriptionPlanUiModel(
+        tier = SubscriptionTier.FREE,
+        title = UiText.StringResource(R.string.subscriptions_tier_free_title),
+        description = UiText.StringResource(R.string.subscriptions_tier_free_description),
+        price = UiText.StringResource(R.string.subscriptions_tier_free_price),
+        period = UiText.StringResource(R.string.subscriptions_tier_free_period),
+        badge = null,
+        features = features,
+        isCurrentPlan = isCurrentPlan,
+        ctaButtonText = if (isCurrentPlan) {
+            UiText.StringResource(R.string.subscriptions_cta_current_plan)
+        } else {
+            UiText.StringResource(R.string.subscriptions_cta_manage_subscription)
+        },
+        isCtaButtonEnabled = !isCurrentPlan,
+        isHighlightedCard = false
+    )
 }
+
+private fun createProPlanFeatures(): ImmutableList<SubscriptionFeatureUiModel> = listOf(
+    SubscriptionFeatureUiModel(
+        label = UiText.StringResource(R.string.subscriptions_feature_pro_unlimited_groups),
+        isIncluded = true,
+        isHighlighted = true
+    ),
+    SubscriptionFeatureUiModel(
+        label = UiText.StringResource(R.string.subscriptions_feature_pro_members),
+        isIncluded = true,
+        isHighlighted = true
+    ),
+    SubscriptionFeatureUiModel(
+        label = UiText.StringResource(R.string.subscriptions_feature_subunits),
+        isIncluded = true,
+        isHighlighted = true
+    ),
+    SubscriptionFeatureUiModel(
+        label = UiText.StringResource(R.string.subscriptions_feature_pro_ai_ocr),
+        isIncluded = true,
+        isHighlighted = true
+    ),
+    SubscriptionFeatureUiModel(
+        label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
+        isIncluded = true,
+        isHighlighted = true
+    ),
+    SubscriptionFeatureUiModel(
+        label = UiText.StringResource(R.string.subscriptions_feature_pro_priority_support),
+        isIncluded = true
+    )
+).toImmutableList()

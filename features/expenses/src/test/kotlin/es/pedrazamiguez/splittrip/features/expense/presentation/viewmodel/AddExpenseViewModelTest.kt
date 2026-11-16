@@ -90,6 +90,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
@@ -2159,6 +2160,38 @@ class AddExpenseViewModelTest {
             viewModel.onEvent(AddExpenseUiEvent.ResolutionAmountSelected("75"))
             advanceUntilIdle()
             assertEquals("75", viewModel.uiState.value.sourceAmount)
+        }
+
+        @Test
+        fun `ResolutionAmountSelected immediately refreshes cash preview and clears insufficient cash`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            coEvery {
+                previewCashExchangeRateUseCase(any(), any(), any(), any(), any(), any(), any())
+            } returns CashRatePreviewResult.InsufficientCash
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Lunch"))
+            viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("USD"))
+            viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("50.00"))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isInsufficientCash)
+            assertFalse(viewModel.uiState.value.isFormValid)
+
+            coEvery {
+                previewCashExchangeRateUseCase(any(), any(), any(), any(), any(), any(), any())
+            } returns CashRatePreviewResult.Available(
+                CashRatePreview(displayRate = BigDecimal("1.08"), groupAmountCents = 2778L)
+            )
+
+            viewModel.onEvent(AddExpenseUiEvent.ResolutionAmountSelected("30.00"))
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals("30.00", state.sourceAmount)
+            assertFalse(state.isInsufficientCash)
+            assertTrue(state.isFormValid)
         }
     }
 

@@ -71,7 +71,7 @@
     <string name="add_expense_cash_conflict_resolution_title">Cash amount changed</string>
     <string name="add_expense_cash_conflict_use_remaining">Use remaining cash (%1$s)</string>
     <string name="add_expense_cash_conflict_switch_payment">Switch payment method</string>
-    <string name="add_expense_cash_conflict_dismiss">Dismiss and review</string>
+    <string name="add_expense_cash_conflict_dismiss">Review expense</string>
     <string name="expense_error_addition_failed">Oops! Couldn\'t save the expense. Try again</string>
     <string name="expense_error_load_group_config">Couldn\'t load group info</string>
     <string name="expense_error_config_retry_hint">Check your connection and try again</string>
@@ -104,6 +104,10 @@
     <string name="add_expense_exchange_rate_title">Currency conversion</string>
     <string name="add_expense_cash_rate_locked_hint">Rate calculated from your ATM withdrawal(s)</string>
     <string name="add_expense_cash_insufficient_hint">Not enough cash available for this amount</string>
+    <string name="add_expense_cash_no_withdrawals_hint">No ATM withdrawals available in %1$s</string>
+    <string name="add_expense_cash_no_withdrawals_generic_hint">No ATM withdrawals available in this currency</string>
+    <string name="add_expense_cash_no_cash_available">No cash available in %1$s. Add a withdrawal or switch payment method.</string>
+    <string name="add_expense_cash_no_cash_available_generic">No cash available in this currency. Add a withdrawal or switch payment method.</string>
     
     <string name="add_expense_cash_tranche_funded_from">Funded from</string>
     <string name="add_expense_cash_tranche_atm_label">ATM — %1$s</string>
@@ -227,8 +231,8 @@
     <string name="expense_wizard_step_receipt">Receipt</string>
     <string name="expense_wizard_step_add_ons">Add-ons</string>
     <string name="expense_wizard_step_review">Review</string>
-    <string name="expense_wizard_skip_to_review">Skip to Review →</string>
-    <string name="expense_wizard_skip_defaults_hint">Optional steps use smart defaults (Equal split · Paid today)</string>
+    <string name="expense_wizard_skip_to_review">Skip to Review</string>
+    <string name="expense_wizard_skip_defaults_hint">Defaults: equal split · paid today</string>
 
     
     <string name="expense_review_title">Review your expense</string>

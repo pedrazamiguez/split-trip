@@ -90,6 +90,8 @@ class CurrencyEventHandler(
                 isExchangeRateStale = false,
                 isExchangeRateLocked = isLocked,
                 isInsufficientCash = false,
+                isNoCashAvailable = false,
+                cashTranchePreviews = persistentListOf(),
                 displayExchangeRate = if (isForeign) it.displayExchangeRate else "1.0",
                 exchangeRateLockedHint = lockedHint
             ).withStepClamped()
@@ -275,6 +277,7 @@ class CurrencyEventHandler(
                     preCashExchangeRate = it.displayExchangeRate,
                     isExchangeRateLocked = true,
                     isInsufficientCash = false,
+                    isNoCashAvailable = false,
                     exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
                 )
             }
@@ -285,6 +288,7 @@ class CurrencyEventHandler(
             fetchPoolsIfNeeded()
         } else if (isGroupPocket) {
             // Same-currency CASH + GROUP pocket: no lock, but probe pools for tranche preview.
+            _uiState.update { it.copy(isInsufficientCash = false, isNoCashAvailable = false) }
             withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
             fetchPoolsIfNeeded()
         }
@@ -297,6 +301,7 @@ class CurrencyEventHandler(
             it.copy(
                 isExchangeRateLocked = false,
                 isInsufficientCash = false,
+                isNoCashAvailable = false,
                 exchangeRateLockedHint = null,
                 cashTranchePreviews = persistentListOf()
             )
@@ -338,9 +343,12 @@ class CurrencyEventHandler(
                     preCashExchangeRate = it.displayExchangeRate,
                     isExchangeRateLocked = true,
                     isInsufficientCash = false,
+                    isNoCashAvailable = false,
                     exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
                 )
             }
+        } else {
+            _uiState.update { it.copy(isInsufficientCash = false, isNoCashAvailable = false) }
         }
         withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
         fetchPoolsIfNeeded()
@@ -354,6 +362,7 @@ class CurrencyEventHandler(
                 it.copy(
                     isExchangeRateLocked = false,
                     isInsufficientCash = false,
+                    isNoCashAvailable = false,
                     exchangeRateLockedHint = null,
                     displayExchangeRate = savedRate ?: it.displayExchangeRate,
                     preCashExchangeRate = null,
@@ -366,7 +375,13 @@ class CurrencyEventHandler(
             // Same-currency USER/SUBUNIT pocket: clear tranche state — ATM pool is not used.
             cashRateDelegate.cancelPendingCashJobs()
             withdrawalPoolSelectionDelegate.clearPoolState(_uiState)
-            _uiState.update { it.copy(isInsufficientCash = false, cashTranchePreviews = persistentListOf()) }
+            _uiState.update {
+                it.copy(
+                    isInsufficientCash = false,
+                    isNoCashAvailable = false,
+                    cashTranchePreviews = persistentListOf()
+                )
+            }
         }
     }
 

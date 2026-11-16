@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.CashTrancheFundedFromSection
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.NoCashAvailableBanner
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.payment.WithdrawalPoolSelectorSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -67,7 +68,10 @@ fun AmountStep(
                 }
             )
         }
-        if (isSameCurrency && uiState.isInsufficientCash) {
+        if (isSameCurrency && uiState.isNoCashAvailable) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
+            NoCashAvailableBanner(currencyCode = uiState.selectedCurrency?.code)
+        } else if (isSameCurrency && uiState.isInsufficientCash) {
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
             FormErrorBanner(error = UiText.StringResource(R.string.add_expense_cash_insufficient_hint))
         } else if (isSameCurrency && uiState.cashTranchePreviews.isNotEmpty()) {

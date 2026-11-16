@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
@@ -59,9 +60,11 @@ class DeveloperServicesViewModelTest {
     private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
     private lateinit var getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase
     private lateinit var updateUserTierUseCase: UpdateUserTierUseCase
+    private lateinit var observeDeveloperAccessUseCase: ObserveDeveloperAccessUseCase
     private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
     private val overrideEngineFlow = MutableStateFlow<AiEngineType?>(null)
     private val userProfileFlow = MutableStateFlow<User?>(null)
+    private val developerAccessFlow = MutableStateFlow(true)
 
     @BeforeEach
     fun setUp() {
@@ -72,10 +75,13 @@ class DeveloperServicesViewModelTest {
         observeCurrentUserProfileUseCase = mockk()
         getCurrentUserProfileUseCase = mockk()
         updateUserTierUseCase = mockk()
+        observeDeveloperAccessUseCase = mockk()
         userProfileFlow.value = null
+        developerAccessFlow.value = true
         every { aiModelResolver.getActiveModel() } returns activeEngineFlow
         every { aiModelResolver.getDeveloperOverrideModel() } returns overrideEngineFlow
         every { observeCurrentUserProfileUseCase() } returns userProfileFlow
+        every { observeDeveloperAccessUseCase() } returns developerAccessFlow
         coEvery { getCurrentUserProfileUseCase() } returns null
         coEvery { updateUserTierUseCase(any(), any()) } returns Result.success(Unit)
         coEvery { aiModelResolver.setDeveloperOverrideModel(any()) } coAnswers {
@@ -96,7 +102,8 @@ class DeveloperServicesViewModelTest {
         aiModelResolver = aiModelResolver,
         observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
         getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-        updateUserTierUseCase = updateUserTierUseCase
+        updateUserTierUseCase = updateUserTierUseCase,
+        observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
     )
 
     @Test
@@ -608,5 +615,60 @@ class DeveloperServicesViewModelTest {
 
             job.cancel()
         }
+    }
+
+    @Nested
+    @DisplayName("DeveloperAccess")
+    inner class DeveloperAccess {
+
+        @Test
+        fun `isDeveloperAccessGranted emits true and does not send NavigateBack when access is granted`() =
+            runTest(testDispatcher) {
+                developerAccessFlow.value = true
+                val viewModel = createViewModel()
+                val actions = mutableListOf<DeveloperServicesUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+                advanceUntilIdle()
+
+                assertEquals(true, viewModel.isDeveloperAccessGranted.value)
+                assertTrue(actions.isEmpty())
+                job.cancel()
+            }
+
+        @Test
+        fun `isDeveloperAccessGranted emits false and sends NavigateBack when access is denied`() =
+            runTest(testDispatcher) {
+                developerAccessFlow.value = false
+                val viewModel = createViewModel()
+                val actions = mutableListOf<DeveloperServicesUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+                advanceUntilIdle()
+
+                assertEquals(false, viewModel.isDeveloperAccessGranted.value)
+                assertEquals(listOf(DeveloperServicesUiAction.NavigateBack), actions)
+                job.cancel()
+            }
+
+        @Test
+        fun `revoking access while active updates isDeveloperAccessGranted to false and sends NavigateBack`() =
+            runTest(testDispatcher) {
+                developerAccessFlow.value = true
+                val viewModel = createViewModel()
+                val actions = mutableListOf<DeveloperServicesUiAction>()
+                val job = launch { viewModel.actions.collect { actions.add(it) } }
+
+                advanceUntilIdle()
+                assertEquals(true, viewModel.isDeveloperAccessGranted.value)
+                assertTrue(actions.isEmpty())
+
+                developerAccessFlow.value = false
+                advanceUntilIdle()
+
+                assertEquals(false, viewModel.isDeveloperAccessGranted.value)
+                assertEquals(listOf(DeveloperServicesUiAction.NavigateBack), actions)
+                job.cancel()
+            }
     }
 }

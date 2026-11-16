@@ -70,7 +70,7 @@
     <string name="add_expense_cash_conflict_resolution_title">El efêttibo a cambiao</string>
     <string name="add_expense_cash_conflict_use_remaining">Uçâh el efêttibo rêttante (%1$s)</string>
     <string name="add_expense_cash_conflict_switch_payment">Cambiâh método de pago</string>
-    <string name="add_expense_cash_conflict_dismiss">Dêccartâh y rebiçâh</string>
+    <string name="add_expense_cash_conflict_dismiss">Rebiçâh gâtto</string>
     <string name="expense_error_addition_failed">¡Ups! No pudimô guardâh er gâtto. Inténtalo otra bêh</string>
     <string name="expense_error_load_group_config">No pudimô cargâh la info der grupo</string>
     <string name="expense_error_config_retry_hint">Rebiça tu conêççión e inténtalo de nuebo</string>
@@ -99,6 +99,10 @@
     <string name="add_expense_exchange_rate_title">Comberçión de moneda</string>
     <string name="add_expense_cash_rate_locked_hint">Tipo de cambio carculao a partîh de tu(s) retirá(s) en cahero</string>
     <string name="add_expense_cash_insufficient_hint">No ay çufiçiente efêttibo dîpponible pa êtte importe</string>
+    <string name="add_expense_cash_no_withdrawals_hint">No ay retirâh en cahero dîpponiblê en %1$s</string>
+    <string name="add_expense_cash_no_withdrawals_generic_hint">No ay retirâh en cahero dîpponiblê en êtta moneda</string>
+    <string name="add_expense_cash_no_cash_available">No ay efêttibo dîpponible en %1$s. Añade una retirá o cambia er método de pago.</string>
+    <string name="add_expense_cash_no_cash_available_generic">No ay efêttibo dîpponible en êtta moneda. Añade una retirá o cambia er método de pago.</string>
     <string name="add_expense_cash_tranche_funded_from">Finançiao dêdde</string>
     <string name="add_expense_cash_tranche_atm_label">Cahero — %1$s</string>
     <string name="add_expense_cash_tranche_atm_label_no_date">Cahero</string>
@@ -201,8 +205,8 @@
     <string name="expense_wizard_step_receipt">Reçibo</string>
     <string name="expense_wizard_step_add_ons">Êttrâ</string>
     <string name="expense_wizard_step_review">Reçumen</string>
-    <string name="expense_wizard_skip_to_review">Îh al reçumen →</string>
-    <string name="expense_wizard_skip_defaults_hint">Lô paçô ôççionalê uçan balorê por defêtto (Reparto iguâh · Pagao oy)</string>
+    <string name="expense_wizard_skip_to_review">Îh al reçumen</string>
+    <string name="expense_wizard_skip_defaults_hint">Por defêtto: reparto iguâh · pagao oy</string>
     <string name="expense_review_title">Rebiça tu gâtto</string>
     <string name="expense_review_none">–</string>
     <string name="expense_review_title_label">Conçêtto</string>

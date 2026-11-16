@@ -39,6 +39,7 @@ class FeatureGateServiceImplTest {
     private val maxOwnedGroupsPro = MutableStateFlow(100)
     private val maxMembersPerGroupFree = MutableStateFlow(4)
     private val maxMembersPerGroupPro = MutableStateFlow(20)
+    private val proAllowlistEmailHashes = MutableStateFlow<Set<String>>(emptySet())
 
     @BeforeEach
     fun setUp() {
@@ -52,6 +53,7 @@ class FeatureGateServiceImplTest {
         every { appConfigRepository.maxOwnedGroupsPro } returns maxOwnedGroupsPro
         every { appConfigRepository.maxMembersPerGroupFree } returns maxMembersPerGroupFree
         every { appConfigRepository.maxMembersPerGroupPro } returns maxMembersPerGroupPro
+        every { appConfigRepository.proAllowlistEmailHashes } returns proAllowlistEmailHashes
         every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
 
         subscriptionGatingEnabled.value = true
@@ -59,6 +61,7 @@ class FeatureGateServiceImplTest {
         maxOwnedGroupsPro.value = 100
         maxMembersPerGroupFree.value = 4
         maxMembersPerGroupPro.value = 20
+        proAllowlistEmailHashes.value = emptySet()
 
         service = FeatureGateServiceImpl(
             authenticationService = authenticationService,
@@ -423,5 +426,129 @@ class FeatureGateServiceImplTest {
                 ),
                 emissions
             )
+        }
+
+    @Test
+    fun `allowlisted non-anonymous FREE user receives full PRO entitlements across FeatureGateService`() = runTest {
+        val allowlistedUser = User(
+            userId = "user-vip",
+            email = "vip@example.com",
+            tier = SubscriptionTier.FREE
+        )
+        proAllowlistEmailHashes.value = setOf(User.hashEmail("vip@example.com"))
+        coEvery { authenticationService.isAnonymous() } returns false
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(allowlistedUser)
+
+        assertTrue(service.isActingUserPro().first())
+        assertTrue(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
+        assertTrue(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
+        assertTrue(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION).first())
+        assertTrue(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId = null).first())
+        assertEquals(
+            LimitResult.Allowed,
+            service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 50).first()
+        )
+        assertEquals(
+            LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = false),
+            service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 100).first()
+        )
+    }
+
+    @Test
+    fun `anonymous user never receives complimentary PRO even when email hash is in proAllowlistEmailHashes`() =
+        runTest {
+            val user = User(
+                userId = "anon-user",
+                email = "vip@example.com",
+                tier = SubscriptionTier.FREE
+            )
+            proAllowlistEmailHashes.value = setOf(User.hashEmail("vip@example.com"))
+            coEvery { authenticationService.isAnonymous() } returns true
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(user)
+
+            assertFalse(service.isActingUserPro().first())
+            assertFalse(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
+            assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
+            assertEquals(
+                LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = true),
+                service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 1).first()
+            )
+        }
+
+    @Test
+    fun `group created by allowlisted FREE user grants PRO limits to FREE members`() =
+        runTest {
+            val freeMember = User(
+                userId = "member-free",
+                email = "member@example.com",
+                tier = SubscriptionTier.FREE
+            )
+            val vipCreator = User(
+                userId = "creator-vip",
+                email = "vip_creator@example.com",
+                tier = SubscriptionTier.FREE
+            )
+            val vipGroup = Group(id = "group-vip", createdBy = "creator-vip")
+            proAllowlistEmailHashes.value = setOf(User.hashEmail("vip_creator@example.com"))
+
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(freeMember)
+            coEvery { groupRepository.getGroupById("group-vip") } returns vipGroup
+            coEvery { userRepository.getUsersByIds(listOf("creator-vip")) } returns mapOf("creator-vip" to vipCreator)
+
+            assertFalse(service.isActingUserPro().first())
+            assertTrue(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId = "group-vip").first())
+            assertTrue(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, groupId = "group-vip").first())
+            assertEquals(
+                LimitResult.Allowed,
+                service.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, 19, groupId = "group-vip").first()
+            )
+            assertEquals(
+                LimitResult.Blocked(GatedLimit.MAX_MEMBERS_PER_GROUP, upgradeRequired = false),
+                service.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, 20, groupId = "group-vip").first()
+            )
+        }
+
+    @Test
+    fun `removing user from proAllowlistEmailHashes reactively revokes complimentary PRO entitlements`() =
+        runTest {
+            val actingUser = User(
+                userId = "user-vip",
+                email = "vip@example.com",
+                tier = SubscriptionTier.FREE
+            )
+            val vipCreator = User(
+                userId = "creator-vip",
+                email = "vip_creator@example.com",
+                tier = SubscriptionTier.FREE
+            )
+            val vipGroup = Group(id = "group-vip", createdBy = "creator-vip")
+            val actingHash = User.hashEmail("vip@example.com")
+            val creatorHash = User.hashEmail("vip_creator@example.com")
+
+            proAllowlistEmailHashes.value = setOf(actingHash, creatorHash)
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(actingUser)
+            coEvery { groupRepository.getGroupById("group-vip") } returns vipGroup
+            coEvery { userRepository.getUsersByIds(listOf("creator-vip")) } returns mapOf("creator-vip" to vipCreator)
+
+            val actingEmissions = mutableListOf<Boolean>()
+            val actingJob = launch {
+                service.isActingUserPro().take(2).toList(actingEmissions)
+            }
+            val groupEmissions = mutableListOf<Boolean>()
+            val groupJob = launch {
+                service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId = "group-vip")
+                    .take(2)
+                    .toList(groupEmissions)
+            }
+            testScheduler.runCurrent()
+
+            proAllowlistEmailHashes.value = emptySet()
+            actingJob.join()
+            groupJob.join()
+
+            assertEquals(listOf(true, false), actingEmissions)
+            assertEquals(listOf(true, false), groupEmissions)
         }
 }

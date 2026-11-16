@@ -40,7 +40,8 @@ fun SettingsScreen(
     onOpenSourceClick: () -> Unit = {},
     onDeveloperInfoClick: () -> Unit = {},
     onCopyDiagnosticsClick: () -> Unit = {},
-    isAnonymous: Boolean = false
+    isAnonymous: Boolean = false,
+    isDeveloperModeEnabled: Boolean = false
 ) {
     val preferencesParams = SettingsPreferencesParams(
         onNotificationsClick = onNotificationsClick,
@@ -68,7 +69,8 @@ fun SettingsScreen(
     val sections = buildSettingsSections(
         preferencesParams = preferencesParams,
         onServicesTestClick = onDeveloperServicesTestClick,
-        isAnonymous = isAnonymous
+        isAnonymous = isAnonymous,
+        isDeveloperModeEnabled = isDeveloperModeEnabled
     )
 
     LazyColumn(

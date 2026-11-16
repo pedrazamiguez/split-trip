@@ -3,6 +3,8 @@ package es.pedrazamiguez.splittrip.di.domain
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.service.UserValidationService
 import es.pedrazamiguez.splittrip.domain.service.impl.UserValidationServiceImpl
@@ -10,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliation
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileUnregisteredUserUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
@@ -20,6 +23,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.impl.CheckPendingReconcili
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.GetCurrentUserProfileUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.GetMemberProfilesUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.ObserveCurrentUserProfileUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.user.impl.ObserveProAllowlistAccessUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.ReconcileSubscriptionEntitlementsUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.ReconcileUnregisteredUserUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.user.impl.SearchUsersByEmailUseCaseImpl
@@ -80,14 +84,26 @@ val profileDomainModule = module {
             userRepository = get<UserRepository>()
         )
     }
+    factory<ObserveProAllowlistAccessUseCase> {
+        val authenticationService = get<AuthenticationService>()
+        val appConfigService = get<AppConfigService>()
+        ObserveProAllowlistAccessUseCaseImpl(
+            authenticationService = authenticationService,
+            appConfigService = appConfigService
+        )
+    }
     factory<ReconcileSubscriptionEntitlementsUseCase> {
         val userRepository = get<UserRepository>()
         val billingService = get<BillingService>()
         val updateUserTierUseCase = get<UpdateUserTierUseCase>()
+        val authenticationService = get<AuthenticationService>()
+        val appConfigService = get<AppConfigService>()
         ReconcileSubscriptionEntitlementsUseCaseImpl(
             userRepository = userRepository,
             billingService = billingService,
-            updateUserTierUseCase = updateUserTierUseCase
+            updateUserTierUseCase = updateUserTierUseCase,
+            authenticationService = authenticationService,
+            appConfigService = appConfigService
         )
     }
 }

@@ -22,4 +22,5 @@ interface SubscriptionsUiMapper {
     fun formatNoPurchasesToRestoreMessage(): UiText
     fun formatBillingError(): UiText
     fun formatSubscriptionsUnavailableMessage(): UiText
+    fun formatComplimentaryProMessage(): UiText
 }

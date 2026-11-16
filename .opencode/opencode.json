@@ -7,8 +7,5 @@
     "paths": [
       ".agents/skills"
     ]
-  },
-  "plugin": [
-    ".opencode/plugins/graphify.js"
-  ]
+  }
 }

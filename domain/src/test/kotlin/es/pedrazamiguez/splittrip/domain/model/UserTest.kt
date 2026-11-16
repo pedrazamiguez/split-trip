@@ -10,6 +10,22 @@ import org.junit.jupiter.api.Test
 class UserTest {
 
     @Test
+    fun `hashEmail produces deterministic lowercase SHA-256 hex digest ignoring case and surrounding whitespace`() {
+        val hash1 = User.hashEmail("  Dev.User@Example.COM  ")
+        val hash2 = User.hashEmail("dev.user@example.com")
+
+        assertEquals(hash2, hash1)
+        assertEquals(64, hash1.length)
+        assertTrue(hash1.all { it in '0'..'9' || it in 'a'..'f' })
+    }
+
+    @Test
+    fun `generatePendingUserId uses hashEmail digest with pending_ prefix`() {
+        val email = "jack.sparrow@example.com"
+        assertEquals("pending_${User.hashEmail(email)}", User.generatePendingUserId(email))
+    }
+
+    @Test
     fun `generatePendingUserId produces deterministic hash matching firestore rules`() {
         val email = "jack.sparrow@example.com"
         val userId1 = User.generatePendingUserId(email)
@@ -78,5 +94,33 @@ class UserTest {
     fun `isPro returns false when tier is FREE`() {
         val user = User(userId = "1", email = "test@example.com", tier = SubscriptionTier.FREE)
         assertFalse(user.isPro)
+    }
+
+    @Test
+    fun `isEmailInAllowlist returns false when email is null or blank`() {
+        val allowlist = setOf(User.hashEmail("pro@example.com"))
+
+        assertFalse(User.isEmailInAllowlist(null, allowlist))
+        assertFalse(User.isEmailInAllowlist("", allowlist))
+        assertFalse(User.isEmailInAllowlist("   ", allowlist))
+    }
+
+    @Test
+    fun `isEmailInAllowlist returns false when allowlistHashes is empty`() {
+        assertFalse(User.isEmailInAllowlist("pro@example.com", emptySet()))
+    }
+
+    @Test
+    fun `isEmailInAllowlist returns true when normalized email hash is in allowlist ignoring case and whitespace`() {
+        val allowlist = setOf(User.hashEmail("pro@example.com"))
+
+        assertTrue(User.isEmailInAllowlist("  PRO@Example.COM  ", allowlist))
+    }
+
+    @Test
+    fun `isEmailInAllowlist returns false when email hash is not in allowlist`() {
+        val allowlist = setOf(User.hashEmail("pro@example.com"))
+
+        assertFalse(User.isEmailInAllowlist("other@example.com", allowlist))
     }
 }

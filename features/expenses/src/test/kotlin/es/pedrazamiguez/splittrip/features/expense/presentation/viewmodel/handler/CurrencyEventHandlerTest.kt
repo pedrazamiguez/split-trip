@@ -290,9 +290,10 @@ class CurrencyEventHandlerTest {
             assertEquals("—", state.displayExchangeRate)
             assertEquals("—", state.calculatedGroupAmount)
             assertFalse(state.isInsufficientCash)
+            assertTrue(state.isNoCashAvailable)
             assertTrue(state.isExchangeRateLocked)
             assertEquals(
-                UiText.StringResource(R.string.add_expense_cash_rate_locked_hint),
+                UiText.StringResource(R.string.add_expense_cash_no_withdrawals_hint, "THB"),
                 state.exchangeRateLockedHint
             )
         }
@@ -986,6 +987,54 @@ class CurrencyEventHandlerTest {
 
             // 100000 / 37.0 = 2702.70 (raw, without thousands grouping separator ",")
             assertEquals("2702.70", uiState.value.calculatedGroupAmount)
+        }
+
+        @Test
+        fun `handleCurrencySelected resets isNoCashAvailable and isInsufficientCash`() = runTest {
+            uiState.value = cashForeignState.copy(
+                availableCurrencies = persistentListOf(eurCurrency, thbCurrency),
+                isNoCashAvailable = true,
+                isInsufficientCash = true
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.handleCurrencySelected("EUR") {}
+
+            assertFalse(uiState.value.isNoCashAvailable)
+            assertFalse(uiState.value.isInsufficientCash)
+        }
+
+        @Test
+        fun `handlePaymentMethodChanged to non-CASH resets isNoCashAvailable`() = runTest {
+            uiState.value = cashForeignState.copy(
+                isNoCashAvailable = true,
+                preCashExchangeRate = "35.5"
+            )
+            handler.bind(uiState, actions, this)
+
+            handler.handlePaymentMethodChanged(isCash = false)
+            advanceUntilIdle()
+
+            assertFalse(uiState.value.isNoCashAvailable)
+        }
+
+        @Test
+        fun `handleFundingSourceChanged to USER resets isNoCashAvailable on foreign and same currency`() = runTest {
+            uiState.value = cashForeignState.copy(isNoCashAvailable = true)
+            handler.bind(uiState, actions, this)
+
+            handler.handleFundingSourceChanged(isGroupPocket = false)
+            advanceUntilIdle()
+            assertFalse(uiState.value.isNoCashAvailable)
+
+            uiState.value = cashForeignState.copy(
+                selectedCurrency = eurCurrency,
+                showExchangeRateSection = false,
+                isNoCashAvailable = true
+            )
+            handler.handleFundingSourceChanged(isGroupPocket = false)
+            advanceUntilIdle()
+            assertFalse(uiState.value.isNoCashAvailable)
         }
     }
 }

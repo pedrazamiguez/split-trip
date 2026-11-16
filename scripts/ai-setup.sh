@@ -25,6 +25,7 @@ log_warn()  { printf "${YELLOW}⚠️   %s${NC}\n" "$1"; }
 log_err()   { printf "${RED}✗   %s${NC}\n" "$1"; }
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export PATH="${HOME}/.local/bin:${HOME}/.cargo/bin:${PATH}"
 CBM_BIN="${HOME}/.local/bin/codebase-memory-mcp"
 UV_BIN="${HOME}/.local/bin/uv"
 GEMINI_MCP="${HOME}/.gemini/config/mcp_config.json"
@@ -54,22 +55,22 @@ setup_codebase_memory() {
     return 1
   fi
   local cache_dir="${HOME}/.cache/codebase-memory-mcp"
-  if [ -d "$cache_dir" ] && [ -f "${HOME}/.gemini/settings.json" ] && grep -q "codebase-memory-mcp" "${HOME}/.gemini/settings.json" 2>/dev/null; then
+  if [ -d "$cache_dir" ] && {
+    ( [ -f "$GEMINI_MCP" ] && grep -q "codebase-memory-mcp" "$GEMINI_MCP" 2>/dev/null ) ||
+    ( [ -f "${HOME}/.gemini/settings.json" ] && grep -q "codebase-memory-mcp" "${HOME}/.gemini/settings.json" 2>/dev/null )
+  }; then
     log_ok "codebase-memory-mcp agent hooks + index already set up"
     return 0
   fi
   log_info "Installing codebase-memory-mcp agent hooks (auto-detects OpenCode, Antigravity/Gemini, VS Code)..."
-  if "$CBM_BIN" install -y; then
-    log_ok "codebase-memory-mcp agent hooks installed"
-    log_info "Rebuilding index..."
-    if "$CBM_BIN" index; then
-      log_ok "codebase-memory-mcp index built"
-    else
-      log_err "Failed to build codebase-memory-mcp index"
-      return 1
-    fi
+  if ! "$CBM_BIN" install -y </dev/null; then
+    log_warn "codebase-memory-mcp install reported a non-fatal agent config warning"
+  fi
+  log_info "Building codebase-memory-mcp index..."
+  if "$CBM_BIN" index </dev/null; then
+    log_ok "codebase-memory-mcp index built"
   else
-    log_err "Failed to install codebase-memory-mcp agent hooks"
+    log_err "Failed to build codebase-memory-mcp index"
     return 1
   fi
 }
@@ -141,6 +142,7 @@ install_graphify_hooks() {
   fi
   log_info "Installing Graphify platform hooks (OpenCode)..."
   if graphify install --platform opencode --project; then
+    rm -f "${PROJECT_ROOT}/.opencode/skills/graphify/SKILL.md.bak"
     log_ok "Graphify OpenCode hooks installed"
   else
     log_warn "graphify OpenCode install failed (may already be installed)"
@@ -155,6 +157,7 @@ install_graphify_antigravity_hooks() {
   fi
   log_info "Installing Graphify platform hooks (Antigravity)..."
   if graphify install --platform antigravity --project; then
+    rm -f "${PROJECT_ROOT}/.agents/skills/graphify/SKILL.md.bak"
     log_ok "Graphify Antigravity hooks installed"
   else
     log_warn "graphify Antigravity install failed (may already be installed)"
@@ -304,7 +307,7 @@ install_and_setup_rtk() {
 
   if command -v rtk &>/dev/null || [ -x "${HOME}/.cargo/bin/rtk" ]; then
     log_info "Configuring RTK for Antigravity..."
-    if rtk init --agent antigravity; then
+    if rtk init --agent antigravity --auto-patch </dev/null; then
       log_ok "RTK configured for Antigravity"
     else
       log_warn "Failed to configure RTK for Antigravity"
@@ -312,7 +315,7 @@ install_and_setup_rtk() {
 
     log_info "Configuring RTK for OpenCode..."
     mkdir -p "${HOME}/.config/opencode/plugins" 2>/dev/null || true
-    if rtk init -g --opencode 2>/dev/null; then
+    if rtk init -g --opencode --auto-patch </dev/null 2>/dev/null; then
       log_ok "RTK configured for OpenCode"
     else
       log_warn "Failed to configure RTK for OpenCode (may require manually creating ~/.config/opencode/plugins)"

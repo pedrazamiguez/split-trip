@@ -398,8 +398,10 @@ class AddExpenseViewModel(
                 addOnEventHandler.handleExpandedToggled(event.addOnId)
 
             // ── Conflict Resolution ──────────────────────────────────────
-            is AddExpenseUiEvent.ResolutionAmountSelected ->
+            is AddExpenseUiEvent.ResolutionAmountSelected -> {
                 formEventHandler.handleSourceAmountChanged(event.amount)
+                currencyEventHandler.fetchCashRate()
+            }
 
             // ── AI Auto-fill ────────────────────────────────────────────
             is AddExpenseUiEvent.SetAiModeActive ->

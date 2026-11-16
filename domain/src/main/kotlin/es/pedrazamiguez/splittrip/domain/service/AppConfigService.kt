@@ -17,4 +17,6 @@ interface AppConfigService {
     val extractedDateMaxFutureDays: StateFlow<Int>
     val supportEmailAddress: StateFlow<String>
     val settlementNudgeRateLimitHours: StateFlow<Long>
+    val developerAllowlistEmailHashes: StateFlow<Set<String>>
+    val proAllowlistEmailHashes: StateFlow<Set<String>>
 }

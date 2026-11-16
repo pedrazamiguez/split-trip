@@ -26,12 +26,14 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricLockEnabled
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetDeveloperInfoUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetBiometricLockEnabledUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserReminderPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
@@ -86,6 +88,7 @@ val settingsUiModule = module {
         val getAppThemeUseCase = get<GetAppThemeUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         val getDiagnosticLogsUseCase = get<GetDiagnosticLogsUseCase>()
+        val observeDeveloperAccessUseCase = get<ObserveDeveloperAccessUseCase>()
         SettingsViewModel(
             signOutUseCase = signOutUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
@@ -94,7 +97,8 @@ val settingsUiModule = module {
             consumeLanguagePillUseCase = consumeLanguagePillUseCase,
             getAppThemeUseCase = getAppThemeUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
-            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase
+            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase,
+            observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
         )
     }
 
@@ -137,13 +141,15 @@ val settingsUiModule = module {
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
         val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
         val updateUserTierUseCase = get<UpdateUserTierUseCase>()
+        val observeDeveloperAccessUseCase = get<ObserveDeveloperAccessUseCase>()
         DeveloperServicesViewModel(
             receiptOcrService = receiptOcrService,
             receiptExtractionService = receiptExtractionService,
             aiModelResolver = aiModelResolverService,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-            updateUserTierUseCase = updateUserTierUseCase
+            updateUserTierUseCase = updateUserTierUseCase,
+            observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
         )
     }
 
@@ -222,6 +228,7 @@ val settingsUiModule = module {
     viewModel {
         val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        val observeProAllowlistAccessUseCase = get<ObserveProAllowlistAccessUseCase>()
         val updateUserTierUseCase = get<UpdateUserTierUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
         val reconcileSubscriptionEntitlementsUseCase = get<ReconcileSubscriptionEntitlementsUseCase>()
@@ -230,6 +237,7 @@ val settingsUiModule = module {
         SubscriptionsViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
             updateUserTierUseCase = updateUserTierUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
             reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,

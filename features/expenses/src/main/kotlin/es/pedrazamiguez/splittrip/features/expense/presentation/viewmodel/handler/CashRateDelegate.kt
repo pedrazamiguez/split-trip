@@ -85,6 +85,7 @@ class CashRateDelegate(
     fun fetchCashRate() {
         val ctx = buildCashRateRequest(_uiState.value) ?: return
 
+        cashPreviewJob?.cancel()
         cashRateJob?.cancel()
         cashRateJob = scope.launch {
             _uiState.update { it.copy(isLoadingRate = true) }
@@ -206,7 +207,7 @@ class CashRateDelegate(
             updateRateFields
         )
         is CashRatePreviewResult.InsufficientCash -> mapInsufficientCashResult(current, updateRateFields)
-        is CashRatePreviewResult.NoWithdrawals -> mapNoWithdrawalsResult(current, updateRateFields)
+        is CashRatePreviewResult.NoWithdrawals -> mapNoWithdrawalsResult(current, sourceCurrencyCode, updateRateFields)
     }
 
     private fun mapAvailableResult(
@@ -223,11 +224,12 @@ class CashRateDelegate(
             persistentListOf()
         }
 
-        // Same-currency CASH: only update tranche preview and clear insufficient flag.
+        // Same-currency CASH: only update tranche preview and clear insufficient/no-cash flags.
         if (!updateRateFields) {
             return current.copy(
                 isLoadingRate = false,
                 isInsufficientCash = false,
+                isNoCashAvailable = false,
                 cashTranchePreviews = tranchePreviews
             )
         }
@@ -250,6 +252,7 @@ class CashRateDelegate(
                 isGroupAmountValid = isAmountValid,
                 isExchangeRateLocked = true,
                 isInsufficientCash = false,
+                isNoCashAvailable = false,
                 exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint),
                 cashTranchePreviews = tranchePreviews
             )
@@ -263,6 +266,7 @@ class CashRateDelegate(
                 isGroupAmountValid = false,
                 isExchangeRateLocked = true,
                 isInsufficientCash = false,
+                isNoCashAvailable = false,
                 exchangeRateLockedHint = UiText.StringResource(R.string.add_expense_cash_rate_locked_hint),
                 cashTranchePreviews = persistentListOf()
             )
@@ -280,6 +284,7 @@ class CashRateDelegate(
         isGroupAmountValid = if (updateRateFields) false else current.isGroupAmountValid,
         isExchangeRateLocked = updateRateFields || current.isExchangeRateLocked,
         isInsufficientCash = true,
+        isNoCashAvailable = false,
         exchangeRateLockedHint = if (updateRateFields) {
             UiText.StringResource(R.string.add_expense_cash_insufficient_hint)
         } else {
@@ -290,6 +295,7 @@ class CashRateDelegate(
 
     private fun mapNoWithdrawalsResult(
         current: AddExpenseUiState,
+        sourceCurrencyCode: String,
         updateRateFields: Boolean
     ): AddExpenseUiState = current.copy(
         isLoadingRate = false,
@@ -299,13 +305,21 @@ class CashRateDelegate(
         isGroupAmountValid = if (updateRateFields) false else current.isGroupAmountValid,
         isExchangeRateLocked = updateRateFields,
         isInsufficientCash = false,
+        isNoCashAvailable = true,
         exchangeRateLockedHint = if (updateRateFields) {
-            UiText.StringResource(R.string.add_expense_cash_rate_locked_hint)
+            noWithdrawalsHint(sourceCurrencyCode)
         } else {
             current.exchangeRateLockedHint
         },
         cashTranchePreviews = persistentListOf()
     )
+
+    private fun noWithdrawalsHint(sourceCurrencyCode: String): UiText =
+        if (sourceCurrencyCode.isNotBlank()) {
+            UiText.StringResource(R.string.add_expense_cash_no_withdrawals_hint, sourceCurrencyCode)
+        } else {
+            UiText.StringResource(R.string.add_expense_cash_no_withdrawals_generic_hint)
+        }
 
     /** Debounced CASH rate recalculation — avoids hitting Room on every keystroke. */
     fun recalculateCashForward() {

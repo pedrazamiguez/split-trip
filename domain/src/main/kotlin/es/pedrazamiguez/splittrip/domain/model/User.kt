@@ -41,12 +41,18 @@ data class User(
             return canonicalizeEmail(first) == canonicalizeEmail(second)
         }
 
-        fun generatePendingUserId(email: String): String {
+        fun hashEmail(email: String): String {
             val normalized = normalizeEmail(email)
             val digest = MessageDigest.getInstance("SHA-256")
             val hash = digest.digest(normalized.toByteArray(Charsets.UTF_8))
-            val hashString = hash.joinToString("") { "%02x".format(it) }
-            return "pending_$hashString"
+            return hash.joinToString("") { "%02x".format(it) }
+        }
+
+        fun generatePendingUserId(email: String): String = "pending_${hashEmail(email)}"
+
+        fun isEmailInAllowlist(email: String?, allowlistHashes: Set<String>): Boolean {
+            if (email.isNullOrBlank() || allowlistHashes.isEmpty()) return false
+            return hashEmail(email) in allowlistHashes
         }
     }
 }
