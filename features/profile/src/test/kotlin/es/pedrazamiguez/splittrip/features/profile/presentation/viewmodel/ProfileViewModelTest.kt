@@ -1,9 +1,11 @@
 package es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUiMapper
 import es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.action.ProfileUiAction
@@ -11,9 +13,11 @@ import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.event.
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.time.LocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -38,6 +42,7 @@ class ProfileViewModelTest {
 
     private lateinit var getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase
     private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
+    private lateinit var observeProAllowlistAccessUseCase: ObserveProAllowlistAccessUseCase
     private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
     private lateinit var profileUiMapper: ProfileUiMapper
     private lateinit var viewModel: ProfileViewModel
@@ -62,12 +67,14 @@ class ProfileViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getCurrentUserProfileUseCase = mockk()
         observeCurrentUserProfileUseCase = mockk()
+        observeProAllowlistAccessUseCase = mockk()
         isUserAnonymousUseCase = mockk()
         profileUiMapper = mockk()
 
         every { isUserAnonymousUseCase() } returns flowOf(false)
         every { observeCurrentUserProfileUseCase() } returns flowOf(null)
-        every { profileUiMapper.toProfileUiModel(testUser) } returns testProfileUiModel
+        every { observeProAllowlistAccessUseCase() } returns flowOf(false)
+        every { profileUiMapper.toProfileUiModel(testUser, false) } returns testProfileUiModel
     }
 
     @AfterEach
@@ -79,6 +86,7 @@ class ProfileViewModelTest {
         viewModel = ProfileViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase,
             profileUiMapper = profileUiMapper
         )
@@ -235,6 +243,40 @@ class ProfileViewModelTest {
             assertFalse(state.isLoading)
             assertNull(state.profile)
             assertTrue(state.hasError)
+        }
+
+        @Test
+        fun `passes isAllowlistedPro true to mapper when user is allowlisted Free user`() = runTest(testDispatcher) {
+            val freeUser = testUser.copy(tier = SubscriptionTier.FREE)
+            every { observeCurrentUserProfileUseCase() } returns flowOf(freeUser)
+            every { observeProAllowlistAccessUseCase() } returns flowOf(true)
+            coEvery { getCurrentUserProfileUseCase() } returns freeUser
+            every { profileUiMapper.toProfileUiModel(freeUser, true) } returns testProfileUiModel.copy(isPro = true)
+
+            createViewModel()
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.profile?.isPro == true)
+            verify(exactly = 1) { profileUiMapper.toProfileUiModel(freeUser, true) }
+        }
+
+        @Test
+        fun `updates profile isPro reactively when allowlist access changes`() = runTest(testDispatcher) {
+            val freeUser = testUser.copy(tier = SubscriptionTier.FREE)
+            val allowlistFlow = MutableStateFlow(false)
+            every { observeCurrentUserProfileUseCase() } returns flowOf(freeUser)
+            every { observeProAllowlistAccessUseCase() } returns allowlistFlow
+            coEvery { getCurrentUserProfileUseCase() } returns freeUser
+            every { profileUiMapper.toProfileUiModel(freeUser, false) } returns testProfileUiModel.copy(isPro = false)
+            every { profileUiMapper.toProfileUiModel(freeUser, true) } returns testProfileUiModel.copy(isPro = true)
+
+            createViewModel()
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.profile?.isPro == true)
+
+            allowlistFlow.value = true
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.profile?.isPro == true)
         }
     }
 

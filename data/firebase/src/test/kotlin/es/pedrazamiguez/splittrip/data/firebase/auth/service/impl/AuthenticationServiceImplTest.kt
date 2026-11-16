@@ -319,6 +319,132 @@ class AuthenticationServiceImplTest {
             coVerify(exactly = 1) { firebaseUser.delete() }
             coVerify(exactly = 0) { cloudUserDataSource.saveUser(any()) }
         }
+
+        @Test
+        fun `falls back to providerData email when firebaseUser email is null`() = runTest {
+            // Given
+            val firebaseUser = mockSuccessfulGoogleSignIn()
+            val providerInfo = mockk<UserInfo>()
+            every { providerInfo.email } returns "provider@example.com"
+            every { firebaseUser.email } returns null
+            every { firebaseUser.providerData } returns listOf(providerInfo)
+            coEvery { cloudUserDataSource.saveUser(any()) } returns Unit
+
+            // When
+            val result = service.signInWithGoogle(testIdToken)
+
+            // Then
+            assertTrue(result.isSuccess)
+            val user = result.getOrNull()!!
+            assertEquals("provider@example.com", user.email)
+            coVerify(exactly = 1) {
+                cloudUserDataSource.saveUser(
+                    User(
+                        userId = testUserId,
+                        email = "provider@example.com",
+                        displayName = testDisplayName,
+                        profileImagePath = null
+                    )
+                )
+            }
+        }
+
+        @Test
+        fun `falls back to idToken email when firebaseUser and providerData emails are blank`() = runTest {
+            // Given
+            val token = createTestIdToken("  Token@Example.COM ")
+            val credential = mockk<AuthCredential>()
+            every { GoogleAuthProvider.getCredential(token, null) } returns credential
+
+            val providerInfo = mockk<UserInfo>()
+            every { providerInfo.email } returns null
+
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.uid } returns testUserId
+            every { firebaseUser.email } returns ""
+            every { firebaseUser.providerData } returns listOf(providerInfo)
+            every { firebaseUser.displayName } returns testDisplayName
+            every { firebaseUser.photoUrl } returns null
+            every { firebaseUser.metadata } returns null
+
+            val authResult = mockk<AuthResult>(relaxed = true)
+            every { authResult.user } returns firebaseUser
+            every { firebaseAuth.signInWithCredential(credential) } returns Tasks.forResult(authResult)
+            coEvery { cloudUserDataSource.saveUser(any()) } returns Unit
+
+            // When
+            val result = service.signInWithGoogle(token)
+
+            // Then
+            assertTrue(result.isSuccess)
+            val user = result.getOrNull()!!
+            assertEquals("token@example.com", user.email)
+            coVerify(exactly = 1) {
+                cloudUserDataSource.saveUser(
+                    User(
+                        userId = testUserId,
+                        email = "token@example.com",
+                        displayName = testDisplayName,
+                        profileImagePath = null
+                    )
+                )
+            }
+        }
+    }
+
+    @Nested
+    inner class CurrentUserEmail {
+
+        @Test
+        fun `returns top-level email when non-blank`() {
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.email } returns "top@example.com"
+            every { firebaseUser.providerData } returns emptyList()
+            every { firebaseAuth.currentUser } returns firebaseUser
+
+            assertEquals("top@example.com", service.currentUserEmail())
+        }
+
+        @Test
+        fun `falls back to providerData email when top-level email is null`() {
+            val providerInfo = mockk<UserInfo>()
+            every { providerInfo.email } returns "provider@example.com"
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.email } returns null
+            every { firebaseUser.providerData } returns listOf(providerInfo)
+            every { firebaseAuth.currentUser } returns firebaseUser
+
+            assertEquals("provider@example.com", service.currentUserEmail())
+        }
+
+        @Test
+        fun `falls back to providerData email when top-level email is blank`() {
+            val blankProvider = mockk<UserInfo>()
+            every { blankProvider.email } returns null
+            val emailProvider = mockk<UserInfo>()
+            every { emailProvider.email } returns "provider@example.com"
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.email } returns "   "
+            every { firebaseUser.providerData } returns listOf(blankProvider, emailProvider)
+            every { firebaseAuth.currentUser } returns firebaseUser
+
+            assertEquals("provider@example.com", service.currentUserEmail())
+        }
+
+        @Test
+        fun `returns null when currentUser is null or both top-level and providerData emails are blank`() {
+            every { firebaseAuth.currentUser } returns null
+            assertNull(service.currentUserEmail())
+
+            val blankProvider = mockk<UserInfo>()
+            every { blankProvider.email } returns "   "
+            val firebaseUser = mockk<FirebaseUser>()
+            every { firebaseUser.email } returns ""
+            every { firebaseUser.providerData } returns listOf(blankProvider)
+            every { firebaseAuth.currentUser } returns firebaseUser
+
+            assertNull(service.currentUserEmail())
+        }
     }
 
     @Nested

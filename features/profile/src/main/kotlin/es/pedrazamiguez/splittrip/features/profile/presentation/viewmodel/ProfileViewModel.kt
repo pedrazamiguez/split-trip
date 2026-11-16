@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.features.profile.R
 import es.pedrazamiguez.splittrip.features.profile.presentation.mapper.ProfileUiMapper
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.action.ProfileUiAction
@@ -30,6 +31,7 @@ import timber.log.Timber
 class ProfileViewModel(
     private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
+    private val observeProAllowlistAccessUseCase: ObserveProAllowlistAccessUseCase,
     private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
     private val profileUiMapper: ProfileUiMapper
 ) : ViewModel() {
@@ -54,14 +56,20 @@ class ProfileViewModel(
         viewModelScope.launch {
             combine(
                 observeCurrentUserProfileUseCase(),
+                observeProAllowlistAccessUseCase(),
                 isUserAnonymousUseCase()
-            ) { user, isAnonymous ->
+            ) { user, isAllowlistedPro, isAnonymous ->
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         hasError = user == null && !isAnonymous,
                         isAnonymous = isAnonymous,
-                        profile = user?.let { profileUiMapper.toProfileUiModel(it) }
+                        profile = user?.let {
+                            profileUiMapper.toProfileUiModel(
+                                user = it,
+                                isAllowlistedPro = isAllowlistedPro
+                            )
+                        }
                     )
                 }
             }.collect {}

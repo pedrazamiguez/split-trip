@@ -61,38 +61,54 @@ class UserRepositoryImpl(
             triggerBackgroundSync(userId, localUser.displayName, localUser.bio, localUser.profileImagePath)
         }
 
-        // If we have a fully-populated profile (including createdAt), return it
+        // If we have a fully-populated profile (including createdAt), self-heal blank email if possible and return it
         if (localUser != null && localUser.createdAt != null) {
-            return localUser
+            return healMissingUserFields(localUser)
         }
 
         // Otherwise the local row is missing required fields (e.g. createdAt was
         // not available when saveGoogleUser cached the profile).
         // Force a cloud refresh and upsert into Room before returning.
-        var profile = try {
-            val refreshedUsers = cloudUserDataSource.getUsersByIds(listOf(userId))
-            if (refreshedUsers.isNotEmpty()) {
-                localUserDataSource.saveUsers(refreshedUsers)
-                refreshedUsers.firstOrNull()
-            } else {
-                localUser
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to refresh current user profile from cloud")
-            localUser
-        }
+        val profile = refreshUserFromCloud(userId, fallback = localUser)
+        return profile?.let { healMissingUserFields(it) }
+    }
 
-        if (profile != null && profile.createdAt == null) {
-            val creationTimestamp = authenticationService.getCurrentUserCreationTimestamp()
-            if (creationTimestamp != null) {
-                val resolvedCreatedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(creationTimestamp), ZoneOffset.UTC)
-                val updatedProfile = profile.copy(createdAt = resolvedCreatedAt)
-                saveUser(updatedProfile)
-                profile = updatedProfile
-            }
+    private suspend fun refreshUserFromCloud(userId: String, fallback: User?): User? = try {
+        val refreshedUsers = cloudUserDataSource.getUsersByIds(listOf(userId))
+        if (refreshedUsers.isNotEmpty()) {
+            localUserDataSource.saveUsers(refreshedUsers)
+            refreshedUsers.firstOrNull()
+        } else {
+            fallback
         }
+    } catch (e: Exception) {
+        Timber.e(e, "Failed to refresh current user profile from cloud")
+        fallback
+    }
 
-        return profile
+    private suspend fun healMissingUserFields(user: User): User {
+        val resolvedCreatedAt = if (user.createdAt == null) {
+            authenticationService.getCurrentUserCreationTimestamp()?.let {
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneOffset.UTC)
+            }
+        } else {
+            null
+        }
+        val resolvedEmail = if (user.email.isBlank()) {
+            authenticationService.currentUserEmail()
+                ?.takeIf(String::isNotBlank)
+                ?.let(User::normalizeEmail)
+        } else {
+            null
+        }
+        if (resolvedCreatedAt == null && resolvedEmail == null) return user
+
+        val healedUser = user.copy(
+            createdAt = resolvedCreatedAt ?: user.createdAt,
+            email = resolvedEmail ?: user.email
+        )
+        saveUser(healedUser)
+        return healedUser
     }
 
     override suspend fun getUsersByIds(userIds: List<String>): Map<String, User> {

@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
 import org.koin.core.module.dsl.viewModel
@@ -20,6 +21,7 @@ val mainUiModule = module {
         val getGroupByIdUseCase = get<GetGroupByIdUseCase>()
         val warmCurrencyCacheUseCase = get<WarmCurrencyCacheUseCase>()
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
+        val observeProAllowlistAccessUseCase = get<ObserveProAllowlistAccessUseCase>()
         val shouldShowAdsUseCase = get<ShouldShowAdsUseCase>()
         val getBannerAdUnitIdUseCase = get<GetBannerAdUnitIdUseCase>()
         val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
@@ -28,6 +30,7 @@ val mainUiModule = module {
             getGroupByIdUseCase = getGroupByIdUseCase,
             warmCurrencyCacheUseCase = warmCurrencyCacheUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
             shouldShowAdsUseCase = shouldShowAdsUseCase,
             getBannerAdUnitIdUseCase = getBannerAdUnitIdUseCase,
             isUserAnonymousUseCase = isUserAnonymousUseCase

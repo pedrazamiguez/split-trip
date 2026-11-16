@@ -311,6 +311,75 @@ class FirestoreUserDataSourceImplTest {
             val data = dataSlot.captured
             assertFalse(data.containsKey("tier"))
         }
+
+        @Test
+        fun `existing user with blank email and non-blank Firestore email - does NOT overwrite email`() = runTest {
+            val docRef = mockDocRef()
+            val existingDoc = mockExistingDoc(exists = true)
+            every { existingDoc.getString("email") } returns "saved@example.com"
+            val transaction = mockTransaction(existingDoc)
+
+            val user = User(
+                userId = testUserId,
+                email = ""
+            )
+
+            dataSource.saveUser(user)
+
+            val dataSlot = slot<Map<String, Any>>()
+            verify(exactly = 1) {
+                transaction.set(docRef, capture(dataSlot), any<SetOptions>())
+            }
+
+            val data = dataSlot.captured
+            assertFalse(data.containsKey("email"))
+        }
+
+        @Test
+        fun `existing user with blank email and missing Firestore email - writes blank email`() = runTest {
+            val docRef = mockDocRef()
+            val existingDoc = mockExistingDoc(exists = true)
+            every { existingDoc.getString("email") } returns null
+            val transaction = mockTransaction(existingDoc)
+
+            val user = User(
+                userId = testUserId,
+                email = ""
+            )
+
+            dataSource.saveUser(user)
+
+            val dataSlot = slot<Map<String, Any>>()
+            verify(exactly = 1) {
+                transaction.set(docRef, capture(dataSlot), any<SetOptions>())
+            }
+
+            val data = dataSlot.captured
+            assertEquals("", data["email"])
+        }
+
+        @Test
+        fun `existing user with non-blank email and existing Firestore email - updates email`() = runTest {
+            val docRef = mockDocRef()
+            val existingDoc = mockExistingDoc(exists = true)
+            every { existingDoc.getString("email") } returns "old@example.com"
+            val transaction = mockTransaction(existingDoc)
+
+            val user = User(
+                userId = testUserId,
+                email = "new@example.com"
+            )
+
+            dataSource.saveUser(user)
+
+            val dataSlot = slot<Map<String, Any>>()
+            verify(exactly = 1) {
+                transaction.set(docRef, capture(dataSlot), any<SetOptions>())
+            }
+
+            val data = dataSlot.captured
+            assertEquals("new@example.com", data["email"])
+        }
     }
 
     @Nested

@@ -107,13 +107,17 @@ internal class FeatureGateServiceImpl(
         ) { profile, allowlistHashes ->
             if (authenticationService.isAnonymous()) {
                 SubscriptionTier.FREE
-            } else if (
-                profile?.tier == SubscriptionTier.PRO ||
-                User.isEmailInAllowlist(profile?.email, allowlistHashes)
-            ) {
-                SubscriptionTier.PRO
             } else {
-                SubscriptionTier.FREE
+                val actingEmail = profile?.email?.takeIf(String::isNotBlank)
+                    ?: authenticationService.currentUserEmail()
+                if (
+                    profile?.tier == SubscriptionTier.PRO ||
+                    User.isEmailInAllowlist(actingEmail, allowlistHashes)
+                ) {
+                    SubscriptionTier.PRO
+                } else {
+                    SubscriptionTier.FREE
+                }
             }
         }.distinctUntilChanged()
 

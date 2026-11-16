@@ -111,6 +111,7 @@ fun MainScreen(
 
     // Observe current user profile at root level to prevent avatar blinking on tab switches
     val profile by mainViewModel.currentUserProfile.collectAsStateWithLifecycle()
+    val isProUser by mainViewModel.isProUser.collectAsStateWithLifecycle()
 
     val shouldShowAds by mainViewModel.shouldShowAds.collectAsStateWithLifecycle()
     val bannerAdUnitId by mainViewModel.bannerAdUnitId.collectAsStateWithLifecycle()
@@ -181,7 +182,7 @@ fun MainScreen(
     CompositionLocalProvider(
         LocalTabNavController provides selectedNavController,
         LocalProfileAvatarUrl provides profile?.profileImagePath,
-        LocalIsProUser provides (profile?.isPro == true),
+        LocalIsProUser provides isProUser,
         LocalHazeState provides hazeState
     ) {
         Scaffold(

@@ -71,6 +71,7 @@ class UserRepositoryImplTest {
             io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
         every { authenticationService.getCurrentUserCreationTimestamp() } returns null
+        every { authenticationService.currentUserEmail() } returns null
 
         repository = UserRepositoryImpl(
             cloudUserDataSource = cloudUserDataSource,
@@ -252,6 +253,42 @@ class UserRepositoryImplTest {
                 )
             }
         }
+
+        @Test
+        fun `heals blank local user email from authenticationService currentUserEmail`() = runTest(testDispatcher) {
+            val blankEmailUser = testUser.copy(email = "")
+            coEvery { authenticationService.currentUserId() } returns "user-1"
+            coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(blankEmailUser)
+            every { authenticationService.currentUserEmail() } returns "Provider@Example.COM"
+            coEvery { localUserDataSource.saveUsers(any()) } just Runs
+            coEvery { cloudUserDataSource.saveUser(any()) } just Runs
+
+            val result = repository.getCurrentUserProfile()
+
+            assertNotNull(result)
+            assertEquals("provider@example.com", result?.email)
+            coVerify(exactly = 1) {
+                localUserDataSource.saveUsers(listOf(blankEmailUser.copy(email = "provider@example.com")))
+            }
+            coVerify(exactly = 1) {
+                cloudUserDataSource.saveUser(blankEmailUser.copy(email = "provider@example.com"))
+            }
+        }
+
+        @Test
+        fun `does not hit cloud or save when local user is anonymous with blank email and null currentUserEmail`() =
+            runTest(testDispatcher) {
+                val anonymousUser = testUser.copy(email = "")
+                coEvery { authenticationService.currentUserId() } returns "user-1"
+                coEvery { localUserDataSource.getUsersByIds(listOf("user-1")) } returns listOf(anonymousUser)
+                every { authenticationService.currentUserEmail() } returns null
+
+                val result = repository.getCurrentUserProfile()
+
+                assertEquals(anonymousUser, result)
+                coVerify(exactly = 0) { cloudUserDataSource.getUsersByIds(any()) }
+                coVerify(exactly = 0) { cloudUserDataSource.saveUser(any()) }
+            }
     }
 
     @Nested
