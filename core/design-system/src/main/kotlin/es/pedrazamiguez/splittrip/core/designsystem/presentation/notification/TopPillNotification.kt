@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -23,10 +22,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,7 +45,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 private const val PILL_AUTO_DISMISS_MS = 3000L
-private val PILL_SHAPE = RoundedCornerShape(28.dp)
+private val PILL_SHADOW_ELEVATION = 6.dp
+private val DISMISS_ICON_SIZE = 16.dp
+
+const val TOP_PILL_NOTIFICATION_TEST_TAG = "top_pill_notification"
+const val TOP_PILL_MESSAGE_TEST_TAG = "top_pill_message"
+const val TOP_PILL_DISMISS_BUTTON_TEST_TAG = "top_pill_dismiss_button"
 
 /**
  * State for a single pill notification.
@@ -116,6 +123,10 @@ val LocalTopPillController = compositionLocalOf<TopPillController> {
 fun TopPillNotification(controller: TopPillController) {
     val pillState by controller.pillState.collectAsStateWithLifecycle(initialValue = null)
 
+    // Cache the last non-null message so exit animations keep text visible until faded/slid out.
+    var displayedMessage by remember { mutableStateOf("") }
+    pillState?.let { displayedMessage = it.message }
+
     // Auto-dismiss timer
     LaunchedEffect(pillState?.id) {
         if (pillState != null) {
@@ -129,44 +140,60 @@ fun TopPillNotification(controller: TopPillController) {
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = MaterialTheme.spacing.ExtraLarge, vertical = MaterialTheme.spacing.Small),
-            contentAlignment = Alignment.TopCenter
+        TopPillNotificationContent(
+            message = displayedMessage,
+            onDismiss = { controller.dismiss() }
+        )
+    }
+}
+
+@Composable
+internal fun TopPillNotificationContent(
+    message: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = MaterialTheme.spacing.ExtraLarge, vertical = MaterialTheme.spacing.Small),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.inverseSurface,
+            shadowElevation = PILL_SHADOW_ELEVATION,
+            modifier = Modifier.testTag(TOP_PILL_NOTIFICATION_TEST_TAG)
         ) {
-            Surface(
-                shape = PILL_SHAPE,
-                color = MaterialTheme.colorScheme.inverseSurface,
-                shadowElevation = 6.dp
+            Row(
+                modifier = Modifier.padding(
+                    start = MaterialTheme.spacing.Large,
+                    top = MaterialTheme.spacing.Small,
+                    end = MaterialTheme.spacing.ExtraSmall,
+                    bottom = MaterialTheme.spacing.Small
+                ),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(
-                        start = MaterialTheme.spacing.Large,
-                        top = MaterialTheme.spacing.Small,
-                        end = MaterialTheme.spacing.ExtraSmall,
-                        bottom = MaterialTheme.spacing.Small
-                    ),
-                    verticalAlignment = Alignment.CenterVertically
+                BodyText(
+                    text = message,
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = MaterialTheme.spacing.ExtraSmall)
+                        .testTag(TOP_PILL_MESSAGE_TEST_TAG)
+                )
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.ExtraSmall))
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.testTag(TOP_PILL_DISMISS_BUTTON_TEST_TAG)
                 ) {
-                    BodyText(
-                        text = pillState?.message.orEmpty(),
-                        color = MaterialTheme.colorScheme.inverseOnSurface,
-                        maxLines = 2,
-                        modifier = Modifier.weight(1f)
+                    Icon(
+                        imageVector = TablerIcons.Outline.X,
+                        contentDescription = stringResource(R.string.content_description_dismiss),
+                        tint = MaterialTheme.colorScheme.inverseOnSurface,
+                        modifier = Modifier.size(DISMISS_ICON_SIZE)
                     )
-                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.ExtraSmall))
-                    IconButton(
-                        onClick = { controller.dismiss() }
-                    ) {
-                        Icon(
-                            imageVector = TablerIcons.Outline.X,
-                            contentDescription = stringResource(R.string.content_description_dismiss),
-                            tint = MaterialTheme.colorScheme.inverseOnSurface,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
                 }
             }
         }

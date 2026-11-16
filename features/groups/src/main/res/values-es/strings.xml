@@ -130,10 +130,10 @@
     <string name="group_unregistered_names_subtitle">Asigna nombres para los viajeros que aún no están registrados, así será más fácil identificarlos en los gastos y balances.</string>
 
     <!-- Guest limits/gating -->
-    <string name="group_error_limit_groups_exceeded">Mejora a SplitTrip Pro para crear más grupos. Las cuentas gratuitas pueden gestionar hasta 1 grupo.</string>
-    <string name="group_error_limit_members_exceeded">Mejora a SplitTrip Pro para añadir más miembros a este grupo. Los grupos gratuitos tienen un límite de 4 miembros.</string>
+    <string name="group_error_limit_groups_exceeded">Las cuentas gratuitas permiten 1 grupo. Mejora a SplitTrip Pro para crear más.</string>
+    <string name="group_error_limit_members_exceeded">Los grupos gratuitos admiten hasta 4 miembros. Mejora a SplitTrip Pro para añadir más.</string>
     <string name="group_error_limit_members_registered_exceeded">Los grupos están limitados a %1$d miembros.</string>
-    <string name="group_error_limit_cover_upload_disabled">Las imágenes de portada personalizadas son una función de SplitTrip Pro. Mejora tu cuenta o únete a un grupo Pro para personalizar portadas.</string>
+    <string name="group_error_limit_cover_upload_disabled">Las portadas personalizadas requieren SplitTrip Pro o un grupo Pro.</string>
 
     <!-- Edit Group -->
     <string name="group_edit_title">Editar grupo</string>
