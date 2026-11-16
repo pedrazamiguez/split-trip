@@ -183,6 +183,34 @@ class AddExpenseUiStateTest {
             )
             assertFalse(state.isFormValid)
         }
+
+        @Test
+        fun `returns false when isNoCashAvailable is true even for same-currency expense`() {
+            val state = AddExpenseUiState(
+                isTitleValid = true,
+                isAmountValid = true,
+                isDueDateValid = true,
+                expenseTitle = "Dinner",
+                sourceAmount = "50.00",
+                showExchangeRateSection = false,
+                isNoCashAvailable = true
+            )
+            assertFalse(state.isFormValid)
+        }
+
+        @Test
+        fun `returns false when isInsufficientCash is true even for same-currency expense`() {
+            val state = AddExpenseUiState(
+                isTitleValid = true,
+                isAmountValid = true,
+                isDueDateValid = true,
+                expenseTitle = "Dinner",
+                sourceAmount = "50.00",
+                showExchangeRateSection = false,
+                isInsufficientCash = true
+            )
+            assertFalse(state.isFormValid)
+        }
     }
 
     // ── showContributionScopeStep ────────────────────────────────────────────
@@ -691,6 +719,65 @@ class AddExpenseUiStateTest {
             )
             assertTrue(state.canSkipToReview)
         }
+
+        @Test
+        fun `returns false on AMOUNT when isNoCashAvailable is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "50.00",
+                isAmountValid = true,
+                showExchangeRateSection = false,
+                isNoCashAvailable = true
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on EXCHANGE_RATE when isNoCashAvailable is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                showExchangeRateSection = true,
+                sourceAmount = "50.00",
+                displayExchangeRate = "1.08",
+                calculatedGroupAmount = "54.00",
+                isExchangeRateValid = true,
+                isGroupAmountValid = true,
+                isNoCashAvailable = true
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on EXCHANGE_RATE when isInsufficientCash is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                showExchangeRateSection = true,
+                sourceAmount = "50.00",
+                displayExchangeRate = "1.08",
+                calculatedGroupAmount = "54.00",
+                isExchangeRateValid = true,
+                isGroupAmountValid = true,
+                isInsufficientCash = true
+            )
+            assertFalse(state.canSkipToReview)
+        }
+
+        @Test
+        fun `returns false on optional step when isNoCashAvailable or isInsufficientCash is true`() {
+            val noCashState = AddExpenseUiState(
+                currentStep = AddExpenseStep.CATEGORY,
+                sourceAmount = "50.00",
+                isNoCashAvailable = true
+            )
+            assertFalse(noCashState.canSkipToReview)
+
+            val insufficientCashState = AddExpenseUiState(
+                currentStep = AddExpenseStep.CATEGORY,
+                sourceAmount = "50.00",
+                isInsufficientCash = true
+            )
+            assertFalse(insufficientCashState.canSkipToReview)
+        }
     }
 
     // ── optionalStepIndices ───────────────────────────────────────────────────
@@ -851,6 +938,42 @@ class AddExpenseUiStateTest {
         }
 
         @Test
+        fun `AMOUNT step invalid when same currency and isNoCashAvailable is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "50.00",
+                isAmountValid = true,
+                showExchangeRateSection = false,
+                isNoCashAvailable = true
+            )
+            assertFalse(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `AMOUNT step invalid when same currency and isInsufficientCash is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "50.00",
+                isAmountValid = true,
+                showExchangeRateSection = false,
+                isInsufficientCash = true
+            )
+            assertFalse(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `AMOUNT step valid when foreign currency and isNoCashAvailable is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.AMOUNT,
+                sourceAmount = "50.00",
+                isAmountValid = true,
+                showExchangeRateSection = true,
+                isNoCashAvailable = true
+            )
+            assertTrue(state.isCurrentStepValid)
+        }
+
+        @Test
         fun `EXCHANGE_RATE step valid when both fields are strictly positive`() {
             val state = AddExpenseUiState(
                 currentStep = AddExpenseStep.EXCHANGE_RATE,
@@ -916,6 +1039,28 @@ class AddExpenseUiStateTest {
                 currentStep = AddExpenseStep.EXCHANGE_RATE,
                 displayExchangeRate = "37.0",
                 calculatedGroupAmount = ""
+            )
+            assertFalse(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `EXCHANGE_RATE step invalid when isNoCashAvailable is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                displayExchangeRate = "37.0",
+                calculatedGroupAmount = "2.70",
+                isNoCashAvailable = true
+            )
+            assertFalse(state.isCurrentStepValid)
+        }
+
+        @Test
+        fun `EXCHANGE_RATE step invalid when isInsufficientCash is true`() {
+            val state = AddExpenseUiState(
+                currentStep = AddExpenseStep.EXCHANGE_RATE,
+                displayExchangeRate = "37.0",
+                calculatedGroupAmount = "2.70",
+                isInsufficientCash = true
             )
             assertFalse(state.isCurrentStepValid)
         }
@@ -1011,6 +1156,9 @@ class AddExpenseUiStateTest {
 
             val invalidState = validState.copy(expenseTitle = "")
             assertFalse(invalidState.isCurrentStepValid)
+
+            val noCashState = validState.copy(isNoCashAvailable = true)
+            assertFalse(noCashState.isCurrentStepValid)
         }
     }
 

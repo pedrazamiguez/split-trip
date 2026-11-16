@@ -71,7 +71,7 @@
     <string name="add_expense_cash_conflict_resolution_title">El efectivo ha cambiado</string>
     <string name="add_expense_cash_conflict_use_remaining">Usar el efectivo restante (%1$s)</string>
     <string name="add_expense_cash_conflict_switch_payment">Cambiar método de pago</string>
-    <string name="add_expense_cash_conflict_dismiss">Descartar y revisar</string>
+    <string name="add_expense_cash_conflict_dismiss">Revisar gasto</string>
     <string name="expense_error_addition_failed">¡Ups! No pudimos guardar el gasto. Inténtalo otra vez</string>
     <string name="expense_error_load_group_config">No pudimos cargar la info del grupo</string>
     <string name="expense_error_config_retry_hint">Revisa tu conexión e inténtalo de nuevo</string>
@@ -104,6 +104,10 @@
     <string name="add_expense_exchange_rate_title">Conversión de moneda</string>
     <string name="add_expense_cash_rate_locked_hint">Tipo de cambio calculado a partir de tu(s) retirada(s) en cajero</string>
     <string name="add_expense_cash_insufficient_hint">No hay suficiente efectivo disponible para este importe</string>
+    <string name="add_expense_cash_no_withdrawals_hint">No hay retiradas en cajero disponibles en %1$s</string>
+    <string name="add_expense_cash_no_withdrawals_generic_hint">No hay retiradas en cajero disponibles en esta moneda</string>
+    <string name="add_expense_cash_no_cash_available">No hay efectivo disponible en %1$s. Añade una retirada o cambia el método de pago.</string>
+    <string name="add_expense_cash_no_cash_available_generic">No hay efectivo disponible en esta moneda. Añade una retirada o cambia el método de pago.</string>
     
     <string name="add_expense_cash_tranche_funded_from">Financiado desde</string>
     <string name="add_expense_cash_tranche_atm_label">Cajero — %1$s</string>

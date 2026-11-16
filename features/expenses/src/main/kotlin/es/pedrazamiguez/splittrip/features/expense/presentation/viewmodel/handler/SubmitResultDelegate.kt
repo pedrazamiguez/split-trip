@@ -98,8 +98,8 @@ class SubmitResultDelegate(
                 )
             }
             is InsufficientCashException -> {
-                if (currentState.isInsufficientCash) {
-                    // Preview already showed insufficient cash — genuine shortage, not a race.
+                if (currentState.isInsufficientCash || currentState.isNoCashAvailable) {
+                    // Preview already showed insufficient or no cash — genuine shortage, not a race.
                     emitInsufficientCashError(error, actionsFlow, currentState)
                 } else {
                     // Preview showed available cash — concurrent write raced this submit.
@@ -171,7 +171,7 @@ class SubmitResultDelegate(
         val currency = currentState.selectedCurrency
         val amountForInput: String?
         val amountDisplay: String?
-        if (availableCents != null && availableCents >= 0 && currency != null) {
+        if (availableCents != null && availableCents > 0 && currency != null) {
             amountForInput = formattingHelper.formatCentsValue(availableCents, currency.decimalDigits)
             amountDisplay = formattingHelper.formatCentsWithCurrency(availableCents, currency.code)
         } else {

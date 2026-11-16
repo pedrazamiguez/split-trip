@@ -82,6 +82,11 @@ data class AddExpenseUiState(
      */
     val isInsufficientCash: Boolean = false,
     /**
+     * True when no cash withdrawals exist at all for the selected currency and pool.
+     * Distinct from [isInsufficientCash] (some cash exists, just not enough for the entered amount).
+     */
+    val isNoCashAvailable: Boolean = false,
+    /**
      * Ordered list of ATM withdrawal tranches that will fund this cash expense,
      * derived from a simulated FIFO run in [PreviewCashExchangeRateUseCase].
      *
@@ -225,6 +230,8 @@ data class AddExpenseUiState(
         get() = isTitleValid &&
             isAmountValid &&
             isDueDateValid &&
+            !isNoCashAvailable &&
+            !isInsufficientCash &&
             addOns.all { it.isAmountValid } &&
             expenseTitle.isNotBlank() &&
             sourceAmount.isNotBlank() &&
@@ -325,6 +332,7 @@ data class AddExpenseUiState(
     val canSkipToReview: Boolean
         get() {
             if (currentStep.isReview) return false
+            if (isNoCashAvailable || isInsufficientCash) return false
             val currentIndex = applicableSteps.indexOf(currentStep)
             if (currentIndex < 0) return false
 
@@ -390,7 +398,7 @@ data class AddExpenseUiState(
             AddExpenseStep.AMOUNT ->
                 sourceAmount.isNotBlank() &&
                     isAmountValid &&
-                    !(isInsufficientCash && !showExchangeRateSection) &&
+                    !((isInsufficientCash || isNoCashAvailable) && !showExchangeRateSection) &&
                     // For same-currency CASH with multiple pools, a pool must be resolved (either
                     // auto-selected by WithdrawalPoolSelectionDelegate or explicitly by the user)
                     // before the user can advance. The pool selector is shown in AmountStep because
@@ -398,7 +406,9 @@ data class AddExpenseUiState(
                     (showExchangeRateSection || availableWithdrawalPools.size <= 1 || selectedWithdrawalPool != null)
 
             AddExpenseStep.EXCHANGE_RATE ->
-                isExchangeRateValid &&
+                !isNoCashAvailable &&
+                    !isInsufficientCash &&
+                    isExchangeRateValid &&
                     isGroupAmountValid &&
                     CurrencyConverter.isPositiveAmount(displayExchangeRate) &&
                     CurrencyConverter.isPositiveAmount(calculatedGroupAmount)
