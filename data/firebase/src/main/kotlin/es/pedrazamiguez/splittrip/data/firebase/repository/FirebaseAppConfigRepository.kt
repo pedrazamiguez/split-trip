@@ -88,6 +88,10 @@ class FirebaseAppConfigRepository(
     private val _adInterstitialMinIntervalSeconds = MutableStateFlow(DEFAULT_INTERSTITIAL_MIN_INTERVAL_SECONDS)
     override val adInterstitialMinIntervalSeconds: StateFlow<Long> = _adInterstitialMinIntervalSeconds.asStateFlow()
 
+    private val _developerAllowlistEmailHashes = MutableStateFlow(DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES)
+    override val developerAllowlistEmailHashes: StateFlow<Set<String>> =
+        _developerAllowlistEmailHashes.asStateFlow()
+
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         updateFlowsFromConfig()
@@ -228,6 +232,16 @@ class FirebaseAppConfigRepository(
         }
         val developerInfoJson = remoteConfig.getString("developer_info_json")
         _developerInfo.value = parseDeveloperInfo(developerInfoJson)
+        val allowlistStr = remoteConfig.getString("developer_allowlist_email_hashes")
+        _developerAllowlistEmailHashes.value = parseAllowlistHashes(allowlistStr)
+    }
+
+    private fun parseAllowlistHashes(raw: String): Set<String> {
+        if (raw.isBlank()) return DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES
+        return raw.split(",")
+            .map { it.trim().lowercase() }
+            .filter { it.isNotEmpty() }
+            .toSet()
     }
 
     private fun parseDeveloperInfo(jsonStr: String): DeveloperInfo {
@@ -265,6 +279,9 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-9638507020441461/6643262487"
         private const val DEFAULT_INTERSTITIAL_ACTION_FREQUENCY = 2
         private const val DEFAULT_INTERSTITIAL_MIN_INTERVAL_SECONDS = 90L
+        private val DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES: Set<String> = setOf(
+            "834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4"
+        )
 
         private const val LANG_EN = "en"
         private const val LANG_ES = "es"

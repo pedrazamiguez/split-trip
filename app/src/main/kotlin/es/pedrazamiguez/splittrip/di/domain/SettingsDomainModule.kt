@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.di.domain
 
+import es.pedrazamiguez.splittrip.BuildConfig
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.BalancePreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.DiagnosticLogRepository
@@ -7,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.BiometricAuthService
 import es.pedrazamiguez.splittrip.domain.service.impl.AppConfigServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
@@ -28,6 +30,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUse
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppThemeUseCase
@@ -56,6 +59,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupNa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetShouldShowLanguagePillUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetUserDefaultCurrencyUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.IsOnboardingCompleteUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.ObserveDeveloperAccessUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetActiveAiEngineUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetAppLanguageUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetAppThemeUseCaseImpl
@@ -243,6 +247,14 @@ val settingsDomainModule = module {
         val diagnosticLogRepository = get<DiagnosticLogRepository>()
         GetDiagnosticLogsUseCaseImpl(
             diagnosticLogRepository = diagnosticLogRepository
+        )
+    }
+
+    factory<ObserveDeveloperAccessUseCase> {
+        ObserveDeveloperAccessUseCaseImpl(
+            authenticationService = get<AuthenticationService>(),
+            appConfigService = get<AppConfigService>(),
+            isDebugBuild = BuildConfig.DEBUG
         )
     }
 

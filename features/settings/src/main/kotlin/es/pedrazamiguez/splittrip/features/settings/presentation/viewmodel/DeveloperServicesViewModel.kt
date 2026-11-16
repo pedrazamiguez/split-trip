@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
@@ -104,11 +105,15 @@ class DeveloperServicesViewModel(
     private val aiModelResolver: AiModelResolverService,
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
     private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
-    private val updateUserTierUseCase: UpdateUserTierUseCase
+    private val updateUserTierUseCase: UpdateUserTierUseCase,
+    private val observeDeveloperAccessUseCase: ObserveDeveloperAccessUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeveloperServicesUiState())
     val uiState: StateFlow<DeveloperServicesUiState> = _uiState.asStateFlow()
+
+    private val _isDeveloperAccessGranted = MutableStateFlow<Boolean?>(null)
+    val isDeveloperAccessGranted: StateFlow<Boolean?> = _isDeveloperAccessGranted.asStateFlow()
 
     private val _actions = Channel<DeveloperServicesUiAction>(Channel.BUFFERED)
     val actions: Flow<DeveloperServicesUiAction> = _actions.receiveAsFlow()
@@ -117,6 +122,7 @@ class DeveloperServicesViewModel(
     private var currentUserId: String? = null
 
     init {
+        observeDeveloperAccess()
         combine(
             aiModelResolver.getActiveModel(),
             aiModelResolver.getDeveloperOverrideModel()
@@ -129,6 +135,17 @@ class DeveloperServicesViewModel(
             }
         }.launchIn(viewModelScope)
         observeUserProfile()
+    }
+
+    private fun observeDeveloperAccess() {
+        observeDeveloperAccessUseCase()
+            .onEach { granted ->
+                _isDeveloperAccessGranted.value = granted
+                if (!granted) {
+                    _actions.send(DeveloperServicesUiAction.NavigateBack)
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun observeUserProfile() {
