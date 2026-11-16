@@ -12,10 +12,12 @@ import es.pedrazamiguez.splittrip.domain.usecase.currency.WarmCurrencyCacheUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.RegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -26,6 +28,7 @@ class MainViewModel(
     private val getGroupByIdUseCase: GetGroupByIdUseCase,
     private val warmCurrencyCacheUseCase: WarmCurrencyCacheUseCase,
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
+    private val observeProAllowlistAccessUseCase: ObserveProAllowlistAccessUseCase,
     private val shouldShowAdsUseCase: ShouldShowAdsUseCase,
     private val getBannerAdUnitIdUseCase: GetBannerAdUnitIdUseCase,
     private val isUserAnonymousUseCase: IsUserAnonymousUseCase
@@ -41,6 +44,22 @@ class MainViewModel(
                 replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
             ),
             initialValue = null
+        )
+
+    val isProUser: StateFlow<Boolean> = combine(
+        observeCurrentUserProfileUseCase(),
+        observeProAllowlistAccessUseCase()
+    ) { user, isAllowlistedPro ->
+        user?.isPro == true || isAllowlistedPro
+    }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(
+                stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
+                replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
+            ),
+            initialValue = false
         )
 
     val shouldShowAds: StateFlow<Boolean> = shouldShowAdsUseCase()

@@ -35,9 +35,9 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
         firestore.runTransaction { transaction ->
             val existingDoc = transaction.get(docRef)
 
+            val normalizedEmail = user.email.trim().lowercase()
             val data = mutableMapOf<String, Any>(
                 "userId" to user.userId,
-                "email" to user.email.trim().lowercase(),
                 "lastUpdatedBy" to user.userId,
                 "lastUpdatedAt" to now,
                 "isPending" to user.isPending
@@ -47,6 +47,7 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
 
             if (!existingDoc.exists()) {
                 // New user — populate user-editable fields from the auth provider
+                data["email"] = normalizedEmail
                 user.displayName?.let { data["displayName"] = it }
                 user.profileImagePath?.let { data["profileImagePath"] = it }
                 user.bio?.let { data["bio"] = it }
@@ -54,6 +55,11 @@ class FirestoreUserDataSourceImpl(private val firestore: FirebaseFirestore) : Cl
                 data["createdBy"] = user.userId
                 data["createdAt"] = userCreatedAtTimestamp ?: now
             } else {
+                // Existing user — preserve an existing non-blank Firestore email when incoming is blank
+                val existingEmail = existingDoc.getString("email")
+                if (normalizedEmail.isNotBlank() || existingEmail.isNullOrBlank()) {
+                    data["email"] = normalizedEmail
+                }
                 // Existing user — if createdAt is missing in Firestore, populate it from local
                 val existingCreatedAt = existingDoc.get("createdAt")
                 if (existingCreatedAt == null && userCreatedAtTimestamp != null) {

@@ -95,5 +95,31 @@ class ProfileUiMapperImplTest {
 
             assertFalse(result.isPro)
         }
+
+        @Test
+        fun `maps isPro to true when user tier is FREE and isAllowlistedPro is true`() {
+            val user = User(
+                userId = "user-vip",
+                email = "vip@example.com",
+                tier = SubscriptionTier.FREE
+            )
+
+            val result = mapper.toProfileUiModel(user, isAllowlistedPro = true)
+
+            assertTrue(result.isPro)
+        }
+
+        @Test
+        fun `maps isPro to true when user tier is PRO and isAllowlistedPro is false`() {
+            val user = User(
+                userId = "user-pro",
+                email = "pro@example.com",
+                tier = SubscriptionTier.PRO
+            )
+
+            val result = mapper.toProfileUiModel(user, isAllowlistedPro = false)
+
+            assertTrue(result.isPro)
+        }
     }
 }
