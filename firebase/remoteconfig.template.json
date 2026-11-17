@@ -2,7 +2,7 @@
   "conditions": [
     {
       "name": "Pre-1.0.0 Closed Test",
-      "expression": "app.build < 1000000",
+      "expression": "app.build.<(['1000000'])",
       "tagColor": "INDIGO"
     }
   ],
