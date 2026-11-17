@@ -17,17 +17,18 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -148,43 +149,42 @@ fun FloatingNavigationBar(
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                     contentAlignment = Alignment.Center
                 ) {
-                    val innerHorizontalPadding = if (mainAction != null) 8.dp else NavBarDefaults.InnerHorizontalPadding
-                    NavigationBar(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        tonalElevation = 0.dp,
-                        windowInsets = WindowInsets(0, 0, 0, 0)
+                    val innerHorizontalPadding = if (mainAction != null) {
+                        NavBarDefaults.CompactInnerHorizontalPadding
+                    } else {
+                        NavBarDefaults.InnerHorizontalPadding
+                    }
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                horizontal = innerHorizontalPadding,
+                                vertical = NavBarDefaults.InnerVerticalPadding
+                            ),
+                        contentAlignment = Alignment.CenterStart
                     ) {
-                        BoxWithConstraints(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(NavBarDefaults.BarHeight)
-                                .padding(
-                                    horizontal = innerHorizontalPadding,
-                                    vertical = NavBarDefaults.InnerVerticalPadding
-                                )
-                        ) {
-                            SlidingIndicator(
-                                selectedIndex = selectedIndex,
-                                itemCount = items.size,
-                                itemWidth = NavBarDefaults.ItemWidth,
-                                containerWidth = maxWidth
-                            )
+                        SlidingIndicator(
+                            selectedIndex = selectedIndex,
+                            itemCount = items.size,
+                            itemWidth = NavBarDefaults.ItemWidth,
+                            containerWidth = maxWidth
+                        )
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                items.forEachIndexed { index, item ->
-                                    FloatingNavItem(
-                                        item = item,
-                                        isSelected = index == selectedIndex,
-                                        onClick = { onTabSelected(item.id) },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .selectableGroup(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            items.forEachIndexed { index, item ->
+                                FloatingNavItem(
+                                    item = item,
+                                    isSelected = index == selectedIndex,
+                                    onClick = { onTabSelected(item.id) },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                )
                             }
                         }
                     }
@@ -213,7 +213,7 @@ fun FloatingNavigationBar(
                     Box(
                         modifier = Modifier
                             .width(80.dp)
-                            .height(64.dp)
+                            .height(NavBarDefaults.BarHeight)
                             .graphicsLayer {
                                 shadowElevation = actionElevation.toPx()
                                 shape = actionButtonShape

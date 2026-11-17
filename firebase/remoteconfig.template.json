@@ -1,4 +1,11 @@
 {
+  "conditions": [
+    {
+      "name": "Pre-1.0.0 Closed Test",
+      "expression": "app.build < 1000000",
+      "tagColor": "INDIGO"
+    }
+  ],
   "parameters": {},
   "parameterGroups": {
     "Subscriptions": {
@@ -151,6 +158,11 @@
         "ads_enabled": {
           "defaultValue": {
             "value": "true"
+          },
+          "conditionalValues": {
+            "Pre-1.0.0 Closed Test": {
+              "value": "false"
+            }
           },
           "description": "Master operational killswitch to enable or disable ads across the app.",
           "valueType": "BOOLEAN"

@@ -27,9 +27,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
 
 /** A single item in [FloatingNavigationBar] with bouncy scale, icon bounce, and color animations. */
@@ -77,7 +75,7 @@ internal fun FloatingNavItem(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(NavBarDefaults.ItemCornerRadius))
             .semantics {
                 role = Role.Tab
                 selected = isSelected
@@ -87,16 +85,16 @@ internal fun FloatingNavItem(
                 indication = null,
                 onClick = onClick
             )
-            .padding(vertical = MaterialTheme.spacing.ExtraSmall),
+            .padding(horizontal = NavBarDefaults.ItemHorizontalPadding),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(NavBarDefaults.IconLabelGap, Alignment.CenterVertically)
         ) {
             Box(
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(NavBarDefaults.IconSize)
                     .scale(scale)
                     .graphicsLayer { translationY = iconOffsetY },
                 contentAlignment = Alignment.Center
@@ -111,6 +109,7 @@ internal fun FloatingNavItem(
                 color = contentColor,
                 modifier = Modifier.graphicsLayer { alpha = labelAlpha },
                 maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Ellipsis
             )
         }

@@ -14,8 +14,9 @@ class ShouldShowAdsUseCaseImpl(
 
     override fun invoke(): Flow<Boolean> = combine(
         appConfigRepository.adsEnabled,
+        appConfigRepository.isInitialFetchSettled,
         featureGateService.isFeatureEnabled(GatedFeature.AD_FREE)
-    ) { adsEnabled, isAdFree ->
-        adsEnabled && !isAdFree
+    ) { adsEnabled, isInitialFetchSettled, isAdFree ->
+        isInitialFetchSettled && adsEnabled && !isAdFree
     }
 }

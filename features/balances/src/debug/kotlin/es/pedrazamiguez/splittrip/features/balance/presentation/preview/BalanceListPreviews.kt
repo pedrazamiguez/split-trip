@@ -1,9 +1,15 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.preview
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.ContributionHistoryItem
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.GroupPocketBalanceCard
+
+private const val NARROW_LARGE_FONT_SCALE = 1.3f
 
 @PreviewComplete
 @Composable
@@ -13,11 +19,27 @@ private fun GroupPocketBalanceCardPreview() {
     }
 }
 
-@PreviewComplete
+@PreviewNarrowThemes
 @Composable
 private fun GroupPocketBalanceCardNarrowPreview() {
     BalanceCardPreviewHelper {
         GroupPocketBalanceCard(balance = it)
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun GroupPocketBalanceCardNarrowLargeFontPreview() {
+    val currentDensity = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(
+            density = currentDensity.density,
+            fontScale = NARROW_LARGE_FONT_SCALE
+        )
+    ) {
+        BalanceCardPreviewHelper {
+            GroupPocketBalanceCard(balance = it)
+        }
     }
 }
 

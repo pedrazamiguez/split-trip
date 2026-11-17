@@ -28,6 +28,7 @@ interface AppConfigRepository {
     val adInterstitialMinIntervalSeconds: StateFlow<Long>
     val developerAllowlistEmailHashes: StateFlow<Set<String>>
     val proAllowlistEmailHashes: StateFlow<Set<String>>
+    val isInitialFetchSettled: StateFlow<Boolean>
 
     suspend fun fetchConfiguration(): Boolean
 }

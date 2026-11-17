@@ -7,6 +7,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -17,11 +18,28 @@ class RemoteConfigTemplateConsistencyTest {
     private lateinit var xmlDefaults: Map<String, String>
     private lateinit var templateParameters: Map<String, ParameterDefinition>
     private lateinit var groupDescriptions: Map<String, String>
+    private lateinit var templateConditions: List<ConditionDefinition>
+    private var hasMalformedConditions: Boolean = false
+
+    data class ConditionDefinition(
+        val name: String?,
+        val expression: String?,
+        val tagColor: String?
+    )
 
     data class ParameterDefinition(
         val description: String?,
         val valueType: String?,
-        val defaultValue: String?
+        val defaultValue: String?,
+        val conditionalValues: Map<String, String?> = emptyMap(),
+        val hasMalformedConditionalValues: Boolean = false
+    )
+
+    private data class ParsedTemplate(
+        val parameters: Map<String, ParameterDefinition>,
+        val groupDescriptions: Map<String, String>,
+        val conditions: List<ConditionDefinition>,
+        val hasMalformedConditions: Boolean
     )
 
     @BeforeEach
@@ -34,9 +52,11 @@ class RemoteConfigTemplateConsistencyTest {
         assertTrue(jsonFile.exists(), "Template JSON file not found: ${jsonFile.absolutePath}")
 
         xmlDefaults = parseXmlDefaults(xmlFile)
-        val (params, groups) = parseTemplate(jsonFile)
-        templateParameters = params
-        groupDescriptions = groups
+        val parsed = parseTemplate(jsonFile)
+        templateParameters = parsed.parameters
+        groupDescriptions = parsed.groupDescriptions
+        templateConditions = parsed.conditions
+        hasMalformedConditions = parsed.hasMalformedConditions
     }
 
     @Test
@@ -106,29 +126,95 @@ class RemoteConfigTemplateConsistencyTest {
         templateParameters.forEach { (key, param) ->
             val value = param.defaultValue
             assertTrue(value != null, "Parameter '$key' defaultValue must not be null")
-            when (param.valueType) {
-                "BOOLEAN" -> {
-                    assertTrue(
-                        value.equals("true", ignoreCase = true) || value.equals("false", ignoreCase = true),
-                        "Parameter '$key' is BOOLEAN but value is '$value'"
-                    )
+            assertValueConformsToType("Parameter '$key'", param.valueType, value)
+        }
+    }
+
+    @Test
+    fun `every declared condition has a non-empty unique name and non-empty expression`() {
+        assertFalse(hasMalformedConditions, "Top-level 'conditions' must be a list of JSON objects")
+        val seenNames = mutableSetOf<String>()
+        templateConditions.forEachIndexed { index, condition ->
+            val name = condition.name
+            assertTrue(!name.isNullOrBlank(), "Condition at index $index must have a non-empty name")
+            assertTrue(
+                !condition.expression.isNullOrBlank(),
+                "Condition '$name' must have a non-empty expression"
+            )
+            assertTrue(seenNames.add(name!!), "Duplicate condition name '$name' found")
+        }
+    }
+
+    @Test
+    fun `every conditionalValue references a declared top-level condition`() {
+        val declaredConditionNames = templateConditions.mapNotNull { it.name }.toSet()
+        templateParameters.forEach { (key, param) ->
+            assertFalse(
+                param.hasMalformedConditionalValues,
+                "Parameter '$key' has malformed conditionalValues"
+            )
+            param.conditionalValues.keys.forEach { conditionName ->
+                assertTrue(
+                    conditionName in declaredConditionNames,
+                    "Parameter '$key' conditionalValues references undeclared condition '$conditionName'"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `every conditionalValue conforms to its parameter declared valueType`() {
+        templateParameters.forEach { (key, param) ->
+            param.conditionalValues.forEach { (conditionName, value) ->
+                assertTrue(
+                    value != null,
+                    "Parameter '$key' [condition '$conditionName'] value must not be null"
+                )
+                assertValueConformsToType(
+                    "Parameter '$key' [condition '$conditionName']",
+                    param.valueType,
+                    value
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `ads_enabled disables ads for Pre-1_0_0 Closed Test condition while keeping default true`() {
+        val closedTestCondition = templateConditions.find { it.name == "Pre-1.0.0 Closed Test" }
+        assertTrue(closedTestCondition != null, "Condition 'Pre-1.0.0 Closed Test' should be declared")
+        assertEquals("app.build < 1000000", closedTestCondition?.expression)
+
+        val adsEnabledParam = templateParameters["ads_enabled"]
+        assertTrue(adsEnabledParam != null, "Parameter 'ads_enabled' should exist in template")
+        assertEquals("true", adsEnabledParam?.defaultValue)
+        assertEquals("true", xmlDefaults["ads_enabled"])
+        assertEquals("false", adsEnabledParam?.conditionalValues?.get("Pre-1.0.0 Closed Test"))
+    }
+
+    private fun assertValueConformsToType(label: String, valueType: String?, value: String?) {
+        when (valueType) {
+            "BOOLEAN" -> {
+                assertTrue(
+                    value.equals("true", ignoreCase = true) || value.equals("false", ignoreCase = true),
+                    "$label is BOOLEAN but value is '$value'"
+                )
+            }
+            "NUMBER" -> {
+                val isNumber = value?.toDoubleOrNull() != null
+                assertTrue(isNumber, "$label is NUMBER but value '$value' is not numeric")
+            }
+            "JSON" -> {
+                val isJson = try {
+                    JsonParser.parseString(value)
+                    true
+                } catch (_: Exception) {
+                    false
                 }
-                "NUMBER" -> {
-                    val isNumber = value?.toDoubleOrNull() != null
-                    assertTrue(isNumber, "Parameter '$key' is NUMBER but value '$value' is not numeric")
-                }
-                "JSON" -> {
-                    val isJson = try {
-                        JsonParser.parseString(value)
-                        true
-                    } catch (_: Exception) {
-                        false
-                    }
-                    assertTrue(isJson, "Parameter '$key' is JSON but value is not valid JSON")
-                }
-                "STRING" -> {
-                    assertTrue(value != null, "Parameter '$key' is STRING but value is null")
-                }
+                assertTrue(isJson, "$label is JSON but value is not valid JSON")
+            }
+            "STRING" -> {
+                assertTrue(value != null, "$label is STRING but value is null")
             }
         }
     }
@@ -178,9 +264,11 @@ class RemoteConfigTemplateConsistencyTest {
         return defaults
     }
 
-    private fun parseTemplate(jsonFile: File): Pair<Map<String, ParameterDefinition>, Map<String, String>> {
+    private fun parseTemplate(jsonFile: File): ParsedTemplate {
         val jsonElement = JsonParser.parseString(jsonFile.readText(StandardCharsets.UTF_8))
         val rootObj = jsonElement.asJsonObject
+
+        val (conditions, malformedConditions) = extractConditions(rootObj)
 
         val parameters = mutableMapOf<String, ParameterDefinition>()
         parameters.putAll(extractParameters(rootObj.getAsJsonObject("parameters")))
@@ -188,7 +276,36 @@ class RemoteConfigTemplateConsistencyTest {
         val (groupParams, groupDescriptions) = extractGroups(rootObj.getAsJsonObject("parameterGroups"))
         parameters.putAll(groupParams)
 
-        return Pair(parameters, groupDescriptions)
+        return ParsedTemplate(
+            parameters = parameters,
+            groupDescriptions = groupDescriptions,
+            conditions = conditions,
+            hasMalformedConditions = malformedConditions
+        )
+    }
+
+    private fun extractConditions(rootObj: JsonObject): Pair<List<ConditionDefinition>, Boolean> {
+        if (!rootObj.has("conditions")) return Pair(emptyList(), false)
+        val conditionsElem = rootObj.get("conditions")
+        if (!conditionsElem.isJsonArray) return Pair(emptyList(), true)
+
+        val result = mutableListOf<ConditionDefinition>()
+        var hasMalformed = false
+        for (elem in conditionsElem.asJsonArray) {
+            if (!elem.isJsonObject) {
+                hasMalformed = true
+                continue
+            }
+            val condObj = elem.asJsonObject
+            result.add(
+                ConditionDefinition(
+                    name = condObj.getStringOrNull("name"),
+                    expression = condObj.getStringOrNull("expression"),
+                    tagColor = condObj.getStringOrNull("tagColor")
+                )
+            )
+        }
+        return Pair(result, hasMalformed)
     }
 
     private fun extractParameters(container: JsonObject?): Map<String, ParameterDefinition> {
@@ -219,29 +336,44 @@ class RemoteConfigTemplateConsistencyTest {
     }
 
     private fun parseParameterDefinition(obj: JsonObject): ParameterDefinition {
-        val description = if (obj.has("description") && !obj.get("description").isJsonNull) {
-            obj.get("description").asString
-        } else {
-            null
-        }
-
-        val valueType = if (obj.has("valueType") && !obj.get("valueType").isJsonNull) {
-            obj.get("valueType").asString
-        } else {
-            null
-        }
+        val description = obj.getStringOrNull("description")
+        val valueType = obj.getStringOrNull("valueType")
 
         val defaultValue = if (obj.has("defaultValue") && obj.get("defaultValue").isJsonObject) {
-            val defaultValObj = obj.getAsJsonObject("defaultValue")
-            if (defaultValObj.has("value") && !defaultValObj.get("value").isJsonNull) {
-                defaultValObj.get("value").asString
-            } else {
-                null
-            }
+            obj.getAsJsonObject("defaultValue").getStringOrNull("value")
         } else {
             null
         }
 
-        return ParameterDefinition(description, valueType, defaultValue)
+        val (conditionalValues, hasMalformedConditionalValues) = parseConditionalValues(obj)
+
+        return ParameterDefinition(
+            description = description,
+            valueType = valueType,
+            defaultValue = defaultValue,
+            conditionalValues = conditionalValues,
+            hasMalformedConditionalValues = hasMalformedConditionalValues
+        )
     }
+
+    private fun parseConditionalValues(obj: JsonObject): Pair<Map<String, String?>, Boolean> {
+        if (!obj.has("conditionalValues")) return Pair(emptyMap(), false)
+        val condValuesElem = obj.get("conditionalValues")
+        if (!condValuesElem.isJsonObject) return Pair(emptyMap(), true)
+
+        val result = mutableMapOf<String, String?>()
+        var hasMalformed = false
+        for ((conditionName, condValElem) in condValuesElem.asJsonObject.entrySet()) {
+            if (!condValElem.isJsonObject) {
+                hasMalformed = true
+                result[conditionName] = null
+            } else {
+                result[conditionName] = condValElem.asJsonObject.getStringOrNull("value")
+            }
+        }
+        return Pair(result, hasMalformed)
+    }
+
+    private fun JsonObject.getStringOrNull(key: String): String? =
+        if (has(key) && !get(key).isJsonNull) get(key).asString else null
 }

@@ -9,6 +9,7 @@ import com.google.gson.annotations.SerializedName
 import es.pedrazamiguez.splittrip.data.firebase.R
 import es.pedrazamiguez.splittrip.domain.model.DeveloperInfo
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -96,6 +97,9 @@ class FirebaseAppConfigRepository(
     override val proAllowlistEmailHashes: StateFlow<Set<String>> =
         _proAllowlistEmailHashes.asStateFlow()
 
+    private val _isInitialFetchSettled = MutableStateFlow(false)
+    override val isInitialFetchSettled: StateFlow<Boolean> = _isInitialFetchSettled.asStateFlow()
+
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         updateFlowsFromConfig()
@@ -107,9 +111,12 @@ class FirebaseAppConfigRepository(
             val updated = remoteConfig.fetchAndActivate().await()
             if (updated) {
                 Timber.d("Firebase Remote Config: Fetch and activate successful.")
-                updateFlowsFromConfig()
             }
+            updateFlowsFromConfig()
+            _isInitialFetchSettled.value = true
             updated
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Firebase Remote Config: Fetch failed.")
             false
@@ -123,6 +130,7 @@ class FirebaseAppConfigRepository(
                 remoteConfig.activate().addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         updateFlowsFromConfig()
+                        _isInitialFetchSettled.value = true
                     }
                 }
             }
