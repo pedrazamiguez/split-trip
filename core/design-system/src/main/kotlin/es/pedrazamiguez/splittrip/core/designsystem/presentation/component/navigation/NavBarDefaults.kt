@@ -16,6 +16,11 @@ internal object NavBarDefaults {
     val HorizontalPadding = 20.dp
     val BottomPadding = 28.dp
     val InnerHorizontalPadding = 12.dp
-    val InnerVerticalPadding = 8.dp
+    val CompactInnerHorizontalPadding = 8.dp
+    val InnerVerticalPadding = 6.dp
+    val ItemHorizontalPadding = 2.dp
+    val IconLabelGap = 2.dp
+    val IconSize = 24.dp
+    val ItemCornerRadius = 16.dp
     val ShadowElevation = 12.dp
 }

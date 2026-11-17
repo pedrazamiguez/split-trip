@@ -4,7 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -23,9 +24,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripSpacing
 
 private val GRADIENT_BUTTON_HEIGHT = 56.dp
 private val GRADIENT_BUTTON_ELEVATION = 8.dp
@@ -68,9 +70,13 @@ data class GradientButtonColors(
 )
 
 /**
- * Defaults and factory methods for [GradientButtonColors].
+ * Defaults and factory methods for [GradientButton].
  */
 object GradientButtonDefaults {
+
+    val ContentPadding: PaddingValues = PaddingValues(horizontal = SplitTripSpacing.ExtraLarge)
+    val CompactContentPadding: PaddingValues = PaddingValues(horizontal = SplitTripSpacing.Medium)
+    val IconSize: Dp = BUTTON_ICON_SIZE
 
     /** Primary tier — `primary → primaryContainer`, white/onPrimary content. */
     @Composable
@@ -120,8 +126,9 @@ object GradientButtonDefaults {
  * @param colors       Gradient and content colours. Defaults to [GradientButtonDefaults.primaryColors].
  * @param enabled      Whether the button is interactive and visually enabled.
  * @param isLoading    Replaces the label with a spinner and suppresses interaction.
- * @param leadingIcon  Optional icon to the left of [text].
- * @param trailingIcon Optional icon to the right of [text].
+ * @param leadingIcon    Optional icon to the left of [text].
+ * @param trailingIcon   Optional icon to the right of [text].
+ * @param contentPadding Inner padding applied around the button content.
  */
 @Composable
 fun GradientButton(
@@ -132,7 +139,8 @@ fun GradientButton(
     enabled: Boolean = true,
     isLoading: Boolean = false,
     leadingIcon: ImageVector? = null,
-    trailingIcon: ImageVector? = null
+    trailingIcon: ImageVector? = null,
+    contentPadding: PaddingValues = GradientButtonDefaults.ContentPadding
 ) {
     val visualEnabled = enabled
     val interactable = enabled && !isLoading
@@ -162,7 +170,7 @@ fun GradientButton(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .height(GRADIENT_BUTTON_HEIGHT)
+            .heightIn(min = GRADIENT_BUTTON_HEIGHT)
             .shadow(
                 elevation = if (visualEnabled) GRADIENT_BUTTON_ELEVATION else 0.dp,
                 shape = CircleShape
@@ -178,7 +186,7 @@ fun GradientButton(
             )
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.ExtraLarge),
+            modifier = Modifier.padding(contentPadding),
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {

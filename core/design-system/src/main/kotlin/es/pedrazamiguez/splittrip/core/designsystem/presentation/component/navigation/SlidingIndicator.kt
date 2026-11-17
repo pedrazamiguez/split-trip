@@ -5,7 +5,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,7 +43,7 @@ internal fun SlidingIndicator(
         modifier = modifier
             .offset(x = indicatorOffset)
             .width(indicatorWidth)
-            .height(NavBarDefaults.BarHeight - 16.dp)
+            .fillMaxHeight()
             .clip(RoundedCornerShape(NavBarDefaults.INDICATOR_CORNER_RADIUS))
             .background(MaterialTheme.colorScheme.primaryContainer)
     )

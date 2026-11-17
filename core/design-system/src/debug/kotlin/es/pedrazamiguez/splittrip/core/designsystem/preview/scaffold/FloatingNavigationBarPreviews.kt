@@ -1,8 +1,11 @@
 package es.pedrazamiguez.splittrip.core.designsystem.preview.scaffold
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BasketPlus
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartArcs
@@ -11,6 +14,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.NavigationBarIcon
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemes
 
@@ -37,12 +41,15 @@ private data class PreviewTab(
     override fun getLabel(): String = label
 }
 
-private val previewTabs = listOf(
+private const val LARGE_FONT_SCALE = 1.3f
+
+private val threeMainTabs = listOf(
     PreviewTab("groups", "Groups", TablerIcons.Outline.UsersGroup),
     PreviewTab("balances", "Balances", TablerIcons.Outline.UsersGroup),
-    PreviewTab("expenses", "Expenses", TablerIcons.Outline.UsersGroup),
-    PreviewTab("activity", "Activity", TablerIcons.Outline.UsersGroup)
+    PreviewTab("expenses", "Expenses", TablerIcons.Outline.UsersGroup)
 )
+
+private val previewTabs = threeMainTabs + PreviewTab("activity", "Activity", TablerIcons.Outline.UsersGroup)
 
 // ---------------------------------------------------------------------------
 // Previews
@@ -95,5 +102,63 @@ private fun FloatingNavigationBarWithFilterActionPreview() {
             ),
             applyWindowInsets = false
         )
+    }
+}
+
+/** Narrow 320dp screen without a main action button. */
+@PreviewNarrowThemes
+@Composable
+private fun FloatingNavigationBarNarrowWithNoActionPreview() {
+    PreviewThemeWrapper {
+        FloatingNavigationBar(
+            items = threeMainTabs,
+            selectedId = "balances",
+            mainAction = null,
+            applyWindowInsets = false
+        )
+    }
+}
+
+/** Narrow 320dp screen with main action button — mirrors closed-test regression layout. */
+@PreviewNarrowThemes
+@Composable
+private fun FloatingNavigationBarNarrowWithMainActionPreview() {
+    PreviewThemeWrapper {
+        FloatingNavigationBar(
+            items = threeMainTabs,
+            selectedId = "balances",
+            mainAction = MainAction(
+                icon = TablerIcons.Outline.ChartArcs,
+                contentDescription = "Chart",
+                onClick = {}
+            ),
+            applyWindowInsets = false
+        )
+    }
+}
+
+/** Narrow 320dp screen with 1.3x accessibility font scaling and main action button. */
+@PreviewNarrowThemes
+@Composable
+private fun FloatingNavigationBarNarrowLargeFontPreview() {
+    val currentDensity = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(
+            density = currentDensity.density,
+            fontScale = LARGE_FONT_SCALE
+        )
+    ) {
+        PreviewThemeWrapper {
+            FloatingNavigationBar(
+                items = threeMainTabs,
+                selectedId = "balances",
+                mainAction = MainAction(
+                    icon = TablerIcons.Outline.ChartArcs,
+                    contentDescription = "Chart",
+                    onClick = {}
+                ),
+                applyWindowInsets = false
+            )
+        }
     }
 }
