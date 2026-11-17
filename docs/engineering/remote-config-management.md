@@ -30,8 +30,13 @@ In Firebase Remote Config, `parameterGroups` organizes parameters into logical, 
 - **Console Presentation:** Each group renders as a folder with an icon, title, and description. Inside each folder, all contained parameters display with their individual name, description, value type badge (`BOOLEAN`, `NUMBER`, `STRING`, `JSON`), and default value.
 - **Client Backwards-Compatibility:** On the Android client SDK side, keys remain globally queryable flatly by name (e.g. `getString("subscription_gating_enabled")`), ensuring complete backwards compatibility with zero runtime code changes.
 
+### Conditions & Conditional Values
+The template supports top-level `conditions` (targeting rules evaluated by Firebase Remote Config, such as `app.build < 1000000`) paired with per-parameter `conditionalValues` overrides.
+- Every key inside a parameter's `conditionalValues` must reference a declared top-level condition `name` and conform to the parameter's `valueType`.
+- In-app `remote_config_defaults.xml` remains synchronized with each parameter's `defaultValue` (not conditional overrides).
+
 ### Zero-Drift Verification Gate
-Any discrepancy between in-app client defaults ([`data/firebase/src/main/res/xml/remote_config_defaults.xml`](../../data/firebase/src/main/res/xml/remote_config_defaults.xml)) and the declarative template is automatically caught by:
+Any discrepancy between in-app client defaults ([`data/firebase/src/main/res/xml/remote_config_defaults.xml`](../../data/firebase/src/main/res/xml/remote_config_defaults.xml)) and the declarative template (including `conditions` and `conditionalValues` integrity) is automatically caught by:
 1. Automated Python consistency script (`scripts/validate_remote_config.py` / `make remoteconfig-validate`).
 2. JUnit 5 unit test (`RemoteConfigTemplateConsistencyTest`) executed during `./gradlew test`, `make fast-check`, and `make check`.
 
@@ -91,7 +96,7 @@ SplitTrip parameters are organized into 5 functional groups:
 
 | Parameter Key | Value Type | Default Value | Description |
 |---|---|---|---|
-| `ads_enabled` | `BOOLEAN` | `true` | Master operational killswitch to enable or disable ads across the app. |
+| `ads_enabled` | `BOOLEAN` | `true` | Master operational killswitch to enable or disable ads across the app. Resolves to `false` under condition `"Pre-1.0.0 Closed Test"` (`app.build < 1000000`) while keeping default `"true"` for `v1.0.0+`. |
 | `admob_test_mode_enabled` | `BOOLEAN` | `false` | When true, overrides ad unit IDs with Google's official sample test ad unit IDs for banners and interstitials. |
 | `admob_banner_ad_unit_id` | `STRING` | `ca-app-pub-9638507020441461/2775424807` | Production AdMob banner ad unit ID for anchored adaptive banners. |
 | `admob_interstitial_ad_unit_id` | `STRING` | `ca-app-pub-9638507020441461/6643262487` | Production AdMob interstitial ad unit ID for full-screen interstitial ads. |

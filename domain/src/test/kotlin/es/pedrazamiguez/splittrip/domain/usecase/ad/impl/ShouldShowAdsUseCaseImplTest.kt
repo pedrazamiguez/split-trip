@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.take
@@ -25,11 +26,15 @@ class ShouldShowAdsUseCaseImplTest {
     private lateinit var useCase: ShouldShowAdsUseCaseImpl
 
     private val adsEnabledFlow = MutableStateFlow(true)
+    private val isInitialFetchSettledFlow = MutableStateFlow(true)
 
     @BeforeEach
     fun setUp() {
+        adsEnabledFlow.value = true
+        isInitialFetchSettledFlow.value = true
         appConfigRepository = mockk {
             every { adsEnabled } returns adsEnabledFlow
+            every { isInitialFetchSettled } returns isInitialFetchSettledFlow
         }
         featureGateService = mockk()
         useCase = ShouldShowAdsUseCaseImpl(appConfigRepository, featureGateService)
@@ -89,6 +94,58 @@ class ShouldShowAdsUseCaseImplTest {
             testScheduler.runCurrent()
 
             isAdFreeFlow.value = false
+            collectJob.join()
+
+            assertEquals(listOf(false, true), emissions)
+        }
+
+    @Test
+    fun `invoke returns false before initial fetch settles even when adsEnabled is true for FREE user`() =
+        runTest {
+            isInitialFetchSettledFlow.value = false
+            adsEnabledFlow.value = true
+            every { featureGateService.isFeatureEnabled(GatedFeature.AD_FREE) } returns flowOf(false)
+
+            val result = useCase().first()
+
+            assertFalse(result)
+        }
+
+    @Test
+    fun `invoke stays false when initial fetch settles with adsEnabled false for FREE user`() = runTest {
+        isInitialFetchSettledFlow.value = false
+        adsEnabledFlow.value = true
+        every { featureGateService.isFeatureEnabled(GatedFeature.AD_FREE) } returns flowOf(false)
+
+        val emissions = mutableListOf<Boolean>()
+        val collectJob = launch {
+            useCase().distinctUntilChanged().take(1).toList(emissions)
+        }
+        testScheduler.runCurrent()
+
+        adsEnabledFlow.value = false
+        isInitialFetchSettledFlow.value = true
+        testScheduler.runCurrent()
+        collectJob.join()
+
+        assertEquals(listOf(false), emissions)
+        assertFalse(useCase().first())
+    }
+
+    @Test
+    fun `invoke transitions from false to true when initial fetch settles with adsEnabled true for FREE user`() =
+        runTest {
+            isInitialFetchSettledFlow.value = false
+            adsEnabledFlow.value = true
+            every { featureGateService.isFeatureEnabled(GatedFeature.AD_FREE) } returns flowOf(false)
+
+            val emissions = mutableListOf<Boolean>()
+            val collectJob = launch {
+                useCase().take(2).toList(emissions)
+            }
+            testScheduler.runCurrent()
+
+            isInitialFetchSettledFlow.value = true
             collectJob.join()
 
             assertEquals(listOf(false, true), emissions)

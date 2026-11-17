@@ -372,6 +372,76 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(setOf("pro_hash1", "pro_hash2"), repository.proAllowlistEmailHashes.value)
     }
 
+    @Test
+    fun `isInitialFetchSettled is false upon initialization before fetchConfiguration completes`() {
+        assertFalse(repository.isInitialFetchSettled.value)
+    }
+
+    @Test
+    fun `fetchConfiguration sets isInitialFetchSettled to true after updating flows on true result`() =
+        runTest {
+            mockkStatic("kotlinx.coroutines.tasks.TasksKt")
+            val mockTask = mockk<Task<Boolean>>()
+            every { firebaseRemoteConfig.fetchAndActivate() } returns mockTask
+            coEvery { mockTask.await() } returns true
+            every { firebaseRemoteConfig.getString("ads_enabled") } returns "false"
+            every { firebaseRemoteConfig.getBoolean("ads_enabled") } returns false
+
+            val result = repository.fetchConfiguration()
+
+            assertTrue(result)
+            assertFalse(repository.adsEnabled.value)
+            assertTrue(repository.isInitialFetchSettled.value)
+        }
+
+    @Test
+    fun `fetchConfiguration sets isInitialFetchSettled to true and refreshes flows on false result`() =
+        runTest {
+            mockkStatic("kotlinx.coroutines.tasks.TasksKt")
+            val mockTask = mockk<Task<Boolean>>()
+            every { firebaseRemoteConfig.fetchAndActivate() } returns mockTask
+            coEvery { mockTask.await() } returns false
+            every { firebaseRemoteConfig.getString("ads_enabled") } returns "false"
+            every { firebaseRemoteConfig.getBoolean("ads_enabled") } returns false
+
+            val result = repository.fetchConfiguration()
+
+            assertFalse(result)
+            assertFalse(repository.adsEnabled.value)
+            assertTrue(repository.isInitialFetchSettled.value)
+        }
+
+    @Test
+    fun `fetchConfiguration keeps isInitialFetchSettled false when fetchAndActivate fails`() = runTest {
+        mockkStatic("kotlinx.coroutines.tasks.TasksKt")
+        val mockTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.fetchAndActivate() } returns mockTask
+        coEvery { mockTask.await() } throws RuntimeException("Network Error")
+
+        val result = repository.fetchConfiguration()
+
+        assertFalse(result)
+        assertFalse(repository.isInitialFetchSettled.value)
+    }
+
+    @Test
+    fun `real-time ConfigUpdateListener activation sets isInitialFetchSettled to true`() {
+        val mockConfigUpdate = mockk<ConfigUpdate>(relaxed = true)
+        val updateListenerSlot = slot<ConfigUpdateListener>()
+        verify(exactly = 1) { firebaseRemoteConfig.addOnConfigUpdateListener(capture(updateListenerSlot)) }
+
+        val mockActivateTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.activate() } returns mockActivateTask
+        val listenerSlot = slot<OnCompleteListener<Boolean>>()
+        every { mockActivateTask.addOnCompleteListener(capture(listenerSlot)) } returns mockActivateTask
+        every { mockActivateTask.isSuccessful } returns true
+
+        updateListenerSlot.captured.onUpdate(mockConfigUpdate)
+        listenerSlot.captured.onComplete(mockActivateTask)
+
+        assertTrue(repository.isInitialFetchSettled.value)
+    }
+
     private fun setupMockRemoteConfigValues() {
         every { firebaseRemoteConfig.getString("default_currency_code") } returns "GBP"
         every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 100L
