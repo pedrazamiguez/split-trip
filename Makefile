@@ -283,6 +283,10 @@ build: ## Compile all modules (debug)
 
 # ─── Utility ──────────────────────────────────────────────────────────────────
 firebase: ## Deploy all configured resources to Firebase (functions, firestore, remoteconfig)
+	@if [ ! -x "functions/node_modules/.bin/tsc" ]; then \
+		printf "$(YELLOW)⏳  Installing Cloud Functions dependencies...$(NC)\n"; \
+		npm --prefix functions ci; \
+	fi
 	@printf "$(YELLOW)⏳  Deploying to Firebase...$(NC)\n"
 	@npx firebase-tools deploy
 
