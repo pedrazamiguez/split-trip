@@ -133,13 +133,19 @@ class RemoteConfigTemplateConsistencyTest {
     @Test
     fun `every declared condition has a non-empty unique name and non-empty expression`() {
         assertFalse(hasMalformedConditions, "Top-level 'conditions' must be a list of JSON objects")
+        val infixComparisonPattern = Regex("""\bapp\.(?:build|version)\s*(?:<=|>=|==|!=|<|>)""")
         val seenNames = mutableSetOf<String>()
         templateConditions.forEachIndexed { index, condition ->
             val name = condition.name
             assertTrue(!name.isNullOrBlank(), "Condition at index $index must have a non-empty name")
+            val expression = condition.expression
             assertTrue(
-                !condition.expression.isNullOrBlank(),
+                !expression.isNullOrBlank(),
                 "Condition '$name' must have a non-empty expression"
+            )
+            assertFalse(
+                infixComparisonPattern.containsMatchIn(expression.orEmpty()),
+                "Condition '$name' must use dot-method syntax (e.g. app.build.<(['1000000'])), not infix operators"
             )
             assertTrue(seenNames.add(name!!), "Duplicate condition name '$name' found")
         }
@@ -183,7 +189,7 @@ class RemoteConfigTemplateConsistencyTest {
     fun `ads_enabled disables ads for Pre-1_0_0 Closed Test condition while keeping default true`() {
         val closedTestCondition = templateConditions.find { it.name == "Pre-1.0.0 Closed Test" }
         assertTrue(closedTestCondition != null, "Condition 'Pre-1.0.0 Closed Test' should be declared")
-        assertEquals("app.build < 1000000", closedTestCondition?.expression)
+        assertEquals("app.build.<(['1000000'])", closedTestCondition?.expression)
 
         val adsEnabledParam = templateParameters["ads_enabled"]
         assertTrue(adsEnabledParam != null, "Parameter 'ads_enabled' should exist in template")
