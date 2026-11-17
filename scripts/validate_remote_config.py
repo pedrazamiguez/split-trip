@@ -17,6 +17,7 @@ Usage:
 """
 
 import json
+import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -29,6 +30,7 @@ CYAN = "\033[0;36m"
 NC = "\033[0m"
 
 VALID_VALUE_TYPES = {"STRING", "BOOLEAN", "NUMBER", "JSON"}
+INFIX_APP_VERSION_OR_BUILD_RE = re.compile(r"\bapp\.(?:build|version)\s*(?:<=|>=|==|!=|<|>)")
 
 
 def resolve_paths() -> Tuple[Path, Path]:
@@ -84,6 +86,12 @@ def parse_conditions(data: Dict[str, Any]) -> Tuple[Set[str], List[str]]:
         if not isinstance(expression, str) or not expression.strip():
             cond_label = f"'{name}'" if isinstance(name, str) and name.strip() else f"at index {idx}"
             errors.append(f"Condition {cond_label} is missing a non-empty string 'expression'.")
+        elif INFIX_APP_VERSION_OR_BUILD_RE.search(expression):
+            cond_label = f"'{name}'" if isinstance(name, str) and name.strip() else f"at index {idx}"
+            errors.append(
+                f"Condition {cond_label} uses invalid infix comparison on app.build/app.version; "
+                "use dot-method syntax like app.build.<(['1000000']) instead."
+            )
 
         if "tagColor" in cond:
             tag_color = cond.get("tagColor")
