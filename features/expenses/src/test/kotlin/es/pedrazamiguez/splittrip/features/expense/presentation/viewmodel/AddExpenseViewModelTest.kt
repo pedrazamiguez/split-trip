@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
@@ -88,6 +89,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -1023,6 +1025,11 @@ class AddExpenseViewModelTest {
             coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEurWithThb)
             coEvery { getExchangeRateUseCase("EUR", "THB") } returns null
 
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { emittedActions.add(it) }
+            }
+
             // When - Load config
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
             advanceUntilIdle()
@@ -1030,13 +1037,21 @@ class AddExpenseViewModelTest {
             // When - Select foreign currency
             viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("THB"))
             advanceUntilIdle()
+            job.cancel()
 
-            // Then - Should keep previous rate as fallback and flag error
+            // Then - Should keep previous rate as fallback, mark invalid, and emit ShowError
             val state = viewModel.uiState.value
             assertTrue(state.showExchangeRateSection)
             assertEquals("1.0", state.displayExchangeRate)
-            assertTrue(state.isExchangeRateError)
+            assertFalse(state.isExchangeRateValid)
             assertFalse(state.isLoadingRate)
+            assertTrue(
+                emittedActions.contains(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                    )
+                )
+            )
         }
 
         @Test
@@ -1111,6 +1126,11 @@ class AddExpenseViewModelTest {
             coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEurWithThb)
             coEvery { getExchangeRateUseCase("EUR", "THB") } throws RuntimeException("Network error")
 
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { emittedActions.add(it) }
+            }
+
             // When - Load config
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
             advanceUntilIdle()
@@ -1118,13 +1138,21 @@ class AddExpenseViewModelTest {
             // When - Select foreign currency
             viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("THB"))
             advanceUntilIdle()
+            job.cancel()
 
-            // Then - Should set isLoadingRate to false, retain previous rate as fallback, and flag error
+            // Then - Should set isLoadingRate to false, retain previous rate, mark invalid, and emit ShowError
             val state = viewModel.uiState.value
             assertTrue(state.showExchangeRateSection)
             assertEquals("1.0", state.displayExchangeRate)
-            assertTrue(state.isExchangeRateError)
+            assertFalse(state.isExchangeRateValid)
             assertFalse(state.isLoadingRate)
+            assertTrue(
+                emittedActions.contains(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                    )
+                )
+            )
             coVerify { getExchangeRateUseCase("EUR", "THB") }
         }
     }

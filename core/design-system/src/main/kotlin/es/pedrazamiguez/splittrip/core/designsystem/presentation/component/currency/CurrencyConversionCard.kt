@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,11 +21,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.InlineWarningBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.ArithmeticTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
@@ -89,17 +86,6 @@ fun CurrencyConversionCard(
         ConversionCardLockedHint(
             exchangeRateLockedHint = state.exchangeRateLockedHint,
             isInsufficientCash = state.isInsufficientCash
-        )
-        val warning = when {
-            state.isExchangeRateError -> UiText.StringResource(R.string.failed_rate_warning)
-            state.isExchangeRateStale -> UiText.StringResource(R.string.stale_rate_warning)
-            else -> null
-        }
-        // Top padding on the AnimatedVisibility container animates in/out with the banner,
-        // matching the 8 dp gap the former StaleRateBanner Spacer provided.
-        InlineWarningBanner(
-            warning = warning,
-            modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
         )
     }
 }

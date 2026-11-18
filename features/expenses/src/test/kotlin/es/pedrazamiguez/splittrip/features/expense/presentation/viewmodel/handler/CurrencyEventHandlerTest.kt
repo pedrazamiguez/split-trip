@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
@@ -28,8 +29,11 @@ import java.math.BigDecimal
 import java.util.Locale
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -728,87 +732,76 @@ class CurrencyEventHandlerTest {
     inner class ExchangeRateErrorHandling {
 
         @Test
-        fun `successful fetch rate resets error flag to false`() = runTest {
-            uiState.value = nonCashForeignState.copy(isExchangeRateError = true)
+        fun `when fetchRate succeeds with Fresh result, does not emit pill`() = runTest {
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emittedActions.add(it) }
+            }
+            uiState.value = nonCashForeignState.copy(isExchangeRateValid = false)
             coEvery {
                 getExchangeRateUseCase(any(), any())
             } returns ExchangeRateWithStaleness(rate = BigDecimal("36.8"), isStale = false)
 
             handler.bind(uiState, actions, this)
-
-            // When
             handler.fetchRate()
             advanceUntilIdle()
 
-            // Then
             val state = uiState.value
-            assertFalse(state.isExchangeRateError)
+            assertTrue(state.isExchangeRateValid)
             assertEquals("36.8", state.displayExchangeRate)
+            assertTrue(emittedActions.isEmpty())
         }
 
         @Test
-        fun `null rateResult from fetch rate sets error flag to true`() = runTest {
-            uiState.value = nonCashForeignState.copy(isExchangeRateError = false, displayExchangeRate = "")
-            coEvery {
-                getExchangeRateUseCase(any(), any())
-            } returns null
+        fun `null rateResult from fetch rate sets isExchangeRateValid false and emits ShowError pill`() = runTest {
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emittedActions.add(it) }
+            }
+            uiState.value = nonCashForeignState.copy(displayExchangeRate = "")
+            coEvery { getExchangeRateUseCase(any(), any()) } returns null
 
             handler.bind(uiState, actions, this)
-
-            // When
             handler.fetchRate()
             advanceUntilIdle()
 
-            // Then
             val state = uiState.value
-            assertTrue(state.isExchangeRateError)
+            assertFalse(state.isExchangeRateValid)
             assertEquals("", state.displayExchangeRate)
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                    )
+                ),
+                emittedActions
+            )
         }
 
         @Test
-        fun `exception from fetch rate sets error flag to true`() = runTest {
-            uiState.value = nonCashForeignState.copy(isExchangeRateError = false, displayExchangeRate = "")
-            coEvery {
-                getExchangeRateUseCase(any(), any())
-            } throws RuntimeException("Network error")
+        fun `exception from fetch rate sets isExchangeRateValid false and emits ShowError pill`() = runTest {
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emittedActions.add(it) }
+            }
+            uiState.value = nonCashForeignState.copy(displayExchangeRate = "")
+            coEvery { getExchangeRateUseCase(any(), any()) } throws RuntimeException("Network error")
 
             handler.bind(uiState, actions, this)
-
-            // When
             handler.fetchRate()
             advanceUntilIdle()
 
-            // Then
             val state = uiState.value
-            assertTrue(state.isExchangeRateError)
+            assertFalse(state.isExchangeRateValid)
             assertEquals("", state.displayExchangeRate)
-        }
-
-        @Test
-        fun `manual exchange rate change resets error flag to false`() = runTest {
-            uiState.value = nonCashForeignState.copy(isExchangeRateError = true)
-            handler.bind(uiState, actions, this)
-
-            // When
-            handler.handleExchangeRateChanged("35.5")
-
-            // Then
-            val state = uiState.value
-            assertFalse(state.isExchangeRateError)
-            assertEquals("35.5", state.displayExchangeRate)
-        }
-
-        @Test
-        fun `manual group amount change resets error flag to false`() = runTest {
-            uiState.value = nonCashForeignState.copy(isExchangeRateError = true, displayExchangeRate = "")
-            handler.bind(uiState, actions, this)
-
-            // When
-            handler.handleGroupAmountChanged("28.17")
-
-            // Then
-            val state = uiState.value
-            assertFalse(state.isExchangeRateError)
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                    )
+                ),
+                emittedActions
+            )
         }
 
         @Test
@@ -854,91 +847,145 @@ class CurrencyEventHandlerTest {
             uiState.value = nonCashForeignState.copy(displayExchangeRate = "", calculatedGroupAmount = "10.00")
             handler.bind(uiState, actions, this)
 
-            // When
             handler.recalculateForward()
 
-            // Then
             val state = uiState.value
             assertEquals("", state.calculatedGroupAmount)
         }
 
         @Test
-        fun `when fetchRate returns null, rate is retained and group amount recalculated`() = runTest {
-            val usdCurrency = CurrencyUiModel(code = "USD", displayText = "USD ($)", decimalDigits = 2)
-            uiState.value = nonCashForeignState.copy(
-                availableCurrencies = persistentListOf(eurCurrency, thbCurrency, usdCurrency),
-                displayExchangeRate = "35.5",
-                sourceAmount = "1000"
-            )
-            coEvery {
-                getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "USD")
-            } returns null
+        fun `when fetchRate returns null, rate is retained, group amount recalculated, and ShowError emitted`() =
+            runTest {
+                val emittedActions = mutableListOf<AddExpenseUiAction>()
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    actions.collect { emittedActions.add(it) }
+                }
+                val usdCurrency = CurrencyUiModel(code = "USD", displayText = "USD ($)", decimalDigits = 2)
+                uiState.value = nonCashForeignState.copy(
+                    availableCurrencies = persistentListOf(eurCurrency, thbCurrency, usdCurrency),
+                    displayExchangeRate = "35.5",
+                    sourceAmount = "1000"
+                )
+                coEvery {
+                    getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "USD")
+                } returns null
 
-            handler.bind(uiState, actions, this)
+                handler.bind(uiState, actions, this)
 
-            // When: user switches currency to USD and fetch fails
-            var recalculated = false
-            handler.handleCurrencySelected("USD") { recalculated = true }
-            advanceUntilIdle()
+                var recalculated = false
+                handler.handleCurrencySelected("USD") { recalculated = true }
+                advanceUntilIdle()
 
-            // Then: error is set, stale is false, fallback rate is retained, and group amount recalculated
-            val state = uiState.value
-            assertTrue(state.isExchangeRateError)
-            assertFalse(state.isExchangeRateStale)
-            assertEquals("35.5", state.displayExchangeRate)
-            assertEquals("28.17", state.calculatedGroupAmount)
-            assertTrue(recalculated)
-        }
-
-        @Test
-        fun `when fetchRate throws exception, displayExchangeRate retains fallback rate and flags error`() = runTest {
-            val usdCurrency = CurrencyUiModel(code = "USD", displayText = "USD ($)", decimalDigits = 2)
-            uiState.value = nonCashForeignState.copy(
-                availableCurrencies = persistentListOf(eurCurrency, thbCurrency, usdCurrency),
-                displayExchangeRate = "35.5",
-                sourceAmount = "1000"
-            )
-            coEvery {
-                getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "USD")
-            } throws RuntimeException("Network timeout")
-
-            handler.bind(uiState, actions, this)
-
-            // When: user switches currency to USD and fetch throws exception
-            handler.handleCurrencySelected("USD") {}
-            advanceUntilIdle()
-
-            // Then
-            val state = uiState.value
-            assertTrue(state.isExchangeRateError)
-            assertFalse(state.isExchangeRateStale)
-            assertEquals("35.5", state.displayExchangeRate)
-            assertEquals("28.17", state.calculatedGroupAmount)
-        }
+                val state = uiState.value
+                assertFalse(state.isExchangeRateValid)
+                assertEquals("35.5", state.displayExchangeRate)
+                assertEquals("28.17", state.calculatedGroupAmount)
+                assertTrue(recalculated)
+                assertEquals(
+                    listOf(
+                        AddExpenseUiAction.ShowError(
+                            UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                        )
+                    ),
+                    emittedActions
+                )
+            }
 
         @Test
-        fun `when fetchRate succeeds with Stale result, isExchangeRateStale is set to true`() = runTest {
+        fun `when fetchRate throws exception, displayExchangeRate retains fallback rate and emits ShowError`() =
+            runTest {
+                val emittedActions = mutableListOf<AddExpenseUiAction>()
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    actions.collect { emittedActions.add(it) }
+                }
+                val usdCurrency = CurrencyUiModel(code = "USD", displayText = "USD ($)", decimalDigits = 2)
+                uiState.value = nonCashForeignState.copy(
+                    availableCurrencies = persistentListOf(eurCurrency, thbCurrency, usdCurrency),
+                    displayExchangeRate = "35.5",
+                    sourceAmount = "1000"
+                )
+                coEvery {
+                    getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "USD")
+                } throws RuntimeException("Network timeout")
+
+                handler.bind(uiState, actions, this)
+
+                handler.handleCurrencySelected("USD") {}
+                advanceUntilIdle()
+
+                val state = uiState.value
+                assertFalse(state.isExchangeRateValid)
+                assertEquals("35.5", state.displayExchangeRate)
+                assertEquals("28.17", state.calculatedGroupAmount)
+                assertEquals(
+                    listOf(
+                        AddExpenseUiAction.ShowError(
+                            UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                        )
+                    ),
+                    emittedActions
+                )
+            }
+
+        @Test
+        fun `when fetchRate succeeds with Stale result, updates rate and emits ShowPill with stale_rate_warning`() =
+            runTest {
+                val emittedActions = mutableListOf<AddExpenseUiAction>()
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    actions.collect { emittedActions.add(it) }
+                }
+                val usdCurrency = CurrencyUiModel(code = "USD", displayText = "USD ($)", decimalDigits = 2)
+                uiState.value = nonCashForeignState.copy(
+                    availableCurrencies = persistentListOf(eurCurrency, thbCurrency, usdCurrency),
+                    displayExchangeRate = "35.5",
+                    sourceAmount = "1000"
+                )
+                coEvery {
+                    getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "USD")
+                } returns ExchangeRateWithStaleness(rate = BigDecimal("1.08"), isStale = true)
+
+                handler.bind(uiState, actions, this)
+
+                handler.handleCurrencySelected("USD") {}
+                advanceUntilIdle()
+
+                val state = uiState.value
+                assertTrue(state.isExchangeRateValid)
+                assertEquals("1.08", state.displayExchangeRate)
+                assertEquals(
+                    listOf(
+                        AddExpenseUiAction.ShowPill(
+                            UiText.StringResource(DesignSystemR.string.stale_rate_warning)
+                        )
+                    ),
+                    emittedActions
+                )
+            }
+
+        @Test
+        fun `fetchRate failure after currency changed does not emit pill`() = runTest {
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emittedActions.add(it) }
+            }
             val usdCurrency = CurrencyUiModel(code = "USD", displayText = "USD ($)", decimalDigits = 2)
             uiState.value = nonCashForeignState.copy(
-                availableCurrencies = persistentListOf(eurCurrency, thbCurrency, usdCurrency),
-                displayExchangeRate = "35.5",
-                sourceAmount = "1000"
+                availableCurrencies = persistentListOf(eurCurrency, thbCurrency, usdCurrency)
             )
             coEvery {
                 getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "USD")
-            } returns ExchangeRateWithStaleness(rate = BigDecimal("1.08"), isStale = true)
+            } coAnswers {
+                delay(1000L)
+                null
+            }
 
             handler.bind(uiState, actions, this)
-
-            // When: user switches currency to USD and stale rate is returned
             handler.handleCurrencySelected("USD") {}
+            runCurrent()
+            handler.handleCurrencySelected("EUR") {}
             advanceUntilIdle()
 
-            // Then
-            val state = uiState.value
-            assertFalse(state.isExchangeRateError)
-            assertTrue(state.isExchangeRateStale)
-            assertEquals("1.08", state.displayExchangeRate)
+            assertTrue(emittedActions.isEmpty())
         }
 
         @Test
@@ -951,7 +998,7 @@ class CurrencyEventHandlerTest {
             coEvery {
                 getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "USD")
             } coAnswers {
-                kotlinx.coroutines.delay(1000L)
+                delay(1000L)
                 ExchangeRateWithStaleness(rate = BigDecimal("1.10"), isStale = false)
             }
 

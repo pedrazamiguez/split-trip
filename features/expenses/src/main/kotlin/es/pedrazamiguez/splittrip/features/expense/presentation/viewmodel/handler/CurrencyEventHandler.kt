@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
@@ -12,6 +13,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -86,8 +88,6 @@ class CurrencyEventHandler(
                 preCashExchangeRate = null,
                 isExchangeRateValid = true,
                 isGroupAmountValid = true,
-                isExchangeRateError = false,
-                isExchangeRateStale = false,
                 isExchangeRateLocked = isLocked,
                 isInsufficientCash = false,
                 isNoCashAvailable = false,
@@ -129,8 +129,7 @@ class CurrencyEventHandler(
         _uiState.update {
             it.copy(
                 displayExchangeRate = rate,
-                isExchangeRateValid = isValid,
-                isExchangeRateError = false
+                isExchangeRateValid = isValid
             )
         }
         recalculateForward()
@@ -141,8 +140,7 @@ class CurrencyEventHandler(
         _uiState.update {
             it.copy(
                 calculatedGroupAmount = amount,
-                isGroupAmountValid = isValid,
-                isExchangeRateError = false
+                isGroupAmountValid = isValid
             )
         }
         recalculateReverse()
@@ -220,7 +218,10 @@ class CurrencyEventHandler(
                     targetCurrencyCode = requestedTargetCode
                 )
 
+                var applied = false
                 _uiState.update { current ->
+                    applied = current.groupCurrency?.code == requestedBaseCode &&
+                        current.selectedCurrency?.code == requestedTargetCode
                     current.updateRateResult(
                         requestedBaseCode = requestedBaseCode,
                         requestedTargetCode = requestedTargetCode,
@@ -230,12 +231,20 @@ class CurrencyEventHandler(
                 }
 
                 recalculateForward()
+                if (applied) {
+                    emitRateFetchOutcome(rateResult)
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Timber.e(
                     e,
                     "Failed to fetch exchange rate for $requestedBaseCode -> $requestedTargetCode"
                 )
+                var applied = false
                 _uiState.update { current ->
+                    applied = current.groupCurrency?.code == requestedBaseCode &&
+                        current.selectedCurrency?.code == requestedTargetCode
                     current.updateRateResult(
                         requestedBaseCode = requestedBaseCode,
                         requestedTargetCode = requestedTargetCode,
@@ -244,7 +253,26 @@ class CurrencyEventHandler(
                     )
                 }
                 recalculateForward()
+                if (applied) {
+                    emitRateFetchOutcome(null)
+                }
             }
+        }
+    }
+
+    private suspend fun emitRateFetchOutcome(rateResult: ExchangeRateWithStaleness?) {
+        when {
+            rateResult == null -> _actions.emit(
+                AddExpenseUiAction.ShowError(
+                    UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                )
+            )
+
+            rateResult.isStale -> _actions.emit(
+                AddExpenseUiAction.ShowPill(
+                    UiText.StringResource(DesignSystemR.string.stale_rate_warning)
+                )
+            )
         }
     }
 
@@ -491,10 +519,8 @@ class CurrencyEventHandler(
         val isValid = CurrencyConverter.isPositiveAmount(rateStr) && !isError
         return copy(
             isLoadingRate = false,
-            isExchangeRateError = isError,
             displayExchangeRate = rateStr,
-            isExchangeRateValid = isValid,
-            isExchangeRateStale = rateResult?.isStale ?: false
+            isExchangeRateValid = isValid
         )
     }
 }

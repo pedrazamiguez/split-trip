@@ -48,8 +48,6 @@ fun ExchangeRateStep(
                 isInsufficientCash = uiState.isInsufficientCash || uiState.isNoCashAvailable,
                 isGroupAmountError = !uiState.isGroupAmountValid,
                 isExchangeRateFieldError = !uiState.isExchangeRateValid,
-                isExchangeRateStale = uiState.isExchangeRateStale,
-                isExchangeRateError = uiState.isExchangeRateError,
                 autoFocus = true
             ),
             groupAmountDecimalPlaces = uiState.groupCurrency?.decimalDigits ?: UiConstants.DEFAULT_MAX_DECIMAL_PLACES,

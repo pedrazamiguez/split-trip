@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCurrencyDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.remote.RemoteCurrencyDataSource
 import es.pedrazamiguez.splittrip.domain.exception.ApiKeyNotConfiguredException
+import es.pedrazamiguez.splittrip.domain.exception.RemoteCurrencyApiException
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.ExchangeRate
 import es.pedrazamiguez.splittrip.domain.model.ExchangeRates
@@ -13,6 +14,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
+import java.io.IOException
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.Instant
@@ -295,5 +297,107 @@ class CurrencyRepositoryImplTest {
             assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
             assertTrue(loggedErrors.isEmpty())
         }
+
+        @Test
+        fun `logs HTTP 401 rejection and no local cache fallback when remote throws 401 and local is empty`() =
+            runTest {
+                val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
+
+                coEvery { local.getExchangeRates("USD") } returns emptyRates
+                coEvery { local.getLastUpdated("USD") } returns null
+                coEvery { remote.fetchExchangeRates("USD") } throws RemoteCurrencyApiException(401, "HTTP 401")
+
+                val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+                assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
+                assertTrue(
+                    loggedErrors.any {
+                        it.contains("401") &&
+                            it.contains("OER_APP_ID") &&
+                            it.contains("no local cache fallback available")
+                    }
+                )
+                assertTrue(loggedWarnings.isEmpty())
+            }
+
+        @Test
+        fun `logs HTTP 500 failure and no local cache fallback when remote throws 500 and local is empty`() =
+            runTest {
+                val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
+
+                coEvery { local.getExchangeRates("USD") } returns emptyRates
+                coEvery { local.getLastUpdated("USD") } returns null
+                coEvery { remote.fetchExchangeRates("USD") } throws RemoteCurrencyApiException(500, "HTTP 500")
+
+                val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+                assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
+                assertTrue(
+                    loggedErrors.any {
+                        it.contains("500") && it.contains("no local cache fallback available")
+                    }
+                )
+                assertTrue(loggedWarnings.isEmpty())
+            }
+
+        @Test
+        fun `logs network error and no local cache fallback when remote throws IOException and local is empty`() =
+            runTest {
+                val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
+
+                coEvery { local.getExchangeRates("USD") } returns emptyRates
+                coEvery { local.getLastUpdated("USD") } returns null
+                coEvery { remote.fetchExchangeRates("USD") } throws IOException("timeout")
+
+                val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+                assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
+                assertTrue(
+                    loggedErrors.any {
+                        it.contains("network", ignoreCase = true) && it.contains("no local cache fallback available")
+                    }
+                )
+                assertTrue(loggedWarnings.isEmpty())
+            }
+
+        @Test
+        fun `logs HTTP 401 warning and uses stale cache when remote throws 401 and cache is stale`() =
+            runTest {
+                val staleRates = freshRates.copy(lastUpdated = Instant.now().minusSeconds(86_400))
+
+                coEvery { local.getExchangeRates("USD") } returns staleRates
+                coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
+                coEvery { remote.fetchExchangeRates("USD") } throws RemoteCurrencyApiException(401, "HTTP 401")
+
+                val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+                assertInstanceOf(ExchangeRateResult.Stale::class.java, result)
+                assertTrue(
+                    loggedWarnings.any {
+                        it.contains("401") && it.contains("using stale cache")
+                    }
+                )
+                assertTrue(loggedErrors.isEmpty())
+            }
+
+        @Test
+        fun `logs network error warning and uses stale cache when remote throws IOException and cache is stale`() =
+            runTest {
+                val staleRates = freshRates.copy(lastUpdated = Instant.now().minusSeconds(86_400))
+
+                coEvery { local.getExchangeRates("USD") } returns staleRates
+                coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
+                coEvery { remote.fetchExchangeRates("USD") } throws IOException("timeout")
+
+                val result = currencyRepositoryImpl.getExchangeRates("USD")
+
+                assertInstanceOf(ExchangeRateResult.Stale::class.java, result)
+                assertTrue(
+                    loggedWarnings.any {
+                        it.contains("network", ignoreCase = true) && it.contains("using stale cache")
+                    }
+                )
+                assertTrue(loggedErrors.isEmpty())
+            }
     }
 }
