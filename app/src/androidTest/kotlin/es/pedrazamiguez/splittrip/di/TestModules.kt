@@ -52,13 +52,18 @@ fun createAppNavHostTestModule(
     biometricLockEnabledFlow: Flow<Boolean> = flowOf(false),
     biometricCapability: BiometricCapability = BiometricCapability.AVAILABLE,
     isExplicitSignOut: Boolean = false,
-    handleSessionExpiredUseCase: HandleSessionExpiredUseCase = createDefaultHandleSessionExpiredUseCase()
+    handleSessionExpiredUseCase: HandleSessionExpiredUseCase = createDefaultHandleSessionExpiredUseCase(),
+    isReconciledFlow: Flow<Boolean> = flowOf(true),
+    currentUserEmail: String? = null,
+    checkPendingReconciliationUseCase: CheckPendingReconciliationUseCase = mockk(relaxed = true),
+    userPreferenceRepository: UserPreferenceRepository? = null
 ) = module {
     // ── Domain services ───────────────────────────────────────────────
     single<AuthenticationService> {
         mockk<AuthenticationService>(relaxed = true).apply {
             every { authState } returns authStateFlow
             every { isExplicitSignOut() } returns isExplicitSignOut
+            every { currentUserEmail() } returns currentUserEmail
         }
     }
 
@@ -68,8 +73,8 @@ fun createAppNavHostTestModule(
 
     // ── User preferences ──────────────────────────────────────────────
     single<UserPreferenceRepository> {
-        mockk<UserPreferenceRepository>(relaxed = true).apply {
-            every { getIsReconciled() } returns flowOf(true)
+        (userPreferenceRepository ?: mockk<UserPreferenceRepository>(relaxed = true)).apply {
+            every { getIsReconciled() } returns isReconciledFlow
         }
     }
 
@@ -98,7 +103,7 @@ fun createAppNavHostTestModule(
         }
     }
 
-    factory<CheckPendingReconciliationUseCase> { mockk(relaxed = true) }
+    factory<CheckPendingReconciliationUseCase> { checkPendingReconciliationUseCase }
 
     factory<ReconcileSubscriptionEntitlementsUseCase> {
         mockk<ReconcileSubscriptionEntitlementsUseCase>(relaxed = true).apply {

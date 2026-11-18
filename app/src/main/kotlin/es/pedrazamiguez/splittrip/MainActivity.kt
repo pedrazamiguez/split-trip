@@ -15,13 +15,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import es.pedrazamiguez.splittrip.core.designsystem.ad.AdConsentManager
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils.DeepLinkDispatchAction
+import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.domain.enums.AppTheme
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
 import es.pedrazamiguez.splittrip.navigation.AppNavHost
 import org.koin.android.ext.android.inject
 import org.koin.compose.getKoin
+import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
@@ -67,25 +70,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent) {
+    public override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         val deepLinkUri = extractDeepLinkUri(intent)
-        if (deepLinkUri != null) {
-            intent.data = deepLinkUri
-            intent.action = Intent.ACTION_VIEW
-            // Deep link intent — check if we're past the auth gate before forwarding.
-            // If the user is on login/onboarding, forwarding the deep link would
-            // navigate directly to Routes.MAIN, bypassing authentication.
-            val currentRoute = navHostController?.currentDestination?.route
-            if (currentRoute == Routes.LOGIN || currentRoute == Routes.ONBOARDING) {
-                // Buffer for later replay after auth/onboarding completes
-                deepLinkHolder.pendingDeepLink = deepLinkUri
-            } else {
-                navHostController?.handleDeepLink(intent)
+        val currentRoute = navHostController?.currentDestination?.route
+        when (NavigationUtils.resolveNewIntentAction(deepLinkUri != null, currentRoute)) {
+            DeepLinkDispatchAction.IGNORE -> {
+                Timber.tag(LogTag.NAVIGATION).i(
+                    "onNewIntent ignored (no deep-link URI, currentRoute=%s)",
+                    currentRoute
+                )
             }
-        } else {
-            navHostController?.handleDeepLink(intent)
+            DeepLinkDispatchAction.BUFFER -> {
+                if (deepLinkUri != null) {
+                    intent.data = deepLinkUri
+                    intent.action = Intent.ACTION_VIEW
+                    deepLinkHolder.pendingDeepLink = deepLinkUri
+                    Timber.tag(LogTag.NAVIGATION).i(
+                        "onNewIntent buffered deep link (scheme=%s, currentRoute=%s)",
+                        deepLinkUri.scheme,
+                        currentRoute
+                    )
+                }
+            }
+            DeepLinkDispatchAction.HANDLE_IMMEDIATELY -> {
+                if (deepLinkUri != null) {
+                    intent.data = deepLinkUri
+                    intent.action = Intent.ACTION_VIEW
+                    navHostController?.handleDeepLink(intent)
+                }
+            }
         }
     }
 
