@@ -207,6 +207,7 @@ data class AddExpenseUiState(
      * Back returns here instead of previous step.
      */
     val jumpedFromStep: AddExpenseStep? = null,
+    val isStepInfoSheetVisible: Boolean = false,
     val initialFormSnapshot: AddExpenseFormSnapshot? = null
 ) {
     /**
