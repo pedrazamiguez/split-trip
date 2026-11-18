@@ -27,6 +27,9 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import kotlinx.collections.immutable.ImmutableList
 
@@ -51,18 +54,21 @@ internal fun <T> CategoryGridSelector(
 ) {
     if (items.isEmpty() || columns <= 0) return
 
+    val isNarrowScreen = LocalConfiguration.current.screenWidthDp.dp <= UiConstants.NARROW_SCREEN_BREAKPOINT
+    val horizontalSpacing =
+        if (isNarrowScreen) MaterialTheme.spacing.ExtraSmall else MaterialTheme.spacing.Small
     val rows = items.chunked(columns)
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         rows.forEach { rowItems ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(IntrinsicSize.Max),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+                horizontalArrangement = Arrangement.spacedBy(horizontalSpacing)
             ) {
                 rowItems.forEach { item ->
                     key(itemId(item)) {
