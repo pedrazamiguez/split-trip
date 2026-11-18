@@ -18,17 +18,20 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.Share
 import es.pedrazamiguez.splittrip.di.FakeRegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.di.createAppNavHostTestModule
 import es.pedrazamiguez.splittrip.domain.enums.BiometricCapability
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.usecase.auth.HandleSessionExpiredUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliationUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
 import es.pedrazamiguez.splittrip.features.authentication.presentation.viewmodel.AuthenticationViewModel
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
 import es.pedrazamiguez.splittrip.features.onboarding.presentation.viewmodel.OnboardingViewModel
+import es.pedrazamiguez.splittrip.features.onboarding.presentation.viewmodel.ReconciliationViewModel
 import es.pedrazamiguez.splittrip.helpers.FakeNavigationProvider
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
 import es.pedrazamiguez.splittrip.navigation.AppNavHost
@@ -36,6 +39,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -97,6 +101,13 @@ class AppNavHostTest {
         }
 
         viewModel { OnboardingViewModel() }
+
+        viewModel {
+            ReconciliationViewModel(
+                reconcileUnregisteredUserUseCase = mockk(relaxed = true),
+                authenticationService = get()
+            )
+        }
 
         // Main screen needs MainViewModel
         viewModel {
@@ -566,5 +577,181 @@ class AppNavHostTest {
         composeRule.onNode(hasTestTag(APP_LOCK_GATE_TEST_TAG)).assertDoesNotExist()
         coVerify(exactly = 1) { handleSessionExpiredUseCase() }
         assertEquals(Routes.LOGIN, navController.currentDestination?.route)
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  Startup Reconciliation Gate
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun navigatesToMain_whenAnonymousUserWithNullEmailAndNotReconciled() {
+        val navController = buildTestNavController()
+        val userPreferenceRepository = mockk<UserPreferenceRepository>(relaxed = true)
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = flowOf(true),
+                        onboardingFlow = flowOf(true),
+                        isReconciledFlow = flowOf(false),
+                        currentUserEmail = null,
+                        userPreferenceRepository = userPreferenceRepository
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 2_000L) {
+            navController.currentDestination?.route == Routes.MAIN
+        }
+
+        assertEquals(Routes.MAIN, navController.currentDestination?.route)
+        coVerify(exactly = 1) { userPreferenceRepository.setIsReconciled(true) }
+    }
+
+    @Test
+    fun navigatesToOnboarding_whenAnonymousUserWithNullEmailAndOnboardingIncomplete() {
+        val navController = buildTestNavController()
+        val userPreferenceRepository = mockk<UserPreferenceRepository>(relaxed = true)
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = flowOf(true),
+                        onboardingFlow = flowOf(false),
+                        isReconciledFlow = flowOf(false),
+                        currentUserEmail = null,
+                        userPreferenceRepository = userPreferenceRepository
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 2_000L) {
+            navController.currentDestination?.route == Routes.ONBOARDING
+        }
+
+        assertEquals(Routes.ONBOARDING, navController.currentDestination?.route)
+        coVerify(exactly = 1) { userPreferenceRepository.setIsReconciled(true) }
+    }
+
+    @Test
+    fun failsOpenToMain_whenPendingReconciliationCheckFails() {
+        val navController = buildTestNavController()
+        val userPreferenceRepository = mockk<UserPreferenceRepository>(relaxed = true)
+        val checkPendingReconciliationUseCase = mockk<CheckPendingReconciliationUseCase>().apply {
+            coEvery { this@apply.invoke("user@example.com") } returns Result.failure(RuntimeException("Network error"))
+        }
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = flowOf(true),
+                        onboardingFlow = flowOf(true),
+                        isReconciledFlow = flowOf(false),
+                        currentUserEmail = "user@example.com",
+                        checkPendingReconciliationUseCase = checkPendingReconciliationUseCase,
+                        userPreferenceRepository = userPreferenceRepository
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 2_000L) {
+            navController.currentDestination?.route == Routes.MAIN
+        }
+
+        assertEquals(Routes.MAIN, navController.currentDestination?.route)
+        coVerify(exactly = 0) { userPreferenceRepository.setIsReconciled(true) }
+    }
+
+    @Test
+    fun failsOpenToMain_whenPendingReconciliationCheckTimesOut() {
+        val navController = buildTestNavController()
+        val userPreferenceRepository = mockk<UserPreferenceRepository>(relaxed = true)
+        val checkPendingReconciliationUseCase = mockk<CheckPendingReconciliationUseCase>().apply {
+            coEvery { this@apply.invoke("user@example.com") } coAnswers { awaitCancellation() }
+        }
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = flowOf(true),
+                        onboardingFlow = flowOf(true),
+                        isReconciledFlow = flowOf(false),
+                        currentUserEmail = "user@example.com",
+                        checkPendingReconciliationUseCase = checkPendingReconciliationUseCase,
+                        userPreferenceRepository = userPreferenceRepository
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(
+                        navController = navController,
+                        reconciliationTimeoutMs = 100L
+                    )
+                }
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 2_000L) {
+            navController.currentDestination?.route == Routes.MAIN
+        }
+
+        assertEquals(Routes.MAIN, navController.currentDestination?.route)
+        coVerify(exactly = 0) { userPreferenceRepository.setIsReconciled(true) }
+    }
+
+    @Test
+    fun navigatesToReconciliation_whenPendingReconciliationExists() {
+        val navController = buildTestNavController()
+        val checkPendingReconciliationUseCase = mockk<CheckPendingReconciliationUseCase>().apply {
+            coEvery { this@apply.invoke("user@example.com") } returns Result.success(true)
+        }
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = flowOf(true),
+                        onboardingFlow = flowOf(false),
+                        isReconciledFlow = flowOf(false),
+                        currentUserEmail = "user@example.com",
+                        checkPendingReconciliationUseCase = checkPendingReconciliationUseCase
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 2_000L) {
+            navController.currentDestination?.route == Routes.RECONCILIATION
+        }
+
+        assertEquals(Routes.RECONCILIATION, navController.currentDestination?.route)
     }
 }

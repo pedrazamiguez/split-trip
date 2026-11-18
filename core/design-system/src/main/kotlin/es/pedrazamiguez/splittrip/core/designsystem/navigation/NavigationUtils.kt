@@ -19,18 +19,36 @@ object NavigationUtils {
     ): String? = when {
         isUserLoggedIn == null || onboardingCompleted == null || isReconciled == null -> null
         isUserLoggedIn == false -> Routes.LOGIN
-        isReconciled == false -> {
-            if (!isReconciliationChecked) {
-                null
-            } else if (hasPendingReconciliation == true) {
-                Routes.RECONCILIATION
-            } else {
-                null
-            }
-        }
+        isReconciled == false && !isReconciliationChecked -> null
+        isReconciled == false && hasPendingReconciliation == true -> Routes.RECONCILIATION
         onboardingCompleted == false -> Routes.ONBOARDING
         else -> Routes.MAIN
     }
+
+    /**
+     * Action to take when [MainActivity.onNewIntent] receives an [Intent].
+     */
+    enum class DeepLinkDispatchAction {
+        IGNORE,
+        BUFFER,
+        HANDLE_IMMEDIATELY
+    }
+
+    /**
+     * Classifies how an incoming `onNewIntent` should be handled based on whether it
+     * carries a deep-link URI and the current root navigation route.
+     */
+    fun resolveNewIntentAction(
+        hasDeepLinkUri: Boolean,
+        currentRoute: String?
+    ): DeepLinkDispatchAction = when {
+        !hasDeepLinkUri -> DeepLinkDispatchAction.IGNORE
+        currentRoute == null || isGateRoute(currentRoute) -> DeepLinkDispatchAction.BUFFER
+        else -> DeepLinkDispatchAction.HANDLE_IMMEDIATELY
+    }
+
+    private fun isGateRoute(route: String?): Boolean =
+        isAuthRoute(route) || route == Routes.ONBOARDING || route == Routes.RECONCILIATION
 
     /**
      * Resolves the destination to navigate to after a successful login.

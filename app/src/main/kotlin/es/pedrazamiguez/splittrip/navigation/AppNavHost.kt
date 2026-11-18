@@ -71,8 +71,11 @@ import es.pedrazamiguez.splittrip.features.profile.navigation.profileGraph
 import es.pedrazamiguez.splittrip.features.settings.navigation.settingsGraph
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.compose.getKoin
 import timber.log.Timber
+
+private const val DEFAULT_RECONCILIATION_TIMEOUT_MS = 6_000L
 
 @Suppress(
     "LongMethod",
@@ -80,7 +83,11 @@ import timber.log.Timber
     "CyclomaticComplexMethod"
 ) // Navigation host DSL with auth/onboarding branching
 @Composable
-fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
+fun AppNavHost(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+    reconciliationTimeoutMs: Long = DEFAULT_RECONCILIATION_TIMEOUT_MS
+) {
     val koin = getKoin()
     val telemetryTracker = remember(koin) { koin.get<TelemetryTracker>() }
     val performanceMonitor = remember(koin) { koin.get<PerformanceMonitor>() }
@@ -139,33 +146,6 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
         }
     }
 
-    LaunchedEffect(isUserLoggedIn, isReconciled) {
-        if (isUserLoggedIn == true && isReconciled == false) {
-            val email = authenticationService.currentUserEmail()
-            if (email != null) {
-                checkPendingReconciliationUseCase(email)
-                    .onSuccess { hasPending ->
-                        if (hasPending) {
-                            hasPendingReconciliation = true
-                            isReconciliationChecked = true
-                        } else {
-                            userPreferenceRepository.setIsReconciled(true)
-                            hasPendingReconciliation = false
-                            isReconciliationChecked = true
-                        }
-                    }
-                    .onFailure {
-                        // Fallback on error to proceed silently or keep splash
-                        isReconciliationChecked = true
-                    }
-            } else {
-                isReconciliationChecked = true
-            }
-        } else {
-            isReconciliationChecked = true
-        }
-    }
-
     // Determine the start destination reactively
     val startDestination = NavigationUtils.resolveStartDestination(
         isUserLoggedIn = isUserLoggedIn,
@@ -184,6 +164,44 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
     val stableStartDestination = remember { mutableStateOf<String?>(null) }
     if (stableStartDestination.value == null && startDestination != null) {
         stableStartDestination.value = startDestination
+    }
+
+    StartupReconciliationEffect(
+        isUserLoggedIn = isUserLoggedIn,
+        isReconciled = isReconciled,
+        stableStartDestination = stableStartDestination.value,
+        reconciliationTimeoutMs = reconciliationTimeoutMs,
+        authenticationService = authenticationService,
+        userPreferenceRepository = userPreferenceRepository,
+        checkPendingReconciliationUseCase = checkPendingReconciliationUseCase,
+        onResult = { isChecked, hasPending ->
+            isReconciliationChecked = isChecked
+            hasPendingReconciliation = hasPending
+        }
+    )
+
+    LaunchedEffect(
+        isUserLoggedIn,
+        onboardingCompleted,
+        isReconciled,
+        isReconciliationChecked,
+        hasPendingReconciliation,
+        biometricLockEnabled,
+        startDestination,
+        stableStartDestination.value
+    ) {
+        Timber.tag(LogTag.NAVIGATION).i(
+            "Startup gate: loggedIn=%s onboarding=%s reconciled=%s checkDone=%s " +
+                "pending=%s bioLock=%s resolved=%s latched=%s",
+            isUserLoggedIn,
+            onboardingCompleted,
+            isReconciled,
+            isReconciliationChecked,
+            hasPendingReconciliation,
+            biometricLockEnabled,
+            startDestination,
+            stableStartDestination.value
+        )
     }
 
     // Wrap changing values used inside the NavHost builder in rememberUpdatedState
@@ -225,6 +243,16 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
         onboardingCompleted != true ||
         biometricLockEnabled != null
     val isNavHostReady = stableStartDestination.value != null && isBiometricPreferenceLoaded && !isAppLocked
+
+    LaunchedEffect(stableStartDestination.value, isBiometricPreferenceLoaded, isAppLocked) {
+        Timber.tag(LogTag.NAVIGATION).i(
+            "NavHost gate: latched=%s bioLoaded=%s appLocked=%s ready=%s",
+            stableStartDestination.value,
+            isBiometricPreferenceLoaded,
+            isAppLocked,
+            isNavHostReady
+        )
+    }
 
     CompositionLocalProvider(
         LocalRootNavController provides navController,
@@ -351,24 +379,35 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                                     isAppUnlocked = true
                                     scope.launch {
                                         val email = authenticationService.currentUserEmail()
+                                            ?.takeIf(String::isNotBlank)
                                         val currentUserId = authenticationService.currentUserId()
-                                        if (email != null && currentUserId != null) {
+                                        if (email == null && currentUserId != null) {
+                                            userPreferenceRepository.setIsReconciled(true)
+                                        } else if (email != null && currentUserId != null) {
                                             val isReconciledVal = userPreferenceRepository.getIsReconciled().first()
                                             if (!isReconciledVal) {
-                                                checkPendingReconciliationUseCase(email)
-                                                    .onSuccess { hasPending ->
-                                                        if (hasPending) {
-                                                            navController.navigate(Routes.RECONCILIATION) {
-                                                                popUpTo(Routes.LOGIN) { inclusive = true }
-                                                            }
-                                                            return@launch
-                                                        } else {
-                                                            userPreferenceRepository.setIsReconciled(true)
-                                                        }
+                                                val result = withTimeoutOrNull(reconciliationTimeoutMs) {
+                                                    checkPendingReconciliationUseCase(email)
+                                                }
+                                                if (result == null) {
+                                                    Timber.tag(LogTag.NAVIGATION).w(
+                                                        "Post-login reconciliation check timed out after %d ms; " +
+                                                            "failing open",
+                                                        reconciliationTimeoutMs
+                                                    )
+                                                } else if (result.getOrNull() == true) {
+                                                    navController.navigate(Routes.RECONCILIATION) {
+                                                        popUpTo(Routes.LOGIN) { inclusive = true }
                                                     }
-                                                    .onFailure {
-                                                        // Fail-safe: proceed if check fails
-                                                    }
+                                                    return@launch
+                                                } else if (result.isSuccess) {
+                                                    userPreferenceRepository.setIsReconciled(true)
+                                                } else {
+                                                    Timber.tag(LogTag.NAVIGATION).w(
+                                                        result.exceptionOrNull(),
+                                                        "Post-login reconciliation check failed; failing open"
+                                                    )
+                                                }
                                             }
                                         }
                                         val destination = NavigationUtils.resolvePostLoginDestination(
@@ -415,6 +454,9 @@ fun AppNavHost(modifier: Modifier = Modifier, navController: NavHostController =
                                     }
                                     navController.navigate(destination) {
                                         popUpTo(Routes.RECONCILIATION) { inclusive = true }
+                                    }
+                                    if (destination == Routes.MAIN) {
+                                        replayPendingDeepLink(deepLinkHolder, navController)
                                     }
                                 }
                             )
