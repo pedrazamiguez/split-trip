@@ -28,6 +28,7 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
     val selectedSplitType = uiState.selectedSplitType
     val isEqualMode = selectedSplitType?.id == SplitType.EQUAL.name
     val isPercentMode = selectedSplitType?.id == SplitType.PERCENT.name
+    val currencySymbol = uiState.groupCurrency?.code
 
     Column(
         modifier = modifier,
@@ -90,6 +91,7 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
                         onEvent(AddExpenseUiEvent.IntraSubunitShareLockToggled(subunitId, userId))
                     }
                 ),
+                currencySymbol = currencySymbol,
                 modifier = Modifier.fillMaxWidth()
             )
         } else if (uiState.splits.isNotEmpty()) {
@@ -113,6 +115,7 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
                 onShareLockToggled = { userId ->
                     onEvent(AddExpenseUiEvent.SplitShareLockToggled(userId))
                 },
+                currencySymbol = currencySymbol,
                 modifier = Modifier.fillMaxWidth()
             )
         }

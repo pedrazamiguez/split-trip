@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.ShareAllocationInputRow
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardFastTrackBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
@@ -216,5 +218,32 @@ class WizardNavigationBarTest {
         composeRule.waitForIdle()
 
         assertTrue(skipped)
+    }
+
+    @Test
+    fun rendersShareAllocationInputRow_andTogglesLock() {
+        var lockToggled = false
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ShareAllocationInputRow(
+                    value = "36.37",
+                    onValueChange = {},
+                    unitText = "%",
+                    isLocked = false,
+                    lockContentDescription = "Lock share",
+                    onLockToggle = { lockToggled = true }
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("36.37").assertIsDisplayed()
+        composeRule.onNodeWithText("%").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Lock share").performClick()
+        composeRule.waitForIdle()
+
+        assertTrue(lockToggled)
     }
 }

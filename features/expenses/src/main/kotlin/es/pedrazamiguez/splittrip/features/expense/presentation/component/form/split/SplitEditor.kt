@@ -29,14 +29,15 @@ fun SplitEditor(
     onExcludedToggled: (userId: String) -> Unit,
     onSoloSelected: (userId: String) -> Unit,
     onShareLockToggled: (userId: String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currencySymbol: String? = null
 ) {
     val focusManager = LocalFocusManager.current
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(
-            if (isEqualMode) MaterialTheme.spacing.Small else MaterialTheme.spacing.Medium
+            if (isEqualMode) MaterialTheme.spacing.Small else MaterialTheme.spacing.Default
         )
     ) {
         splits.forEach { split ->
@@ -44,6 +45,7 @@ fun SplitEditor(
                 split = split,
                 isEqualMode = isEqualMode,
                 isPercentMode = isPercentMode,
+                currencySymbol = currencySymbol,
                 onAmountChanged = { amount -> onAmountChanged(split.userId, amount) },
                 onPercentageChanged = { pct -> onPercentageChanged(split.userId, pct) },
                 onExcludedToggled = { onExcludedToggled(split.userId) },

@@ -96,7 +96,8 @@ private fun EntitySplitEditorExactPreview() {
             isEqualMode = false,
             isPercentMode = false,
             availableSplitTypes = PREVIEW_SPLIT_TYPES,
-            events = PREVIEW_EVENTS
+            events = PREVIEW_EVENTS,
+            currencySymbol = "€"
         )
     }
 }
@@ -110,7 +111,8 @@ private fun EntitySplitEditorPercentagePreview() {
             isEqualMode = false,
             isPercentMode = true,
             availableSplitTypes = PREVIEW_SPLIT_TYPES,
-            events = PREVIEW_EVENTS
+            events = PREVIEW_EVENTS,
+            currencySymbol = "€"
         )
     }
 }
@@ -124,7 +126,8 @@ private fun EntitySplitEditorExactNarrowPreview() {
             isEqualMode = false,
             isPercentMode = false,
             availableSplitTypes = PREVIEW_SPLIT_TYPES,
-            events = PREVIEW_EVENTS
+            events = PREVIEW_EVENTS,
+            currencySymbol = "€"
         )
     }
 }
@@ -141,7 +144,8 @@ private fun SplitEditorExactNarrowPreview() {
             onPercentageChanged = { _, _ -> },
             onExcludedToggled = {},
             onSoloSelected = {},
-            onShareLockToggled = {}
+            onShareLockToggled = {},
+            currencySymbol = "€"
         )
     }
 }

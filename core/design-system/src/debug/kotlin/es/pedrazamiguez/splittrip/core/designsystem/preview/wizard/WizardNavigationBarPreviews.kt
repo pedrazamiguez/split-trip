@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.ShareAllocationInputRow
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.ShareLockButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardFastTrackBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
@@ -137,6 +138,14 @@ private fun WizardReviewRowAndShareLockPreview() {
                     onClick = {}
                 )
             }
+            ShareAllocationInputRow(
+                value = "36.37",
+                onValueChange = {},
+                unitText = "%",
+                isLocked = true,
+                lockContentDescription = "Unlock share",
+                onLockToggle = {}
+            )
         }
     }
 }

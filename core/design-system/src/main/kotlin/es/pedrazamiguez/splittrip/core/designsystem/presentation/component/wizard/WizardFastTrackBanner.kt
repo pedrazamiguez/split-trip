@@ -4,8 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -19,13 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowRight
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.ButtonContentRow
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 
 private val FAST_TRACK_PILL_HEIGHT = 36.dp
@@ -35,21 +34,19 @@ private const val DISABLED_CONTENT_ALPHA = 0.38f
 private const val HINT_MAX_LINES = 2
 
 /**
- * Contextual fast-track banner placed at the top of [WizardScrollableStepContainer]
+ * Contextual fast-track header placed at the top of [WizardScrollableStepContainer]
  * (beneath [WizardStepIndicator]) when jumping directly to the review step is available.
  *
- * Uses a tonal [FlatCard] (`surfaceContainerLow`) with a [FlowRow] so that on standard screens
- * (`> 360dp`) the optional smart-defaults hint and the compact `"Skip to Review"` pill sit
- * cleanly side-by-side on a single row, while on compact screens (`<= 360dp`) they wrap
- * gracefully without clipping or stacking over the fixed bottom navigation bar.
+ * Renders directly on the page `surface` canvas without a card wrapper so there are no
+ * nested surfaces, centering both the optional smart-defaults caption and the `"Skip to Review"`
+ * action pill horizontally.
  *
  * @param label                Localised label for the fast-track action pill (e.g., `"Skip to Review"`).
  * @param onSkipToReview       Callback invoked when the fast-track pill is tapped.
- * @param modifier             Optional modifier applied to the outer [FlatCard].
+ * @param modifier             Optional modifier applied to the root [Column].
  * @param optionalDefaultsHint Optional caption explaining smart defaults applied to skipped steps.
  * @param enabled              Whether the fast-track pill is interactive.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WizardFastTrackBanner(
     label: String,
@@ -58,47 +55,30 @@ fun WizardFastTrackBanner(
     optionalDefaultsHint: String? = null,
     enabled: Boolean = true
 ) {
-    FlatCard(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(
                 start = MaterialTheme.spacing.Large,
                 end = MaterialTheme.spacing.Large,
                 top = MaterialTheme.spacing.Small
-            )
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = MaterialTheme.spacing.Medium,
-                    vertical = MaterialTheme.spacing.Small
-                ),
-            horizontalArrangement = if (optionalDefaultsHint != null) {
-                Arrangement.SpaceBetween
-            } else {
-                Arrangement.End
-            },
-            verticalArrangement = Arrangement.spacedBy(
-                MaterialTheme.spacing.ExtraSmall,
-                Alignment.CenterVertically
-            )
-        ) {
-            optionalDefaultsHint?.let { hint ->
-                CaptionText(
-                    text = hint,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = HINT_MAX_LINES,
-                    modifier = Modifier.align(Alignment.CenterVertically)
-                )
-            }
-            WizardFastTrackPill(
-                label = label,
-                enabled = enabled,
-                onClick = onSkipToReview,
-                modifier = Modifier.align(Alignment.CenterVertically)
+        optionalDefaultsHint?.let { hint ->
+            CaptionText(
+                text = hint,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = HINT_MAX_LINES
             )
         }
+        WizardFastTrackPill(
+            label = label,
+            enabled = enabled,
+            onClick = onSkipToReview
+        )
     }
 }
 
