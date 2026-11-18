@@ -180,3 +180,25 @@ export interface NotificationDisplay {
   /** Android notification channel ID for routing. */
   channelId: string;
 }
+
+export interface OerLatestResponse {
+  disclaimer?: string;
+  license?: string;
+  timestamp: number;
+  base: string;
+  rates: Record<string, number>;
+}
+
+export type OerCurrenciesResponse = Record<string, string>;
+
+export interface ExchangeRatesDoc {
+  base: string;
+  timestamp: number;
+  rates: Record<string, string>;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
+
+export interface CurrenciesDoc {
+  currencies: Record<string, string>;
+  updatedAt: FirebaseFirestore.Timestamp;
+}

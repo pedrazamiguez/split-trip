@@ -2,8 +2,6 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCurrencyDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.remote.RemoteCurrencyDataSource
-import es.pedrazamiguez.splittrip.domain.exception.ApiKeyNotConfiguredException
-import es.pedrazamiguez.splittrip.domain.exception.RemoteCurrencyApiException
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateResult
@@ -29,12 +27,6 @@ class CurrencyRepositoryImpl(
             remote
         } catch (e: CancellationException) {
             throw e
-        } catch (ignored: ApiKeyNotConfiguredException) {
-            Timber.w("Failed to fetch currencies: API key is not configured or placeholder is being used.")
-            local ?: localDataSource.getCurrencies()
-        } catch (e: RemoteCurrencyApiException) {
-            Timber.e(e, formatHttpFailureDetail(e.httpCode, "currencies"))
-            local ?: localDataSource.getCurrencies()
         } catch (e: Exception) {
             Timber.e(e, "Remote network or unexpected error fetching currencies")
             local ?: localDataSource.getCurrencies()
@@ -54,44 +46,29 @@ class CurrencyRepositoryImpl(
                         .minus(cacheDuration)
                 )
 
-        return when {
-            localRates.exchangeRates.isEmpty() -> {
-                try {
-                    val remoteRates = remoteDataSource.fetchExchangeRates(baseCurrencyCode)
-                    localDataSource.saveExchangeRates(remoteRates)
-                    ExchangeRateResult.Fresh(remoteRates)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logExchangeRateFailure(
-                        exception = e,
-                        baseCurrencyCode = baseCurrencyCode,
-                        hasStaleFallback = false,
-                        lastUpdated = lastUpdated
-                    )
-                    ExchangeRateResult.Empty
-                }
-            }
+        val hasLocalFallback = localRates.exchangeRates.isNotEmpty()
+        if (hasLocalFallback && !isStale) {
+            return ExchangeRateResult.Fresh(localRates)
+        }
 
-            isStale -> {
-                try {
-                    val remoteRates = remoteDataSource.fetchExchangeRates(baseCurrencyCode)
-                    localDataSource.saveExchangeRates(remoteRates)
-                    ExchangeRateResult.Fresh(remoteRates)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logExchangeRateFailure(
-                        exception = e,
-                        baseCurrencyCode = baseCurrencyCode,
-                        hasStaleFallback = true,
-                        lastUpdated = lastUpdated
-                    )
-                    ExchangeRateResult.Stale(localRates)
-                }
+        return try {
+            val remoteRates = remoteDataSource.fetchExchangeRates(baseCurrencyCode)
+            localDataSource.saveExchangeRates(remoteRates)
+            ExchangeRateResult.Fresh(remoteRates)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logExchangeRateFailure(
+                exception = e,
+                baseCurrencyCode = baseCurrencyCode,
+                hasStaleFallback = hasLocalFallback,
+                lastUpdated = lastUpdated
+            )
+            if (hasLocalFallback) {
+                ExchangeRateResult.Stale(localRates)
+            } else {
+                ExchangeRateResult.Empty
             }
-
-            else -> ExchangeRateResult.Fresh(localRates)
         }
     }
 
@@ -101,32 +78,12 @@ class CurrencyRepositoryImpl(
         hasStaleFallback: Boolean,
         lastUpdated: Long?
     ) {
-        if (exception is ApiKeyNotConfiguredException) {
-            val message = if (hasStaleFallback) {
-                "Failed to refresh exchange rates for baseCurrencyCode=%s: " +
-                    "API key is not configured or placeholder is being used; using stale cache."
-            } else {
-                "Failed to fetch exchange rates for baseCurrencyCode=%s: " +
-                    "API key is not configured or placeholder is being used (no local cache fallback available)."
-            }
-            Timber.w(message, baseCurrencyCode)
-            return
-        }
-
-        val detail = when (exception) {
-            is RemoteCurrencyApiException -> formatHttpFailureDetail(exception.httpCode, "exchange rates")
-            else -> if (hasStaleFallback) {
-                "Remote network or unexpected error refreshing exchange rates"
-            } else {
-                "Remote network or unexpected error fetching exchange rates"
-            }
-        }
         if (hasStaleFallback) {
             val formattedLastUpdated = lastUpdated?.let { timestamp -> Instant.ofEpochSecond(timestamp).toString() }
             Timber.w(
                 exception,
-                "%s for baseCurrencyCode=%s (lastUpdated=%s, cacheDuration=%s); using stale cache",
-                detail,
+                "Remote network or unexpected error refreshing exchange rates for baseCurrencyCode=%s " +
+                    "(lastUpdated=%s, cacheDuration=%s); using stale cache",
                 baseCurrencyCode,
                 formattedLastUpdated,
                 cacheDuration
@@ -134,22 +91,10 @@ class CurrencyRepositoryImpl(
         } else {
             Timber.e(
                 exception,
-                "%s for baseCurrencyCode=%s; no local cache fallback available",
-                detail,
+                "Remote network or unexpected error fetching exchange rates for baseCurrencyCode=%s; " +
+                    "no local cache fallback available",
                 baseCurrencyCode
             )
         }
-    }
-
-    private fun formatHttpFailureDetail(httpCode: Int, target: String): String {
-        return if (httpCode in AUTH_HTTP_CODES) {
-            "Remote API rejected $target request (HTTP $httpCode; check OER_APP_ID)"
-        } else {
-            "Remote API request failed for $target (HTTP $httpCode)"
-        }
-    }
-
-    companion object {
-        private val AUTH_HTTP_CODES = setOf(401, 403)
     }
 }

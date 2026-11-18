@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCurrencyDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.remote.RemoteCurrencyDataSource
-import es.pedrazamiguez.splittrip.domain.exception.ApiKeyNotConfiguredException
 import es.pedrazamiguez.splittrip.domain.exception.RemoteCurrencyApiException
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.ExchangeRate
@@ -14,15 +13,17 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
-import java.io.IOException
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.Instant
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -130,42 +131,16 @@ class CurrencyRepositoryImplTest {
             assertEquals(listOf(usd, eur), result)
             coVerify { remote.fetchCurrencies() }
             coVerify { local.saveCurrencies(listOf(usd, eur)) }
-            // Should NOT query local when forceRefresh=true
             coVerify(exactly = 0) { local.getCurrencies() }
         }
 
         @Test
-        fun `returns local currencies on ApiKeyNotConfiguredException`() = runTest {
+        fun `returns local currencies on remote fetch exception`() = runTest {
+            val remoteException = RemoteCurrencyApiException(500, "network error")
+            assertEquals(500, remoteException.httpCode)
+            assertEquals("network error", remoteException.message)
             coEvery { local.getCurrencies() } returns listOf(usd, eur)
-            coEvery { remote.fetchCurrencies() } throws ApiKeyNotConfiguredException("Missing key")
-
-            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = true)
-
-            assertEquals(listOf(usd, eur), result)
-            coVerify { remote.fetchCurrencies() }
-            coVerify(exactly = 1) { local.getCurrencies() }
-            assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
-            assertTrue(loggedErrors.isEmpty())
-        }
-
-        @Test
-        fun `returns empty list on ApiKeyNotConfiguredException and empty local`() = runTest {
-            coEvery { local.getCurrencies() } returns emptyList()
-            coEvery { remote.fetchCurrencies() } throws ApiKeyNotConfiguredException("Missing key")
-
-            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = false)
-
-            assertEquals(emptyList<Currency>(), result)
-            coVerify { remote.fetchCurrencies() }
-            coVerify(exactly = 1) { local.getCurrencies() }
-            assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
-            assertTrue(loggedErrors.isEmpty())
-        }
-
-        @Test
-        fun `returns local currencies on remote fetch general exception`() = runTest {
-            coEvery { local.getCurrencies() } returns listOf(usd, eur)
-            coEvery { remote.fetchCurrencies() } throws RuntimeException("network error")
+            coEvery { remote.fetchCurrencies() } throws remoteException
 
             val result = currencyRepositoryImpl.getCurrencies(forceRefresh = true)
 
@@ -173,6 +148,31 @@ class CurrencyRepositoryImplTest {
             coVerify { remote.fetchCurrencies() }
             coVerify(exactly = 1) { local.getCurrencies() }
             assertTrue(loggedErrors.isNotEmpty())
+        }
+
+        @Test
+        fun `returns empty list when remote fetch throws and local is empty`() = runTest {
+            coEvery { local.getCurrencies() } returns emptyList()
+            coEvery { remote.fetchCurrencies() } throws RuntimeException("network error")
+
+            val result = currencyRepositoryImpl.getCurrencies(forceRefresh = false)
+
+            assertEquals(emptyList<Currency>(), result)
+            coVerify { remote.fetchCurrencies() }
+            coVerify(exactly = 1) { local.getCurrencies() }
+            assertTrue(loggedErrors.isNotEmpty())
+        }
+
+        @Test
+        fun `rethrows CancellationException when fetching currencies`() = runTest {
+            coEvery { local.getCurrencies() } returns emptyList()
+            coEvery { remote.fetchCurrencies() } throws CancellationException("cancelled")
+
+            assertThrows(CancellationException::class.java) {
+                runBlocking {
+                    currencyRepositoryImpl.getCurrencies(forceRefresh = false)
+                }
+            }
         }
     }
 
@@ -205,6 +205,7 @@ class CurrencyRepositoryImplTest {
 
             val result = currencyRepositoryImpl.getExchangeRates("USD")
             assertTrue(result is ExchangeRateResult.Stale)
+            assertTrue(loggedWarnings.any { it.contains("using stale cache") })
         }
 
         @Test
@@ -236,6 +237,7 @@ class CurrencyRepositoryImplTest {
             val result = currencyRepositoryImpl.getExchangeRates("USD")
 
             assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
+            assertTrue(loggedErrors.any { it.contains("no local cache fallback available") })
         }
 
         @Test
@@ -266,138 +268,17 @@ class CurrencyRepositoryImplTest {
         }
 
         @Test
-        fun `returns Empty on ApiKeyNotConfiguredException and empty local rates`() = runTest {
+        fun `rethrows CancellationException when fetching exchange rates`() = runTest {
             val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
-
             coEvery { local.getExchangeRates("USD") } returns emptyRates
             coEvery { local.getLastUpdated("USD") } returns null
-            coEvery { remote.fetchExchangeRates("USD") } throws ApiKeyNotConfiguredException("Missing key")
+            coEvery { remote.fetchExchangeRates("USD") } throws CancellationException("cancelled")
 
-            val result = currencyRepositoryImpl.getExchangeRates("USD")
-
-            assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
-            assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
-            assertTrue(loggedErrors.isEmpty())
+            assertThrows(CancellationException::class.java) {
+                runBlocking {
+                    currencyRepositoryImpl.getExchangeRates("USD")
+                }
+            }
         }
-
-        @Test
-        fun `falls back to stale on ApiKeyNotConfiguredException`() = runTest {
-            val staleRates = freshRates.copy(
-                lastUpdated = Instant
-                    .now()
-                    .minusSeconds(86_400)
-            )
-
-            coEvery { local.getExchangeRates("USD") } returns staleRates
-            coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
-            coEvery { remote.fetchExchangeRates("USD") } throws ApiKeyNotConfiguredException("Missing key")
-
-            val result = currencyRepositoryImpl.getExchangeRates("USD")
-            assertTrue(result is ExchangeRateResult.Stale)
-            assertTrue(loggedWarnings.any { it.contains("API key is not configured or placeholder is being used") })
-            assertTrue(loggedErrors.isEmpty())
-        }
-
-        @Test
-        fun `logs HTTP 401 rejection and no local cache fallback when remote throws 401 and local is empty`() =
-            runTest {
-                val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
-
-                coEvery { local.getExchangeRates("USD") } returns emptyRates
-                coEvery { local.getLastUpdated("USD") } returns null
-                coEvery { remote.fetchExchangeRates("USD") } throws RemoteCurrencyApiException(401, "HTTP 401")
-
-                val result = currencyRepositoryImpl.getExchangeRates("USD")
-
-                assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
-                assertTrue(
-                    loggedErrors.any {
-                        it.contains("401") &&
-                            it.contains("OER_APP_ID") &&
-                            it.contains("no local cache fallback available")
-                    }
-                )
-                assertTrue(loggedWarnings.isEmpty())
-            }
-
-        @Test
-        fun `logs HTTP 500 failure and no local cache fallback when remote throws 500 and local is empty`() =
-            runTest {
-                val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
-
-                coEvery { local.getExchangeRates("USD") } returns emptyRates
-                coEvery { local.getLastUpdated("USD") } returns null
-                coEvery { remote.fetchExchangeRates("USD") } throws RemoteCurrencyApiException(500, "HTTP 500")
-
-                val result = currencyRepositoryImpl.getExchangeRates("USD")
-
-                assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
-                assertTrue(
-                    loggedErrors.any {
-                        it.contains("500") && it.contains("no local cache fallback available")
-                    }
-                )
-                assertTrue(loggedWarnings.isEmpty())
-            }
-
-        @Test
-        fun `logs network error and no local cache fallback when remote throws IOException and local is empty`() =
-            runTest {
-                val emptyRates = ExchangeRates(usd, emptyList(), Instant.EPOCH)
-
-                coEvery { local.getExchangeRates("USD") } returns emptyRates
-                coEvery { local.getLastUpdated("USD") } returns null
-                coEvery { remote.fetchExchangeRates("USD") } throws IOException("timeout")
-
-                val result = currencyRepositoryImpl.getExchangeRates("USD")
-
-                assertInstanceOf(ExchangeRateResult.Empty::class.java, result)
-                assertTrue(
-                    loggedErrors.any {
-                        it.contains("network", ignoreCase = true) && it.contains("no local cache fallback available")
-                    }
-                )
-                assertTrue(loggedWarnings.isEmpty())
-            }
-
-        @Test
-        fun `logs HTTP 401 warning and uses stale cache when remote throws 401 and cache is stale`() =
-            runTest {
-                val staleRates = freshRates.copy(lastUpdated = Instant.now().minusSeconds(86_400))
-
-                coEvery { local.getExchangeRates("USD") } returns staleRates
-                coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
-                coEvery { remote.fetchExchangeRates("USD") } throws RemoteCurrencyApiException(401, "HTTP 401")
-
-                val result = currencyRepositoryImpl.getExchangeRates("USD")
-
-                assertInstanceOf(ExchangeRateResult.Stale::class.java, result)
-                assertTrue(
-                    loggedWarnings.any {
-                        it.contains("401") && it.contains("using stale cache")
-                    }
-                )
-                assertTrue(loggedErrors.isEmpty())
-            }
-
-        @Test
-        fun `logs network error warning and uses stale cache when remote throws IOException and cache is stale`() =
-            runTest {
-                val staleRates = freshRates.copy(lastUpdated = Instant.now().minusSeconds(86_400))
-
-                coEvery { local.getExchangeRates("USD") } returns staleRates
-                coEvery { local.getLastUpdated("USD") } returns staleRates.lastUpdated.epochSecond
-                coEvery { remote.fetchExchangeRates("USD") } throws IOException("timeout")
-
-                val result = currencyRepositoryImpl.getExchangeRates("USD")
-
-                assertInstanceOf(ExchangeRateResult.Stale::class.java, result)
-                assertTrue(
-                    loggedWarnings.any {
-                        it.contains("network", ignoreCase = true) && it.contains("using stale cache")
-                    }
-                )
-                assertTrue(loggedErrors.isEmpty())
-            }
     }
 }

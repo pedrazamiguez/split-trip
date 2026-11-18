@@ -13,23 +13,14 @@
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
 
 ############################################################################
-# 🌐 RETROFIT / OKHTTP / GSON (Reflection Boundaries)
+# 🌐 GSON (Reflection Boundaries)
 ############################################################################
-
-# Retrofit (API interfaces and annotations)
--keep,allowobfuscation interface * {
-    @retrofit2.http.* <methods>;
-}
 
 # Gson serialization support & warnings
 -dontwarn sun.misc.**
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
 -keep class * implements com.google.gson.JsonDeserializer
-
-# Keep DTO classes and Retrofit API interfaces
--keep class es.pedrazamiguez.splittrip.data.remote.dto.** { *; }
--keep class es.pedrazamiguez.splittrip.data.remote.api.** { *; }
 
 ############################################################################
 # 🔥 FIRESTORE DOCUMENT MODELS (Reflection Boundary)

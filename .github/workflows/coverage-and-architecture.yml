@@ -21,7 +21,6 @@ jobs:
       checks: write
       actions: read
     env:
-      OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
     steps:
       - uses: actions/checkout@v6
@@ -77,7 +76,6 @@ jobs:
     permissions:
       contents: read
     env:
-      OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
     steps:
       - uses: actions/checkout@v6
@@ -134,7 +132,6 @@ jobs:
       actions: read
       pull-requests: write   # required to post the QG-failed comment
     env:
-      OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
     steps:
       - uses: actions/checkout@v6
