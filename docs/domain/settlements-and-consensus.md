@@ -41,7 +41,7 @@ Represents the state of mutual consensus:
 |---|---|---|
 | `SUGGESTED` | Materialized proposal generated from balances. | Debtor (`fromUserId`) confirms payment sent. |
 | `CONFIRMED_BY_PAYER` | Debtor marked payment as sent. | Creditor (`toUserId`) confirms receipt. |
-| `DISPUTED` | Either party flagged an issue (amount, non-receipt, invalid currency). | Creditor (`toUserId`) or group creator/admin (direct resolution to `RESOLVED`), or auto-reset on debt details change (to `SUGGESTED`). |
+| `DISPUTED` | Either party flagged an issue (amount, non-receipt, invalid currency) and requested a review (displayed as *"Under review"* / *"En revisión"*). | Creditor (`toUserId`) or group creator/admin (direct resolution to `RESOLVED`), or auto-reset on debt details change (to `SUGGESTED`). |
 | `RESOLVED` | Final state. Settlement is complete and cleared. | Terminal state. |
 
 #### `SettlementPocketType`
@@ -67,8 +67,8 @@ stateDiagram-v2
     SUGGESTED --> CONFIRMED_BY_PAYER: ConfirmSettlementUseCase (Payer / fromUserId)
     CONFIRMED_BY_PAYER --> RESOLVED: ConfirmSettlementUseCase (Payee / toUserId)
     
-    SUGGESTED --> DISPUTED: DisputeSettlementUseCase (Payer or Payee)
-    CONFIRMED_BY_PAYER --> DISPUTED: DisputeSettlementUseCase (Payee)
+    SUGGESTED --> DISPUTED: DisputeSettlementUseCase (Request review — Payer or Payee)
+    CONFIRMED_BY_PAYER --> DISPUTED: DisputeSettlementUseCase (Request review — Payee)
     
     DISPUTED --> SUGGESTED: Re-seeded / Reset (when calculated debt details change)
     DISPUTED --> RESOLVED: ConfirmSettlementUseCase (Payee / toUserId or Group Creator)
@@ -107,7 +107,7 @@ stateDiagram-v2
 
 ## 3. Pocket-Type Confirmation Matrix
 
-| Pocket Type | `SUGGESTED` Payer Confirmation | `CONFIRMED_BY_PAYER` Payee Confirmation | Dispute Handling |
+| Pocket Type | `SUGGESTED` Payer Confirmation | `CONFIRMED_BY_PAYER` Payee Confirmation | Review Request Handling |
 |---|---|---|---|
 | **`POCKET`** | Mandatory | Mandatory | Allowed by either party until `RESOLVED`. |
 | **`CASH`** | **N/A (Read-Only)** | **N/A (Read-Only)** | **N/A (Read-Only)** |
@@ -178,7 +178,7 @@ When a `SettlementRecord` status changes in Firestore:
 1. The `onSettlementStatusUpdated` Cloud Function is triggered.
 2. Formats a localized FCM push notification:
    - `CONFIRMED_BY_PAYER`: Notifies `toUserId` ("*Member X marked payment of $Y as sent. Please confirm receipt.*").
-   - `DISPUTED`: Notifies the counterparty ("*Member X disputed the settlement proposal.*").
+   - `DISPUTED`: Notifies the counterparty ("*Member X requested a review of a $Y payment.*").
    - `RESOLVED`: Notifies `fromUserId` ("*Member Y confirmed receipt of your payment.*").
 
 ---

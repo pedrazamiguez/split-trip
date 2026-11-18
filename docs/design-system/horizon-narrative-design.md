@@ -397,7 +397,7 @@ A non-interactive display tag component designed for metadata labels, dates, cat
   - `TERTIARY`: `tertiaryContainer` / `onTertiaryContainer` (e.g., pending statuses)
   - `WARNING`: `tertiaryContainer` / `onTertiaryContainer` (e.g., awaiting confirmation)
   - `SUCCESS`: `primaryContainer` / `onPrimaryContainer` (e.g., confirmed/settled)
-  - `ERROR`: `errorContainer` / `onErrorContainer` (e.g., disputed)
+  - `ERROR`: `errorContainer` / `onErrorContainer` (e.g., under review)
   - `NEUTRAL`: `surfaceContainerHigh` / `onSurfaceVariant` (e.g., dates, unstyled tags, pockets)
 
 Used across: `HeroSection` (expense details), `ContributionHeroSection`, `SplitBreakdownSection`, `SubunitGroup`, `GroupSettlementItem`, `SettlementConsensusCard`.

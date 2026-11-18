@@ -58,6 +58,7 @@ All copy must align strictly with [`docs/domain/ubiquitous-language.md`](../doma
 | :--- | :--- | :--- | :--- |
 | **Group Pool** | Group pocket / Virtual pocket | Pocket del grupo / Pocket virtual | *Bote*, *Bolsa*, *Fondo común*, *Cuenta* |
 | **Debt Resolution** | Settlement | Acuerdo de pago | *Liquidación* (implies clearance sale), *Finiquito* |
+| **Settlement Review** | Request review / Under review | Pedir revisión / Solicitar revisión / En revisión | *Disputar*, *Disputa*, *Disputado* |
 | **Funding Inflow** | Contribution | Aportación | *Ingreso*, *Top-up*, *Recarga* |
 | **Cash Outflow** | Cash withdrawal | Retirada de efectivo | *Retiro* (Latin American / retirement), *Saca* |
 | **Expense Division** | Split / Entity split | Reparto / Divisiones | *Partición*, *Prorrateo* |

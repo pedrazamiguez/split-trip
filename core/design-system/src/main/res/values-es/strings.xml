@@ -157,7 +157,7 @@
     <string name="settlement_status_pending">Pendiente</string>
     <string name="settlement_status_awaiting_confirmation">Esperando confirmación</string>
     <string name="settlement_status_confirmed">Confirmado</string>
-    <string name="settlement_status_disputed">Disputado</string>
+    <string name="settlement_status_disputed">En revisión</string>
 
     <!-- Cash Breakdown Bottom Sheet -->
     <string name="core_cash_breakdown_title">Desglose de efectivo</string>

@@ -128,7 +128,7 @@
     <string name="settlement_status_pending">Pendiente</string>
     <string name="settlement_status_awaiting_confirmation">Êpperando confirmaçión</string>
     <string name="settlement_status_confirmed">Confirmao</string>
-    <string name="settlement_status_disputed">Dîpputao</string>
+    <string name="settlement_status_disputed">En rebiçión</string>
     <string name="core_cash_breakdown_title">Dêggloçe de efêttibo</string>
     <string name="core_cash_breakdown_group_scope">Efêttibo der grupo (parte êtt.)</string>
     <string name="core_cash_breakdown_personal_scope">Efêttibo perçonâh</string>
