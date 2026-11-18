@@ -15,7 +15,7 @@ import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
@@ -24,8 +24,6 @@ import es.pedrazamiguez.splittrip.features.group.presentation.component.step.lea
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.leave.LeaveConfirmationStep
 import es.pedrazamiguez.splittrip.features.group.presentation.model.leave.LeaveWizardStep
 import es.pedrazamiguez.splittrip.features.group.presentation.model.leave.LeaveWizardUiState
-
-private val StepBottomPadding = 80.dp
 
 @Suppress("LongMethod", "LongParameterList")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,7 +82,7 @@ fun GroupLeaveWizardSheet(
                     LeaveWizardStep.BALANCE_SUMMARY -> {
                         LeaveBalanceSummaryStep(
                             balanceSummary = leaveWizardState.balanceSummary,
-                            modifier = Modifier.padding(bottom = StepBottomPadding)
+                            modifier = Modifier.padding(bottom = UiConstants.WIZARD_NAV_BAR_HEIGHT)
                         )
                     }
                     LeaveWizardStep.CONFIRMATION -> {
@@ -93,7 +91,7 @@ fun GroupLeaveWizardSheet(
                             subunitImpact = leaveWizardState.subunitImpact,
                             hasUnresolvedSettlements = leaveWizardState.hasUnresolvedSettlements,
                             onGoToSettlementsClicked = onGoToSettlementsClicked,
-                            modifier = Modifier.padding(bottom = StepBottomPadding)
+                            modifier = Modifier.padding(bottom = UiConstants.WIZARD_NAV_BAR_HEIGHT)
                         )
                     }
                 }
@@ -111,7 +109,8 @@ fun GroupLeaveWizardSheet(
                 ),
                 onBack = onBackClicked,
                 onNext = onNextClicked,
-                onSubmit = onConfirmLeave
+                onSubmit = onConfirmLeave,
+                applyWindowInsets = false
             )
         }
     }

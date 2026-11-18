@@ -20,6 +20,8 @@ import org.koin.core.parameter.parametersOf
 
 class AddExpenseScreenUiProviderImpl(override val route: String = Routes.ADD_EXPENSE) : ScreenUiProvider {
 
+    override val showBottomBar: Boolean = false
+
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
         val navController = LocalTabNavController.current

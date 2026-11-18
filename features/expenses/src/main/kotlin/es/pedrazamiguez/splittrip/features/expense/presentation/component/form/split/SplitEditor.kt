@@ -35,7 +35,9 @@ fun SplitEditor(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        verticalArrangement = Arrangement.spacedBy(
+            if (isEqualMode) MaterialTheme.spacing.Small else MaterialTheme.spacing.Medium
+        )
     ) {
         splits.forEach { split ->
             SplitMemberRow(

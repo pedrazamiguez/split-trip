@@ -626,3 +626,60 @@ Selection sub-screens follow a strict, standardized pattern:
 
 - Primary action buttons (`GradientButton`) and destructive actions (`DestructiveButton`) sit directly on the canvas foundation.
 - Maintain full width (`Modifier.fillMaxWidth()`) with standard vertical spacing (`MaterialTheme.spacing.Section` or `MaterialTheme.spacing.Large`) from preceding cards.
+
+---
+
+## 13. Multi-Step Wizard & Write-Flow Layout Standards
+
+All multi-step wizard flows (`Expenses`, `Withdrawals`, `Contributions`, `Groups`, `Subunits`, and `Settlements` archive flow) share a unified, design-system-driven architecture in `:core:design-system` (`WizardScaffold`, `WizardScrollableStepContainer`, `WizardNavigationBar`, `WizardFastTrackBanner`, `WizardReviewRow`, and `ShareLockButton`).
+
+### 13.1 Chrome Hierarchy & Single Bottom Bar Rule
+
+- **Single Bottom Bar:** Focused wizard screens (`ScreenUiProvider.showBottomBar = false`) hide the main tab bar (`FloatingNavigationBar`) and `AdaptiveBannerAd`, immediately setting `LocalBottomPadding` to `0.dp` while preserving `SharedTransitionSurface` container transforms.
+- **Scrimmed Fixed-Bottom Navigation (`WizardNavigationBar`):** `WizardNavigationBar` is the sole bottom overlay (`80.dp` + system `navigationBarsPadding()` when `LocalBottomPadding.current == 0.dp`). It renders over a dual-layer backdrop scrim (`Modifier.horizonGlassEffect` with a vertical fade mask + a vertical tonal surface gradient wash `surface` `0% → 90% → 100%`) so scrolled step content never bleeds behind `Back`, `Next`, or `Submit`.
+- **Keyboard Invariance:** `WizardNavigationBar` remains pinned to the bottom of `WizardScaffold`; the soft keyboard slides over it (`imePadding()` is applied to `WizardScrollableStepContainer`, never to the bottom bar).
+
+### 13.2 Fast-Track & Contextual Hints (`WizardFastTrackBanner`)
+
+- **No Stacked Bottom Overlays:** `"Skip to Review"` and smart-default captions (`"Defaults: equal split · paid today"`) must never stack above `WizardNavigationBar`.
+- **Scrollable Header Banner:** When fast-tracking to the review step is available, render `WizardFastTrackBanner` at the top of `WizardScrollableStepContainer` (directly beneath `WizardStepIndicator`). It uses a tonal `FlatCard` (`surfaceContainerLow`, `shapes.large`) with a `FlowRow` housing the optional `CaptionText` hint and a compact `36.dp` `CircleShape` action pill (`primary` at `12%` alpha + `ButtonContentRow`), scrolling naturally with step content.
+
+### 13.3 Step Canvas & Input Vertical Rhythm
+
+- **`WizardStepLayout` Outer Padding:** `MaterialTheme.spacing.Large` (`20.dp`) horizontal on standard screens (`> 360dp`), `MaterialTheme.spacing.Default` (`16.dp`) horizontal on narrow screens (`<= 360dp`), `MaterialTheme.spacing.ExtraLarge` (`24.dp`) vertical, and `MaterialTheme.spacing.Default` (`16.dp`) inter-section spacing.
+- **Static Field Label Clearance:** Because `StyledOutlinedTextField` renders its label as a static external `FieldHeader` above the input container (`bottom = 6.dp`), consecutive rows containing `StyledOutlinedTextField` (such as `EXACT` / `PERCENT` split rows or multi-member share inputs) must use `MaterialTheme.spacing.Medium` (`12.dp`) vertical arrangement spacing and `MaterialTheme.spacing.Small` (`8.dp`) row vertical padding so each field's top label has clean visual separation from the row above.
+- **Single-Line Field Labels:** `FieldLabel` inside `StyledOutlinedTextField` enforces `maxLines = 1` with `TextOverflow.Ellipsis` so side-by-side inputs in `AmountCurrencyCard`, `CurrencyConversionCard`, and split/share rows never misalign vertically.
+
+### 13.4 Share-Lock Allocation Rows (`ShareLockButton`)
+
+- Percentage and exact-amount allocation rows (`SplitMemberRow`, `EntitySplitRow`, `IntraSubunitSplitEditor` in `:features:expenses`, and `SubunitSharesStep` in `:features:subunits`) use a single horizontal row layout:
+  - **Start:** Member or entity name column (`Modifier.weight(1f)`).
+  - **End:** Width-constrained `StyledOutlinedTextField` (`120.dp` amount / `100.dp` `%` on standard screens; `96.dp` amount / `84.dp` `%` on narrow screens) paired with the shared `ShareLockButton` (`40.dp` on standard screens, `36.dp` on narrow screens).
+
+### 13.5 Read-Only Review Steps (`WizardReviewRow`)
+
+- All wizard `ReviewStep` composables group summary items inside `SectionCard` using `WizardReviewRow`:
+  - **Label (`0.4f` weight):** `BodyText` in `onSurfaceVariant`.
+  - **Value (`0.6f` weight):** `bodyMedium` (`FontWeight.Medium`) in `onSurface` with `TextAlign.End`.
+
+---
+
+## 14. Responsive Compact-Screen (`<= 360dp`) vs. Standard-Screen (`> 360dp`) Guardrails
+
+To ensure compact-device (`320dp–360dp`) ergonomics never degrade the visual richness or proportions of standard phones (`393dp–412dp+`), all responsive adaptations must follow a strict two-tier invariant:
+
+1. **Universal Structural Improvements (All Screen Widths):** Single bottom bar on wizard routes (`showBottomBar = false`), scrimmed `80.dp` `WizardNavigationBar`, `WizardFastTrackBanner` inside the scrollable step header, `Medium` (`12.dp`) vertical spacing between `StyledOutlinedTextField` rows, single-row `SubunitSharesStep`, and `WizardReviewRow` (`0.4f` / `0.6f`) alignment.
+2. **Narrow-Screen Overrides (`<= UiConstants.NARROW_SCREEN_BREAKPOINT`, `360.dp`):** Any reduction in horizontal padding, input field max-width, icon presence, or side-by-side row layout MUST be gated behind `LocalConfiguration.current.screenWidthDp.dp <= UiConstants.NARROW_SCREEN_BREAKPOINT` (or container `maxWidth < 280.dp` inside `BoxWithConstraints`).
+
+| Surface / Token | Standard Screen (`> 360dp`, e.g., `411dp`) | Compact / Narrow Screen (`<= 360dp`, e.g., `320dp`) |
+|---|---|---|
+| `WizardStepLayout` horizontal padding | `MaterialTheme.spacing.Large` (`20.dp`) | `MaterialTheme.spacing.Default` (`16.dp`) |
+| `SplitMemberRow` / `EntitySplitRow` amount & `%` max width | `120.dp` (amount) / `100.dp` (`%`) | `96.dp` (amount) / `84.dp` (`%`) |
+| `EntitySplitRow` subunit header icons (in `EXACT`/`PERCENT`) | Leading `Sitemap` icon + trailing `ChevronUp`/`ChevronDown` | Decorative `Sitemap` omitted; `16.dp` `Chevron` inline with title |
+| `EntitySplitRow` accordion horizontal padding | `MaterialTheme.spacing.Medium` (`12.dp`) | `MaterialTheme.spacing.ExtraSmall` (`4.dp`) |
+| `IntraSubunitSplitEditor` member start indent | `MaterialTheme.spacing.Default` (`16.dp`) | `MaterialTheme.spacing.Small` (`8.dp`) |
+| `IntraSubunitSplitEditor` amount & `%` max width | `110.dp` (amount) / `90.dp` (`%`) | `92.dp` (amount) / `80.dp` (`%`) |
+| `ShareLockButton` touch target size | `40.dp` (`18.dp` icon) | `36.dp` (`18.dp` icon) |
+| `CurrencyConversionCard` input layout | Side-by-side `Row` (`0.6f` rate / `0.4f` amount) when `maxWidth >= 280.dp` | Stacked `Column` only when container `maxWidth < 280.dp` |
+| `ArchiveSummaryStep` metric card inner padding | `MaterialTheme.spacing.Medium` (`12.dp`) | `MaterialTheme.spacing.Small` (`8.dp`) |
+

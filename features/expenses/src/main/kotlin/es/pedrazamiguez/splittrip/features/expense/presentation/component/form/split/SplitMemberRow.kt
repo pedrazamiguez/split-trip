@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -24,12 +25,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickableNoRipple
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.ShareLockButton
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
+
+private val STANDARD_AMOUNT_MAX_WIDTH = 120.dp
+private val NARROW_AMOUNT_MAX_WIDTH = 96.dp
+private val STANDARD_PERCENT_MAX_WIDTH = 100.dp
+private val NARROW_PERCENT_MAX_WIDTH = 84.dp
 
 @Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
@@ -45,14 +53,32 @@ internal fun SplitMemberRow(
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isNarrowScreen = LocalConfiguration.current.screenWidthDp.dp <= UiConstants.NARROW_SCREEN_BREAKPOINT
+    val amountMaxWidth = if (isNarrowScreen) NARROW_AMOUNT_MAX_WIDTH else STANDARD_AMOUNT_MAX_WIDTH
+    val percentMaxWidth = if (isNarrowScreen) NARROW_PERCENT_MAX_WIDTH else STANDARD_PERCENT_MAX_WIDTH
+    val lockDescription = stringResource(
+        if (split.isShareLocked) {
+            R.string.add_expense_split_share_unlock
+        } else {
+            R.string.add_expense_split_share_lock
+        }
+    )
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = MaterialTheme.spacing.ExtraSmall),
+            .padding(
+                vertical = if (isEqualMode) {
+                    MaterialTheme.spacing.ExtraSmall
+                } else {
+                    MaterialTheme.spacing.Small
+                }
+            ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        horizontalArrangement = Arrangement.spacedBy(
+            if (isNarrowScreen) MaterialTheme.spacing.ExtraSmall else MaterialTheme.spacing.Small
+        )
     ) {
-        // Name column (previously SplitMemberNameColumn)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = split.displayName,
@@ -75,7 +101,6 @@ internal fun SplitMemberRow(
             }
         }
 
-        // Input field (previously SplitMemberInputField)
         AnimatedVisibility(visible = !split.isExcluded) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -93,23 +118,31 @@ internal fun SplitMemberRow(
                         value = split.percentageInput,
                         onValueChange = onPercentageChanged,
                         label = stringResource(R.string.add_expense_split_percentage_label),
-                        modifier = Modifier.widthIn(max = 100.dp),
+                        modifier = Modifier.widthIn(max = percentMaxWidth),
                         keyboardType = KeyboardType.Decimal,
                         imeAction = ImeAction.Next,
                         keyboardActions = KeyboardActions(onNext = { onDone() })
                     )
-                    ShareLockIcon(isLocked = split.isShareLocked, onClick = onShareLockToggled)
+                    ShareLockButton(
+                        isLocked = split.isShareLocked,
+                        contentDescription = lockDescription,
+                        onClick = onShareLockToggled
+                    )
                 } else {
                     StyledOutlinedTextField(
                         value = split.amountInput,
                         onValueChange = onAmountChanged,
                         label = stringResource(R.string.add_expense_split_amount_label),
-                        modifier = Modifier.widthIn(max = 120.dp),
+                        modifier = Modifier.widthIn(max = amountMaxWidth),
                         keyboardType = KeyboardType.Decimal,
                         imeAction = ImeAction.Next,
                         keyboardActions = KeyboardActions(onNext = { onDone() })
                     )
-                    ShareLockIcon(isLocked = split.isShareLocked, onClick = onShareLockToggled)
+                    ShareLockButton(
+                        isLocked = split.isShareLocked,
+                        contentDescription = lockDescription,
+                        onClick = onShareLockToggled
+                    )
                 }
             }
         }

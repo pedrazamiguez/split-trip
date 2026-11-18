@@ -1,19 +1,12 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.component
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScaffold
 import es.pedrazamiguez.splittrip.features.withdrawal.R
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.event.AddCashWithdrawalUiEvent
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.state.AddCashWithdrawalUiState
@@ -54,56 +47,30 @@ internal fun WithdrawalWizard(
     val backLabel = stringResource(R.string.withdrawal_wizard_back)
     val nextLabel = stringResource(R.string.withdrawal_wizard_next)
     val submitLabel = stringResource(R.string.withdrawal_cash_submit)
-    val skipToReviewLabel = stringResource(R.string.withdrawal_wizard_skip_to_review)
 
-    val bottomPadding = LocalBottomPadding.current
-    val topPadding = LocalTopPadding.current
-
-    Box(
+    WizardScaffold(
+        stepLabels = orderedLabels,
+        currentStepIndex = uiState.currentStepIndex,
+        optionalStepIndices = uiState.optionalStepIndices,
+        onStepClicked = { onEvent(AddCashWithdrawalUiEvent.JumpToStep(it)) },
+        navigationConfig = WizardNavigationBarConfig(
+            canGoNext = uiState.canGoNext,
+            isOnLastStep = uiState.isOnReviewStep,
+            isCurrentStepValid = uiState.isCurrentStepValid,
+            isLoading = uiState.isLoading,
+            backLabel = backLabel,
+            nextLabel = nextLabel,
+            submitLabel = submitLabel
+        ),
+        onBack = { onEvent(AddCashWithdrawalUiEvent.PreviousStep) },
+        onNext = { onEvent(AddCashWithdrawalUiEvent.NextStep) },
+        onSubmit = { onEvent(AddCashWithdrawalUiEvent.SubmitWithdrawal(groupId)) },
         modifier = modifier
-            .fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = topPadding)
-        ) {
-            WizardStepIndicator(
-                stepLabels = orderedLabels,
-                currentStepIndex = uiState.currentStepIndex,
-                optionalStepIndices = uiState.optionalStepIndices,
-                onStepClicked = { onEvent(AddCashWithdrawalUiEvent.JumpToStep(it)) }
-            )
-
-            WizardStepContent(
-                uiState = uiState,
-                onEvent = onEvent,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        WizardNavigationBar(
-            config = WizardNavigationBarConfig(
-                canGoNext = uiState.canGoNext,
-                isOnLastStep = uiState.isOnReviewStep,
-                isCurrentStepValid = uiState.isCurrentStepValid,
-                isLoading = uiState.isLoading,
-                backLabel = backLabel,
-                nextLabel = nextLabel,
-                submitLabel = submitLabel,
-                skipToReviewLabel = if (uiState.isOnOptionalStep) skipToReviewLabel else null
-            ),
-            onBack = { onEvent(AddCashWithdrawalUiEvent.PreviousStep) },
-            onNext = { onEvent(AddCashWithdrawalUiEvent.NextStep) },
-            onSubmit = { onEvent(AddCashWithdrawalUiEvent.SubmitWithdrawal(groupId)) },
-            onSkipToReview = if (uiState.isOnOptionalStep) {
-                { onEvent(AddCashWithdrawalUiEvent.JumpToReview) }
-            } else {
-                null
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = bottomPadding)
+        WizardStepContent(
+            uiState = uiState,
+            onEvent = onEvent,
+            modifier = Modifier.fillMaxSize()
         )
     }
 }

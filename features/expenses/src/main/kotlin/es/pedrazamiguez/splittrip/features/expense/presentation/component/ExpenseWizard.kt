@@ -1,17 +1,18 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScaffold
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.ReceiptAnalysisOverlay
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -70,10 +71,6 @@ fun ExpenseWizard(
     val backLabel = stringResource(R.string.expense_wizard_back)
     val nextLabel = stringResource(R.string.expense_wizard_next)
     val submitLabel = stringResource(uiState.submitLabelRes)
-    val skipToReviewLabel = stringResource(R.string.expense_wizard_skip_to_review)
-    val optionalDefaultsHint = stringResource(R.string.expense_wizard_skip_defaults_hint)
-
-    val bottomPadding = LocalBottomPadding.current
 
     LaunchedEffect(uiState.isOnReviewStep, uiState.isFormValid, uiState.isLoading) {
         if (uiState.isOnReviewStep) {
@@ -92,51 +89,56 @@ fun ExpenseWizard(
         }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
+    WizardScaffold(
+        stepLabels = orderedLabels,
+        currentStepIndex = uiState.currentStepIndex,
+        optionalStepIndices = uiState.optionalStepIndices,
+        allowForwardJumps = uiState.isEditMode,
+        onStepClicked = { onEvent(AddExpenseUiEvent.JumpToStep(it)) },
+        navigationConfig = WizardNavigationBarConfig(
+            canGoNext = uiState.canGoNext,
+            isOnLastStep = uiState.isOnReviewStep,
+            isCurrentStepValid = uiState.isCurrentStepValid,
+            isLoading = uiState.isLoading,
+            backLabel = backLabel,
+            nextLabel = nextLabel,
+            submitLabel = submitLabel
+        ),
+        onBack = { onEvent(AddExpenseUiEvent.PreviousStep) },
+        onNext = { onEvent(AddExpenseUiEvent.NextStep) },
+        onSubmit = {
+            Timber.d(
+                "AddExpenseScreen: submit tapped groupId=%s isEditMode=%s isCurrentStepValid=%s isLoading=%s",
+                groupId,
+                uiState.isEditMode,
+                uiState.isCurrentStepValid,
+                uiState.isLoading
+            )
+            onEvent(AddExpenseUiEvent.SubmitAddExpense(groupId))
+        },
+        modifier = modifier,
+        headerBanner = {
+            AnimatedVisibility(
+                visible = uiState.autoFillBanner != null,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                uiState.autoFillBanner?.let { banner ->
+                    AutoFillBanner(
+                        banner = banner,
+                        onDismiss = { onEvent(AddExpenseUiEvent.DismissAutoFillBanner) }
+                    )
+                }
+            }
+        },
+        overlay = {
+            ReceiptAnalysisOverlay(visible = uiState.isAnalyzingReceipt)
+        }
     ) {
-        ExpenseWizardBody(
+        WizardStepContent(
             uiState = uiState,
-            orderedLabels = orderedLabels,
             onEvent = onEvent,
             modifier = Modifier.fillMaxSize()
         )
-
-        WizardNavigationBar(
-            config = WizardNavigationBarConfig(
-                canGoNext = uiState.canGoNext,
-                isOnLastStep = uiState.isOnReviewStep,
-                isCurrentStepValid = uiState.isCurrentStepValid,
-                isLoading = uiState.isLoading,
-                backLabel = backLabel,
-                nextLabel = nextLabel,
-                submitLabel = submitLabel,
-                skipToReviewLabel = if (uiState.canSkipToReview) skipToReviewLabel else null,
-                optionalDefaultsHint = if (uiState.canSkipToReview) optionalDefaultsHint else null
-            ),
-            onBack = { onEvent(AddExpenseUiEvent.PreviousStep) },
-            onNext = { onEvent(AddExpenseUiEvent.NextStep) },
-            onSubmit = {
-                Timber.d(
-                    "AddExpenseScreen: submit tapped groupId=%s isEditMode=%s isCurrentStepValid=%s isLoading=%s",
-                    groupId,
-                    uiState.isEditMode,
-                    uiState.isCurrentStepValid,
-                    uiState.isLoading
-                )
-                onEvent(AddExpenseUiEvent.SubmitAddExpense(groupId))
-            },
-            onSkipToReview = if (uiState.canSkipToReview) {
-                { onEvent(AddExpenseUiEvent.JumpToReview) }
-            } else {
-                null
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = bottomPadding)
-        )
-
-        ReceiptAnalysisOverlay(visible = uiState.isAnalyzingReceipt)
     }
 }

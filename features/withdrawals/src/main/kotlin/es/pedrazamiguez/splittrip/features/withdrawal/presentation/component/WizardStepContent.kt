@@ -1,22 +1,21 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.component
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.rememberWizardNavBarPadding
+import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardFastTrackBanner
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScrollableStepContainer
+import es.pedrazamiguez.splittrip.features.withdrawal.R
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.step.AmountStep
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.step.AtmFeeStep
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.step.DetailsStep
@@ -28,13 +27,14 @@ import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.eve
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.state.AddCashWithdrawalUiState
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.state.CashWithdrawalStep
 
+@Suppress("LongMethod")
 @Composable
 internal fun WizardStepContent(
     uiState: AddCashWithdrawalUiState,
     onEvent: (AddCashWithdrawalUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val navBarPadding = rememberWizardNavBarPadding(hasSkipToReview = uiState.isOnOptionalStep)
+    val skipToReviewLabel = stringResource(R.string.withdrawal_wizard_skip_to_review)
 
     AnimatedContent(
         targetState = uiState.currentStep,
@@ -49,13 +49,20 @@ internal fun WizardStepContent(
         },
         label = "wizardStep"
     ) { step ->
-        val bottomPadding = LocalBottomPadding.current
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = bottomPadding + navBarPadding)
+        WizardScrollableStepContainer(
+            fastTrackBanner = {
+                AnimatedVisibility(
+                    visible = uiState.isOnOptionalStep && !uiState.isOnReviewStep,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    WizardFastTrackBanner(
+                        label = skipToReviewLabel,
+                        enabled = !uiState.isLoading,
+                        onSkipToReview = { onEvent(AddCashWithdrawalUiEvent.JumpToReview) }
+                    )
+                }
+            }
         ) {
             val nextStep = { onEvent(AddCashWithdrawalUiEvent.NextStep) }
             when (step) {

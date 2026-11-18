@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.screens
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -7,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardFastTrackBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
@@ -17,7 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * UI smoke and interaction tests for [WizardNavigationBar].
+ * UI smoke and interaction tests for [WizardNavigationBar] and [WizardFastTrackBanner].
  */
 @RunWith(AndroidJUnit4::class)
 class WizardNavigationBarTest {
@@ -29,7 +31,7 @@ class WizardNavigationBarTest {
     val screenshotRule = ScreenshotRule()
 
     @Test
-    fun rendersBackAndNextButtons_whenFastTrackHidden() {
+    fun rendersBackAndNextButtons_andInvokesCallbacks() {
         var backClicked = false
         var nextClicked = false
 
@@ -43,14 +45,11 @@ class WizardNavigationBarTest {
                         isLoading = false,
                         backLabel = "Back",
                         nextLabel = "Next",
-                        submitLabel = "Create",
-                        skipToReviewLabel = null,
-                        optionalDefaultsHint = null
+                        submitLabel = "Create"
                     ),
                     onBack = { backClicked = true },
                     onNext = { nextClicked = true },
-                    onSubmit = {},
-                    onSkipToReview = null
+                    onSubmit = {}
                 )
             }
         }
@@ -59,7 +58,6 @@ class WizardNavigationBarTest {
 
         composeRule.onNodeWithText("Back").assertIsDisplayed()
         composeRule.onNodeWithText("Next").assertIsDisplayed()
-        composeRule.onNodeWithText("Skip to Review").assertDoesNotExist()
 
         composeRule.onNodeWithText("Back").performClick()
         composeRule.onNodeWithText("Next").performClick()
@@ -70,81 +68,9 @@ class WizardNavigationBarTest {
     }
 
     @Test
-    fun rendersFastTrackPillAndHint_andInvokesCallback_whenVisible() {
-        var skipped = false
+    fun rendersSubmitButton_whenOnLastStep() {
+        var submitted = false
 
-        composeRule.setContent {
-            SplitTripTheme {
-                WizardNavigationBar(
-                    config = WizardNavigationBarConfig(
-                        canGoNext = true,
-                        isOnLastStep = false,
-                        isCurrentStepValid = true,
-                        isLoading = false,
-                        backLabel = "Back",
-                        nextLabel = "Next",
-                        submitLabel = "Create",
-                        skipToReviewLabel = "Skip to Review",
-                        optionalDefaultsHint = "Defaults: equal split · paid today"
-                    ),
-                    onBack = {},
-                    onNext = {},
-                    onSubmit = {},
-                    onSkipToReview = { skipped = true }
-                )
-            }
-        }
-
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithText("Skip to Review").assertIsDisplayed()
-        composeRule.onNodeWithText("Defaults: equal split · paid today").assertIsDisplayed()
-        composeRule.onNodeWithText("Back").assertIsDisplayed()
-        composeRule.onNodeWithText("Next").assertIsDisplayed()
-
-        composeRule.onNodeWithText("Skip to Review").performClick()
-        composeRule.waitForIdle()
-
-        assertTrue(skipped)
-    }
-
-    @Test
-    fun rendersFastTrackWithoutHint_whenOptionalDefaultsHintIsNull() {
-        var skipped = false
-
-        composeRule.setContent {
-            SplitTripTheme {
-                WizardNavigationBar(
-                    config = WizardNavigationBarConfig(
-                        canGoNext = true,
-                        isOnLastStep = false,
-                        isCurrentStepValid = true,
-                        isLoading = false,
-                        backLabel = "Back",
-                        nextLabel = "Next",
-                        submitLabel = "Create",
-                        skipToReviewLabel = "Skip to Review",
-                        optionalDefaultsHint = null
-                    ),
-                    onBack = {},
-                    onNext = {},
-                    onSubmit = {},
-                    onSkipToReview = { skipped = true }
-                )
-            }
-        }
-
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithText("Skip to Review").assertIsDisplayed()
-        composeRule.onNodeWithText("Skip to Review").performClick()
-        composeRule.waitForIdle()
-
-        assertTrue(skipped)
-    }
-
-    @Test
-    fun hidesFastTrackPillAndHint_whenOnLastStep() {
         composeRule.setContent {
             SplitTripTheme {
                 WizardNavigationBar(
@@ -155,14 +81,11 @@ class WizardNavigationBarTest {
                         isLoading = false,
                         backLabel = "Back",
                         nextLabel = "Next",
-                        submitLabel = "Create Expense",
-                        skipToReviewLabel = "Skip to Review",
-                        optionalDefaultsHint = "Defaults: equal split · paid today"
+                        submitLabel = "Create Expense"
                     ),
                     onBack = {},
                     onNext = {},
-                    onSubmit = {},
-                    onSkipToReview = {}
+                    onSubmit = { submitted = true }
                 )
             }
         }
@@ -171,31 +94,72 @@ class WizardNavigationBarTest {
 
         composeRule.onNodeWithText("Create Expense").assertIsDisplayed()
         composeRule.onNodeWithText("Back").assertIsDisplayed()
-        composeRule.onNodeWithText("Skip to Review").assertDoesNotExist()
-        composeRule.onNodeWithText("Defaults: equal split · paid today").assertDoesNotExist()
+        composeRule.onNodeWithText("Next").assertDoesNotExist()
+
+        composeRule.onNodeWithText("Create Expense").performClick()
+        composeRule.waitForIdle()
+
+        assertTrue(submitted)
     }
 
     @Test
-    fun disablesFastTrackPill_whenLoading() {
+    fun rendersFastTrackBannerAndHint_andInvokesCallback() {
         var skipped = false
 
         composeRule.setContent {
             SplitTripTheme {
-                WizardNavigationBar(
-                    config = WizardNavigationBarConfig(
-                        canGoNext = true,
-                        isOnLastStep = false,
-                        isCurrentStepValid = true,
-                        isLoading = true,
-                        backLabel = "Back",
-                        nextLabel = "Next",
-                        submitLabel = "Create",
-                        skipToReviewLabel = "Skip to Review",
-                        optionalDefaultsHint = "Defaults: equal split · paid today"
-                    ),
-                    onBack = {},
-                    onNext = {},
-                    onSubmit = {},
+                WizardFastTrackBanner(
+                    label = "Skip to Review",
+                    optionalDefaultsHint = "Defaults: equal split · paid today",
+                    onSkipToReview = { skipped = true }
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Skip to Review").assertIsDisplayed()
+        composeRule.onNodeWithText("Defaults: equal split · paid today").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Skip to Review").performClick()
+        composeRule.waitForIdle()
+
+        assertTrue(skipped)
+    }
+
+    @Test
+    fun rendersFastTrackBannerWithoutHint_whenOptionalDefaultsHintIsNull() {
+        var skipped = false
+
+        composeRule.setContent {
+            SplitTripTheme {
+                WizardFastTrackBanner(
+                    label = "Skip to Review",
+                    optionalDefaultsHint = null,
+                    onSkipToReview = { skipped = true }
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Skip to Review").assertIsDisplayed()
+        composeRule.onNodeWithText("Skip to Review").performClick()
+        composeRule.waitForIdle()
+
+        assertTrue(skipped)
+    }
+
+    @Test
+    fun disablesFastTrackBanner_whenNotEnabled() {
+        var skipped = false
+
+        composeRule.setContent {
+            SplitTripTheme {
+                WizardFastTrackBanner(
+                    label = "Skip to Review",
+                    optionalDefaultsHint = "Defaults: equal split · paid today",
+                    enabled = false,
                     onSkipToReview = { skipped = true }
                 )
             }
@@ -212,28 +176,32 @@ class WizardNavigationBarTest {
     }
 
     @Test
-    fun rendersFastTrackInDarkTheme_preservingActions() {
+    fun rendersFastTrackBannerInDarkTheme_preservingActions() {
         var skipped = false
 
         composeRule.setContent {
             SplitTripTheme(darkTheme = true) {
-                WizardNavigationBar(
-                    config = WizardNavigationBarConfig(
-                        canGoNext = true,
-                        isOnLastStep = false,
-                        isCurrentStepValid = true,
-                        isLoading = false,
-                        backLabel = "Back",
-                        nextLabel = "Next",
-                        submitLabel = "Create",
-                        skipToReviewLabel = "Skip to Review",
-                        optionalDefaultsHint = "Defaults: equal split · paid today"
-                    ),
-                    onBack = {},
-                    onNext = {},
-                    onSubmit = {},
-                    onSkipToReview = { skipped = true }
-                )
+                Column {
+                    WizardFastTrackBanner(
+                        label = "Skip to Review",
+                        optionalDefaultsHint = "Defaults: equal split · paid today",
+                        onSkipToReview = { skipped = true }
+                    )
+                    WizardNavigationBar(
+                        config = WizardNavigationBarConfig(
+                            canGoNext = true,
+                            isOnLastStep = false,
+                            isCurrentStepValid = true,
+                            isLoading = false,
+                            backLabel = "Back",
+                            nextLabel = "Next",
+                            submitLabel = "Create"
+                        ),
+                        onBack = {},
+                        onNext = {},
+                        onSubmit = {}
+                    )
+                }
             }
         }
 

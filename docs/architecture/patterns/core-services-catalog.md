@@ -100,13 +100,18 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Component | File | Purpose |
 |---|---|---|
-| `WizardStepLayout` | `wizard/WizardStepLayout.kt` | Container for a single wizard step: title, content slot, and consistent padding. **Use for:** Multi-step form screens (e.g., Add Expense wizard). |
+| `WizardScaffold` | `wizard/WizardScaffold.kt` | Shared top-level wizard orchestrator scaffold managing `HazeState`, `LocalTopPadding`, `LocalBottomPadding`, `WizardStepIndicator`, optional `headerBanner`, step content slot, scrimmed fixed-bottom `WizardNavigationBar`, and optional full-screen `overlay`. **Use for:** All multi-step wizard flows. |
+| `WizardScrollableStepContainer` | `wizard/WizardScaffold.kt` | Scrollable step wrapper with `imePadding()`, `verticalScroll()`, `rememberWizardNavBarPadding()` bottom clearance, and an optional top `fastTrackBanner` slot. **Use for:** Wrapping individual step content inside `AnimatedContent` in wizard flows. |
+| `WizardStepLayout` | `wizard/WizardStepLayout.kt` | Container for a single wizard step: consistent vertical rhythm (`ExtraLarge` `24.dp` vertical, `Default` `16.dp` inter-section) and responsive horizontal padding (`Large` `20.dp` on `> 360dp`, `Default` `16.dp` on `<= 360dp`). **Use for:** Multi-step form screens (e.g., Add Expense wizard). |
 | `WizardStepIndicator` | `wizard/WizardStepIndicator.kt` | Animated step dots/labels showing progress through wizard steps. Supports optional step indices (dashed-border visual) and step-circle tap navigation. **Use for:** Top of wizard screens to show current step. |
-| `WizardNavigationBar` | `wizard/WizardNavigationBar.kt` | Bottom bar with Back/Next/Submit buttons and an optional fast-track "Skip to Review" tonal pill (with an optional smart-defaults `CaptionText` directly below it) above the action row. Configured via `WizardNavigationBarConfig` and `onSkipToReview`. **Use for:** Wizard step navigation controls (reserve `UiConstants.WIZARD_NAV_BAR_HEIGHT` or `UiConstants.WIZARD_NAV_BAR_WITH_SKIP_HEIGHT` bottom scroll padding). |
+| `WizardNavigationBar` | `wizard/WizardNavigationBar.kt` | Single-row (`80.dp`) fixed-bottom bar with Back/Next/Submit buttons rendered over a `horizonGlassEffect` + tonal surface gradient scrim, respecting `navigationBarsPadding()` when `BottomNavigationBar` is hidden. Configured via `WizardNavigationBarConfig`. **Use for:** Wizard step navigation controls (reserve `rememberWizardNavBarPadding()` or `UiConstants.WIZARD_NAV_BAR_HEIGHT` bottom scroll padding). |
+| `WizardFastTrackBanner` | `wizard/WizardFastTrackBanner.kt` | Tonal `FlatCard` header banner with a `FlowRow` containing an optional smart-defaults `CaptionText` and a compact `36.dp` `"Skip to Review"` pill. Placed in `WizardScrollableStepContainer.fastTrackBanner`. **Use for:** Fast-tracking from optional or early valid steps to `ReviewStep`. |
+| `WizardReviewRow` | `wizard/WizardReviewRow.kt` | Canonical key-value summary row (`0.4f` label weight in `onSurfaceVariant`, `0.6f` end-aligned value weight in `onSurface` `FontWeight.Medium`) inside `SectionCard`. **Use for:** All wizard `ReviewStep` screens. |
+| `ShareLockButton` | `wizard/ShareLockButton.kt` | Shared lock/unlock toggle button (`40.dp` on standard screens, `36.dp` on narrow screens, `18.dp` `LockFilled`/`LockOpen` icon) for locking a participant's share during auto-distribution. **Use for:** `SplitMemberRow`, `EntitySplitRow`, `IntraSubunitSplitEditor`, and `SubunitSharesStep`. |
 | `WizardSkipStrategy` | `wizard/WizardSkipStrategy.kt` | Enum classifying wizard steps as `REQUIRED` or `OPTIONAL`. Used as documentation/reference; feature step enums use `isOptional: Boolean`. |
 
 **Configuration class:**
-- `WizardNavigationBarConfig` — data class defining button labels, visibility, enabled state, and optional fast-track `"Skip to Review"` label + smart-defaults caption rendered below the pill for the navigation bar.
+- `WizardNavigationBarConfig` — data class defining single-row button labels (`backLabel`, `nextLabel`, `submitLabel`), visibility (`canGoNext`, `isOnLastStep`), and state (`isCurrentStepValid`, `isLoading`) for `WizardNavigationBar`.
 
 ### A.6 Form
 
@@ -786,7 +791,7 @@ confirmPendingSync:  PENDING_SYNC ──server verified──→ SYNCED
 | Convert cents to BigDecimal | `ExpenseCalculatorService.centsToBigDecimal()` |
 | Create a confirmation dialog | `DestructiveConfirmationDialog` |
 | Show contextual actions | `ActionBottomSheet` + `SheetAction` |
-| Build a multi-step form | `WizardStepLayout` + `WizardStepIndicator` + `WizardNavigationBar` |
+| Build a multi-step form | `WizardScaffold` + `WizardScrollableStepContainer` + `WizardStepLayout` + `WizardNavigationBar` |
 | Manage keyed cloud subscriptions | `KeyedSubscriptionTracker` (`:data` internal) |
 | Subscribe + reconcile + confirm sync | `subscribeAndReconcile()` (`:data` internal) |
 | Sync a create/update to cloud | `syncCreateToCloud()` (`:data` internal) |

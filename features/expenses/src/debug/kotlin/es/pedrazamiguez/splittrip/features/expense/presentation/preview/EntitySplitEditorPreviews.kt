@@ -2,9 +2,11 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split.EntitySplitEditor
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split.EntitySplitEditorEvents
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split.SplitEditor
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import kotlinx.collections.immutable.persistentListOf
@@ -38,7 +40,7 @@ private val PREVIEW_ENTITY_SPLITS = persistentListOf(
         percentageInput = "50",
         isEntityRow = true,
         isExpanded = true,
-        entitySplitType = SplitTypeUiModel("EQUAL", "Equal"),
+        entitySplitType = SplitTypeUiModel("EXACT", "Exact"),
         entityMembers = persistentListOf(
             SplitUiModel(
                 userId = "user-1",
@@ -109,6 +111,37 @@ private fun EntitySplitEditorPercentagePreview() {
             isPercentMode = true,
             availableSplitTypes = PREVIEW_SPLIT_TYPES,
             events = PREVIEW_EVENTS
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun EntitySplitEditorExactNarrowPreview() {
+    PreviewThemeWrapper {
+        EntitySplitEditor(
+            entitySplits = PREVIEW_ENTITY_SPLITS,
+            isEqualMode = false,
+            isPercentMode = false,
+            availableSplitTypes = PREVIEW_SPLIT_TYPES,
+            events = PREVIEW_EVENTS
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun SplitEditorExactNarrowPreview() {
+    PreviewThemeWrapper {
+        SplitEditor(
+            splits = PREVIEW_ENTITY_SPLITS.first().entityMembers,
+            isEqualMode = false,
+            isPercentMode = false,
+            onAmountChanged = { _, _ -> },
+            onPercentageChanged = { _, _ -> },
+            onExcludedToggled = {},
+            onSoloSelected = {},
+            onShareLockToggled = {}
         )
     }
 }

@@ -1,12 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.screen
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -15,9 +9,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScaffold
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScrollableStepContainer
 import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.component.DisputeSettlementBottomSheet
 import es.pedrazamiguez.splittrip.features.settlement.presentation.component.SettlementContent
@@ -68,31 +62,31 @@ fun GroupSettlementOverviewScreen(
                     else -> true
                 }
 
-                Column(
+                WizardScaffold(
+                    stepLabels = activeSteps.map { stringResource(it.labelResId) },
+                    currentStepIndex = currentStepIndex,
+                    navigationConfig = WizardNavigationBarConfig(
+                        canGoNext = isCurrentStepValid,
+                        isOnLastStep = isOnLastStep,
+                        isCurrentStepValid = isCurrentStepValid,
+                        isLoading = uiState.isArchiving,
+                        backLabel = stringResource(R.string.group_wizard_back),
+                        nextLabel = stringResource(R.string.group_wizard_next),
+                        submitLabel = stringResource(R.string.settlement_overview_close_trip)
+                    ),
+                    onBack = { onEvent(GroupSettlementOverviewUiEvent.WizardBackClicked) },
+                    onNext = { onEvent(GroupSettlementOverviewUiEvent.WizardNextClicked) },
+                    onSubmit = { onEvent(GroupSettlementOverviewUiEvent.CloseTripClicked) },
                     modifier = modifier
-                        .fillMaxSize()
-                        .padding(top = topPadding)
                 ) {
-                    if (activeSteps.isNotEmpty()) {
-                        WizardStepIndicator(
-                            stepLabels = activeSteps.map { stringResource(it.labelResId) },
-                            currentStepIndex = currentStepIndex
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
+                    WizardScrollableStepContainer {
                         when (uiState.currentStep) {
                             ArchiveWizardStep.SETTLEMENT_SUMMARY -> {
                                 ArchiveSummaryStep(
                                     pendingCount = uiState.actionRequiredCount + uiState.waitingOnOthersCount,
                                     disputedCount = uiState.disputedCount,
                                     resolvedCount = uiState.resolvedSettlements.size,
-                                    areAllSettlementsResolved = uiState.areAllSettlementsResolved,
-                                    modifier = Modifier.verticalScroll(rememberScrollState())
+                                    areAllSettlementsResolved = uiState.areAllSettlementsResolved
                                 )
                             }
 
@@ -104,30 +98,11 @@ fun GroupSettlementOverviewScreen(
                                         onEvent(
                                             GroupSettlementOverviewUiEvent.NavigateToYourBalanceClicked
                                         )
-                                    },
-                                    modifier = Modifier.verticalScroll(rememberScrollState())
+                                    }
                                 )
                             }
                         }
                     }
-
-                    WizardNavigationBar(
-                        config = WizardNavigationBarConfig(
-                            canGoNext = isCurrentStepValid,
-                            isOnLastStep = isOnLastStep,
-                            isCurrentStepValid = isCurrentStepValid,
-                            isLoading = uiState.isArchiving,
-                            backLabel = stringResource(R.string.group_wizard_back),
-                            nextLabel = stringResource(R.string.group_wizard_next),
-                            submitLabel = stringResource(R.string.settlement_overview_close_trip)
-                        ),
-                        onBack = { onEvent(GroupSettlementOverviewUiEvent.WizardBackClicked) },
-                        onNext = { onEvent(GroupSettlementOverviewUiEvent.WizardNextClicked) },
-                        onSubmit = { onEvent(GroupSettlementOverviewUiEvent.CloseTripClicked) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = bottomPadding)
-                    )
                 }
             }
             else -> SettlementContent(uiState = uiState, onEvent = onEvent, modifier = modifier)

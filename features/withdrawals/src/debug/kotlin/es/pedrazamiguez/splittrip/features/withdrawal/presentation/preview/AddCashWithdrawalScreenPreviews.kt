@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.screen.AddCashWithdrawalScreen
@@ -222,6 +223,40 @@ private fun WizardFeeExchangeRateStepPreview() {
 @PreviewComplete
 @Composable
 private fun WizardReviewStepPreview() {
+    PreviewThemeWrapper {
+        AddCashWithdrawalScreen(
+            groupId = "group-1",
+            uiState = AddCashWithdrawalUiState(
+                isConfigLoaded = true,
+                groupName = "Thai 2.0",
+                groupCurrency = CurrencyUiModel("EUR", "EUR - Euro", 2),
+                selectedCurrency = CurrencyUiModel("THB", "THB - Thai Baht", 2),
+                availableCurrencies = PREVIEW_CURRENCIES,
+                withdrawalAmount = "10000",
+                showExchangeRateSection = true,
+                displayExchangeRate = "37.037",
+                deductedAmount = "270.00",
+                withdrawalScope = PayerType.GROUP,
+                title = "BKK Airport ATM",
+                notes = "Kasikorn bank ATM, free withdrawal",
+                hasFee = true,
+                feeAmount = "220",
+                feeCurrency = CurrencyUiModel("THB", "THB - Thai Baht", 2),
+                showFeeExchangeRateSection = true,
+                feeExchangeRate = "37.037",
+                feeConvertedAmount = "5.94",
+                groupMembers = PREVIEW_MEMBERS,
+                selectedMemberId = "user-1",
+                selectedMemberDisplayName = "Andrés",
+                currentStep = CashWithdrawalStep.REVIEW
+            )
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun WizardReviewStepNarrowPreview() {
     PreviewThemeWrapper {
         AddCashWithdrawalScreen(
             groupId = "group-1",

@@ -1,22 +1,21 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.rememberWizardNavBarPadding
+import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardFastTrackBanner
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScrollableStepContainer
+import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.AddOnsStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.AmountStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.step.expense.CategoryStep
@@ -41,7 +40,8 @@ fun WizardStepContent(
     onEvent: (AddExpenseUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val navBarPadding = rememberWizardNavBarPadding(hasSkipToReview = uiState.canSkipToReview)
+    val skipToReviewLabel = stringResource(R.string.expense_wizard_skip_to_review)
+    val optionalDefaultsHint = stringResource(R.string.expense_wizard_skip_defaults_hint)
 
     AnimatedContent(
         targetState = uiState.currentStep,
@@ -65,13 +65,21 @@ fun WizardStepContent(
         },
         label = "wizardStep"
     ) { step ->
-        val bottomPadding = LocalBottomPadding.current
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = bottomPadding + navBarPadding)
+        WizardScrollableStepContainer(
+            fastTrackBanner = {
+                AnimatedVisibility(
+                    visible = uiState.canSkipToReview && !uiState.isOnReviewStep,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    WizardFastTrackBanner(
+                        label = skipToReviewLabel,
+                        optionalDefaultsHint = optionalDefaultsHint,
+                        enabled = !uiState.isLoading,
+                        onSkipToReview = { onEvent(AddExpenseUiEvent.JumpToReview) }
+                    )
+                }
+            }
         ) {
             val nextStep = { onEvent(AddExpenseUiEvent.NextStep) }
             when (step) {

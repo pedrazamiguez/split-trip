@@ -22,15 +22,6 @@ object UiConstants {
     val WIZARD_NAV_BAR_HEIGHT: Dp = 80.dp
 
     /**
-     * Height reserved for [WizardNavigationBar] when the fast-track "Skip to Review"
-     * pill (and optional smart-defaults hint) is visible above the Back / Next buttons.
-     *
-     * Calculated from base [WIZARD_NAV_BAR_HEIGHT] (80 dp) + fast-track pill (48 dp) +
-     * hint gap (4 dp) + single-line caption (16 dp) + section gap (8 dp) + safety buffer (4 dp).
-     */
-    val WIZARD_NAV_BAR_WITH_SKIP_HEIGHT: Dp = 160.dp
-
-    /**
      * Height reserved for the [FormSubmitButton] overlay.
      *
      * Calculated from GradientButton height (56 dp) + vertical padding (16 dp top + 12 dp bottom).

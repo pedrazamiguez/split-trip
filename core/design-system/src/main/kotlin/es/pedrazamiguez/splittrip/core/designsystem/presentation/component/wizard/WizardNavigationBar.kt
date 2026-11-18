@@ -1,86 +1,61 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
-import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowLeft
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowRight
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.ButtonContentRow
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 
-private val FAST_TRACK_SHADOW_ELEVATION = 2.dp
-private val FAST_TRACK_PILL_HEIGHT = 48.dp
-private const val FAST_TRACK_CONTAINER_ALPHA = 0.12f
-private const val DISABLED_CONTAINER_ALPHA = 0.12f
-private const val DISABLED_CONTENT_ALPHA = 0.38f
-private const val HINT_MAX_LINES = 2
+private const val SCRIM_MID_STOP = 0.25f
+private const val SCRIM_MID_ALPHA = 0.90f
 
 /**
- * Navigation bar for a multi-step wizard.
+ * Single-row fixed-bottom navigation bar for a multi-step wizard.
  *
  * Domain-agnostic: all configuration is passed via [WizardNavigationBarConfig] so this
- * component can be reused across any feature (AddCashWithdrawal, AddExpense, etc.).
+ * component can be reused across any feature (`AddExpense`, `AddCashWithdrawal`, `AddContribution`,
+ * `CreateEditGroup`, `CreateEditSubunit`, and `GroupSettlementOverview`).
  *
- * Adapts automatically between Back/Next and Back/Submit on the last step, and renders an
- * optional fast-track "Skip to Review" [CircleShape] tonal pill above the button row when
- * [WizardNavigationBarConfig.skipToReviewLabel] and [onSkipToReview] are non-null and
- * `!config.isOnLastStep`. When [WizardNavigationBarConfig.optionalDefaultsHint] is non-null,
- * a subtle [CaptionText] defaults hint is rendered directly below the pill.
+ * **Backdrop Scrim:** Renders over a frosted-glass [horizonGlassEffect] (when [hazeState] is provided)
+ * plus a vertical tonal surface gradient wash (`0% → 90% → 100%`) so scrolled form content never
+ * bleeds behind the `Back` / `Next` / `Submit` action buttons.
  *
- * **Positioning:** This bar is designed to be placed as a fixed-bottom overlay
- * inside a `Box(Modifier.align(BottomCenter))` in the wizard orchestrator.
- * The keyboard slides *over* the bar — the buttons never move. The scrollable
- * step content must reserve bottom padding equal to
- * `UiConstants.WIZARD_NAV_BAR_HEIGHT` (or `UiConstants.WIZARD_NAV_BAR_WITH_SKIP_HEIGHT`
- * when the fast-track pill is visible) so the last items are not obscured.
+ * **Positioning:** Designed to be placed as a fixed-bottom overlay inside `WizardScaffold`.
+ * The keyboard slides *over* the bar — the buttons never move. Scrollable step content reserves
+ * bottom padding via [rememberWizardNavBarPadding].
  *
- * All buttons delegate to the design-system's canonical button components
- * ([SecondaryButton], [GradientButton], [ButtonContentRow]) which provide consistent
- * pill geometry, typography, and tonal hierarchy across the app.
- *
- * @param config         Combined state and labels for the navigation bar.
- * @param onBack         Called when the Back button is tapped.
- * @param onNext         Called when the Next button is tapped.
- * @param onSubmit       Called when the Submit button is tapped.
- * @param modifier       Optional modifier applied to the root container.
- * @param onSkipToReview Optional callback invoked when the fast-track "Skip to Review" pill
- *                       is tapped.
+ * @param config            Combined state and labels for the navigation bar.
+ * @param onBack            Called when the Back button is tapped.
+ * @param onNext            Called when the Next button is tapped.
+ * @param onSubmit          Called when the Submit button is tapped.
+ * @param modifier          Optional modifier applied to the root container.
+ * @param hazeState         Optional [HazeState] shared with the step content for frosted-glass blur.
+ * @param applyWindowInsets When `true` (default when `BottomNavigationBar` is hidden and
+ *                          `LocalBottomPadding.current == 0.dp`), applies [navigationBarsPadding]
+ *                          so the bar clears the system navigation bar.
  */
 @Composable
 fun WizardNavigationBar(
@@ -89,27 +64,47 @@ fun WizardNavigationBar(
     onNext: () -> Unit,
     onSubmit: () -> Unit,
     modifier: Modifier = Modifier,
-    onSkipToReview: (() -> Unit)? = null
+    hazeState: HazeState? = null,
+    applyWindowInsets: Boolean = LocalBottomPadding.current == 0.dp
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = MaterialTheme.spacing.Large,
-                vertical = MaterialTheme.spacing.Medium
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val glassModifier = if (hazeState != null) {
+        Modifier.horizonGlassEffect(hazeState = hazeState) {
+            mask(
+                Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, Color.Black, Color.Black)
+                )
             )
+        }
+    } else {
+        Modifier
+    }
+
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        WizardFastTrackSection(
-            skipToReviewLabel = config.skipToReviewLabel,
-            optionalDefaultsHint = config.optionalDefaultsHint,
-            isVisible = config.skipToReviewLabel != null &&
-                onSkipToReview != null &&
-                !config.isOnLastStep,
-            enabled = !config.isLoading,
-            onSkipToReview = { onSkipToReview?.invoke() }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .then(glassModifier)
+                .background(
+                    Brush.verticalGradient(
+                        0f to surfaceColor.copy(alpha = 0f),
+                        SCRIM_MID_STOP to surfaceColor.copy(alpha = SCRIM_MID_ALPHA),
+                        1f to surfaceColor
+                    )
+                )
         )
+
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (applyWindowInsets) Modifier.navigationBarsPadding() else Modifier)
+                .padding(
+                    horizontal = MaterialTheme.spacing.Large,
+                    vertical = MaterialTheme.spacing.Medium
+                ),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
         ) {
             SecondaryButton(
@@ -123,106 +118,6 @@ fun WizardNavigationBar(
                 onNext = onNext,
                 onSubmit = onSubmit,
                 modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun WizardFastTrackSection(
-    skipToReviewLabel: String?,
-    optionalDefaultsHint: String?,
-    isVisible: Boolean,
-    enabled: Boolean,
-    onSkipToReview: () -> Unit
-) {
-    // Cache last non-null label/hint while visible so exit animation never blanks mid-fade.
-    var displayedLabel by remember { mutableStateOf(skipToReviewLabel) }
-    var displayedHint by remember { mutableStateOf(optionalDefaultsHint) }
-    if (isVisible) {
-        displayedLabel = skipToReviewLabel
-        displayedHint = optionalDefaultsHint
-    }
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
-        exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = MaterialTheme.spacing.Small),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-        ) {
-            displayedLabel?.let { label ->
-                WizardFastTrackPill(
-                    label = label,
-                    enabled = enabled,
-                    onClick = onSkipToReview
-                )
-            }
-            displayedHint?.let { hint ->
-                CaptionText(
-                    text = hint,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = HINT_MAX_LINES,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun WizardFastTrackPill(
-    label: String,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val containerColor = if (enabled) {
-        colorScheme.primary.copy(alpha = FAST_TRACK_CONTAINER_ALPHA).compositeOver(colorScheme.surface)
-    } else {
-        colorScheme.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA).compositeOver(colorScheme.surface)
-    }
-    val contentColor = if (enabled) {
-        colorScheme.primary
-    } else {
-        colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
-    }
-    val shadowElevation = if (enabled && !isSystemInDarkTheme()) {
-        FAST_TRACK_SHADOW_ELEVATION
-    } else {
-        0.dp
-    }
-
-    val interactionSource = remember { MutableInteractionSource() }
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(FAST_TRACK_PILL_HEIGHT)
-            .shadow(elevation = shadowElevation, shape = CircleShape)
-            .clip(CircleShape)
-            .background(color = containerColor, shape = CircleShape)
-            .debouncedClickable(
-                interactionSource = interactionSource,
-                indication = ripple(color = contentColor),
-                enabled = enabled,
-                role = Role.Button,
-                onClick = onClick
-            )
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.ExtraLarge),
-            contentAlignment = Alignment.Center
-        ) {
-            ButtonContentRow(
-                text = label,
-                contentColor = contentColor,
-                trailingIcon = TablerIcons.Outline.ArrowRight
             )
         }
     }
@@ -255,18 +150,15 @@ private fun WizardForwardButton(
 }
 
 /**
- * Animates bottom content clearance for [WizardNavigationBar] between its standard height and
- * [UiConstants.WIZARD_NAV_BAR_WITH_SKIP_HEIGHT] when [hasSkipToReview] is `true`.
+ * Returns the bottom content clearance required for [WizardNavigationBar], including
+ * system `navigationBars` inset when the main bottom tab bar is hidden (`LocalBottomPadding == 0.dp`).
  */
 @Composable
-fun rememberWizardNavBarPadding(hasSkipToReview: Boolean): Dp {
-    val padding by animateDpAsState(
-        targetValue = if (hasSkipToReview) {
-            UiConstants.WIZARD_NAV_BAR_WITH_SKIP_HEIGHT
-        } else {
-            UiConstants.WIZARD_NAV_BAR_HEIGHT
-        },
-        label = "wizardNavBarPadding"
-    )
-    return padding
+fun rememberWizardNavBarPadding(): Dp {
+    val navBarInset = if (LocalBottomPadding.current == 0.dp) {
+        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    } else {
+        0.dp
+    }
+    return UiConstants.WIZARD_NAV_BAR_HEIGHT + navBarInset
 }
