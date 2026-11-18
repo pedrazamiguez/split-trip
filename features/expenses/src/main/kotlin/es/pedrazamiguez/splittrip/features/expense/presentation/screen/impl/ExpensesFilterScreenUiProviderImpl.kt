@@ -19,6 +19,8 @@ class ExpensesFilterScreenUiProviderImpl(
     override val route: String = Routes.EXPENSES_FILTER
 ) : ScreenUiProvider {
 
+    override val showBottomBar: Boolean = false
+
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
         val navController = LocalTabNavController.current
