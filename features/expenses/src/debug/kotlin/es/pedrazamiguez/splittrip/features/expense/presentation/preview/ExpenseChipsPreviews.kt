@@ -1,10 +1,17 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PlaneTilt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.CategorySection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.CategoryChips
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.CondensedChips
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.PaymentMethodChips
@@ -12,6 +19,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.c
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
+import kotlinx.collections.immutable.toImmutableList
 
 private val PREVIEW_CATEGORY_FOOD = CategoryUiModel(
     id = "FOOD",
@@ -91,6 +100,38 @@ private fun CondensedChipsPreview() {
             onItemSelected = {},
             itemId = { it },
             itemLabel = { it }
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun CategorySectionGridPreview() {
+    val categories = ExpenseCategory.entries.map { category ->
+        CategoryUiModel(
+            id = category.name,
+            displayText = stringResource(category.toStringRes()),
+            icon = category.toIconVector()
+        )
+    }.toImmutableList()
+    val subcategories = ExpenseSubcategory.forCategory(ExpenseCategory.TRANSPORT).map { subcategory ->
+        SubcategoryUiModel(
+            subcategory = subcategory,
+            name = UiText.StringResource(subcategory.toStringRes()),
+            icon = subcategory.toIconVector()
+        )
+    }.toImmutableList()
+
+    PreviewThemeWrapper {
+        CategorySection(
+            availableCategories = categories,
+            selectedCategory = categories.first { it.id == ExpenseCategory.TRANSPORT.name },
+            onCategorySelected = {},
+            availableSubcategories = subcategories,
+            selectedSubcategory = subcategories.first {
+                it.subcategory == ExpenseSubcategory.INTERNATIONAL_FLIGHT
+            },
+            onSubcategorySelected = {}
         )
     }
 }
