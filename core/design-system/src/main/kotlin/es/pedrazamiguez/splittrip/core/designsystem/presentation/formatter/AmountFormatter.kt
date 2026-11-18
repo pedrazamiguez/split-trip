@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.model.Currency as DomainCurrency
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -177,6 +178,28 @@ fun DomainCurrency.formatDisplay(defaultCurrencyCode: String = "EUR"): String {
         code
     }
 }
+
+/**
+ * Resolves the display symbol for a domain [DomainCurrency], preferring the locale/native
+ * currency symbol (e.g. `"€"`, `"$"`, `"฿"`) and falling back to [DomainCurrency.symbol]
+ * (when distinct from [DomainCurrency.code]) or the 3-letter ISO code when no symbol exists.
+ */
+fun DomainCurrency.resolveDisplaySymbol(locale: Locale = Locale.getDefault()): String {
+    val resolved = resolveCurrencySymbol(code, locale)
+    if (resolved.isNotBlank() && resolved != code) {
+        return resolved
+    }
+    return symbol.takeIf { it.isNotBlank() && it != code } ?: code
+}
+
+/**
+ * Resolves the display symbol for a [CurrencyUiModel], preferring its pre-resolved [CurrencyUiModel.symbol],
+ * then [resolveCurrencySymbol] for [CurrencyUiModel.code] in [locale], and falling back to [CurrencyUiModel.code].
+ */
+fun CurrencyUiModel.resolveDisplaySymbol(locale: Locale = Locale.getDefault()): String =
+    symbol.ifBlank {
+        resolveCurrencySymbol(code, locale).ifBlank { code }
+    }
 
 /**
  * Parses a user-entered amount string to the currency's smallest unit (e.g., cents for

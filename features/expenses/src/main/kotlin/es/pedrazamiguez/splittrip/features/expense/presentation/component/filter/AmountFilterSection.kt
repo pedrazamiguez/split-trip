@@ -21,8 +21,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.rememberLocale
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.resolveCurrencySymbol
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
 import java.math.BigDecimal
@@ -40,6 +42,8 @@ fun AmountFilterSection(
     modifier: Modifier = Modifier
 ) {
     val activeCurrency = criteria.filterCurrency ?: defaultCurrency
+    val locale = rememberLocale()
+    val currencySymbol = resolveCurrencySymbol(activeCurrency, locale).ifBlank { activeCurrency }
     var minText by rememberSaveable { mutableStateOf("") }
     var maxText by rememberSaveable { mutableStateOf("") }
 
@@ -98,7 +102,7 @@ fun AmountFilterSection(
                 imeAction = ImeAction.Next,
                 suffix = {
                     Text(
-                        text = activeCurrency,
+                        text = currencySymbol,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -120,7 +124,7 @@ fun AmountFilterSection(
                 imeAction = ImeAction.Done,
                 suffix = {
                     Text(
-                        text = activeCurrency,
+                        text = currencySymbol,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

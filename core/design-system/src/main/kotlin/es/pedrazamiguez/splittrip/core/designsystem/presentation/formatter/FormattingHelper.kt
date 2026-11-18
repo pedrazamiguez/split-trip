@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -145,4 +146,21 @@ class FormattingHelper(
      */
     fun formatMediumDate(date: LocalDate?): String =
         date?.formatMediumDate(locale = localeProvider.getCurrentLocale()) ?: ""
+
+    /**
+     * Resolves the currency symbol for [currencyCode] using the current locale,
+     * falling back to the 3-letter ISO code when no distinct symbol exists.
+     */
+    fun resolveCurrencySymbol(currencyCode: String): String {
+        if (currencyCode.isBlank()) return ""
+        return resolveCurrencySymbol(currencyCode, localeProvider.getCurrentLocale())
+            .ifBlank { currencyCode }
+    }
+
+    /**
+     * Resolves the display symbol for a domain [Currency] using the current locale,
+     * preferring the currency symbol and falling back to the 3-letter ISO code when unavailable.
+     */
+    fun resolveCurrencySymbol(currency: Currency): String =
+        currency.resolveDisplaySymbol(locale = localeProvider.getCurrentLocale())
 }

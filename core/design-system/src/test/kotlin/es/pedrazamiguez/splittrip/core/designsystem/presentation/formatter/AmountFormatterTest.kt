@@ -1,7 +1,11 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
+import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.Currency as DomainCurrency
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import io.mockk.every
+import io.mockk.mockk
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -338,6 +342,75 @@ class AmountFormatterTest {
                 decimalDigits = 2
             )
             assertEquals("THB (฿)", currency.formatDisplay())
+        }
+    }
+
+    // ---------- resolveDisplaySymbol ----------
+
+    @Nested
+    @DisplayName("resolveDisplaySymbol")
+    inner class ResolveDisplaySymbol {
+
+        @Test
+        fun `domain currency resolves euro symbol over 3-letter code`() {
+            val currency = DomainCurrency(code = "EUR", symbol = "€", defaultName = "Euro", decimalDigits = 2)
+            assertEquals("€", currency.resolveDisplaySymbol(usLocale))
+            assertEquals("€", currency.resolveDisplaySymbol(esLocale))
+        }
+
+        @Test
+        fun `domain currency resolves native symbol for ZAR in US locale`() {
+            val currency = DomainCurrency(
+                code = "ZAR",
+                symbol = "R",
+                defaultName = "South African Rand",
+                decimalDigits = 2
+            )
+            assertEquals("R", currency.resolveDisplaySymbol(usLocale))
+        }
+
+        @Test
+        fun `domain currency falls back to 3-letter code when currency has no distinct symbol`() {
+            val currency = DomainCurrency(code = "CHF", symbol = "CHF", defaultName = "Swiss Franc", decimalDigits = 2)
+            assertEquals("CHF", currency.resolveDisplaySymbol(usLocale))
+        }
+
+        @Test
+        fun `domain currency falls back to model symbol or code when ISO code is unknown`() {
+            val withSymbol = DomainCurrency(code = "XYZ", symbol = "¤", defaultName = "Custom", decimalDigits = 2)
+            val withoutSymbol = DomainCurrency(code = "XYZ", symbol = "", defaultName = "Custom", decimalDigits = 2)
+            assertEquals("¤", withSymbol.resolveDisplaySymbol(usLocale))
+            assertEquals("XYZ", withoutSymbol.resolveDisplaySymbol(usLocale))
+        }
+
+        @Test
+        fun `currency UI model prefers pre-resolved symbol and resolves blank symbol lazily`() {
+            val preResolved = CurrencyUiModel(code = "EUR", displayText = "EUR (€)", decimalDigits = 2, symbol = "€")
+            val lazyEur = CurrencyUiModel(code = "EUR", displayText = "EUR (€)", decimalDigits = 2)
+            val lazyChf = CurrencyUiModel(code = "CHF", displayText = "CHF", decimalDigits = 2)
+            val lazyUnknown = CurrencyUiModel(code = "XYZ", displayText = "XYZ", decimalDigits = 2)
+
+            assertEquals("€", preResolved.resolveDisplaySymbol(usLocale))
+            assertEquals("€", lazyEur.resolveDisplaySymbol(usLocale))
+            assertEquals("CHF", lazyChf.resolveDisplaySymbol(usLocale))
+            assertEquals("XYZ", lazyUnknown.resolveDisplaySymbol(usLocale))
+        }
+
+        @Test
+        fun `formatting helper resolves symbol with fallback to currency code`() {
+            val localeProvider = mockk<LocaleProvider>()
+            every { localeProvider.getCurrentLocale() } returns usLocale
+            val helper = FormattingHelper(localeProvider)
+
+            val eur = DomainCurrency(code = "EUR", symbol = "€", defaultName = "Euro", decimalDigits = 2)
+            val chf = DomainCurrency(code = "CHF", symbol = "CHF", defaultName = "Swiss Franc", decimalDigits = 2)
+
+            assertEquals("€", helper.resolveCurrencySymbol("EUR"))
+            assertEquals("CHF", helper.resolveCurrencySymbol("CHF"))
+            assertEquals("XYZ", helper.resolveCurrencySymbol("XYZ"))
+            assertEquals("", helper.resolveCurrencySymbol(""))
+            assertEquals("€", helper.resolveCurrencySymbol(eur))
+            assertEquals("CHF", helper.resolveCurrencySymbol(chf))
         }
     }
 

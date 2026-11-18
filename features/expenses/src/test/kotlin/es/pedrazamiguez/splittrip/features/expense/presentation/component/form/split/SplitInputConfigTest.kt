@@ -41,26 +41,40 @@ class SplitInputConfigTest {
     }
 
     @Test
-    fun `resolveSplitInputConfig returns exact amount configuration when isPercentMode is false`() {
+    fun `resolveSplitInputConfig returns exact amount configuration with currency symbol when available`() {
         var amountCallbackValue: String? = null
         var percentageCallbackCalled = false
 
         val config = resolveSplitInputConfig(
             split = sampleSplit,
             isPercentMode = false,
-            currencySymbol = "EUR",
+            currencySymbol = "€",
             onAmountChanged = { amountCallbackValue = it },
             onPercentageChanged = { percentageCallbackCalled = true }
         )
 
         assertEquals("25.00", config.value)
         assertNull(config.unitRes)
-        assertEquals("EUR", config.unitLiteral)
+        assertEquals("€", config.unitLiteral)
         assertEquals(R.string.add_expense_split_amount_label, config.fieldDescriptionRes)
 
         config.onValueChange("30.00")
         assertEquals("30.00", amountCallbackValue)
         assertEquals(false, percentageCallbackCalled)
+    }
+
+    @Test
+    fun `resolveSplitInputConfig preserves currency code fallback when currency has no symbol`() {
+        val config = resolveSplitInputConfig(
+            split = sampleSplit,
+            isPercentMode = false,
+            currencySymbol = "CHF",
+            onAmountChanged = {},
+            onPercentageChanged = {}
+        )
+
+        assertNull(config.unitRes)
+        assertEquals("CHF", config.unitLiteral)
     }
 
     @Test

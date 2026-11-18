@@ -54,7 +54,8 @@ class AddExpenseOptionsUiMapper(
         displayText = currency.formatDisplay(),
         decimalDigits = currency.decimalDigits,
         defaultName = currency.defaultName,
-        localizedName = currency.resolveLocalizedName(resourceProvider)
+        localizedName = currency.resolveLocalizedName(resourceProvider),
+        symbol = formattingHelper.resolveCurrencySymbol(currency)
     )
 
     fun mapCurrencies(currencies: List<Currency>): ImmutableList<CurrencyUiModel> =
