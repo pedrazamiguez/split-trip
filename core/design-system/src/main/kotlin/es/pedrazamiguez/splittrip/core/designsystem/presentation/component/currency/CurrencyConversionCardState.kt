@@ -19,7 +19,6 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
  * @param exchangeRateLockedHint Optional hint explaining why the rate is locked.
  * @param isInsufficientCash  Drives error colouring on the locked hint text.
  * @param isGroupAmountError  Shows error styling on the group-amount field.
- * @param isExchangeRateStale When true, shows a warning that the rate may be outdated.
  * @param autoFocus           If `true`, the exchange-rate field requests focus on first composition.
  * @param displayExchangeRate Optional custom display-formatted rate text for unfocused state.
  * @param displayGroupAmount  Optional custom display-formatted group amount text for unfocused state.
@@ -35,8 +34,6 @@ data class CurrencyConversionCardState(
     val exchangeRateLockedHint: UiText? = null,
     val isInsufficientCash: Boolean = false,
     val isGroupAmountError: Boolean = false,
-    val isExchangeRateStale: Boolean = false,
-    val isExchangeRateError: Boolean = false,
     val isExchangeRateFieldError: Boolean = false,
     val autoFocus: Boolean = false,
     val displayExchangeRate: String? = null,

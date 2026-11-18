@@ -36,8 +36,6 @@ fun FeeExchangeRateStep(
                 isExchangeRateLocked = false,
                 isGroupAmountError = !uiState.isFeeConvertedAmountValid,
                 isExchangeRateFieldError = !uiState.isFeeExchangeRateValid,
-                isExchangeRateStale = uiState.isFeeExchangeRateStale,
-                isExchangeRateError = uiState.isFeeExchangeRateError,
                 autoFocus = true
             ),
             groupAmountDecimalPlaces = uiState.groupCurrency?.decimalDigits ?: UiConstants.DEFAULT_MAX_DECIMAL_PLACES,
