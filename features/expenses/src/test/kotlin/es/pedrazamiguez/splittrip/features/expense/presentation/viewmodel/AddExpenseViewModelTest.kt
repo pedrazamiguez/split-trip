@@ -2289,4 +2289,48 @@ class AddExpenseViewModelTest {
             // Routing verified — previewCashExchangeRateUseCase is relaxed and won't throw
         }
     }
+
+    @Nested
+    inner class StepInfoSheetEvents {
+
+        @Test
+        fun `initial state has isStepInfoSheetVisible set to false`() = runTest {
+            assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible true updates isStepInfoSheetVisible to true`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = true))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible false updates isStepInfoSheetVisible to false`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = true))
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+
+            viewModel.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = false))
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet does not mark form as dirty`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.isDirty)
+
+            viewModel.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = true))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            assertFalse(viewModel.uiState.value.isDirty)
+        }
+    }
 }

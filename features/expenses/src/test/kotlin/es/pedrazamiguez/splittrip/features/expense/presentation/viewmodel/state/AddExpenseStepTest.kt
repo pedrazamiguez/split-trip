@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state
 
+import es.pedrazamiguez.splittrip.features.expense.R
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -323,6 +325,85 @@ class AddExpenseStepTest {
                 AddExpenseStep.REVIEW
             )
             assertEquals(expected, mandatorySteps)
+        }
+    }
+
+    // ── Step Info Resources ──────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("StepInfoResources")
+    inner class StepInfoResources {
+
+        @Test
+        fun `every step has non-zero infoTitleRes and infoDescriptionRes`() {
+            AddExpenseStep.entries.forEach { step ->
+                assertNotEquals(0, step.infoTitleRes, "infoTitleRes should not be 0 for $step")
+                assertNotEquals(0, step.infoDescriptionRes, "infoDescriptionRes should not be 0 for $step")
+            }
+        }
+
+        @Test
+        fun `all 13 steps have unique infoTitleRes and infoDescriptionRes`() {
+            val steps = AddExpenseStep.entries
+            assertEquals(13, steps.size)
+            assertEquals(13, steps.map { it.infoTitleRes }.toSet().size)
+            assertEquals(13, steps.map { it.infoDescriptionRes }.toSet().size)
+        }
+
+        @Test
+        fun `each step maps to its expected infoTitleRes and infoDescriptionRes`() {
+            val expectedMappings = mapOf(
+                AddExpenseStep.TITLE to (
+                    R.string.expense_step_info_title_title to R.string.expense_step_info_title_description
+                    ),
+                AddExpenseStep.PAYMENT_METHOD to (
+                    R.string.expense_step_info_payment_method_title to
+                        R.string.expense_step_info_payment_method_description
+                    ),
+                AddExpenseStep.AMOUNT to (
+                    R.string.expense_step_info_amount_title to R.string.expense_step_info_amount_description
+                    ),
+                AddExpenseStep.EXCHANGE_RATE to (
+                    R.string.expense_step_info_exchange_rate_title to
+                        R.string.expense_step_info_exchange_rate_description
+                    ),
+                AddExpenseStep.SPLIT to (
+                    R.string.expense_step_info_split_title to R.string.expense_step_info_split_description
+                    ),
+                AddExpenseStep.CATEGORY to (
+                    R.string.expense_step_info_category_title to R.string.expense_step_info_category_description
+                    ),
+                AddExpenseStep.FUNDING_SOURCE to (
+                    R.string.expense_step_info_funding_source_title to
+                        R.string.expense_step_info_funding_source_description
+                    ),
+                AddExpenseStep.CONTRIBUTION_SCOPE to (
+                    R.string.expense_step_info_contribution_scope_title to
+                        R.string.expense_step_info_contribution_scope_description
+                    ),
+                AddExpenseStep.VENDOR_NOTES to (
+                    R.string.expense_step_info_vendor_notes_title to
+                        R.string.expense_step_info_vendor_notes_description
+                    ),
+                AddExpenseStep.PAYMENT_STATUS to (
+                    R.string.expense_step_info_payment_status_title to
+                        R.string.expense_step_info_payment_status_description
+                    ),
+                AddExpenseStep.RECEIPT to (
+                    R.string.expense_step_info_receipt_title to R.string.expense_step_info_receipt_description
+                    ),
+                AddExpenseStep.ADD_ONS to (
+                    R.string.expense_step_info_add_ons_title to R.string.expense_step_info_add_ons_description
+                    ),
+                AddExpenseStep.REVIEW to (
+                    R.string.expense_step_info_review_title to R.string.expense_step_info_review_description
+                    )
+            )
+
+            expectedMappings.forEach { (step, expectedPair) ->
+                assertEquals(expectedPair.first, step.infoTitleRes, "Title mismatch for $step")
+                assertEquals(expectedPair.second, step.infoDescriptionRes, "Description mismatch for $step")
+            }
         }
     }
 }

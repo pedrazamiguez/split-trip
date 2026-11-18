@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.AddExpenseConfigFailedContent
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.ExpenseStepInfoBottomSheet
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.ExpenseWizard
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -46,5 +47,12 @@ fun AddExpenseScreen(
                 ShimmerLoadingList(modifier = Modifier.padding(top = topPadding))
             }
         }
+    }
+
+    if (uiState.isStepInfoSheetVisible) {
+        ExpenseStepInfoBottomSheet(
+            step = uiState.currentStep,
+            onDismiss = { onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = false)) }
+        )
     }
 }

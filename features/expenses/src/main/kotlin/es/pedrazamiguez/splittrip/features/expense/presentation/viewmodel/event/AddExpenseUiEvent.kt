@@ -146,6 +146,9 @@ sealed interface AddExpenseUiEvent {
     /** Jumps directly to a previously completed step by its zero-based index. */
     data class JumpToStep(val stepIndex: Int) : AddExpenseUiEvent
 
+    /** Toggles visibility of the contextual step explanation bottom sheet. */
+    data class ToggleStepInfoSheet(val visible: Boolean) : AddExpenseUiEvent
+
     /**
      * Fired from the conflict-resolution sheet when the user taps "Use remaining cash".
      *
