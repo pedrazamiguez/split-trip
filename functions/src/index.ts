@@ -25,3 +25,4 @@ export { onNudgeCreated } from "./triggers/onNudgeCreated";
 export { onSettlementUpdated } from "./triggers/onSettlementUpdated";
 export { onGroupDeletionRequested } from "./triggers/onGroupDeletionRequested";
 export { expenseReminders } from "./triggers/scheduled/expenseReminders";
+export { syncExchangeRates } from "./triggers/scheduled/syncExchangeRates";

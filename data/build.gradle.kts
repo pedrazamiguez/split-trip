@@ -35,7 +35,6 @@ dependencies {
     implementation(project(":domain"))
     api(project(":data:firebase"))
     api(project(":data:local"))
-    api(project(":data:remote"))
 
     // Other dependencies
     implementation(libs.kotlinx.coroutines.core)

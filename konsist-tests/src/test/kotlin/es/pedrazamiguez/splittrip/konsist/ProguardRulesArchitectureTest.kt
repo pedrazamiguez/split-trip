@@ -77,16 +77,16 @@ class ProguardRulesArchitectureTest {
     }
 
     @Test
-    @DisplayName("Remote DTO models and API interfaces must have keep rules")
+    @DisplayName("Retired remote DTO and API keep rules must not be present")
     fun `remote dtos and apis must have keep rules`() {
         val rules = readProguardRules()
-        assertTrue(
+        assertFalse(
             rules.contains("es.pedrazamiguez.splittrip.data.remote.dto.**"),
-            "Proguard rules must keep remote DTO classes"
+            "Proguard rules must not reference retired data.remote DTO classes"
         )
-        assertTrue(
+        assertFalse(
             rules.contains("es.pedrazamiguez.splittrip.data.remote.api.**"),
-            "Proguard rules must keep remote API interfaces"
+            "Proguard rules must not reference retired data.remote API interfaces"
         )
     }
 

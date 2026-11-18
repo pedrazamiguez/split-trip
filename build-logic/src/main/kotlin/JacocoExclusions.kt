@@ -116,8 +116,6 @@ object JacocoExclusions {
         "**/local/dao/*Dao\$*.*",
         // Room entity projection data classes — pure data holders with no testable logic
         "**/local/entity/SyncStatusEntry*.*",
-        // ── Remote data sources — Retrofit HTTP (requires OkHttp/network runtime)
-        "**/remote/datasource/impl/**",
         // ── Settings UI models — sealed subclasses with @Composable lambda fields
         "**/presentation/model/SettingsItemModel*.*",
         "**/presentation/model/SettingsSectionModel*.*",

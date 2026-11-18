@@ -144,5 +144,13 @@ service cloud.firestore {
         allow delete: if isAuthenticated();
       }
     }
+
+    // ---------------------------------------------------------------
+    // Exchange rates (populated by scheduled Cloud Function)
+    // ---------------------------------------------------------------
+    match /exchange_rates/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
   }
 }

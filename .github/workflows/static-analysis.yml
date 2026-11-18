@@ -19,7 +19,6 @@ jobs:
     permissions:
       contents: read
     env:
-      OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
     steps:
       - uses: actions/checkout@v6
@@ -59,7 +58,6 @@ jobs:
       contents: read
       security-events: write
     env:
-      OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
     steps:
       - uses: actions/checkout@v6
@@ -181,7 +179,6 @@ jobs:
       contents: read
       security-events: write
     env:
-      OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
     steps:
       - uses: actions/checkout@v6
@@ -333,7 +330,6 @@ jobs:
       contents: read
       security-events: write
     env:
-      OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
     steps:
       - uses: actions/checkout@v6
