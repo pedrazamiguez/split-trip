@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.core.designsystem.navigation
 
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils.DeepLinkDispatchAction
 import es.pedrazamiguez.splittrip.domain.model.Group
 import io.mockk.every
 import io.mockk.mockk
@@ -139,14 +140,57 @@ class NavigationUtilsTest {
         }
 
         @Test
-        fun `returns null when isReconciled is false, checked, but does not have pending data`() {
-            assertNull(
+        fun `returns ONBOARDING when isReconciled is false, checked, and has no pending data`() {
+            assertEquals(
+                Routes.ONBOARDING,
                 NavigationUtils.resolveStartDestination(
                     isUserLoggedIn = true,
                     onboardingCompleted = false,
                     isReconciled = false,
                     isReconciliationChecked = true,
                     hasPendingReconciliation = false
+                )
+            )
+        }
+
+        @Test
+        fun `returns MAIN when isReconciled is false, checked, has no pending data, and onboarding is complete`() {
+            assertEquals(
+                Routes.MAIN,
+                NavigationUtils.resolveStartDestination(
+                    isUserLoggedIn = true,
+                    onboardingCompleted = true,
+                    isReconciled = false,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = false
+                )
+            )
+        }
+
+        @Test
+        fun `returns ONBOARDING when isReconciled is false, checked, and hasPendingReconciliation is null`() {
+            assertEquals(
+                Routes.ONBOARDING,
+                NavigationUtils.resolveStartDestination(
+                    isUserLoggedIn = true,
+                    onboardingCompleted = false,
+                    isReconciled = false,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = null
+                )
+            )
+        }
+
+        @Test
+        fun `returns MAIN when isReconciled is false, checked, and hasPendingReconciliation is null`() {
+            assertEquals(
+                Routes.MAIN,
+                NavigationUtils.resolveStartDestination(
+                    isUserLoggedIn = true,
+                    onboardingCompleted = true,
+                    isReconciled = false,
+                    isReconciliationChecked = true,
+                    hasPendingReconciliation = null
                 )
             )
         }
@@ -449,6 +493,89 @@ class NavigationUtilsTest {
             assertFalse(NavigationUtils.shouldNavigateOnSessionExpired(Routes.REGISTER))
             assertFalse(NavigationUtils.shouldNavigateOnSessionExpired(Routes.FORGOT_PASSWORD))
             assertFalse(NavigationUtils.shouldNavigateOnSessionExpired(null))
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  resolveNewIntentAction
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("resolveNewIntentAction")
+    inner class ResolveNewIntentAction {
+
+        @Test
+        fun `returns IGNORE when hasDeepLinkUri is false and currentRoute is null`() {
+            assertEquals(
+                DeepLinkDispatchAction.IGNORE,
+                NavigationUtils.resolveNewIntentAction(
+                    hasDeepLinkUri = false,
+                    currentRoute = null
+                )
+            )
+        }
+
+        @Test
+        fun `returns IGNORE when hasDeepLinkUri is false and currentRoute is MAIN`() {
+            assertEquals(
+                DeepLinkDispatchAction.IGNORE,
+                NavigationUtils.resolveNewIntentAction(
+                    hasDeepLinkUri = false,
+                    currentRoute = Routes.MAIN
+                )
+            )
+        }
+
+        @Test
+        fun `returns BUFFER when hasDeepLinkUri is true and currentRoute is null`() {
+            assertEquals(
+                DeepLinkDispatchAction.BUFFER,
+                NavigationUtils.resolveNewIntentAction(
+                    hasDeepLinkUri = true,
+                    currentRoute = null
+                )
+            )
+        }
+
+        @Test
+        fun `returns BUFFER when hasDeepLinkUri is true and currentRoute is a gate route`() {
+            listOf(
+                Routes.LOGIN,
+                Routes.REGISTER,
+                Routes.FORGOT_PASSWORD,
+                Routes.ONBOARDING,
+                Routes.RECONCILIATION
+            ).forEach { gateRoute ->
+                assertEquals(
+                    DeepLinkDispatchAction.BUFFER,
+                    NavigationUtils.resolveNewIntentAction(
+                        hasDeepLinkUri = true,
+                        currentRoute = gateRoute
+                    )
+                )
+            }
+        }
+
+        @Test
+        fun `returns HANDLE_IMMEDIATELY when hasDeepLinkUri is true and currentRoute is MAIN`() {
+            assertEquals(
+                DeepLinkDispatchAction.HANDLE_IMMEDIATELY,
+                NavigationUtils.resolveNewIntentAction(
+                    hasDeepLinkUri = true,
+                    currentRoute = Routes.MAIN
+                )
+            )
+        }
+
+        @Test
+        fun `returns HANDLE_IMMEDIATELY when hasDeepLinkUri is true and currentRoute is SETTINGS`() {
+            assertEquals(
+                DeepLinkDispatchAction.HANDLE_IMMEDIATELY,
+                NavigationUtils.resolveNewIntentAction(
+                    hasDeepLinkUri = true,
+                    currentRoute = Routes.SETTINGS
+                )
+            )
         }
     }
 }
