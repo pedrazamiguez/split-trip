@@ -12,8 +12,6 @@ data class YourBalanceUiState(
     val personalPosition: PersonalPositionUiModel? = null,
     val isCashBreakdownVisible: Boolean = false,
     val settlementConsensus: ImmutableList<SettlementConsensusItemUiModel> = persistentListOf(),
-    val activeDisputeSettlementId: String? = null,
-    val disputeReasonInput: String = "",
     val spendingChart: MemberSpendingChartUiModel? = null,
     val isChartCashOnly: Boolean = true
 )

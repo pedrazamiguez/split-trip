@@ -22,7 +22,6 @@ import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.Member
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.SettlementConsensusUiMapper
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.YourBalanceUiMapper
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.MemberSpendingChartUiModel
-import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.delegate.LocalUiState
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.delegate.YourBalanceActionDelegate
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.event.YourBalanceUiEvent
 import io.mockk.coEvery
@@ -109,7 +108,6 @@ class YourBalanceViewModelTest {
                 isCashOnly = true,
                 hasCashExpenses = true
             )
-        every { actionDelegate.localState } returns MutableStateFlow(LocalUiState())
 
         mapper = YourBalanceUiMapper(localeProvider, resourceProvider)
 
@@ -302,42 +300,12 @@ class YourBalanceViewModelTest {
 
     @Test
     fun `DisputeSettlement delegates to actionDelegate`() = runTest(testDispatcher) {
-        coEvery { actionDelegate.handleOpenDispute(any(), any(), any()) } returns Unit
+        coEvery { actionDelegate.handleOpenDispute(any(), any(), any(), any()) } returns Unit
 
         viewModel.onEvent(YourBalanceUiEvent.DisputeSettlement("s1"))
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { actionDelegate.handleOpenDispute("s1", false, any()) }
-    }
-
-    @Test
-    fun `DisputeReasonChanged delegates to actionDelegate`() = runTest(testDispatcher) {
-        every { actionDelegate.updateDisputeReason(any()) } returns Unit
-
-        viewModel.onEvent(YourBalanceUiEvent.DisputeReasonChanged("reason"))
-        advanceUntilIdle()
-
-        coVerify(exactly = 1) { actionDelegate.updateDisputeReason("reason") }
-    }
-
-    @Test
-    fun `DisputeSubmitted delegates to actionDelegate`() = runTest(testDispatcher) {
-        coEvery { actionDelegate.handleSubmitDispute(any(), any(), any()) } returns Unit
-
-        viewModel.onEvent(YourBalanceUiEvent.DisputeSubmitted)
-        advanceUntilIdle()
-
-        coVerify(exactly = 1) { actionDelegate.handleSubmitDispute(null, false, any()) }
-    }
-
-    @Test
-    fun `DisputeCancelled delegates to actionDelegate`() = runTest(testDispatcher) {
-        every { actionDelegate.handleCancelDispute() } returns Unit
-
-        viewModel.onEvent(YourBalanceUiEvent.DisputeCancelled)
-        advanceUntilIdle()
-
-        coVerify(exactly = 1) { actionDelegate.handleCancelDispute() }
+        coVerify(exactly = 1) { actionDelegate.handleOpenDispute("s1", null, false, any()) }
     }
 
     @Test

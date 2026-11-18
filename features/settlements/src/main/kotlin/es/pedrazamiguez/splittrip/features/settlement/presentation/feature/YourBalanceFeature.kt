@@ -17,7 +17,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.ad.InterstitialAdManager
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -42,6 +44,7 @@ fun YourBalanceFeature(
 ) {
     val uiState by yourBalanceViewModel.uiState.collectAsStateWithLifecycle()
     val selectedGroupId by sharedViewModel.selectedGroupId.collectAsStateWithLifecycle()
+    val navController = LocalTabNavController.current
     val pillController = LocalTopPillController.current
     val context = LocalContext.current
     val koin = getKoin()
@@ -52,17 +55,26 @@ fun YourBalanceFeature(
 
     LaunchedEffect(Unit) {
         yourBalanceViewModel.actions.collectLatest { action ->
-            val message = when (action) {
-                is YourBalanceUiAction.ShowError -> action.message.asString(context)
+            when (action) {
+                is YourBalanceUiAction.ShowError -> {
+                    pillController.showPill(message = action.message.asString(context))
+                }
                 is YourBalanceUiAction.ShowSuccess -> {
                     val activity = context as? Activity
                     if (activity != null) {
                         interstitialAdManager.onActionCompleted(activity) {}
                     }
-                    action.message.asString(context)
+                    pillController.showPill(message = action.message.asString(context))
+                }
+                is YourBalanceUiAction.NavigateToDisputeSettlement -> {
+                    navController.navigate(
+                        Routes.disputeSettlementRoute(
+                            groupId = action.groupId,
+                            settlementId = action.settlementId
+                        )
+                    )
                 }
             }
-            pillController.showPill(message = message)
         }
     }
 
