@@ -32,8 +32,10 @@ import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.Member
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.SettlementConsensusUiMapper
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.YourBalanceUiMapper
 import es.pedrazamiguez.splittrip.features.settlement.presentation.mapper.impl.GroupSettlementOverviewUiMapperImpl
+import es.pedrazamiguez.splittrip.features.settlement.presentation.screen.impl.DisputeSettlementScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settlement.presentation.screen.impl.GroupSettlementOverviewScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settlement.presentation.screen.impl.YourBalanceScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.DisputeSettlementViewModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.GroupSettlementOverviewViewModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.YourBalanceUseCases
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.YourBalanceViewModel
@@ -45,14 +47,21 @@ import org.koin.dsl.module
 val settlementsUiModule = module {
     factory {
         val confirmSettlementUseCase = get<ConfirmSettlementUseCase>()
-        val disputeSettlementUseCase = get<DisputeSettlementUseCase>()
         val nudgeDebtorUseCase = get<NudgeDebtorUseCase>()
         val telemetryTracker = get<TelemetryTracker>()
         YourBalanceActionDelegate(
             confirmSettlementUseCase = confirmSettlementUseCase,
-            disputeSettlementUseCase = disputeSettlementUseCase,
             nudgeDebtorUseCase = nudgeDebtorUseCase,
             telemetryTracker = telemetryTracker
+        )
+    }
+
+    viewModel {
+        val disputeSettlementUseCase = get<DisputeSettlementUseCase>()
+        val networkMonitor = get<NetworkMonitor>()
+        DisputeSettlementViewModel(
+            disputeSettlementUseCase = disputeSettlementUseCase,
+            networkMonitor = networkMonitor
         )
     }
 
@@ -155,4 +164,5 @@ val settlementsUiModule = module {
     factory { SettlementsTabGraphContributorImpl() } bind TabGraphContributor::class
     single { YourBalanceScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { GroupSettlementOverviewScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { DisputeSettlementScreenUiProviderImpl() } bind ScreenUiProvider::class
 }

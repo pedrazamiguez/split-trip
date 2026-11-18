@@ -50,9 +50,16 @@ object Routes {
     const val MANAGE_SUBUNITS = "manage_subunits/{groupId}"
     const val CREATE_EDIT_SUBUNIT = "create_edit_subunit/{groupId}?subunitId={subunitId}"
     const val GROUP_SETTLEMENT_OVERVIEW = "group_settlement_overview/{groupId}"
+    const val DISPUTE_SETTLEMENT_ARG_GROUP_ID = "groupId"
+    const val DISPUTE_SETTLEMENT_ARG_SETTLEMENT_ID = "settlementId"
+    const val DISPUTE_SETTLEMENT =
+        "dispute_settlement/{$DISPUTE_SETTLEMENT_ARG_GROUP_ID}/{$DISPUTE_SETTLEMENT_ARG_SETTLEMENT_ID}"
     const val RECEIPT_VIEWER = "receipt_viewer/{receiptUri}?mimeType={mimeType}"
 
     fun groupSettlementOverviewRoute(groupId: String) = "group_settlement_overview/$groupId"
+
+    fun disputeSettlementRoute(groupId: String, settlementId: String): String =
+        "dispute_settlement/${Uri.encode(groupId)}/${Uri.encode(settlementId)}"
 
     fun groupDetailRoute(groupId: String) = "group_detail/$groupId"
 

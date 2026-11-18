@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.de
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.balance.DisputeSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.NudgeDebtorUseCase
 import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.action.YourBalanceUiAction
@@ -14,7 +13,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -23,7 +21,6 @@ import org.junit.jupiter.api.Test
 class YourBalanceActionDelegateTest {
 
     private val confirmSettlementUseCase: ConfirmSettlementUseCase = mockk()
-    private val disputeSettlementUseCase: DisputeSettlementUseCase = mockk()
     private val nudgeDebtorUseCase: NudgeDebtorUseCase = mockk()
     private val telemetryTracker: TelemetryTracker = mockk(relaxed = true)
 
@@ -33,7 +30,6 @@ class YourBalanceActionDelegateTest {
     fun setUp() {
         delegate = YourBalanceActionDelegate(
             confirmSettlementUseCase,
-            disputeSettlementUseCase,
             nudgeDebtorUseCase,
             telemetryTracker
         )
@@ -80,65 +76,25 @@ class YourBalanceActionDelegateTest {
     }
 
     @Test
-    fun `handleOpenDispute sets active dispute settlement id`() = runTest {
+    fun `handleOpenDispute emits NavigateToDisputeSettlement when online and groupId is present`() = runTest {
         val actions = Channel<YourBalanceUiAction>(Channel.BUFFERED)
-        delegate.handleOpenDispute("s1", isOffline = false, actions)
 
-        assertEquals("s1", delegate.localState.value.activeDisputeSettlementId)
-    }
+        delegate.handleOpenDispute("s1", "group1", isOffline = false, actions)
 
-    @Test
-    fun `updateDisputeReason updates state`() = runTest {
-        delegate.updateDisputeReason("Wrong amount")
-        assertEquals("Wrong amount", delegate.localState.value.disputeReasonInput)
-    }
-
-    @Test
-    fun `handleCancelDispute clears state`() = runTest {
-        delegate.updateDisputeReason("Wrong amount")
-        delegate.handleCancelDispute()
-        assertNull(delegate.localState.value.activeDisputeSettlementId)
-        assertEquals("", delegate.localState.value.disputeReasonInput)
-    }
-
-    @Test
-    fun `handleSubmitDispute calls use case and clears state on success`() = runTest {
-        val actions = Channel<YourBalanceUiAction>(Channel.BUFFERED)
-        coEvery { disputeSettlementUseCase("group1", "s1", "Wrong amount") } returns Result.success(mockk())
-
-        delegate.handleOpenDispute("s1", isOffline = false, actions)
-        delegate.updateDisputeReason("Wrong amount")
-        delegate.handleSubmitDispute("group1", isOffline = false, actions)
-
-        coVerify(exactly = 1) { disputeSettlementUseCase("group1", "s1", "Wrong amount") }
         val action = actions.receive()
-        assertTrue(action is YourBalanceUiAction.ShowSuccess)
-        assertNull(delegate.localState.value.activeDisputeSettlementId)
-        assertEquals("", delegate.localState.value.disputeReasonInput)
+        assertEquals(
+            YourBalanceUiAction.NavigateToDisputeSettlement(groupId = "group1", settlementId = "s1"),
+            action
+        )
     }
 
     @Test
-    fun `handleSubmitDispute emits error on failure`() = runTest {
+    fun `handleOpenDispute does nothing when groupId is null`() = runTest {
         val actions = Channel<YourBalanceUiAction>(Channel.BUFFERED)
-        coEvery { disputeSettlementUseCase("group1", "s1", "Wrong amount") } returns Result.failure(RuntimeException())
 
-        delegate.handleOpenDispute("s1", isOffline = false, actions)
-        delegate.updateDisputeReason("Wrong amount")
-        delegate.handleSubmitDispute("group1", isOffline = false, actions)
+        delegate.handleOpenDispute("s1", null, isOffline = false, actions)
 
-        coVerify(exactly = 1) { disputeSettlementUseCase("group1", "s1", "Wrong amount") }
-        val action = actions.receive()
-        assertTrue(action is YourBalanceUiAction.ShowError)
-    }
-
-    @Test
-    fun `handleSubmitDispute does nothing if reason is blank`() = runTest {
-        val actions = Channel<YourBalanceUiAction>(Channel.BUFFERED)
-        delegate.handleOpenDispute("s1", isOffline = false, actions)
-        delegate.updateDisputeReason("  ")
-        delegate.handleSubmitDispute("group1", isOffline = false, actions)
-
-        coVerify(exactly = 0) { disputeSettlementUseCase(any(), any(), any()) }
+        assertTrue(actions.isEmpty)
     }
 
     @Test
@@ -194,14 +150,10 @@ class YourBalanceActionDelegateTest {
         delegate.handleNudgeDebtor("s1", "group1", isOffline = true, actions)
         assertTrue(actions.receive() is YourBalanceUiAction.ShowError)
 
-        delegate.handleOpenDispute("s1", isOffline = true, actions)
-        assertTrue(actions.receive() is YourBalanceUiAction.ShowError)
-
-        delegate.handleSubmitDispute("group1", isOffline = true, actions)
+        delegate.handleOpenDispute("s1", "group1", isOffline = true, actions)
         assertTrue(actions.receive() is YourBalanceUiAction.ShowError)
 
         coVerify(exactly = 0) { confirmSettlementUseCase(any(), any()) }
         coVerify(exactly = 0) { nudgeDebtorUseCase(any(), any()) }
-        coVerify(exactly = 0) { disputeSettlementUseCase(any(), any(), any()) }
     }
 }
