@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -1498,6 +1499,26 @@ class AddExpenseViewModelTest {
             viewModel.onEvent(AddExpenseUiEvent.CategorySelected("NONEXISTENT"))
 
             assertEquals(before, viewModel.uiState.value.selectedCategory)
+        }
+
+        @Test
+        fun `loadGroupConfig preserves canonical category order while pre-selecting last-used category`() = runTest {
+            every { getGroupLastUsedCategoryUseCase("group-eur") } returns flowOf(
+                listOf(ExpenseCategory.ENTERTAINMENT.name)
+            )
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            assertEquals(
+                ExpenseCategory.entries.map { it.name },
+                viewModel.uiState.value.availableCategories.map { it.id }
+            )
+            assertEquals(
+                ExpenseCategory.ENTERTAINMENT.name,
+                viewModel.uiState.value.selectedCategory?.id
+            )
         }
     }
 

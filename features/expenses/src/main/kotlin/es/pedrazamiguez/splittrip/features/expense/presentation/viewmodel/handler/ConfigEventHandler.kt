@@ -197,7 +197,7 @@ class ConfigEventHandler(
                 paymentMethods = defaults.reorderedPaymentMethods,
                 fundingSources = defaults.mappedFundingSources,
                 selectedFundingSource = defaults.defaultFundingSource,
-                availableCategories = defaults.reorderedCategories,
+                availableCategories = defaults.mappedCategories,
                 availableSubcategories = defaults.availableSubcategories,
                 availablePaymentStatuses = defaults.mappedPaymentStatuses,
                 selectedCurrency = defaults.initialCurrency,
@@ -296,13 +296,11 @@ class ConfigEventHandler(
             } ?: reorderedPaymentMethods.firstOrNull()
 
         val mappedCategories = addExpenseOptionsMapper.mapCategories(ExpenseCategory.entries)
-        val reorderedCategories =
-            reorderByRecent(mappedCategories, recentCategoryIds) { it.id }
         val defaultCategory =
             recentCategoryIds.firstOrNull()?.let { lastId ->
-                reorderedCategories.find { it.id == lastId }
-            } ?: reorderedCategories.find { it.id == ExpenseCategory.OTHER.name }
-                ?: reorderedCategories.lastOrNull()
+                mappedCategories.find { it.id == lastId }
+            } ?: mappedCategories.find { it.id == ExpenseCategory.OTHER.name }
+                ?: mappedCategories.lastOrNull()
 
         val defaultCategoryEnum = defaultCategory?.id?.let { catId ->
             runCatching { ExpenseCategory.fromString(catId) }.getOrNull()
@@ -348,7 +346,7 @@ class ConfigEventHandler(
             defaultPaymentMethod = defaultPaymentMethod,
             mappedFundingSources = mappedFundingSources,
             defaultFundingSource = defaultFundingSource,
-            reorderedCategories = reorderedCategories,
+            mappedCategories = mappedCategories,
             availableSubcategories = availableSubcategories,
             defaultCategory = defaultCategory,
             mappedPaymentStatuses = mappedPaymentStatuses,
@@ -445,7 +443,7 @@ class ConfigEventHandler(
         val defaultPaymentMethod: PaymentMethodUiModel?,
         val mappedFundingSources: ImmutableList<FundingSourceUiModel>,
         val defaultFundingSource: FundingSourceUiModel?,
-        val reorderedCategories: ImmutableList<CategoryUiModel>,
+        val mappedCategories: ImmutableList<CategoryUiModel>,
         val availableSubcategories: ImmutableList<SubcategoryUiModel>,
         val defaultCategory: CategoryUiModel?,
         val mappedPaymentStatuses: ImmutableList<PaymentStatusUiModel>,
