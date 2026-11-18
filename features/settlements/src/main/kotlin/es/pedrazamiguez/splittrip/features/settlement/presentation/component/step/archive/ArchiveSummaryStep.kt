@@ -10,8 +10,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
@@ -27,6 +31,13 @@ fun ArchiveSummaryStep(
     areAllSettlementsResolved: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val isNarrowScreen = LocalConfiguration.current.screenWidthDp.dp <= UiConstants.NARROW_SCREEN_BREAKPOINT
+    val metricHorizontalPadding = if (isNarrowScreen) {
+        MaterialTheme.spacing.Small
+    } else {
+        MaterialTheme.spacing.Medium
+    }
+
     WizardStepLayout(modifier = modifier) {
         Text(
             text = stringResource(R.string.archive_wizard_summary_title),
@@ -48,7 +59,10 @@ fun ArchiveSummaryStep(
                 modifier = Modifier.weight(1f)
             ) {
                 Column(
-                    modifier = Modifier.padding(MaterialTheme.spacing.Medium),
+                    modifier = Modifier.padding(
+                        horizontal = metricHorizontalPadding,
+                        vertical = MaterialTheme.spacing.Medium
+                    ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
                 ) {
@@ -61,7 +75,9 @@ fun ArchiveSummaryStep(
                     Text(
                         text = stringResource(R.string.settlement_overview_status_suggested),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -70,7 +86,10 @@ fun ArchiveSummaryStep(
                 modifier = Modifier.weight(1f)
             ) {
                 Column(
-                    modifier = Modifier.padding(MaterialTheme.spacing.Medium),
+                    modifier = Modifier.padding(
+                        horizontal = metricHorizontalPadding,
+                        vertical = MaterialTheme.spacing.Medium
+                    ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
                 ) {
@@ -78,9 +97,7 @@ fun ArchiveSummaryStep(
                         text = disputedCount.toString(),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = if (disputedCount >
-                            0
-                        ) {
+                        color = if (disputedCount > 0) {
                             MaterialTheme.colorScheme.error
                         } else {
                             MaterialTheme.colorScheme.onSurface
@@ -89,7 +106,9 @@ fun ArchiveSummaryStep(
                     Text(
                         text = stringResource(R.string.settlement_overview_status_disputed),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -98,7 +117,10 @@ fun ArchiveSummaryStep(
                 modifier = Modifier.weight(1f)
             ) {
                 Column(
-                    modifier = Modifier.padding(MaterialTheme.spacing.Medium),
+                    modifier = Modifier.padding(
+                        horizontal = metricHorizontalPadding,
+                        vertical = MaterialTheme.spacing.Medium
+                    ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
                 ) {
@@ -115,7 +137,9 @@ fun ArchiveSummaryStep(
                     Text(
                         text = stringResource(R.string.settlement_overview_status_resolved),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

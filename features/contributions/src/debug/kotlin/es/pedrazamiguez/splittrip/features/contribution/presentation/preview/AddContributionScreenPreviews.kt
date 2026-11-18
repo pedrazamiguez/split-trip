@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.contribution.presentation.screen.AddContributionScreen
@@ -180,6 +181,25 @@ private fun AddContributionReviewStepImpersonatedPreview() {
                 groupMembers = previewMembers,
                 selectedMemberId = "user-2",
                 selectedMemberDisplayName = "Ana"
+            )
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun AddContributionReviewStepNarrowPreview() {
+    PreviewThemeWrapper {
+        AddContributionScreen(
+            uiState = AddContributionUiState(
+                currentStep = AddContributionStep.REVIEW,
+                amountInput = "300",
+                groupCurrencyCode = "EUR",
+                formattedAmountWithCurrency = "300,00\u00A0€",
+                contributionScope = PayerType.GROUP,
+                groupMembers = previewMembers,
+                selectedMemberId = "user-1",
+                selectedMemberDisplayName = "Andrés"
             )
         )
     }

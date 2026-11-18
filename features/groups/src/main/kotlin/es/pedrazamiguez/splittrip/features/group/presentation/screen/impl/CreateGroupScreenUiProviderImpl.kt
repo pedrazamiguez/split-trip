@@ -14,6 +14,8 @@ import org.koin.androidx.compose.koinViewModel
 
 class CreateGroupScreenUiProviderImpl(override val route: String = Routes.CREATE_GROUP) : ScreenUiProvider {
 
+    override val showBottomBar: Boolean = false
+
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
         val navController = LocalTabNavController.current

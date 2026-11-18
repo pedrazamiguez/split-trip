@@ -20,6 +20,8 @@ import org.koin.androidx.compose.koinViewModel
 class AddCashWithdrawalScreenUiProviderImpl(override val route: String = Routes.ADD_CASH_WITHDRAWAL) :
     ScreenUiProvider {
 
+    override val showBottomBar: Boolean = false
+
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
         val navController = LocalTabNavController.current

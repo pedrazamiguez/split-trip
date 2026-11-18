@@ -15,6 +15,8 @@ import org.koin.androidx.compose.koinViewModel
 class CreateEditSubunitScreenUiProviderImpl(override val route: String = Routes.CREATE_EDIT_SUBUNIT) :
     ScreenUiProvider {
 
+    override val showBottomBar: Boolean = false
+
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
         val navController = LocalTabNavController.current

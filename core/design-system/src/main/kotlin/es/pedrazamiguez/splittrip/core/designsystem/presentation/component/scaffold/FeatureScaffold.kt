@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
@@ -47,15 +48,18 @@ fun FeatureScaffold(
                     Spacer(modifier = Modifier.statusBarsPadding())
                 }
             },
-            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            contentWindowInsets = WindowInsets.navigationBars
         ) { innerPadding ->
             val topPadding = innerPadding.calculateTopPadding()
             val bottomPadding = innerPadding.calculateBottomPadding()
 
+            // Bottom inset is applied directly to the root content Box so every standalone
+            // screen (including 3-button nav devices) clears the system bar; pass 0.dp via
+            // LocalBottomPadding to avoid double-padding screens that also read it.
             if (scrollContentUnderTopBar) {
                 CompositionLocalProvider(
                     LocalTopPadding provides topPadding,
-                    LocalBottomPadding provides bottomPadding
+                    LocalBottomPadding provides 0.dp
                 ) {
                     Box(
                         modifier = Modifier
@@ -69,7 +73,7 @@ fun FeatureScaffold(
             } else {
                 CompositionLocalProvider(
                     LocalTopPadding provides 0.dp,
-                    LocalBottomPadding provides bottomPadding
+                    LocalBottomPadding provides 0.dp
                 ) {
                     Box(
                         modifier = Modifier

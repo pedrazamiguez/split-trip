@@ -38,6 +38,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -52,40 +53,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
  * - Background: `surfaceContainerLow` — no visible border at rest.
  * - On focus: a full `outline` "ghost border" at 20 % opacity fades in (all four sides).
  * - Error state: always shows a visible `error`-coloured border.
- *
- * The public API is intentionally unchanged — all call-sites require no modification.
- *
- * @param value The input text to be shown in the text field
- * @param onValueChange The callback that is triggered when the input value changes
- * @param modifier Modifier applied to the outer [Column] wrapper
- * @param label Optional label rendered statically above the field
- * @param placeholder Optional placeholder shown inside the field when empty
- * @param leadingIcon Optional leading icon at the beginning of the field
- * @param trailingIcon Optional trailing icon at the end of the field
- * @param prefix Optional prefix text displayed before the input
- * @param suffix Optional suffix text displayed after the input
- * @param supportingText Optional supporting / error text displayed below the field
- * @param isError Whether the field is in error state
- * @param maxLength Optional maximum character length to display a counter ("current / max") below the field
- * @param enabled Whether the field is enabled
- * @param readOnly Whether the field is read-only (no editing but can be focused)
- * @param singleLine Whether the field should be a single line
- * @param maxLines Maximum number of visible lines
- * @param minLines Minimum number of visible lines
- * @param visualTransformation Transforms the visual representation of the input
- * @param keyboardType The type of keyboard to show
- * @param imeAction The IME action to show
- * @param capitalization The capitalization behavior
- * @param keyboardActions Keyboard actions to perform
- * @param onClick Optional click handler for read-only fields (e.g., dropdown triggers)
- * @param focusRequester Optional [FocusRequester] to programmatically request focus
- * @param moveCursorToEndOnFocus When `true`, the cursor moves to the end of the text on
- *                               programmatic focus. Use with [focusRequester] +
- *                               [rememberAutoFocusRequester].
- * @param focusable Whether the field can receive focus. Set to `false` for dropdown triggers
- *                  that must not steal focus from an adjacent editable field.
- * @param shape The shape of the field container
- * @param colors Custom colors for the field
  */
 @Suppress("LongMethod", "LongParameterList", "CognitiveComplexMethod", "CyclomaticComplexMethod")
 @Composable
@@ -322,6 +289,8 @@ private fun FieldLabel(label: String, enabled: Boolean, isError: Boolean) {
     Text(
         text = label,
         style = MaterialTheme.typography.labelLarge,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
         color = when {
             !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
             isError -> MaterialTheme.colorScheme.error

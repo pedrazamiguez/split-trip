@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.features.subunit.presentation.component.step.subunit.SubunitMembersStep
 import es.pedrazamiguez.splittrip.features.subunit.presentation.component.step.subunit.SubunitNameStep
@@ -60,9 +61,43 @@ fun SubunitSharesStepPreview() {
     }
 }
 
+@PreviewNarrowThemes
+@Composable
+fun SubunitSharesStepNarrowPreview() {
+    PreviewThemeWrapper {
+        SubunitSharesStep(
+            uiState = CreateEditSubunitUiState(
+                currentStep = CreateEditSubunitStep.SHARES,
+                name = "Beach House",
+                selectedMemberIds = persistentListOf("user-1", "user-2"),
+                memberShares = PREVIEW_MEMBER_SHARES,
+                lockedMemberIds = persistentSetOf("user-1"),
+                availableMembers = PREVIEW_GROUP_MEMBERS
+            ),
+            onEvent = {}
+        )
+    }
+}
+
 @PreviewComplete
 @Composable
 fun SubunitReviewStepPreview() {
+    PreviewThemeWrapper {
+        SubunitReviewStep(
+            uiState = CreateEditSubunitUiState(
+                currentStep = CreateEditSubunitStep.REVIEW,
+                name = "Beach House",
+                selectedMemberIds = persistentListOf("user-1", "user-2"),
+                memberShares = PREVIEW_MEMBER_SHARES,
+                availableMembers = PREVIEW_GROUP_MEMBERS
+            )
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+fun SubunitReviewStepNarrowPreview() {
     PreviewThemeWrapper {
         SubunitReviewStep(
             uiState = CreateEditSubunitUiState(

@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.extension.resolveLocalizedNa
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatForDisplay
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.resolveDisplaySymbol
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.Currency
@@ -96,7 +97,8 @@ class GroupUiMapperImpl(
         displayText = currency.formatDisplay(),
         decimalDigits = currency.decimalDigits,
         defaultName = currency.defaultName,
-        localizedName = currency.resolveLocalizedName(resourceProvider)
+        localizedName = currency.resolveLocalizedName(resourceProvider),
+        symbol = currency.resolveDisplaySymbol(localeProvider.getCurrentLocale())
     )
 
     override fun toCurrencyUiModels(currencies: List<Currency>): ImmutableList<CurrencyUiModel> =

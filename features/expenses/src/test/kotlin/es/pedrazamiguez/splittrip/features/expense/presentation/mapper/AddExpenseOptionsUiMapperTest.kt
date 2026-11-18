@@ -93,8 +93,11 @@ class AddExpenseOptionsUiMapperTest {
 
         @Test
         fun `maps EUR domain currency to UI model`() {
+            every { formattingHelper.resolveCurrencySymbol(eurDomain) } returns "€"
+
             val result = mapper.mapCurrency(eurDomain)
             assertEquals("EUR", result.code)
+            assertEquals("€", result.symbol)
             assertEquals(2, result.decimalDigits)
             assertTrue(result.displayText.contains("EUR"))
         }

@@ -7,16 +7,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScrollableStepContainer
 import es.pedrazamiguez.splittrip.features.contribution.presentation.component.step.ContributionAmountStep
 import es.pedrazamiguez.splittrip.features.contribution.presentation.component.step.ContributionDateStep
 import es.pedrazamiguez.splittrip.features.contribution.presentation.component.step.ContributionReviewStep
@@ -44,14 +37,7 @@ internal fun WizardStepContent(
         },
         label = "contributionWizardStep"
     ) { step ->
-        val bottomPadding = LocalBottomPadding.current
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = bottomPadding + UiConstants.WIZARD_NAV_BAR_HEIGHT)
-        ) {
+        WizardScrollableStepContainer {
             when (step) {
                 AddContributionStep.AMOUNT -> ContributionAmountStep(
                     uiState = uiState,
