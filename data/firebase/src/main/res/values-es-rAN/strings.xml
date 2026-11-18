@@ -40,8 +40,8 @@
     <string name="notification_settlement_request_body">%1$s çoliçitó un pago de %2$s</string>
     <string name="notification_settlement_confirmed_title">Pago confirmao</string>
     <string name="notification_settlement_confirmed_body">%1$s confirmó la reçêççión de %2$s</string>
-    <string name="notification_settlement_disputed_title">Pago dîpputao</string>
-    <string name="notification_settlement_disputed_body">%1$s dîpputó un pago de %2$s</string>
+    <string name="notification_settlement_disputed_title">Pago en rebiçión</string>
+    <string name="notification_settlement_disputed_body">%1$s çoliçitó rebiçâh un pago de %2$s</string>
     <string name="notification_group_deleted_title">Grupo eliminao</string>
     <string name="notification_group_deleted_body">%1$s eliminó er grupo %2$s</string>
     <string name="notification_group_deleted_body_brief">%1$s eliminó er grupo</string>

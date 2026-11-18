@@ -157,7 +157,7 @@
     <string name="settlement_status_pending">Pending</string>
     <string name="settlement_status_awaiting_confirmation">Awaiting confirmation</string>
     <string name="settlement_status_confirmed">Confirmed</string>
-    <string name="settlement_status_disputed">Disputed</string>
+    <string name="settlement_status_disputed">Under review</string>
 
     <!-- Cash Breakdown Bottom Sheet -->
     <string name="core_cash_breakdown_title">Cash breakdown</string>

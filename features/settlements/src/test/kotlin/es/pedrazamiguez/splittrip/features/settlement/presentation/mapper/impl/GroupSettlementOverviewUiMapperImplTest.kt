@@ -310,7 +310,7 @@ class GroupSettlementOverviewUiMapperImplTest {
             every { resourceProvider.getString(R.string.settlement_overview_status_suggested) } returns "Pending"
             every { resourceProvider.getString(R.string.settlement_overview_status_confirmed_by_payer) } returns
                 "Awaiting"
-            every { resourceProvider.getString(R.string.settlement_overview_status_disputed) } returns "Disputed"
+            every { resourceProvider.getString(R.string.settlement_overview_status_disputed) } returns "Under review"
             every { resourceProvider.getString(R.string.settlement_overview_status_resolved) } returns "Resolved"
 
             val suggested = createRecord("s-1", SettlementStatus.SUGGESTED)
@@ -322,7 +322,7 @@ class GroupSettlementOverviewUiMapperImplTest {
 
             assertEquals("Pending", result.pendingSettlements[0].statusLabel)
             assertEquals("Awaiting", result.pendingSettlements[1].statusLabel)
-            assertEquals("Disputed", result.disputedSettlements[0].statusLabel)
+            assertEquals("Under review", result.disputedSettlements[0].statusLabel)
             assertEquals("Resolved", result.resolvedSettlements[0].statusLabel)
         }
 

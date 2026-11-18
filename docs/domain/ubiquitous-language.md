@@ -13,8 +13,8 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 | **Contribution** | Aportación | Funds added to a group's collective virtual pool to cover future shared expenses. |
 | **Cash Withdrawal** | Retirada de efectivo | Physical cash withdrawn from an ATM or bank account to be used for group expenses. |
 | **Your Position** | Tu posición / Tu balance | The personal financial standing view for the current user, summarizing net position, cash in hand, and settlement consensus actions. (Replaces "My Position" / "Mi posición"). |
-| **Settlement / Settlement Consensus** | Acuerdo de pago / Consenso de pagos | A collaborative agreement and mutual consensus process to resolve a debt between two group members (propose, confirm receipt, or dispute). Replaces unilateral "Liquidación". |
-| **Settlement Record** | Registro de pago | A historical record of a completed or disputed settlement. |
+| **Settlement / Settlement Consensus** | Acuerdo de pago / Consenso de pagos | A collaborative agreement and mutual consensus process to resolve a debt between two group members (propose, confirm receipt, or request review). Replaces unilateral "Liquidación". |
+| **Settlement Record** | Registro de pago | A historical record of a completed or under-review settlement. |
 | **Balance** | Balance | The net financial position of a member or the group (how much is owed or owed to them). |
 | **Member Balance** | Balance de miembro | The specific breakdown of a single member's financial position, including cash in hand and total spent. |
 | **Group Pocket / Virtual Pocket** | Pocket del grupo / Pocket virtual | The collective pool of funds (virtual and physical cash) held by the group to cover shared expenses. |
@@ -49,7 +49,7 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 
 ## Translation Guidelines
 - **Always use "Acuerdo de pago" or "Consenso de pagos"**.
-  - **Never use "Liquidación"**. In traditional financial tools, "liquidación" implies an aggressive unilateral clearance, debt foreclosure, or clearance sale. In SplitTrip, debt resolution is a collaborative consensus agreement between peers (proposing a payment, payer marking it as sent, payee confirming receipt, or disputing).
+  - **Never use "Liquidación"**. In traditional financial tools, "liquidación" implies an aggressive unilateral clearance, debt foreclosure, or clearance sale. In SplitTrip, debt resolution is a collaborative consensus agreement between peers (proposing a payment, payer marking it as sent, payee confirming receipt, or requesting a review).
 - **Always use "Your Position" / "Tu posición" (or "Tu balance")**.
   - **Never use "My Position" / "Mi posición"**. The application addresses the traveler in a natural, respectful second person ("Tu posición", "Tus preferencias"), avoiding first-person self-labeling.
 - **Always use "Balance"**. Never use "Saldo" or "Posición neta" to keep the terminology approachable and less aggressively financial.
@@ -57,4 +57,6 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 - **Always use "Adicional" for AddOnMode.ON_TOP (English: "On top")**.
   - **Never use "Sumado"**. In previous iterations, "Sumado" was occasionally used in breakdown badges, creating inconsistency with the creation flow ("Adicional"). The canonical Spanish term across both expense creation and expense detail breakdowns is **"Adicional"** (Andalusian EPA: **"Adiçionâh"**).
 - **Always use "Ya incluido" (in form fields/selectors) or "Incluido" (in compact badges) for AddOnMode.INCLUDED (English: "Already included" / "Included")**.
+- **Always use "Pedir revisión" / "Solicitar revisión" (action) and "En revisión" (status)** (English: **"Request review"** / **"Under review"**).
+  - **Never use "Disputar" / "Disputa" / "Disputado"**. In Spanish, *"disputar"* conveys sports competition or legal litigation rather than collaborative peer consensus. Use *"Pedir revisión"* for compact action buttons, *"Solicitar revisión del pago"* for modal/dialog headers, and *"En revisión"* for status chips and section headings. (Internal enum `SettlementStatus.DISPUTED` and Firestore fields `disputedBy` / `disputeReason` are preserved for backward compatibility.)
 - Maintain consistency across all UI text, push notifications, error messages, and API responses.

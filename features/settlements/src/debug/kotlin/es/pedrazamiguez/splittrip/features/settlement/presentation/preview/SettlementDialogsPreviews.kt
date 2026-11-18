@@ -38,7 +38,7 @@ private fun DisputeSettlementBottomSheetPreview() {
 private fun SettlementDisputeBannerPreview() {
     PreviewThemeWrapper {
         SettlementDisputeBanner(
-            reason = "Disputed: Incorrect amount requested."
+            reason = "Under review: Incorrect amount requested."
         )
     }
 }
