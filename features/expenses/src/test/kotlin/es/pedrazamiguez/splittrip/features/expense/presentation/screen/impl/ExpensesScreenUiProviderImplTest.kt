@@ -40,6 +40,16 @@ class ExpensesScreenUiProviderImplTest {
     }
 
     @Test
+    fun `showBottomBar is true by default`() {
+        assertTrue(uiProvider.showBottomBar)
+    }
+
+    @Test
+    fun `category spending route matches expected destination`() {
+        assertEquals("category_spending", Routes.CATEGORY_SPENDING)
+    }
+
+    @Test
     fun `ADD_EXPENSE_SHARED_ELEMENT_KEY matches expected shared transition key`() {
         assertEquals("add_expense_container", ADD_EXPENSE_SHARED_ELEMENT_KEY)
     }

@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.screen.impl
+package es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -13,7 +13,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainActi
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
-import es.pedrazamiguez.splittrip.features.balance.R
+import es.pedrazamiguez.splittrip.features.expense.R
 import org.koin.androidx.compose.koinViewModel
 
 class CategorySpendingScreenUiProviderImpl(
@@ -29,7 +29,7 @@ class CategorySpendingScreenUiProviderImpl(
         val groupName by sharedViewModel.selectedGroupName.collectAsStateWithLifecycle()
 
         DynamicTopAppBar(
-            title = stringResource(R.string.balances_category_spending_title),
+            title = stringResource(R.string.expenses_category_spending_title),
             subtitle = groupName,
             onBack = { tabNavController.navigateUp() }
         )

@@ -370,7 +370,7 @@
     <string name="expense_step_info_split_title">Reparto entre miembrô</string>
     <string name="expense_step_info_split_description">Configura cómo çe dibide er gâtto entre tû compañerô de biahe. Êtte paço êh ôççionâh y por defêtto aplica un reparto a partê igualê entre tôh lô miembrô.\n\n• Partê igualê: Dibide er côtte equitatibamente entre lô miembrô incluíô.\n• Cantidadê: Introduçe el importe êççâtto pa cá partiçipante.\n• Porçentahe: Açînna porçentahê uçando el icono der candao pa fihâh cuotâ concretâ mientrâ el rêtto çe redîttribuye automáticamente.\n\nÇi er grupo tiene çubunidadê (como parehâ o familiâ), âttiba \"Dibidîh por çubunidá\" pa repartîh primero por grupo.</string>
     <string name="expense_step_info_category_title">Categoría y çûccategoría</string>
-    <string name="expense_step_info_category_description">Claçifica er gâtto en una categoría y una çûccategoría ôççionâh (como Comida y bebida, Alohamiento o Trâpporte). Êtte paço êh ôççionâh y preçelêççiona la úrtima categoría utiliçá.\n\nCategoriçâh lô gâttô alimenta er gráfico de gâttô por categoría en la pêttaña de Balançê çin afêttâh al êttao de cuentâ de lô miembrô.</string>
+    <string name="expense_step_info_category_description">Claçifica er gâtto en una categoría y una çûccategoría ôççionâh (como Comida y bebida, Alohamiento o Trâpporte). Êtte paço êh ôççionâh y preçelêççiona la úrtima categoría utiliçá.\n\nCategoriçâh lô gâttô alimenta er gráfico de gâttô por categoría en la pêttaña de Gâttô çin afêttâh al êttao de cuentâ de lô miembrô.</string>
     <string name="expense_step_info_funding_source_title">Pagao con (Orihen de lô fondô)</string>
     <string name="expense_step_info_funding_source_description">Indica de dónde çalió er dinero pa êtte pago. Êtte paço êh ôççionâh y çelêççiona por defêtto \"Tu dinero\" çi er grupo no tiene aportaçionê prebiâ ar pockêh, o \"Pockêh der grupo\" çi ay un pockêh compartío âttibo.\n\n• Pockêh der grupo: Çe paga con er dinero compartío reunío mediante aportaçionê en er pockêh birtuâh. Çe dêccuenta der çardo der pockêh çin henerâh un reemborço perçonâh.\n• Tu dinero: Pagâ de tu propio borçiyo. SplîTTrîh rehîttra una aportaçión binculá pa que tû compañerô de biahe te reemborçen çu parte en el acuerdo de pago.</string>
     <string name="expense_step_info_contribution_scope_title">Pagao pa (Arcançe de la aportaçión)</string>
@@ -385,4 +385,15 @@
     <string name="expense_step_info_add_ons_description">Dêggloça propinâ, comiçionê, recargô o dêccuentô como un importe fiho o un porçentahe. Êtte paço êh ôççionâh y êttá baçío por defêtto.\n\n• Adiçionâh: Çe çuma al importe introduçío (o çe rêtta çi êh un dêccuento), modificando er totâh reçurtante pagao.\n• Ya incluío: Çe dêggloça del importe introduçío pa mayôh trâpparençia çin cambiâh er totâh pagao.\n\nTodô lô êttrâ çe reparten proporçionarmente entre lô partiçipantê çegún çu cuota der gâtto baçe.</string>
     <string name="expense_step_info_review_title">Reçumen y confirmaçión</string>
     <string name="expense_step_info_review_description">Rebiça el reçumen completo de tu gâtto —incluyendo el importe, la comberçión de moneda, el orihen de lô fondô, el reparto y lô êttrâ— antê de guardâl-lo.\n\n¿Neçeçitâ cambiâh argo? Toca cuarquiêh paço completao en la barra çuperiôh o purça \"Atrâh\" pa modificâh cuarquiêh dato antê de confirmâh.</string>
+    <string name="expenses_category_spending_title">Gâttô por categoría</string>
+    <string name="expenses_category_expand">Môttrâh çûccategoríâ de %1$s</string>
+    <string name="expenses_category_collapse">Ocurtâh çûccategoríâ de %1$s</string>
+    <string name="expenses_category_spending_total_spent">Totâh gâttao</string>
+    <string name="expenses_category_spending_empty_title">Çin gâttô todabía</string>
+    <string name="expenses_category_spending_empty_description">Lô gâttô rehîttráô en êtte grupo apareçerán aquí dêggloçáô por categoría.</string>
+    <string name="expenses_category_spending_filtered_empty_title">No çe an encontrao gâttô</string>
+    <string name="expenses_category_spending_filtered_empty_description">Prueba a ahûttâh o borrâh lô firtrô âttibô en la pantaya de Gâttô.</string>
+    <string name="expenses_extras_add_on_fee_plural">Comiçionê</string>
+    <string name="expenses_extras_add_on_surcharge_plural">Recargô</string>
+    <string name="expenses_extras_add_on_tip_plural">Propinâ</string>
 </resources>

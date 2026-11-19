@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.spending
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.SubcategorySpendingUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategorySpendingUiModel
 
 @Suppress("LongMethod")
 @Composable

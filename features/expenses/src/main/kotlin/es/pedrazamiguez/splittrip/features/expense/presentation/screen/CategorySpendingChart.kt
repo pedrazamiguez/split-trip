@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.screen
+package es.pedrazamiguez.splittrip.features.expense.presentation.screen
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,8 +14,8 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chart.DonutChart
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chart.DonutChartData
-import es.pedrazamiguez.splittrip.features.balance.R
-import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.CategorySpendingUiState
+import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.CategorySpendingUiState
 import kotlinx.collections.immutable.toImmutableList
 
 @Composable
@@ -39,7 +39,7 @@ internal fun CategorySpendingChart(uiState: CategorySpendingUiState) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = stringResource(R.string.balances_total_spent),
+                        text = stringResource(R.string.expenses_category_spending_total_spent),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

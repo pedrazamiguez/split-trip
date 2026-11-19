@@ -1,14 +1,18 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debounced
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BasketPlus
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartDonut
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
@@ -42,6 +46,18 @@ class ExpensesScreenUiProviderImpl(
             title = stringResource(R.string.expenses_title),
             subtitle = resolveSubtitle(groupName),
             actions = {
+                val tabNavController = LocalTabNavController.current
+                val onCategorySpendingClick = debounced {
+                    tabNavController.navigate(Routes.CATEGORY_SPENDING) {
+                        launchSingleTop = true
+                    }
+                }
+                IconButton(onClick = onCategorySpendingClick) {
+                    Icon(
+                        imageVector = TablerIcons.Outline.ChartDonut,
+                        contentDescription = stringResource(R.string.expenses_category_spending_title)
+                    )
+                }
                 ProfileAvatarButton(
                     avatarUrl = avatarUrl,
                     onClick = { rootNavController.navigate(Routes.PROFILE) }

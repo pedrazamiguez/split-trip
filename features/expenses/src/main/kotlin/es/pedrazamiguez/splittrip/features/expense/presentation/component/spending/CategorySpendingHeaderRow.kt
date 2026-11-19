@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.spending
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -27,8 +27,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
-import es.pedrazamiguez.splittrip.features.balance.R
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.CategorySpendingUiModel
+import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategorySpendingUiModel
 
 @Suppress("LongMethod")
 @Composable
@@ -124,7 +124,7 @@ internal fun CategorySpendingHeaderRow(
                 TablerIcons.Outline.ChevronDown
             }
             val chevronContentDesc = stringResource(
-                if (isExpanded) R.string.balances_category_collapse else R.string.balances_category_expand,
+                if (isExpanded) R.string.expenses_category_collapse else R.string.expenses_category_expand,
                 item.categoryName
             )
             Icon(

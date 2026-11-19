@@ -445,7 +445,7 @@
     <string name="expense_step_info_split_description">Configura cómo se divide el gasto entre tus compañeros de viaje. Este paso es opcional y por defecto aplica un reparto a partes iguales entre todos los miembros.\n\n• Partes iguales: Divide el coste equitativamente entre los miembros incluidos.\n• Cantidades: Introduce el importe exacto para cada participante.\n• Porcentaje: Asigna porcentajes usando el icono del candado para fijar cuotas concretas mientras el resto se redistribuye automáticamente.\n\nSi el grupo tiene subunidades (como parejas o familias), activa \"Dividir por subunidad\" para repartir primero por grupo.</string>
 
     <string name="expense_step_info_category_title">Categoría y subcategoría</string>
-    <string name="expense_step_info_category_description">Clasifica el gasto en una categoría y una subcategoría opcional (como Comida y bebida, Alojamiento o Transporte). Este paso es opcional y preselecciona la última categoría utilizada.\n\nCategorizar los gastos alimenta el gráfico de gastos por categoría en la pestaña de Balances sin afectar al estado de cuentas de los miembros.</string>
+    <string name="expense_step_info_category_description">Clasifica el gasto en una categoría y una subcategoría opcional (como Comida y bebida, Alojamiento o Transporte). Este paso es opcional y preselecciona la última categoría utilizada.\n\nCategorizar los gastos alimenta el gráfico de gastos por categoría en la pestaña de Gastos sin afectar al estado de cuentas de los miembros.</string>
 
     <string name="expense_step_info_funding_source_title">Pagado con (Origen de los fondos)</string>
     <string name="expense_step_info_funding_source_description">Indica de dónde salió el dinero para este pago. Este paso es opcional y selecciona por defecto \"Tu dinero\" si el grupo no tiene aportaciones previas al pocket, o \"Pocket del grupo\" si hay un pocket compartido activo.\n\n• Pocket del grupo: Se paga con el dinero compartido reunido mediante aportaciones en el pocket virtual. Se descuenta del saldo del pocket sin generar un reembolso personal.\n• Tu dinero: Pagas de tu propio bolsillo. SplitTrip registra una aportación vinculada para que tus compañeros de viaje te reembolsen su parte en el acuerdo de pago.</string>
@@ -467,4 +467,17 @@
 
     <string name="expense_step_info_review_title">Resumen y confirmación</string>
     <string name="expense_step_info_review_description">Revisa el resumen completo de tu gasto —incluyendo el importe, la conversión de moneda, el origen de los fondos, el reparto y los extras— antes de guardarlo.\n\n¿Necesitas cambiar algo? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\" para modificar cualquier dato antes de confirmar.</string>
+
+    <!-- Category Spending -->
+    <string name="expenses_category_spending_title">Gastos por categoría</string>
+    <string name="expenses_category_expand">Mostrar subcategorías de %1$s</string>
+    <string name="expenses_category_collapse">Ocultar subcategorías de %1$s</string>
+    <string name="expenses_category_spending_total_spent">Total gastado</string>
+    <string name="expenses_category_spending_empty_title">Sin gastos todavía</string>
+    <string name="expenses_category_spending_empty_description">Los gastos registrados en este grupo aparecerán aquí desglosados por categoría.</string>
+    <string name="expenses_category_spending_filtered_empty_title">No se han encontrado gastos</string>
+    <string name="expenses_category_spending_filtered_empty_description">Prueba a ajustar o borrar los filtros activos en la pantalla de Gastos.</string>
+    <string name="expenses_extras_add_on_fee_plural">Comisiones</string>
+    <string name="expenses_extras_add_on_surcharge_plural">Recargos</string>
+    <string name="expenses_extras_add_on_tip_plural">Propinas</string>
 </resources>

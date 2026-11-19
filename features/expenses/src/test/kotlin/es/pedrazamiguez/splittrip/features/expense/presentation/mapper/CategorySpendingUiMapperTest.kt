@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
+package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
@@ -13,7 +13,7 @@ import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
-import es.pedrazamiguez.splittrip.features.balance.R
+import es.pedrazamiguez.splittrip.features.expense.R
 import io.mockk.every
 import io.mockk.mockk
 import java.time.LocalDate
@@ -146,10 +146,10 @@ class CategorySpendingUiMapperTest {
     }
 
     private fun mockExtrasResourceStrings() {
-        every { resourceProvider.getString(R.string.balances_total_extras) } returns "Extras"
-        every { resourceProvider.getString(R.string.balances_extras_add_on_fee_plural) } returns "Fees"
-        every { resourceProvider.getString(R.string.balances_extras_add_on_surcharge_plural) } returns "Surcharges"
-        every { resourceProvider.getString(R.string.balances_extras_add_on_tip_plural) } returns "Tips"
+        every { resourceProvider.getString(R.string.expense_add_ons_label) } returns "Extras"
+        every { resourceProvider.getString(R.string.expenses_extras_add_on_fee_plural) } returns "Fees"
+        every { resourceProvider.getString(R.string.expenses_extras_add_on_surcharge_plural) } returns "Surcharges"
+        every { resourceProvider.getString(R.string.expenses_extras_add_on_tip_plural) } returns "Tips"
     }
 
     private fun createSampleExpensesWithAddOns(): List<Expense> = listOf(
@@ -250,8 +250,8 @@ class CategorySpendingUiMapperTest {
 
     @Test
     fun `mapExpenses excludes DISCOUNT add-ons from Extras category`() {
-        every { resourceProvider.getString(R.string.balances_total_extras) } returns "Extras"
-        every { resourceProvider.getString(R.string.balances_extras_add_on_tip_plural) } returns "Tips"
+        every { resourceProvider.getString(R.string.expense_add_ons_label) } returns "Extras"
+        every { resourceProvider.getString(R.string.expenses_extras_add_on_tip_plural) } returns "Tips"
 
         val expenses = listOf(
             Expense(
