@@ -61,4 +61,24 @@ class DateFormatterCacheTest {
 
         assertEquals(4, getDateTimeFormatterCacheSize())
     }
+
+    @Test
+    fun `formatShortDateTime populates and reuses date and time formatter cache entries`() {
+        val dateTime = LocalDateTime.of(2026, 10, 21, 14, 30)
+
+        assertEquals(0, getDateTimeFormatterCacheSize())
+
+        val firstFormatted = dateTime.formatShortDateTime(esLocale, referenceYear = 2026)
+        assertEquals(2, getDateTimeFormatterCacheSize())
+
+        repeat(100) {
+            val nextFormatted = dateTime.formatShortDateTime(esLocale, referenceYear = 2026)
+            assertEquals(firstFormatted, nextFormatted)
+        }
+
+        assertEquals(2, getDateTimeFormatterCacheSize())
+
+        dateTime.formatShortDateTime(esLocale, referenceYear = 2027)
+        assertEquals(3, getDateTimeFormatterCacheSize())
+    }
 }

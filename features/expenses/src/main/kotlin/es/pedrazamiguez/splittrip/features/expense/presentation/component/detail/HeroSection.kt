@@ -57,10 +57,11 @@ internal fun HeroSection(
         // Tag Row (previously HeroTagRow)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
             verticalAlignment = Alignment.Top
         ) {
             Column(
+                modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
@@ -92,10 +93,12 @@ internal fun HeroSection(
                     icon = expense.badgeIcon ?: expense.paymentStatusIcon,
                     style = PassportTagStyle.TERTIARY
                 )
-                PassportTag(
-                    text = expense.dateText,
-                    style = PassportTagStyle.NEUTRAL
-                )
+                if (expense.dateText.isNotBlank()) {
+                    PassportTag(
+                        text = expense.dateText,
+                        style = PassportTagStyle.NEUTRAL
+                    )
+                }
                 if (expense.formattedRefundedDate != null) {
                     PassportTag(
                         text = expense.formattedRefundedDate,
