@@ -42,3 +42,21 @@ private fun BalancesScreenWithDataPreview() {
         }
     }
 }
+
+@PreviewComplete
+@Composable
+private fun BalancesScreenArchivedPreview() {
+    BalanceCardPreviewHelper { balanceUiModel ->
+        ActivityListPreviewHelper { activityUiModels ->
+            BalancesScreen(
+                uiState = BalancesUiState(
+                    isLoading = false,
+                    groupId = "group-1",
+                    isGroupArchived = true,
+                    pocketBalance = balanceUiModel,
+                    activityItems = activityUiModels
+                )
+            )
+        }
+    }
+}

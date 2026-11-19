@@ -53,6 +53,7 @@ fun GroupPocketBalanceCard(
                     previousBalance = previousBalance,
                     balanceRollingUp = balanceRollingUp,
                     onBalanceAnimationComplete = onBalanceAnimationComplete,
+                    isGroupArchived = isGroupArchived,
                     onShowMetricInfo = onShowMetricInfo
                 )
 
@@ -72,9 +73,11 @@ fun GroupPocketBalanceCard(
                     )
                 }
 
-                if (!isGroupArchived) {
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
 
+                if (isGroupArchived) {
+                    ArchivedReadOnlyNotice()
+                } else {
                     BalanceCardActionButtons(
                         onAddMoney = onAddMoney,
                         onWithdrawCash = onWithdrawCash

@@ -17,6 +17,7 @@
     <string name="balances_error_loading">No çe pudieron cargâh lô balançê</string>
     <string name="balances_empty_title">Çin âttibidá todabía</string>
     <string name="balances_empty_description">Rehîttra gâttô pagáô de tu borçiyo pa bêh quién debe a quién, o añade una aportaçión çi compartîh un pockêh común.</string>
+    <string name="balances_archived_readonly_notice">Êtte biahe êttá arxibao y êh de çolo lêttura. Lâ aportaçionê, retirâh y ediçionê de âttibidá êttán deçâttibâh.</string>
     <string name="balances_member_balances_title">Balançê por miembro</string>
     <string name="balances_member_you">Tú</string>
     <string name="balances_member_contributed_label">Aportao</string>

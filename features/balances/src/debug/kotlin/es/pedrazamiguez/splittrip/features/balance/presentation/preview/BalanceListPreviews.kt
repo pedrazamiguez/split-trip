@@ -53,6 +53,28 @@ private fun GroupPocketBalanceCardEmptyPreview() {
 
 @PreviewComplete
 @Composable
+private fun GroupPocketBalanceCardArchivedPreview() {
+    BalanceCardPreviewHelper {
+        GroupPocketBalanceCard(
+            balance = it,
+            isGroupArchived = true
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun GroupPocketBalanceCardArchivedNarrowPreview() {
+    BalanceCardPreviewHelper {
+        GroupPocketBalanceCard(
+            balance = it,
+            isGroupArchived = true
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
 private fun ContributionHistoryItemPreview() {
     ContributionItemPreviewHelper {
         ContributionHistoryItem(contribution = it)
