@@ -35,7 +35,7 @@
     <string name="your_balance_settlement_mark_paid">He pagado</string>
     <string name="your_balance_settlement_confirm_receipt">Confirmar recepción</string>
     <string name="your_balance_settlement_resolve_dispute">Cerrar revisión</string>
-    <string name="your_balance_settlement_dispute">Pedir revisión</string>
+    <string name="your_balance_settlement_dispute">Revisar</string>
     <string name="your_balance_settlement_status_suggested">Sugerido</string>
     <string name="your_balance_settlement_status_confirmed_payer">Confirmado por pagador</string>
     <string name="your_balance_settlement_status_disputed">En revisión</string>
@@ -44,8 +44,7 @@
     <string name="your_balance_settlement_pocket_net">Neto</string>
     <string name="your_balance_dispute_dialog_title">Solicitar revisión del pago</string>
     <string name="your_balance_dispute_dialog_hint">Describe qué debe revisarse…</string>
-    <string name="your_balance_dispute_dialog_submit">Solicitar revisión</string>
-    <string name="your_balance_dispute_dialog_cancel">Cancelar</string>
+    <string name="your_balance_dispute_dialog_submit">Enviar</string>
     <string name="your_balance_confirm_success">Acuerdo de pago confirmado correctamente</string>
     <string name="your_balance_confirm_error">No se pudo confirmar el acuerdo de pago. Inténtalo de nuevo.</string>
     <string name="your_balance_dispute_success">Revisión solicitada correctamente</string>
@@ -69,7 +68,7 @@
     <string name="settlement_overview_section_resolved">Resuelto</string>
     <string name="settlement_overview_empty">Todos los acuerdos de pago resueltos</string>
     <string name="settlement_overview_confirm">Confirmar</string>
-    <string name="settlement_overview_dispute">Pedir revisión</string>
+    <string name="settlement_overview_dispute">Revisar</string>
     <string name="settlement_overview_dispute_title">Solicitar revisión del pago</string>
     <string name="settlement_overview_dispute_reason_hint">Describe qué debe revisarse…</string>
     <string name="settlement_overview_dispute_submit">Pedir revisión</string>

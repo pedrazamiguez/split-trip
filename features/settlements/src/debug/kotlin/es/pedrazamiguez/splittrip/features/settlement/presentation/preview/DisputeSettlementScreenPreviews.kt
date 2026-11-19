@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.preview
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
@@ -40,6 +41,22 @@ private fun DisputeSettlementScreenOfflinePreview() {
                 isOffline = true
             ),
             onEvent = {}
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun DisputeSettlementScreenWithAttachmentPreview() {
+    PreviewThemeWrapper {
+        DisputeSettlementScreen(
+            uiState = DisputeSettlementUiState(
+                reason = "Taxi fare was split evenly at the airport."
+            ),
+            onEvent = {},
+            attachmentContent = {
+                Text(text = "Attachment slot preview")
+            }
         )
     }
 }

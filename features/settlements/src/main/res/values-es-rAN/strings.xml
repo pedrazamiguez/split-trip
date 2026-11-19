@@ -34,7 +34,7 @@
     <string name="your_balance_settlement_mark_paid">E pagao</string>
     <string name="your_balance_settlement_confirm_receipt">Confirmâh reçêççión</string>
     <string name="your_balance_settlement_resolve_dispute">Çerrâh rebiçión</string>
-    <string name="your_balance_settlement_dispute">Pedîh rebiçión</string>
+    <string name="your_balance_settlement_dispute">Rebiçâh</string>
     <string name="your_balance_settlement_status_suggested">Çuherío</string>
     <string name="your_balance_settlement_status_confirmed_payer">Confirmao por pagadôh</string>
     <string name="your_balance_settlement_status_disputed">En rebiçión</string>
@@ -43,8 +43,7 @@
     <string name="your_balance_settlement_pocket_net">Neto</string>
     <string name="your_balance_dispute_dialog_title">Çoliçitâh rebiçión der pago</string>
     <string name="your_balance_dispute_dialog_hint">Dêccribe qué debe rebiçarçe…</string>
-    <string name="your_balance_dispute_dialog_submit">Çoliçitâh rebiçión</string>
-    <string name="your_balance_dispute_dialog_cancel">Cançelâh</string>
+    <string name="your_balance_dispute_dialog_submit">Embiâh</string>
     <string name="your_balance_confirm_success">Acuerdo de pago confirmao corrêttamente</string>
     <string name="your_balance_confirm_error">No çe pudo confirmâh el acuerdo de pago. Inténtalo de nuebo.</string>
     <string name="your_balance_dispute_success">Rebiçión çoliçitá corrêttamente</string>
@@ -66,7 +65,7 @@
     <string name="settlement_overview_section_resolved">Reçuerto</string>
     <string name="settlement_overview_empty">Tôh lô acuerdô de pago reçuertô</string>
     <string name="settlement_overview_confirm">Confirmâh</string>
-    <string name="settlement_overview_dispute">Pedîh rebiçión</string>
+    <string name="settlement_overview_dispute">Rebiçâh</string>
     <string name="settlement_overview_dispute_title">Çoliçitâh rebiçión der pago</string>
     <string name="settlement_overview_dispute_reason_hint">Dêccribe qué debe rebiçarçe…</string>
     <string name="settlement_overview_dispute_submit">Pedîh rebiçión</string>

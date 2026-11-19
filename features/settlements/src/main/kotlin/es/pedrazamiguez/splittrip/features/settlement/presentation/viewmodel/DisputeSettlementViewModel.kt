@@ -57,11 +57,6 @@ class DisputeSettlementViewModel(
             is DisputeSettlementUiEvent.ReasonChanged -> {
                 _localState.update { it.copy(reason = event.reason) }
             }
-            DisputeSettlementUiEvent.NavigateBackClicked -> {
-                viewModelScope.launch {
-                    _actions.send(DisputeSettlementUiAction.NavigateBack)
-                }
-            }
             DisputeSettlementUiEvent.SubmitClicked -> handleSubmit()
         }
     }

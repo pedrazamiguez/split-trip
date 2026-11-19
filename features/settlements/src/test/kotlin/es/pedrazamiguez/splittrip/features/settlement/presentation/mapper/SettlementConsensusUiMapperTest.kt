@@ -42,7 +42,7 @@ class SettlementConsensusUiMapperTest {
             "Confirm receipt"
         every { resourceProvider.getString(R.string.your_balance_settlement_resolve_dispute) } returns
             "Resolve review"
-        every { resourceProvider.getString(R.string.your_balance_settlement_dispute) } returns "Request review"
+        every { resourceProvider.getString(R.string.your_balance_settlement_dispute) } returns "Review"
         every { resourceProvider.getString(R.string.your_balance_settlement_status_suggested) } returns "Suggested"
         every { resourceProvider.getString(R.string.your_balance_settlement_status_confirmed_payer) } returns
             "Confirmed by payer"

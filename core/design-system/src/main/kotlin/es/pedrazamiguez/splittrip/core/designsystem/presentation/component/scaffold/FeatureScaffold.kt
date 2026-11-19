@@ -1,9 +1,11 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -75,6 +77,7 @@ private fun TabHostedFeatureContent(
             modifier = modifier
                 .fillMaxSize()
                 .padding(top = contentTopPadding, bottom = effectiveBottomPadding)
+                .consumeWindowInsets(PaddingValues(bottom = effectiveBottomPadding))
         ) {
             content()
         }
