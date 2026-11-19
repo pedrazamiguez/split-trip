@@ -1,9 +1,16 @@
 package es.pedrazamiguez.splittrip.screens
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -15,9 +22,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.features.settlement.R
 import es.pedrazamiguez.splittrip.features.settlement.presentation.component.DISPUTE_ATTACHMENT_CONTAINER_TEST_TAG
 import es.pedrazamiguez.splittrip.features.settlement.presentation.screen.DISPUTE_REASON_INPUT_TEST_TAG
@@ -46,10 +58,9 @@ class DisputeSettlementScreenTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun rendersInputAndButtons_andDisablesSubmitWhenReasonIsBlank() {
+    fun rendersInputAndSubmitButton_andDisablesSubmitWhenReasonIsBlank() {
         val hintText = context.getString(R.string.your_balance_dispute_dialog_hint)
         val submitText = context.getString(R.string.your_balance_dispute_dialog_submit)
-        val cancelText = context.getString(R.string.your_balance_dispute_dialog_cancel)
 
         composeRule.setContent {
             SplitTripTheme {
@@ -64,14 +75,13 @@ class DisputeSettlementScreenTest {
 
         composeRule.onNodeWithTag(DISPUTE_REASON_INPUT_TEST_TAG).assertIsDisplayed()
         composeRule.onNodeWithText(hintText).assertIsDisplayed()
-        composeRule.onNodeWithText(cancelText).assertIsDisplayed().assertIsEnabled()
         composeRule.onNodeWithText(submitText).assertIsDisplayed().assertIsNotEnabled()
+        composeRule.onNodeWithTag(DISPUTE_ATTACHMENT_CONTAINER_TEST_TAG).assertDoesNotExist()
     }
 
     @Test
     fun enablesSubmit_whenReasonIsNotBlankAndOnline_andTriggersCallbacks() {
         val submitText = context.getString(R.string.your_balance_dispute_dialog_submit)
-        val cancelText = context.getString(R.string.your_balance_dispute_dialog_cancel)
         val events = mutableListOf<DisputeSettlementUiEvent>()
         var uiState by mutableStateOf(DisputeSettlementUiState(reason = ""))
 
@@ -99,15 +109,13 @@ class DisputeSettlementScreenTest {
 
         assertTrue(events.contains(DisputeSettlementUiEvent.ReasonChanged("Wrong amount")))
         composeRule.onNodeWithText(submitText).assertIsEnabled().performClick()
-        composeRule.onNodeWithText(cancelText).assertIsEnabled().performClick()
 
         composeRule.waitForIdle()
 
         assertEquals(
             listOf(
                 DisputeSettlementUiEvent.ReasonChanged("Wrong amount"),
-                DisputeSettlementUiEvent.SubmitClicked,
-                DisputeSettlementUiEvent.NavigateBackClicked
+                DisputeSettlementUiEvent.SubmitClicked
             ),
             events
         )
@@ -154,5 +162,44 @@ class DisputeSettlementScreenTest {
 
         composeRule.onNodeWithTag(DISPUTE_ATTACHMENT_CONTAINER_TEST_TAG).assertIsDisplayed()
         composeRule.onNodeWithText("Sticker Picker Slot").assertIsDisplayed()
+    }
+
+    @Test
+    fun featureScaffold_tabHostedMode_consumesBottomSystemInsets() {
+        var outerBottomPx = -1
+        var innerBottomPx = -1
+
+        composeRule.setContent {
+            SplitTripTheme {
+                CompositionLocalProvider(
+                    LocalTopPadding provides 56.dp,
+                    LocalBottomPadding provides 0.dp
+                ) {
+                    FeatureScaffold(currentRoute = Routes.DISPUTE_SETTLEMENT) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .onGloballyPositioned { coordinates ->
+                                    outerBottomPx = coordinates.boundsInRoot().bottom.toInt()
+                                }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .navigationBarsPadding()
+                                    .onGloballyPositioned { coordinates ->
+                                        innerBottomPx = coordinates.boundsInRoot().bottom.toInt()
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        assertTrue(outerBottomPx > 0)
+        assertEquals(0, outerBottomPx - innerBottomPx)
     }
 }

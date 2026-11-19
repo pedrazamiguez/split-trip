@@ -35,7 +35,7 @@
     <string name="your_balance_settlement_mark_paid">Mark as paid</string>
     <string name="your_balance_settlement_confirm_receipt">Confirm receipt</string>
     <string name="your_balance_settlement_resolve_dispute">Resolve review</string>
-    <string name="your_balance_settlement_dispute">Request review</string>
+    <string name="your_balance_settlement_dispute">Review</string>
     <string name="your_balance_settlement_status_suggested">Suggested</string>
     <string name="your_balance_settlement_status_confirmed_payer">Confirmed by payer</string>
     <string name="your_balance_settlement_status_disputed">Under review</string>
@@ -44,8 +44,7 @@
     <string name="your_balance_settlement_pocket_net">Net</string>
     <string name="your_balance_dispute_dialog_title">Request settlement review</string>
     <string name="your_balance_dispute_dialog_hint">Describe what needs to be reviewed…</string>
-    <string name="your_balance_dispute_dialog_submit">Request review</string>
-    <string name="your_balance_dispute_dialog_cancel">Cancel</string>
+    <string name="your_balance_dispute_dialog_submit">Submit</string>
     <string name="your_balance_confirm_success">Settlement confirmed successfully</string>
     <string name="your_balance_confirm_error">Failed to confirm settlement. Try again.</string>
     <string name="your_balance_dispute_success">Review requested successfully</string>
@@ -70,7 +69,7 @@
     <string name="settlement_overview_section_resolved">Resolved</string>
     <string name="settlement_overview_empty">All settlements resolved</string>
     <string name="settlement_overview_confirm">Confirm</string>
-    <string name="settlement_overview_dispute">Request review</string>
+    <string name="settlement_overview_dispute">Review</string>
     <string name="settlement_overview_dispute_title">Request Settlement Review</string>
     <string name="settlement_overview_dispute_reason_hint">Describe what needs to be reviewed…</string>
     <string name="settlement_overview_dispute_submit">Request Review</string>

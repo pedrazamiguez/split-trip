@@ -2,9 +2,12 @@ package es.pedrazamiguez.splittrip.features.settlement.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +29,7 @@ import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.sta
 
 const val DISPUTE_REASON_INPUT_TEST_TAG = "dispute_reason_input"
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DisputeSettlementScreen(
     uiState: DisputeSettlementUiState,
@@ -36,6 +40,12 @@ fun DisputeSettlementScreen(
     val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
     val spacing = MaterialTheme.spacing
+    val isKeyboardVisible = WindowInsets.isImeVisible
+    val effectiveBottomPadding = if (isKeyboardVisible) {
+        spacing.Medium
+    } else {
+        spacing.ExtraLarge + bottomPadding
+    }
 
     Column(
         modifier = modifier
@@ -45,9 +55,9 @@ fun DisputeSettlementScreen(
                 start = spacing.ExtraLarge,
                 end = spacing.ExtraLarge,
                 top = spacing.ExtraLarge + topPadding,
-                bottom = spacing.ExtraLarge + bottomPadding
+                bottom = effectiveBottomPadding
             ),
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(spacing.Medium)
     ) {
         Column(
             modifier = Modifier
@@ -79,7 +89,6 @@ fun DisputeSettlementScreen(
         DisputeSettlementBottomBar(
             isSubmitEnabled = uiState.isSubmitEnabled,
             isSubmitting = uiState.isSubmitting,
-            onCancelClick = { onEvent(DisputeSettlementUiEvent.NavigateBackClicked) },
             onSubmitClick = { onEvent(DisputeSettlementUiEvent.SubmitClicked) },
             attachmentContent = attachmentContent
         )

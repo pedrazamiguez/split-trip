@@ -1,21 +1,14 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.component
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.features.settlement.R
+import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementCardAction
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
 
-@Suppress("LongMethod")
 @Composable
 internal fun ConsensusCardActions(
     item: SettlementConsensusItemUiModel,
@@ -30,7 +23,7 @@ internal fun ConsensusCardActions(
     val actions = buildList {
         if (item.canConfirm) {
             add(
-                ConsensusActionData(
+                SettlementCardAction(
                     label = item.confirmLabel,
                     isPrimary = true,
                     isEnabled = !isOffline,
@@ -43,7 +36,7 @@ internal fun ConsensusCardActions(
         }
         if (item.canDispute) {
             add(
-                ConsensusActionData(
+                SettlementCardAction(
                     label = disputeLabel,
                     isPrimary = false,
                     isEnabled = !isOffline,
@@ -56,7 +49,7 @@ internal fun ConsensusCardActions(
         }
         if (item.canNudge) {
             add(
-                ConsensusActionData(
+                SettlementCardAction(
                     label = item.nudgeButtonLabel,
                     isPrimary = false,
                     isEnabled = !item.isNudgeRateLimited && !isOffline,
@@ -66,34 +59,8 @@ internal fun ConsensusCardActions(
         }
     }
 
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-    ) {
-        val actionModifier = if (actions.size > 1) Modifier.weight(1f) else Modifier.fillMaxWidth()
-        actions.forEach { action ->
-            if (action.isPrimary) {
-                GradientButton(
-                    text = action.label,
-                    onClick = action.onClick,
-                    enabled = action.isEnabled,
-                    modifier = actionModifier
-                )
-            } else {
-                SecondaryButton(
-                    text = action.label,
-                    onClick = action.onClick,
-                    enabled = action.isEnabled,
-                    modifier = actionModifier
-                )
-            }
-        }
-    }
+    SettlementCardActionRow(
+        actions = actions,
+        modifier = modifier
+    )
 }
-
-private data class ConsensusActionData(
-    val label: String,
-    val isPrimary: Boolean,
-    val isEnabled: Boolean,
-    val onClick: () -> Unit
-)

@@ -211,13 +211,4 @@ class DisputeSettlementViewModelTest {
         coVerify(exactly = 0) { disputeSettlementUseCase(any(), any(), any()) }
         assertFalse(viewModel.uiState.value.isSubmitting)
     }
-
-    @Test
-    fun `NavigateBackClicked emits NavigateBack action`() = runTest(testDispatcher) {
-        viewModel.onEvent(DisputeSettlementUiEvent.NavigateBackClicked)
-        advanceUntilIdle()
-
-        val action = viewModel.actions.first()
-        assertEquals(DisputeSettlementUiAction.NavigateBack, action)
-    }
 }
