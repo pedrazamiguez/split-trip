@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.model
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
@@ -19,6 +21,7 @@ data class ExpenseUiModel(
     val subcategoryText: String? = null,
     val vendorText: String? = null,
     val paymentMethodText: String = "",
+    val paymentMethodIcon: ImageVector = TablerIcons.Outline.CreditCard,
     val paymentStatusText: String = "",
     val paidByText: String = "",
     val creatorDisplay: MemberDisplay = MemberDisplay.Active("", ""),
