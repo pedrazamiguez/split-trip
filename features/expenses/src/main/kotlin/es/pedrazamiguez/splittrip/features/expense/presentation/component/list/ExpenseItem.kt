@@ -184,7 +184,7 @@ fun ExpenseItem(
                             PassportTag(
                                 text = expenseUiModel.paymentMethodText,
                                 icon = expenseUiModel.paymentMethodIcon,
-                                style = PassportTagStyle.SECONDARY
+                                style = PassportTagStyle.NEUTRAL
                             )
                         }
                         if (expenseUiModel.hasAddOns) {
