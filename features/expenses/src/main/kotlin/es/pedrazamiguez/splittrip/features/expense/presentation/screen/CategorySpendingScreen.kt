@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.screen
+package es.pedrazamiguez.splittrip.features.expense.presentation.screen
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,19 +9,42 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
-import es.pedrazamiguez.splittrip.features.balance.R
-import es.pedrazamiguez.splittrip.features.balance.presentation.component.CategorySpendingItemRow
-import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.CategorySpendingUiState
+import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.spending.CategorySpendingItemRow
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.CategorySpendingUiState
+
+private data class CategorySpendingEmptyConfig(
+    val titleRes: Int,
+    val descriptionRes: Int,
+    val icon: ImageVector
+)
+
+private fun resolveEmptyConfig(isFiltered: Boolean): CategorySpendingEmptyConfig =
+    if (isFiltered) {
+        CategorySpendingEmptyConfig(
+            titleRes = R.string.expenses_category_spending_filtered_empty_title,
+            descriptionRes = R.string.expenses_category_spending_filtered_empty_description,
+            icon = TablerIcons.Outline.Search
+        )
+    } else {
+        CategorySpendingEmptyConfig(
+            titleRes = R.string.expenses_category_spending_empty_title,
+            descriptionRes = R.string.expenses_category_spending_empty_description,
+            icon = TablerIcons.Outline.Receipt
+        )
+    }
 
 @Composable
 fun CategorySpendingScreen(
@@ -46,16 +69,15 @@ fun CategorySpendingScreen(
             modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding)
         ) {
-            item {
-                CategorySpendingChart(uiState = uiState)
-            }
+            item { CategorySpendingChart(uiState = uiState) }
 
             item {
                 if (uiState.items.isEmpty()) {
+                    val emptyConfig = resolveEmptyConfig(uiState.isFiltered)
                     EmptyStateView(
-                        title = stringResource(R.string.balances_category_spending_empty_title),
-                        description = stringResource(R.string.balances_category_spending_empty_description),
-                        icon = TablerIcons.Outline.Receipt
+                        title = stringResource(emptyConfig.titleRes),
+                        description = stringResource(emptyConfig.descriptionRes),
+                        icon = emptyConfig.icon
                     )
                 } else {
                     FlatCard(

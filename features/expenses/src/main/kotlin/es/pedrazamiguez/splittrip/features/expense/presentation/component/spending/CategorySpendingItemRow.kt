@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.component
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.spending
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -16,7 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.CategorySpendingUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategorySpendingUiModel
 
 @Composable
 fun CategorySpendingItemRow(

@@ -7,12 +7,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
+import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_APPLIED_FILTER_CRITERIA
+import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_EXPENSE_ADDED
+import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_INITIAL_FILTER_CRITERIA
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpensesScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpensesUiAction
@@ -24,6 +28,7 @@ import org.koin.androidx.compose.koinViewModel
 @Suppress("LongMethod")
 @Composable
 fun ExpensesFeature(
+    backStackEntry: NavBackStackEntry? = null,
     expensesViewModel: ExpensesViewModel = koinViewModel<ExpensesViewModel>(),
     sharedViewModel: SharedViewModel = koinViewModel(
         viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
@@ -68,24 +73,32 @@ fun ExpensesFeature(
         }
     }
 
-    val currentBackStackEntry = navController.currentBackStackEntry
-    LaunchedEffect(currentBackStackEntry) {
-        currentBackStackEntry?.savedStateHandle?.getStateFlow("expenseAdded", false)?.collectLatest { added ->
+    val expensesBackStackEntry = backStackEntry ?: navController.currentBackStackEntry
+
+    LaunchedEffect(expensesBackStackEntry, uiState.filterCriteria) {
+        expensesBackStackEntry?.savedStateHandle?.set(
+            KEY_INITIAL_FILTER_CRITERIA,
+            uiState.filterCriteria
+        )
+    }
+
+    LaunchedEffect(expensesBackStackEntry) {
+        expensesBackStackEntry?.savedStateHandle?.getStateFlow(KEY_EXPENSE_ADDED, false)?.collectLatest { added ->
             if (added) {
                 expensesViewModel.onEvent(ExpensesUiEvent.ExpenseAdded)
-                currentBackStackEntry.savedStateHandle.remove<Boolean>("expenseAdded")
+                expensesBackStackEntry.savedStateHandle.remove<Boolean>(KEY_EXPENSE_ADDED)
             }
         }
     }
 
-    LaunchedEffect(currentBackStackEntry) {
-        currentBackStackEntry?.savedStateHandle?.getStateFlow<ExpenseFilterCriteria?>(
-            "appliedFilterCriteria",
+    LaunchedEffect(expensesBackStackEntry) {
+        expensesBackStackEntry?.savedStateHandle?.getStateFlow<ExpenseFilterCriteria?>(
+            KEY_APPLIED_FILTER_CRITERIA,
             null
         )?.collectLatest { appliedCriteria ->
             if (appliedCriteria != null) {
                 expensesViewModel.onEvent(ExpensesUiEvent.FilterCriteriaChanged(appliedCriteria))
-                currentBackStackEntry.savedStateHandle.remove<ExpenseFilterCriteria>("appliedFilterCriteria")
+                expensesBackStackEntry.savedStateHandle.remove<ExpenseFilterCriteria>(KEY_APPLIED_FILTER_CRITERIA)
             }
         }
     }
@@ -122,8 +135,8 @@ fun ExpensesFeature(
             expensesViewModel.onEvent(ExpensesUiEvent.SearchQueryChanged(query))
         },
         onFilterClick = {
-            navController.currentBackStackEntry?.savedStateHandle?.set(
-                "initialFilterCriteria",
+            expensesBackStackEntry?.savedStateHandle?.set(
+                KEY_INITIAL_FILTER_CRITERIA,
                 uiState.filterCriteria
             )
             navController.navigate(Routes.expensesFilterRoute())

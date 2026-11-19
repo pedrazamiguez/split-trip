@@ -9,24 +9,18 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
-import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetBalancesDashboardFlowUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.features.balance.navigation.impl.BalancesNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
-import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.CategorySpendingUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.SettlementsUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.screen.impl.BalancesScreenUiProviderImpl
-import es.pedrazamiguez.splittrip.features.balance.presentation.screen.impl.CategorySpendingScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.BalancesViewModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.CategorySpendingViewModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandler
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandlerImpl
 import kotlinx.coroutines.Dispatchers
@@ -79,31 +73,6 @@ val balancesUiModule = module {
         )
     }
 
-    single {
-        CategorySpendingUiMapper(
-            localeProvider = get<LocaleProvider>(),
-            resourceProvider = get<ResourceProvider>(),
-            remainderDistributionService = get<RemainderDistributionService>()
-        )
-    }
-
-    viewModel {
-        val getGroupExpensesFlowUseCase = get<GetGroupExpensesFlowUseCase>()
-        val getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>()
-        val observeGroupUseCase = get<ObserveGroupUseCase>()
-        val appConfigService = get<AppConfigService>()
-        val categorySpendingUiMapper = get<CategorySpendingUiMapper>()
-
-        CategorySpendingViewModel(
-            getGroupExpensesFlowUseCase = getGroupExpensesFlowUseCase,
-            getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
-            observeGroupUseCase = observeGroupUseCase,
-            appConfigService = appConfigService,
-            categorySpendingUiMapper = categorySpendingUiMapper,
-            computationDispatcher = Dispatchers.Default
-        )
-    }
-
     factory {
         BalancesNavigationProviderImpl(
             graphContributors = getAll<TabGraphContributor>()
@@ -112,9 +81,5 @@ val balancesUiModule = module {
 
     single {
         BalancesScreenUiProviderImpl()
-    } bind ScreenUiProvider::class
-
-    single {
-        CategorySpendingScreenUiProviderImpl()
     } bind ScreenUiProvider::class
 }

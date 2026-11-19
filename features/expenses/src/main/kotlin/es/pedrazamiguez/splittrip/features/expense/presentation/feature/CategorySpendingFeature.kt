@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.feature
+package es.pedrazamiguez.splittrip.features.expense.presentation.feature
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -8,13 +8,15 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.screen.CategorySpendingScreen
-import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.CategorySpendingViewModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.CategorySpendingUiAction
+import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
+import es.pedrazamiguez.splittrip.features.expense.presentation.screen.CategorySpendingScreen
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.CategorySpendingViewModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.CategorySpendingUiAction
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun CategorySpendingFeature(
+    filterCriteria: ExpenseFilterCriteria = ExpenseFilterCriteria(),
     viewModel: CategorySpendingViewModel = koinViewModel(),
     sharedViewModel: SharedViewModel = koinViewModel(
         viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
@@ -23,6 +25,11 @@ fun CategorySpendingFeature(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedGroupId by sharedViewModel.selectedGroupId.collectAsStateWithLifecycle()
     val tabNavController = LocalTabNavController.current
+
+    // Set filterCriteria before selectedGroupId so initial emission uses the active filters without flashing.
+    LaunchedEffect(filterCriteria) {
+        viewModel.setFilterCriteria(filterCriteria)
+    }
 
     LaunchedEffect(selectedGroupId) {
         viewModel.setSelectedGroup(selectedGroupId)
@@ -36,7 +43,5 @@ fun CategorySpendingFeature(
         }
     }
 
-    CategorySpendingScreen(
-        uiState = uiState
-    )
+    CategorySpendingScreen(uiState = uiState)
 }

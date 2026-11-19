@@ -2,9 +2,6 @@
 <resources>
     <string name="balances_title">Balances</string>
     <string name="balances_subtitle">Resumen del viaje</string>
-    <string name="balances_category_spending_title">Gastos por categoría</string>
-    <string name="balances_category_expand">Mostrar subcategorías de %1$s</string>
-    <string name="balances_category_collapse">Ocultar subcategorías de %1$s</string>
     <string name="balances_search">Buscar</string>
     <string name="balances_info">Info</string>
     <string name="balances_placeholder">Balances</string>
@@ -140,9 +137,5 @@
     <!-- Main Action -->
     <string name="balances_filter">Filtrar balances</string>
     <string name="balances_your_balance_title">Tu balance</string>
-
-    <!-- Category Spending -->
-    <string name="balances_category_spending_empty_title">Sin gastos todavía</string>
-    <string name="balances_category_spending_empty_description">Los gastos registrados en este grupo aparecerán aquí desglosados por categoría.</string>
 
 </resources>

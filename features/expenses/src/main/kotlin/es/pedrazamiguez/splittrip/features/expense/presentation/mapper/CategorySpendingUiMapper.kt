@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.mapper
+package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
@@ -15,10 +15,10 @@ import es.pedrazamiguez.splittrip.domain.model.BreakdownPercentage
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
-import es.pedrazamiguez.splittrip.features.balance.R
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.CategorySpendingUiModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.SubcategorySpendingUiModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.UncoloredCategoryEntry
+import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategorySpendingUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategorySpendingUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.UncoloredCategoryEntry
 import java.time.LocalDate
 import java.util.Locale
 import kotlinx.collections.immutable.ImmutableList
@@ -194,7 +194,7 @@ class CategorySpendingUiMapper(
         }.toImmutableList()
 
         return UncoloredCategoryEntry(
-            name = resourceProvider.getString(R.string.balances_total_extras),
+            name = resourceProvider.getString(R.string.expense_add_ons_label),
             icon = TablerIcons.Outline.ReceiptEuro,
             amount = extrasTotalCents,
             formattedAmount = formatCurrencyAmount(extrasTotalCents, groupCurrency, locale),
@@ -204,9 +204,9 @@ class CategorySpendingUiMapper(
     }
 
     private fun resolveAddOnTypeName(addOnType: AddOnType): String = when (addOnType) {
-        AddOnType.FEE -> resourceProvider.getString(R.string.balances_extras_add_on_fee_plural)
-        AddOnType.SURCHARGE -> resourceProvider.getString(R.string.balances_extras_add_on_surcharge_plural)
-        AddOnType.TIP -> resourceProvider.getString(R.string.balances_extras_add_on_tip_plural)
+        AddOnType.FEE -> resourceProvider.getString(R.string.expenses_extras_add_on_fee_plural)
+        AddOnType.SURCHARGE -> resourceProvider.getString(R.string.expenses_extras_add_on_surcharge_plural)
+        AddOnType.TIP -> resourceProvider.getString(R.string.expenses_extras_add_on_tip_plural)
         AddOnType.DISCOUNT -> ""
     }
 

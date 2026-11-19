@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action
+package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action
 
 sealed interface CategorySpendingUiAction {
     data object NavigateBack : CategorySpendingUiAction

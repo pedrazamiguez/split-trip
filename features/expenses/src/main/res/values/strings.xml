@@ -445,7 +445,7 @@
     <string name="expense_step_info_split_description">Choose how to divide the expense across your travel companions. This step is optional and defaults to an Equal split among all members.\n\n• Equal: Divides the cost evenly among selected members.\n• Exact: Enter specific amounts for each participant.\n• Percent: Assign percentages, using the lock icon to pin specific shares while the remaining percentage redistributes automatically.\n\nIf your group has subunits (such as couples or families), toggle \"Split by subunit\" to allocate shares by group first.</string>
 
     <string name="expense_step_info_category_title">Category &amp; subcategory</string>
-    <string name="expense_step_info_category_description">Organise the expense under a category and optional subcategory (such as Food &amp; Drink, Accommodation, or Transport). This step is optional and pre-selects your last-used category.\n\nCategorising expenses powers the group\'s category spending chart in the Balances tab without affecting member balances.</string>
+    <string name="expense_step_info_category_description">Organise the expense under a category and optional subcategory (such as Food &amp; Drink, Accommodation, or Transport). This step is optional and pre-selects your last-used category.\n\nCategorising expenses powers the group\'s category spending chart in the Expenses tab without affecting member balances.</string>
 
     <string name="expense_step_info_funding_source_title">Paid with (Funding source)</string>
     <string name="expense_step_info_funding_source_description">Specify where the money for this payment came from. This step is optional and defaults to \"Your Money\" when the group has no pocket contributions, or \"Group Pocket\" when a shared pocket is active.\n\n• Group Pocket: Paid using shared funds already collected in the group\'s virtual pocket. Deducts from the pocket balance without creating a personal reimbursement.\n• Your Money: Paid out of your own pocket. SplitTrip records a paired contribution so your travel companions reimburse you for their share at settlement time.</string>
@@ -467,4 +467,17 @@
 
     <string name="expense_step_info_review_title">Review &amp; confirm</string>
     <string name="expense_step_info_review_description">Check the complete summary of your expense—including the amount, currency conversion, funding source, split breakdown, and any extras—before saving.\n\nNeed to adjust something? Tap any completed step in the top step bar or press \"Back\" to make changes before submitting.</string>
+
+    <!-- Category Spending -->
+    <string name="expenses_category_spending_title">Category spending</string>
+    <string name="expenses_category_expand">Show subcategories for %1$s</string>
+    <string name="expenses_category_collapse">Hide subcategories for %1$s</string>
+    <string name="expenses_category_spending_total_spent">Total spent</string>
+    <string name="expenses_category_spending_empty_title">No spending yet</string>
+    <string name="expenses_category_spending_empty_description">Expenses logged in this group will appear here broken down by category.</string>
+    <string name="expenses_category_spending_filtered_empty_title">No matching expenses</string>
+    <string name="expenses_category_spending_filtered_empty_description">Try adjusting or clearing your active filters on the Expenses screen.</string>
+    <string name="expenses_extras_add_on_fee_plural">Fees</string>
+    <string name="expenses_extras_add_on_surcharge_plural">Surcharges</string>
+    <string name="expenses_extras_add_on_tip_plural">Tips</string>
 </resources>

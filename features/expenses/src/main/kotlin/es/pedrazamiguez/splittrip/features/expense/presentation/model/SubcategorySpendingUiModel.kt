@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.model
+package es.pedrazamiguez.splittrip.features.expense.presentation.model
 
 import androidx.compose.ui.graphics.vector.ImageVector
 

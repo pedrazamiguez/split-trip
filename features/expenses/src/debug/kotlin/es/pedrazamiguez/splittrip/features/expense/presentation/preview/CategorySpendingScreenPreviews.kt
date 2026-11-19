@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.preview
+package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -6,12 +6,12 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PlaneTilt
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
-import es.pedrazamiguez.splittrip.features.balance.presentation.component.CategorySpendingItemRow
-import es.pedrazamiguez.splittrip.features.balance.presentation.component.SubcategorySpendingItemRow
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.CategorySpendingUiModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.model.SubcategorySpendingUiModel
-import es.pedrazamiguez.splittrip.features.balance.presentation.screen.CategorySpendingScreen
-import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.CategorySpendingUiState
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.spending.CategorySpendingItemRow
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.spending.SubcategorySpendingItemRow
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategorySpendingUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategorySpendingUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.screen.CategorySpendingScreen
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.CategorySpendingUiState
 import kotlinx.collections.immutable.persistentListOf
 
 private val PREVIEW_SUBCATEGORY_ITEM = SubcategorySpendingUiModel(
@@ -50,6 +50,20 @@ private fun CategorySpendingScreenEmptyPreview() {
             uiState = CategorySpendingUiState(
                 isLoading = false,
                 items = persistentListOf()
+            )
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun CategorySpendingScreenFilteredEmptyPreview() {
+    PreviewThemeWrapper {
+        CategorySpendingScreen(
+            uiState = CategorySpendingUiState(
+                isLoading = false,
+                items = persistentListOf(),
+                isFiltered = true
             )
         )
     }

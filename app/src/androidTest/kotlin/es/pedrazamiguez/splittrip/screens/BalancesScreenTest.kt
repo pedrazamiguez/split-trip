@@ -10,7 +10,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,9 +22,7 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.component.Member
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBalanceUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.screen.BalancesScreen
-import es.pedrazamiguez.splittrip.features.balance.presentation.screen.CategorySpendingScreen
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.BalancesUiState
-import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.CategorySpendingUiState
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.Assert.assertEquals
@@ -40,7 +37,7 @@ private val NARROW_CARD_CONTAINER_WIDTH = 288.dp
 private val SINGLE_LINE_LABEL_MAX_HEIGHT = 24.dp
 
 /**
- * Smoke tests for empty states on [BalancesScreen] and [CategorySpendingScreen].
+ * Smoke tests for empty states on [BalancesScreen].
  */
 @RunWith(AndroidJUnit4::class)
 class BalancesScreenTest {
@@ -75,28 +72,6 @@ class BalancesScreenTest {
 
         composeRule.onNodeWithText(emptyTitle).assertIsDisplayed()
         composeRule.onNodeWithText(emptyDescription).assertIsDisplayed()
-    }
-
-    @Test
-    fun rendersCategorySpendingScreen_emptyState_displaysCategorySpendingEmptyCopy() {
-        val emptyTitle = context.getString(R.string.balances_category_spending_empty_title)
-        val emptyDescription = context.getString(R.string.balances_category_spending_empty_description)
-
-        composeRule.setContent {
-            SplitTripTheme {
-                CategorySpendingScreen(
-                    uiState = CategorySpendingUiState(
-                        isLoading = false,
-                        items = persistentListOf()
-                    )
-                )
-            }
-        }
-
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithText(emptyTitle).performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText(emptyDescription).performScrollTo().assertIsDisplayed()
     }
 
     @Test
