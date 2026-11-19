@@ -57,7 +57,7 @@ fun ArchiveConfirmationStep(
         }
 
         SectionCard(
-            title = stringResource(R.string.archive_wizard_confirm_title),
+            title = stringResource(R.string.archive_wizard_confirm_impact_title),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(top = MaterialTheme.spacing.Small)) {

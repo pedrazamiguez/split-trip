@@ -117,10 +117,10 @@
     <string name="group_error_archived">Êtte biahe êttá arxibao y no çe puede modificâh.</string>
     <string name="group_detail_end_trip">Finaliçâh biahe</string>
     <string name="group_detail_end_trip_title">¿Finaliçâh biahe?</string>
-    <string name="group_detail_end_trip_message">¿Êttâh çeguro de que quierê finaliçâh êtte biahe? Êtto bloqueará tôh lô gâttô, aportaçionê y retirâh, açiendo que er grupo çea de çolo lêttura.</string>
+    <string name="group_detail_end_trip_message">¿Êttâh çeguro de que quierê finaliçâh êtte biahe? Êtto bloqueará tôh lô gâttô, aportaçionê y retirâh, açiendo que er biahe çea de çolo lêttura.</string>
     <string name="group_detail_end_trip_confirm">Finaliçâh biahe</string>
     <string name="group_detail_archived_label">Arxibao</string>
-    <string name="group_error_archiving_failed">Errôh al arxibâh er biahe. Por fabôh, inténtalo de nuebo.</string>
+    <string name="group_error_archiving_failed">Errôh ar finaliçâh er biahe. Por fabôh, inténtalo de nuebo.</string>
     <string name="group_error_archiving_unresolved_settlements">No çe puede finaliçâh er biahe mientrâ êççîttan balançê o acuerdô de pago pendientê çin reçorbêh.</string>
     <string name="settlement_pocket_type_virtual">Pockêh birtuâh</string>
     <string name="settlement_pocket_type_cash">Efêttibo</string>
