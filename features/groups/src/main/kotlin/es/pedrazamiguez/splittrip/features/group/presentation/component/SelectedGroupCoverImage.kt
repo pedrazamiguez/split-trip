@@ -32,6 +32,7 @@ import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.R
 
 private val COVER_IMAGE_HEIGHT = 160.dp
@@ -41,7 +42,8 @@ private val COVER_IMAGE_HEIGHT = 160.dp
 internal fun SelectedGroupCoverImage(
     imageUrl: String?,
     groupName: String,
-    showActiveBadge: Boolean = true,
+    status: GroupStatus = GroupStatus.ACTIVE,
+    showBadge: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var imageLoadFailed by remember(imageUrl) { mutableStateOf(false) }
@@ -97,21 +99,35 @@ internal fun SelectedGroupCoverImage(
                 }
             }
         }
-        if (showActiveBadge) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(MaterialTheme.spacing.Default)
-                    .clip(MaterialTheme.shapes.large)
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-            ) {
-                Text(
-                    text = stringResource(R.string.group_active_badge),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.ExtraSmall)
-                )
+        if (showBadge) {
+            when (status) {
+                GroupStatus.ACTIVE -> {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(MaterialTheme.spacing.Default)
+                            .clip(MaterialTheme.shapes.large)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.group_active_badge),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(
+                                horizontal = 10.dp,
+                                vertical = MaterialTheme.spacing.ExtraSmall
+                            )
+                        )
+                    }
+                }
+                GroupStatus.ARCHIVED -> {
+                    GroupArchivedTag(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(MaterialTheme.spacing.Default)
+                    )
+                }
             }
         }
     }
