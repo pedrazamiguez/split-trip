@@ -19,7 +19,8 @@ import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.s
 @Composable
 fun ContributionDetailScreen(
     uiState: ContributionDetailUiState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLinkedExpenseClick: (String) -> Unit = {}
 ) {
     val bottomPadding = LocalBottomPadding.current
     val topPadding = LocalTopPadding.current
@@ -47,7 +48,8 @@ fun ContributionDetailScreen(
                     ContributionDetailContent(
                         contribution = uiState.contribution,
                         bottomPadding = bottomPadding,
-                        topPadding = topPadding
+                        topPadding = topPadding,
+                        onLinkedExpenseClick = onLinkedExpenseClick
                     )
                 }
             }

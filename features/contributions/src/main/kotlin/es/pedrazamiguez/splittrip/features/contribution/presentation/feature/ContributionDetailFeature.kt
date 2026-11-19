@@ -7,12 +7,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.contribution.presentation.screen.ContributionDetailScreen
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.ContributionDetailViewModel
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.action.ContributionDetailUiAction
+import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.event.ContributionDetailUiEvent
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 
@@ -42,6 +44,9 @@ fun ContributionDetailFeature(
                     pillController.showPill(message = action.message.asString(context))
                     navController.popBackStack()
                 }
+                is ContributionDetailUiAction.NavigateToExpenseDetail -> {
+                    navController.navigate(Routes.expenseDetailRoute(action.expenseId))
+                }
             }
         }
     }
@@ -52,7 +57,12 @@ fun ContributionDetailFeature(
         )
     ) {
         ContributionDetailScreen(
-            uiState = uiState
+            uiState = uiState,
+            onLinkedExpenseClick = { expenseId ->
+                contributionDetailViewModel.onEvent(
+                    ContributionDetailUiEvent.LinkedExpenseClicked(expenseId)
+                )
+            }
         )
     }
 }

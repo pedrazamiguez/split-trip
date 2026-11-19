@@ -238,4 +238,39 @@ class ContributionDetailViewModelTest {
             collectActionsJob.cancel()
             collectStateJob.cancel()
         }
+
+    @Test
+    fun `onEvent LinkedExpenseClicked emits NavigateToExpenseDetail with expenseId`() =
+        runTest(testDispatcher) {
+            val emitted = mutableListOf<ContributionDetailUiAction>()
+            val collectActionsJob = launch {
+                viewModel.actions.collect { emitted.add(it) }
+            }
+
+            viewModel.onEvent(ContributionDetailUiEvent.LinkedExpenseClicked("expense-123"))
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(ContributionDetailUiAction.NavigateToExpenseDetail("expense-123")),
+                emitted
+            )
+
+            collectActionsJob.cancel()
+        }
+
+    @Test
+    fun `onEvent LinkedExpenseClicked with blank expenseId does not emit NavigateToExpenseDetail`() =
+        runTest(testDispatcher) {
+            val emitted = mutableListOf<ContributionDetailUiAction>()
+            val collectActionsJob = launch {
+                viewModel.actions.collect { emitted.add(it) }
+            }
+
+            viewModel.onEvent(ContributionDetailUiEvent.LinkedExpenseClicked("   "))
+            advanceUntilIdle()
+
+            assertTrue(emitted.isEmpty())
+
+            collectActionsJob.cancel()
+        }
 }
