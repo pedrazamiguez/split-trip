@@ -46,6 +46,11 @@ class SubmitEventHandler(
     private val telemetryTracker: TelemetryTracker
 ) : AddExpenseEventHandler {
 
+    private data class DerivedExpenseAmounts(
+        val groupAmountCents: Long,
+        val sourceAmountCents: Long
+    )
+
     private lateinit var strategy: ExpenseFlowStrategy
 
     fun setStrategy(strategy: ExpenseFlowStrategy) {
@@ -249,13 +254,13 @@ class SubmitEventHandler(
         }
         if (includedNonDiscount.isEmpty()) return expense
 
-        val (baseCostGroup, baseCostSource) = computeBaseCosts(expense, uiAddOns)
-        val adjustedAddOns = adjustIncludedPercentageAddOns(expense, uiAddOns, baseCostGroup)
-        val adjustedSplits = rescaleSplits(expense.splits, expense.sourceAmount, baseCostSource)
+        val derivedAmounts = computeBaseCosts(expense, uiAddOns)
+        val adjustedAddOns = adjustIncludedPercentageAddOns(expense, uiAddOns, derivedAmounts.groupAmountCents)
+        val adjustedSplits = rescaleSplits(expense.splits, expense.sourceAmount, derivedAmounts.sourceAmountCents)
 
         return expense.copy(
-            sourceAmount = baseCostSource,
-            groupAmount = baseCostGroup,
+            sourceAmount = derivedAmounts.sourceAmountCents,
+            groupAmount = derivedAmounts.groupAmountCents,
             addOns = adjustedAddOns,
             splits = adjustedSplits
         )
@@ -263,13 +268,11 @@ class SubmitEventHandler(
 
     /**
      * Derives base costs in both group and source currencies from the user-entered total.
-     *
-     * Returns `(baseCostGroup, baseCostSource)`.
      */
     private fun computeBaseCosts(
         expense: Expense,
         uiAddOns: ImmutableList<AddOnUiModel>
-    ): Pair<Long, Long> {
+    ): DerivedExpenseAmounts {
         val includedNonDiscount = expense.addOns.filter {
             it.mode == AddOnMode.INCLUDED && it.type != AddOnType.DISCOUNT
         }
@@ -298,7 +301,10 @@ class SubmitEventHandler(
             targetAmount = baseCostGroup,
             totalAmount = expense.groupAmount
         )
-        return baseCostGroup to baseCostSource
+        return DerivedExpenseAmounts(
+            groupAmountCents = baseCostGroup,
+            sourceAmountCents = baseCostSource
+        )
     }
 
     /**

@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnCurrencyContext
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import java.util.UUID
@@ -135,10 +136,8 @@ class AddOnCrudDelegate(
 
     /**
      * Determines currency context flags for the new add-on.
-     *
-     * @return Triple of (isForeign, isCash, shouldLockRate)
      */
-    fun resolveAddOnCurrencyContext(state: AddExpenseUiState): Triple<Boolean, Boolean, Boolean> {
+    fun resolveAddOnCurrencyContext(state: AddExpenseUiState): AddOnCurrencyContext {
         val groupCurrency = state.groupCurrency
         val addOnCurrency = state.selectedCurrency
         val isForeign = addOnCurrency != null &&
@@ -146,7 +145,11 @@ class AddOnCrudDelegate(
             addOnCurrency.code != groupCurrency.code
         val isCash = exchangeRateDelegate.isCashMethod(state.selectedPaymentMethod?.id)
         val shouldLockRate = isForeign && isCash
-        return Triple(isForeign, isCash, shouldLockRate)
+        return AddOnCurrencyContext(
+            isForeign = isForeign,
+            isCash = isCash,
+            shouldLockRate = shouldLockRate
+        )
     }
 
     /**

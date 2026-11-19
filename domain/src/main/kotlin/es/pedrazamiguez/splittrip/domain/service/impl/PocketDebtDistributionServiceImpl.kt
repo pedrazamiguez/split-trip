@@ -1,11 +1,17 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.MemberBalanceEntry
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
 
 class PocketDebtDistributionServiceImpl : PocketDebtDistributionService {
+
+    private data class DebtGrantKey(
+        val debtorId: String,
+        val creditorId: String
+    )
 
     override fun distributePocketDebts(
         memberBalances: List<MemberBalance>,
@@ -13,38 +19,38 @@ class PocketDebtDistributionServiceImpl : PocketDebtDistributionService {
     ): List<Settlement> {
         val deficits = memberBalances
             .filter { it.pocketBalance < 0L }
-            .map { it.userId to -it.pocketBalance }
+            .map { MemberBalanceEntry(memberId = it.userId, amountCents = -it.pocketBalance) }
 
         val capacities = memberBalances
             .filter { it.pocketBalance > 0L }
-            .map { it.userId to it.pocketBalance }
+            .map { MemberBalanceEntry(memberId = it.userId, amountCents = it.pocketBalance) }
 
         return distribute(deficits, capacities, groupCurrency)
     }
 
     override fun distribute(
-        deficits: List<Pair<String, Long>>,
-        capacities: List<Pair<String, Long>>,
+        deficits: List<MemberBalanceEntry>,
+        capacities: List<MemberBalanceEntry>,
         groupCurrency: String
     ): List<Settlement> {
         val validDeficits = deficits
-            .filter { it.second > 0L }
-            .sortedByDescending { it.second }
+            .filter { it.amountCents > 0L }
+            .sortedByDescending { it.amountCents }
 
         val remainingCapacities = initialCapacities(capacities)
         if (validDeficits.isEmpty() || remainingCapacities.isEmpty()) {
             return emptyList()
         }
 
-        val recordedGrants = LinkedHashMap<Pair<String, String>, Long>()
+        val recordedGrants = LinkedHashMap<DebtGrantKey, Long>()
         for ((debtorId, totalDeficit) in validDeficits) {
             distributeDebtorDeficit(debtorId, totalDeficit, remainingCapacities, recordedGrants)
         }
 
-        return recordedGrants.map { (pair, amount) ->
+        return recordedGrants.map { (grantKey, amount) ->
             Settlement(
-                fromUserId = pair.first,
-                toUserId = pair.second,
+                fromUserId = grantKey.debtorId,
+                toUserId = grantKey.creditorId,
                 amount = amount,
                 currency = groupCurrency,
                 sourcePocket = SettlementPocketType.POCKET
@@ -52,7 +58,7 @@ class PocketDebtDistributionServiceImpl : PocketDebtDistributionService {
         }
     }
 
-    private fun initialCapacities(capacities: List<Pair<String, Long>>): LinkedHashMap<String, Long> {
+    private fun initialCapacities(capacities: List<MemberBalanceEntry>): LinkedHashMap<String, Long> {
         val map = LinkedHashMap<String, Long>()
         for ((userId, cap) in capacities) {
             if (cap > 0L) {
@@ -66,7 +72,7 @@ class PocketDebtDistributionServiceImpl : PocketDebtDistributionService {
         debtorId: String,
         totalDeficit: Long,
         remainingCapacities: LinkedHashMap<String, Long>,
-        recordedGrants: LinkedHashMap<Pair<String, String>, Long>
+        recordedGrants: LinkedHashMap<DebtGrantKey, Long>
     ) {
         var unassigned = totalDeficit
         while (unassigned > 0L) {
@@ -82,7 +88,7 @@ class PocketDebtDistributionServiceImpl : PocketDebtDistributionService {
         debtorId: String,
         unassigned: Long,
         remainingCapacities: LinkedHashMap<String, Long>,
-        recordedGrants: LinkedHashMap<Pair<String, String>, Long>
+        recordedGrants: LinkedHashMap<DebtGrantKey, Long>
     ): Long {
         val activeCreditors = remainingCapacities.filter { it.value > 0L }.keys.toList()
         if (activeCreditors.isEmpty()) return 0L
@@ -104,7 +110,7 @@ class PocketDebtDistributionServiceImpl : PocketDebtDistributionService {
             if (actualGrant > 0L) {
                 remainingCapacities[creditorId] = cap - actualGrant
                 totalAllocated += actualGrant
-                val key = debtorId to creditorId
+                val key = DebtGrantKey(debtorId = debtorId, creditorId = creditorId)
                 recordedGrants[key] = (recordedGrants[key] ?: 0L) + actualGrant
             }
         }

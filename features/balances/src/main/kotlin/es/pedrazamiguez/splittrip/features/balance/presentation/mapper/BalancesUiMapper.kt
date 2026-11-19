@@ -457,6 +457,12 @@ class BalancesUiMapper(
         )
     }
 
+    private data class CashInHandPresentation(
+        val formattedCashInHand: String,
+        val cashInHandByCurrency: ImmutableList<CurrencyBreakdownUiModel>,
+        val cashBreakdown: ImmutableList<CashBreakdownUiModel>
+    )
+
     private fun mapCashInHandAndBreakdown(
         balance: MemberBalance,
         isNegativeCash: Boolean,
@@ -464,14 +470,18 @@ class BalancesUiMapper(
         groupCurrency: String,
         locale: Locale,
         cashContext: MemberBalanceCashContext
-    ): Triple<String, ImmutableList<CurrencyBreakdownUiModel>, ImmutableList<CashBreakdownUiModel>> {
+    ): CashInHandPresentation {
         if (isNegativeCash) {
-            return Triple(EM_DASH, persistentListOf(), persistentListOf())
+            return CashInHandPresentation(
+                formattedCashInHand = EM_DASH,
+                cashInHandByCurrency = persistentListOf(),
+                cashBreakdown = persistentListOf()
+            )
         }
-        return Triple(
-            formatCurrencyAmount(balance.cashInHand, currency, locale),
-            mapCurrencyBreakdowns(balance.cashInHandByCurrency, groupCurrency, locale),
-            mapCashBreakdown(
+        return CashInHandPresentation(
+            formattedCashInHand = formatCurrencyAmount(balance.cashInHand, currency, locale),
+            cashInHandByCurrency = mapCurrencyBreakdowns(balance.cashInHandByCurrency, groupCurrency, locale),
+            cashBreakdown = mapCashBreakdown(
                 userId = balance.userId,
                 withdrawals = cashContext.withdrawals,
                 subunitsMap = cashContext.subunitsMap,

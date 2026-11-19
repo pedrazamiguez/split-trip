@@ -1,13 +1,21 @@
 package es.pedrazamiguez.splittrip.domain.usecase.currency.impl
 
+import es.pedrazamiguez.splittrip.domain.model.ExchangeRate
 import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateResult
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import java.math.BigDecimal
 import java.math.MathContext
+import java.time.Instant
 
 class GetExchangeRateUseCaseImpl(private val currencyRepository: CurrencyRepository) : GetExchangeRateUseCase {
+
+    private data class ResolvedExchangeRates(
+        val rates: List<ExchangeRate>,
+        val isStale: Boolean,
+        val lastUpdated: Instant
+    )
 
     /**
      * Calculates the cross-rate: 1 [baseCurrencyCode] = X [targetCurrencyCode].
@@ -25,15 +33,15 @@ class GetExchangeRateUseCaseImpl(private val currencyRepository: CurrencyReposit
         val result = currencyRepository.getExchangeRates("USD")
 
         val (ratesList, isStale, lastUpdated) = when (result) {
-            is ExchangeRateResult.Fresh -> Triple(
-                result.exchangeRates.exchangeRates,
-                false,
-                result.exchangeRates.lastUpdated
+            is ExchangeRateResult.Fresh -> ResolvedExchangeRates(
+                rates = result.exchangeRates.exchangeRates,
+                isStale = false,
+                lastUpdated = result.exchangeRates.lastUpdated
             )
-            is ExchangeRateResult.Stale -> Triple(
-                result.exchangeRates.exchangeRates,
-                true,
-                result.exchangeRates.lastUpdated
+            is ExchangeRateResult.Stale -> ResolvedExchangeRates(
+                rates = result.exchangeRates.exchangeRates,
+                isStale = true,
+                lastUpdated = result.exchangeRates.lastUpdated
             )
             ExchangeRateResult.Empty -> return null
         }

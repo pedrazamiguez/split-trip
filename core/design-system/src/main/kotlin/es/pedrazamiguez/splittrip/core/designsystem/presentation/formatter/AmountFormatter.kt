@@ -19,7 +19,7 @@ private val UNICODE_SPACE_REGEX = Regex("[\\p{Zs}]")
 
 private const val NO_NATIVE_SYMBOL = "__NO_NATIVE_SYMBOL__"
 private val nativeSymbolCache = ConcurrentHashMap<Currency, String>()
-private val numberFormatCache = ConcurrentHashMap<Pair<Locale, String>, NumberFormat>()
+private val numberFormatCache = ConcurrentHashMap<CurrencyFormatCacheKey, NumberFormat>()
 
 internal fun getNativeSymbolCacheSize(): Int = nativeSymbolCache.size
 internal fun getNumberFormatCacheSize(): Int = numberFormatCache.size
@@ -48,7 +48,9 @@ fun formatCurrencyAmount(
     val divisor = BigDecimal.TEN.pow(fractionDigits)
     val value = BigDecimal(amount).divide(divisor, fractionDigits, RoundingMode.HALF_UP)
 
-    val template = numberFormatCache.computeIfAbsent(locale to currencyInstance.currencyCode) {
+    val template = numberFormatCache.computeIfAbsent(
+        CurrencyFormatCacheKey(locale = locale, currencyCode = currencyInstance.currencyCode)
+    ) {
         NumberFormat.getCurrencyInstance(locale).apply {
             this.currency = currencyInstance
             minimumFractionDigits = fractionDigits

@@ -325,7 +325,7 @@ private fun parseAmount(jsonObject: JSONObject): BigDecimal? {
     }
 }
 
-private fun parseCurrency(jsonObject: JSONObject): Pair<String, String?> {
+private fun parseCurrency(jsonObject: JSONObject): ParsedReceiptCurrency {
     val rawCurrency = jsonObject.optString("currency")
         .takeIf { it.isNotEmpty() && it != "null" }?.uppercase(Locale.ROOT)
 
@@ -336,7 +336,7 @@ private fun parseCurrency(jsonObject: JSONObject): Pair<String, String?> {
     }
 
     val currency = normalizedCurrency ?: "EUR"
-    return Pair(currency, rawCurrency)
+    return ParsedReceiptCurrency(currencyCode = currency, rawCurrency = rawCurrency)
 }
 
 private fun calculateConfidence(
@@ -415,3 +415,8 @@ private fun getNoOpFallbackReceipt(): ExtractedReceipt {
         confidence = ExtractionConfidence.LOW
     )
 }
+
+private data class ParsedReceiptCurrency(
+    val currencyCode: String,
+    val rawCurrency: String?
+)

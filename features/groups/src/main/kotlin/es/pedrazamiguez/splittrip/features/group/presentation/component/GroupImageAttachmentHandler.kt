@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestCameraPermission
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CameraAttachmentTarget
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import java.io.File
 
@@ -85,7 +86,7 @@ internal fun GroupImageAttachmentHandler(
     )
 }
 
-private fun createGroupCameraUri(context: Context): Pair<File, Uri> {
+private fun createGroupCameraUri(context: Context): CameraAttachmentTarget {
     val groupsTempDir = File(context.filesDir, "groups_temp").also { it.mkdirs() }
     val tempFile = File.createTempFile("group_camera_", ".jpg", groupsTempDir)
     val uri = FileProvider.getUriForFile(
@@ -93,5 +94,5 @@ private fun createGroupCameraUri(context: Context): Pair<File, Uri> {
         "${context.packageName}.fileprovider",
         tempFile
     )
-    return tempFile to uri
+    return CameraAttachmentTarget(file = tempFile, uri = uri)
 }

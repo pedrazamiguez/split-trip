@@ -20,6 +20,13 @@ class SettlementsUiMapper(
     private val resourceProvider: ResourceProvider,
     private val userUiMapper: UserUiMapper
 ) {
+
+    private data class SettlementGroupKey(
+        val counterpartyId: String,
+        val currency: String,
+        val isCurrentUserPayer: Boolean
+    )
+
     companion object {
         private val POCKET_RES_MAP = mapOf(
             SettlementPocketType.POCKET to DesignSystemR.string.settlement_pocket_type_virtual,
@@ -54,7 +61,11 @@ class SettlementsUiMapper(
             // In SettlementsUiMapper, we group to avoid "Debes a Pepe twice"
             val isCurrentUserPayer = s.fromUserId == currentUserId
             val counterpartyId = if (isCurrentUserPayer) s.toUserId else s.fromUserId
-            Triple(counterpartyId, s.currency, isCurrentUserPayer)
+            SettlementGroupKey(
+                counterpartyId = counterpartyId,
+                currency = s.currency,
+                isCurrentUserPayer = isCurrentUserPayer
+            )
         }
 
         return grouped.values.map { groupRecords ->

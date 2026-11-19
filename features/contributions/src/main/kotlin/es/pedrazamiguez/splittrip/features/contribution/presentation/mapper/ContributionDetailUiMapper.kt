@@ -18,6 +18,22 @@ class ContributionDetailUiMapper(
     private val userUiMapper: UserUiMapper
 ) {
 
+    private data class ResolvedMemberDisplay(
+        val displayName: String,
+        val memberDisplay: MemberDisplay
+    )
+
+    private data class ResolvedCreatorDisplay(
+        val displayName: String,
+        val memberDisplay: MemberDisplay?
+    )
+
+    private data class ResolvedContributionScope(
+        val label: String,
+        val description: String,
+        val subunitName: String?
+    )
+
     fun map(
         contribution: Contribution,
         groupCurrency: String,
@@ -82,7 +98,7 @@ class ContributionDetailUiMapper(
         groupMemberIds: List<String>,
         currentUserId: String?,
         youLabel: String
-    ): Pair<String, MemberDisplay> {
+    ): ResolvedMemberDisplay {
         val name = userUiMapper.mapToDisplayName(
             user = memberProfiles[userId],
             fallbackUserId = userId,
@@ -94,7 +110,7 @@ class ContributionDetailUiMapper(
         } else {
             MemberDisplay.Active(userId, name)
         }
-        return name to display
+        return ResolvedMemberDisplay(displayName = name, memberDisplay = display)
     }
 
     private fun resolveCreatorDisplay(
@@ -103,8 +119,8 @@ class ContributionDetailUiMapper(
         groupMemberIds: List<String>,
         currentUserId: String?,
         youLabel: String
-    ): Pair<String, MemberDisplay?> {
-        if (createdBy.isBlank()) return "" to null
+    ): ResolvedCreatorDisplay {
+        if (createdBy.isBlank()) return ResolvedCreatorDisplay(displayName = "", memberDisplay = null)
         val name = userUiMapper.mapToDisplayName(
             user = memberProfiles[createdBy],
             fallbackUserId = createdBy,
@@ -116,30 +132,35 @@ class ContributionDetailUiMapper(
         } else {
             MemberDisplay.Active(createdBy, name)
         }
-        return name to display
+        return ResolvedCreatorDisplay(displayName = name, memberDisplay = display)
     }
 
     private fun resolveScopeInfo(
         scope: PayerType,
         subunitId: String?,
         subunitsMap: Map<String, Subunit>
-    ): Triple<String, String, String?> {
+    ): ResolvedContributionScope {
         val subunitName = subunitId?.let { subunitsMap[it]?.name }
-        val (label, description) = when (scope) {
-            PayerType.USER -> {
-                resourceProvider.getString(R.string.contribution_detail_scope_personal) to
-                    resourceProvider.getString(R.string.contribution_detail_scope_personal_desc)
-            }
-            PayerType.GROUP -> {
-                resourceProvider.getString(R.string.contribution_detail_scope_group) to
-                    resourceProvider.getString(R.string.contribution_detail_scope_group_desc)
-            }
+        return when (scope) {
+            PayerType.USER -> ResolvedContributionScope(
+                label = resourceProvider.getString(R.string.contribution_detail_scope_personal),
+                description = resourceProvider.getString(R.string.contribution_detail_scope_personal_desc),
+                subunitName = subunitName
+            )
+            PayerType.GROUP -> ResolvedContributionScope(
+                label = resourceProvider.getString(R.string.contribution_detail_scope_group),
+                description = resourceProvider.getString(R.string.contribution_detail_scope_group_desc),
+                subunitName = subunitName
+            )
             PayerType.SUBUNIT -> {
                 val name = subunitName.orEmpty()
-                name to resourceProvider.getString(R.string.contribution_detail_scope_subunit_desc, name)
+                ResolvedContributionScope(
+                    label = name,
+                    description = resourceProvider.getString(R.string.contribution_detail_scope_subunit_desc, name),
+                    subunitName = subunitName
+                )
             }
         }
-        return Triple(label, description, subunitName)
     }
 
     private fun resolveEquivalentAmount(

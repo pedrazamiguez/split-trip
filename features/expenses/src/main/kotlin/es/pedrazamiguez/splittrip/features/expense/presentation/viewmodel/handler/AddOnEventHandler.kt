@@ -67,7 +67,7 @@ class AddOnEventHandler(
     fun handleAddOnAdded(type: AddOnType) {
         val state = _uiState.value
         val newAddOn = addOnCrudDelegate.buildNewAddOn(type, state)
-        val (isForeign, isCash, _) = addOnCrudDelegate.resolveAddOnCurrencyContext(state)
+        val currencyContext = addOnCrudDelegate.resolveAddOnCurrencyContext(state)
         val collapsedExisting = addOnCrudDelegate.collapseAllExcept(state.addOns, newAddOn.id)
 
         _uiState.update {
@@ -78,8 +78,8 @@ class AddOnEventHandler(
         }
 
         // Auto-fetch rate if foreign currency
-        if (isForeign) {
-            if (isCash) {
+        if (currencyContext.isForeign) {
+            if (currencyContext.isCash) {
                 exchangeRateDelegate.fetchCashRate(
                     newAddOn.id,
                     scope,

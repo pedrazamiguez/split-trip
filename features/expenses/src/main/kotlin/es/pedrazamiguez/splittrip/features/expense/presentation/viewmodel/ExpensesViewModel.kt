@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseMappingContext
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ScrollPosition
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpensesUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpensesUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesUiState
@@ -61,7 +62,7 @@ class ExpensesViewModel(
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
-    internal var savedScrollPosition = Pair(0, 0)
+    internal var savedScrollPosition = ScrollPosition()
     private val _selectedGroupId = MutableStateFlow<String?>(null)
     private val _refreshTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val _filterCriteria = MutableStateFlow(ExpenseFilterCriteria())
@@ -259,7 +260,10 @@ class ExpensesViewModel(
             }
 
             is ExpensesUiEvent.ScrollPositionChanged -> {
-                savedScrollPosition = event.index to event.offset
+                savedScrollPosition = ScrollPosition(
+                    firstVisibleItemIndex = event.index,
+                    firstVisibleItemScrollOffset = event.offset
+                )
             }
 
             is ExpensesUiEvent.DeleteExpense -> handleDeleteExpense(event.expenseId)

@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatCurrencyAmount
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.MemberBalanceEntry
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.MemberSpendingBarUiModel
@@ -70,8 +71,8 @@ class MemberSpendingChartUiMapper(
         cashOnly: Boolean,
         groupCurrencyCode: String
     ): SpendAnalysis {
-        val capacities = mutableListOf<Pair<Int, Long>>()
-        val overspenders = mutableListOf<Pair<Int, Long>>()
+        val capacities = mutableListOf<IndexedMemberCapacity>()
+        val overspenders = mutableListOf<IndexedMemberOverspend>()
         val ownSpends = mutableMapOf<Int, Long>()
         val allowances = mutableMapOf<Int, Long>()
         var totalAllowance = 0L
@@ -87,11 +88,11 @@ class MemberSpendingChartUiMapper(
             totalAllowance += allowanceCents
 
             if (overspentCents > 0) {
-                overspenders.add(index to overspentCents)
+                overspenders.add(IndexedMemberOverspend(memberIndex = index, overspendCents = overspentCents))
             }
             val available = allowanceCents - ownSpendingCents
             if (available > 0) {
-                capacities.add(index to available)
+                capacities.add(IndexedMemberCapacity(memberIndex = index, capacityCents = available))
             }
         }
 
@@ -110,6 +111,16 @@ class MemberSpendingChartUiMapper(
         )
     }
 
+    private data class IndexedMemberCapacity(
+        val memberIndex: Int,
+        val capacityCents: Long
+    )
+
+    private data class IndexedMemberOverspend(
+        val memberIndex: Int,
+        val overspendCents: Long
+    )
+
     private data class SpendAnalysis(
         val allowances: Map<Int, Long>,
         val ownSpends: Map<Int, Long>,
@@ -119,13 +130,23 @@ class MemberSpendingChartUiMapper(
 
     private fun buildSpilloverAllocations(
         sortedMembers: List<MemberBalance>,
-        overspenders: List<Pair<Int, Long>>,
-        capacities: List<Pair<Int, Long>>,
+        overspenders: List<IndexedMemberOverspend>,
+        capacities: List<IndexedMemberCapacity>,
         groupCurrencyCode: String
     ): Map<Int, List<SpilloverSegment>> {
         val userIndexMap = sortedMembers.mapIndexed { index, balance -> balance.userId to index }.toMap()
-        val deficits = overspenders.map { (index, overspent) -> sortedMembers[index].userId to overspent }
-        val caps = capacities.map { (index, cap) -> sortedMembers[index].userId to cap }
+        val deficits = overspenders.map { entry ->
+            MemberBalanceEntry(
+                memberId = sortedMembers[entry.memberIndex].userId,
+                amountCents = entry.overspendCents
+            )
+        }
+        val caps = capacities.map { entry ->
+            MemberBalanceEntry(
+                memberId = sortedMembers[entry.memberIndex].userId,
+                amountCents = entry.capacityCents
+            )
+        }
 
         val settlements = pocketDebtDistributionService.distribute(deficits, caps, groupCurrencyCode)
 

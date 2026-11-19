@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.BalanceMetricType
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.GroupPocketBalanceUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.SecondaryBalanceMetricItem
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -23,28 +24,28 @@ internal fun SecondaryBalancesRow(
     val items = buildList {
         if (balance.formattedAvailableBalance != null) {
             add(
-                Triple(
-                    stringResource(R.string.balances_available),
-                    balance.formattedAvailableBalance,
-                    BalanceMetricType.AVAILABLE
+                SecondaryBalanceMetricItem(
+                    label = stringResource(R.string.balances_available),
+                    formattedAmount = balance.formattedAvailableBalance,
+                    metricType = BalanceMetricType.AVAILABLE
                 )
             )
         }
         if (balance.formattedScheduledHoldAmount != null) {
             add(
-                Triple(
-                    stringResource(R.string.balances_scheduled),
-                    balance.formattedScheduledHoldAmount,
-                    BalanceMetricType.SCHEDULED
+                SecondaryBalanceMetricItem(
+                    label = stringResource(R.string.balances_scheduled),
+                    formattedAmount = balance.formattedScheduledHoldAmount,
+                    metricType = BalanceMetricType.SCHEDULED
                 )
             )
         }
         if (balance.formattedRefundableHoldAmount != null) {
             add(
-                Triple(
-                    stringResource(R.string.balances_refundable),
-                    balance.formattedRefundableHoldAmount,
-                    BalanceMetricType.REFUNDABLE
+                SecondaryBalanceMetricItem(
+                    label = stringResource(R.string.balances_refundable),
+                    formattedAmount = balance.formattedRefundableHoldAmount,
+                    metricType = BalanceMetricType.REFUNDABLE
                 )
             )
         }

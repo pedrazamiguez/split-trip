@@ -14,6 +14,11 @@ import java.math.RoundingMode
  */
 class PercentSplitCalculator : ExpenseSplitCalculator() {
 
+    private data class RawSplitAmount(
+        val split: ExpenseSplit,
+        val rawAmountCents: Long
+    )
+
     companion object {
         private val HUNDRED = BigDecimal("100")
         private val TOLERANCE = BigDecimal("0.01")
@@ -57,11 +62,11 @@ class PercentSplitCalculator : ExpenseSplitCalculator() {
             val rawAmount = totalAmount.multiply(percentage)
                 .divide(HUNDRED, 0, RoundingMode.DOWN)
                 .toLong()
-            split to rawAmount
+            RawSplitAmount(split = split, rawAmountCents = rawAmount)
         }
 
         // Distribute remainder (cents lost to rounding) to the first participants
-        val allocatedTotal = rawAmounts.sumOf { it.second }
+        val allocatedTotal = rawAmounts.sumOf { it.rawAmountCents }
         var remainder = totalAmountCents - allocatedTotal
 
         return rawAmounts.map { (split, rawAmount) ->
