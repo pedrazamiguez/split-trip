@@ -54,3 +54,27 @@ private fun SelectedGroupCardMultiCurrencyPreview() {
         )
     }
 }
+
+/** Hero card for an archived group with a cover image. */
+@PreviewComplete
+@Composable
+private fun SelectedGroupCardArchivedPreview() {
+    GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_ARCHIVED) {
+        SelectedGroupCard(
+            groupUiModel = it,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+/** Hero card for an archived group without a cover image — shows the gradient placeholder. */
+@PreviewComplete
+@Composable
+private fun SelectedGroupCardArchivedNoImagePreview() {
+    GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_ARCHIVED_NO_IMAGE) {
+        SelectedGroupCard(
+            groupUiModel = it,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}

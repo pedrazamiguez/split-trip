@@ -67,7 +67,7 @@ fun SelectedGroupCard(
                 SelectedGroupCoverImage(
                     imageUrl = groupUiModel.imageUrl,
                     groupName = groupUiModel.name,
-                    showActiveBadge = true
+                    status = groupUiModel.status
                 )
 
                 Column(

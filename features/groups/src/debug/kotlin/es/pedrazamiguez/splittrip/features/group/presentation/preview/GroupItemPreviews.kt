@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupItem
 
 @PreviewComplete
@@ -32,6 +33,22 @@ private fun GroupItemSingleExtraCurrencyPreview() {
 @Composable
 private fun GroupItemMultiCurrencyPreview() {
     GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_MULTI_CURRENCY) {
+        GroupItem(groupUiModel = it)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun GroupItemArchivedPreview() {
+    GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_ARCHIVED) {
+        GroupItem(groupUiModel = it)
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun GroupItemArchivedMultiCurrencyPreview() {
+    GroupUiPreviewHelper(domainGroup = GROUP_DOMAIN_MULTI_CURRENCY.copy(status = GroupStatus.ARCHIVED)) {
         GroupItem(groupUiModel = it)
     }
 }

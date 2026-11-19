@@ -108,7 +108,8 @@ fun GroupDetailScreen(
                     SelectedGroupCoverImage(
                         imageUrl = group.imageUrl,
                         groupName = group.name,
-                        showActiveBadge = isActiveGroup
+                        status = group.status,
+                        showBadge = isActiveGroup
                     )
 
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
