@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.screen.impl
 import androidx.navigation.NavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import io.mockk.mockk
@@ -137,5 +138,20 @@ class SubunitManagementScreenUiProviderImplTest {
         )
 
         verify(exactly = 1) { upgradeNavigator.navigateToUpgrade(mockNavController) }
+    }
+
+    @Test
+    fun `shouldShowMainAction returns true when group status is ACTIVE`() {
+        assertTrue(uiProvider.shouldShowMainAction(GroupStatus.ACTIVE))
+    }
+
+    @Test
+    fun `shouldShowMainAction returns true when group status is null`() {
+        assertTrue(uiProvider.shouldShowMainAction(null))
+    }
+
+    @Test
+    fun `shouldShowMainAction returns false when group status is ARCHIVED`() {
+        assertFalse(uiProvider.shouldShowMainAction(GroupStatus.ARCHIVED))
     }
 }
