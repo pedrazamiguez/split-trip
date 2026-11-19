@@ -97,6 +97,23 @@ class FirebaseAppConfigRepository(
     override val proAllowlistEmailHashes: StateFlow<Set<String>> =
         _proAllowlistEmailHashes.asStateFlow()
 
+    private val _inAppUpdatesEnabled = MutableStateFlow(DEFAULT_IN_APP_UPDATES_ENABLED)
+    override val inAppUpdatesEnabled: StateFlow<Boolean> = _inAppUpdatesEnabled.asStateFlow()
+
+    private val _minSupportedVersionCode = MutableStateFlow(DEFAULT_MIN_SUPPORTED_VERSION_CODE)
+    override val minSupportedVersionCode: StateFlow<Long> = _minSupportedVersionCode.asStateFlow()
+
+    private val _autoForcePatchUpdates = MutableStateFlow(DEFAULT_AUTO_FORCE_PATCH_UPDATES)
+    override val autoForcePatchUpdates: StateFlow<Boolean> = _autoForcePatchUpdates.asStateFlow()
+
+    private val _optionalUpdateVersionCodes = MutableStateFlow(DEFAULT_OPTIONAL_UPDATE_VERSION_CODES)
+    override val optionalUpdateVersionCodes: StateFlow<Set<Long>> =
+        _optionalUpdateVersionCodes.asStateFlow()
+
+    private val _optionalUpdateCooldownHours = MutableStateFlow(DEFAULT_OPTIONAL_UPDATE_COOLDOWN_HOURS)
+    override val optionalUpdateCooldownHours: StateFlow<Long> =
+        _optionalUpdateCooldownHours.asStateFlow()
+
     private val _isInitialFetchSettled = MutableStateFlow(false)
     override val isInitialFetchSettled: StateFlow<Boolean> = _isInitialFetchSettled.asStateFlow()
 
@@ -146,6 +163,7 @@ class FirebaseAppConfigRepository(
         updateAdvertisingFlows()
         updateTierLimitFlows()
         updateOcrAndDeveloperFlows()
+        updateAppUpdateFlows()
     }
 
     private fun updateGeneralConfigFlows() {
@@ -260,6 +278,38 @@ class FirebaseAppConfigRepository(
             .toSet()
     }
 
+    private fun updateAppUpdateFlows() {
+        _inAppUpdatesEnabled.value = readBooleanOrDefault(
+            key = "in_app_updates_enabled",
+            defaultValue = DEFAULT_IN_APP_UPDATES_ENABLED
+        )
+        val minSupported = remoteConfig.getLong("min_supported_version_code")
+        _minSupportedVersionCode.value =
+            if (minSupported >= 0) minSupported else DEFAULT_MIN_SUPPORTED_VERSION_CODE
+        _autoForcePatchUpdates.value = readBooleanOrDefault(
+            key = "auto_force_patch_updates",
+            defaultValue = DEFAULT_AUTO_FORCE_PATCH_UPDATES
+        )
+        _optionalUpdateVersionCodes.value =
+            parseVersionCodes(remoteConfig.getString("optional_update_version_codes"))
+        val cooldownHours = remoteConfig.getLong("optional_update_cooldown_hours")
+        _optionalUpdateCooldownHours.value =
+            if (cooldownHours > 0) cooldownHours else DEFAULT_OPTIONAL_UPDATE_COOLDOWN_HOURS
+    }
+
+    private fun readBooleanOrDefault(key: String, defaultValue: Boolean): Boolean {
+        val rawValue = remoteConfig.getString(key).trim()
+        return if (rawValue.isNotBlank()) remoteConfig.getBoolean(key) else defaultValue
+    }
+
+    private fun parseVersionCodes(raw: String): Set<Long> {
+        if (raw.isBlank()) return DEFAULT_OPTIONAL_UPDATE_VERSION_CODES
+        return raw.split(",")
+            .map { it.trim() }
+            .mapNotNull { token -> token.toLongOrNull()?.takeIf { code -> code > 0 } }
+            .toSet()
+    }
+
     private fun parseDeveloperInfo(jsonStr: String): DeveloperInfo {
         if (jsonStr.isBlank()) return DEFAULT_DEVELOPER_INFO
         return try {
@@ -301,6 +351,11 @@ class FirebaseAppConfigRepository(
             setOf(DEFAULT_ALLOWLIST_OWNER_EMAIL_HASH)
         private val DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES: Set<String> =
             setOf(DEFAULT_ALLOWLIST_OWNER_EMAIL_HASH)
+        private const val DEFAULT_IN_APP_UPDATES_ENABLED = true
+        private const val DEFAULT_MIN_SUPPORTED_VERSION_CODE = 0L
+        private const val DEFAULT_AUTO_FORCE_PATCH_UPDATES = true
+        private val DEFAULT_OPTIONAL_UPDATE_VERSION_CODES: Set<Long> = emptySet()
+        private const val DEFAULT_OPTIONAL_UPDATE_COOLDOWN_HOURS = 24L
 
         private const val LANG_EN = "en"
         private const val LANG_ES = "es"

@@ -213,6 +213,14 @@
     <!-- Session Expiration -->
     <string name="session_expired_message">Tu sesión ha caducado. Inicia sesión de nuevo.</string>
 
+    <!-- In-App Updates -->
+    <string name="app_update_required_title">Actualización obligatoria</string>
+    <string name="app_update_required_description">Hay una nueva versión de SplitTrip disponible con correcciones importantes. Actualiza para continuar.</string>
+    <string name="app_update_required_button">Actualizar ahora</string>
+    <string name="app_update_ready_title">Actualización lista</string>
+    <string name="app_update_ready_description">Se ha descargado una nueva versión de SplitTrip.</string>
+    <string name="app_update_ready_button">Reiniciar para actualizar</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

@@ -108,4 +108,37 @@ class AppConfigServiceImplTest {
         assertEquals(allowlistFlow, service.proAllowlistEmailHashes)
         assertEquals(setOf("abc123"), service.proAllowlistEmailHashes.value)
     }
+
+    @Test
+    fun `exposes app update policy and initial fetch settled flows from repository correctly`() {
+        val repository = mockk<AppConfigRepository>(relaxed = true)
+        val inAppUpdatesEnabledFlow = MutableStateFlow(true)
+        val minSupportedVersionCodeFlow = MutableStateFlow(1_000_000L)
+        val autoForcePatchUpdatesFlow = MutableStateFlow(false)
+        val optionalUpdateVersionCodesFlow = MutableStateFlow(setOf(1_001_000L, 1_002_001L))
+        val optionalUpdateCooldownHoursFlow = MutableStateFlow(48L)
+        val isInitialFetchSettledFlow = MutableStateFlow(true)
+
+        every { repository.inAppUpdatesEnabled } returns inAppUpdatesEnabledFlow
+        every { repository.minSupportedVersionCode } returns minSupportedVersionCodeFlow
+        every { repository.autoForcePatchUpdates } returns autoForcePatchUpdatesFlow
+        every { repository.optionalUpdateVersionCodes } returns optionalUpdateVersionCodesFlow
+        every { repository.optionalUpdateCooldownHours } returns optionalUpdateCooldownHoursFlow
+        every { repository.isInitialFetchSettled } returns isInitialFetchSettledFlow
+
+        val service = AppConfigServiceImpl(repository)
+
+        assertEquals(inAppUpdatesEnabledFlow, service.inAppUpdatesEnabled)
+        assertEquals(minSupportedVersionCodeFlow, service.minSupportedVersionCode)
+        assertEquals(autoForcePatchUpdatesFlow, service.autoForcePatchUpdates)
+        assertEquals(optionalUpdateVersionCodesFlow, service.optionalUpdateVersionCodes)
+        assertEquals(optionalUpdateCooldownHoursFlow, service.optionalUpdateCooldownHours)
+        assertEquals(isInitialFetchSettledFlow, service.isInitialFetchSettled)
+        assertEquals(true, service.inAppUpdatesEnabled.value)
+        assertEquals(1_000_000L, service.minSupportedVersionCode.value)
+        assertEquals(false, service.autoForcePatchUpdates.value)
+        assertEquals(setOf(1_001_000L, 1_002_001L), service.optionalUpdateVersionCodes.value)
+        assertEquals(48L, service.optionalUpdateCooldownHours.value)
+        assertEquals(true, service.isInitialFetchSettled.value)
+    }
 }

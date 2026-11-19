@@ -166,5 +166,11 @@
     <string name="currency_picker_search_placeholder">Bûccâh por código o nombre</string>
     <string name="currency_picker_empty">No çe encontraron monedâ</string>
     <string name="session_expired_message">Tu çeçión a caducao. Iniçia çeçión de nuebo.</string>
+    <string name="app_update_required_title">Âttualiçaçión obligatoria</string>
+    <string name="app_update_required_description">Ay una nueba berçión de SplîTTrîh dîpponible con corrêççionê importantê. Âttualiça pa continuâh.</string>
+    <string name="app_update_required_button">Âttualiçâh aora</string>
+    <string name="app_update_ready_title">Âttualiçaçión lîtta</string>
+    <string name="app_update_ready_description">Çe a dêccargao una nueba berçión de SplîTTrîh.</string>
+    <string name="app_update_ready_button">Reiniçiâh pa âttualiçâh</string>
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

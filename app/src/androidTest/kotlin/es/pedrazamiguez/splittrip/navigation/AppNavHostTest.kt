@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -14,6 +15,10 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.BRANDED_LOADING_SCREEN_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.security.APP_LOCK_GATE_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_GATE_BUTTON_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_GATE_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_READY_ACTION_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_READY_BANNER_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.di.FakeRegisterDeviceTokenUseCase
 import es.pedrazamiguez.splittrip.di.createAppNavHostTestModule
@@ -35,6 +40,9 @@ import es.pedrazamiguez.splittrip.features.onboarding.presentation.viewmodel.Rec
 import es.pedrazamiguez.splittrip.helpers.FakeNavigationProvider
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
 import es.pedrazamiguez.splittrip.navigation.AppNavHost
+import es.pedrazamiguez.splittrip.update.AppUpdateCoordinator
+import es.pedrazamiguez.splittrip.update.AppUpdateCoordinatorAction
+import es.pedrazamiguez.splittrip.update.AppUpdateUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -753,5 +761,81 @@ class AppNavHostTest {
         }
 
         assertEquals(Routes.RECONCILIATION, navController.currentDestination?.route)
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  In-App Updates (Gate & Ready Banner)
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun showsAppUpdateGate_whenCoordinatorEmitsForcedUpdateBlocked() {
+        val navController = buildTestNavController()
+        val coordinator = mockk<AppUpdateCoordinator>(relaxed = true).apply {
+            every { uiState } returns MutableStateFlow(
+                AppUpdateUiState.ForcedUpdateBlocked(availableVersionCode = 1_001_000L)
+            )
+            every { actions } returns MutableSharedFlow<AppUpdateCoordinatorAction>()
+            every { registerInstallListener() } returns {}
+        }
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = flowOf(true),
+                        onboardingFlow = flowOf(true),
+                        appUpdateCoordinator = coordinator
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasTestTag(APP_UPDATE_GATE_TEST_TAG)).assertIsDisplayed()
+        composeRule.onNode(hasTestTag(APP_UPDATE_GATE_BUTTON_TEST_TAG)).performClick()
+        composeRule.waitForIdle()
+
+        coVerify(exactly = 1) { coordinator.retryForcedUpdate(any()) }
+    }
+
+    @Test
+    fun showsAppUpdateReadyBanner_whenCoordinatorEmitsFlexibleUpdateReadyToInstall() {
+        val navController = buildTestNavController()
+        val coordinator = mockk<AppUpdateCoordinator>(relaxed = true).apply {
+            every { uiState } returns MutableStateFlow(AppUpdateUiState.FlexibleUpdateReadyToInstall)
+            every { actions } returns MutableSharedFlow<AppUpdateCoordinatorAction>()
+            every { registerInstallListener() } returns {}
+        }
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = flowOf(true),
+                        onboardingFlow = flowOf(true),
+                        appUpdateCoordinator = coordinator
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasTestTag(APP_UPDATE_READY_BANNER_TEST_TAG)).assertIsDisplayed()
+        composeRule.onNode(hasTestTag(APP_UPDATE_READY_ACTION_TEST_TAG)).performClick()
+        composeRule.waitForIdle()
+
+        coVerify(exactly = 1) { coordinator.completeFlexibleUpdate() }
     }
 }

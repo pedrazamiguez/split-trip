@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import es.pedrazamiguez.splittrip.R
 import es.pedrazamiguez.splittrip.core.common.network.NetworkMonitor
@@ -69,6 +70,7 @@ import es.pedrazamiguez.splittrip.features.main.navigation.mainGraph
 import es.pedrazamiguez.splittrip.features.onboarding.navigation.onboardingGraph
 import es.pedrazamiguez.splittrip.features.profile.navigation.profileGraph
 import es.pedrazamiguez.splittrip.features.settings.navigation.settingsGraph
+import es.pedrazamiguez.splittrip.update.AppUpdateCoordinator
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -106,6 +108,7 @@ fun AppNavHost(
         koin.get<ReconcileSubscriptionEntitlementsUseCase>()
     }
     val deepLinkHolder = remember(koin) { koin.get<DeepLinkHolder>() }
+    val appUpdateCoordinator = remember(koin) { koin.get<AppUpdateCoordinator>() }
     val scope = rememberCoroutineScope()
 
     val routeToUiProvider = remember(screenUiProviders) {
@@ -243,6 +246,8 @@ fun AppNavHost(
         onboardingCompleted != true ||
         biometricLockEnabled != null
     val isNavHostReady = stableStartDestination.value != null && isBiometricPreferenceLoaded && !isAppLocked
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val isOnMainDestination = isNavHostReady && navBackStackEntry?.destination?.route == Routes.MAIN
 
     LaunchedEffect(stableStartDestination.value, isBiometricPreferenceLoaded, isAppLocked) {
         Timber.tag(LogTag.NAVIGATION).i(
@@ -481,6 +486,12 @@ fun AppNavHost(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .imePadding()
+            )
+
+            AppUpdateEffect(
+                coordinator = appUpdateCoordinator,
+                isNavHostReady = isNavHostReady,
+                isOnMainDestination = isOnMainDestination
             )
         }
     }

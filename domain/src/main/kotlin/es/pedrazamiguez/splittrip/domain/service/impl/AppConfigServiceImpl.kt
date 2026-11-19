@@ -25,4 +25,16 @@ class AppConfigServiceImpl(
         appConfigRepository.developerAllowlistEmailHashes
     override val proAllowlistEmailHashes: StateFlow<Set<String>> =
         appConfigRepository.proAllowlistEmailHashes
+    override val inAppUpdatesEnabled: StateFlow<Boolean> =
+        appConfigRepository.inAppUpdatesEnabled
+    override val minSupportedVersionCode: StateFlow<Long> =
+        appConfigRepository.minSupportedVersionCode
+    override val autoForcePatchUpdates: StateFlow<Boolean> =
+        appConfigRepository.autoForcePatchUpdates
+    override val optionalUpdateVersionCodes: StateFlow<Set<Long>> =
+        appConfigRepository.optionalUpdateVersionCodes
+    override val optionalUpdateCooldownHours: StateFlow<Long> =
+        appConfigRepository.optionalUpdateCooldownHours
+    override val isInitialFetchSettled: StateFlow<Boolean> =
+        appConfigRepository.isInitialFetchSettled
 }

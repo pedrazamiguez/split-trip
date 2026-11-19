@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.local.datastore
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.test.core.app.ApplicationProvider
+import es.pedrazamiguez.splittrip.domain.model.OptionalUpdateDismissal
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.every
@@ -506,5 +507,50 @@ class UserPreferencesTest {
         val result = prefsB.isBiometricLockEnabled.first()
 
         assertTrue(result)
+    }
+
+    // ── Optional App Update Dismissal (Device-scoped) ────────────────────
+
+    @Test
+    fun `getOptionalUpdateDismissal returns null when no dismissal recorded`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+
+        assertNull(prefs.getOptionalUpdateDismissal())
+    }
+
+    @Test
+    fun `recordOptionalUpdateDismissal persists versionCode and timestampMs atomically and is shared across users`() =
+        runTest {
+            val prefsA = createUserPreferences(USER_A_ID)
+            prefsA.recordOptionalUpdateDismissal(versionCode = 1_001_000L, timestampMs = 1_700_000_000_000L)
+
+            val prefsB = createUserPreferences(USER_B_ID)
+            val result = prefsB.getOptionalUpdateDismissal()
+
+            assertEquals(
+                OptionalUpdateDismissal(
+                    versionCode = 1_001_000L,
+                    dismissedAtTimestampMs = 1_700_000_000_000L
+                ),
+                result
+            )
+        }
+
+    @Test
+    fun `clearAll preserves device-scoped optional update dismissal`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        prefs.recordOptionalUpdateDismissal(versionCode = 1_002_000L, timestampMs = 1_700_000_100_000L)
+        prefs.setSelectedGroup("groupA", "Group A", "EUR")
+
+        prefs.clearAll()
+
+        assertEquals(
+            OptionalUpdateDismissal(
+                versionCode = 1_002_000L,
+                dismissedAtTimestampMs = 1_700_000_100_000L
+            ),
+            prefs.getOptionalUpdateDismissal()
+        )
+        assertNull(prefs.selectedGroupId.first())
     }
 }

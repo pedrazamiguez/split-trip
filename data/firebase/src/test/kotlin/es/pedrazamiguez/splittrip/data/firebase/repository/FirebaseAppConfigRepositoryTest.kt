@@ -63,6 +63,13 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getString("admob_interstitial_ad_unit_id") } returns "interstitial-456"
         every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 3L
         every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 180L
+        every { firebaseRemoteConfig.getString("in_app_updates_enabled") } returns "true"
+        every { firebaseRemoteConfig.getBoolean("in_app_updates_enabled") } returns true
+        every { firebaseRemoteConfig.getLong("min_supported_version_code") } returns 950_000L
+        every { firebaseRemoteConfig.getString("auto_force_patch_updates") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("auto_force_patch_updates") } returns false
+        every { firebaseRemoteConfig.getString("optional_update_version_codes") } returns "1001000,1002000"
+        every { firebaseRemoteConfig.getLong("optional_update_cooldown_hours") } returns 48L
 
         repository = FirebaseAppConfigRepository(firebaseRemoteConfig)
     }
@@ -107,6 +114,11 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals("interstitial-456", repository.admobInterstitialAdUnitId.value)
         assertEquals(3, repository.adInterstitialActionFrequency.value)
         assertEquals(180L, repository.adInterstitialMinIntervalSeconds.value)
+        assertEquals(true, repository.inAppUpdatesEnabled.value)
+        assertEquals(950_000L, repository.minSupportedVersionCode.value)
+        assertEquals(false, repository.autoForcePatchUpdates.value)
+        assertEquals(setOf(1_001_000L, 1_002_000L), repository.optionalUpdateVersionCodes.value)
+        assertEquals(48L, repository.optionalUpdateCooldownHours.value)
     }
 
     @Test
@@ -148,6 +160,11 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals("Custom Dev", repository.developerInfo.value.name)
         assertEquals("https://example.com/custom.png", repository.developerInfo.value.avatarUrl)
         assertEquals("Custom Lead", repository.developerInfo.value.roleMap["en"])
+        assertEquals(false, repository.inAppUpdatesEnabled.value)
+        assertEquals(1_000_000L, repository.minSupportedVersionCode.value)
+        assertEquals(true, repository.autoForcePatchUpdates.value)
+        assertEquals(setOf(1_005_000L, 1_006_001L), repository.optionalUpdateVersionCodes.value)
+        assertEquals(72L, repository.optionalUpdateCooldownHours.value)
     }
 
     @Test
@@ -215,6 +232,11 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getString("support_email_address") } returns ""
         every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 0L
         every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 0L
+        every { firebaseRemoteConfig.getString("in_app_updates_enabled") } returns ""
+        every { firebaseRemoteConfig.getLong("min_supported_version_code") } returns -1L
+        every { firebaseRemoteConfig.getString("auto_force_patch_updates") } returns ""
+        every { firebaseRemoteConfig.getString("optional_update_version_codes") } returns ""
+        every { firebaseRemoteConfig.getLong("optional_update_cooldown_hours") } returns 0L
 
         val fallbackRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
 
@@ -229,6 +251,11 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals("support@splittrip.eu", fallbackRepo.supportEmailAddress.value)
         assertEquals(2, fallbackRepo.adInterstitialActionFrequency.value)
         assertEquals(90L, fallbackRepo.adInterstitialMinIntervalSeconds.value)
+        assertEquals(true, fallbackRepo.inAppUpdatesEnabled.value)
+        assertEquals(0L, fallbackRepo.minSupportedVersionCode.value)
+        assertEquals(true, fallbackRepo.autoForcePatchUpdates.value)
+        assertEquals(emptySet<Long>(), fallbackRepo.optionalUpdateVersionCodes.value)
+        assertEquals(24L, fallbackRepo.optionalUpdateCooldownHours.value)
     }
 
     @Test
@@ -442,6 +469,57 @@ class FirebaseAppConfigRepositoryTest {
         assertTrue(repository.isInitialFetchSettled.value)
     }
 
+    @Test
+    fun `parses optional_update_version_codes trimming whitespace and ignoring invalid or non-positive entries`() {
+        every {
+            firebaseRemoteConfig.getString("optional_update_version_codes")
+        } returns " 1001000 , abc , -5 , 0 , 1002001 "
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertEquals(setOf(1_001_000L, 1_002_001L), repo.optionalUpdateVersionCodes.value)
+    }
+
+    @Test
+    fun `falls back to defaults for app update keys when remote config values are blank or negative`() {
+        every { firebaseRemoteConfig.getString("in_app_updates_enabled") } returns "   "
+        every { firebaseRemoteConfig.getLong("min_supported_version_code") } returns -1L
+        every { firebaseRemoteConfig.getString("auto_force_patch_updates") } returns "  "
+        every { firebaseRemoteConfig.getString("optional_update_version_codes") } returns "  "
+        every { firebaseRemoteConfig.getLong("optional_update_cooldown_hours") } returns 0L
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertTrue(repo.inAppUpdatesEnabled.value)
+        assertEquals(0L, repo.minSupportedVersionCode.value)
+        assertTrue(repo.autoForcePatchUpdates.value)
+        assertEquals(emptySet<Long>(), repo.optionalUpdateVersionCodes.value)
+        assertEquals(24L, repo.optionalUpdateCooldownHours.value)
+    }
+
+    @Test
+    fun `real-time ConfigUpdateListener updates app update flows`() {
+        val mockConfigUpdate = mockk<ConfigUpdate>(relaxed = true)
+        val updateListenerSlot = slot<ConfigUpdateListener>()
+        verify(exactly = 1) { firebaseRemoteConfig.addOnConfigUpdateListener(capture(updateListenerSlot)) }
+
+        val mockActivateTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.activate() } returns mockActivateTask
+        val listenerSlot = slot<OnCompleteListener<Boolean>>()
+        every { mockActivateTask.addOnCompleteListener(capture(listenerSlot)) } returns mockActivateTask
+        every { mockActivateTask.isSuccessful } returns true
+
+        every { firebaseRemoteConfig.getString("in_app_updates_enabled") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("in_app_updates_enabled") } returns false
+        every { firebaseRemoteConfig.getLong("min_supported_version_code") } returns 1_003_000L
+
+        updateListenerSlot.captured.onUpdate(mockConfigUpdate)
+        listenerSlot.captured.onComplete(mockActivateTask)
+
+        assertFalse(repository.inAppUpdatesEnabled.value)
+        assertEquals(1_003_000L, repository.minSupportedVersionCode.value)
+    }
+
     private fun setupMockRemoteConfigValues() {
         every { firebaseRemoteConfig.getString("default_currency_code") } returns "GBP"
         every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 100L
@@ -470,6 +548,13 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getString("admob_interstitial_ad_unit_id") } returns "interstitial-new"
         every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 3L
         every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 60L
+        every { firebaseRemoteConfig.getString("in_app_updates_enabled") } returns "false"
+        every { firebaseRemoteConfig.getBoolean("in_app_updates_enabled") } returns false
+        every { firebaseRemoteConfig.getLong("min_supported_version_code") } returns 1_000_000L
+        every { firebaseRemoteConfig.getString("auto_force_patch_updates") } returns "true"
+        every { firebaseRemoteConfig.getBoolean("auto_force_patch_updates") } returns true
+        every { firebaseRemoteConfig.getString("optional_update_version_codes") } returns "1005000, 1006001"
+        every { firebaseRemoteConfig.getLong("optional_update_cooldown_hours") } returns 72L
         every {
             firebaseRemoteConfig.getString("developer_info_json")
         } returns """

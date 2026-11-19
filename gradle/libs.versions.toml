@@ -45,6 +45,7 @@ mlkitBarcodeScanning = "18.3.1"
 mlkitTextRecognition = "19.0.2"
 mockk = "1.14.12"
 navigation = "2.10.2"
+playAppUpdate = "2.1.0"
 playBilling = "9.1.0"
 playServicesAds = "25.5.0"
 robolectric = "4.18"
@@ -134,6 +135,7 @@ ktlint-gradlePlugin = { module = "org.jlleitschuh.gradle.ktlint:org.jlleitschuh.
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
+play-app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
 play-billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "playBilling" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 play-services-mlkit-barcode-scanning = { module = "com.google.android.gms:play-services-mlkit-barcode-scanning", version.ref = "mlkitBarcodeScanning" }
