@@ -7,8 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
+import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseItem
+import java.time.LocalDateTime
 
 @PreviewComplete
 @Composable
@@ -133,5 +137,46 @@ private fun ExpenseItemAllPaymentMethodsPreview() {
                 ExpenseItem(expenseUiModel = it)
             }
         }
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun ExpenseItemNarrowBasicPreview() {
+    ExpenseItemPreviewHelper(domainExpense = PREVIEW_EXPENSE_BASIC) {
+        ExpenseItem(
+            expenseUiModel = it,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun ExpenseItemNarrowForeignCurrencyPreview() {
+    ExpenseItemPreviewHelper(domainExpense = PREVIEW_EXPENSE_FOREIGN_CURRENCY) {
+        ExpenseItem(
+            expenseUiModel = it,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun ExpenseItemNarrowOutOfPocketWithBadgesPreview() {
+    ExpenseItemPreviewHelper(
+        domainExpense = PREVIEW_EXPENSE_OUT_OF_POCKET.copy(
+            paymentStatus = PaymentStatus.PENDING,
+            dueDate = LocalDateTime.of(2026, 2, 10, 0, 0),
+            addOns = listOf(AddOn(id = "addon-1", description = "Tip", amountCents = 500L))
+        ),
+        memberProfiles = PREVIEW_MEMBER_PROFILES,
+        pairedContributions = PREVIEW_PAIRED_CONTRIBUTIONS
+    ) {
+        ExpenseItem(
+            expenseUiModel = it,
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }

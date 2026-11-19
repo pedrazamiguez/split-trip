@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.feature
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,11 +13,13 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_APPLIED_FILTER_CRITERIA
 import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_EXPENSE_ADDED
 import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_INITIAL_FILTER_CRITERIA
+import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_RESET_FILTERS_REQUESTED
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpensesScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpensesUiAction
@@ -48,28 +51,7 @@ fun ExpensesFeature(
     // Collect and handle UiActions
     LaunchedEffect(Unit) {
         expensesViewModel.actions.collectLatest { action ->
-            when (action) {
-                is ExpensesUiAction.ShowLoadError -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-
-                is ExpensesUiAction.ShowDeleteSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-
-                is ExpensesUiAction.ShowDeleteError -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-
-                is ExpensesUiAction.ShowCancelSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-
-                is ExpensesUiAction.ShowCancelError -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-                is ExpensesUiAction.ScrollToTop -> Unit // Handled by ExpensesScreen
-            }
+            handleExpenseUiAction(action, pillController, context)
         }
     }
 
@@ -99,6 +81,18 @@ fun ExpensesFeature(
             if (appliedCriteria != null) {
                 expensesViewModel.onEvent(ExpensesUiEvent.FilterCriteriaChanged(appliedCriteria))
                 expensesBackStackEntry.savedStateHandle.remove<ExpenseFilterCriteria>(KEY_APPLIED_FILTER_CRITERIA)
+            }
+        }
+    }
+
+    LaunchedEffect(expensesBackStackEntry) {
+        expensesBackStackEntry?.savedStateHandle?.getStateFlow(
+            KEY_RESET_FILTERS_REQUESTED,
+            false
+        )?.collectLatest { resetRequested ->
+            if (resetRequested) {
+                expensesViewModel.onEvent(ExpensesUiEvent.ClearFilters)
+                expensesBackStackEntry.savedStateHandle.remove<Boolean>(KEY_RESET_FILTERS_REQUESTED)
             }
         }
     }
@@ -133,16 +127,26 @@ fun ExpensesFeature(
         },
         onSearchQueryChanged = { query ->
             expensesViewModel.onEvent(ExpensesUiEvent.SearchQueryChanged(query))
-        },
-        onFilterClick = {
-            expensesBackStackEntry?.savedStateHandle?.set(
-                KEY_INITIAL_FILTER_CRITERIA,
-                uiState.filterCriteria
-            )
-            navController.navigate(Routes.expensesFilterRoute())
-        },
-        onResetFilters = {
-            expensesViewModel.onEvent(ExpensesUiEvent.ClearFilters)
         }
     )
+}
+
+private fun handleExpenseUiAction(
+    action: ExpensesUiAction,
+    pillController: TopPillController,
+    context: Context
+) {
+    when (action) {
+        is ExpensesUiAction.ShowLoadError ->
+            pillController.showPill(message = action.message.asString(context))
+        is ExpensesUiAction.ShowDeleteSuccess ->
+            pillController.showPill(message = action.message.asString(context))
+        is ExpensesUiAction.ShowDeleteError ->
+            pillController.showPill(message = action.message.asString(context))
+        is ExpensesUiAction.ShowCancelSuccess ->
+            pillController.showPill(message = action.message.asString(context))
+        is ExpensesUiAction.ShowCancelError ->
+            pillController.showPill(message = action.message.asString(context))
+        is ExpensesUiAction.ScrollToTop -> Unit
+    }
 }

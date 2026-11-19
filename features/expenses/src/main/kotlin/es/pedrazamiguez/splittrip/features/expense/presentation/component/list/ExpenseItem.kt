@@ -88,8 +88,8 @@ fun ExpenseItem(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(MaterialTheme.spacing.Default),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+                    .padding(horizontal = MaterialTheme.spacing.Medium, vertical = CARD_VERTICAL_PADDING),
+                verticalArrangement = Arrangement.spacedBy(ROW_VERTICAL_GAP)
             ) {
                 // ── Title Row ────────────────────────
                 Row(
@@ -100,18 +100,19 @@ fun ExpenseItem(
                     CategorySatelliteIcon(
                         category = expenseUiModel.category,
                         subcategory = expenseUiModel.subcategory,
-                        contentDescription = expenseUiModel.categoryText.takeIf { it.isNotBlank() }
+                        contentDescription = expenseUiModel.categoryText.takeIf { it.isNotBlank() },
+                        containerSize = CATEGORY_ICON_SIZE
                     )
 
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(start = MaterialTheme.spacing.Medium, end = MaterialTheme.spacing.Default),
+                            .padding(horizontal = MaterialTheme.spacing.Small),
                         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
                     ) {
                         Text(
                             text = expenseUiModel.title,
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
@@ -121,7 +122,7 @@ fun ExpenseItem(
 
                     Column(
                         horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+                        verticalArrangement = Arrangement.spacedBy(AMOUNT_BADGE_GAP)
                     ) {
                         Box(
                             modifier = Modifier
@@ -131,13 +132,16 @@ fun ExpenseItem(
                             Text(
                                 text = expenseUiModel.formattedAmount,
                                 modifier = Modifier
-                                    .padding(horizontal = 14.dp, vertical = MaterialTheme.spacing.Small)
+                                    .padding(
+                                        horizontal = MaterialTheme.spacing.Medium,
+                                        vertical = MaterialTheme.spacing.ExtraSmall
+                                    )
                                     .sharedTextAnimation(
                                         key = SharedElementKeys.expenseAmount(expenseUiModel.id),
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope
                                     ),
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 maxLines = 1,
@@ -153,10 +157,15 @@ fun ExpenseItem(
                             ) {
                                 Text(
                                     text = expenseUiModel.formattedOriginalAmount,
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(
+                                        horizontal = MaterialTheme.spacing.Small,
+                                        vertical = ORIGINAL_AMOUNT_VERTICAL_PADDING
+                                    )
                                 )
                             }
                         }
@@ -257,13 +266,15 @@ fun ExpenseItem(
                             Icon(
                                 imageVector = expenseUiModel.badgeIcon,
                                 contentDescription = null,
-                                modifier = Modifier.size(14.dp),
+                                modifier = Modifier.size(STATUS_BADGE_ICON_SIZE),
                                 tint = tintColor
                             )
                             Text(
                                 text = expenseUiModel.badgeText,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = tintColor
+                                style = MaterialTheme.typography.labelSmall,
+                                color = tintColor,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -274,4 +285,10 @@ fun ExpenseItem(
     }
 }
 
+private val CARD_VERTICAL_PADDING = 10.dp
+private val ROW_VERTICAL_GAP = 6.dp
+private val CATEGORY_ICON_SIZE = 38.dp
+private val AMOUNT_BADGE_GAP = 2.dp
+private val ORIGINAL_AMOUNT_VERTICAL_PADDING = 2.dp
+private val STATUS_BADGE_ICON_SIZE = 13.dp
 private const val CANCELLED_ALPHA = 0.5f
