@@ -36,17 +36,18 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.ScrollAwareHeaderContainer
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.rememberScrollAwareHeaderState
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalAnimatedVisibilityScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.TrackScrollEffect
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.dialog.ResetFiltersConfirmationDialog
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.DateHeaderItem
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseItem
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseSearchBar
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpensesTotalSummaryRow
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpensesListHeader
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpensesUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesUiState
@@ -63,9 +64,7 @@ fun ExpensesScreen(
     onScrollPositionChanged: (Int, Int) -> Unit = { _, _ -> },
     onDeleteExpense: (expenseId: String) -> Unit = {},
     onCancelExpense: (expenseId: String) -> Unit = {},
-    onSearchQueryChanged: (String) -> Unit = {},
-    onFilterClick: () -> Unit = {},
-    onResetFilters: () -> Unit = {}
+    onSearchQueryChanged: (String) -> Unit = {}
 ) {
     val bottomPadding = LocalBottomPadding.current
     val topPadding = LocalTopPadding.current
@@ -73,9 +72,10 @@ fun ExpensesScreen(
     var selectedExpenseForMenu by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var expenseToDelete by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var expenseToCancel by remember { mutableStateOf<ExpenseUiModel?>(null) }
-    var showResetFiltersDialog by remember { mutableStateOf(false) }
+    var isSearchFocused by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
+    val headerState = rememberScrollAwareHeaderState()
 
     TrackScrollEffect(listState = listState, onScrollPositionChanged = onScrollPositionChanged)
 
@@ -83,6 +83,7 @@ fun ExpensesScreen(
         actions?.collect { action ->
             when (action) {
                 is ExpensesUiAction.ScrollToTop -> {
+                    headerState.expand()
                     listState.animateScrollToItem(0)
                 }
                 else -> Unit
@@ -107,116 +108,103 @@ fun ExpensesScreen(
                     )
                 }
 
-                else -> {
-                    val sharedTransitionScope = LocalSharedTransitionScope.current
-                    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
+                uiState.isSearchResultEmpty -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(top = topPadding)
                     ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            if (!uiState.isSearchResultEmpty) {
-                                ExpensesTotalSummaryRow(
-                                    formattedTotalSpent = uiState.formattedTotalSpent,
-                                    formattedTotalScheduled = uiState.formattedTotalScheduled,
-                                    visibleExpensesCount = uiState.visibleExpensesCount,
-                                    isFiltered = uiState.isFiltered,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(
-                                            start = MaterialTheme.spacing.Default,
-                                            top = MaterialTheme.spacing.Default,
-                                            end = MaterialTheme.spacing.Default,
-                                            bottom = MaterialTheme.spacing.None
-                                        )
+                        ExpenseSearchBar(
+                            query = uiState.searchQuery,
+                            onQueryChange = onSearchQueryChanged,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = MaterialTheme.spacing.Default,
+                                    vertical = MaterialTheme.spacing.Small
                                 )
-                            }
-                            ExpenseSearchBar(
-                                query = uiState.searchQuery,
-                                onQueryChange = onSearchQueryChanged,
-                                activeFilterCount = uiState.activeFilterCount,
-                                onFilterClick = onFilterClick,
-                                onFilterLongClick = {
-                                    if (uiState.activeFilterCount > 0) {
-                                        showResetFiltersDialog = true
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        start = MaterialTheme.spacing.Default,
-                                        top = if (!uiState.isSearchResultEmpty) {
-                                            MaterialTheme.spacing.Small
-                                        } else {
-                                            MaterialTheme.spacing.Default
-                                        },
-                                        end = MaterialTheme.spacing.Default,
-                                        bottom = MaterialTheme.spacing.ExtraSmall
-                                    )
+                        )
+                        EmptyStateView(
+                            title = stringResource(R.string.expenses_search_empty_title),
+                            description = stringResource(R.string.expenses_search_empty_description),
+                            icon = TablerIcons.Outline.Search,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(bottom = bottomPadding)
+                        )
+                    }
+                }
+
+                else -> {
+                    val sharedTransitionScope = LocalSharedTransitionScope.current
+                    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
+                    ScrollAwareHeaderContainer(
+                        listState = listState,
+                        headerState = headerState,
+                        isPinned = isSearchFocused,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = topPadding),
+                        header = {
+                            ExpensesListHeader(
+                                formattedTotalSpent = uiState.formattedTotalSpent,
+                                formattedTotalScheduled = uiState.formattedTotalScheduled,
+                                visibleExpensesCount = uiState.visibleExpensesCount,
+                                isFiltered = uiState.isFiltered,
+                                searchQuery = uiState.searchQuery,
+                                onSearchQueryChanged = onSearchQueryChanged,
+                                onSearchFocusChanged = { isSearchFocused = it }
                             )
-                        }
+                        },
+                        content = { headerHeight ->
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(
+                                    start = MaterialTheme.spacing.Default,
+                                    top = headerHeight,
+                                    end = MaterialTheme.spacing.Default,
+                                    bottom = MaterialTheme.spacing.Default + bottomPadding
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+                            ) {
+                                uiState.expenseGroups.forEach { dateGroup ->
+                                    stickyHeader(
+                                        key = "header-${dateGroup.dateText}",
+                                        contentType = "date_header"
+                                    ) {
+                                        DateHeaderItem(
+                                            dateText = dateGroup.dateText,
+                                            formattedDayTotal = dateGroup.formattedDayTotal,
+                                            formattedDayScheduled = dateGroup.formattedDayScheduled
+                                        )
+                                    }
 
-                        when {
-                            uiState.isSearchResultEmpty -> {
-                                EmptyStateView(
-                                    title = stringResource(R.string.expenses_search_empty_title),
-                                    description = stringResource(R.string.expenses_search_empty_description),
-                                    icon = TablerIcons.Outline.Search,
-                                    modifier = Modifier.padding(bottom = bottomPadding)
-                                )
-                            }
-
-                            else -> {
-                                LazyColumn(
-                                    state = listState,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(
-                                        start = MaterialTheme.spacing.Default,
-                                        top = MaterialTheme.spacing.Small,
-                                        end = MaterialTheme.spacing.Default,
-                                        bottom = MaterialTheme.spacing.Default + bottomPadding
-                                    ),
-                                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-                                ) {
-                                    uiState.expenseGroups.forEach { dateGroup ->
-                                        stickyHeader(
-                                            key = "header-${dateGroup.dateText}",
-                                            contentType = "date_header"
-                                        ) {
-                                            DateHeaderItem(
-                                                dateText = dateGroup.dateText,
-                                                formattedDayTotal = dateGroup.formattedDayTotal,
-                                                formattedDayScheduled = dateGroup.formattedDayScheduled
-                                            )
-                                        }
-
-                                        items(
-                                            items = dateGroup.expenses,
-                                            key = { it.id },
-                                            contentType = { "expense_item" }
-                                        ) { expense ->
-                                            ExpenseItem(
-                                                expenseUiModel = expense,
-                                                modifier = Modifier.animateItem(),
-                                                innerModifier = Modifier.sharedElementAnimation(
-                                                    key = SharedElementKeys.expenseCard(expense.id),
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                    animatedVisibilityScope = animatedVisibilityScope
-                                                ),
-                                                onClick = onExpenseClicked,
-                                                onLongClick = {
-                                                    if (!uiState.isGroupArchived) {
-                                                        selectedExpenseForMenu = expense
-                                                    }
+                                    items(
+                                        items = dateGroup.expenses,
+                                        key = { it.id },
+                                        contentType = { "expense_item" }
+                                    ) { expense ->
+                                        ExpenseItem(
+                                            expenseUiModel = expense,
+                                            modifier = Modifier.animateItem(),
+                                            innerModifier = Modifier.sharedElementAnimation(
+                                                key = SharedElementKeys.expenseCard(expense.id),
+                                                sharedTransitionScope = sharedTransitionScope,
+                                                animatedVisibilityScope = animatedVisibilityScope
+                                            ),
+                                            onClick = onExpenseClicked,
+                                            onLongClick = {
+                                                if (!uiState.isGroupArchived) {
+                                                    selectedExpenseForMenu = expense
                                                 }
-                                            )
-                                        }
+                                            }
+                                        )
                                     }
                                 }
                             }
                         }
-                    }
+                    )
                 }
             }
         }
@@ -287,16 +275,6 @@ fun ExpensesScreen(
             onConfirm = {
                 onCancelExpense(expense.id)
                 expenseToCancel = null
-            }
-        )
-    }
-
-    if (showResetFiltersDialog) {
-        ResetFiltersConfirmationDialog(
-            onDismiss = { showResetFiltersDialog = false },
-            onConfirm = {
-                onResetFilters()
-                showResetFiltersDialog = false
             }
         )
     }

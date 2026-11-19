@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
 
-private val SCHEDULED_ICON_SIZE = 12.dp
+private val SCHEDULED_ICON_SIZE = 11.dp
 
 @Composable
 fun DateHeaderItem(
@@ -33,17 +33,22 @@ fun DateHeaderItem(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = MaterialTheme.spacing.ExtraSmall, vertical = MaterialTheme.spacing.Small),
+            .padding(
+                horizontal = MaterialTheme.spacing.ExtraSmall,
+                vertical = MaterialTheme.spacing.ExtraSmall
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SectionHeadingText(text = dateText)
+        CardTitleText(text = dateText)
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = formattedDayTotal,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false
             )
 
             if (formattedDayScheduled != null) {
@@ -59,8 +64,10 @@ fun DateHeaderItem(
                     )
                     Text(
                         text = formattedDayScheduled,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }

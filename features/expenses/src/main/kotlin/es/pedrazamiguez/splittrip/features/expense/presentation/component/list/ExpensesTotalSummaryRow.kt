@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -22,8 +23,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.AnimatedAmount
 import es.pedrazamiguez.splittrip.features.expense.R
 
-private val ICON_SIZE = 18.dp
-private val SCHEDULED_ICON_SIZE = 12.dp
+private val ICON_SIZE = 16.dp
+private val SCHEDULED_ICON_SIZE = 11.dp
+private val SUMMARY_ICON_GAP = 6.dp
 
 @Composable
 fun ExpensesTotalSummaryRow(
@@ -39,8 +41,9 @@ fun ExpensesTotalSummaryRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
+            modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+            horizontalArrangement = Arrangement.spacedBy(SUMMARY_ICON_GAP)
         ) {
             Icon(
                 imageVector = if (isFiltered) TablerIcons.Outline.AlignJustified else TablerIcons.Outline.Receipt,
@@ -49,14 +52,12 @@ fun ExpensesTotalSummaryRow(
                 modifier = Modifier.size(ICON_SIZE)
             )
             Text(
-                text = pluralStringResource(
-                    R.plurals.expenses_count,
-                    visibleExpensesCount,
-                    visibleExpensesCount
-                ),
-                style = MaterialTheme.typography.bodyMedium,
+                text = pluralStringResource(R.plurals.expenses_count, visibleExpensesCount, visibleExpensesCount),
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
@@ -64,7 +65,7 @@ fun ExpensesTotalSummaryRow(
             AnimatedAmount(
                 formattedAmount = formattedTotalSpent,
                 shouldAnimate = false,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -82,8 +83,10 @@ fun ExpensesTotalSummaryRow(
                     )
                     Text(
                         text = formattedTotalScheduled,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
