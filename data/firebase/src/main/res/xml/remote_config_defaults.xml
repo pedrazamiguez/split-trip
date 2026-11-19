@@ -97,4 +97,24 @@
         <key>pro_allowlist_email_hashes</key>
         <value>834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4</value>
     </entry>
+    <entry>
+        <key>in_app_updates_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>min_supported_version_code</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>auto_force_patch_updates</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>optional_update_version_codes</key>
+        <value></value>
+    </entry>
+    <entry>
+        <key>optional_update_cooldown_hours</key>
+        <value>24</value>
+    </entry>
 </defaultsMap>

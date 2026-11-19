@@ -19,4 +19,10 @@ interface AppConfigService {
     val settlementNudgeRateLimitHours: StateFlow<Long>
     val developerAllowlistEmailHashes: StateFlow<Set<String>>
     val proAllowlistEmailHashes: StateFlow<Set<String>>
+    val inAppUpdatesEnabled: StateFlow<Boolean>
+    val minSupportedVersionCode: StateFlow<Long>
+    val autoForcePatchUpdates: StateFlow<Boolean>
+    val optionalUpdateVersionCodes: StateFlow<Set<Long>>
+    val optionalUpdateCooldownHours: StateFlow<Long>
+    val isInitialFetchSettled: StateFlow<Boolean>
 }

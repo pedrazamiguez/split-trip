@@ -26,6 +26,12 @@ private object DefaultAppConfigService : AppConfigService {
     override val settlementNudgeRateLimitHours: StateFlow<Long> = MutableStateFlow(24L)
     override val developerAllowlistEmailHashes: StateFlow<Set<String>> = MutableStateFlow(emptySet())
     override val proAllowlistEmailHashes: StateFlow<Set<String>> = MutableStateFlow(emptySet())
+    override val inAppUpdatesEnabled: StateFlow<Boolean> = MutableStateFlow(true)
+    override val minSupportedVersionCode: StateFlow<Long> = MutableStateFlow(0L)
+    override val autoForcePatchUpdates: StateFlow<Boolean> = MutableStateFlow(true)
+    override val optionalUpdateVersionCodes: StateFlow<Set<Long>> = MutableStateFlow(emptySet())
+    override val optionalUpdateCooldownHours: StateFlow<Long> = MutableStateFlow(24L)
+    override val isInitialFetchSettled: StateFlow<Boolean> = MutableStateFlow(true)
 }
 
 /**

@@ -23,6 +23,7 @@ import es.pedrazamiguez.splittrip.di.coreModules
 import es.pedrazamiguez.splittrip.di.currenciesFeatureModules
 import es.pedrazamiguez.splittrip.di.dataModules
 import es.pedrazamiguez.splittrip.di.domain.adsDomainModule
+import es.pedrazamiguez.splittrip.di.domain.appUpdateDomainModule
 import es.pedrazamiguez.splittrip.di.expensesFeatureModules
 import es.pedrazamiguez.splittrip.di.groupsFeatureModules
 import es.pedrazamiguez.splittrip.di.notificationModules
@@ -64,6 +65,7 @@ class App : Application() {
                 mainUiModule,
                 notificationModules,
                 adsDomainModule,
+                appUpdateDomainModule,
 
                 authenticationFeatureModules,
                 balancesFeatureModules,

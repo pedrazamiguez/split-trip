@@ -245,6 +245,26 @@ class RemoteConfigTemplateConsistencyTest {
         )
     }
 
+    @Test
+    fun `app update parameters exist with expected defaults and valueTypes`() {
+        val enabled = templateParameters["in_app_updates_enabled"]
+        val minVersion = templateParameters["min_supported_version_code"]
+        val autoForcePatch = templateParameters["auto_force_patch_updates"]
+        val optionalCodes = templateParameters["optional_update_version_codes"]
+        val cooldownHours = templateParameters["optional_update_cooldown_hours"]
+
+        assertEquals("BOOLEAN", enabled?.valueType)
+        assertEquals("true", enabled?.defaultValue)
+        assertEquals("NUMBER", minVersion?.valueType)
+        assertEquals("0", minVersion?.defaultValue)
+        assertEquals("BOOLEAN", autoForcePatch?.valueType)
+        assertEquals("true", autoForcePatch?.defaultValue)
+        assertEquals("STRING", optionalCodes?.valueType)
+        assertEquals("", optionalCodes?.defaultValue)
+        assertEquals("NUMBER", cooldownHours?.valueType)
+        assertEquals("24", cooldownHours?.defaultValue)
+    }
+
     private fun resolveProjectRoot(): File {
         var dir = File(System.getProperty("user.dir") ?: ".")
         while (!File(dir, "settings.gradle.kts").exists()) {

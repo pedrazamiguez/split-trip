@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.repository
 
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.model.OptionalUpdateDismissal
 import kotlinx.coroutines.flow.Flow
 
 @Suppress("TooManyFunctions")
@@ -29,6 +30,9 @@ interface UserPreferenceRepository {
 
     fun getBiometricLockEnabled(): Flow<Boolean>
     suspend fun setBiometricLockEnabled(enabled: Boolean)
+
+    suspend fun getOptionalUpdateDismissal(): OptionalUpdateDismissal?
+    suspend fun recordOptionalUpdateDismissal(versionCode: Long, timestampMs: Long)
 
     suspend fun clearAll()
 }

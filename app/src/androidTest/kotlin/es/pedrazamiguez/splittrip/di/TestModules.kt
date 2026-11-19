@@ -15,10 +15,13 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUs
 import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliationUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
 import es.pedrazamiguez.splittrip.features.main.navigation.DeepLinkHolder
+import es.pedrazamiguez.splittrip.update.AppUpdateCoordinator
+import es.pedrazamiguez.splittrip.update.AppUpdateUiState
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import org.koin.dsl.module
@@ -56,7 +59,8 @@ fun createAppNavHostTestModule(
     isReconciledFlow: Flow<Boolean> = flowOf(true),
     currentUserEmail: String? = null,
     checkPendingReconciliationUseCase: CheckPendingReconciliationUseCase = mockk(relaxed = true),
-    userPreferenceRepository: UserPreferenceRepository? = null
+    userPreferenceRepository: UserPreferenceRepository? = null,
+    appUpdateCoordinator: AppUpdateCoordinator = createDefaultAppUpdateCoordinator()
 ) = module {
     // ── Domain services ───────────────────────────────────────────────
     single<AuthenticationService> {
@@ -118,7 +122,17 @@ fun createAppNavHostTestModule(
 
     // ── Deep link holder for cold start replay ──────────────────────
     single { DeepLinkHolder() }
+
+    // ── In-App Updates ────────────────────────────────────────────────
+    single<AppUpdateCoordinator> { appUpdateCoordinator }
 }
+
+private fun createDefaultAppUpdateCoordinator(): AppUpdateCoordinator =
+    mockk<AppUpdateCoordinator>(relaxed = true).apply {
+        every { uiState } returns MutableStateFlow(AppUpdateUiState.Idle)
+        every { actions } returns MutableSharedFlow()
+        every { registerInstallListener() } returns {}
+    }
 
 private fun createDefaultHandleSessionExpiredUseCase(): HandleSessionExpiredUseCase =
     mockk<HandleSessionExpiredUseCase>(relaxed = true).apply {

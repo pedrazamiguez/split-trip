@@ -215,6 +215,46 @@
           "valueType": "STRING"
         }
       }
+    },
+    "AppUpdates": {
+      "description": "Operational killswitch, version floor, and policy controls for hybrid Google Play In-App Updates.",
+      "parameters": {
+        "in_app_updates_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Master operational killswitch to enable or disable in-app update prompts and forced update gates.",
+          "valueType": "BOOLEAN"
+        },
+        "min_supported_version_code": {
+          "defaultValue": {
+            "value": "0"
+          },
+          "description": "Hard minimum supported versionCode floor; installed versions below this value are forced to update once Google Play confirms an update is available. Set to 0 to disable.",
+          "valueType": "NUMBER"
+        },
+        "auto_force_patch_updates": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "When true, automatically treats available updates with a non-zero SemVer patch component (hotfixes) as forced updates unless explicitly overridden.",
+          "valueType": "BOOLEAN"
+        },
+        "optional_update_version_codes": {
+          "defaultValue": {
+            "value": ""
+          },
+          "description": "Comma-separated list of versionCodes explicitly downgraded to optional updates even when SemVer rules would otherwise force them.",
+          "valueType": "STRING"
+        },
+        "optional_update_cooldown_hours": {
+          "defaultValue": {
+            "value": "24"
+          },
+          "description": "Minimum cooldown duration in hours before re-prompting a user who dismissed an optional update for the same available versionCode.",
+          "valueType": "NUMBER"
+        }
+      }
     }
   }
 }
