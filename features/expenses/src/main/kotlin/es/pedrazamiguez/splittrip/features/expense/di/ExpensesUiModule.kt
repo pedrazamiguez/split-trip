@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
@@ -51,6 +52,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPayment
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
+import es.pedrazamiguez.splittrip.features.expense.navigation.impl.ExpenseDetailTabGraphContributorImpl
 import es.pedrazamiguez.splittrip.features.expense.navigation.impl.ExpensesNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
@@ -338,6 +340,7 @@ val expensesUiModule = module {
     }
 
     factory { ExpensesNavigationProviderImpl() } bind NavigationProvider::class
+    factory { ExpenseDetailTabGraphContributorImpl() } bind TabGraphContributor::class
 
     single {
         ExpensesScreenUiProviderImpl(

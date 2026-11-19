@@ -86,6 +86,10 @@ fun NavGraphBuilder.expensesGraph() {
         )
     }
 
+    expenseDetailGraph()
+}
+
+fun NavGraphBuilder.expenseDetailGraph() {
     sharedComposable(
         route = Routes.EDIT_EXPENSE,
         arguments = listOf(navArgument("expenseId") { type = NavType.StringType })

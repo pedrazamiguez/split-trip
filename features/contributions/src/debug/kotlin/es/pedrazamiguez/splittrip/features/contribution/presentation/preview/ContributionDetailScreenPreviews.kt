@@ -71,6 +71,42 @@ private val PREVIEW_CONTRIBUTION_PERSONAL = ContributionDetailUiModel(
     syncStatus = SyncStatus.SYNCED
 )
 
+private val PREVIEW_CONTRIBUTION_LINKED_EXPENSE = ContributionDetailUiModel(
+    id = "contrib-4",
+    groupId = "group-1",
+    formattedAmount = "45,00 €",
+    dateText = "16 Oct 2024",
+    createdAtText = "Created 16 Oct 2024, 12:00",
+    memberDisplay = MemberDisplay.Active("Andrés", ""),
+    isCurrentUser = true,
+    contributorName = "Andrés",
+    contributedByText = "Contributed by Andrés",
+    createdByText = "Recorded by Andrés",
+    scopeLabel = "Group",
+    scopeDescription = "Shared across all group members",
+    scopeType = PayerType.GROUP,
+    isLinkedContribution = true,
+    linkedExpenseId = "expense-1",
+    syncStatus = SyncStatus.SYNCED
+)
+
+private val PREVIEW_CONTRIBUTION_SETTLEMENT = ContributionDetailUiModel(
+    id = "contrib-5",
+    groupId = "group-1",
+    formattedAmount = "30,00 €",
+    dateText = "17 Oct 2024",
+    createdAtText = "Created 17 Oct 2024, 09:45",
+    memberDisplay = MemberDisplay.Active("María", ""),
+    contributorName = "María",
+    contributedByText = "Contributed by María",
+    createdByText = "Recorded by María",
+    scopeLabel = "Personal",
+    scopeDescription = "Personal contribution",
+    scopeType = PayerType.USER,
+    isSettlementContribution = true,
+    syncStatus = SyncStatus.SYNCED
+)
+
 @PreviewComplete
 @Composable
 fun ContributionDetailScreenLoadingPreview() {
@@ -161,6 +197,41 @@ fun ContributionScopeSectionPreview() {
     PreviewThemeWrapper {
         ContributionScopeSection(
             contribution = PREVIEW_CONTRIBUTION_GROUP,
+            modifier = Modifier.padding(MaterialTheme.spacing.Default)
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+fun ContributionDetailScreenLinkedExpensePreview() {
+    PreviewThemeWrapper {
+        ContributionDetailScreen(
+            uiState = ContributionDetailUiState(
+                isLoading = false,
+                contribution = PREVIEW_CONTRIBUTION_LINKED_EXPENSE
+            )
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+fun ContributionScopeSectionLinkedExpensePreview() {
+    PreviewThemeWrapper {
+        ContributionScopeSection(
+            contribution = PREVIEW_CONTRIBUTION_LINKED_EXPENSE,
+            modifier = Modifier.padding(MaterialTheme.spacing.Default)
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+fun ContributionScopeSectionSettlementPreview() {
+    PreviewThemeWrapper {
+        ContributionScopeSection(
+            contribution = PREVIEW_CONTRIBUTION_SETTLEMENT,
             modifier = Modifier.padding(MaterialTheme.spacing.Default)
         )
     }

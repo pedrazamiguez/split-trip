@@ -157,6 +157,14 @@ class ContributionDetailViewModel(
     fun onEvent(event: ContributionDetailUiEvent) {
         when (event) {
             ContributionDetailUiEvent.DeleteConfirmed -> handleDelete()
+            is ContributionDetailUiEvent.LinkedExpenseClicked -> handleLinkedExpenseClick(event.expenseId)
+        }
+    }
+
+    private fun handleLinkedExpenseClick(expenseId: String) {
+        if (expenseId.isBlank()) return
+        viewModelScope.launch {
+            _actions.send(ContributionDetailUiAction.NavigateToExpenseDetail(expenseId))
         }
     }
 
