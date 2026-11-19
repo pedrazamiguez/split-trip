@@ -88,7 +88,6 @@ All components are `@Composable` functions following Material 3 design. They acc
 |---|---|---|
 | `CurrencySelectorField` | `currency/CurrencySelectorField.kt` | Text field trigger opening `CurrencyPickerBottomSheet` on tap. **Use for:** Primary currency selector across all forms. |
 | `CurrencyPickerBottomSheet` | `currency/CurrencyPickerBottomSheet.kt` | Modal bottom sheet displaying available currencies with checkmarks and optional search filter. **Use for:** Bottom sheet currency picker. |
-| `CurrencyDropdown` | `currency/CurrencyDropdown.kt` | *(Deprecated)* Delegating wrapper for `CurrencySelectorField`. Superseded by `CurrencySelectorField`. |
 | `AmountCurrencyCard` | `currency/AmountCurrencyCard.kt` | Combined amount input + currency selector card. Uses `AmountCurrencyCardState` for state management. **Use for:** Entering monetary amounts with currency selection (e.g., expense source amount). |
 | `CurrencyConversionCard` | `currency/CurrencyConversionCard.kt` | Displays source → group currency conversion with exchange rate input. Uses `CurrencyConversionCardState`. **Use for:** Multi-currency expense forms when source ≠ group currency. |
 

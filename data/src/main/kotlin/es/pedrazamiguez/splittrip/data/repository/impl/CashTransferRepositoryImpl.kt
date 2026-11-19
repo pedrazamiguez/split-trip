@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.data.local.dao.CashTransferDao
 import es.pedrazamiguez.splittrip.data.local.mapper.toDomain
 import es.pedrazamiguez.splittrip.data.local.mapper.toEntity
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
@@ -44,13 +45,15 @@ class CashTransferRepositoryImpl(
         syncCreateToCloud(
             scope = syncScope,
             entityId = transferWithMetadata.id,
-            cloudWrite = { cloudCashTransferDataSource.upsertCashTransfer(transferWithMetadata).getOrThrow() },
-            updateSyncStatus = { id, status -> cashTransferDao.updateSyncStatus(id, status.name) },
-            getCurrentSyncStatus = { id ->
-                cashTransferDao.getCashTransferById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
-            },
-            entityLabel = "cash_transfer",
-            performanceMonitor = performanceMonitor
+            params = SyncCreateParams(
+                cloudWrite = { cloudCashTransferDataSource.upsertCashTransfer(transferWithMetadata).getOrThrow() },
+                updateSyncStatus = { id, status -> cashTransferDao.updateSyncStatus(id, status.name) },
+                getCurrentSyncStatus = { id ->
+                    cashTransferDao.getCashTransferById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
+                },
+                entityLabel = "cash_transfer",
+                performanceMonitor = performanceMonitor
+            )
         )
 
         return Result.success(Unit)

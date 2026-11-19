@@ -38,6 +38,7 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseMappingContext
 import io.mockk.every
 import io.mockk.mockk
 import java.time.LocalDate
@@ -734,7 +735,10 @@ class ExpenseUiMapperTest {
                 )
             )
 
-            val result = mapper.mapGroupedByDate(expenses, zoneId = ZoneId.of("Asia/Shanghai"))
+            val result = mapper.mapGroupedByDate(
+                expenses = expenses,
+                context = ExpenseMappingContext(zoneId = ZoneId.of("Asia/Shanghai"))
+            )
 
             val expectedDateText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
             assertEquals(1, result.size)
@@ -755,7 +759,10 @@ class ExpenseUiMapperTest {
                 )
             )
 
-            val result = mapper.mapGroupedByDate(expenses, zoneId = ZoneId.of("America/New_York"))
+            val result = mapper.mapGroupedByDate(
+                expenses = expenses,
+                context = ExpenseMappingContext(zoneId = ZoneId.of("America/New_York"))
+            )
 
             val expectedDateText = LocalDate.of(2026, 10, 27).formatShortDate(Locale.US)
             assertEquals(1, result.size)
@@ -1665,9 +1672,51 @@ class ExpenseUiMapperTest {
                 )
             )
 
-            val result = mapper.mapGroupedByDate(expenses, profiles)
+            val result = mapper.mapGroupedByDate(
+                expenses = expenses,
+                context = ExpenseMappingContext(memberProfiles = profiles)
+            )
 
             assertEquals("Paid by Bruno", result[0].expenses[0].paidByText)
+        }
+
+        @Test
+        fun `mapGroupedByDate propagates ExpenseMappingContext groupMemberIds and subunits to mapped items`() {
+            val profiles = mapOf(
+                "former-user" to User(userId = "former-user", email = "f@t.com", displayName = "Former Alice")
+            )
+            val subunit = Subunit(id = "sub-1", name = "Couple", memberIds = listOf("former-user", "uid-2"))
+            val pairedContribution = Contribution(
+                id = "c-1",
+                userId = "former-user",
+                linkedExpenseId = "exp-1",
+                contributionScope = PayerType.SUBUNIT,
+                subunitId = "sub-1"
+            )
+            val expense = Expense(
+                id = "exp-1",
+                createdBy = "former-user",
+                payerType = PayerType.USER,
+                payerId = "former-user",
+                groupAmount = 2500,
+                groupCurrency = "EUR",
+                createdAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+            )
+
+            val result = mapper.mapGroupedByDate(
+                expenses = listOf(expense),
+                context = ExpenseMappingContext(
+                    memberProfiles = profiles,
+                    pairedContributions = mapOf("exp-1" to pairedContribution),
+                    subunits = mapOf("sub-1" to subunit),
+                    groupMemberIds = listOf("uid-2")
+                )
+            )
+
+            val item = result[0].expenses[0]
+            assertTrue(item.isSubunitScope)
+            assertEquals("Paid by Former Alice for Couple", item.fundingSourceText)
+            assertTrue(item.creatorDisplay is MemberDisplay.Former)
         }
     }
 

@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
@@ -100,13 +101,15 @@ class ContributionRepositoryImpl(
             syncCreateToCloud(
                 scope = syncScope,
                 entityId = contributionWithMetadata.id,
-                entityLabel = "Contribution",
-                cloudWrite = { cloudContributionDataSource.addContribution(groupId, contributionWithMetadata) },
-                updateSyncStatus = { id, status -> localContributionDataSource.updateSyncStatus(id, status) },
-                getCurrentSyncStatus = { id ->
-                    localContributionDataSource.findContributionById(id)?.syncStatus ?: SyncStatus.SYNCED
-                },
-                performanceMonitor = performanceMonitor
+                params = SyncCreateParams(
+                    entityLabel = "Contribution",
+                    cloudWrite = { cloudContributionDataSource.addContribution(groupId, contributionWithMetadata) },
+                    updateSyncStatus = { id, status -> localContributionDataSource.updateSyncStatus(id, status) },
+                    getCurrentSyncStatus = { id ->
+                        localContributionDataSource.findContributionById(id)?.syncStatus ?: SyncStatus.SYNCED
+                    },
+                    performanceMonitor = performanceMonitor
+                )
             )
         }
     }

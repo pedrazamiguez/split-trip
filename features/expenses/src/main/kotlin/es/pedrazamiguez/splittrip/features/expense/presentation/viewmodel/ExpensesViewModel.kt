@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseMappingContext
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpensesUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpensesUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesUiState
@@ -138,11 +139,13 @@ class ExpensesViewModel(
 
                     val mappedGroups = expenseUiMapper.mapGroupedByDate(
                         expenses = filteredExpenses,
-                        memberProfiles = memberProfiles,
-                        currentUserId = currentUserId,
-                        pairedContributions = pairedContributions,
-                        subunits = subunitsById,
-                        groupMemberIds = groupMemberIds
+                        context = ExpenseMappingContext(
+                            memberProfiles = memberProfiles,
+                            currentUserId = currentUserId,
+                            pairedContributions = pairedContributions,
+                            subunits = subunitsById,
+                            groupMemberIds = groupMemberIds
+                        )
                     )
                     ExpenseCalculationResult(
                         mappedGroups = mappedGroups,

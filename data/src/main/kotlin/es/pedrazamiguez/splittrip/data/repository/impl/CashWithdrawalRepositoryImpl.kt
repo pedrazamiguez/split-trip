@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
@@ -68,16 +69,18 @@ class CashWithdrawalRepositoryImpl(
             syncCreateToCloud(
                 scope = syncScope,
                 entityId = withdrawalWithMetadata.id,
-                cloudWrite = {
-                    cloudCashWithdrawalDataSource.addWithdrawal(groupId, withdrawalWithMetadata)
-                },
-                updateSyncStatus = localWriteDataSource::updateSyncStatus,
-                getCurrentSyncStatus = { id ->
-                    localQueryDataSource.getWithdrawalById(id)?.syncStatus
-                        ?: SyncStatus.PENDING_SYNC
-                },
-                entityLabel = ENTITY_LABEL,
-                performanceMonitor = performanceMonitor
+                params = SyncCreateParams(
+                    cloudWrite = {
+                        cloudCashWithdrawalDataSource.addWithdrawal(groupId, withdrawalWithMetadata)
+                    },
+                    updateSyncStatus = localWriteDataSource::updateSyncStatus,
+                    getCurrentSyncStatus = { id ->
+                        localQueryDataSource.getWithdrawalById(id)?.syncStatus
+                            ?: SyncStatus.PENDING_SYNC
+                    },
+                    entityLabel = ENTITY_LABEL,
+                    performanceMonitor = performanceMonitor
+                )
             )
         }
     }

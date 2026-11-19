@@ -286,9 +286,7 @@ Launches a background coroutine that pushes a locally-saved entity to the cloud 
 internal fun syncCreateToCloud(
     scope: CoroutineScope,
     entityId: String,
-    cloudWrite: suspend () -> Unit,
-    updateSyncStatus: suspend (String, SyncStatus) -> Unit,
-    entityLabel: String
+    params: SyncCreateParams
 )
 ```
 
@@ -334,9 +332,12 @@ class SubunitRepositoryImpl(
         syncCreateToCloud(
             scope = syncScope,
             entityId = subunitWithMetadata.id,
-            cloudWrite = { cloudSubunitDataSource.addSubunit(groupId, subunitWithMetadata) },
-            updateSyncStatus = localSubunitDataSource::updateSyncStatus,
-            entityLabel = "subunit"
+            params = SyncCreateParams(
+                cloudWrite = { cloudSubunitDataSource.addSubunit(groupId, subunitWithMetadata) },
+                updateSyncStatus = localSubunitDataSource::updateSyncStatus,
+                entityLabel = "subunit",
+                performanceMonitor = performanceMonitor
+            )
         )
         return subunitWithMetadata.id
     }

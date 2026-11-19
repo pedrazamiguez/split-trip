@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
@@ -172,37 +173,39 @@ class UserRepositoryImpl(
         syncCreateToCloud(
             scope = syncScope,
             entityId = userId,
-            cloudWrite = {
-                val avatarUrl = if (localAvatarUri != null) {
-                    if (!localAvatarUri.startsWith("http")) {
-                        cloudStorageDataSource.uploadAvatar(userId, localAvatarUri, "image/webp")
+            params = SyncCreateParams(
+                cloudWrite = {
+                    val avatarUrl = if (localAvatarUri != null) {
+                        if (!localAvatarUri.startsWith("http")) {
+                            cloudStorageDataSource.uploadAvatar(userId, localAvatarUri, "image/webp")
+                        } else {
+                            localAvatarUri
+                        }
                     } else {
-                        localAvatarUri
+                        cloudStorageDataSource.deleteAvatar(userId)
+                        null
                     }
-                } else {
-                    cloudStorageDataSource.deleteAvatar(userId)
-                    null
-                }
-                cloudUserDataSource.updateUserProfile(userId, displayName, bio, avatarUrl)
+                    cloudUserDataSource.updateUserProfile(userId, displayName, bio, avatarUrl)
 
-                // Update local DB with new remote avatar URL and SYNCED status
-                val currentUser = localUserDataSource.getUsersByIds(listOf(userId)).firstOrNull()
-                if (currentUser != null) {
-                    val finalUser = currentUser.copy(
-                        displayName = displayName,
-                        bio = bio,
-                        profileImagePath = avatarUrl,
-                        syncStatus = SyncStatus.SYNCED
-                    )
-                    localUserDataSource.saveUsers(listOf(finalUser))
-                }
-            },
-            updateSyncStatus = localUserDataSource::updateSyncStatus,
-            getCurrentSyncStatus = { id ->
-                localUserDataSource.getUsersByIds(listOf(id)).firstOrNull()?.syncStatus ?: SyncStatus.PENDING_SYNC
-            },
-            entityLabel = "user profile",
-            performanceMonitor = performanceMonitor
+                    // Update local DB with new remote avatar URL and SYNCED status
+                    val currentUser = localUserDataSource.getUsersByIds(listOf(userId)).firstOrNull()
+                    if (currentUser != null) {
+                        val finalUser = currentUser.copy(
+                            displayName = displayName,
+                            bio = bio,
+                            profileImagePath = avatarUrl,
+                            syncStatus = SyncStatus.SYNCED
+                        )
+                        localUserDataSource.saveUsers(listOf(finalUser))
+                    }
+                },
+                updateSyncStatus = localUserDataSource::updateSyncStatus,
+                getCurrentSyncStatus = { id ->
+                    localUserDataSource.getUsersByIds(listOf(id)).firstOrNull()?.syncStatus ?: SyncStatus.PENDING_SYNC
+                },
+                entityLabel = "user profile",
+                performanceMonitor = performanceMonitor
+            )
         )
     }
 
@@ -237,15 +240,18 @@ class UserRepositoryImpl(
             syncCreateToCloud(
                 scope = syncScope,
                 entityId = userId,
-                cloudWrite = {
-                    cloudUserDataSource.updateUserReminderPreferences(userId, timezone, preferredReminderTime)
-                },
-                updateSyncStatus = localUserDataSource::updateSyncStatus,
-                getCurrentSyncStatus = { id ->
-                    localUserDataSource.getUsersByIds(listOf(id)).firstOrNull()?.syncStatus ?: SyncStatus.PENDING_SYNC
-                },
-                entityLabel = "user reminder preferences",
-                performanceMonitor = performanceMonitor
+                params = SyncCreateParams(
+                    cloudWrite = {
+                        cloudUserDataSource.updateUserReminderPreferences(userId, timezone, preferredReminderTime)
+                    },
+                    updateSyncStatus = localUserDataSource::updateSyncStatus,
+                    getCurrentSyncStatus = { id ->
+                        localUserDataSource.getUsersByIds(listOf(id)).firstOrNull()?.syncStatus
+                            ?: SyncStatus.PENDING_SYNC
+                    },
+                    entityLabel = "user reminder preferences",
+                    performanceMonitor = performanceMonitor
+                )
             )
         }
     }
@@ -257,15 +263,18 @@ class UserRepositoryImpl(
             syncCreateToCloud(
                 scope = syncScope,
                 entityId = userId,
-                cloudWrite = {
-                    cloudUserDataSource.updateUserTier(userId, tier)
-                },
-                updateSyncStatus = localUserDataSource::updateSyncStatus,
-                getCurrentSyncStatus = { id ->
-                    localUserDataSource.getUsersByIds(listOf(id)).firstOrNull()?.syncStatus ?: SyncStatus.PENDING_SYNC
-                },
-                entityLabel = "user tier",
-                performanceMonitor = performanceMonitor
+                params = SyncCreateParams(
+                    cloudWrite = {
+                        cloudUserDataSource.updateUserTier(userId, tier)
+                    },
+                    updateSyncStatus = localUserDataSource::updateSyncStatus,
+                    getCurrentSyncStatus = { id ->
+                        localUserDataSource.getUsersByIds(listOf(id)).firstOrNull()?.syncStatus
+                            ?: SyncStatus.PENDING_SYNC
+                    },
+                    entityLabel = "user tier",
+                    performanceMonitor = performanceMonitor
+                )
             )
         }
     }

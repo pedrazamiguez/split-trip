@@ -116,49 +116,46 @@ internal suspend fun confirmPendingSync(
     }
 }
 
+@Suppress("MatchingDeclarationName")
+internal data class SyncCreateParams(
+    val cloudWrite: suspend () -> Unit,
+    val updateSyncStatus: suspend (String, SyncStatus) -> Unit,
+    val getCurrentSyncStatus: (suspend (String) -> SyncStatus)? = null,
+    val entityLabel: String,
+    val performanceMonitor: PerformanceMonitor,
+    val telemetryTracker: TelemetryTracker? = null
+)
+
 /**
  * Launches a background coroutine that pushes a locally-saved entity to the
  * cloud and transitions its sync status accordingly.
  *
- * - Success: `updateSyncStatus(id, SYNCED)`
- * - Failure: `updateSyncStatus(id, SYNC_FAILED)` — only if the entity is still
- *   [SyncStatus.PENDING_SYNC] (guarded by [getCurrentSyncStatus] when provided).
+ * - Success: `params.updateSyncStatus(id, SYNCED)`
+ * - Failure: `params.updateSyncStatus(id, SYNC_FAILED)` — only if the entity is still
+ *   [SyncStatus.PENDING_SYNC] (guarded by [SyncCreateParams.getCurrentSyncStatus] when provided).
  *
- * The optional [getCurrentSyncStatus] guard prevents a false [SyncStatus.SYNC_FAILED]
+ * The optional [SyncCreateParams.getCurrentSyncStatus] guard prevents a false [SyncStatus.SYNC_FAILED]
  * flash when the Firestore snapshot listener has already reconciled the entity to
  * [SyncStatus.SYNCED] before the write-path ACK roundtrip completes (ACK-loss race).
  *
  * @param scope CoroutineScope for the background sync job (typically `syncScope`).
  * @param entityId ID of the entity being synced.
- * @param cloudWrite Suspend function that performs the cloud write
- *   (e.g., `cloudDataSource.addExpense(groupId, entity)`).
- * @param updateSyncStatus Suspend function that updates the local entity's
- *   sync status.
- * @param getCurrentSyncStatus Optional suspend function that reads the entity's
- *   current sync status from local storage. When provided, [SyncStatus.SYNC_FAILED]
- *   is only written if the status is still [SyncStatus.PENDING_SYNC]. When `null`
- *   (default), the old unconditional behaviour is preserved for backward compatibility.
- * @param entityLabel Human-readable entity name for Timber logging.
+ * @param params Configuration parameters for the cloud write, local status updates, logging, and monitoring.
  */
 internal fun syncCreateToCloud(
     scope: CoroutineScope,
     entityId: String,
-    cloudWrite: suspend () -> Unit,
-    updateSyncStatus: suspend (String, SyncStatus) -> Unit,
-    getCurrentSyncStatus: (suspend (String) -> SyncStatus)? = null,
-    entityLabel: String,
-    performanceMonitor: PerformanceMonitor,
-    telemetryTracker: TelemetryTracker? = null
+    params: SyncCreateParams
 ) {
     scope.launch {
         try {
-            performanceMonitor.traceAsync(PerformanceTraces.SYNC_CREATE_TO_CLOUD) {
-                cloudWrite()
+            params.performanceMonitor.traceAsync(PerformanceTraces.SYNC_CREATE_TO_CLOUD) {
+                params.cloudWrite()
             }
-            updateSyncStatus(entityId, SyncStatus.SYNCED)
+            params.updateSyncStatus(entityId, SyncStatus.SYNCED)
             Timber.tag(LogTag.SYNC).d(
                 "%s synced to cloud: %s",
-                entityLabel.replaceFirstChar {
+                params.entityLabel.replaceFirstChar {
                     it.uppercase()
                 },
                 entityId
@@ -169,19 +166,19 @@ internal fun syncCreateToCloud(
             // Only downgrade to SYNC_FAILED if the snapshot listener has not already
             // confirmed the entity as SYNCED (guards against the ACK-loss race condition).
             // When getCurrentSyncStatus is null (not provided), fall back to old behaviour.
-            val currentStatus = getCurrentSyncStatus?.invoke(entityId)
+            val currentStatus = params.getCurrentSyncStatus?.invoke(entityId)
             if (currentStatus == null || currentStatus == SyncStatus.PENDING_SYNC) {
-                updateSyncStatus(entityId, SyncStatus.SYNC_FAILED)
+                params.updateSyncStatus(entityId, SyncStatus.SYNC_FAILED)
             }
-            telemetryTracker?.trackEvent(
+            params.telemetryTracker?.trackEvent(
                 "cloud_sync_failed",
                 mapOf(
-                    "entity" to entityLabel,
+                    "entity" to params.entityLabel,
                     "entity_id" to entityId,
                     "reason" to (e.message ?: "unknown")
                 )
             )
-            Timber.tag(LogTag.SYNC).w(e, "Failed to sync %s to cloud", entityLabel)
+            Timber.tag(LogTag.SYNC).w(e, "Failed to sync %s to cloud", params.entityLabel)
         }
     }
 }

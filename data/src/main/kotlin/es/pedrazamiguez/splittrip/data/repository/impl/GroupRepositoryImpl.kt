@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
@@ -373,29 +374,31 @@ class GroupRepositoryImpl(
         syncCreateToCloud(
             scope = syncScope,
             entityId = groupId,
-            cloudWrite = {
-                val remoteUrl = syncGroupImageToCloud(
-                    groupId = groupId,
-                    imageChanged = imageChanged,
-                    imageRemoved = imageRemoved,
-                    localImagePath = finalLocalImagePath,
-                    updatedGroup = updatedGroup
-                )
-                val groupToSync = updatedGroup.copy(mainImagePath = remoteUrl)
-                cloudGroupDataSource.updateGroup(groupToSync)
-            },
-            updateSyncStatus = { id, status ->
-                if (status == SyncStatus.SYNCED) {
-                    verifyGroupSyncOnServer(id)
-                } else {
-                    localGroupDataSource.updateSyncStatus(id, status)
-                }
-            },
-            getCurrentSyncStatus = { id ->
-                localGroupDataSource.getGroupById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
-            },
-            entityLabel = "group update",
-            performanceMonitor = performanceMonitor
+            params = SyncCreateParams(
+                cloudWrite = {
+                    val remoteUrl = syncGroupImageToCloud(
+                        groupId = groupId,
+                        imageChanged = imageChanged,
+                        imageRemoved = imageRemoved,
+                        localImagePath = finalLocalImagePath,
+                        updatedGroup = updatedGroup
+                    )
+                    val groupToSync = updatedGroup.copy(mainImagePath = remoteUrl)
+                    cloudGroupDataSource.updateGroup(groupToSync)
+                },
+                updateSyncStatus = { id, status ->
+                    if (status == SyncStatus.SYNCED) {
+                        verifyGroupSyncOnServer(id)
+                    } else {
+                        localGroupDataSource.updateSyncStatus(id, status)
+                    }
+                },
+                getCurrentSyncStatus = { id ->
+                    localGroupDataSource.getGroupById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
+                },
+                entityLabel = "group update",
+                performanceMonitor = performanceMonitor
+            )
         )
     }
 

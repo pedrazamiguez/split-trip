@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.exception.ValidationException
 import es.pedrazamiguez.splittrip.domain.model.AddOn
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -529,6 +530,24 @@ class AddExpenseUiMapperTest {
             assertTrue(result.isSuccess)
             val expense = result.getOrThrow()
             assertEquals(PaymentMethod.CASH, expense.paymentMethod)
+        }
+
+        @Test
+        fun `mapToDomain returns failure when showExchangeRateSection is true and display rate is zero`() {
+            val state = AddExpenseUiState(
+                expenseTitle = "Test",
+                sourceAmount = "10.00",
+                selectedCurrency = eurUi,
+                groupCurrency = eurUi,
+                showExchangeRateSection = true,
+                displayExchangeRate = "0",
+                calculatedGroupAmount = ""
+            )
+
+            val result = mapper.mapToDomain(state, "group-123")
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is ValidationException)
         }
     }
 
