@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service
 
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.MemberBalanceEntry
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 
 interface PocketDebtDistributionService {
@@ -19,8 +20,8 @@ interface PocketDebtDistributionService {
      * Reusable for pocket balances and cash-only chart projections.
      */
     fun distribute(
-        deficits: List<Pair<String, Long>>,
-        capacities: List<Pair<String, Long>>,
+        deficits: List<MemberBalanceEntry>,
+        capacities: List<MemberBalanceEntry>,
         groupCurrency: String
     ): List<Settlement>
 }

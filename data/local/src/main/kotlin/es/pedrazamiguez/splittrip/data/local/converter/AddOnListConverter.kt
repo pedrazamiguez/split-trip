@@ -100,6 +100,8 @@ class AddOnListConverter {
      */
     private data class ParseResult(val value: String, val nextIndex: Int)
 
+    private data class ParsedJsonField(val key: String, val value: String, val nextIndex: Int)
+
     /**
      * Simple JSON field parser for a flat object.
      * Handles: `"key":"stringValue"`, `"key":numericValue`, `"key":booleanValue`
@@ -109,10 +111,10 @@ class AddOnListConverter {
         var cursor = 0
 
         while (cursor < objectContent.length) {
-            val (key, value, next) = parseNextField(objectContent, cursor)
+            val field = parseNextField(objectContent, cursor)
                 ?: break
-            result[key] = value
-            cursor = next
+            result[field.key] = field.value
+            cursor = field.nextIndex
         }
         return result
     }
@@ -124,11 +126,11 @@ class AddOnListConverter {
     private fun parseNextField(
         content: String,
         from: Int
-    ): Triple<String, String, Int>? {
+    ): ParsedJsonField? {
         val key = extractKey(content, from) ?: return null
         val value = extractValue(content, key.nextIndex) ?: return null
         val next = skipComma(content, value.nextIndex)
-        return Triple(key.value, value.value, next)
+        return ParsedJsonField(key = key.value, value = value.value, nextIndex = next)
     }
 
     /** Extracts the next `"key"` and advances past the colon. */

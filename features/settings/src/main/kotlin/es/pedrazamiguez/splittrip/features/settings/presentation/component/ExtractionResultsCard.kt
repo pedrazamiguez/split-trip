@@ -1,11 +1,13 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.component
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -22,6 +24,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.R
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.ExtractionFieldItem
 
 @Suppress("LongParameterList")
 @Composable
@@ -39,45 +42,23 @@ internal fun ExtractionResultsCard(
     confidence: ExtractionConfidence?,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     SectionCard(
         title = stringResource(R.string.developer_services_extraction_results),
         modifier = modifier
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)) {
-            val fields = listOf(
-                Triple(TablerIcons.Outline.Cash, stringResource(R.string.developer_services_extraction_amount), amount),
-                Triple(
-                    TablerIcons.Outline.CurrencyEuro,
-                    stringResource(R.string.developer_services_extraction_currency),
-                    currency
-                ),
-                Triple(TablerIcons.Outline.Calendar, stringResource(R.string.developer_services_extraction_date), date),
-                Triple(TablerIcons.Outline.Clock, stringResource(R.string.developer_services_extraction_time), time),
-                Triple(
-                    TablerIcons.Outline.Receipt,
-                    stringResource(R.string.developer_services_extraction_title),
-                    title
-                ),
-                Triple(
-                    TablerIcons.Outline.ShoppingBag,
-                    stringResource(R.string.developer_services_extraction_vendor),
-                    vendor
-                ),
-                Triple(
-                    TablerIcons.Outline.CreditCardPay,
-                    stringResource(R.string.developer_services_extraction_payment_method),
-                    paymentMethod
-                ),
-                Triple(
-                    TablerIcons.Outline.Category,
-                    stringResource(R.string.developer_services_extraction_category),
-                    category
-                ),
-                Triple(
-                    TablerIcons.Outline.InfoCircle,
-                    stringResource(R.string.developer_services_extraction_notes),
-                    notes
-                )
+            val fields = buildExtractionFields(
+                context = context,
+                amount = amount,
+                currency = currency,
+                date = date,
+                time = time,
+                title = title,
+                vendor = vendor,
+                paymentMethod = paymentMethod,
+                category = category,
+                notes = notes
             )
 
             fields.forEach { (icon, label, value) ->
@@ -91,3 +72,63 @@ internal fun ExtractionResultsCard(
         }
     }
 }
+
+@Suppress("LongParameterList")
+private fun buildExtractionFields(
+    context: Context,
+    amount: String?,
+    currency: String?,
+    date: String?,
+    time: String?,
+    title: String?,
+    vendor: String?,
+    paymentMethod: String?,
+    category: String?,
+    notes: String?
+): List<ExtractionFieldItem> = listOf(
+    ExtractionFieldItem(
+        TablerIcons.Outline.Cash,
+        context.getString(R.string.developer_services_extraction_amount),
+        amount
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.CurrencyEuro,
+        context.getString(R.string.developer_services_extraction_currency),
+        currency
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.Calendar,
+        context.getString(R.string.developer_services_extraction_date),
+        date
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.Clock,
+        context.getString(R.string.developer_services_extraction_time),
+        time
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.Receipt,
+        context.getString(R.string.developer_services_extraction_title),
+        title
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.ShoppingBag,
+        context.getString(R.string.developer_services_extraction_vendor),
+        vendor
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.CreditCardPay,
+        context.getString(R.string.developer_services_extraction_payment_method),
+        paymentMethod
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.Category,
+        context.getString(R.string.developer_services_extraction_category),
+        category
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.InfoCircle,
+        context.getString(R.string.developer_services_extraction_notes),
+        notes
+    )
+)

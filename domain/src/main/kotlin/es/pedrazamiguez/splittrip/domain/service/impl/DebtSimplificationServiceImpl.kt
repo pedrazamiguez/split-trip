@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.MemberBalanceEntry
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.service.CashDebtScalingService
@@ -15,7 +16,7 @@ class DebtSimplificationServiceImpl(
 ) : DebtSimplificationService {
     override fun simplify(memberBalances: List<MemberBalance>): List<Settlement> =
         runGreedyAlgorithm(
-            balances = memberBalances.map { it.userId to it.totalBalance },
+            balances = memberBalances.map { MemberBalanceEntry(memberId = it.userId, amountCents = it.totalBalance) },
             sourcePocket = SettlementPocketType.NET,
             currency = ""
         )
@@ -50,7 +51,9 @@ class DebtSimplificationServiceImpl(
                 )
             }
             runGreedyAlgorithm(
-                balances = cashDebtScalingService.scaleBalances(nodes).map { it.userId to it.balance },
+                balances = cashDebtScalingService.scaleBalances(nodes).map {
+                    MemberBalanceEntry(memberId = it.userId, amountCents = it.balance)
+                },
                 sourcePocket = SettlementPocketType.CASH,
                 currency = groupCurrency
             )
@@ -68,7 +71,9 @@ class DebtSimplificationServiceImpl(
                     )
                 }
                 runGreedyAlgorithm(
-                    balances = cashDebtScalingService.scaleBalances(nodes).map { it.userId to it.balance },
+                    balances = cashDebtScalingService.scaleBalances(nodes).map {
+                        MemberBalanceEntry(memberId = it.userId, amountCents = it.balance)
+                    },
                     sourcePocket = SettlementPocketType.CASH,
                     currency = currencyCode
                 )
@@ -77,19 +82,19 @@ class DebtSimplificationServiceImpl(
     }
 
     private fun runGreedyAlgorithm(
-        balances: List<Pair<String, Long>>,
+        balances: List<MemberBalanceEntry>,
         sourcePocket: SettlementPocketType,
         currency: String
     ): List<Settlement> {
         val debtors = balances
-            .filter { (_, bal) -> bal < 0L }
-            .map { (id, bal) -> id to -bal }
-            .sortedByDescending { it.second }
+            .filter { it.amountCents < 0L }
+            .map { it.copy(amountCents = -it.amountCents) }
+            .sortedByDescending { it.amountCents }
             .toMutableList()
 
         val creditors = balances
-            .filter { (_, bal) -> bal > 0L }
-            .sortedByDescending { it.second }
+            .filter { it.amountCents > 0L }
+            .sortedByDescending { it.amountCents }
             .toMutableList()
 
         val settlements = mutableListOf<Settlement>()
@@ -99,23 +104,23 @@ class DebtSimplificationServiceImpl(
         while (dIdx < debtors.size && cIdx < creditors.size) {
             val debtor = debtors[dIdx]
             val creditor = creditors[cIdx]
-            val settleAmount = min(debtor.second, creditor.second)
+            val settleAmount = min(debtor.amountCents, creditor.amountCents)
 
             if (settleAmount > 0L) {
                 settlements += Settlement(
-                    fromUserId = debtor.first,
-                    toUserId = creditor.first,
+                    fromUserId = debtor.memberId,
+                    toUserId = creditor.memberId,
                     amount = settleAmount,
                     currency = currency,
                     sourcePocket = sourcePocket
                 )
             }
 
-            debtors[dIdx] = debtor.first to (debtor.second - settleAmount)
-            creditors[cIdx] = creditor.first to (creditor.second - settleAmount)
+            debtors[dIdx] = debtor.copy(amountCents = debtor.amountCents - settleAmount)
+            creditors[cIdx] = creditor.copy(amountCents = creditor.amountCents - settleAmount)
 
-            if (debtors[dIdx].second == 0L) dIdx++
-            if (creditors[cIdx].second == 0L) cIdx++
+            if (debtors[dIdx].amountCents == 0L) dIdx++
+            if (creditors[cIdx].amountCents == 0L) cIdx++
         }
 
         return settlements

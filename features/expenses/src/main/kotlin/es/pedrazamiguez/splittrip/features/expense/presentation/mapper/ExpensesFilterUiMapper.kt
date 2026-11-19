@@ -7,6 +7,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMa
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateBounds
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateRange
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateRangePreset
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -23,10 +25,10 @@ class ExpensesFilterUiMapper(
     fun extractDateBounds(
         expenses: List<Expense>,
         zoneId: ZoneId = ZoneId.systemDefault()
-    ): Pair<LocalDate?, LocalDate?> {
+    ): DateBounds {
         val dates = expenses.mapNotNull { it.effectiveDate?.utcToSystemLocalDate(zoneId) }
-        if (dates.isEmpty()) return null to null
-        return dates.minOrNull() to dates.maxOrNull()
+        if (dates.isEmpty()) return DateBounds(startDate = null, endDate = null)
+        return DateBounds(startDate = dates.minOrNull(), endDate = dates.maxOrNull())
     }
 
     fun formatFilterDate(date: LocalDate?): String {
@@ -36,23 +38,23 @@ class ExpensesFilterUiMapper(
     fun calculatePresetRange(
         preset: DateRangePreset,
         today: LocalDate = LocalDate.now()
-    ): Pair<LocalDate, LocalDate> = when (preset) {
-        DateRangePreset.TODAY -> today to today
+    ): DateRange = when (preset) {
+        DateRangePreset.TODAY -> DateRange(startDate = today, endDate = today)
         DateRangePreset.YESTERDAY -> {
             val yesterday = today.minusDays(1)
-            yesterday to yesterday
+            DateRange(startDate = yesterday, endDate = yesterday)
         }
         DateRangePreset.THIS_WEEK -> {
             val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-            startOfWeek to today
+            DateRange(startDate = startOfWeek, endDate = today)
         }
         DateRangePreset.LAST_15_DAYS -> {
             val start = today.minusDays(14)
-            start to today
+            DateRange(startDate = start, endDate = today)
         }
         DateRangePreset.THIS_MONTH -> {
             val startOfMonth = today.withDayOfMonth(1)
-            startOfMonth to today
+            DateRange(startDate = startOfMonth, endDate = today)
         }
     }
 
@@ -63,8 +65,8 @@ class ExpensesFilterUiMapper(
     ): DateRangePreset? {
         if (startDate == null || endDate == null) return null
         return DateRangePreset.entries.firstOrNull { preset ->
-            val (presetStart, presetEnd) = calculatePresetRange(preset, today)
-            startDate == presetStart && endDate == presetEnd
+            val presetRange = calculatePresetRange(preset, today)
+            startDate == presetRange.startDate && endDate == presetRange.endDate
         }
     }
 

@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.data.local.mapper.toEntity
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalDataSource
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawalRemainingAmountUpdate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -58,7 +59,7 @@ class LocalCashWithdrawalDataSourceImpl(private val cashWithdrawalDao: CashWithd
         cashWithdrawalDao.updateRemainingAmount(withdrawalId, newRemaining)
     }
 
-    override suspend fun updateRemainingAmounts(updates: List<Pair<String, Long>>) {
+    override suspend fun updateRemainingAmounts(updates: List<CashWithdrawalRemainingAmountUpdate>) {
         cashWithdrawalDao.updateRemainingAmounts(updates)
     }
 

@@ -25,6 +25,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ScrollPosition
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.ExpensesUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.ExpensesUiEvent
 import io.mockk.Runs
@@ -525,7 +526,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             // Then
-            assertEquals(Pair(5, 100), viewModel.savedScrollPosition)
+            assertEquals(ScrollPosition(5, 100), viewModel.savedScrollPosition)
             collectJob.cancel()
         }
 
@@ -548,7 +549,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             // Then - Scroll position should persist
-            assertEquals(Pair(3, 50), viewModel.savedScrollPosition)
+            assertEquals(ScrollPosition(3, 50), viewModel.savedScrollPosition)
             collectJob.cancel()
         }
     }

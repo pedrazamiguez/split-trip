@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -138,14 +139,14 @@ fun ScrollAwareHeaderContainer(
             content(measuredHeightPx.toDp())
         }.map { it.measure(constraints) }
 
-        val (width, height) = resolveLayoutSize(
+        val layoutSize = resolveLayoutSize(
             constraints = constraints,
             headerPlaceables = headerPlaceables,
             contentPlaceables = contentPlaceables,
             headerHeightPx = measuredHeightPx
         )
 
-        layout(width, height) {
+        layout(layoutSize.width, layoutSize.height) {
             contentPlaceables.forEach { it.placeRelative(0, 0) }
             val offsetY = headerState.offsetPx.roundToInt()
             headerPlaceables.forEach { it.placeRelative(0, offsetY) }
@@ -222,7 +223,7 @@ private fun resolveLayoutSize(
     headerPlaceables: List<Placeable>,
     contentPlaceables: List<Placeable>,
     headerHeightPx: Int
-): Pair<Int, Int> {
+): IntSize {
     val width = if (constraints.hasBoundedWidth) {
         constraints.maxWidth
     } else {
@@ -239,5 +240,5 @@ private fun resolveLayoutSize(
             headerHeightPx
         )
     }
-    return width to height
+    return IntSize(width = width, height = height)
 }

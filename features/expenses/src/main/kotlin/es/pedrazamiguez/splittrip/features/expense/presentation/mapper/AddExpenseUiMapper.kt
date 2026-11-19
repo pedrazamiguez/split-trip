@@ -28,8 +28,8 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategorizedExpenseSplits
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import java.math.BigDecimal
@@ -40,7 +40,6 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
 /**
@@ -519,7 +518,7 @@ class AddExpenseUiMapper(
         memberProfiles: Map<String, User>,
         subunits: List<Subunit>,
         currentUserId: String? = null
-    ): Pair<ImmutableList<SplitUiModel>, ImmutableList<SplitUiModel>> {
+    ): CategorizedExpenseSplits {
         val hasSubunitSplits = expense.splits.any { it.subunitId != null }
 
         val mappedSplits = if (hasSubunitSplits) {
@@ -548,7 +547,10 @@ class AddExpenseUiMapper(
             currentState.entitySplits
         }
 
-        return mappedSplits to mappedEntitySplits
+        return CategorizedExpenseSplits(
+            directSplits = mappedSplits,
+            subunitSplits = mappedEntitySplits
+        )
     }
 
     private fun rescaleSplitsToEnteredAmount(

@@ -26,6 +26,11 @@ class SubunitUiMapperImpl(
 ) :
     SubunitUiMapper {
 
+    private data class IndexedMemberShare(
+        val userId: String,
+        val share: MemberShareUiModel
+    )
+
     override fun toSubunitUiModel(
         subunit: Subunit,
         memberProfiles: Map<String, User>,
@@ -141,7 +146,7 @@ class SubunitUiMapperImpl(
             maximumFractionDigits = 0
         } as DecimalFormat
         val localeComparator =
-            localeAwareComparator<Pair<String, MemberShareUiModel>>(locale) { it.second.displayName }
+            localeAwareComparator<IndexedMemberShare>(locale) { it.share.displayName }
 
         return subunit.memberIds.mapNotNull { userId ->
             val share = subunit.memberShares[userId] ?: return@mapNotNull null
@@ -156,14 +161,17 @@ class SubunitUiMapperImpl(
                 }
             )
 
-            userId to MemberShareUiModel(
-                displayName = displayName,
-                shareText = percentFormat.format(share),
-                avatarUrl = memberProfiles[userId]?.profileImagePath
+            IndexedMemberShare(
+                userId = userId,
+                share = MemberShareUiModel(
+                    displayName = displayName,
+                    shareText = percentFormat.format(share),
+                    avatarUrl = memberProfiles[userId]?.profileImagePath
+                )
             )
         }.sortedWith(
-            compareByDescending<Pair<String, MemberShareUiModel>> { it.first == currentUserId }
+            compareByDescending<IndexedMemberShare> { it.userId == currentUserId }
                 .thenComparing(localeComparator)
-        ).map { it.second }.toImmutableList()
+        ).map { it.share }.toImmutableList()
     }
 }

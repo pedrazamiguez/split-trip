@@ -31,6 +31,11 @@ class IntraSubunitSplitDelegate(
     private val formattingHelper: FormattingHelper
 ) {
 
+    private data class EntityPercentShare(
+        val percentage: BigDecimal,
+        val amountCents: Long
+    )
+
     /**
      * Recalculates the member splits within a subunit entity row based on
      * the entity's current [SplitUiModel.amountCents] and [SplitUiModel.entitySplitType].
@@ -440,7 +445,10 @@ class IntraSubunitSplitDelegate(
         val amounts = computePercentAmounts(percentages, sourceAmountCents)
 
         val sharesByEntityId = activeEntities.mapIndexed { index, entity ->
-            entity.userId to Pair(percentages[index], amounts[index])
+            entity.userId to EntityPercentShare(
+                percentage = percentages[index],
+                amountCents = amounts[index]
+            )
         }.toMap()
 
         return entitySplits.map { entity ->
@@ -448,8 +456,8 @@ class IntraSubunitSplitDelegate(
             when {
                 !entity.isExcluded && share != null -> applyPercentShareToEntity(
                     entity = entity,
-                    pct = share.first,
-                    amountCents = share.second,
+                    pct = share.percentage,
+                    amountCents = share.amountCents,
                     sourceAmountCents = sourceAmountCents,
                     currencyCode = currencyCode,
                     groupSubunits = groupSubunits,

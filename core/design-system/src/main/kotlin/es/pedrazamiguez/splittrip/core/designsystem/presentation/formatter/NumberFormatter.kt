@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 private const val DEFAULT_RATE_DECIMALS = 6
 
 private val decimalFormatSymbolsCache = ConcurrentHashMap<Locale, DecimalFormatSymbols>()
-private val decimalFormatCache = ConcurrentHashMap<Pair<String, Locale>, DecimalFormat>()
+private val decimalFormatCache = ConcurrentHashMap<PatternLocaleCacheKey, DecimalFormat>()
 
 internal fun getDecimalFormatCacheSize(): Int = decimalFormatCache.size
 internal fun clearNumberFormatterCache() {
@@ -22,7 +22,7 @@ private fun getDecimalFormatSymbols(locale: Locale): DecimalFormatSymbols =
     decimalFormatSymbolsCache.computeIfAbsent(locale) { DecimalFormatSymbols.getInstance(it) }
 
 private fun getDecimalFormat(pattern: String, locale: Locale): DecimalFormat {
-    val prototype = decimalFormatCache.computeIfAbsent(pattern to locale) { (p, l) ->
+    val prototype = decimalFormatCache.computeIfAbsent(PatternLocaleCacheKey(pattern, locale)) { (p, l) ->
         DecimalFormat(p, getDecimalFormatSymbols(l))
     }
     return prototype.clone() as DecimalFormat

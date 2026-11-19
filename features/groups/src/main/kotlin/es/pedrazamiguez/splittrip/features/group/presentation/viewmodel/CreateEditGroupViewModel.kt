@@ -25,6 +25,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
+import es.pedrazamiguez.splittrip.features.group.presentation.model.LoadedGroupCurrencies
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandler
@@ -413,7 +414,7 @@ class CreateEditGroupViewModel(
 
                 val group = groupId?.let { getGroupByIdUseCase(it) }
 
-                Triple(mappedCurrencies, defaultCurrency, group)
+                LoadedGroupCurrencies(mappedCurrencies, defaultCurrency, group)
             }
         }.onSuccess { (mappedCurrencies, defaultCurrency, group) ->
             if (group != null) {
