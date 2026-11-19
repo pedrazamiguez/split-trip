@@ -213,4 +213,40 @@ class CashRateDelegateTest {
             previewCashExchangeRateUseCase(any(), any(), any(), any(), any(), any(), any())
         }
     }
+
+    @Test
+    fun `mapCashRateResult preserves rate validity on InsufficientCash when updateRateFields is false`() {
+        val current = sameCurrencyCashState.copy(isExchangeRateValid = true, isGroupAmountValid = true)
+
+        val result = delegate.mapCashRateResult(
+            current = current,
+            result = CashRatePreviewResult.InsufficientCash,
+            targetDecimalDigits = 2,
+            sourceCurrencyCode = "EUR",
+            updateRateFields = false
+        )
+
+        assertTrue(result.isExchangeRateValid)
+        assertTrue(result.isGroupAmountValid)
+        assertTrue(result.isInsufficientCash)
+        assertFalse(result.isNoCashAvailable)
+    }
+
+    @Test
+    fun `mapCashRateResult preserves existing rate validity flags on NoWithdrawals when updateRateFields is false`() {
+        val current = sameCurrencyCashState.copy(isExchangeRateValid = true, isGroupAmountValid = true)
+
+        val result = delegate.mapCashRateResult(
+            current = current,
+            result = CashRatePreviewResult.NoWithdrawals,
+            targetDecimalDigits = 2,
+            sourceCurrencyCode = "EUR",
+            updateRateFields = false
+        )
+
+        assertTrue(result.isExchangeRateValid)
+        assertTrue(result.isGroupAmountValid)
+        assertTrue(result.isNoCashAvailable)
+        assertFalse(result.isInsufficientCash)
+    }
 }

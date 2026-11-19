@@ -5,6 +5,8 @@ import es.pedrazamiguez.splittrip.core.common.extensions.utcToSystemLocalDateTim
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
@@ -20,6 +22,7 @@ import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.BreakdownSummaryUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentBadgeData
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ReconstructedAmounts
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitBreakdownItemUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
@@ -421,4 +424,43 @@ internal fun sortSubunitMembers(
             collator.compare(a.displayName, b.displayName)
         }
     ).toImmutableList()
+}
+
+internal fun resolveDetailBadgeIcon(
+    paymentStatus: PaymentStatus,
+    badgeData: PaymentBadgeData?,
+    isScheduledSettled: Boolean
+): ImageVector? = badgeData?.let {
+    when (paymentStatus) {
+        PaymentStatus.SCHEDULED -> if (isScheduledSettled) {
+            TablerIcons.Outline.CircleCheck
+        } else {
+            TablerIcons.Outline.Calendar
+        }
+        PaymentStatus.REFUNDABLE -> if (it.isPassed) {
+            TablerIcons.Outline.Receipt
+        } else {
+            TablerIcons.Outline.ReceiptRefund
+        }
+        else -> null
+    }
+}
+
+internal fun resolveDetailPaymentStatusText(
+    paymentStatus: PaymentStatus,
+    isPassed: Boolean,
+    isScheduledSettled: Boolean,
+    resourceProvider: ResourceProvider
+): String = when (paymentStatus) {
+    PaymentStatus.SCHEDULED -> if (isScheduledSettled) {
+        resourceProvider.getString(R.string.payment_status_finished)
+    } else {
+        resourceProvider.getString(R.string.payment_status_pending)
+    }
+    PaymentStatus.REFUNDABLE -> if (isPassed) {
+        resourceProvider.getString(R.string.payment_status_finished)
+    } else {
+        resourceProvider.getString(R.string.expense_detail_on_hold)
+    }
+    else -> resourceProvider.getString(paymentStatus.toStringRes())
 }

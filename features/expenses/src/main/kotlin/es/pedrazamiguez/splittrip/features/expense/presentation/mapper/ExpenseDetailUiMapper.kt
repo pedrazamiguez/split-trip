@@ -3,11 +3,6 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.extensions.utcToSystemLocalDateTime
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
@@ -104,28 +99,14 @@ class ExpenseDetailUiMapper(
             addOnCalculationService
         ) ?: expense.groupAmount
 
-        @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
+        @Suppress("LongMethod")
         fun build(): ExpenseDetailUiModel {
             val youLabel = resourceProvider.getString(R.string.you_label)
             val (soloSplits, splitGroups, splitBreakdownItems) = resolveSplits()
             val isForeign = expense.sourceCurrency != expense.groupCurrency
             val badgeData = paymentStatusBadgeUiMapper.buildBadge(expense)
             val isScheduledSettled = badgeData?.isPassed == true || badgeData?.isToday == true
-            val badgeIcon = badgeData?.let {
-                when (expense.paymentStatus) {
-                    PaymentStatus.SCHEDULED -> if (isScheduledSettled) {
-                        TablerIcons.Outline.CircleCheck
-                    } else {
-                        TablerIcons.Outline.Calendar
-                    }
-                    PaymentStatus.REFUNDABLE -> if (it.isPassed) {
-                        TablerIcons.Outline.Receipt
-                    } else {
-                        TablerIcons.Outline.ReceiptRefund
-                    }
-                    else -> null
-                }
-            }
+            val badgeIcon = resolveDetailBadgeIcon(expense.paymentStatus, badgeData, isScheduledSettled)
 
             val effectivePayerId = expense.payerId ?: expense.createdBy.takeIf { it.isNotBlank() }
             val payerDisplay = resolvePayerDisplay(effectivePayerId, youLabel)
@@ -171,19 +152,12 @@ class ExpenseDetailUiMapper(
                 formattedConfirmPaymentPlaceholder = placeholder,
                 paymentMethodText = resourceProvider.getString(expense.paymentMethod.toStringRes()),
                 paymentMethodIcon = expense.paymentMethod.toIconVector(),
-                paymentStatusText = when (expense.paymentStatus) {
-                    PaymentStatus.SCHEDULED -> if (isScheduledSettled) {
-                        resourceProvider.getString(R.string.payment_status_finished)
-                    } else {
-                        resourceProvider.getString(R.string.payment_status_pending)
-                    }
-                    PaymentStatus.REFUNDABLE -> if (badgeData?.isPassed == true) {
-                        resourceProvider.getString(R.string.payment_status_finished)
-                    } else {
-                        resourceProvider.getString(R.string.expense_detail_on_hold)
-                    }
-                    else -> resourceProvider.getString(expense.paymentStatus.toStringRes())
-                },
+                paymentStatusText = resolveDetailPaymentStatusText(
+                    paymentStatus = expense.paymentStatus,
+                    isPassed = badgeData?.isPassed == true,
+                    isScheduledSettled = isScheduledSettled,
+                    resourceProvider = resourceProvider
+                ),
                 paymentStatusIcon = expense.paymentStatus.toIconVector(),
                 expenseScopeLabel = buildExpenseScopeLabel(expense.payerType, resourceProvider),
                 paidByText = getPaidByText(

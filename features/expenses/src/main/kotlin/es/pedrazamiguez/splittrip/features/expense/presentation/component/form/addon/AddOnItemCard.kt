@@ -28,7 +28,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType

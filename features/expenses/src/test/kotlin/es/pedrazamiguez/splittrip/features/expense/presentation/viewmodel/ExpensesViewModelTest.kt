@@ -166,7 +166,7 @@ class ExpensesViewModelTest {
     }
 
     private fun stubExpenseUiMapper() {
-        every { expenseUiMapper.mapGroupedByDate(any(), any(), any(), any(), any()) } answers {
+        every { expenseUiMapper.mapGroupedByDate(any(), any(), any()) } answers {
             val expenses = firstArg<List<Expense>>()
             expenses.groupBy { it.createdAt?.toLocalDate() }
                 .map { (date, dayExpenses) ->

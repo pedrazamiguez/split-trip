@@ -29,6 +29,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseMappingContext
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentBadgeData
 import java.time.LocalDate
@@ -131,13 +132,8 @@ class ExpenseUiMapper(
      */
     fun mapGroupedByDate(
         expenses: List<Expense>,
-        memberProfiles: Map<String, User> = emptyMap(),
-        currentUserId: String? = null,
-        pairedContributions: Map<String, Contribution> = emptyMap(),
-        subunits: Map<String, Subunit> = emptyMap(),
-        groupMemberIds: List<String> = emptyList(),
-        today: LocalDate = LocalDate.now(),
-        zoneId: ZoneId = ZoneId.systemDefault()
+        context: ExpenseMappingContext = ExpenseMappingContext(),
+        today: LocalDate = LocalDate.now()
     ): ImmutableList<ExpenseDateGroupUiModel> {
         if (expenses.isEmpty()) return emptyList<ExpenseDateGroupUiModel>().toImmutableList()
 
@@ -145,7 +141,7 @@ class ExpenseUiMapper(
         val groupCurrencyCode = expenses.first().groupCurrency
 
         return expenses
-            .groupBy { it.effectiveDate?.utcToSystemLocalDate(zoneId) }
+            .groupBy { it.effectiveDate?.utcToSystemLocalDate(context.zoneId) }
             .map { (date, dayExpenses) ->
                 val dateText = date?.formatShortDate(appLocale) ?: ""
 
@@ -186,7 +182,15 @@ class ExpenseUiMapper(
                     formattedDayTotal = formattedDayTotal,
                     formattedDayScheduled = formattedDayScheduled,
                     expenses = dayExpenses.map {
-                        map(it, memberProfiles, currentUserId, pairedContributions, subunits, groupMemberIds, zoneId)
+                        map(
+                            expense = it,
+                            memberProfiles = context.memberProfiles,
+                            currentUserId = context.currentUserId,
+                            pairedContributions = context.pairedContributions,
+                            subunits = context.subunits,
+                            groupMemberIds = context.groupMemberIds,
+                            zoneId = context.zoneId
+                        )
                     }.toImmutableList()
                 )
             }
