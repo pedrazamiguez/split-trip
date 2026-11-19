@@ -114,20 +114,21 @@ class ExpensesScreenUiProviderImpl(
         @Composable
         get() {
             val selectedGroup by observeSelectedGroupUseCase().collectAsStateWithLifecycle(initialValue = null)
+            if (!shouldShowMainAction(selectedGroup?.status)) return null
+
             val tabNavController = LocalTabNavController.current
             return MainAction(
                 icon = TablerIcons.Outline.BasketPlus,
                 contentDescription = stringResource(R.string.expenses_add),
                 onClick = { tabNavController.navigate(Routes.ADD_EXPENSE) },
-                sharedTransitionKey = ADD_EXPENSE_SHARED_ELEMENT_KEY,
-                enabled = isMainActionEnabled(selectedGroup?.status)
+                sharedTransitionKey = ADD_EXPENSE_SHARED_ELEMENT_KEY
             )
         }
 
     internal fun resolveSubtitle(groupName: String?): String? =
         groupName?.takeIf { it.isNotBlank() }
 
-    internal fun isMainActionEnabled(status: GroupStatus?): Boolean =
+    internal fun shouldShowMainAction(status: GroupStatus?): Boolean =
         status != GroupStatus.ARCHIVED
 
     internal fun resolveActiveFilterCount(criteria: ExpenseFilterCriteria?): Int =

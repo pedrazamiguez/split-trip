@@ -59,18 +59,18 @@ class ExpensesScreenUiProviderImplTest {
     }
 
     @Test
-    fun `isMainActionEnabled returns true when group status is ACTIVE`() {
-        assertTrue(uiProvider.isMainActionEnabled(GroupStatus.ACTIVE))
+    fun `shouldShowMainAction returns true when group status is ACTIVE`() {
+        assertTrue(uiProvider.shouldShowMainAction(GroupStatus.ACTIVE))
     }
 
     @Test
-    fun `isMainActionEnabled returns true when group status is null`() {
-        assertTrue(uiProvider.isMainActionEnabled(null))
+    fun `shouldShowMainAction returns true when group status is null`() {
+        assertTrue(uiProvider.shouldShowMainAction(null))
     }
 
     @Test
-    fun `isMainActionEnabled returns false when group status is ARCHIVED`() {
-        assertFalse(uiProvider.isMainActionEnabled(GroupStatus.ARCHIVED))
+    fun `shouldShowMainAction returns false when group status is ARCHIVED`() {
+        assertFalse(uiProvider.shouldShowMainAction(GroupStatus.ARCHIVED))
     }
 
     @Test

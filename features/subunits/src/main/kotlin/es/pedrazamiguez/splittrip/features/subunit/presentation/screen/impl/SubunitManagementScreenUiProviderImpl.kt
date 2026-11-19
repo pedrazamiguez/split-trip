@@ -43,7 +43,8 @@ class SubunitManagementScreenUiProviderImpl(
         @Composable
         get() {
             val selectedGroup by observeSelectedGroupUseCase().collectAsStateWithLifecycle(initialValue = null)
-            val isArchived = selectedGroup?.status == GroupStatus.ARCHIVED
+            if (!shouldShowMainAction(selectedGroup?.status)) return null
+
             val navController = LocalTabNavController.current
             val rootNavController = LocalRootNavController.current
             val pillController = LocalTopPillController.current
@@ -72,7 +73,6 @@ class SubunitManagementScreenUiProviderImpl(
                     )
                 },
                 sharedTransitionKey = if (isSubunitCreationEnabled) CREATE_EDIT_SUBUNIT_SHARED_ELEMENT_KEY else null,
-                enabled = !isArchived,
                 showProBadge = shouldShowProBadge(
                     isSubunitCreationEnabled = isSubunitCreationEnabled,
                     isActingUserPro = isActingUserPro
@@ -98,6 +98,9 @@ class SubunitManagementScreenUiProviderImpl(
             }
         }
     }
+
+    internal fun shouldShowMainAction(status: GroupStatus?): Boolean =
+        status != GroupStatus.ARCHIVED
 
     internal fun shouldShowProBadge(
         isSubunitCreationEnabled: Boolean,
