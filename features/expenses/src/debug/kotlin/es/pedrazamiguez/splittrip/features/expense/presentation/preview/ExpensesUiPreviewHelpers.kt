@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUi
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpensesFilterUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.PaymentStatusBadgeUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseMappingContext
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesFilterUiState
 import java.time.LocalDate
@@ -76,7 +77,15 @@ fun ExpenseListPreviewHelper(
             buildExpenseUiMapper(localeProvider, resourceProvider)
         },
         transform = { mapper, domain ->
-            mapper.mapGroupedByDate(domain, memberProfiles, currentUserId, pairedContributions, subunits)
+            mapper.mapGroupedByDate(
+                expenses = domain,
+                context = ExpenseMappingContext(
+                    memberProfiles = memberProfiles,
+                    currentUserId = currentUserId,
+                    pairedContributions = pairedContributions,
+                    subunits = subunits
+                )
+            )
         },
         content = content
     )

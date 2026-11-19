@@ -169,18 +169,28 @@ fun AppNavHost(
         stableStartDestination.value = startDestination
     }
 
+    val reconciliationDependencies = remember(
+        authenticationService,
+        userPreferenceRepository,
+        checkPendingReconciliationUseCase
+    ) {
+        StartupReconciliationDependencies(
+            authenticationService = authenticationService,
+            userPreferenceRepository = userPreferenceRepository,
+            checkPendingReconciliationUseCase = checkPendingReconciliationUseCase
+        )
+    }
+
     StartupReconciliationEffect(
         isUserLoggedIn = isUserLoggedIn,
         isReconciled = isReconciled,
         stableStartDestination = stableStartDestination.value,
-        reconciliationTimeoutMs = reconciliationTimeoutMs,
-        authenticationService = authenticationService,
-        userPreferenceRepository = userPreferenceRepository,
-        checkPendingReconciliationUseCase = checkPendingReconciliationUseCase,
+        dependencies = reconciliationDependencies,
         onResult = { isChecked, hasPending ->
             isReconciliationChecked = isChecked
             hasPendingReconciliation = hasPending
-        }
+        },
+        reconciliationTimeoutMs = reconciliationTimeoutMs
     )
 
     LaunchedEffect(

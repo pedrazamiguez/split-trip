@@ -113,9 +113,19 @@ class AddExpenseUiMapper(
 
     // ── UI State → Domain Mapping ──────────────────────────────────────────
 
+    private data class ResolvedAmountAndRate(
+        val internalRate: BigDecimal,
+        val groupAmount: Long
+    )
+
+    private data class ResolvedPaymentDates(
+        val dueDate: LocalDateTime?,
+        val refundedAt: LocalDateTime?
+    )
+
     // Sequential field-by-field parsing of UiState → domain model;
     // each field requires its own null-coalescing and conversion logic
-    @Suppress("CyclomaticComplexMethod", "CognitiveComplexMethod", "LongMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     fun mapToDomain(state: AddExpenseUiState, groupId: String): Result<Expense> = try {
         val sourceCurrencyCode = state.selectedCurrency?.code
         val groupCurrencyCode = state.groupCurrency?.code
@@ -123,25 +133,7 @@ class AddExpenseUiMapper(
         val groupDecimalDigits = state.groupCurrency?.decimalDigits ?: 2
 
         val sourceAmount = splitPreviewService.parseAmountToCents(state.sourceAmount, sourceDecimalDigits)
-
-        val normalizedDisplayRate =
-            CurrencyConverter.normalizeAmountString(state.displayExchangeRate.trim())
-        val displayRate = normalizedDisplayRate.toBigDecimalOrNull() ?: BigDecimal.ONE
-        val internalRate = if (displayRate > BigDecimal.ZERO) {
-            BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
-        } else {
-            BigDecimal.ZERO
-        }
-
-        val groupAmount = if (state.calculatedGroupAmount.isNotBlank()) {
-            splitPreviewService.parseAmountToCents(state.calculatedGroupAmount, groupDecimalDigits)
-        } else {
-            BigDecimal(sourceAmount).multiply(internalRate).setScale(0, RoundingMode.HALF_UP).toLong()
-        }
-
-        if (state.showExchangeRateSection && (internalRate <= BigDecimal.ZERO || groupAmount <= 0L)) {
-            return Result.failure(ValidationException("Invalid exchange rate or converted amount"))
-        }
+        val (internalRate, groupAmount) = resolveAmountAndRate(state, sourceAmount, groupDecimalDigits)
 
         val paymentMethod = state.selectedPaymentMethod?.let {
             PaymentMethod.fromString(it.id)
@@ -157,21 +149,9 @@ class AddExpenseUiMapper(
             runCatching { PaymentStatus.fromString(it.id) }.getOrDefault(PaymentStatus.FINISHED)
         } ?: PaymentStatus.FINISHED
 
-        val dueDate = if ((paymentStatus == PaymentStatus.SCHEDULED || paymentStatus == PaymentStatus.REFUNDABLE) &&
-            state.dueDateMillis != null
-        ) {
-            LocalDateTime.ofInstant(Instant.ofEpochMilli(state.dueDateMillis), ZoneOffset.UTC)
-        } else {
-            null
-        }
-
+        val (dueDate, refundedAt) = resolvePaymentDates(paymentStatus, state)
         val splitType = state.selectedSplitType?.let { SplitType.fromString(it.id) } ?: SplitType.EQUAL
-
-        val splits = if (state.isSubunitMode && state.entitySplits.isNotEmpty()) {
-            splitMapper.mapEntitySplitsToDomain(state.entitySplits, splitType)
-        } else {
-            splitMapper.mapSplitsToDomain(state.splits, splitType)
-        }
+        val splits = resolveDomainSplits(state, splitType)
 
         val addOns = addOnMapper.mapAddOnsToDomain(
             state.addOns,
@@ -189,14 +169,6 @@ class AddExpenseUiMapper(
 
         val expectedGroupAmount = if (paymentStatus == PaymentStatus.SCHEDULED) {
             state.expectedGroupAmount ?: groupAmount
-        } else {
-            null
-        }
-
-        val refundedAt = if (paymentStatus == PaymentStatus.CANCELLED) {
-            state.refundDateMillis?.let {
-                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneOffset.UTC)
-            } ?: LocalDateTime.now()
         } else {
             null
         }
@@ -229,6 +201,65 @@ class AddExpenseUiMapper(
         Result.success(expense)
     } catch (e: Exception) {
         Result.failure(e)
+    }
+
+    private fun resolveAmountAndRate(
+        state: AddExpenseUiState,
+        sourceAmount: Long,
+        groupDecimalDigits: Int
+    ): ResolvedAmountAndRate {
+        val normalizedDisplayRate =
+            CurrencyConverter.normalizeAmountString(state.displayExchangeRate.trim())
+        val displayRate = normalizedDisplayRate.toBigDecimalOrNull() ?: BigDecimal.ONE
+        val internalRate = if (displayRate > BigDecimal.ZERO) {
+            BigDecimal.ONE.divide(displayRate, DomainConstants.RATE_PRECISION, RoundingMode.HALF_UP)
+        } else {
+            BigDecimal.ZERO
+        }
+
+        val groupAmount = if (state.calculatedGroupAmount.isNotBlank()) {
+            splitPreviewService.parseAmountToCents(state.calculatedGroupAmount, groupDecimalDigits)
+        } else {
+            BigDecimal(sourceAmount).multiply(internalRate).setScale(0, RoundingMode.HALF_UP).toLong()
+        }
+
+        if (state.showExchangeRateSection && (internalRate <= BigDecimal.ZERO || groupAmount <= 0L)) {
+            throw ValidationException("Invalid exchange rate or converted amount")
+        }
+
+        return ResolvedAmountAndRate(internalRate = internalRate, groupAmount = groupAmount)
+    }
+
+    private fun resolvePaymentDates(
+        paymentStatus: PaymentStatus,
+        state: AddExpenseUiState
+    ): ResolvedPaymentDates {
+        val dueDate = if ((paymentStatus == PaymentStatus.SCHEDULED || paymentStatus == PaymentStatus.REFUNDABLE) &&
+            state.dueDateMillis != null
+        ) {
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(state.dueDateMillis), ZoneOffset.UTC)
+        } else {
+            null
+        }
+
+        val refundedAt = if (paymentStatus == PaymentStatus.CANCELLED) {
+            state.refundDateMillis?.let {
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneOffset.UTC)
+            } ?: LocalDateTime.now()
+        } else {
+            null
+        }
+
+        return ResolvedPaymentDates(dueDate = dueDate, refundedAt = refundedAt)
+    }
+
+    private fun resolveDomainSplits(
+        state: AddExpenseUiState,
+        splitType: SplitType
+    ): List<ExpenseSplit> = if (state.isSubunitMode && state.entitySplits.isNotEmpty()) {
+        splitMapper.mapEntitySplitsToDomain(state.entitySplits, splitType)
+    } else {
+        splitMapper.mapSplitsToDomain(state.splits, splitType)
     }
 
     /**

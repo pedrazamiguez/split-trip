@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
@@ -58,13 +59,15 @@ class SubunitRepositoryImpl(
         syncCreateToCloud(
             scope = syncScope,
             entityId = subunitWithMetadata.id,
-            cloudWrite = { cloudSubunitDataSource.addSubunit(groupId, subunitWithMetadata) },
-            updateSyncStatus = localSubunitDataSource::updateSyncStatus,
-            getCurrentSyncStatus = { id ->
-                localSubunitDataSource.getSubunitById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
-            },
-            entityLabel = ENTITY_LABEL,
-            performanceMonitor = performanceMonitor
+            params = SyncCreateParams(
+                cloudWrite = { cloudSubunitDataSource.addSubunit(groupId, subunitWithMetadata) },
+                updateSyncStatus = localSubunitDataSource::updateSyncStatus,
+                getCurrentSyncStatus = { id ->
+                    localSubunitDataSource.getSubunitById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
+                },
+                entityLabel = ENTITY_LABEL,
+                performanceMonitor = performanceMonitor
+            )
         )
 
         return subunitId
@@ -84,13 +87,15 @@ class SubunitRepositoryImpl(
         syncCreateToCloud(
             scope = syncScope,
             entityId = updatedSubunit.id,
-            cloudWrite = { cloudSubunitDataSource.updateSubunit(groupId, updatedSubunit) },
-            updateSyncStatus = localSubunitDataSource::updateSyncStatus,
-            getCurrentSyncStatus = { id ->
-                localSubunitDataSource.getSubunitById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
-            },
-            entityLabel = "$ENTITY_LABEL update",
-            performanceMonitor = performanceMonitor
+            params = SyncCreateParams(
+                cloudWrite = { cloudSubunitDataSource.updateSubunit(groupId, updatedSubunit) },
+                updateSyncStatus = localSubunitDataSource::updateSyncStatus,
+                getCurrentSyncStatus = { id ->
+                    localSubunitDataSource.getSubunitById(id)?.syncStatus ?: SyncStatus.PENDING_SYNC
+                },
+                entityLabel = "$ENTITY_LABEL update",
+                performanceMonitor = performanceMonitor
+            )
         )
     }
 

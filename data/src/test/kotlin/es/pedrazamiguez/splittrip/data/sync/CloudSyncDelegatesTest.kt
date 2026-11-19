@@ -280,10 +280,12 @@ class CloudSyncDelegatesTest {
             syncCreateToCloud(
                 scope = this,
                 entityId = "entity-1",
-                cloudWrite = cloudWrite,
-                updateSyncStatus = updateSyncStatus,
-                entityLabel = "test",
-                performanceMonitor = mockPerformanceMonitor
+                params = SyncCreateParams(
+                    cloudWrite = cloudWrite,
+                    updateSyncStatus = updateSyncStatus,
+                    entityLabel = "test",
+                    performanceMonitor = mockPerformanceMonitor
+                )
             )
             advanceUntilIdle()
 
@@ -300,10 +302,12 @@ class CloudSyncDelegatesTest {
             syncCreateToCloud(
                 scope = this,
                 entityId = "entity-1",
-                cloudWrite = { throw IOException("Network error") },
-                updateSyncStatus = updateSyncStatus,
-                entityLabel = "test",
-                performanceMonitor = mockPerformanceMonitor
+                params = SyncCreateParams(
+                    cloudWrite = { throw IOException("Network error") },
+                    updateSyncStatus = updateSyncStatus,
+                    entityLabel = "test",
+                    performanceMonitor = mockPerformanceMonitor
+                )
             )
             advanceUntilIdle()
 
@@ -322,10 +326,12 @@ class CloudSyncDelegatesTest {
             syncCreateToCloud(
                 scope = this,
                 entityId = "entity-1",
-                cloudWrite = { cloudWriteCalled = true },
-                updateSyncStatus = { _, _ -> },
-                entityLabel = "test",
-                performanceMonitor = mockPerformanceMonitor
+                params = SyncCreateParams(
+                    cloudWrite = { cloudWriteCalled = true },
+                    updateSyncStatus = { _, _ -> },
+                    entityLabel = "test",
+                    performanceMonitor = mockPerformanceMonitor
+                )
             )
 
             // Before advanceUntilIdle, cloud write should not have completed yet
@@ -342,11 +348,13 @@ class CloudSyncDelegatesTest {
             syncCreateToCloud(
                 scope = this,
                 entityId = "entity-1",
-                cloudWrite = { throw IOException("Network error") },
-                updateSyncStatus = updateSyncStatus,
-                getCurrentSyncStatus = { SyncStatus.SYNCED },
-                entityLabel = "test",
-                performanceMonitor = mockPerformanceMonitor
+                params = SyncCreateParams(
+                    cloudWrite = { throw IOException("Network error") },
+                    updateSyncStatus = updateSyncStatus,
+                    getCurrentSyncStatus = { SyncStatus.SYNCED },
+                    entityLabel = "test",
+                    performanceMonitor = mockPerformanceMonitor
+                )
             )
             advanceUntilIdle()
 
@@ -362,10 +370,12 @@ class CloudSyncDelegatesTest {
                 syncCreateToCloud(
                     scope = this,
                     entityId = "entity-1",
-                    cloudWrite = { throw CancellationException("Job cancelled") },
-                    updateSyncStatus = updateSyncStatus,
-                    entityLabel = "test",
-                    performanceMonitor = mockPerformanceMonitor
+                    params = SyncCreateParams(
+                        cloudWrite = { throw CancellationException("Job cancelled") },
+                        updateSyncStatus = updateSyncStatus,
+                        entityLabel = "test",
+                        performanceMonitor = mockPerformanceMonitor
+                    )
                 )
                 advanceUntilIdle()
 

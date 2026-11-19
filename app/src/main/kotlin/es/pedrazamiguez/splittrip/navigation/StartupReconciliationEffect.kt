@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
-import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.user.CheckPendingReconciliationUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
@@ -19,9 +18,7 @@ internal fun StartupReconciliationEffect(
     isUserLoggedIn: Boolean?,
     isReconciled: Boolean?,
     stableStartDestination: String?,
-    authenticationService: AuthenticationService,
-    userPreferenceRepository: UserPreferenceRepository,
-    checkPendingReconciliationUseCase: CheckPendingReconciliationUseCase,
+    dependencies: StartupReconciliationDependencies,
     onResult: (isChecked: Boolean, hasPending: Boolean?) -> Unit,
     reconciliationTimeoutMs: Long = DEFAULT_RECONCILIATION_TIMEOUT_MS
 ) {
@@ -36,17 +33,17 @@ internal fun StartupReconciliationEffect(
             return@LaunchedEffect
         }
         currentOnResult(false, null)
-        val email = authenticationService.currentUserEmail()?.takeIf(String::isNotBlank)
+        val email = dependencies.authenticationService.currentUserEmail()?.takeIf(String::isNotBlank)
         if (email == null) {
             Timber.tag(LogTag.NAVIGATION).i("No email for active session; marking reconciled")
-            markSessionReconciled(userPreferenceRepository)
+            markSessionReconciled(dependencies.userPreferenceRepository)
             currentOnResult(true, false)
         } else {
             checkEmailReconciliation(
                 email = email,
                 reconciliationTimeoutMs = reconciliationTimeoutMs,
-                userPreferenceRepository = userPreferenceRepository,
-                checkPendingReconciliationUseCase = checkPendingReconciliationUseCase,
+                userPreferenceRepository = dependencies.userPreferenceRepository,
+                checkPendingReconciliationUseCase = dependencies.checkPendingReconciliationUseCase,
                 onResult = currentOnResult
             )
         }

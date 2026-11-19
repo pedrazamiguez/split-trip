@@ -22,6 +22,7 @@ import org.koin.compose.getKoin
 internal const val KEY_INITIAL_FILTER_CRITERIA = "initialFilterCriteria"
 internal const val KEY_APPLIED_FILTER_CRITERIA = "appliedFilterCriteria"
 internal const val KEY_EXPENSE_ADDED = "expenseAdded"
+internal const val KEY_RESET_FILTERS_REQUESTED = "resetFiltersRequested"
 
 @Suppress("LongMethod")
 fun NavGraphBuilder.expensesGraph() {

@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
@@ -89,18 +90,20 @@ class SettlementRepositoryImpl(
         syncCreateToCloud(
             scope = syncScope,
             entityId = record.id,
-            cloudWrite = {
-                cloudSettlementDataSource.upsertSettlement(
-                    record.groupId,
-                    record
-                )
-            },
-            updateSyncStatus = localSettlementDataSource::updateSyncStatus,
-            getCurrentSyncStatus = { id ->
-                localSettlementDataSource.getSyncStatus(id) ?: SyncStatus.PENDING_SYNC
-            },
-            entityLabel = ENTITY_LABEL,
-            performanceMonitor = performanceMonitor
+            params = SyncCreateParams(
+                cloudWrite = {
+                    cloudSettlementDataSource.upsertSettlement(
+                        record.groupId,
+                        record
+                    )
+                },
+                updateSyncStatus = localSettlementDataSource::updateSyncStatus,
+                getCurrentSyncStatus = { id ->
+                    localSettlementDataSource.getSyncStatus(id) ?: SyncStatus.PENDING_SYNC
+                },
+                entityLabel = ENTITY_LABEL,
+                performanceMonitor = performanceMonitor
+            )
         )
     }
 
@@ -110,18 +113,20 @@ class SettlementRepositoryImpl(
         syncCreateToCloud(
             scope = syncScope,
             entityId = record.id,
-            cloudWrite = {
-                cloudSettlementDataSource.upsertSettlement(
-                    record.groupId,
-                    record
-                )
-            },
-            updateSyncStatus = localSettlementDataSource::updateSyncStatus,
-            getCurrentSyncStatus = { id ->
-                localSettlementDataSource.getSyncStatus(id) ?: SyncStatus.PENDING_SYNC
-            },
-            entityLabel = "$ENTITY_LABEL update",
-            performanceMonitor = performanceMonitor
+            params = SyncCreateParams(
+                cloudWrite = {
+                    cloudSettlementDataSource.upsertSettlement(
+                        record.groupId,
+                        record
+                    )
+                },
+                updateSyncStatus = localSettlementDataSource::updateSyncStatus,
+                getCurrentSyncStatus = { id ->
+                    localSettlementDataSource.getSyncStatus(id) ?: SyncStatus.PENDING_SYNC
+                },
+                entityLabel = "$ENTITY_LABEL update",
+                performanceMonitor = performanceMonitor
+            )
         )
     }
 
