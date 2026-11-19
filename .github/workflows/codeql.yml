@@ -23,7 +23,6 @@ jobs:
       contents: read
       actions: read
     env:
-      OER_APP_ID_RELEASE: ${{ secrets.OER_APP_ID_RELEASE }}
       # Disable parallel and daemon to ensure CodeQL intercepts compiler correctly
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.parallel=false -Dorg.gradle.daemon=false"
     steps:

@@ -178,17 +178,10 @@ class YourBalanceViewModel(
                     )
                 }
 
-            combine(baseStateFlow, actionDelegate.localState, networkMonitor.isOnline) {
-                    baseState,
-                    localState,
-                    isOnline
-                ->
-                baseState.copy(
-                    isOffline = !isOnline,
-                    activeDisputeSettlementId = localState.activeDisputeSettlementId,
-                    disputeReasonInput = localState.disputeReasonInput
-                )
-            }
+            baseStateFlow
+                .combine(networkMonitor.isOnline) { baseState, isOnline ->
+                    baseState.copy(isOffline = !isOnline)
+                }
                 .catch { e ->
                     Timber.e(e, "Error loading personal position for group $groupId")
                     emit(YourBalanceUiState(isLoading = false))
@@ -228,13 +221,13 @@ class YourBalanceViewModel(
                 )
             }
             is YourBalanceUiEvent.DisputeSettlement -> viewModelScope.launch {
-                actionDelegate.handleOpenDispute(event.settlementId, uiState.value.isOffline, _actions)
+                actionDelegate.handleOpenDispute(
+                    event.settlementId,
+                    _selectedGroupId.value,
+                    uiState.value.isOffline,
+                    _actions
+                )
             }
-            is YourBalanceUiEvent.DisputeReasonChanged -> actionDelegate.updateDisputeReason(event.reason)
-            YourBalanceUiEvent.DisputeSubmitted -> viewModelScope.launch {
-                actionDelegate.handleSubmitDispute(_selectedGroupId.value, uiState.value.isOffline, _actions)
-            }
-            YourBalanceUiEvent.DisputeCancelled -> actionDelegate.handleCancelDispute()
             is YourBalanceUiEvent.NudgeDebtor -> viewModelScope.launch {
                 actionDelegate.handleNudgeDebtor(
                     event.settlementId,

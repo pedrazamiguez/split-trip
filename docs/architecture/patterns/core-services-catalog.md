@@ -100,13 +100,19 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Component | File | Purpose |
 |---|---|---|
-| `WizardStepLayout` | `wizard/WizardStepLayout.kt` | Container for a single wizard step: title, content slot, and consistent padding. **Use for:** Multi-step form screens (e.g., Add Expense wizard). |
+| `WizardScaffold` | `wizard/WizardScaffold.kt` | Shared top-level wizard orchestrator scaffold managing `HazeState`, `LocalTopPadding`, `LocalBottomPadding`, `WizardStepIndicator`, optional `headerBanner`, step content slot, scrimmed fixed-bottom `WizardNavigationBar`, and optional full-screen `overlay`. **Use for:** All multi-step wizard flows. |
+| `WizardScrollableStepContainer` | `wizard/WizardScaffold.kt` | Scrollable step wrapper with `imePadding()`, `verticalScroll()`, `rememberWizardNavBarPadding()` bottom clearance, and an optional top `fastTrackBanner` slot. **Use for:** Wrapping individual step content inside `AnimatedContent` in wizard flows. |
+| `WizardStepLayout` | `wizard/WizardStepLayout.kt` | Container for a single wizard step: consistent vertical rhythm (`ExtraLarge` `24.dp` vertical, `Default` `16.dp` inter-section) and responsive horizontal padding (`Large` `20.dp` on `> 360dp`, `Default` `16.dp` on `<= 360dp`). **Use for:** Multi-step form screens (e.g., Add Expense wizard). |
 | `WizardStepIndicator` | `wizard/WizardStepIndicator.kt` | Animated step dots/labels showing progress through wizard steps. Supports optional step indices (dashed-border visual) and step-circle tap navigation. **Use for:** Top of wizard screens to show current step. |
-| `WizardNavigationBar` | `wizard/WizardNavigationBar.kt` | Bottom bar with Back/Next/Submit buttons and an optional fast-track "Skip to Review" tonal pill (with an optional smart-defaults `CaptionText` directly below it) above the action row. Configured via `WizardNavigationBarConfig` and `onSkipToReview`. **Use for:** Wizard step navigation controls (reserve `UiConstants.WIZARD_NAV_BAR_HEIGHT` or `UiConstants.WIZARD_NAV_BAR_WITH_SKIP_HEIGHT` bottom scroll padding). |
+| `WizardNavigationBar` | `wizard/WizardNavigationBar.kt` | Single-row (`80.dp`) fixed-bottom bar with Back/Next/Submit buttons rendered over a `horizonGlassEffect` + tonal surface gradient scrim, respecting `navigationBarsPadding()` when `BottomNavigationBar` is hidden. Configured via `WizardNavigationBarConfig`. **Use for:** Wizard step navigation controls (reserve `rememberWizardNavBarPadding()` or `UiConstants.WIZARD_NAV_BAR_HEIGHT` bottom scroll padding). |
+| `WizardFastTrackBanner` | `wizard/WizardFastTrackBanner.kt` | Cardless centered header with an optional smart-defaults `CaptionText` and a compact `36.dp` `"Skip to Review"` pill rendered directly on the `surface` canvas. Placed in `WizardScrollableStepContainer.fastTrackBanner`. **Use for:** Fast-tracking from optional or early valid steps to `ReviewStep`. |
+| `WizardReviewRow` | `wizard/WizardReviewRow.kt` | Canonical key-value summary row (`0.4f` label weight in `onSurfaceVariant`, `0.6f` end-aligned value weight in `onSurface` `FontWeight.Medium`) inside `SectionCard`. **Use for:** All wizard `ReviewStep` screens. |
+| `ShareAllocationInputRow` | `wizard/ShareAllocationInputRow.kt` | Full-width soft `StyledOutlinedTextField` (`label = null`, inline unit `trailingIcon`) paired with `ShareLockButton` for share-allocation rows. **Use for:** `SplitMemberRow`, `EntitySplitRow`, `IntraSubunitSplitEditor`, and `SubunitSharesStep`. |
+| `ShareLockButton` | `wizard/ShareLockButton.kt` | Shared lock/unlock toggle button (`40.dp` on standard screens, `36.dp` on narrow screens, `18.dp` `LockFilled`/`LockOpen` icon) for locking a participant's share during auto-distribution. **Use for:** `ShareAllocationInputRow` or standalone share lock toggles. |
 | `WizardSkipStrategy` | `wizard/WizardSkipStrategy.kt` | Enum classifying wizard steps as `REQUIRED` or `OPTIONAL`. Used as documentation/reference; feature step enums use `isOptional: Boolean`. |
 
 **Configuration class:**
-- `WizardNavigationBarConfig` — data class defining button labels, visibility, enabled state, and optional fast-track `"Skip to Review"` label + smart-defaults caption rendered below the pill for the navigation bar.
+- `WizardNavigationBarConfig` — data class defining single-row button labels (`backLabel`, `nextLabel`, `submitLabel`), visibility (`canGoNext`, `isOnLastStep`), and state (`isCurrentStepValid`, `isLoading`) for `WizardNavigationBar`.
 
 ### A.6 Form
 
@@ -267,6 +273,7 @@ All components are `@Composable` functions following Material 3 design. They acc
 |---|---|---|
 | `formatShortDate` | `LocalDateTime.formatShortDate(locale, referenceYear = LocalDate.now().year): String` | Formats as `"12 Jan"` (short month) when in `referenceYear`, or `"12 Jan 2025"` when outside. For list items and metadata chips. |
 | `formatShortDate` | `LocalDate.formatShortDate(locale, referenceYear = LocalDate.now().year): String` | Formats as `"12 Jan"` when in `referenceYear`, or `"12 Jan 2025"` when outside. |
+| `formatShortDateTime` | `LocalDateTime.formatShortDateTime(locale, referenceYear = LocalDate.now().year): String` | Formats as `"12 Jan, 14:30"` / `"12 Jan, 2:30 PM"` when in `referenceYear`, or `"12 Jan 2025, 14:30"` when outside. For detail metadata chips. |
 | `formatMediumDate` | `LocalDateTime.formatMediumDate(locale): String` | Formats as `"January 2025"`. For section headers. |
 | `formatMediumDate` | `LocalDate.formatMediumDate(locale): String` | Formats as `"January 2025"`. For section headers. |
 
@@ -287,6 +294,7 @@ A convenience wrapper around all the above formatters, injected with `LocaleProv
 | `formatCentsValue(cents, decimalDigits)` | Cents → plain locale number (e.g., `"16,67"`). For input fields. |
 | `formatPercentageForDisplay(percentage)` | BigDecimal percentage → locale string (e.g., `"33,33"`). |
 | `formatShortDate(date, referenceYear = LocalDate.now().year)` | `LocalDateTime?` or `LocalDate?` → `"12 Jan"` (or `"12 Jan 2025"` outside `referenceYear`) short date string. Used for groups, expenses, and cash tranches. |
+| `formatShortDateTime(date, referenceYear = LocalDate.now().year)` | `LocalDateTime?` → `"12 Jan, 14:30"` / `"12 Jan, 2:30 PM"` (or `"12 Jan 2025, 14:30"` outside `referenceYear`) short date and localized time string. |
 | `formatMediumDate(date)` | `LocalDate?` → `"January 2025"` medium date string. |
 
 **When to use:** Inject into feature mappers as the primary formatting API. Eliminates locale-passing boilerplate.
@@ -786,7 +794,7 @@ confirmPendingSync:  PENDING_SYNC ──server verified──→ SYNCED
 | Convert cents to BigDecimal | `ExpenseCalculatorService.centsToBigDecimal()` |
 | Create a confirmation dialog | `DestructiveConfirmationDialog` |
 | Show contextual actions | `ActionBottomSheet` + `SheetAction` |
-| Build a multi-step form | `WizardStepLayout` + `WizardStepIndicator` + `WizardNavigationBar` |
+| Build a multi-step form | `WizardScaffold` + `WizardScrollableStepContainer` + `WizardStepLayout` + `WizardNavigationBar` |
 | Manage keyed cloud subscriptions | `KeyedSubscriptionTracker` (`:data` internal) |
 | Subscribe + reconcile + confirm sync | `subscribeAndReconcile()` (`:data` internal) |
 | Sync a create/update to cloud | `syncCreateToCloud()` (`:data` internal) |

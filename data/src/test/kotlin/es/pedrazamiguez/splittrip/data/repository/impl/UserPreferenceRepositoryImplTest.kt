@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.model.OptionalUpdateDismissal
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -170,6 +171,27 @@ class UserPreferenceRepositoryImplTest {
         repository.setIsReconciled(true)
 
         coVerify(exactly = 1) { userPreferences.setIsReconciled(true) }
+    }
+
+    @Test
+    fun `getOptionalUpdateDismissal delegates to userPreferences`() = runTest {
+        val expected = OptionalUpdateDismissal(versionCode = 1_001_000L, dismissedAtTimestampMs = 1_700_000_000_000L)
+        coEvery { userPreferences.getOptionalUpdateDismissal() } returns expected
+
+        val result = repository.getOptionalUpdateDismissal()
+
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun `recordOptionalUpdateDismissal delegates to userPreferences`() = runTest {
+        coEvery { userPreferences.recordOptionalUpdateDismissal(1_001_000L, 1_700_000_000_000L) } just runs
+
+        repository.recordOptionalUpdateDismissal(1_001_000L, 1_700_000_000_000L)
+
+        coVerify(exactly = 1) {
+            userPreferences.recordOptionalUpdateDismissal(1_001_000L, 1_700_000_000_000L)
+        }
     }
 
     @Test

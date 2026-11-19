@@ -21,11 +21,14 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.curre
  *                      back to [defaultName] for currencies not in the domain enum. Used as the
  *                      preferred secondary display and localized search name when available.
  *                      Defaults to empty string.
+ * @param symbol        Resolved display symbol for input fields (e.g. "€" for EUR, "CHF" fallback
+ *                      when no distinct symbol exists). Defaults to empty string.
  */
 data class CurrencyUiModel(
     val code: String,
     val displayText: String,
     val decimalDigits: Int,
     val defaultName: String = "",
-    val localizedName: String = ""
+    val localizedName: String = "",
+    val symbol: String = ""
 )

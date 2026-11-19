@@ -163,27 +163,27 @@
     <string name="settlement_overview_title">Settlements</string>
     <string name="settlement_overview_subtitle">Review and resolve pending settlements before closing the trip</string>
     <string name="settlement_overview_section_pending">Pending</string>
-    <string name="settlement_overview_section_disputed">Disputed</string>
+    <string name="settlement_overview_section_disputed">Under review</string>
     <string name="settlement_overview_section_resolved">Resolved</string>
     <string name="settlement_overview_empty">All settlements resolved</string>
     <string name="settlement_overview_confirm">Confirm</string>
-    <string name="settlement_overview_dispute">Dispute</string>
-    <string name="settlement_overview_dispute_title">Dispute Settlement</string>
-    <string name="settlement_overview_dispute_reason_hint">Describe why you\'re disputing this settlement</string>
-    <string name="settlement_overview_dispute_submit">Submit Dispute</string>
+    <string name="settlement_overview_dispute">Request review</string>
+    <string name="settlement_overview_dispute_title">Request Settlement Review</string>
+    <string name="settlement_overview_dispute_reason_hint">Describe what needs to be reviewed…</string>
+    <string name="settlement_overview_dispute_submit">Request Review</string>
     <string name="settlement_overview_dispute_cancel">Cancel</string>
-    <string name="settlement_overview_dispute_success">Settlement disputed successfully</string>
+    <string name="settlement_overview_dispute_success">Review requested successfully</string>
     <string name="settlement_overview_confirm_success">Settlement confirmed successfully</string>
     <string name="settlement_overview_close_trip">Close Trip</string>
     <string name="settlement_overview_closing_trip">Closing trip…</string>
     <string name="settlement_overview_trip_closed">Trip closed successfully!</string>
     <string name="settlement_overview_error_confirm">Failed to confirm settlement. Please try again</string>
-    <string name="settlement_overview_error_dispute">Failed to dispute settlement. Please try again</string>
+    <string name="settlement_overview_error_dispute">Failed to request review. Please try again</string>
     <string name="settlement_overview_error_archive">Failed to close the trip. Please try again</string>
     <string name="settlement_overview_error_loading">Couldn\'t load settlement data. Please try again</string>
     <string name="settlement_overview_status_suggested">Pending</string>
     <string name="settlement_overview_status_confirmed_by_payer">Awaiting Payee</string>
-    <string name="settlement_overview_status_disputed">Disputed</string>
+    <string name="settlement_overview_status_disputed">Under review</string>
     <string name="settlement_overview_status_resolved">Resolved</string>
     <string name="settlement_overview_direction_owes_you">%1$s owes you</string>
     <string name="settlement_overview_direction_you_owe">You owe %1$s</string>
@@ -223,24 +223,6 @@
     <string name="leave_wizard_settlement_section_waiting">Waiting on Others</string>
     <string name="leave_wizard_balances_with_members">Balances with other travellers</string>
     <string name="leave_wizard_go_to_settlements">Go to Settlements</string>
-
-    <!-- Archive Group Wizard -->
-    <string name="archive_wizard_step_summary">Summary</string>
-    <string name="archive_wizard_step_action">Action Required</string>
-    <string name="archive_wizard_step_confirm">Confirm</string>
-    <string name="archive_wizard_summary_title">Trip Summary</string>
-    <string name="archive_wizard_summary_subtitle">Review the settlement status of this group before ending the trip.</string>
-    <string name="archive_wizard_summary_ready_title">Ready to Archive</string>
-    <string name="archive_wizard_summary_ready_desc">All settlements have been successfully resolved. You can proceed directly to archive the group and end the trip.</string>
-    <string name="archive_wizard_summary_unresolved_title">Pending Settlements</string>
-    <string name="archive_wizard_summary_unresolved_desc">There are pending or disputed settlements. You must resolve them before you can close the trip.</string>
-    <string name="archive_wizard_action_title">Consensus Actions</string>
-    <string name="archive_wizard_action_subtitle">Review and act on outstanding settlements to reach consensus.</string>
-    <string name="archive_wizard_confirm_title">End Trip</string>
-    <string name="archive_wizard_confirm_subtitle">Are you sure you want to end the trip for %1$s?</string>
-    <string name="archive_wizard_confirm_warning_banner">All settlements must be resolved before you can archive this group.</string>
-    <string name="archive_wizard_confirm_desc">Archiving this group will freeze all balances and mark the group as inactive. This action is permanent and cannot be undone.</string>
-    <string name="archive_wizard_go_to_settlements">Go to Settlements</string>
 
     <!-- Group Cover Photo Upfront Gate -->
     <string name="group_cover_photo_locked_pro_badge">Pro</string>

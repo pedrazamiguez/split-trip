@@ -4,6 +4,8 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.Currency
@@ -718,6 +720,71 @@ class ConfigEventHandlerTest {
             assertTrue("FINISHED" in statusIds)
             assertTrue("REFUNDABLE" in statusIds)
             assertTrue("SCHEDULED" in statusIds)
+        }
+
+        @Test
+        fun `availableCategories retains canonical ExpenseCategory entries order regardless of recentCategoryIds`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = emptyList(),
+                recentCategoryIds = listOf(
+                    ExpenseCategory.SHOPPING.name,
+                    ExpenseCategory.ENTERTAINMENT.name
+                )
+            )
+
+            assertEquals(
+                ExpenseCategory.entries.map { it.name },
+                defaults.mappedCategories.map { it.id }
+            )
+        }
+
+        @Test
+        fun `defaultCategory selects most recently used category while keeping canonical list order`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = emptyList(),
+                recentCategoryIds = listOf(
+                    ExpenseCategory.SHOPPING.name,
+                    ExpenseCategory.FOOD.name
+                )
+            )
+
+            assertEquals(ExpenseCategory.SHOPPING.name, defaults.defaultCategory?.id)
+            assertEquals(
+                ExpenseSubcategory.forCategory(ExpenseCategory.SHOPPING),
+                defaults.availableSubcategories.map { it.subcategory }
+            )
+        }
+
+        @Test
+        fun `defaultCategory falls back to OTHER when recentCategoryIds is empty`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = emptyList(),
+                recentCategoryIds = emptyList()
+            )
+
+            assertEquals(ExpenseCategory.OTHER.name, defaults.defaultCategory?.id)
+            assertEquals(
+                ExpenseSubcategory.forCategory(ExpenseCategory.OTHER),
+                defaults.availableSubcategories.map { it.subcategory }
+            )
+        }
+
+        @Test
+        fun `defaultCategory falls back to OTHER when recentCategoryIds contains unknown category`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = emptyList(),
+                recentCategoryIds = listOf("UNKNOWN_CATEGORY")
+            )
+
+            assertEquals(ExpenseCategory.OTHER.name, defaults.defaultCategory?.id)
         }
     }
 

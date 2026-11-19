@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state
 
+import androidx.annotation.StringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStep
+import es.pedrazamiguez.splittrip.features.expense.R
 
 /**
  * Defines the wizard steps for the Add Expense flow.
@@ -28,68 +30,121 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizar
  * All optional steps carry sensible pre-filled defaults so they can be skipped without leaving
  * the expense incomplete.
  *
+ * @property infoTitleRes String resource ID for the contextual step info bottom sheet title.
+ * @property infoDescriptionRes String resource ID for the contextual step info bottom sheet body.
  * @property isOptional When `true` the step can be skipped via the "Skip to Review"
  *                      link in [WizardStepIndicator]. Optional steps show a dashed
  *                      border in the indicator until completed.
  * @property isReview When `true` this is the final read-only review/confirmation step.
  */
 enum class AddExpenseStep(
+    @StringRes val infoTitleRes: Int,
+    @StringRes val infoDescriptionRes: Int,
     override val isOptional: Boolean = false,
     override val isReview: Boolean = false
 ) : WizardStep {
     /** Expense title — always shown. */
-    TITLE,
+    TITLE(
+        infoTitleRes = R.string.expense_step_info_title_title,
+        infoDescriptionRes = R.string.expense_step_info_title_description
+    ),
 
     /** Payment method selection — always shown (affects exchange-rate lock). */
-    PAYMENT_METHOD,
+    PAYMENT_METHOD(
+        infoTitleRes = R.string.expense_step_info_payment_method_title,
+        infoDescriptionRes = R.string.expense_step_info_payment_method_description
+    ),
 
     /** Amount + Currency — always shown. */
-    AMOUNT,
+    AMOUNT(
+        infoTitleRes = R.string.expense_step_info_amount_title,
+        infoDescriptionRes = R.string.expense_step_info_amount_description
+    ),
 
     /**
      * Exchange rate + calculated group amount — only when foreign currency selected.
      * Optional: defaults to last-used or API-fetched rate when skipped.
      */
-    EXCHANGE_RATE(isOptional = true),
+    EXCHANGE_RATE(
+        infoTitleRes = R.string.expense_step_info_exchange_rate_title,
+        infoDescriptionRes = R.string.expense_step_info_exchange_rate_description,
+        isOptional = true
+    ),
 
     /**
      * Split type + per-member allocation + sub-unit mode — only when >1 member.
      * Optional: defaults to equal split among all members when skipped.
      */
-    SPLIT(isOptional = true),
+    SPLIT(
+        infoTitleRes = R.string.expense_step_info_split_title,
+        infoDescriptionRes = R.string.expense_step_info_split_description,
+        isOptional = true
+    ),
 
     /** Category selection — optional, may be skipped. */
-    CATEGORY(isOptional = true),
+    CATEGORY(
+        infoTitleRes = R.string.expense_step_info_category_title,
+        infoDescriptionRes = R.string.expense_step_info_category_description,
+        isOptional = true
+    ),
 
     /**
      * Funding source — always shown ("Group Pocket" or "Your Money").
      * Optional: defaults to "Your Money" when no manual pocket activity exists, or "Group Pocket" otherwise.
      */
-    FUNDING_SOURCE(isOptional = true),
+    FUNDING_SOURCE(
+        infoTitleRes = R.string.expense_step_info_funding_source_title,
+        infoDescriptionRes = R.string.expense_step_info_funding_source_description,
+        isOptional = true
+    ),
 
     /**
      * Contribution scope — only when funding source is "Your Money" (USER).
      * Optional: defaults to USER ("For you") when skipped.
      */
-    CONTRIBUTION_SCOPE(isOptional = true),
+    CONTRIBUTION_SCOPE(
+        infoTitleRes = R.string.expense_step_info_contribution_scope_title,
+        infoDescriptionRes = R.string.expense_step_info_contribution_scope_description,
+        isOptional = true
+    ),
 
     /** Vendor and optional notes — optional, may be skipped. */
-    VENDOR_NOTES(isOptional = true),
+    VENDOR_NOTES(
+        infoTitleRes = R.string.expense_step_info_vendor_notes_title,
+        infoDescriptionRes = R.string.expense_step_info_vendor_notes_description,
+        isOptional = true
+    ),
 
     /**
      * Payment status + conditional due date — always shown.
      * Optional: defaults to "Paid" (not scheduled) when skipped.
      */
-    PAYMENT_STATUS(isOptional = true),
+    PAYMENT_STATUS(
+        infoTitleRes = R.string.expense_step_info_payment_status_title,
+        infoDescriptionRes = R.string.expense_step_info_payment_status_description,
+        isOptional = true
+    ),
 
     /** Receipt image attachment — optional, may be skipped. */
-    RECEIPT(isOptional = true),
+    RECEIPT(
+        infoTitleRes = R.string.expense_step_info_receipt_title,
+        infoDescriptionRes = R.string.expense_step_info_receipt_description,
+        isOptional = true
+    ),
 
     /** Fees, tips, discounts, surcharges — optional, may be skipped. */
-    ADD_ONS(isOptional = true),
+    ADD_ONS(
+        infoTitleRes = R.string.expense_step_info_add_ons_title,
+        infoDescriptionRes = R.string.expense_step_info_add_ons_description,
+        isOptional = true
+    ),
 
     /** Read-only summary of all entered data — always shown (final confirmation). */
-    REVIEW(isReview = true);
+    REVIEW(
+        infoTitleRes = R.string.expense_step_info_review_title,
+        infoDescriptionRes = R.string.expense_step_info_review_description,
+        isReview = true
+    );
 
     companion object {
         /**

@@ -424,4 +424,60 @@
     <!-- AI Scan Pro Gate and Manual Receipt Demarcation -->
     <string name="expense_autofill_unlock_with_pro">Unlock AI Scan with Pro</string>
     <string name="add_expense_receipt_manual_description">Attach a receipt photo or PDF as proof of purchase for all members (Free &amp; unlimited).</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="action_step_info">About this step</string>
+    <string name="expense_step_info_dismiss">Got it</string>
+
+    <string name="expense_step_info_title_title">Expense title</string>
+    <string name="expense_step_info_title_description">Give this expense a clear, recognisable title (such as \"Dinner in Rome\" or \"Airport taxi\") so all travel companions can easily spot it in the expense log.\n\nThis step is required. On supported devices, you can also switch to AI Receipt Scan to extract the title, amount, currency, and date automatically from a receipt.</string>
+
+    <string name="expense_step_info_payment_method_title">Payment method</string>
+    <string name="expense_step_info_payment_method_description">Select how the payment was made (Cash, Credit Card, Debit Card, Transfer, Bizum, and more). Your group\'s last-used method is pre-selected by default, and tapping an option advances automatically.\n\nWhy it matters: Choosing Cash links the expense to your recorded ATM cash withdrawals (FIFO tranches) and locks the exchange rate to the actual withdrawal rate. Digital and card methods allow live or custom exchange rates.</string>
+
+    <string name="expense_step_info_amount_title">Amount &amp; currency</string>
+    <string name="expense_step_info_amount_description">Enter the amount paid and the currency shown on the receipt (pre-filled with your last-used currency or the group\'s base currency).\n\nThis step is required. Once you\'ve entered the amount (and confirmed any foreign exchange rate), you can tap \"Skip to Review\" at any time to accept the smart defaults for all remaining optional steps.</string>
+
+    <string name="expense_step_info_exchange_rate_title">Currency conversion</string>
+    <string name="expense_step_info_exchange_rate_description">Shown only when the expense currency differs from the group\'s base currency. This step is optional and defaults to the latest fetched exchange rate.\n\nFor card or digital payments, you can edit either the exchange rate or the converted group amount and the other updates automatically. For Cash payments, the rate is automatically locked to your ATM cash withdrawal tranches, and you can choose which cash pool funds the expense.</string>
+
+    <string name="expense_step_info_split_title">Split among members</string>
+    <string name="expense_step_info_split_description">Choose how to divide the expense across your travel companions. This step is optional and defaults to an Equal split among all members.\n\n• Equal: Divides the cost evenly among selected members.\n• Exact: Enter specific amounts for each participant.\n• Percent: Assign percentages, using the lock icon to pin specific shares while the remaining percentage redistributes automatically.\n\nIf your group has subunits (such as couples or families), toggle \"Split by subunit\" to allocate shares by group first.</string>
+
+    <string name="expense_step_info_category_title">Category &amp; subcategory</string>
+    <string name="expense_step_info_category_description">Organise the expense under a category and optional subcategory (such as Food &amp; Drink, Accommodation, or Transport). This step is optional and pre-selects your last-used category.\n\nCategorising expenses powers the group\'s category spending chart in the Expenses tab without affecting member balances.</string>
+
+    <string name="expense_step_info_funding_source_title">Paid with (Funding source)</string>
+    <string name="expense_step_info_funding_source_description">Specify where the money for this payment came from. This step is optional and defaults to \"Your Money\" when the group has no pocket contributions, or \"Group Pocket\" when a shared pocket is active.\n\n• Group Pocket: Paid using shared funds already collected in the group\'s virtual pocket. Deducts from the pocket balance without creating a personal reimbursement.\n• Your Money: Paid out of your own pocket. SplitTrip records a paired contribution so your travel companions reimburse you for their share at settlement time.</string>
+
+    <string name="expense_step_info_contribution_scope_title">Paid for (Contribution scope)</string>
+    <string name="expense_step_info_contribution_scope_description">Shown only when paying with \"Your Money\". This step is optional and defaults to \"For you\".\n\nIt determines who receives credit in the group balances for the out-of-pocket payment:\n• For you: Credits your personal balance so the group reimburses you directly.\n• For a subunit: Credits your subunit\'s shared balance.\n• For the whole group: Credits the payment as a general group contribution.</string>
+
+    <string name="expense_step_info_vendor_notes_title">Vendor &amp; notes</string>
+    <string name="expense_step_info_vendor_notes_description">Record the merchant or company name and any helpful notes (such as booking references, items ordered, or invoice numbers).\n\nThis step is completely optional and both fields are blank by default. Added details appear on the expense detail screen and can be searched from the expense log.</string>
+
+    <string name="expense_step_info_payment_status_title">Payment status &amp; date</string>
+    <string name="expense_step_info_payment_status_description">Track the status of the payment and when it took place. This step is optional and defaults to \"Paid\" with today\'s date and time.\n\n• Paid: Standard completed payment, immediately included in active balances.\n• Scheduled: Future payment with a required due date; tracked as a scheduled hold until confirmed.\n• Paid (Refundable): Completed payment (such as a refundable deposit) with an optional deadline that can be cancelled and refunded later.</string>
+
+    <string name="expense_step_info_receipt_title">Receipt attachment</string>
+    <string name="expense_step_info_receipt_description">Attach a photo from your camera or gallery, or upload a PDF document as proof of purchase for all members (free and unlimited). This step is optional and can be skipped.\n\nOn supported devices with SplitTrip Pro, you can also use AI Receipt Scan (powered by on-device Gemini Nano) to automatically read and fill in the expense fields.</string>
+
+    <string name="expense_step_info_add_ons_title">Add-ons &amp; extras</string>
+    <string name="expense_step_info_add_ons_description">Itemise tips, service fees, surcharges, or discounts as a fixed amount or percentage. This step is optional and empty by default.\n\n• On top: Added to (or subtracted from, for discounts) the entered amount, changing the effective total paid.\n• Already included: Broken down from the entered amount for transparency without changing the total paid.\n\nAll extras are distributed proportionally across participants based on their share of the base expense.</string>
+
+    <string name="expense_step_info_review_title">Review &amp; confirm</string>
+    <string name="expense_step_info_review_description">Check the complete summary of your expense—including the amount, currency conversion, funding source, split breakdown, and any extras—before saving.\n\nNeed to adjust something? Tap any completed step in the top step bar or press \"Back\" to make changes before submitting.</string>
+
+    <!-- Category Spending -->
+    <string name="expenses_category_spending_title">Category spending</string>
+    <string name="expenses_category_expand">Show subcategories for %1$s</string>
+    <string name="expenses_category_collapse">Hide subcategories for %1$s</string>
+    <string name="expenses_category_spending_total_spent">Total spent</string>
+    <string name="expenses_category_spending_empty_title">No spending yet</string>
+    <string name="expenses_category_spending_empty_description">Expenses logged in this group will appear here broken down by category.</string>
+    <string name="expenses_category_spending_filtered_empty_title">No matching expenses</string>
+    <string name="expenses_category_spending_filtered_empty_description">Try adjusting or clearing your active filters on the Expenses screen.</string>
+    <string name="expenses_extras_add_on_fee_plural">Fees</string>
+    <string name="expenses_extras_add_on_surcharge_plural">Surcharges</string>
+    <string name="expenses_extras_add_on_tip_plural">Tips</string>
 </resources>

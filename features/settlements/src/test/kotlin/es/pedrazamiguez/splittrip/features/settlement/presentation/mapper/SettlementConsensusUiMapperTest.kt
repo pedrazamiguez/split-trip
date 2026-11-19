@@ -41,12 +41,12 @@ class SettlementConsensusUiMapperTest {
         every { resourceProvider.getString(R.string.your_balance_settlement_confirm_receipt) } returns
             "Confirm receipt"
         every { resourceProvider.getString(R.string.your_balance_settlement_resolve_dispute) } returns
-            "Resolve dispute"
-        every { resourceProvider.getString(R.string.your_balance_settlement_dispute) } returns "Dispute"
+            "Resolve review"
+        every { resourceProvider.getString(R.string.your_balance_settlement_dispute) } returns "Review"
         every { resourceProvider.getString(R.string.your_balance_settlement_status_suggested) } returns "Suggested"
         every { resourceProvider.getString(R.string.your_balance_settlement_status_confirmed_payer) } returns
             "Confirmed by payer"
-        every { resourceProvider.getString(R.string.your_balance_settlement_status_disputed) } returns "Disputed"
+        every { resourceProvider.getString(R.string.your_balance_settlement_status_disputed) } returns "Under review"
         every { resourceProvider.getString(R.string.your_balance_settlement_pocket_pocket) } returns "Pocket"
         every { resourceProvider.getString(R.string.your_balance_settlement_pocket_cash) } returns "Cash"
         every { resourceProvider.getString(R.string.your_balance_settlement_pocket_net) } returns "Net"
@@ -200,7 +200,8 @@ class SettlementConsensusUiMapperTest {
 
         val item = result[0]
         assertTrue(item.canConfirm)
-        assertEquals("Resolve dispute", item.confirmLabel)
+        assertEquals("Resolve review", item.confirmLabel)
+        assertEquals("Under review", item.statusLabel)
         assertFalse(item.canDispute)
         assertEquals("Wrong amount", item.disputeReason)
     }
@@ -213,7 +214,8 @@ class SettlementConsensusUiMapperTest {
 
         val item = result[0]
         assertTrue(item.canConfirm)
-        assertEquals("Resolve dispute", item.confirmLabel)
+        assertEquals("Resolve review", item.confirmLabel)
+        assertEquals("Under review", item.statusLabel)
     }
 
     @Test

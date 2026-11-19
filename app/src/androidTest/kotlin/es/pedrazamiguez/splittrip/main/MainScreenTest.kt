@@ -355,4 +355,40 @@ class MainScreenTest {
 
         composeRule.onNodeWithText("Content: Balances - $contributionDetailRoute").assertIsDisplayed()
     }
+
+    @Test
+    fun hidesBottomNavigationBar_whenCurrentRouteProviderHasShowBottomBarFalse() {
+        val expensesProviderWithSub = FakeNavigationProvider(
+            route = "expenses",
+            order = 30,
+            requiresSelectedGroup = true,
+            label = "Expenses",
+            subRoutes = listOf(Routes.ADD_EXPENSE)
+        )
+        val wizardScreenUiProvider = object : ScreenUiProvider {
+            override val route: String = Routes.ADD_EXPENSE
+            override val showBottomBar: Boolean = false
+        }
+        val providers = listOf(
+            groupsProvider,
+            balancesProvider,
+            expensesProviderWithSub,
+            profileProvider
+        )
+
+        setContent(
+            navigationProviders = providers,
+            screenUiProviders = listOf(wizardScreenUiProvider),
+            deepLinkGroupId = "group-123",
+            deepLinkTargetTab = "expenses",
+            deepLinkInTabDestination = Routes.ADD_EXPENSE,
+            sharedViewModel = createSharedViewModel(selectedGroupId = "group-123")
+        )
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Content: Expenses - ${Routes.ADD_EXPENSE}").assertIsDisplayed()
+        composeRule.onNodeWithText("Groups").assertDoesNotExist()
+        composeRule.onNodeWithText("Profile").assertDoesNotExist()
+    }
 }

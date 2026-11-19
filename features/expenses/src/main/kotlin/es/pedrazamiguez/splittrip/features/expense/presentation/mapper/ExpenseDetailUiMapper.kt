@@ -36,6 +36,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDet
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitBreakdownItemUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitDetailUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubunitSplitGroupUiModel
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
 import kotlin.math.abs
@@ -195,7 +196,10 @@ class ExpenseDetailUiMapper(
                 ),
                 payerDisplay = payerDisplay,
                 creatorDisplay = creatorDisplay,
-                dateText = formattingHelper.formatShortDate(expense.effectiveDate?.utcToSystemLocalDateTime(zoneId)),
+                dateText = formattingHelper.formatShortDateTime(
+                    date = expense.effectiveDate?.utcToSystemLocalDateTime(zoneId),
+                    referenceYear = LocalDate.now(zoneId).year
+                ),
                 secondaryDateText = resolveSecondaryDateText(expense, formattingHelper),
                 secondaryDateIcon = resolveSecondaryDateIcon(expense),
                 formattedRefundedDate = resolveRefundedDateText(expense, formattingHelper, resourceProvider, zoneId),

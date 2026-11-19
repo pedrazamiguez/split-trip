@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
@@ -22,6 +23,7 @@ import es.pedrazamiguez.splittrip.domain.service.split.ExpenseSplitCalculatorFac
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.domain.service.split.SubunitAwareSplitService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsByIdsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpenseIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
@@ -50,21 +52,25 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPayment
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
+import es.pedrazamiguez.splittrip.features.expense.navigation.impl.ExpenseDetailTabGraphContributorImpl
 import es.pedrazamiguez.splittrip.features.expense.navigation.impl.ExpensesNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.CategorySpendingUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpensesFilterUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.PaymentStatusBadgeUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.AddExpenseScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.CategorySpendingScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpenseDetailScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpensesFilterScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ExpensesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.ReceiptViewerScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.AddExpenseViewModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.CategorySpendingViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpenseDetailViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesFilterViewModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesUseCases
@@ -87,6 +93,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.WithdrawalPoolSelectionDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategyFactory
+import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
@@ -333,6 +340,7 @@ val expensesUiModule = module {
     }
 
     factory { ExpensesNavigationProviderImpl() } bind NavigationProvider::class
+    factory { ExpenseDetailTabGraphContributorImpl() } bind TabGraphContributor::class
 
     single {
         ExpensesScreenUiProviderImpl(
@@ -346,6 +354,35 @@ val expensesUiModule = module {
     single { ExpenseDetailScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { ExpensesFilterScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { ReceiptViewerScreenUiProviderImpl() } bind ScreenUiProvider::class
+
+    single {
+        CategorySpendingUiMapper(
+            localeProvider = get<LocaleProvider>(),
+            resourceProvider = get<ResourceProvider>(),
+            remainderDistributionService = get<RemainderDistributionService>()
+        )
+    }
+
+    viewModel {
+        val getGroupExpensesFlowUseCase = get<GetGroupExpensesFlowUseCase>()
+        val getCashWithdrawalsFlowUseCase = get<GetCashWithdrawalsFlowUseCase>()
+        val observeGroupUseCase = get<ObserveGroupUseCase>()
+        val appConfigService = get<AppConfigService>()
+        val expenseFilterService = get<ExpenseFilterService>()
+        val categorySpendingUiMapper = get<CategorySpendingUiMapper>()
+
+        CategorySpendingViewModel(
+            getGroupExpensesFlowUseCase = getGroupExpensesFlowUseCase,
+            getCashWithdrawalsFlowUseCase = getCashWithdrawalsFlowUseCase,
+            observeGroupUseCase = observeGroupUseCase,
+            appConfigService = appConfigService,
+            expenseFilterService = expenseFilterService,
+            categorySpendingUiMapper = categorySpendingUiMapper,
+            computationDispatcher = Dispatchers.Default
+        )
+    }
+
+    single { CategorySpendingScreenUiProviderImpl() } bind ScreenUiProvider::class
 
     single {
         ExpenseDetailUiMapper(

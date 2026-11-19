@@ -416,6 +416,8 @@ class AddExpenseViewModel(
             AddExpenseUiEvent.CloseWizard -> handleCloseWizard()
             AddExpenseUiEvent.JumpToReview -> navigateToReview()
             is AddExpenseUiEvent.JumpToStep -> navigateToStep(event.stepIndex)
+            is AddExpenseUiEvent.ToggleStepInfoSheet ->
+                _uiState.update { it.copy(isStepInfoSheetVisible = event.visible) }
         }
     }
 

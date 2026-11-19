@@ -12,7 +12,9 @@ import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.rememberLocale
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.resolveDisplaySymbol
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -28,6 +30,9 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
     val selectedSplitType = uiState.selectedSplitType
     val isEqualMode = selectedSplitType?.id == SplitType.EQUAL.name
     val isPercentMode = selectedSplitType?.id == SplitType.PERCENT.name
+    val locale = rememberLocale()
+    val currencySymbol = (uiState.selectedCurrency ?: uiState.groupCurrency)
+        ?.resolveDisplaySymbol(locale)
 
     Column(
         modifier = modifier,
@@ -90,6 +95,7 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
                         onEvent(AddExpenseUiEvent.IntraSubunitShareLockToggled(subunitId, userId))
                     }
                 ),
+                currencySymbol = currencySymbol,
                 modifier = Modifier.fillMaxWidth()
             )
         } else if (uiState.splits.isNotEmpty()) {
@@ -113,6 +119,7 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
                 onShareLockToggled = { userId ->
                     onEvent(AddExpenseUiEvent.SplitShareLockToggled(userId))
                 },
+                currencySymbol = currencySymbol,
                 modifier = Modifier.fillMaxWidth()
             )
         }

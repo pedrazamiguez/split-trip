@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.AnimatedAmount
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SettlementConsensusItemUiModel
 
 @Composable
@@ -58,10 +57,7 @@ internal fun SettlementConsensusCard(
         }
 
         if (!item.disputeReason.isNullOrBlank()) {
-            CaptionText(
-                text = item.disputeReason,
-                color = MaterialTheme.colorScheme.error
-            )
+            SettlementDisputeBanner(reason = item.disputeReason)
         }
 
         if (item.canConfirm || item.canDispute || item.canNudge) {

@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.model.OptionalUpdateDismissal
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import kotlinx.coroutines.flow.Flow
 
@@ -56,6 +57,13 @@ class UserPreferenceRepositoryImpl(
 
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
         userPreferences.setBiometricLockEnabled(enabled)
+    }
+
+    override suspend fun getOptionalUpdateDismissal(): OptionalUpdateDismissal? =
+        userPreferences.getOptionalUpdateDismissal()
+
+    override suspend fun recordOptionalUpdateDismissal(versionCode: Long, timestampMs: Long) {
+        userPreferences.recordOptionalUpdateDismissal(versionCode, timestampMs)
     }
 
     override suspend fun clearAll() {

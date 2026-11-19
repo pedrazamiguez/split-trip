@@ -1,9 +1,11 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
+import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
@@ -61,7 +63,8 @@ class AddOnExchangeRateDelegate(
         scope: CoroutineScope,
         stateFlow: MutableStateFlow<AddExpenseUiState>,
         updateAddOn: (String, (AddOnUiModel) -> AddOnUiModel) -> Unit,
-        onRateApplied: () -> Unit
+        onRateApplied: () -> Unit,
+        onRateWarning: suspend (isError: Boolean, message: UiText) -> Unit = { _, _ -> }
     ) {
         rateFetchJobs[addOnId]?.cancel()
         rateFetchJobs[addOnId] = scope.launch {
@@ -71,36 +74,89 @@ class AddOnExchangeRateDelegate(
                     baseCurrencyCode = baseCurrencyCode,
                     targetCurrencyCode = targetCurrencyCode
                 )
-
-                updateAddOn(addOnId) { current ->
-                    val state = stateFlow.value
-                    val addOn = state.addOns.find { it.id == addOnId }
-                    if (addOn?.currency?.code != targetCurrencyCode ||
-                        state.groupCurrency?.code != baseCurrencyCode
-                    ) {
-                        current.copy(isLoadingRate = false)
-                    } else {
-                        val rawRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString()
-                            ?: current.displayExchangeRate
-                        current.copy(
-                            isLoadingRate = false,
-                            displayExchangeRate = rawRate,
-                            isExchangeRateStale = rateResult?.isStale
-                                ?: current.isExchangeRateStale
-                        )
-                    }
-                }
+                val isMatchingContext = applyFetchedRate(
+                    addOnId = addOnId,
+                    baseCurrencyCode = baseCurrencyCode,
+                    targetCurrencyCode = targetCurrencyCode,
+                    rateResult = rateResult,
+                    stateFlow = stateFlow,
+                    updateAddOn = updateAddOn
+                )
 
                 if (rateResult != null) {
                     recalculateForward(addOnId, stateFlow, updateAddOn)
                     onRateApplied()
+                }
+                if (isMatchingContext) {
+                    emitRateWarning(rateResult, onRateWarning)
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to fetch add-on rate for $baseCurrencyCode -> $targetCurrencyCode")
                 updateAddOn(addOnId) { it.copy(isLoadingRate = false) }
+                if (isAddOnCurrencyMatching(stateFlow.value, addOnId, baseCurrencyCode, targetCurrencyCode)) {
+                    onRateWarning(true, UiText.StringResource(DesignSystemR.string.failed_rate_warning))
+                }
             }
+        }
+    }
+
+    private fun applyFetchedRate(
+        addOnId: String,
+        baseCurrencyCode: String,
+        targetCurrencyCode: String,
+        rateResult: ExchangeRateWithStaleness?,
+        stateFlow: MutableStateFlow<AddExpenseUiState>,
+        updateAddOn: (String, (AddOnUiModel) -> AddOnUiModel) -> Unit
+    ): Boolean {
+        var isMatchingContext = false
+        updateAddOn(addOnId) { current ->
+            isMatchingContext = isAddOnCurrencyMatching(
+                state = stateFlow.value,
+                addOnId = addOnId,
+                baseCurrencyCode = baseCurrencyCode,
+                targetCurrencyCode = targetCurrencyCode
+            )
+            if (!isMatchingContext) {
+                current.copy(isLoadingRate = false)
+            } else {
+                val rawRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString()
+                    ?: current.displayExchangeRate
+                current.copy(
+                    isLoadingRate = false,
+                    displayExchangeRate = rawRate
+                )
+            }
+        }
+        return isMatchingContext
+    }
+
+    private fun isAddOnCurrencyMatching(
+        state: AddExpenseUiState,
+        addOnId: String,
+        baseCurrencyCode: String,
+        targetCurrencyCode: String
+    ): Boolean {
+        val addOn = state.addOns.find { it.id == addOnId }
+        return addOn?.currency?.code == targetCurrencyCode &&
+            state.groupCurrency?.code == baseCurrencyCode
+    }
+
+    private suspend fun emitRateWarning(
+        rateResult: ExchangeRateWithStaleness?,
+        onRateWarning: suspend (isError: Boolean, message: UiText) -> Unit
+    ) {
+        when {
+            rateResult == null -> onRateWarning(
+                true,
+                UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+            )
+
+            rateResult.isStale -> onRateWarning(
+                false,
+                UiText.StringResource(DesignSystemR.string.stale_rate_warning)
+            )
         }
     }
 

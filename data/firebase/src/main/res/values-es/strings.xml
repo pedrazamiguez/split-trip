@@ -45,8 +45,8 @@
     <string name="notification_settlement_request_body">%1$s solicitó un pago de %2$s</string>
     <string name="notification_settlement_confirmed_title">Pago confirmado</string>
     <string name="notification_settlement_confirmed_body">%1$s confirmó la recepción de %2$s</string>
-    <string name="notification_settlement_disputed_title">Pago disputado</string>
-    <string name="notification_settlement_disputed_body">%1$s disputó un pago de %2$s</string>
+    <string name="notification_settlement_disputed_title">Pago en revisión</string>
+    <string name="notification_settlement_disputed_body">%1$s solicitó revisar un pago de %2$s</string>
     <string name="notification_group_deleted_title">Grupo eliminado</string>
     <string name="notification_group_deleted_body">%1$s eliminó el grupo %2$s</string>
     <string name="notification_group_deleted_body_brief">%1$s eliminó el grupo</string>

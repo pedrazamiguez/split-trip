@@ -2,12 +2,12 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCurrencyDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.remote.RemoteCurrencyDataSource
-import es.pedrazamiguez.splittrip.domain.exception.ApiKeyNotConfiguredException
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateResult
 import java.time.Duration
 import java.time.Instant
+import kotlin.coroutines.cancellation.CancellationException
 import timber.log.Timber
 
 class CurrencyRepositoryImpl(
@@ -25,11 +25,10 @@ class CurrencyRepositoryImpl(
             val remote = remoteDataSource.fetchCurrencies()
             localDataSource.saveCurrencies(remote)
             remote
-        } catch (ignored: ApiKeyNotConfiguredException) {
-            Timber.w("Failed to fetch currencies: API key is not configured or placeholder is being used.")
-            local ?: localDataSource.getCurrencies()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch currencies")
+            Timber.e(e, "Remote network or unexpected error fetching currencies")
             local ?: localDataSource.getCurrencies()
         }
     }
@@ -47,47 +46,55 @@ class CurrencyRepositoryImpl(
                         .minus(cacheDuration)
                 )
 
-        return when {
-            localRates.exchangeRates.isEmpty() -> {
-                try {
-                    val remoteRates = remoteDataSource.fetchExchangeRates(baseCurrencyCode)
-                    localDataSource.saveExchangeRates(remoteRates)
-                    ExchangeRateResult.Fresh(remoteRates)
-                } catch (ignored: ApiKeyNotConfiguredException) {
-                    Timber.w("Failed to fetch exchange rates: API key is not configured or placeholder is being used.")
-                    ExchangeRateResult.Empty
-                } catch (e: Exception) {
-                    Timber.e(
-                        e,
-                        "Failed to fetch exchange rates for baseCurrencyCode=%s (no local cache)",
-                        baseCurrencyCode
-                    )
-                    ExchangeRateResult.Empty
-                }
-            }
+        val hasLocalFallback = localRates.exchangeRates.isNotEmpty()
+        if (hasLocalFallback && !isStale) {
+            return ExchangeRateResult.Fresh(localRates)
+        }
 
-            isStale -> {
-                try {
-                    val remoteRates = remoteDataSource.fetchExchangeRates(baseCurrencyCode)
-                    localDataSource.saveExchangeRates(remoteRates)
-                    ExchangeRateResult.Fresh(remoteRates)
-                } catch (ignored: ApiKeyNotConfiguredException) {
-                    Timber.w("Failed to fetch exchange rates: API key is not configured or placeholder is being used.")
-                    ExchangeRateResult.Stale(localRates)
-                } catch (e: Exception) {
-                    Timber.w(
-                        e,
-                        "Failed to refresh exchange rates for baseCurrencyCode=%s" +
-                            " (lastUpdated=%s, cacheDuration=%s); using stale cache",
-                        baseCurrencyCode,
-                        lastUpdated?.let { timestamp -> Instant.ofEpochSecond(timestamp).toString() },
-                        cacheDuration
-                    )
-                    ExchangeRateResult.Stale(localRates)
-                }
+        return try {
+            val remoteRates = remoteDataSource.fetchExchangeRates(baseCurrencyCode)
+            localDataSource.saveExchangeRates(remoteRates)
+            ExchangeRateResult.Fresh(remoteRates)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logExchangeRateFailure(
+                exception = e,
+                baseCurrencyCode = baseCurrencyCode,
+                hasStaleFallback = hasLocalFallback,
+                lastUpdated = lastUpdated
+            )
+            if (hasLocalFallback) {
+                ExchangeRateResult.Stale(localRates)
+            } else {
+                ExchangeRateResult.Empty
             }
+        }
+    }
 
-            else -> ExchangeRateResult.Fresh(localRates)
+    private fun logExchangeRateFailure(
+        exception: Throwable,
+        baseCurrencyCode: String,
+        hasStaleFallback: Boolean,
+        lastUpdated: Long?
+    ) {
+        if (hasStaleFallback) {
+            val formattedLastUpdated = lastUpdated?.let { timestamp -> Instant.ofEpochSecond(timestamp).toString() }
+            Timber.w(
+                exception,
+                "Remote network or unexpected error refreshing exchange rates for baseCurrencyCode=%s " +
+                    "(lastUpdated=%s, cacheDuration=%s); using stale cache",
+                baseCurrencyCode,
+                formattedLastUpdated,
+                cacheDuration
+            )
+        } else {
+            Timber.e(
+                exception,
+                "Remote network or unexpected error fetching exchange rates for baseCurrencyCode=%s; " +
+                    "no local cache fallback available",
+                baseCurrencyCode
+            )
         }
     }
 }

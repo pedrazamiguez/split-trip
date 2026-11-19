@@ -3,9 +3,11 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -88,6 +90,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -1023,6 +1026,11 @@ class AddExpenseViewModelTest {
             coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEurWithThb)
             coEvery { getExchangeRateUseCase("EUR", "THB") } returns null
 
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { emittedActions.add(it) }
+            }
+
             // When - Load config
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
             advanceUntilIdle()
@@ -1030,13 +1038,21 @@ class AddExpenseViewModelTest {
             // When - Select foreign currency
             viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("THB"))
             advanceUntilIdle()
+            job.cancel()
 
-            // Then - Should keep previous rate as fallback and flag error
+            // Then - Should keep previous rate as fallback, mark invalid, and emit ShowError
             val state = viewModel.uiState.value
             assertTrue(state.showExchangeRateSection)
             assertEquals("1.0", state.displayExchangeRate)
-            assertTrue(state.isExchangeRateError)
+            assertFalse(state.isExchangeRateValid)
             assertFalse(state.isLoadingRate)
+            assertTrue(
+                emittedActions.contains(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                    )
+                )
+            )
         }
 
         @Test
@@ -1111,6 +1127,11 @@ class AddExpenseViewModelTest {
             coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEurWithThb)
             coEvery { getExchangeRateUseCase("EUR", "THB") } throws RuntimeException("Network error")
 
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { emittedActions.add(it) }
+            }
+
             // When - Load config
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
             advanceUntilIdle()
@@ -1118,13 +1139,21 @@ class AddExpenseViewModelTest {
             // When - Select foreign currency
             viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("THB"))
             advanceUntilIdle()
+            job.cancel()
 
-            // Then - Should set isLoadingRate to false, retain previous rate as fallback, and flag error
+            // Then - Should set isLoadingRate to false, retain previous rate, mark invalid, and emit ShowError
             val state = viewModel.uiState.value
             assertTrue(state.showExchangeRateSection)
             assertEquals("1.0", state.displayExchangeRate)
-            assertTrue(state.isExchangeRateError)
+            assertFalse(state.isExchangeRateValid)
             assertFalse(state.isLoadingRate)
+            assertTrue(
+                emittedActions.contains(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                    )
+                )
+            )
             coVerify { getExchangeRateUseCase("EUR", "THB") }
         }
     }
@@ -1470,6 +1499,26 @@ class AddExpenseViewModelTest {
             viewModel.onEvent(AddExpenseUiEvent.CategorySelected("NONEXISTENT"))
 
             assertEquals(before, viewModel.uiState.value.selectedCategory)
+        }
+
+        @Test
+        fun `loadGroupConfig preserves canonical category order while pre-selecting last-used category`() = runTest {
+            every { getGroupLastUsedCategoryUseCase("group-eur") } returns flowOf(
+                listOf(ExpenseCategory.ENTERTAINMENT.name)
+            )
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            assertEquals(
+                ExpenseCategory.entries.map { it.name },
+                viewModel.uiState.value.availableCategories.map { it.id }
+            )
+            assertEquals(
+                ExpenseCategory.ENTERTAINMENT.name,
+                viewModel.uiState.value.selectedCategory?.id
+            )
         }
     }
 
@@ -2259,6 +2308,50 @@ class AddExpenseViewModelTest {
             viewModel.refreshCashPreview()
             advanceUntilIdle()
             // Routing verified — previewCashExchangeRateUseCase is relaxed and won't throw
+        }
+    }
+
+    @Nested
+    inner class StepInfoSheetEvents {
+
+        @Test
+        fun `initial state has isStepInfoSheetVisible set to false`() = runTest {
+            assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible true updates isStepInfoSheetVisible to true`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = true))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible false updates isStepInfoSheetVisible to false`() = runTest {
+            viewModel.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = true))
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+
+            viewModel.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = false))
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet does not mark form as dirty`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.isDirty)
+
+            viewModel.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = true))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            assertFalse(viewModel.uiState.value.isDirty)
         }
     }
 }

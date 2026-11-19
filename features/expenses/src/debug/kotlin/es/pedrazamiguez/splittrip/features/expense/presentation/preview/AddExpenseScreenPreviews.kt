@@ -1,6 +1,10 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
@@ -8,13 +12,18 @@ import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.AddExpenseScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 private val PREVIEW_CURRENCIES = persistentListOf(
     CurrencyUiModel("EUR", "EUR - Euro", 2),
@@ -172,6 +181,21 @@ private fun AddExpenseScreenExchangeRateStepPreview() {
 @PreviewComplete
 @Composable
 private fun AddExpenseScreenDetailsStepPreview() {
+    val previewCategories = ExpenseCategory.entries.map { category ->
+        CategoryUiModel(
+            id = category.name,
+            displayText = stringResource(category.toStringRes()),
+            icon = category.toIconVector()
+        )
+    }.toImmutableList()
+    val previewSubcategories = ExpenseSubcategory.forCategory(ExpenseCategory.FOOD).map { subcategory ->
+        SubcategoryUiModel(
+            subcategory = subcategory,
+            name = UiText.StringResource(subcategory.toStringRes()),
+            icon = subcategory.toIconVector()
+        )
+    }.toImmutableList()
+
     PreviewThemeWrapper {
         AddExpenseScreen(
             groupId = "group-1",
@@ -183,6 +207,12 @@ private fun AddExpenseScreenDetailsStepPreview() {
                 availableCurrencies = PREVIEW_CURRENCIES,
                 selectedCurrency = CurrencyUiModel("EUR", "EUR - Euro", 2),
                 groupCurrency = CurrencyUiModel("EUR", "EUR - Euro", 2),
+                availableCategories = previewCategories,
+                selectedCategory = previewCategories.first { it.id == ExpenseCategory.FOOD.name },
+                availableSubcategories = previewSubcategories,
+                selectedSubcategory = previewSubcategories.first {
+                    it.subcategory == ExpenseSubcategory.RESTAURANT
+                },
                 currentStep = AddExpenseStep.CATEGORY
             )
         )

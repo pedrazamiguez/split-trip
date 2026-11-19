@@ -1,0 +1,123 @@
+package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetCashWithdrawalsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.CategorySpendingUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.CategorySpendingUiAction
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.CategorySpendingUiEvent
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.CategorySpendingUiState
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import timber.log.Timber
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class CategorySpendingViewModel(
+    private val getGroupExpensesFlowUseCase: GetGroupExpensesFlowUseCase,
+    private val getCashWithdrawalsFlowUseCase: GetCashWithdrawalsFlowUseCase,
+    private val observeGroupUseCase: ObserveGroupUseCase,
+    private val appConfigService: AppConfigService,
+    private val expenseFilterService: ExpenseFilterService,
+    private val categorySpendingUiMapper: CategorySpendingUiMapper,
+    private val computationDispatcher: CoroutineDispatcher = Dispatchers.Default
+) : ViewModel() {
+
+    private val _selectedGroupId = MutableStateFlow<String?>(null)
+    private val _filterCriteria = MutableStateFlow(ExpenseFilterCriteria())
+
+    private val _actions = MutableSharedFlow<CategorySpendingUiAction>()
+    val actions: SharedFlow<CategorySpendingUiAction> = _actions.asSharedFlow()
+
+    val uiState: StateFlow<CategorySpendingUiState> = _selectedGroupId
+        .filterNotNull()
+        .flatMapLatest { groupId ->
+            combine(
+                observeGroupUseCase(groupId),
+                getGroupExpensesFlowUseCase(groupId),
+                getCashWithdrawalsFlowUseCase(groupId),
+                _filterCriteria
+            ) { group, expenses, withdrawals, filterCriteria ->
+                val currency = group?.currency ?: appConfigService.defaultCurrencyCode.value
+                val filteredExpenses = expenseFilterService.filter(expenses, filterCriteria)
+                // CashWithdrawal records are not evaluated by ExpenseFilterService; exclude them when filtered
+                // so the chart and totals strictly reflect only the filtered expenses.
+                val effectiveWithdrawals = if (filterCriteria.isActive) emptyList() else withdrawals
+                val mappedItems = categorySpendingUiMapper.mapExpenses(
+                    expenses = filteredExpenses,
+                    groupCurrency = currency,
+                    withdrawals = effectiveWithdrawals
+                )
+                val totalCents = categorySpendingUiMapper.calculateTotalCents(
+                    expenses = filteredExpenses,
+                    withdrawals = effectiveWithdrawals
+                )
+                val formattedTotal = categorySpendingUiMapper.formatTotalAmount(totalCents, currency)
+
+                CategorySpendingUiState(
+                    isLoading = false,
+                    items = mappedItems,
+                    totalFormattedAmount = formattedTotal,
+                    isFiltered = filterCriteria.isActive
+                )
+            }.catch { e ->
+                Timber.e(e, "Error loading category spending for group $groupId")
+                emit(CategorySpendingUiState(isLoading = false))
+            }.flowOn(computationDispatcher)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(
+                stopTimeoutMillis = AppConstants.FLOW_RETENTION_TIME,
+                replayExpirationMillis = AppConstants.FLOW_REPLAY_EXPIRATION
+            ),
+            initialValue = CategorySpendingUiState(isLoading = true)
+        )
+
+    fun setSelectedGroup(groupId: String?) {
+        val previousGroupId = _selectedGroupId.value
+        if (groupId != previousGroupId) {
+            // Reset filter criteria only when switching away from an already-selected group
+            // so initial filterCriteria passed before first group emission is preserved.
+            if (previousGroupId != null) {
+                _filterCriteria.value = ExpenseFilterCriteria()
+            }
+            _selectedGroupId.value = groupId
+        }
+    }
+
+    fun setFilterCriteria(criteria: ExpenseFilterCriteria) {
+        if (criteria != _filterCriteria.value) {
+            _filterCriteria.value = criteria
+        }
+    }
+
+    fun onEvent(event: CategorySpendingUiEvent) {
+        when (event) {
+            CategorySpendingUiEvent.OnNavigateBack -> {
+                viewModelScope.launch {
+                    _actions.emit(CategorySpendingUiAction.NavigateBack)
+                }
+            }
+        }
+    }
+}

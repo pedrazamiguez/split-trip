@@ -54,6 +54,10 @@ fun AddCashWithdrawalFeature(
                     pillController.showPill(message = action.message.asString(context))
                 }
 
+                is AddCashWithdrawalUiAction.ShowPill -> {
+                    pillController.showPill(message = action.message.asString(context))
+                }
+
                 AddCashWithdrawalUiAction.NavigateBack -> {
                     navController.popBackStack()
                 }

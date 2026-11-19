@@ -12,4 +12,7 @@ interface ScreenUiProvider {
     val mainAction: MainAction?
         @Composable
         get() = null
+
+    val showBottomBar: Boolean
+        get() = true
 }

@@ -91,7 +91,8 @@ internal val PREVIEW_SETTLEMENT_RECORD_CONFIRMED = PREVIEW_SETTLEMENT_RECORD_PEN
 internal val PREVIEW_SETTLEMENT_RECORD_DISPUTED = PREVIEW_SETTLEMENT_RECORD_PENDING.copy(
     id = "c-3",
     status = SettlementStatus.DISPUTED,
-    disputeReason = "Wrong amount entered"
+    disputeReason = "Wrong amount entered — I paid 25.00 EUR in cash at the airport " +
+        "and split the taxi fare equally with Andrés."
 )
 
 internal val PREVIEW_SETTLEMENT_RECORD_RECEIVER = SettlementRecord(

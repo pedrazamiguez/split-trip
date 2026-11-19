@@ -97,7 +97,8 @@ class AddOnEventHandler(
                     scope,
                     _uiState,
                     ::updateAddOn,
-                    ::recalculateEffectiveTotal
+                    ::recalculateEffectiveTotal,
+                    ::emitAddOnRateWarning
                 )
             }
         }
@@ -220,7 +221,8 @@ class AddOnEventHandler(
                     scope,
                     _uiState,
                     ::updateAddOn,
-                    ::recalculateEffectiveTotal
+                    ::recalculateEffectiveTotal,
+                    ::emitAddOnRateWarning
                 )
             }
         }
@@ -285,7 +287,8 @@ class AddOnEventHandler(
                         scope,
                         _uiState,
                         ::updateAddOn,
-                        ::recalculateEffectiveTotal
+                        ::recalculateEffectiveTotal,
+                        ::emitAddOnRateWarning
                     )
                 }
             }
@@ -536,6 +539,15 @@ class AddOnEventHandler(
         } catch (_: IllegalArgumentException) {
             PayerType.GROUP
         }
+    }
+
+    private suspend fun emitAddOnRateWarning(isError: Boolean, message: UiText) {
+        val action = if (isError) {
+            AddExpenseUiAction.ShowError(message)
+        } else {
+            AddExpenseUiAction.ShowPill(message)
+        }
+        _actions.emit(action)
     }
 
     /**

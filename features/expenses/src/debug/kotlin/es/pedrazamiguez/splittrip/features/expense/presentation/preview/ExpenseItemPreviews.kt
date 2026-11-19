@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseItem
 
 @PreviewComplete
@@ -109,6 +110,26 @@ private fun ExpenseItemAllCategoriesPreview() {
     ) {
         PREVIEW_ALL_CATEGORY_EXPENSES.forEach { expense ->
             ExpenseItemPreviewHelper(domainExpense = expense) {
+                ExpenseItem(expenseUiModel = it)
+            }
+        }
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun ExpenseItemAllPaymentMethodsPreview() {
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        PaymentMethod.entries.forEach { method ->
+            ExpenseItemPreviewHelper(
+                domainExpense = PREVIEW_EXPENSE_BASIC.copy(
+                    id = "pm-preview-${method.name}",
+                    paymentMethod = method
+                )
+            ) {
                 ExpenseItem(expenseUiModel = it)
             }
         }

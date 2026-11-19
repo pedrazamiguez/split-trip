@@ -1,20 +1,12 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.component
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigationBarConfig
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepIndicator
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScaffold
 import es.pedrazamiguez.splittrip.features.subunit.R
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.event.CreateEditSubunitUiEvent
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.state.CreateEditSubunitStep
@@ -49,49 +41,29 @@ internal fun SubunitWizard(
     val nextLabel = stringResource(R.string.subunit_wizard_next)
     val submitLabel = stringResource(R.string.subunit_save)
 
-    val topPadding = LocalTopPadding.current
-    val bottomPadding = LocalBottomPadding.current
-
-    Box(
+    WizardScaffold(
+        stepLabels = orderedLabels,
+        currentStepIndex = uiState.currentStepIndex,
+        allowForwardJumps = uiState.isEditing,
+        onStepClicked = { onEvent(CreateEditSubunitUiEvent.JumpToStep(it)) },
+        navigationConfig = WizardNavigationBarConfig(
+            canGoNext = uiState.canGoNext,
+            isOnLastStep = uiState.isOnReviewStep,
+            isCurrentStepValid = uiState.isCurrentStepValid,
+            isLoading = uiState.isSaving,
+            backLabel = backLabel,
+            nextLabel = nextLabel,
+            submitLabel = submitLabel
+        ),
+        onBack = { onEvent(CreateEditSubunitUiEvent.PreviousStep) },
+        onNext = { onEvent(CreateEditSubunitUiEvent.NextStep) },
+        onSubmit = { onEvent(CreateEditSubunitUiEvent.Save) },
         modifier = modifier
-            .fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = topPadding)
-        ) {
-            WizardStepIndicator(
-                stepLabels = orderedLabels,
-                currentStepIndex = uiState.currentStepIndex,
-                allowForwardJumps = uiState.isEditing,
-                onStepClicked = { onEvent(CreateEditSubunitUiEvent.JumpToStep(it)) }
-            )
-
-            SubunitWizardStepContent(
-                uiState = uiState,
-                onEvent = onEvent,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        WizardNavigationBar(
-            config = WizardNavigationBarConfig(
-                canGoNext = uiState.canGoNext,
-                isOnLastStep = uiState.isOnReviewStep,
-                isCurrentStepValid = uiState.isCurrentStepValid,
-                isLoading = uiState.isSaving,
-                backLabel = backLabel,
-                nextLabel = nextLabel,
-                submitLabel = submitLabel
-            ),
-            onBack = { onEvent(CreateEditSubunitUiEvent.PreviousStep) },
-            onNext = { onEvent(CreateEditSubunitUiEvent.NextStep) },
-            onSubmit = { onEvent(CreateEditSubunitUiEvent.Save) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(bottom = bottomPadding)
+        SubunitWizardStepContent(
+            uiState = uiState,
+            onEvent = onEvent,
+            modifier = Modifier.fillMaxSize()
         )
     }
 }

@@ -5,8 +5,18 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BrandAlipay
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BrandBebo
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BrandPaypal
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BrandPaypay
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BrandVivaldi
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BrandWechat
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BuildingBank
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Calendar
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CashBanknote
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CircleCheck
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Qrcode
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
@@ -26,6 +36,7 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import io.mockk.every
 import io.mockk.mockk
@@ -302,6 +313,123 @@ class ExpenseUiMapperTest {
             val result = mapper.map(expense)
 
             assertEquals("WeChat Pay", result.paymentMethodText)
+        }
+    }
+
+    // ---------- paymentMethodIcon ----------
+
+    @Nested
+    @DisplayName("paymentMethodIcon mapping")
+    inner class PaymentMethodIcon {
+
+        @Test
+        fun `resolves CASH payment method icon to CashBanknote`() {
+            val expense = Expense(id = "e-icon-cash", paymentMethod = PaymentMethod.CASH)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.CashBanknote, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves CREDIT_CARD payment method icon to CreditCard`() {
+            val expense = Expense(id = "e-icon-cc", paymentMethod = PaymentMethod.CREDIT_CARD)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.CreditCard, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves DEBIT_CARD payment method icon to CreditCard`() {
+            val expense = Expense(id = "e-icon-dc", paymentMethod = PaymentMethod.DEBIT_CARD)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.CreditCard, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves BIZUM payment method icon to BrandBebo`() {
+            val expense = Expense(id = "e-icon-bizum", paymentMethod = PaymentMethod.BIZUM)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.BrandBebo, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves PIX payment method icon to BrandPaypay`() {
+            val expense = Expense(id = "e-icon-pix", paymentMethod = PaymentMethod.PIX)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.BrandPaypay, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves BANK_TRANSFER payment method icon to BuildingBank`() {
+            val expense = Expense(id = "e-icon-bt", paymentMethod = PaymentMethod.BANK_TRANSFER)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.BuildingBank, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves PAYPAL payment method icon to BrandPaypal`() {
+            val expense = Expense(id = "e-icon-pp", paymentMethod = PaymentMethod.PAYPAL)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.BrandPaypal, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves VENMO payment method icon to BrandVivaldi`() {
+            val expense = Expense(id = "e-icon-venmo", paymentMethod = PaymentMethod.VENMO)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.BrandVivaldi, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves ALIPAY payment method icon to BrandAlipay`() {
+            val expense = Expense(id = "e-icon-alipay", paymentMethod = PaymentMethod.ALIPAY)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.BrandAlipay, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves WECHAT_PAY payment method icon to BrandWechat`() {
+            val expense = Expense(id = "e-icon-wechat", paymentMethod = PaymentMethod.WECHAT_PAY)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.BrandWechat, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `resolves OTHER payment method icon to Qrcode`() {
+            val expense = Expense(id = "e-icon-other", paymentMethod = PaymentMethod.OTHER)
+
+            val result = mapper.map(expense)
+
+            assertEquals(TablerIcons.Outline.Qrcode, result.paymentMethodIcon)
+        }
+
+        @Test
+        fun `maps paymentMethodIcon matching toIconVector for every PaymentMethod entry`() {
+            PaymentMethod.entries.forEach { method ->
+                val expense = Expense(id = "e-${method.name}", paymentMethod = method)
+
+                val result = mapper.map(expense)
+
+                assertEquals(method.toIconVector(), result.paymentMethodIcon)
+            }
         }
     }
 

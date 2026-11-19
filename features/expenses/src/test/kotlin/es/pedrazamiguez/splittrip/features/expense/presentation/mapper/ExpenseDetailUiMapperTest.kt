@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReceiptRefund
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDate
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.formatShortDateTime
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
@@ -168,6 +169,7 @@ class ExpenseDetailUiMapperTest {
 
         @Test
         fun `maps dateText and createdAtText in local timezone across midnight boundary`() {
+            val shanghaiZone = ZoneId.of("Asia/Shanghai")
             val expense = baseExpense.copy(
                 operationDate = LocalDateTime.of(2026, 10, 27, 22, 58, 0),
                 createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
@@ -177,12 +179,81 @@ class ExpenseDetailUiMapperTest {
                 expense = expense,
                 memberProfiles = memberProfiles,
                 currentUserId = currentUserId,
-                zoneId = ZoneId.of("Asia/Shanghai")
+                zoneId = shanghaiZone
             )
 
-            val expectedDateText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
+            val expectedDateText = LocalDateTime.of(2026, 10, 28, 6, 58, 0).formatShortDateTime(
+                locale = Locale.US,
+                referenceYear = LocalDate.now(shanghaiZone).year
+            )
+            val expectedCreatedAtText = LocalDate.of(2026, 10, 28).formatShortDate(Locale.US)
             assertEquals(expectedDateText, result.dateText)
-            assertEquals(expectedDateText, result.createdAtText)
+            assertEquals(expectedCreatedAtText, result.createdAtText)
+        }
+
+        @Test
+        fun `maps dateText with Spanish 24h time and local timezone conversion`() {
+            val madridZone = ZoneId.of("Europe/Madrid")
+            val currentYear = LocalDate.now(madridZone).year
+            every { localeProvider.getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
+            val expense = baseExpense.copy(
+                operationDate = LocalDateTime.of(currentYear, 10, 21, 12, 30, 0)
+            )
+
+            val result = mapper.map(
+                expense = expense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                zoneId = madridZone
+            )
+
+            assertEquals("21 oct, 14:30", result.dateText.lowercase())
+        }
+
+        @Test
+        fun `maps dateText with 4-digit year and time when expense is from a previous year`() {
+            val madridZone = ZoneId.of("Europe/Madrid")
+            val previousYear = LocalDate.now(madridZone).year - 1
+            every { localeProvider.getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
+            val expense = baseExpense.copy(
+                operationDate = LocalDateTime.of(previousYear, 10, 21, 12, 30, 0)
+            )
+
+            val result = mapper.map(
+                expense = expense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                zoneId = madridZone
+            )
+
+            assertEquals("21 oct $previousYear, 14:30", result.dateText.lowercase())
+        }
+
+        @Test
+        fun `maps dateText with negative UTC offset timezone conversion`() {
+            val newYorkZone = ZoneId.of("America/New_York")
+            val currentYear = LocalDate.now(newYorkZone).year
+            val expense = baseExpense.copy(
+                operationDate = LocalDateTime.of(currentYear, 10, 28, 2, 15, 0)
+            )
+
+            val result = mapper.map(
+                expense = expense,
+                memberProfiles = memberProfiles,
+                currentUserId = currentUserId,
+                zoneId = newYorkZone
+            )
+
+            assertEquals("27 Oct, 10:15 PM", result.dateText.replace('\u202F', ' ').replace('\u00A0', ' '))
+        }
+
+        @Test
+        fun `maps dateText as empty string when both operationDate and createdAt are null`() {
+            val expense = baseExpense.copy(operationDate = null, createdAt = null)
+
+            val result = mapper.map(expense, memberProfiles, currentUserId)
+
+            assertEquals("", result.dateText)
         }
 
         @Test

@@ -191,8 +191,6 @@ sonarqube {
                 "**/local/entity/SyncStatusEntry.kt",
                 // Local data sources — thin Room DAO wrappers requiring Android/Robolectric
                 "**/local/datasource/impl/**/*.kt",
-                // Remote data sources — Retrofit HTTP (requires OkHttp/network runtime)
-                "**/remote/datasource/impl/**/*.kt",
                 // Database migrations — raw DDL SQL; no meaningful unit-test path
                 "**/database/DatabaseMigrations.kt",
                 // UiEvent / UiAction, AppCheck, data-holders, mapping and interfaces

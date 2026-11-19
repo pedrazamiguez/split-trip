@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,7 +21,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 private val SECONDARY_BUTTON_HEIGHT = 56.dp
 private val SECONDARY_BUTTON_ELEVATION = 4.dp
@@ -47,8 +47,9 @@ private const val DISABLED_CONTENT_ALPHA = 0.38f
  * @param modifier     Optional [Modifier] for width/padding. Height is managed internally.
  * @param enabled      Whether the button is interactive.
  * @param isLoading    Replaces the label with a spinner and suppresses interaction.
- * @param leadingIcon  Optional icon to the left of [text].
- * @param trailingIcon Optional icon to the right of [text].
+ * @param leadingIcon    Optional icon to the left of [text].
+ * @param trailingIcon   Optional icon to the right of [text].
+ * @param contentPadding Inner padding applied around the button content.
  */
 @Composable
 fun SecondaryButton(
@@ -58,7 +59,8 @@ fun SecondaryButton(
     enabled: Boolean = true,
     isLoading: Boolean = false,
     leadingIcon: ImageVector? = null,
-    trailingIcon: ImageVector? = null
+    trailingIcon: ImageVector? = null,
+    contentPadding: PaddingValues = GradientButtonDefaults.ContentPadding
 ) {
     val interactable = enabled && !isLoading
 
@@ -95,7 +97,7 @@ fun SecondaryButton(
             )
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.ExtraLarge),
+            modifier = Modifier.padding(contentPadding),
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {

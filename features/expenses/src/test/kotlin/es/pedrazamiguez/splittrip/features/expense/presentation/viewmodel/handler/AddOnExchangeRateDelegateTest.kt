@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
@@ -16,6 +18,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import java.math.BigDecimal
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -427,6 +430,156 @@ class AddOnExchangeRateDelegateTest {
             advanceUntilIdle()
 
             assertFalse(rateApplied)
+        }
+
+        @Test
+        fun `invokes onRateWarning with isError=true when rateResult is null`() = runTest {
+            coEvery {
+                getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "THB")
+            } returns null
+
+            val addOn = AddOnUiModel(id = "addon-1", currency = thbCurrency, showExchangeRateSection = true)
+            val stateFlow = MutableStateFlow(
+                AddExpenseUiState(groupCurrency = eurCurrency, addOns = persistentListOf(addOn))
+            )
+            val warnings = mutableListOf<Pair<Boolean, UiText>>()
+
+            delegate.fetchRate(
+                addOnId = "addon-1",
+                baseCurrencyCode = "EUR",
+                targetCurrencyCode = "THB",
+                scope = this,
+                stateFlow = stateFlow,
+                updateAddOn = { _, transform -> transform(addOn) },
+                onRateApplied = {},
+                onRateWarning = { isError, message -> warnings.add(isError to message) }
+            )
+
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(true to UiText.StringResource(DesignSystemR.string.failed_rate_warning)),
+                warnings
+            )
+        }
+
+        @Test
+        fun `invokes onRateWarning with isError=true when getExchangeRateUseCase throws`() = runTest {
+            coEvery {
+                getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "THB")
+            } throws RuntimeException("Network error")
+
+            val addOn = AddOnUiModel(id = "addon-1", currency = thbCurrency, showExchangeRateSection = true)
+            val stateFlow = MutableStateFlow(
+                AddExpenseUiState(groupCurrency = eurCurrency, addOns = persistentListOf(addOn))
+            )
+            val warnings = mutableListOf<Pair<Boolean, UiText>>()
+
+            delegate.fetchRate(
+                addOnId = "addon-1",
+                baseCurrencyCode = "EUR",
+                targetCurrencyCode = "THB",
+                scope = this,
+                stateFlow = stateFlow,
+                updateAddOn = { _, transform -> transform(addOn) },
+                onRateApplied = {},
+                onRateWarning = { isError, message -> warnings.add(isError to message) }
+            )
+
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(true to UiText.StringResource(DesignSystemR.string.failed_rate_warning)),
+                warnings
+            )
+        }
+
+        @Test
+        fun `invokes onRateWarning with isError=false when rateResult is stale`() = runTest {
+            coEvery {
+                getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "THB")
+            } returns ExchangeRateWithStaleness(rate = BigDecimal("37.0"), isStale = true)
+
+            val addOn = AddOnUiModel(id = "addon-1", currency = thbCurrency, showExchangeRateSection = true)
+            val stateFlow = MutableStateFlow(
+                AddExpenseUiState(groupCurrency = eurCurrency, addOns = persistentListOf(addOn))
+            )
+            val warnings = mutableListOf<Pair<Boolean, UiText>>()
+
+            delegate.fetchRate(
+                addOnId = "addon-1",
+                baseCurrencyCode = "EUR",
+                targetCurrencyCode = "THB",
+                scope = this,
+                stateFlow = stateFlow,
+                updateAddOn = { _, transform -> transform(addOn) },
+                onRateApplied = {},
+                onRateWarning = { isError, message -> warnings.add(isError to message) }
+            )
+
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(false to UiText.StringResource(DesignSystemR.string.stale_rate_warning)),
+                warnings
+            )
+        }
+
+        @Test
+        fun `does not invoke onRateWarning when add-on currency changed before result arrives`() = runTest {
+            coEvery {
+                getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "THB")
+            } returns null
+
+            val addOn = AddOnUiModel(id = "addon-1", currency = thbCurrency, showExchangeRateSection = true)
+            val changedAddOn = addOn.copy(currency = eurCurrency)
+            val stateFlow = MutableStateFlow(
+                AddExpenseUiState(groupCurrency = eurCurrency, addOns = persistentListOf(changedAddOn))
+            )
+            val warnings = mutableListOf<Pair<Boolean, UiText>>()
+
+            delegate.fetchRate(
+                addOnId = "addon-1",
+                baseCurrencyCode = "EUR",
+                targetCurrencyCode = "THB",
+                scope = this,
+                stateFlow = stateFlow,
+                updateAddOn = { _, transform -> transform(addOn) },
+                onRateApplied = {},
+                onRateWarning = { isError, message -> warnings.add(isError to message) }
+            )
+
+            advanceUntilIdle()
+
+            assertTrue(warnings.isEmpty())
+        }
+
+        @Test
+        fun `does not invoke onRateWarning on CancellationException`() = runTest {
+            coEvery {
+                getExchangeRateUseCase(baseCurrencyCode = "EUR", targetCurrencyCode = "THB")
+            } throws CancellationException("Cancelled")
+
+            val addOn = AddOnUiModel(id = "addon-1", currency = thbCurrency, showExchangeRateSection = true)
+            val stateFlow = MutableStateFlow(
+                AddExpenseUiState(groupCurrency = eurCurrency, addOns = persistentListOf(addOn))
+            )
+            val warnings = mutableListOf<Pair<Boolean, UiText>>()
+
+            delegate.fetchRate(
+                addOnId = "addon-1",
+                baseCurrencyCode = "EUR",
+                targetCurrencyCode = "THB",
+                scope = this,
+                stateFlow = stateFlow,
+                updateAddOn = { _, transform -> transform(addOn) },
+                onRateApplied = {},
+                onRateWarning = { isError, message -> warnings.add(isError to message) }
+            )
+
+            advanceUntilIdle()
+
+            assertTrue(warnings.isEmpty())
         }
     }
 

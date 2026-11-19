@@ -144,10 +144,10 @@
     <string name="group_error_archived">Este viaje está archivado y no se puede modificar.</string>
     <string name="group_detail_end_trip">Finalizar viaje</string>
     <string name="group_detail_end_trip_title">¿Finalizar viaje?</string>
-    <string name="group_detail_end_trip_message">¿Estás seguro de que quieres finalizar este viaje? Esto bloqueará todos los gastos, aportaciones y retiradas, haciendo que el grupo sea de solo lectura.</string>
+    <string name="group_detail_end_trip_message">¿Estás seguro de que quieres finalizar este viaje? Esto bloqueará todos los gastos, aportaciones y retiradas, haciendo que el viaje sea de solo lectura.</string>
     <string name="group_detail_end_trip_confirm">Finalizar viaje</string>
     <string name="group_detail_archived_label">Archivado</string>
-    <string name="group_error_archiving_failed">Error al archivar el viaje. Por favor, inténtalo de nuevo.</string>
+    <string name="group_error_archiving_failed">Error al finalizar el viaje. Por favor, inténtalo de nuevo.</string>
     <string name="group_error_archiving_unresolved_settlements">No se puede finalizar el viaje mientras existan balances o acuerdos de pago pendientes sin resolver.</string>
 
     <!-- Settlement Widget -->
@@ -157,7 +157,7 @@
     <string name="settlement_status_pending">Pendiente</string>
     <string name="settlement_status_awaiting_confirmation">Esperando confirmación</string>
     <string name="settlement_status_confirmed">Confirmado</string>
-    <string name="settlement_status_disputed">Disputado</string>
+    <string name="settlement_status_disputed">En revisión</string>
 
     <!-- Cash Breakdown Bottom Sheet -->
     <string name="core_cash_breakdown_title">Desglose de efectivo</string>
@@ -212,6 +212,14 @@
 
     <!-- Session Expiration -->
     <string name="session_expired_message">Tu sesión ha caducado. Inicia sesión de nuevo.</string>
+
+    <!-- In-App Updates -->
+    <string name="app_update_required_title">Actualización obligatoria</string>
+    <string name="app_update_required_description">Hay una nueva versión de SplitTrip disponible con correcciones importantes. Actualiza para continuar.</string>
+    <string name="app_update_required_button">Actualizar ahora</string>
+    <string name="app_update_ready_title">Actualización lista</string>
+    <string name="app_update_ready_description">Se ha descargado una nueva versión de SplitTrip.</string>
+    <string name="app_update_ready_button">Reiniciar para actualizar</string>
 
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>

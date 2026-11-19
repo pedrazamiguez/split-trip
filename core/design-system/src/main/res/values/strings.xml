@@ -144,10 +144,10 @@
     <string name="group_error_archived">This trip is archived and cannot be modified.</string>
     <string name="group_detail_end_trip">End Trip</string>
     <string name="group_detail_end_trip_title">End Trip?</string>
-    <string name="group_detail_end_trip_message">Are you sure you want to end this trip? This will lock all expenses, contributions, and withdrawals, making the group read-only.</string>
+    <string name="group_detail_end_trip_message">Are you sure you want to end this trip? This will lock all expenses, contributions, and withdrawals, making the trip read-only.</string>
     <string name="group_detail_end_trip_confirm">End Trip</string>
     <string name="group_detail_archived_label">Archived</string>
-    <string name="group_error_archiving_failed">Failed to archive the trip. Please try again.</string>
+    <string name="group_error_archiving_failed">Failed to end the trip. Please try again.</string>
     <string name="group_error_archiving_unresolved_settlements">Cannot end trip while there are unresolved balances or settlements.</string>
 
     <!-- Settlement Widget -->
@@ -157,7 +157,7 @@
     <string name="settlement_status_pending">Pending</string>
     <string name="settlement_status_awaiting_confirmation">Awaiting confirmation</string>
     <string name="settlement_status_confirmed">Confirmed</string>
-    <string name="settlement_status_disputed">Disputed</string>
+    <string name="settlement_status_disputed">Under review</string>
 
     <!-- Cash Breakdown Bottom Sheet -->
     <string name="core_cash_breakdown_title">Cash breakdown</string>
@@ -212,6 +212,14 @@
 
     <!-- Session Expiration -->
     <string name="session_expired_message">Your session has expired. Please sign in again.</string>
+
+    <!-- In-App Updates -->
+    <string name="app_update_required_title">Update Required</string>
+    <string name="app_update_required_description">A newer version of SplitTrip is available with important fixes. Please update to continue.</string>
+    <string name="app_update_required_button">Update now</string>
+    <string name="app_update_ready_title">Update ready</string>
+    <string name="app_update_ready_description">A new version of SplitTrip has been downloaded.</string>
+    <string name="app_update_ready_button">Restart to update</string>
 
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>

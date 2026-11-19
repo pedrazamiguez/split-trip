@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.AddOnMode
@@ -9,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.AddOnValueType
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
+import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
 import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExchangeRateCalculationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
@@ -31,6 +34,8 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -48,6 +53,7 @@ import org.junit.jupiter.api.Test
 class AddOnEventHandlerTest {
 
     private lateinit var handler: AddOnEventHandler
+    private lateinit var getExchangeRateUseCase: GetExchangeRateUseCase
     private lateinit var previewCashExchangeRateUseCase: PreviewCashExchangeRateUseCase
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actions: MutableSharedFlow<AddExpenseUiAction>
@@ -111,7 +117,7 @@ class AddOnEventHandlerTest {
 
         val formattingHelper = FormattingHelper(localeProvider)
         val splitPreviewService = SplitPreviewServiceImpl()
-        val getExchangeRateUseCase = mockk<GetExchangeRateUseCase>(relaxed = true)
+        getExchangeRateUseCase = mockk(relaxed = true)
 
         val addOnExchangeRateDelegate = AddOnExchangeRateDelegate(
             exchangeRateCalculationService = ExchangeRateCalculationServiceImpl(),
@@ -1575,6 +1581,91 @@ class AddOnEventHandlerTest {
             handler.handleAmountChanged(id, "150")
 
             assertEquals(15000L, uiState.value.addOns[0].resolvedAmountCents)
+        }
+    }
+
+    // ── Non-CASH add-on rate warning pills ───────────────────────────────
+
+    @Nested
+    @DisplayName("handleCurrencySelected — non-CASH rate warning pills")
+    inner class AddOnRateWarningPills {
+
+        @Test
+        fun `emits ShowError when getExchangeRateUseCase returns null`() = runTest {
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emittedActions.add(it) }
+            }
+            uiState.value = baseState.copy(selectedPaymentMethod = cardMethod)
+            coEvery { getExchangeRateUseCase("EUR", "THB") } returns null
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.FEE)
+            val addOnId = uiState.value.addOns[0].id
+
+            handler.handleCurrencySelected(addOnId, "THB")
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                    )
+                ),
+                emittedActions
+            )
+        }
+
+        @Test
+        fun `emits ShowError when getExchangeRateUseCase throws`() = runTest {
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emittedActions.add(it) }
+            }
+            uiState.value = baseState.copy(selectedPaymentMethod = cardMethod)
+            coEvery { getExchangeRateUseCase("EUR", "THB") } throws RuntimeException("Network error")
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.FEE)
+            val addOnId = uiState.value.addOns[0].id
+
+            handler.handleCurrencySelected(addOnId, "THB")
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowError(
+                        UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                    )
+                ),
+                emittedActions
+            )
+        }
+
+        @Test
+        fun `emits ShowPill when getExchangeRateUseCase returns stale rate`() = runTest {
+            val emittedActions = mutableListOf<AddExpenseUiAction>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emittedActions.add(it) }
+            }
+            uiState.value = baseState.copy(selectedPaymentMethod = cardMethod)
+            coEvery { getExchangeRateUseCase("EUR", "THB") } returns ExchangeRateWithStaleness(
+                rate = BigDecimal("37.0"),
+                isStale = true
+            )
+            handler.bind(uiState, actions, this)
+            handler.handleAddOnAdded(AddOnType.FEE)
+            val addOnId = uiState.value.addOns[0].id
+
+            handler.handleCurrencySelected(addOnId, "THB")
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(
+                    AddExpenseUiAction.ShowPill(
+                        UiText.StringResource(DesignSystemR.string.stale_rate_warning)
+                    )
+                ),
+                emittedActions
+            )
         }
     }
 }

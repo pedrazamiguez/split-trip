@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -25,6 +26,12 @@ private object DefaultAppConfigService : AppConfigService {
     override val settlementNudgeRateLimitHours: StateFlow<Long> = MutableStateFlow(24L)
     override val developerAllowlistEmailHashes: StateFlow<Set<String>> = MutableStateFlow(emptySet())
     override val proAllowlistEmailHashes: StateFlow<Set<String>> = MutableStateFlow(emptySet())
+    override val inAppUpdatesEnabled: StateFlow<Boolean> = MutableStateFlow(true)
+    override val minSupportedVersionCode: StateFlow<Long> = MutableStateFlow(0L)
+    override val autoForcePatchUpdates: StateFlow<Boolean> = MutableStateFlow(true)
+    override val optionalUpdateVersionCodes: StateFlow<Set<Long>> = MutableStateFlow(emptySet())
+    override val optionalUpdateCooldownHours: StateFlow<Long> = MutableStateFlow(24L)
+    override val isInitialFetchSettled: StateFlow<Boolean> = MutableStateFlow(true)
 }
 
 /**
@@ -138,6 +145,24 @@ class FormattingHelper(
         date?.formatShortDate(locale = localeProvider.getCurrentLocale(), referenceYear = referenceYear) ?: ""
 
     /**
+     * Formats a [LocalDateTime] to a short human-readable date and localized time
+     * (e.g., "21 oct, 14:30" or "21 Oct, 2:30 PM" in [referenceYear], and
+     * "21 oct 2025, 14:30" or "21 Oct 2025, 2:30 PM" outside [referenceYear]).
+     *
+     * Expects a [LocalDateTime] already converted to the target display timezone
+     * (e.g., via `utcToSystemLocalDateTime(zoneId)`).
+     *
+     * @param date The local date-time to format. Returns an empty string if null.
+     * @param referenceYear The reference calendar year to compare against (defaults to current year).
+     * @return Locale-aware short date-time string.
+     */
+    fun formatShortDateTime(
+        date: LocalDateTime?,
+        referenceYear: Int = LocalDate.now().year
+    ): String =
+        date?.formatShortDateTime(locale = localeProvider.getCurrentLocale(), referenceYear = referenceYear) ?: ""
+
+    /**
      * Formats a [LocalDate] to a medium human-readable date (e.g., "January 2026").
      *
      * @param date The date to format. Returns an empty string if null.
@@ -145,4 +170,21 @@ class FormattingHelper(
      */
     fun formatMediumDate(date: LocalDate?): String =
         date?.formatMediumDate(locale = localeProvider.getCurrentLocale()) ?: ""
+
+    /**
+     * Resolves the currency symbol for [currencyCode] using the current locale,
+     * falling back to the 3-letter ISO code when no distinct symbol exists.
+     */
+    fun resolveCurrencySymbol(currencyCode: String): String {
+        if (currencyCode.isBlank()) return ""
+        return resolveCurrencySymbol(currencyCode, localeProvider.getCurrentLocale())
+            .ifBlank { currencyCode }
+    }
+
+    /**
+     * Resolves the display symbol for a domain [Currency] using the current locale,
+     * preferring the currency symbol and falling back to the 3-letter ISO code when unavailable.
+     */
+    fun resolveCurrencySymbol(currency: Currency): String =
+        currency.resolveDisplaySymbol(locale = localeProvider.getCurrentLocale())
 }

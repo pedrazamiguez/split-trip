@@ -31,13 +31,16 @@ fun EntitySplitEditor(
     isPercentMode: Boolean,
     availableSplitTypes: ImmutableList<SplitTypeUiModel>,
     events: EntitySplitEditorEvents,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currencySymbol: String? = null
 ) {
     val focusManager = LocalFocusManager.current
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        verticalArrangement = Arrangement.spacedBy(
+            if (isEqualMode) MaterialTheme.spacing.Small else MaterialTheme.spacing.Default
+        )
     ) {
         entitySplits.forEach { entity ->
             EntitySplitRow(
@@ -46,6 +49,7 @@ fun EntitySplitEditor(
                 isPercentMode = isPercentMode,
                 availableSplitTypes = availableSplitTypes,
                 events = events,
+                currencySymbol = currencySymbol,
                 onDone = { focusManager.clearFocus() }
             )
         }

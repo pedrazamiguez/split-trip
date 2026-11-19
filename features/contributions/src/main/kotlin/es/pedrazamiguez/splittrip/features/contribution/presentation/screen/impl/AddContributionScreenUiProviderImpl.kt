@@ -22,6 +22,8 @@ import org.koin.androidx.compose.koinViewModel
 class AddContributionScreenUiProviderImpl(override val route: String = Routes.CONTRIBUTION_WIZARD) :
     ScreenUiProvider {
 
+    override val showBottomBar: Boolean = false
+
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
         val navController = LocalTabNavController.current

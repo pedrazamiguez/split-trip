@@ -23,7 +23,8 @@ internal fun ContributionDetailContent(
     contribution: ContributionDetailUiModel,
     bottomPadding: Dp,
     modifier: Modifier = Modifier,
-    topPadding: Dp = LocalTopPadding.current
+    topPadding: Dp = LocalTopPadding.current,
+    onLinkedExpenseClick: (String) -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -37,10 +38,13 @@ internal fun ContributionDetailContent(
                     bottom = MaterialTheme.spacing.Default + bottomPadding
                 )
             ),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Large)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
         ContributionHeroSection(contribution = contribution)
-        ContributionScopeSection(contribution = contribution)
+        ContributionScopeSection(
+            contribution = contribution,
+            onLinkedExpenseClick = onLinkedExpenseClick
+        )
         ContributionProvenanceSection(contribution = contribution)
     }
 }

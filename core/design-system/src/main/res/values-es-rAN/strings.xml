@@ -117,10 +117,10 @@
     <string name="group_error_archived">Êtte biahe êttá arxibao y no çe puede modificâh.</string>
     <string name="group_detail_end_trip">Finaliçâh biahe</string>
     <string name="group_detail_end_trip_title">¿Finaliçâh biahe?</string>
-    <string name="group_detail_end_trip_message">¿Êttâh çeguro de que quierê finaliçâh êtte biahe? Êtto bloqueará tôh lô gâttô, aportaçionê y retirâh, açiendo que er grupo çea de çolo lêttura.</string>
+    <string name="group_detail_end_trip_message">¿Êttâh çeguro de que quierê finaliçâh êtte biahe? Êtto bloqueará tôh lô gâttô, aportaçionê y retirâh, açiendo que er biahe çea de çolo lêttura.</string>
     <string name="group_detail_end_trip_confirm">Finaliçâh biahe</string>
     <string name="group_detail_archived_label">Arxibao</string>
-    <string name="group_error_archiving_failed">Errôh al arxibâh er biahe. Por fabôh, inténtalo de nuebo.</string>
+    <string name="group_error_archiving_failed">Errôh ar finaliçâh er biahe. Por fabôh, inténtalo de nuebo.</string>
     <string name="group_error_archiving_unresolved_settlements">No çe puede finaliçâh er biahe mientrâ êççîttan balançê o acuerdô de pago pendientê çin reçorbêh.</string>
     <string name="settlement_pocket_type_virtual">Pockêh birtuâh</string>
     <string name="settlement_pocket_type_cash">Efêttibo</string>
@@ -128,7 +128,7 @@
     <string name="settlement_status_pending">Pendiente</string>
     <string name="settlement_status_awaiting_confirmation">Êpperando confirmaçión</string>
     <string name="settlement_status_confirmed">Confirmao</string>
-    <string name="settlement_status_disputed">Dîpputao</string>
+    <string name="settlement_status_disputed">En rebiçión</string>
     <string name="core_cash_breakdown_title">Dêggloçe de efêttibo</string>
     <string name="core_cash_breakdown_group_scope">Efêttibo der grupo (parte êtt.)</string>
     <string name="core_cash_breakdown_personal_scope">Efêttibo perçonâh</string>
@@ -166,5 +166,11 @@
     <string name="currency_picker_search_placeholder">Bûccâh por código o nombre</string>
     <string name="currency_picker_empty">No çe encontraron monedâ</string>
     <string name="session_expired_message">Tu çeçión a caducao. Iniçia çeçión de nuebo.</string>
+    <string name="app_update_required_title">Âttualiçaçión obligatoria</string>
+    <string name="app_update_required_description">Ay una nueba berçión de SplîTTrîh dîpponible con corrêççionê importantê. Âttualiça pa continuâh.</string>
+    <string name="app_update_required_button">Âttualiçâh aora</string>
+    <string name="app_update_ready_title">Âttualiçaçión lîtta</string>
+    <string name="app_update_ready_description">Çe a dêccargao una nueba berçión de SplîTTrîh.</string>
+    <string name="app_update_ready_button">Reiniçiâh pa âttualiçâh</string>
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

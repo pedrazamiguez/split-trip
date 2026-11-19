@@ -121,13 +121,6 @@ data class AddExpenseUiState(
      * Null when no warning should be shown.
      */
     val personalCashSplitWarning: UiText? = null,
-    /**
-     * True when the exchange rate was served from an expired local cache
-     * (the remote API was unreachable). Drives a warning banner in the
-     * exchange rate section.
-     */
-    val isExchangeRateStale: Boolean = false,
-    val isExchangeRateError: Boolean = false,
     val showDueDateSection: Boolean = false,
 
     // Due date
@@ -214,6 +207,7 @@ data class AddExpenseUiState(
      * Back returns here instead of previous step.
      */
     val jumpedFromStep: AddExpenseStep? = null,
+    val isStepInfoSheetVisible: Boolean = false,
     val initialFormSnapshot: AddExpenseFormSnapshot? = null
 ) {
     /**

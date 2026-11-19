@@ -5,9 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -16,22 +17,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickableNoRipple
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
-import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.ShareAllocationInputRow
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
 
-@Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
+private val TRAILING_ICON_SLOT_SIZE = 24.dp
+
+@Suppress("LongParameterList", "LongMethod")
 @Composable
 internal fun SplitMemberRow(
     split: SplitUiModel,
@@ -43,17 +45,23 @@ internal fun SplitMemberRow(
     onSoloSelected: () -> Unit,
     onShareLockToggled: () -> Unit,
     onDone: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currencySymbol: String? = null
 ) {
-    Row(
+    val isNarrowScreen = LocalConfiguration.current.screenWidthDp.dp <= UiConstants.NARROW_SCREEN_BREAKPOINT
+    val rowGap = if (isNarrowScreen) MaterialTheme.spacing.ExtraSmall else MaterialTheme.spacing.Small
+
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = MaterialTheme.spacing.ExtraSmall),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
     ) {
-        // Name column (previously SplitMemberNameColumn)
-        Column(modifier = Modifier.weight(1f)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(rowGap)
+        ) {
             Text(
                 text = split.displayName,
                 style = MaterialTheme.typography.bodyMedium,
@@ -64,70 +72,58 @@ internal fun SplitMemberRow(
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 } else {
                     MaterialTheme.colorScheme.onSurface
-                }
+                },
+                modifier = Modifier.weight(1f)
             )
-            if (!split.isExcluded && !isEqualMode && split.formattedAmount.isNotBlank()) {
-                SecondaryBodyText(
+
+            if (!split.isExcluded && split.formattedAmount.isNotBlank()) {
+                Text(
                     text = split.formattedAmount,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = Int.MAX_VALUE
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                // Reserve the same 24.dp trailing slot as subunit rows so prices stay
+                // aligned and separated from the toggle by an identical gap.
+                Spacer(modifier = Modifier.size(TRAILING_ICON_SLOT_SIZE))
+            }
+
+            val haptic = LocalHapticFeedback.current
+            Box(
+                modifier = Modifier.debouncedCombinedClickableNoRipple(
+                    onClick = onExcludedToggled,
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSoloSelected()
+                    },
+                    role = Role.Switch
+                )
+            ) {
+                Switch(
+                    checked = !split.isExcluded,
+                    onCheckedChange = null
                 )
             }
         }
 
-        // Input field (previously SplitMemberInputField)
-        AnimatedVisibility(visible = !split.isExcluded) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
-            ) {
-                if (isEqualMode) {
-                    Text(
-                        text = split.formattedAmount,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else if (isPercentMode) {
-                    StyledOutlinedTextField(
-                        value = split.percentageInput,
-                        onValueChange = onPercentageChanged,
-                        label = stringResource(R.string.add_expense_split_percentage_label),
-                        modifier = Modifier.widthIn(max = 100.dp),
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next,
-                        keyboardActions = KeyboardActions(onNext = { onDone() })
-                    )
-                    ShareLockIcon(isLocked = split.isShareLocked, onClick = onShareLockToggled)
-                } else {
-                    StyledOutlinedTextField(
-                        value = split.amountInput,
-                        onValueChange = onAmountChanged,
-                        label = stringResource(R.string.add_expense_split_amount_label),
-                        modifier = Modifier.widthIn(max = 120.dp),
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next,
-                        keyboardActions = KeyboardActions(onNext = { onDone() })
-                    )
-                    ShareLockIcon(isLocked = split.isShareLocked, onClick = onShareLockToggled)
-                }
-            }
-        }
-
-        val haptic = LocalHapticFeedback.current
-        Box(
-            modifier = Modifier.debouncedCombinedClickableNoRipple(
-                onClick = onExcludedToggled,
-                onLongClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onSoloSelected()
-                },
-                role = Role.Switch
+        AnimatedVisibility(visible = !isEqualMode && !split.isExcluded) {
+            val inputConfig = resolveSplitInputConfig(
+                split = split,
+                isPercentMode = isPercentMode,
+                currencySymbol = currencySymbol,
+                onAmountChanged = onAmountChanged,
+                onPercentageChanged = onPercentageChanged
             )
-        ) {
-            Switch(
-                checked = !split.isExcluded,
-                onCheckedChange = null
+            ShareAllocationInputRow(
+                value = inputConfig.value,
+                onValueChange = inputConfig.onValueChange,
+                unitText = inputConfig.unitRes?.let { stringResource(it) } ?: inputConfig.unitLiteral,
+                isLocked = split.isShareLocked,
+                lockContentDescription = stringResource(splitLockDescriptionRes(split.isShareLocked)),
+                onLockToggle = onShareLockToggled,
+                fieldContentDescription = stringResource(inputConfig.fieldDescriptionRes),
+                imeAction = ImeAction.Next,
+                keyboardActions = KeyboardActions(onNext = { onDone() })
             )
         }
     }

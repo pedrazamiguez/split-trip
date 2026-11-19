@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.handler
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.isValidDecimalInput
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
@@ -8,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.currency.GetExchangeRateUseCase
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.mapper.AddCashWithdrawalUiMapper
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.action.AddCashWithdrawalUiAction
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.state.AddCashWithdrawalUiState
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,9 +58,7 @@ class WithdrawalFeeHandler(
                     feeConvertedAmount = "",
                     feeConvertedLabel = feeConvertedLabel,
                     showFeeExchangeRateSection = false,
-                    isFeeAmountValid = true,
-                    isFeeExchangeRateError = false,
-                    isFeeExchangeRateStale = false
+                    isFeeAmountValid = true
                 ).withStepClamped()
             }
         } else {
@@ -71,9 +72,7 @@ class WithdrawalFeeHandler(
                     feeExchangeRateLabel = "",
                     feeConvertedLabel = "",
                     showFeeExchangeRateSection = false,
-                    isFeeAmountValid = true,
-                    isFeeExchangeRateError = false,
-                    isFeeExchangeRateStale = false
+                    isFeeAmountValid = true
                 ).withStepClamped()
             }
         }
@@ -105,9 +104,8 @@ class WithdrawalFeeHandler(
                 feeCurrency = feeCurrencyModel,
                 showFeeExchangeRateSection = isForeign,
                 feeExchangeRateLabel = feeExchangeRateLabel,
-                feeExchangeRate = if (isForeign) it.feeExchangeRate else "1.0",
-                isFeeExchangeRateError = false,
-                isFeeExchangeRateStale = false
+                feeExchangeRate = if (isForeign) "" else "1.0",
+                isFeeExchangeRateValid = true
             ).withStepClamped()
         }
 
@@ -122,8 +120,7 @@ class WithdrawalFeeHandler(
         _uiState.update {
             it.copy(
                 feeExchangeRate = rate,
-                isFeeExchangeRateValid = isValid,
-                isFeeExchangeRateError = false
+                isFeeExchangeRateValid = isValid
             )
         }
         recalculateFeeConverted()
@@ -134,8 +131,7 @@ class WithdrawalFeeHandler(
         _uiState.update {
             it.copy(
                 feeConvertedAmount = amount,
-                isFeeConvertedAmountValid = isValid,
-                isFeeExchangeRateError = false
+                isFeeConvertedAmountValid = isValid
             )
         }
         recalculateFeeRateFromConverted()
@@ -195,35 +191,62 @@ class WithdrawalFeeHandler(
                     baseCurrencyCode = groupCurrencyCode,
                     targetCurrencyCode = feeCurrencyCode
                 )
+                var applied = false
                 _uiState.update { current ->
+                    applied = current.groupCurrency?.code == groupCurrencyCode &&
+                        current.feeCurrency?.code == feeCurrencyCode
                     current.updateFeeRateResult(
                         groupCurrencyCode = groupCurrencyCode,
                         feeCurrencyCode = feeCurrencyCode,
-                        rateResult = rateResult,
-                        isError = rateResult == null
+                        rateResult = rateResult
                     )
                 }
                 recalculateFeeConverted()
+                if (applied) {
+                    emitFeeRateFetchOutcome(rateResult)
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Timber.w(e, "Failed to fetch fee exchange rate")
+                var applied = false
                 _uiState.update { current ->
+                    applied = current.groupCurrency?.code == groupCurrencyCode &&
+                        current.feeCurrency?.code == feeCurrencyCode
                     current.updateFeeRateResult(
                         groupCurrencyCode = groupCurrencyCode,
                         feeCurrencyCode = feeCurrencyCode,
-                        rateResult = null,
-                        isError = true
+                        rateResult = null
                     )
                 }
                 recalculateFeeConverted()
+                if (applied) {
+                    emitFeeRateFetchOutcome(null)
+                }
             }
+        }
+    }
+
+    private suspend fun emitFeeRateFetchOutcome(rateResult: ExchangeRateWithStaleness?) {
+        when {
+            rateResult == null -> _actions.emit(
+                AddCashWithdrawalUiAction.ShowError(
+                    UiText.StringResource(DesignSystemR.string.failed_rate_warning)
+                )
+            )
+
+            rateResult.isStale -> _actions.emit(
+                AddCashWithdrawalUiAction.ShowPill(
+                    UiText.StringResource(DesignSystemR.string.stale_rate_warning)
+                )
+            )
         }
     }
 
     private fun AddCashWithdrawalUiState.updateFeeRateResult(
         groupCurrencyCode: String,
         feeCurrencyCode: String,
-        rateResult: ExchangeRateWithStaleness?,
-        isError: Boolean
+        rateResult: ExchangeRateWithStaleness?
     ): AddCashWithdrawalUiState {
         if (groupCurrency?.code != groupCurrencyCode ||
             feeCurrency?.code != feeCurrencyCode
@@ -231,9 +254,7 @@ class WithdrawalFeeHandler(
             return this
         }
         return copy(
-            isFeeExchangeRateError = isError,
-            feeExchangeRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString() ?: feeExchangeRate,
-            isFeeExchangeRateStale = rateResult?.isStale ?: false
+            feeExchangeRate = rateResult?.rate?.stripTrailingZeros()?.toPlainString() ?: feeExchangeRate
         )
     }
 }

@@ -1,12 +1,16 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
@@ -19,6 +23,8 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 class AddExpenseScreenUiProviderImpl(override val route: String = Routes.ADD_EXPENSE) : ScreenUiProvider {
+
+    override val showBottomBar: Boolean = false
 
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
@@ -47,7 +53,17 @@ class AddExpenseScreenUiProviderImpl(override val route: String = Routes.ADD_EXP
             title = title,
             subtitle = groupName,
             onBack = { vm?.onEvent(AddExpenseUiEvent.PreviousStep) ?: navController.popBackStack() },
-            onBackLongPress = { vm?.onEvent(AddExpenseUiEvent.CloseWizard) }
+            onBackLongPress = { vm?.onEvent(AddExpenseUiEvent.CloseWizard) },
+            actions = {
+                IconButton(
+                    onClick = { vm?.onEvent(AddExpenseUiEvent.ToggleStepInfoSheet(visible = true)) }
+                ) {
+                    Icon(
+                        imageVector = TablerIcons.Outline.InfoCircle,
+                        contentDescription = stringResource(R.string.action_step_info)
+                    )
+                }
+            }
         )
     }
 }

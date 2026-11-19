@@ -53,12 +53,6 @@ data class AddOnUiModel(
     val isInsufficientCash: Boolean = false,
 
     /**
-     * True when the exchange rate was served from an expired local cache
-     * (the remote API was unreachable). Drives a warning indicator.
-     */
-    val isExchangeRateStale: Boolean = false,
-
-    /**
      * Snapshot of [displayExchangeRate] taken just before switching to CASH payment.
      * Restored when the user switches back to a non-CASH method.
      */

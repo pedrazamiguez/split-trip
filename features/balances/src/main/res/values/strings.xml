@@ -139,12 +139,5 @@
     <string name="balances_filter">Filter balances</string>
     <string name="balances_your_balance_title">Your Position</string>
 
-    <!-- Category Spending -->
-    <string name="balances_category_spending_title">Category spending</string>
-    <string name="balances_category_expand">Show subcategories for %1$s</string>
-    <string name="balances_category_collapse">Hide subcategories for %1$s</string>
-    <string name="balances_category_spending_empty_title">No spending yet</string>
-    <string name="balances_category_spending_empty_description">Expenses logged in this group will appear here broken down by category.</string>
-
 </resources>
 

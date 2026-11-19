@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.CreateEditGroupScreen
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
@@ -34,6 +35,24 @@ private fun EditGroupScreenPreview() {
                 isEditMode = true,
                 groupName = "Japan Trip",
                 groupDescription = "Our trip to Japan",
+                availableCurrencies = persistentListOf(
+                    CURRENCY_UI_EUR,
+                    CURRENCY_UI_USD,
+                    CURRENCY_UI_MXN
+                )
+            ),
+            onScannerClick = {}
+        )
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun CreateGroupScreenNarrowPreview() {
+    PreviewThemeWrapper {
+        CreateEditGroupScreen(
+            uiState = CreateEditGroupUiState(
+                isEditMode = false,
                 availableCurrencies = persistentListOf(
                     CURRENCY_UI_EUR,
                     CURRENCY_UI_USD,

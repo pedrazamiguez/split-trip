@@ -35,6 +35,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -154,6 +155,7 @@ fun MainScreen(
     val currentUiProvider = remember(currentRoute) {
         screenUiProviders.firstOrNull { it.route == currentRoute }
     }
+    val shouldShowBottomBar = currentUiProvider?.showBottomBar != false
 
     LaunchedEffect(currentRoute) {
         telemetryTracker.trackScreenView(currentRoute, null)
@@ -198,10 +200,10 @@ fun MainScreen(
                 Column {
                     AdaptiveBannerAd(
                         adUnitId = bannerAdUnitId,
-                        isAdEnabled = shouldShowAds
+                        isAdEnabled = shouldShowAds && shouldShowBottomBar
                     )
                     AnimatedVisibility(
-                        visible = isInitialLoadComplete,
+                        visible = isInitialLoadComplete && shouldShowBottomBar,
                         enter = slideInVertically(
                             animationSpec = spring(
                                 dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -230,7 +232,11 @@ fun MainScreen(
             contentWindowInsets = WindowInsets(0, 0, 0, 0)
         ) { innerPadding ->
             val topPadding = innerPadding.calculateTopPadding()
-            val bottomPadding = innerPadding.calculateBottomPadding()
+            val bottomPadding = if (shouldShowBottomBar) {
+                innerPadding.calculateBottomPadding()
+            } else {
+                0.dp
+            }
 
             CompositionLocalProvider(
                 LocalTopPadding provides topPadding,

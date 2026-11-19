@@ -3,12 +3,15 @@ package es.pedrazamiguez.splittrip.data.local.datastore
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.model.OptionalUpdateDismissal
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -34,6 +37,10 @@ class UserPreferences(
         private val DEVICE_ID_KEY = stringPreferencesKey("device_id")
         private val HAS_SIGNED_OUT_KEY = booleanPreferencesKey("has_signed_out")
         private val BIOMETRIC_LOCK_ENABLED_KEY = booleanPreferencesKey("biometric_lock_enabled")
+        private val LAST_DISMISSED_UPDATE_VERSION_CODE_KEY =
+            longPreferencesKey("last_dismissed_update_version_code")
+        private val LAST_DISMISSED_UPDATE_TIMESTAMP_MS_KEY =
+            longPreferencesKey("last_dismissed_update_timestamp_ms")
 
         // User-scoped key name constants (prefixed at access time via userKey())
         private const val SELECTED_GROUP_ID = "selected_group_id"
@@ -141,6 +148,29 @@ class UserPreferences(
     suspend fun setBiometricLockEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[BIOMETRIC_LOCK_ENABLED_KEY] = enabled
+        }
+    }
+
+    // ── Optional App Update Dismissal (Device-scoped) ────────────────────
+
+    suspend fun getOptionalUpdateDismissal(): OptionalUpdateDismissal? =
+        context.dataStore.data.map { prefs ->
+            val versionCode = prefs[LAST_DISMISSED_UPDATE_VERSION_CODE_KEY]
+            val timestampMs = prefs[LAST_DISMISSED_UPDATE_TIMESTAMP_MS_KEY]
+            if (versionCode != null && timestampMs != null) {
+                OptionalUpdateDismissal(
+                    versionCode = versionCode,
+                    dismissedAtTimestampMs = timestampMs
+                )
+            } else {
+                null
+            }
+        }.first()
+
+    suspend fun recordOptionalUpdateDismissal(versionCode: Long, timestampMs: Long) {
+        context.dataStore.edit { prefs ->
+            prefs[LAST_DISMISSED_UPDATE_VERSION_CODE_KEY] = versionCode
+            prefs[LAST_DISMISSED_UPDATE_TIMESTAMP_MS_KEY] = timestampMs
         }
     }
 

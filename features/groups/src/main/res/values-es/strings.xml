@@ -164,27 +164,27 @@
     <string name="settlement_overview_title">Acuerdos de pago</string>
     <string name="settlement_overview_subtitle">Revisa y resuelve los acuerdos de pago pendientes antes de cerrar el viaje</string>
     <string name="settlement_overview_section_pending">Pendientes</string>
-    <string name="settlement_overview_section_disputed">Disputadas</string>
+    <string name="settlement_overview_section_disputed">En revisión</string>
     <string name="settlement_overview_section_resolved">Resueltas</string>
     <string name="settlement_overview_empty">Todos los acuerdos de pago resueltos</string>
     <string name="settlement_overview_confirm">Confirmar</string>
-    <string name="settlement_overview_dispute">Disputar</string>
-    <string name="settlement_overview_dispute_title">Disputar acuerdo de pago</string>
-    <string name="settlement_overview_dispute_reason_hint">Describe por qué disputas este acuerdo de pago</string>
-    <string name="settlement_overview_dispute_submit">Enviar disputa</string>
+    <string name="settlement_overview_dispute">Pedir revisión</string>
+    <string name="settlement_overview_dispute_title">Solicitar revisión del pago</string>
+    <string name="settlement_overview_dispute_reason_hint">Describe qué debe revisarse…</string>
+    <string name="settlement_overview_dispute_submit">Pedir revisión</string>
     <string name="settlement_overview_dispute_cancel">Cancelar</string>
-    <string name="settlement_overview_dispute_success">Acuerdo de pago disputado correctamente</string>
+    <string name="settlement_overview_dispute_success">Revisión solicitada correctamente</string>
     <string name="settlement_overview_confirm_success">Acuerdo de pago confirmado correctamente</string>
     <string name="settlement_overview_close_trip">Cerrar viaje</string>
     <string name="settlement_overview_closing_trip">Cerrando viaje…</string>
     <string name="settlement_overview_trip_closed">¡Viaje cerrado correctamente!</string>
     <string name="settlement_overview_error_confirm">Error al confirmar el acuerdo de pago. Inténtalo de nuevo</string>
-    <string name="settlement_overview_error_dispute">Error al disputar el acuerdo de pago. Inténtalo de nuevo</string>
+    <string name="settlement_overview_error_dispute">No se pudo solicitar la revisión. Inténtalo de nuevo</string>
     <string name="settlement_overview_error_archive">Error al cerrar el viaje. Inténtalo de nuevo</string>
     <string name="settlement_overview_error_loading">No pudimos cargar los datos de los acuerdos de pago. Inténtalo de nuevo</string>
     <string name="settlement_overview_status_suggested">Pendiente</string>
     <string name="settlement_overview_status_confirmed_by_payer">Esperando cobrador</string>
-    <string name="settlement_overview_status_disputed">Disputada</string>
+    <string name="settlement_overview_status_disputed">En revisión</string>
     <string name="settlement_overview_status_resolved">Resuelta</string>
     <string name="settlement_overview_direction_owes_you">%1$s te debe</string>
     <string name="settlement_overview_direction_you_owe">Debes a %1$s</string>
@@ -224,24 +224,6 @@
     <string name="leave_wizard_settlement_section_waiting">Esperando a otros</string>
     <string name="leave_wizard_balances_with_members">Balances con otros viajeros</string>
     <string name="leave_wizard_go_to_settlements">Ir a Acuerdos de pago</string>
-
-    <!-- Archive Group Wizard -->
-    <string name="archive_wizard_step_summary">Resumen</string>
-    <string name="archive_wizard_step_action">Acción requerida</string>
-    <string name="archive_wizard_step_confirm">Confirmar</string>
-    <string name="archive_wizard_summary_title">Resumen del viaje</string>
-    <string name="archive_wizard_summary_subtitle">Revisa el estado de los acuerdos de pago de este grupo antes de finalizar el viaje.</string>
-    <string name="archive_wizard_summary_ready_title">Listo para archivar</string>
-    <string name="archive_wizard_summary_ready_desc">Todos los acuerdos de pago se han resuelto correctamente. Puedes proceder directamente a archivar el grupo y finalizar el viaje.</string>
-    <string name="archive_wizard_summary_unresolved_title">Acuerdos de pago pendientes</string>
-    <string name="archive_wizard_summary_unresolved_desc">Hay acuerdos de pago pendientes o disputados. Debes resolverlos antes de poder cerrar el viaje.</string>
-    <string name="archive_wizard_action_title">Acciones de pago</string>
-    <string name="archive_wizard_action_subtitle">Revisa y actúa sobre los acuerdos de pago pendientes para llegar a un consenso.</string>
-    <string name="archive_wizard_confirm_title">Finalizar viaje</string>
-    <string name="archive_wizard_confirm_subtitle">¿Estás seguro de que quieres finalizar el viaje para %1$s?</string>
-    <string name="archive_wizard_confirm_warning_banner">Todos los acuerdos de pago deben estar resueltos antes de poder archivar este grupo.</string>
-    <string name="archive_wizard_confirm_desc">Archivar este grupo congelará todos los balances y marcará el grupo como inactivo. Esta acción es permanente y no se puede deshacer.</string>
-    <string name="archive_wizard_go_to_settlements">Ir a Acuerdos de pago</string>
 
     <!-- Group Cover Photo Upfront Gate -->
     <string name="group_cover_photo_locked_pro_badge">Pro</string>

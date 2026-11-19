@@ -1,12 +1,12 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.currency
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,11 +21,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.InlineWarningBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.ArithmeticTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
@@ -34,6 +32,7 @@ import org.koin.compose.koinInject
 
 private const val EXCHANGE_RATE_FIELD_WEIGHT = 0.6f
 private const val GROUP_AMOUNT_FIELD_WEIGHT = 0.4f
+private val SIDE_BY_SIDE_MIN_WIDTH = 280.dp
 
 /**
  * Reusable currency-conversion section that displays an exchange rate input,
@@ -88,17 +87,6 @@ fun CurrencyConversionCard(
             exchangeRateLockedHint = state.exchangeRateLockedHint,
             isInsufficientCash = state.isInsufficientCash
         )
-        val warning = when {
-            state.isExchangeRateError -> UiText.StringResource(R.string.failed_rate_warning)
-            state.isExchangeRateStale -> UiText.StringResource(R.string.stale_rate_warning)
-            else -> null
-        }
-        // Top padding on the AnimatedVisibility container animates in/out with the banner,
-        // matching the 8 dp gap the former StaleRateBanner Spacer provided.
-        InlineWarningBanner(
-            warning = warning,
-            modifier = Modifier.padding(top = MaterialTheme.spacing.Small)
-        )
     }
 }
 
@@ -122,6 +110,7 @@ private fun ConversionCardTitleRow(
     }
 }
 
+@Suppress("LongMethod")
 @Composable
 private fun ConversionCardInputRow(
     state: CurrencyConversionCardState,
@@ -133,45 +122,89 @@ private fun ConversionCardInputRow(
     focusRequester: FocusRequester? = null,
     moveCursorToEndOnFocus: Boolean = true
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-    ) {
-        val evaluator = koinInject<ExpressionCalculatorService>()
-        ArithmeticTextField(
-            value = state.exchangeRateValue,
-            onValueChange = onExchangeRateChanged,
-            evaluator = evaluator,
-            displayValue = state.displayExchangeRate,
-            label = state.exchangeRateLabel,
-            modifier = Modifier.weight(EXCHANGE_RATE_FIELD_WEIGHT),
-            readOnly = state.isExchangeRateLocked,
-            isError = state.isExchangeRateFieldError,
-            requirePositive = true,
-            keyboardType = KeyboardType.Decimal,
-            imeAction = ImeAction.Next,
-            focusRequester = focusRequester,
-            moveCursorToEndOnFocus = moveCursorToEndOnFocus
-        )
-        ArithmeticTextField(
-            value = state.groupAmountValue,
-            onValueChange = onGroupAmountChanged,
-            evaluator = evaluator,
-            displayValue = state.displayGroupAmount,
-            maxDecimalPlaces = groupAmountDecimalPlaces,
-            minDecimalPlaces = groupAmountMinDecimalPlaces,
-            label = state.groupAmountLabel,
-            modifier = Modifier.weight(GROUP_AMOUNT_FIELD_WEIGHT),
-            readOnly = state.isExchangeRateLocked,
-            isError = state.isGroupAmountError,
-            requirePositive = true,
-            keyboardType = KeyboardType.Decimal,
-            imeAction = ImeAction.Done,
-            keyboardActions = KeyboardActions(
-                onDone = { onDone() }
-            ),
-            moveCursorToEndOnFocus = moveCursorToEndOnFocus
-        )
+    val evaluator = koinInject<ExpressionCalculatorService>()
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        if (maxWidth >= SIDE_BY_SIDE_MIN_WIDTH) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+            ) {
+                ArithmeticTextField(
+                    value = state.exchangeRateValue,
+                    onValueChange = onExchangeRateChanged,
+                    evaluator = evaluator,
+                    displayValue = state.displayExchangeRate,
+                    label = state.exchangeRateLabel,
+                    modifier = Modifier.weight(EXCHANGE_RATE_FIELD_WEIGHT),
+                    readOnly = state.isExchangeRateLocked,
+                    isError = state.isExchangeRateFieldError,
+                    requirePositive = true,
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next,
+                    focusRequester = focusRequester,
+                    moveCursorToEndOnFocus = moveCursorToEndOnFocus
+                )
+                ArithmeticTextField(
+                    value = state.groupAmountValue,
+                    onValueChange = onGroupAmountChanged,
+                    evaluator = evaluator,
+                    displayValue = state.displayGroupAmount,
+                    maxDecimalPlaces = groupAmountDecimalPlaces,
+                    minDecimalPlaces = groupAmountMinDecimalPlaces,
+                    label = state.groupAmountLabel,
+                    modifier = Modifier.weight(GROUP_AMOUNT_FIELD_WEIGHT),
+                    readOnly = state.isExchangeRateLocked,
+                    isError = state.isGroupAmountError,
+                    requirePositive = true,
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Done,
+                    keyboardActions = KeyboardActions(
+                        onDone = { onDone() }
+                    ),
+                    moveCursorToEndOnFocus = moveCursorToEndOnFocus
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+            ) {
+                ArithmeticTextField(
+                    value = state.exchangeRateValue,
+                    onValueChange = onExchangeRateChanged,
+                    evaluator = evaluator,
+                    displayValue = state.displayExchangeRate,
+                    label = state.exchangeRateLabel,
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = state.isExchangeRateLocked,
+                    isError = state.isExchangeRateFieldError,
+                    requirePositive = true,
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next,
+                    focusRequester = focusRequester,
+                    moveCursorToEndOnFocus = moveCursorToEndOnFocus
+                )
+                ArithmeticTextField(
+                    value = state.groupAmountValue,
+                    onValueChange = onGroupAmountChanged,
+                    evaluator = evaluator,
+                    displayValue = state.displayGroupAmount,
+                    maxDecimalPlaces = groupAmountDecimalPlaces,
+                    minDecimalPlaces = groupAmountMinDecimalPlaces,
+                    label = state.groupAmountLabel,
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = state.isExchangeRateLocked,
+                    isError = state.isGroupAmountError,
+                    requirePositive = true,
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Done,
+                    keyboardActions = KeyboardActions(
+                        onDone = { onDone() }
+                    ),
+                    moveCursorToEndOnFocus = moveCursorToEndOnFocus
+                )
+            }
+        }
     }
 }
 

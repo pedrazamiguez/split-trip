@@ -41,7 +41,7 @@ class SettlementsUiMapperTest {
         every { resourceProvider.getString(DesignR.string.settlement_status_awaiting_confirmation) } returns
             "Awaiting confirmation"
         every { resourceProvider.getString(DesignR.string.settlement_status_confirmed) } returns "Confirmed"
-        every { resourceProvider.getString(DesignR.string.settlement_status_disputed) } returns "Disputed"
+        every { resourceProvider.getString(DesignR.string.settlement_status_disputed) } returns "Under review"
         every { resourceProvider.getString(DesignR.string.self_identification_nominative) } returns "You"
         every { resourceProvider.getString(DesignR.string.self_identification_beneficiary) } returns "For you"
         every { resourceProvider.getString(DesignR.string.self_identification_agent) } returns "By you"

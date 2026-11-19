@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.preview
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
@@ -47,13 +48,14 @@ internal val PREVIEW_CONSENSUS_DISPUTED = SettlementConsensusItemUiModel(
     currencyCode = "EUR",
     pocketTypeLabel = "Pocket",
     directionLabel = "You owe María",
-    statusLabel = "Disputed",
+    statusLabel = "Under review",
     statusChipStyle = PassportTagStyle.ERROR,
     isCurrentUserPayer = true,
     canConfirm = true,
     confirmLabel = "Mark as paid",
     canDispute = false,
-    disputeReason = "Wrong amount entered",
+    disputeReason = "Wrong amount entered — I paid 25.00 EUR in cash at the airport " +
+        "and split the taxi fare equally with Andrés.",
     status = SettlementStatus.DISPUTED
 )
 
@@ -147,5 +149,44 @@ private fun SettlementConsensusCardReceiverViewPreview() {
                 onNudge = {}
             )
         }
+    }
+}
+
+@Preview(widthDp = 320, showBackground = true)
+@Composable
+private fun SettlementConsensusCardCompactSenderPreview() {
+    PreviewThemeWrapper {
+        SettlementConsensusCard(
+            item = PREVIEW_CONSENSUS_PENDING,
+            onConfirm = {},
+            onDispute = {},
+            onNudge = {}
+        )
+    }
+}
+
+@Preview(widthDp = 320, showBackground = true)
+@Composable
+private fun SettlementConsensusCardCompactReceiverPreview() {
+    PreviewThemeWrapper {
+        SettlementConsensusCard(
+            item = PREVIEW_CONSENSUS_RECEIVER,
+            onConfirm = {},
+            onDispute = {},
+            onNudge = {}
+        )
+    }
+}
+
+@Preview(widthDp = 320, showBackground = true)
+@Composable
+private fun SettlementConsensusCardCompactDisputedPreview() {
+    PreviewThemeWrapper {
+        SettlementConsensusCard(
+            item = PREVIEW_CONSENSUS_DISPUTED,
+            onConfirm = {},
+            onDispute = {},
+            onNudge = {}
+        )
     }
 }
