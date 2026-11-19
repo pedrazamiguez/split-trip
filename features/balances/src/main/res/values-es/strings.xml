@@ -18,6 +18,7 @@
     <string name="balances_error_loading">No se pudieron cargar los balances</string>
     <string name="balances_empty_title">Sin actividad todavía</string>
     <string name="balances_empty_description">Registra gastos pagados de tu bolsillo para ver quién debe a quién, o añade una aportación si compartís un pocket común.</string>
+    <string name="balances_archived_readonly_notice">Este viaje está archivado y es de solo lectura. Las aportaciones, retiradas y ediciones de actividad están desactivadas.</string>
 
     <!-- Member Balances -->
     <string name="balances_member_balances_title">Balances por miembro</string>

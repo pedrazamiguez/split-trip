@@ -17,6 +17,7 @@
     <string name="balances_error_loading">Failed to load balances</string>
     <string name="balances_empty_title">No activity yet</string>
     <string name="balances_empty_description">Log expenses paid out of pocket to see who owes whom, or add a contribution if your group shares a common pocket.</string>
+    <string name="balances_archived_readonly_notice">This trip is archived and read-only. Contributions, withdrawals, and activity edits are disabled.</string>
 
     <!-- Member Balances -->
     <string name="balances_member_balances_title">Member balances</string>
