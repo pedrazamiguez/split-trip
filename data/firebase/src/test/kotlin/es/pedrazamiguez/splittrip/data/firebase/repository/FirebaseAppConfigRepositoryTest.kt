@@ -246,7 +246,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(100, fallbackRepo.maxOwnedGroupsPro.value)
         assertEquals(4, fallbackRepo.maxMembersPerGroupFree.value)
         assertEquals(20, fallbackRepo.maxMembersPerGroupPro.value)
-        assertEquals(0, fallbackRepo.aiReceiptMonthlyLimitFree.value)
+        assertEquals(3, fallbackRepo.aiReceiptMonthlyLimitFree.value)
         assertEquals(100, fallbackRepo.aiReceiptMonthlyLimitPro.value)
         assertEquals("support@splittrip.eu", fallbackRepo.supportEmailAddress.value)
         assertEquals(2, fallbackRepo.adInterstitialActionFrequency.value)
@@ -256,6 +256,15 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(true, fallbackRepo.autoForcePatchUpdates.value)
         assertEquals(emptySet<Long>(), fallbackRepo.optionalUpdateVersionCodes.value)
         assertEquals(24L, fallbackRepo.optionalUpdateCooldownHours.value)
+    }
+
+    @Test
+    fun `updateFlowsFromConfig preserves explicit zero for ai_receipt_monthly_limit_free`() {
+        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns 0L
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertEquals(0, repo.aiReceiptMonthlyLimitFree.value)
     }
 
     @Test

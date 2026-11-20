@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExchangeRateCalculationServiceImpl
@@ -57,6 +58,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnCrudDelegate
@@ -129,7 +131,8 @@ class AddExpenseViewModelTest {
     private lateinit var localeProvider: LocaleProvider
     private lateinit var resourceProvider: ResourceProvider
     private lateinit var featureGateService: FeatureGateService
-    private lateinit var gateFlow: MutableStateFlow<Boolean>
+    private lateinit var quotaFlow: MutableStateFlow<AiReceiptQuota>
+    private lateinit var aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper
 
     private lateinit var configHandler: ConfigEventHandler
     private lateinit var currencyHandler: CurrencyEventHandler
@@ -298,9 +301,16 @@ class AddExpenseViewModelTest {
         val mockReceiptExtractionService = mockk<ReceiptExtractionService>()
         every { mockReceiptExtractionService.capability() } returns ExtractionCapability.UNSUPPORTED
 
-        gateFlow = MutableStateFlow(true)
+        aiReceiptQuotaUiMapper = AiReceiptQuotaUiMapper(resourceProvider)
+        quotaFlow = MutableStateFlow(
+            AiReceiptQuota(
+                usedScans = 0,
+                monthlyLimit = 100,
+                isProTier = true
+            )
+        )
         featureGateService = mockk<FeatureGateService>(relaxed = true) {
-            every { isFeatureEnabled(any(), any()) } returns gateFlow
+            every { observeAiReceiptQuota() } returns quotaFlow
         }
 
         configHandler = ConfigEventHandler(
@@ -314,7 +324,8 @@ class AddExpenseViewModelTest {
             addExpenseSplitMapper = addExpenseSplitMapper,
             addExpenseUiMapper = addExpenseUiMapper,
             receiptExtractionService = mockReceiptExtractionService,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper
         )
 
         submitHandler = SubmitEventHandler(
@@ -382,6 +393,7 @@ class AddExpenseViewModelTest {
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
             featureGateService = featureGateService,
+            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
             telemetryTracker = mockk(relaxed = true)
         )
 
@@ -416,8 +428,7 @@ class AddExpenseViewModelTest {
             submitEventHandler = submitHandler,
             formEventHandler = formHandler,
             receiptAutoFillEventHandler = receiptAutoFillEventHandler,
-            strategyFactory = strategyFactory,
-            featureGateService = featureGateService
+            strategyFactory = strategyFactory
         )
     }
 
@@ -2250,20 +2261,47 @@ class AddExpenseViewModelTest {
 
         @Test
         fun `AddExpenseViewModel observes featureGateService and updates isAiGated dynamically`() = runTest {
-            gateFlow.value = true
+            every {
+                resourceProvider.getQuantityString(
+                    R.plurals.expense_autofill_free_scans_remaining,
+                    2,
+                    2
+                )
+            } returns "2 free scans left this month"
+            every {
+                resourceProvider.getString(
+                    R.string.expense_autofill_free_scans_exhausted
+                )
+            } returns "0 free scans left this month"
+
+            quotaFlow.value = AiReceiptQuota(
+                usedScans = 1,
+                monthlyLimit = 3,
+                isProTier = false
+            )
             advanceUntilIdle()
             assertFalse(viewModel.uiState.value.isAiGated)
             assertFalse(viewModel.uiState.value.isAiProFeature)
+            assertEquals("2 free scans left this month", viewModel.uiState.value.aiRemainingScansLabel)
 
-            gateFlow.value = false
+            quotaFlow.value = AiReceiptQuota(
+                usedScans = 3,
+                monthlyLimit = 3,
+                isProTier = false
+            )
             advanceUntilIdle()
             assertTrue(viewModel.uiState.value.isAiGated)
             assertTrue(viewModel.uiState.value.isAiProFeature)
+            assertEquals("0 free scans left this month", viewModel.uiState.value.aiRemainingScansLabel)
         }
 
         @Test
         fun `SetAiModeActive true when gated emits NavigateToSubscriptions action`() = runTest {
-            gateFlow.value = false
+            quotaFlow.value = AiReceiptQuota(
+                usedScans = 3,
+                monthlyLimit = 3,
+                isProTier = false
+            )
             advanceUntilIdle()
 
             val actions = mutableListOf<AddExpenseUiAction>()
@@ -2281,7 +2319,11 @@ class AddExpenseViewModelTest {
 
         @Test
         fun `SetAiModeActive true when ungated enables AI mode in uiState`() = runTest {
-            gateFlow.value = true
+            quotaFlow.value = AiReceiptQuota(
+                usedScans = 0,
+                monthlyLimit = 3,
+                isProTier = false
+            )
             advanceUntilIdle()
 
             viewModel.onEvent(AddExpenseUiEvent.SetAiModeActive(true))

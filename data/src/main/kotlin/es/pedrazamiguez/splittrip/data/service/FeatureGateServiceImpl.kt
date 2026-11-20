@@ -4,12 +4,15 @@ import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
+import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -19,7 +22,9 @@ internal class FeatureGateServiceImpl(
     private val authenticationService: AuthenticationService,
     private val appConfigRepository: AppConfigRepository,
     private val userRepository: UserRepository,
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    private val userPreferenceRepository: UserPreferenceRepository,
+    private val yearMonthProvider: () -> YearMonth = { YearMonth.now() }
 ) : FeatureGateService {
 
     private data class TierLimitFlows(
@@ -27,8 +32,14 @@ internal class FeatureGateServiceImpl(
         val proLimitFlow: Flow<Int>
     )
 
-    override fun isFeatureEnabled(feature: GatedFeature, groupId: String?): Flow<Boolean> =
-        combine(
+    override fun isFeatureEnabled(feature: GatedFeature, groupId: String?): Flow<Boolean> {
+        if (feature == GatedFeature.AI_RECEIPT_SCANNING) {
+            return observeAiReceiptQuota()
+                .map { it.canScan }
+                .distinctUntilChanged()
+        }
+
+        return combine(
             appConfigRepository.subscriptionGatingEnabled,
             observeActingUserTier(),
             appConfigRepository.proAllowlistEmailHashes
@@ -50,6 +61,25 @@ internal class FeatureGateServiceImpl(
                 effectiveTier == SubscriptionTier.PRO
             }
         }.distinctUntilChanged()
+    }
+
+    override fun observeAiReceiptQuota(): Flow<AiReceiptQuota> =
+        combine(
+            appConfigRepository.subscriptionGatingEnabled,
+            observeActingUserTier(),
+            appConfigRepository.aiReceiptMonthlyLimitFree,
+            appConfigRepository.aiReceiptMonthlyLimitPro,
+            userPreferenceRepository.getMonthlyAiReceiptScanCount(yearMonthProvider())
+        ) { gatingEnabled, actingTier, freeLimit, proLimit, usedScans ->
+            val isPro = actingTier == SubscriptionTier.PRO
+            val monthlyLimit = if (isPro) proLimit else freeLimit
+            AiReceiptQuota(
+                usedScans = usedScans.coerceAtLeast(0),
+                monthlyLimit = monthlyLimit.coerceAtLeast(0),
+                isProTier = isPro,
+                isGatingEnabled = gatingEnabled
+            )
+        }.distinctUntilChanged()
 
     override fun isActingUserPro(): Flow<Boolean> =
         observeActingUserTier()
@@ -66,6 +96,10 @@ internal class FeatureGateServiceImpl(
                 freeLimitFlow = appConfigRepository.maxMembersPerGroupFree,
                 proLimitFlow = appConfigRepository.maxMembersPerGroupPro
             )
+            GatedLimit.AI_RECEIPT_MONTHLY_SCANS -> TierLimitFlows(
+                freeLimitFlow = appConfigRepository.aiReceiptMonthlyLimitFree,
+                proLimitFlow = appConfigRepository.aiReceiptMonthlyLimitPro
+            )
         }
 
         return combine(
@@ -79,7 +113,8 @@ internal class FeatureGateServiceImpl(
                 LimitResult.Allowed
             } else {
                 val effectiveTier = when (limit) {
-                    GatedLimit.MAX_OWNED_GROUPS_COUNT -> actingTier
+                    GatedLimit.MAX_OWNED_GROUPS_COUNT,
+                    GatedLimit.AI_RECEIPT_MONTHLY_SCANS -> actingTier
                     GatedLimit.MAX_MEMBERS_PER_GROUP ->
                         resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
                 }

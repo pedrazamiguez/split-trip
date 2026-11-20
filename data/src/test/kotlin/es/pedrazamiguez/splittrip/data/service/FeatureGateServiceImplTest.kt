@@ -5,14 +5,17 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import java.time.YearMonth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -32,13 +35,18 @@ class FeatureGateServiceImplTest {
     private lateinit var appConfigRepository: AppConfigRepository
     private lateinit var userRepository: UserRepository
     private lateinit var groupRepository: GroupRepository
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var service: FeatureGateServiceImpl
 
+    private val fixedYearMonth = YearMonth.of(2026, 11)
     private val subscriptionGatingEnabled = MutableStateFlow(true)
     private val maxOwnedGroupsFree = MutableStateFlow(1)
     private val maxOwnedGroupsPro = MutableStateFlow(100)
     private val maxMembersPerGroupFree = MutableStateFlow(4)
     private val maxMembersPerGroupPro = MutableStateFlow(20)
+    private val aiReceiptMonthlyLimitFree = MutableStateFlow(3)
+    private val aiReceiptMonthlyLimitPro = MutableStateFlow(100)
+    private val monthlyScanCount = MutableStateFlow(0)
     private val proAllowlistEmailHashes = MutableStateFlow<Set<String>>(emptySet())
 
     @BeforeEach
@@ -47,13 +55,17 @@ class FeatureGateServiceImplTest {
         appConfigRepository = mockk()
         userRepository = mockk()
         groupRepository = mockk()
+        userPreferenceRepository = mockk()
 
         every { appConfigRepository.subscriptionGatingEnabled } returns subscriptionGatingEnabled
         every { appConfigRepository.maxOwnedGroupsFree } returns maxOwnedGroupsFree
         every { appConfigRepository.maxOwnedGroupsPro } returns maxOwnedGroupsPro
         every { appConfigRepository.maxMembersPerGroupFree } returns maxMembersPerGroupFree
         every { appConfigRepository.maxMembersPerGroupPro } returns maxMembersPerGroupPro
+        every { appConfigRepository.aiReceiptMonthlyLimitFree } returns aiReceiptMonthlyLimitFree
+        every { appConfigRepository.aiReceiptMonthlyLimitPro } returns aiReceiptMonthlyLimitPro
         every { appConfigRepository.proAllowlistEmailHashes } returns proAllowlistEmailHashes
+        every { userPreferenceRepository.getMonthlyAiReceiptScanCount(fixedYearMonth) } returns monthlyScanCount
         every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
         every { authenticationService.currentUserEmail() } returns null
 
@@ -62,13 +74,18 @@ class FeatureGateServiceImplTest {
         maxOwnedGroupsPro.value = 100
         maxMembersPerGroupFree.value = 4
         maxMembersPerGroupPro.value = 20
+        aiReceiptMonthlyLimitFree.value = 3
+        aiReceiptMonthlyLimitPro.value = 100
+        monthlyScanCount.value = 0
         proAllowlistEmailHashes.value = emptySet()
 
         service = FeatureGateServiceImpl(
             authenticationService = authenticationService,
             appConfigRepository = appConfigRepository,
             userRepository = userRepository,
-            groupRepository = groupRepository
+            groupRepository = groupRepository,
+            userPreferenceRepository = userPreferenceRepository,
+            yearMonthProvider = { fixedYearMonth }
         )
     }
 
@@ -86,8 +103,9 @@ class FeatureGateServiceImplTest {
     }
 
     @Test
-    fun `isFeatureEnabled when anonymous returns false for all gated features`() = runTest {
+    fun `isFeatureEnabled when anonymous returns false for all gated features when AI limit is zero`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns true
+        aiReceiptMonthlyLimitFree.value = 0
 
         assertFalse(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).first())
         assertFalse(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION).first())
@@ -158,7 +176,9 @@ class FeatureGateServiceImplTest {
             )
         )
 
-        // User-level capability: AI Receipt Scanning is disabled for Free user
+        // User-level capability: AI Receipt Scanning is enabled with remaining trial scans, disabled when exhausted
+        assertTrue(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
+        monthlyScanCount.value = 3
         assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
 
         // Group-level capability without groupId: evaluates acting user (Free) -> false
@@ -269,6 +289,7 @@ class FeatureGateServiceImplTest {
         every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
 
         // Profile null -> acting user falls back to FREE
+        aiReceiptMonthlyLimitFree.value = 0
         assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
         assertEquals(
             LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = true),
@@ -469,7 +490,9 @@ class FeatureGateServiceImplTest {
 
             assertFalse(service.isActingUserPro().first())
             assertFalse(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
-            assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
+            val aiQuota = service.observeAiReceiptQuota().first()
+            assertFalse(aiQuota.isProTier)
+            assertEquals(3, aiQuota.monthlyLimit)
             assertEquals(
                 LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = true),
                 service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 1).first()
@@ -569,4 +592,121 @@ class FeatureGateServiceImplTest {
             assertTrue(service.isActingUserPro().first())
             assertTrue(service.isFeatureEnabled(GatedFeature.AD_FREE).first())
         }
+
+    @Test
+    fun `observeAiReceiptQuota emits remaining scans for Free user and updates reactively when scan count increases`() =
+        runTest {
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(
+                User(userId = "free-user", email = "free@test.com", tier = SubscriptionTier.FREE)
+            )
+
+            val emissions = mutableListOf<AiReceiptQuota>()
+            val job = launch {
+                service.observeAiReceiptQuota()
+                    .take(3)
+                    .toList(emissions)
+            }
+            testScheduler.runCurrent()
+
+            monthlyScanCount.value = 1
+            testScheduler.runCurrent()
+            monthlyScanCount.value = 3
+            testScheduler.runCurrent()
+            job.join()
+
+            assertEquals(3, emissions.size)
+            assertTrue(emissions[0].canScan && !emissions[0].requiresUpgrade && emissions[0].remainingScans == 3)
+            assertTrue(emissions[1].canScan && !emissions[1].requiresUpgrade && emissions[1].remainingScans == 2)
+            assertTrue(!emissions[2].canScan && emissions[2].requiresUpgrade && emissions[2].remainingScans == 0)
+        }
+
+    @Test
+    fun `isFeatureEnabled AI_RECEIPT_SCANNING returns true with trial quota and false once exhausted`() =
+        runTest {
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(
+                User(userId = "free-user", email = "free@test.com", tier = SubscriptionTier.FREE)
+            )
+
+            monthlyScanCount.value = 2
+            assertTrue(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
+
+            monthlyScanCount.value = 3
+            assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
+        }
+
+    @Test
+    fun `isFeatureEnabled AI_RECEIPT_SCANNING returns false for Free user when remote config free limit is zero`() =
+        runTest {
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(
+                User(userId = "free-user", email = "free@test.com", tier = SubscriptionTier.FREE)
+            )
+            aiReceiptMonthlyLimitFree.value = 0
+            monthlyScanCount.value = 0
+
+            assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
+        }
+
+    @Test
+    fun `observeAiReceiptQuota evaluates Pro monthly limit and sets requiresUpgrade false when Pro cap reached`() =
+        runTest {
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(
+                User(userId = "pro-user", email = "pro@test.com", tier = SubscriptionTier.PRO)
+            )
+
+            monthlyScanCount.value = 99
+            val almostExhausted = service.observeAiReceiptQuota().first()
+            assertTrue(almostExhausted.canScan)
+            assertEquals(1, almostExhausted.remainingScans)
+
+            monthlyScanCount.value = 100
+            val exhausted = service.observeAiReceiptQuota().first()
+            assertFalse(exhausted.canScan)
+            assertFalse(exhausted.requiresUpgrade)
+            assertEquals(0, exhausted.remainingScans)
+        }
+
+    @Test
+    fun `checkLimit for AI_RECEIPT_MONTHLY_SCANS evaluates free and pro limits against acting tier`() = runTest {
+        coEvery { authenticationService.isAnonymous() } returns false
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(userId = "free-user", email = "free@test.com", tier = SubscriptionTier.FREE)
+        )
+
+        assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.AI_RECEIPT_MONTHLY_SCANS, 2).first())
+        assertEquals(
+            LimitResult.Blocked(GatedLimit.AI_RECEIPT_MONTHLY_SCANS, upgradeRequired = true),
+            service.checkLimit(GatedLimit.AI_RECEIPT_MONTHLY_SCANS, 3).first()
+        )
+
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(userId = "pro-user", email = "pro@test.com", tier = SubscriptionTier.PRO)
+        )
+
+        assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.AI_RECEIPT_MONTHLY_SCANS, 99).first())
+        assertEquals(
+            LimitResult.Blocked(GatedLimit.AI_RECEIPT_MONTHLY_SCANS, upgradeRequired = false),
+            service.checkLimit(GatedLimit.AI_RECEIPT_MONTHLY_SCANS, 100).first()
+        )
+    }
+
+    @Test
+    fun `observeAiReceiptQuota respects dynamic remote config changes to aiReceiptMonthlyLimitFree`() = runTest {
+        coEvery { authenticationService.isAnonymous() } returns false
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(userId = "free-user", email = "free@test.com", tier = SubscriptionTier.FREE)
+        )
+        monthlyScanCount.value = 3
+
+        assertFalse(service.observeAiReceiptQuota().first().canScan)
+
+        aiReceiptMonthlyLimitFree.value = 5
+
+        val updated = service.observeAiReceiptQuota().first()
+        assertTrue(updated.canScan)
+        assertEquals(2, updated.remainingScans)
+    }
 }

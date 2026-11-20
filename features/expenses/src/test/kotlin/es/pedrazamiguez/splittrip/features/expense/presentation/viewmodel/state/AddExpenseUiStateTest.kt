@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSou
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -1167,20 +1168,23 @@ class AddExpenseUiStateTest {
     inner class AiGatingDefaults {
 
         @Test
-        fun `defaults isAiGated and isAiProFeature to false`() {
+        fun `defaults isAiGated and isAiProFeature to false and aiRemainingScansLabel to null`() {
             val state = AddExpenseUiState()
             assertFalse(state.isAiGated)
             assertFalse(state.isAiProFeature)
+            assertNull(state.aiRemainingScansLabel)
         }
 
         @Test
-        fun `copies isAiGated and isAiProFeature correctly`() {
+        fun `copies isAiGated isAiProFeature and aiRemainingScansLabel correctly`() {
             val state = AddExpenseUiState(
                 isAiGated = true,
-                isAiProFeature = true
+                isAiProFeature = true,
+                aiRemainingScansLabel = "0 free scans left this month"
             )
             assertTrue(state.isAiGated)
             assertTrue(state.isAiProFeature)
+            assertEquals("0 free scans left this month", state.aiRemainingScansLabel)
         }
     }
 }

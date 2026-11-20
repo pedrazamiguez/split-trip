@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.domain.repository.CurrencyRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -148,7 +149,8 @@ val expensesDomainModule = module {
         ExtractReceiptFieldsUseCaseImpl(
             ocrService = get<ReceiptOcrService>(),
             extractionService = get<ReceiptExtractionService>(),
-            appConfigService = get<AppConfigService>()
+            appConfigService = get<AppConfigService>(),
+            userPreferenceRepository = get<UserPreferenceRepository>()
         )
     }
 }

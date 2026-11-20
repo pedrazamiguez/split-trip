@@ -38,7 +38,7 @@
     </entry>
     <entry>
         <key>ai_receipt_monthly_limit_free</key>
-        <value>0</value>
+        <value>3</value>
     </entry>
     <entry>
         <key>ai_receipt_monthly_limit_pro</key>

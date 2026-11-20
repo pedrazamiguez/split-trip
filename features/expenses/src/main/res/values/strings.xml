@@ -480,4 +480,14 @@
     <string name="expenses_extras_add_on_fee_plural">Fees</string>
     <string name="expenses_extras_add_on_surcharge_plural">Surcharges</string>
     <string name="expenses_extras_add_on_tip_plural">Tips</string>
+
+    <!-- AI Receipt Monthly Quota -->
+    <plurals name="expense_autofill_free_scans_remaining">
+        <item quantity="one">%1$d free scan left this month</item>
+        <item quantity="other">%1$d free scans left this month</item>
+    </plurals>
+    <string name="expense_autofill_free_scans_exhausted">0 free scans left this month</string>
+    <string name="expense_autofill_monthly_scans_exhausted">Monthly scan limit reached</string>
+    <string name="expense_autofill_monthly_limit_reached">Monthly free AI scan limit reached (%1$d). Upgrade to Pro for more.</string>
+    <string name="expense_autofill_pro_monthly_limit_reached">Monthly AI scan limit reached (%1$d).</string>
 </resources>

@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.OptionalUpdateDismissal
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 
 @Suppress("TooManyFunctions")
@@ -64,6 +65,13 @@ class UserPreferenceRepositoryImpl(
 
     override suspend fun recordOptionalUpdateDismissal(versionCode: Long, timestampMs: Long) {
         userPreferences.recordOptionalUpdateDismissal(versionCode, timestampMs)
+    }
+
+    override fun getMonthlyAiReceiptScanCount(yearMonth: YearMonth): Flow<Int> =
+        userPreferences.getMonthlyAiReceiptScanCount(yearMonth)
+
+    override suspend fun incrementMonthlyAiReceiptScanCount(yearMonth: YearMonth) {
+        userPreferences.incrementMonthlyAiReceiptScanCount(yearMonth)
     }
 
     override suspend fun clearAll() {

@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
@@ -12,10 +13,13 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.ExtractReceiptFiel
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
@@ -29,8 +33,10 @@ class ExtractReceiptFieldsUseCaseTest {
     private lateinit var ocrService: ReceiptOcrService
     private lateinit var extractionService: ReceiptExtractionService
     private lateinit var appConfigService: AppConfigService
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var useCase: ExtractReceiptFieldsUseCase
 
+    private val fixedYearMonth = YearMonth.of(2026, 11)
     private val maxFutureDaysFlow = MutableStateFlow(30)
 
     private val attachment = ReceiptAttachment(
@@ -64,8 +70,16 @@ class ExtractReceiptFieldsUseCaseTest {
         ocrService = mockk()
         extractionService = mockk()
         appConfigService = mockk()
+        userPreferenceRepository = mockk()
         every { appConfigService.extractedDateMaxFutureDays } returns maxFutureDaysFlow
-        useCase = ExtractReceiptFieldsUseCaseImpl(ocrService, extractionService, appConfigService)
+        coEvery { userPreferenceRepository.incrementMonthlyAiReceiptScanCount(any()) } just runs
+        useCase = ExtractReceiptFieldsUseCaseImpl(
+            ocrService = ocrService,
+            extractionService = extractionService,
+            appConfigService = appConfigService,
+            userPreferenceRepository = userPreferenceRepository,
+            yearMonthProvider = { fixedYearMonth }
+        )
     }
 
     @Test
@@ -80,6 +94,7 @@ class ExtractReceiptFieldsUseCaseTest {
 
         coVerify(exactly = 1) { ocrService.recogniseText(attachment) }
         coVerify(exactly = 1) { extractionService.extract(rawText) }
+        coVerify(exactly = 1) { userPreferenceRepository.incrementMonthlyAiReceiptScanCount(fixedYearMonth) }
     }
 
     @Test
@@ -118,6 +133,7 @@ class ExtractReceiptFieldsUseCaseTest {
 
         coVerify(exactly = 1) { ocrService.recogniseText(attachment) }
         coVerify(exactly = 0) { extractionService.extract(any()) }
+        coVerify(exactly = 0) { userPreferenceRepository.incrementMonthlyAiReceiptScanCount(any()) }
     }
 
     @Test
@@ -133,5 +149,6 @@ class ExtractReceiptFieldsUseCaseTest {
 
         coVerify(exactly = 1) { ocrService.recogniseText(attachment) }
         coVerify(exactly = 1) { extractionService.extract(rawText) }
+        coVerify(exactly = 0) { userPreferenceRepository.incrementMonthlyAiReceiptScanCount(any()) }
     }
 }

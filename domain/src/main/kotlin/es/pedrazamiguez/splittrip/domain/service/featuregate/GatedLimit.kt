@@ -5,5 +5,6 @@ package es.pedrazamiguez.splittrip.domain.service.featuregate
  */
 enum class GatedLimit {
     MAX_OWNED_GROUPS_COUNT,
-    MAX_MEMBERS_PER_GROUP
+    MAX_MEMBERS_PER_GROUP,
+    AI_RECEIPT_MONTHLY_SCANS
 }

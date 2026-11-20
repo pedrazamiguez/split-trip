@@ -396,4 +396,12 @@
     <string name="expenses_extras_add_on_fee_plural">Comiçionê</string>
     <string name="expenses_extras_add_on_surcharge_plural">Recargô</string>
     <string name="expenses_extras_add_on_tip_plural">Propinâ</string>
+    <plurals name="expense_autofill_free_scans_remaining">
+        <item quantity="one">%1$d êccaneo gratî rêttante êtte mê</item>
+        <item quantity="other">%1$d êccaneô gratî rêttantê êtte mê</item>
+    </plurals>
+    <string name="expense_autofill_free_scans_exhausted">0 êccaneô gratî rêttantê êtte mê</string>
+    <string name="expense_autofill_monthly_scans_exhausted">Límite mençuâh de êccaneô arcançao</string>
+    <string name="expense_autofill_monthly_limit_reached">Límite mençuâh de êccaneô IA gratî arcançao (%1$d). Páçate a Pro pa mâh.</string>
+    <string name="expense_autofill_pro_monthly_limit_reached">Límite mençuâh de êccaneô IA arcançao (%1$d).</string>
 </resources>
