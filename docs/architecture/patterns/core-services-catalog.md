@@ -127,6 +127,8 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Component | File | Purpose |
 |---|---|---|
+| `HorizonModalBottomSheet` | `sheet/HorizonModalBottomSheet.kt` | Standardized Material 3 `ModalBottomSheet` wrapper with `dragHandle = null`, `surface` container color, bottom-only `WindowInsets.safeDrawing` insets, and `rememberHorizonBottomSheetState` (no `PartiallyExpanded` anchor). **Use instead of:** raw `ModalBottomSheet`. |
+| `rememberHorizonBottomSheetState` | `sheet/HorizonModalBottomSheet.kt` | State helper returning `SheetState` with `initialValue = SheetValue.Hidden` and `enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)`. |
 | `DestructiveConfirmationDialog` | `dialog/DestructiveConfirmationDialog.kt` | Confirmation dialog with a destructive (red) action button. **Use for:** Delete confirmations (Delete Group, Delete Expense). |
 | `ActionBottomSheet` | `sheet/ActionBottomSheet.kt` | Bottom sheet displaying a list of `SheetAction` items with icons. **Use for:** Contextual action menus (long-press on expense, group options). |
 | `CopyableTextSheet` | `sheet/CopyableTextSheet.kt` | Bottom sheet displaying text that can be copied to clipboard. **Use for:** Sharing group invite codes, debug info. |
