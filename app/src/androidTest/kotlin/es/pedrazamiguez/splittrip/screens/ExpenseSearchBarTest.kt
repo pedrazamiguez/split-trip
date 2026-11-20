@@ -4,11 +4,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -29,6 +33,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseUiM
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpensesScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesUiState
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -145,6 +150,7 @@ class ExpenseSearchBarTest {
     @Test
     fun expensesScreen_emptySearchState_rendersSearchBar_andClearsQuery() {
         val emptyTitle = targetContext.getString(R.string.expenses_search_empty_title)
+        val emptyDescription = targetContext.getString(R.string.expenses_search_empty_description)
         val clearDescription = targetContext.getString(R.string.expenses_search_clear)
         var lastQuery = "Nonexistent"
 
@@ -172,7 +178,9 @@ class ExpenseSearchBarTest {
 
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText(emptyTitle).assertIsDisplayed()
+        composeRule.onAllNodesWithText(emptyTitle).assertCountEquals(2)
+        composeRule.onNodeWithText(emptyDescription).assertIsDisplayed()
+        composeRule.onNodeWithText("€0.00").assertIsDisplayed()
         composeRule.onNodeWithText("Nonexistent").assertIsDisplayed()
         composeRule.onNodeWithContentDescription(clearDescription).performClick()
         composeRule.waitForIdle()
@@ -223,6 +231,91 @@ class ExpenseSearchBarTest {
         composeRule.waitForIdle()
 
         composeRule.onNode(hasSetTextAction()).assertIsNotDisplayed()
+    }
+
+    @Test
+    fun expensesScreen_preservesSearchFocus_whenTransitioningBetweenResultsAndEmptySearch() {
+        val emptyTitle = targetContext.getString(R.string.expenses_search_empty_title)
+        val emptyDescription = targetContext.getString(R.string.expenses_search_empty_description)
+        val dateGroups = buildSampleDateGroups()
+        val totalCount = dateGroups.sumOf { it.expenses.size }
+        var uiState by mutableStateOf(
+            ExpensesUiState(
+                isLoading = false,
+                groupId = "group-1",
+                expenseGroups = dateGroups,
+                totalExpensesCount = totalCount,
+                formattedTotalSpent = "€240.00",
+                visibleExpensesCount = totalCount,
+                isFiltered = false
+            )
+        )
+
+        composeRule.setContent {
+            SplitTripTheme {
+                CompositionLocalProvider(
+                    LocalTopPadding provides 0.dp,
+                    LocalBottomPadding provides 0.dp
+                ) {
+                    ExpensesScreen(
+                        uiState = uiState,
+                        onSearchQueryChanged = { query ->
+                            uiState = if (query.isEmpty()) {
+                                uiState.copy(
+                                    searchQuery = "",
+                                    expenseGroups = dateGroups,
+                                    formattedTotalSpent = "€240.00",
+                                    visibleExpensesCount = totalCount,
+                                    isFiltered = false
+                                )
+                            } else {
+                                uiState.copy(
+                                    searchQuery = query,
+                                    expenseGroups = persistentListOf(),
+                                    formattedTotalSpent = "€0.00",
+                                    visibleExpensesCount = 0,
+                                    isFiltered = true
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        val initialSearchTop = composeRule.onNode(hasSetTextAction()).fetchSemanticsNode().positionInRoot.y
+        composeRule.onNode(hasSetTextAction()).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+
+        composeRule.onNode(hasSetTextAction()).performTextInput("y")
+        composeRule.waitForIdle()
+
+        composeRule.onAllNodesWithText(emptyTitle).assertCountEquals(2)
+        composeRule.onNodeWithText(emptyDescription).assertIsDisplayed()
+        composeRule.onNodeWithText("€0.00").assertIsDisplayed()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+        val emptySearchTop = composeRule.onNode(hasSetTextAction()).fetchSemanticsNode().positionInRoot.y
+        assertEquals(initialSearchTop, emptySearchTop, 0.5f)
+
+        uiState = uiState.copy(
+            searchQuery = "",
+            expenseGroups = dateGroups,
+            formattedTotalSpent = "€240.00",
+            visibleExpensesCount = totalCount,
+            isFiltered = false
+        )
+        composeRule.waitForIdle()
+
+        composeRule.onAllNodesWithText(emptyTitle).assertCountEquals(0)
+        composeRule.onNodeWithText(emptyDescription).assertDoesNotExist()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+
+        composeRule.onNode(hasSetTextAction()).performImeAction()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsNotFocused()
     }
 
     private fun buildSampleDateGroups() = listOf(

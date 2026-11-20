@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.list
 
+import android.content.res.Resources
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,6 +36,7 @@ fun ExpensesTotalSummaryRow(
     modifier: Modifier = Modifier,
     formattedTotalScheduled: String? = null
 ) {
+    val resources = LocalContext.current.resources
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -52,7 +54,7 @@ fun ExpensesTotalSummaryRow(
                 modifier = Modifier.size(ICON_SIZE)
             )
             Text(
-                text = pluralStringResource(R.plurals.expenses_count, visibleExpensesCount, visibleExpensesCount),
+                text = formatSummaryCountLabel(resources, visibleExpensesCount),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -60,7 +62,6 @@ fun ExpensesTotalSummaryRow(
                 overflow = TextOverflow.Ellipsis
             )
         }
-
         Column(horizontalAlignment = Alignment.End) {
             AnimatedAmount(
                 formattedAmount = formattedTotalSpent,
@@ -69,7 +70,6 @@ fun ExpensesTotalSummaryRow(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-
             if (formattedTotalScheduled != null) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -93,3 +93,10 @@ fun ExpensesTotalSummaryRow(
         }
     }
 }
+
+private fun formatSummaryCountLabel(resources: Resources, visibleExpensesCount: Int): String =
+    if (visibleExpensesCount == 0) {
+        resources.getString(R.string.expenses_search_empty_title)
+    } else {
+        resources.getQuantityString(R.plurals.expenses_count, visibleExpensesCount, visibleExpensesCount)
+    }
