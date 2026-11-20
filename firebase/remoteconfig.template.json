@@ -55,7 +55,7 @@
         },
         "ai_receipt_monthly_limit_free": {
           "defaultValue": {
-            "value": "0"
+            "value": "3"
           },
           "description": "Monthly quota of AI receipt scans allocated to Free users.",
           "valueType": "NUMBER"

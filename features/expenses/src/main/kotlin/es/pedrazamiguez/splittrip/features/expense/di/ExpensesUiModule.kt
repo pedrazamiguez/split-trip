@@ -58,6 +58,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.CategorySpendingUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
@@ -131,6 +132,12 @@ val expensesUiModule = module {
     }
 
     single { AddExpenseAddOnUiMapper() }
+
+    single {
+        AiReceiptQuotaUiMapper(
+            resourceProvider = get<ResourceProvider>()
+        )
+    }
 
     single {
         AddExpenseUiMapper(
@@ -240,6 +247,7 @@ val expensesUiModule = module {
         )
 
         val featureGateService = get<FeatureGateService>()
+        val aiReceiptQuotaUiMapper = get<AiReceiptQuotaUiMapper>()
 
         val configEventHandler = ConfigEventHandler(
             getGroupExpenseConfigUseCase = get<GetGroupExpenseConfigUseCase>(),
@@ -252,7 +260,8 @@ val expensesUiModule = module {
             addExpenseSplitMapper = addExpenseSplitUiMapper,
             addExpenseUiMapper = addExpenseUiMapper,
             receiptExtractionService = get<ReceiptExtractionService>(),
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper
         )
 
         val submitResultDelegate = SubmitResultDelegate(
@@ -310,6 +319,7 @@ val expensesUiModule = module {
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
             featureGateService = featureGateService,
+            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
             telemetryTracker = get<TelemetryTracker>()
         )
 
@@ -335,8 +345,7 @@ val expensesUiModule = module {
             submitEventHandler = submitEventHandler,
             formEventHandler = formEventHandler,
             receiptAutoFillEventHandler = receiptAutoFillEventHandler,
-            strategyFactory = expenseFlowStrategyFactory,
-            featureGateService = featureGateService
+            strategyFactory = expenseFlowStrategyFactory
         )
     }
 

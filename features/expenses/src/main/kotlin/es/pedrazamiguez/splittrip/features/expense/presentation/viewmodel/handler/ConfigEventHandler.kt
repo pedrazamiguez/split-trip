@@ -14,7 +14,6 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
@@ -24,6 +23,7 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
@@ -64,7 +64,8 @@ class ConfigEventHandler(
     private val addExpenseSplitMapper: AddExpenseSplitUiMapper,
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val receiptExtractionService: ReceiptExtractionService,
-    private val featureGateService: FeatureGateService
+    private val featureGateService: FeatureGateService,
+    private val aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -170,8 +171,9 @@ class ConfigEventHandler(
         val userSubunitOptions = filterSubunitsForCurrentUser(currentUserId, config)
 
         val isAiCapable = receiptExtractionService.capability() == ExtractionCapability.ON_DEVICE_AI
-        val isAiEnabled = featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first()
-        val effectiveAiMode = resolveEffectiveAiMode(isAiCapable, isAiEnabled)
+        val aiQuota = featureGateService.observeAiReceiptQuota().first()
+        val aiQuotaUi = aiReceiptQuotaUiMapper.mapQuotaToUiModel(aiQuota)
+        val effectiveAiMode = resolveEffectiveAiMode(isAiCapable, aiQuota.canScan)
         val currentMillis = System.currentTimeMillis()
         val formattedDate = addExpenseUiMapper.formatExpenseDateForDisplay(currentMillis)
 
@@ -183,8 +185,9 @@ class ConfigEventHandler(
                 loadedGroupId = groupId,
                 isAiCapable = isAiCapable,
                 isAiModeActive = effectiveAiMode,
-                isAiGated = !isAiEnabled,
-                isAiProFeature = !isAiEnabled,
+                isAiGated = aiQuotaUi.isAiGated,
+                isAiProFeature = aiQuotaUi.isAiProFeature,
+                aiRemainingScansLabel = aiQuotaUi.remainingScansLabel,
                 currentStep = if (effectiveAiMode) AddExpenseStep.RECEIPT else AddExpenseStep.TITLE,
                 groupName = config.group.name,
                 currentUserId = currentUserId,

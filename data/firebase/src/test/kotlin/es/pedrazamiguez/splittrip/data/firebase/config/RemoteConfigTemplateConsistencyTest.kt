@@ -96,6 +96,12 @@ class RemoteConfigTemplateConsistencyTest {
     }
 
     @Test
+    fun `ai_receipt_monthly_limit_free defaults to 3 in template and XML`() {
+        assertEquals("3", templateParameters["ai_receipt_monthly_limit_free"]?.defaultValue)
+        assertEquals("3", xmlDefaults["ai_receipt_monthly_limit_free"])
+    }
+
+    @Test
     fun `every parameter specifies a valid valueType and non-empty description`() {
         val validTypes = setOf("STRING", "BOOLEAN", "NUMBER", "JSON")
         templateParameters.forEach { (key, param) ->

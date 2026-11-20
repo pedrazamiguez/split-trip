@@ -11,11 +11,13 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
@@ -41,6 +43,7 @@ class ReceiptAutoFillEventHandler(
     private val formattingHelper: FormattingHelper,
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val featureGateService: FeatureGateService,
+    private val aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper,
     private val telemetryTracker: TelemetryTracker,
     private val zoneIdProvider: () -> ZoneId = { ZoneId.systemDefault() }
 ) : AddExpenseEventHandler {
@@ -80,6 +83,21 @@ class ReceiptAutoFillEventHandler(
         onPaymentMethodSelected = callback
     }
 
+    fun startObservingAiQuota() {
+        scope.launch {
+            featureGateService.observeAiReceiptQuota().collect { quota ->
+                val quotaUi = aiReceiptQuotaUiMapper.mapQuotaToUiModel(quota)
+                _uiState.update { state ->
+                    state.copy(
+                        isAiGated = quotaUi.isAiGated,
+                        isAiProFeature = quotaUi.isAiProFeature,
+                        aiRemainingScansLabel = quotaUi.remainingScansLabel
+                    )
+                }
+            }
+        }
+    }
+
     /**
      * Triggered when a receipt is successfully attached. If AI extraction is supported on
      * the device, runs OCR and extracts structured fields, then merges them.
@@ -113,19 +131,12 @@ class ReceiptAutoFillEventHandler(
         preScanCurrency: CurrencyUiModel?,
         preScanPaymentMethod: PaymentMethodUiModel?
     ) {
-        val isEnabled = featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first()
-        if (!isEnabled) {
-            telemetryTracker.trackFeatureGateBlocked(
-                feature = GatedFeature.AI_RECEIPT_SCANNING,
-                entryPoint = MonetizationTelemetry.GateEntryPoint.AI_RECEIPT_ATTACH,
-                upgradePrompted = true
+        val quota = featureGateService.observeAiReceiptQuota().first()
+        if (!quota.canScan) {
+            handleQuotaBlocked(
+                quota = quota,
+                entryPoint = MonetizationTelemetry.GateEntryPoint.AI_RECEIPT_ATTACH
             )
-            _actionsFlow.emit(
-                AddExpenseUiAction.ShowPill(
-                    UiText.StringResource(R.string.expense_autofill_pro_required)
-                )
-            )
-            _actionsFlow.emit(AddExpenseUiAction.NavigateToSubscriptions)
             return
         }
 
@@ -173,25 +184,32 @@ class ReceiptAutoFillEventHandler(
 
         if (active) {
             scope.launch {
-                val isEnabled = featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first()
-                if (!isEnabled) {
-                    telemetryTracker.trackFeatureGateBlocked(
-                        feature = GatedFeature.AI_RECEIPT_SCANNING,
-                        entryPoint = MonetizationTelemetry.GateEntryPoint.AI_MODE_TOGGLE,
-                        upgradePrompted = true
+                val quota = featureGateService.observeAiReceiptQuota().first()
+                if (!quota.canScan) {
+                    handleQuotaBlocked(
+                        quota = quota,
+                        entryPoint = MonetizationTelemetry.GateEntryPoint.AI_MODE_TOGGLE
                     )
-                    _actionsFlow.emit(
-                        AddExpenseUiAction.ShowPill(
-                            UiText.StringResource(R.string.expense_autofill_pro_required)
-                        )
-                    )
-                    _actionsFlow.emit(AddExpenseUiAction.NavigateToSubscriptions)
                     return@launch
                 }
                 performSetAiModeActive(active = true)
             }
         } else {
             performSetAiModeActive(active = false)
+        }
+    }
+
+    private suspend fun handleQuotaBlocked(quota: AiReceiptQuota, entryPoint: String) {
+        telemetryTracker.trackFeatureGateBlocked(
+            feature = GatedFeature.AI_RECEIPT_SCANNING,
+            entryPoint = entryPoint,
+            upgradePrompted = quota.requiresUpgrade
+        )
+        _actionsFlow.emit(
+            AddExpenseUiAction.ShowPill(aiReceiptQuotaUiMapper.mapBlockedMessage(quota))
+        )
+        if (quota.requiresUpgrade) {
+            _actionsFlow.emit(AddExpenseUiAction.NavigateToSubscriptions)
         }
     }
 

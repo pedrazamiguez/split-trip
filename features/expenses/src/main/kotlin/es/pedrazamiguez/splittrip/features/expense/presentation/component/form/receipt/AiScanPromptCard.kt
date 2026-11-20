@@ -27,8 +27,17 @@ import es.pedrazamiguez.splittrip.features.expense.R
 fun AiScanPromptCard(
     isProFeature: Boolean,
     onSwitchToAi: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    remainingScansLabel: String? = null,
+    isQuotaExhausted: Boolean = false
 ) {
+    val buttonText = if (isProFeature) {
+        stringResource(R.string.expense_autofill_unlock_with_pro)
+    } else {
+        stringResource(R.string.expense_autofill_switch_ai)
+    }
+    val buttonIcon = if (isProFeature) TablerIcons.Outline.Lock else null
+
     FlatCard(
         modifier = modifier.fillMaxWidth()
     ) {
@@ -50,19 +59,21 @@ fun AiScanPromptCard(
                     ProBadge()
                 }
             }
+            if (remainingScansLabel != null) {
+                AiRemainingScansBadge(
+                    label = remainingScansLabel,
+                    isExhausted = isQuotaExhausted
+                )
+            }
             Text(
                 text = stringResource(R.string.expense_autofill_prompt_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             SecondaryButton(
-                text = if (isProFeature) {
-                    stringResource(R.string.expense_autofill_unlock_with_pro)
-                } else {
-                    stringResource(R.string.expense_autofill_switch_ai)
-                },
+                text = buttonText,
                 onClick = onSwitchToAi,
-                leadingIcon = if (isProFeature) TablerIcons.Outline.Lock else null,
+                leadingIcon = buttonIcon,
                 modifier = Modifier.fillMaxWidth()
             )
         }

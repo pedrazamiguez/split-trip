@@ -71,4 +71,18 @@ class ModifierExtensionsTest {
 
         assertNotNull(modifier)
     }
+
+    @Test
+    fun `clearFocusOnKeyboardDismiss creates a valid modifier`() {
+        val modifier = Modifier.clearFocusOnKeyboardDismiss()
+
+        assertNotNull(modifier)
+    }
+
+    @Test
+    fun `clearFocusOnKeyboardDismiss with explicit ime visibility creates a valid modifier`() {
+        val modifier = Modifier.clearFocusOnKeyboardDismiss(isImeVisible = true)
+
+        assertNotNull(modifier)
+    }
 }

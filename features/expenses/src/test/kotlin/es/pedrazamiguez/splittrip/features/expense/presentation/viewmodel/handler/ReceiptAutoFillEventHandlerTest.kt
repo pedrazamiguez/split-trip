@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
@@ -11,11 +12,12 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
@@ -59,6 +61,8 @@ class ReceiptAutoFillEventHandlerTest {
     private lateinit var receiptExtractionService: ReceiptExtractionService
     private lateinit var formattingHelper: FormattingHelper
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
+    private lateinit var resourceProvider: ResourceProvider
+    private lateinit var aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper
     private lateinit var featureGateService: FeatureGateService
     private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
@@ -88,8 +92,12 @@ class ReceiptAutoFillEventHandlerTest {
         capturedPaymentMethodSelections.clear()
 
         addExpenseUiMapper = mockk(relaxed = true)
+        resourceProvider = mockk(relaxed = true)
+        aiReceiptQuotaUiMapper = AiReceiptQuotaUiMapper(resourceProvider)
         featureGateService = mockk {
-            every { isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(true)
+            every { observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 100, isProTier = true)
+            )
         }
         telemetryTracker = mockk(relaxed = true)
         handler = ReceiptAutoFillEventHandler(
@@ -98,6 +106,7 @@ class ReceiptAutoFillEventHandlerTest {
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
             featureGateService = featureGateService,
+            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
             telemetryTracker = telemetryTracker,
             zoneIdProvider = { ZoneOffset.UTC }
         )
@@ -146,7 +155,9 @@ class ReceiptAutoFillEventHandlerTest {
 
         @Test
         fun `handleSetAiModeActive true when AI scanning enabled activates AI mode`() = runTest {
-            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(true)
+            every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 100, isProTier = true)
+            )
             uiState.value = uiState.value.copy(
                 isAiCapable = true,
                 isAiModeActive = false,
@@ -161,7 +172,9 @@ class ReceiptAutoFillEventHandlerTest {
 
         @Test
         fun `handleSetAiModeActive true when AI scanning disabled emits NavigateToSubscriptions`() = runTest {
-            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(false)
+            every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 0, isProTier = false)
+            )
             uiState.value = uiState.value.copy(
                 isAiCapable = true,
                 isAiModeActive = false,
@@ -193,6 +206,108 @@ class ReceiptAutoFillEventHandlerTest {
                 )
             }
         }
+
+        @Test
+        fun `startObservingAiQuota updates isAiGated isAiProFeature and aiRemainingScansLabel dynamically`() =
+            runTest {
+                val quotaFlow = MutableStateFlow(
+                    AiReceiptQuota(usedScans = 1, monthlyLimit = 3, isProTier = false)
+                )
+                every { featureGateService.observeAiReceiptQuota() } returns quotaFlow
+                every {
+                    resourceProvider.getQuantityString(R.plurals.expense_autofill_free_scans_remaining, 2, 2)
+                } returns "2 free scans left this month"
+                every {
+                    resourceProvider.getString(R.string.expense_autofill_free_scans_exhausted)
+                } returns "0 free scans left this month"
+
+                handler.startObservingAiQuota()
+
+                assertFalse(uiState.value.isAiGated)
+                assertFalse(uiState.value.isAiProFeature)
+                assertEquals("2 free scans left this month", uiState.value.aiRemainingScansLabel)
+
+                quotaFlow.value = AiReceiptQuota(usedScans = 3, monthlyLimit = 3, isProTier = false)
+
+                assertTrue(uiState.value.isAiGated)
+                assertTrue(uiState.value.isAiProFeature)
+                assertEquals("0 free scans left this month", uiState.value.aiRemainingScansLabel)
+            }
+
+        @Test
+        fun `handleSetAiModeActive true when Free trial exhausted emits pill and NavigateToSubscriptions`() =
+            runTest {
+                every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                    AiReceiptQuota(usedScans = 3, monthlyLimit = 3, isProTier = false)
+                )
+                uiState.value = uiState.value.copy(
+                    isAiCapable = true,
+                    isAiModeActive = false,
+                    currentStep = AddExpenseStep.TITLE
+                )
+
+                handler.handleSetAiModeActive(true)
+
+                assertFalse(uiState.value.isAiModeActive)
+                assertEquals(
+                    listOf(
+                        AddExpenseUiAction.ShowPill(
+                            UiText.StringResource(R.string.expense_autofill_monthly_limit_reached, 3)
+                        ),
+                        AddExpenseUiAction.NavigateToSubscriptions
+                    ),
+                    actions.replayCache
+                )
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                            MonetizationTelemetry.Param.GATE_NAME to "ai_receipt_scanning",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.AI_MODE_TOGGLE,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `handleSetAiModeActive true when Pro cap reached emits pro limit pill without navigating`() =
+            runTest {
+                every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                    AiReceiptQuota(usedScans = 100, monthlyLimit = 100, isProTier = true)
+                )
+                uiState.value = uiState.value.copy(
+                    isAiCapable = true,
+                    isAiModeActive = false,
+                    currentStep = AddExpenseStep.TITLE
+                )
+
+                handler.handleSetAiModeActive(true)
+
+                assertFalse(uiState.value.isAiModeActive)
+                assertEquals(
+                    listOf(
+                        AddExpenseUiAction.ShowPill(
+                            UiText.StringResource(R.string.expense_autofill_pro_monthly_limit_reached, 100)
+                        )
+                    ),
+                    actions.replayCache
+                )
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                            MonetizationTelemetry.Param.GATE_NAME to "ai_receipt_scanning",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.AI_MODE_TOGGLE,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                        )
+                    )
+                }
+            }
     }
 
     @Nested
@@ -222,7 +337,9 @@ class ReceiptAutoFillEventHandlerTest {
         @Test
         fun `handleReceiptAttached when AI scanning is disabled emits NavigateToSubscriptions`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
-            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(false)
+            every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 0, isProTier = false)
+            )
 
             handler.handleReceiptAttached(attachment)
 
@@ -252,9 +369,46 @@ class ReceiptAutoFillEventHandlerTest {
         }
 
         @Test
+        fun `handleReceiptAttached when Free trial exhausted blocks extraction and navigates`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                    AiReceiptQuota(usedScans = 3, monthlyLimit = 3, isProTier = false)
+                )
+
+                handler.handleReceiptAttached(attachment)
+
+                assertEquals(
+                    listOf(
+                        AddExpenseUiAction.ShowPill(
+                            UiText.StringResource(R.string.expense_autofill_monthly_limit_reached, 3)
+                        ),
+                        AddExpenseUiAction.NavigateToSubscriptions
+                    ),
+                    actions.replayCache
+                )
+                coVerify(exactly = 0) { extractReceiptFieldsUseCase(any()) }
+                assertFalse(uiState.value.isAnalyzingReceipt)
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                            MonetizationTelemetry.Param.GATE_NAME to "ai_receipt_scanning",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.AI_RECEIPT_ATTACH,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
+            }
+
+        @Test
         fun `handleReceiptAttached when AI scanning is enabled proceeds to extract receipt fields`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
-            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(true)
+            every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 100, isProTier = true)
+            )
             coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
                 ExtractedReceipt(
                     title = "Starbucks",
@@ -337,6 +491,7 @@ class ReceiptAutoFillEventHandlerTest {
                 formattingHelper = formattingHelper,
                 addExpenseUiMapper = addExpenseUiMapper,
                 featureGateService = featureGateService,
+                aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
                 telemetryTracker = telemetryTracker,
                 zoneIdProvider = { ZoneId.of("Asia/Shanghai") }
             )

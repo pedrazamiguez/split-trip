@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
-import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
@@ -41,8 +39,7 @@ class AddExpenseViewModel(
     private val submitEventHandler: SubmitEventHandler,
     private val formEventHandler: FormEventHandler,
     private val receiptAutoFillEventHandler: ReceiptAutoFillEventHandler,
-    private val strategyFactory: ExpenseFlowStrategyFactory,
-    private val featureGateService: FeatureGateService
+    private val strategyFactory: ExpenseFlowStrategyFactory
 ) : ViewModel() {
 
     private val strategy = strategyFactory.create(expenseId)
@@ -62,18 +59,6 @@ class AddExpenseViewModel(
     private val wizardNavigator = WizardNavigator()
 
     init {
-        viewModelScope.launch {
-            featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING)
-                .collect { isEnabled ->
-                    _uiState.update {
-                        it.copy(
-                            isAiGated = !isEnabled,
-                            isAiProFeature = !isEnabled
-                        )
-                    }
-                }
-        }
-
         // Bind all handlers to the shared state and actions flows
         configEventHandler.bind(_uiState, _actions, viewModelScope)
         currencyEventHandler.bind(_uiState, _actions, viewModelScope)
@@ -83,6 +68,7 @@ class AddExpenseViewModel(
         submitEventHandler.bind(_uiState, _actions, viewModelScope)
         formEventHandler.bind(_uiState, _actions, viewModelScope)
         receiptAutoFillEventHandler.bind(_uiState, _actions, viewModelScope)
+        receiptAutoFillEventHandler.startObservingAiQuota()
 
         submitEventHandler.setStrategy(strategy)
 

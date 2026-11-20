@@ -29,6 +29,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.AiRemainingScansBadge
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.AiScanPromptCard
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.ReceiptSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -95,7 +96,7 @@ fun ReceiptStep(
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    if (uiState.isAiProFeature || uiState.isAiGated) {
+                                    if (uiState.isAiProFeature) {
                                         ProBadge()
                                     }
                                 }
@@ -105,6 +106,13 @@ fun ReceiptStep(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
+                        }
+
+                        if (uiState.aiRemainingScansLabel != null) {
+                            AiRemainingScansBadge(
+                                label = uiState.aiRemainingScansLabel,
+                                isExhausted = uiState.isAiGated
+                            )
                         }
 
                         Text(
@@ -165,9 +173,11 @@ fun ReceiptStep(
             } else {
                 if (uiState.isAiCapable && !uiState.isEditMode) {
                     AiScanPromptCard(
-                        isProFeature = uiState.isAiProFeature || uiState.isAiGated,
+                        isProFeature = uiState.isAiProFeature,
                         onSwitchToAi = { onEvent(AddExpenseUiEvent.SetAiModeActive(true)) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        remainingScansLabel = uiState.aiRemainingScansLabel,
+                        isQuotaExhausted = uiState.isAiGated
                     )
                 }
                 ReceiptSection(

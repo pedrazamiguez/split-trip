@@ -3,7 +3,9 @@ package es.pedrazamiguez.splittrip.screens
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
@@ -21,11 +23,14 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import es.pedrazamiguez.splittrip.core.designsystem.extension.clearFocusOnKeyboardDismiss
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseSearchBar
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
@@ -35,6 +40,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -145,6 +152,111 @@ class ExpenseSearchBarTest {
         composeRule.onNode(hasSetTextAction()).performImeAction()
         composeRule.waitForIdle()
         assertFalse(focusHistory.lastOrNull() != false)
+    }
+
+    @Test
+    fun preservesCharacterOrderAndCursorAtEnd_whenTypingRapidlyWithAsyncStateLag() {
+        var query by mutableStateOf("")
+        var lastDispatchedQuery = ""
+
+        composeRule.setContent {
+            val scope = rememberCoroutineScope()
+            SplitTripTheme {
+                ExpenseSearchBar(
+                    query = query,
+                    onQueryChange = { newQuery ->
+                        lastDispatchedQuery = newQuery
+                        scope.launch {
+                            delay(50)
+                            query = newQuery
+                        }
+                    }
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).performClick()
+        listOf("g", "r", "o", "u", "n", "d").forEach { char ->
+            composeRule.onNode(hasSetTextAction()).performTextInput(char)
+        }
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).performTextInput("s")
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("grounds").assertIsDisplayed()
+        assertEquals("grounds", lastDispatchedQuery)
+    }
+
+    @Test
+    fun syncsTextField_whenQueryExternallyResetAfterTyping() {
+        val placeholder = targetContext.getString(R.string.expenses_search_placeholder)
+        val clearDescription = targetContext.getString(R.string.expenses_search_clear)
+        var query by mutableStateOf("")
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ExpenseSearchBar(
+                    query = query,
+                    onQueryChange = { query = it }
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).performTextInput("ground")
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("ground").assertIsDisplayed()
+
+        composeRule.runOnUiThread {
+            query = ""
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("ground").assertDoesNotExist()
+        composeRule.onNodeWithText(placeholder).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(clearDescription).assertDoesNotExist()
+    }
+
+    @Test
+    fun clearButton_clearsTextImmediately_evenBeforeAsyncQueryUpdates() {
+        val placeholder = targetContext.getString(R.string.expenses_search_placeholder)
+        val clearDescription = targetContext.getString(R.string.expenses_search_clear)
+        var query by mutableStateOf("")
+        var lastDispatchedQuery = ""
+        var pendingAsyncUpdates by mutableStateOf(0)
+
+        composeRule.setContent {
+            val scope = rememberCoroutineScope()
+            SplitTripTheme {
+                ExpenseSearchBar(
+                    query = query,
+                    onQueryChange = { newQuery ->
+                        lastDispatchedQuery = newQuery
+                        pendingAsyncUpdates++
+                        scope.launch {
+                            delay(100)
+                            query = newQuery
+                            pendingAsyncUpdates--
+                        }
+                    }
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).performTextInput("gr")
+        composeRule.onNodeWithContentDescription(clearDescription).performClick()
+
+        composeRule.onNodeWithText("gr").assertDoesNotExist()
+        composeRule.onNodeWithText(placeholder).assertIsDisplayed()
+        assertEquals("", lastDispatchedQuery)
+
+        composeRule.waitUntil(timeoutMillis = 1_000) { pendingAsyncUpdates == 0 }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("gr").assertDoesNotExist()
+        composeRule.onNodeWithText(placeholder).assertIsDisplayed()
     }
 
     @Test
@@ -316,6 +428,80 @@ class ExpenseSearchBarTest {
         composeRule.onNode(hasSetTextAction()).performImeAction()
         composeRule.waitForIdle()
         composeRule.onNode(hasSetTextAction()).assertIsNotFocused()
+    }
+
+    @Test
+    fun clearFocusOnKeyboardDismiss_preservesFocusBeforeImeAppears_andClearsFocusWhenImeDismissed() {
+        var imeVisible by mutableStateOf(false)
+        var text by mutableStateOf("")
+
+        composeRule.setContent {
+            SplitTripTheme {
+                StyledOutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.clearFocusOnKeyboardDismiss(isImeVisible = imeVisible)
+                )
+            }
+        }
+
+        composeRule.onNode(hasSetTextAction()).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+
+        imeVisible = true
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+
+        imeVisible = false
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsNotFocused()
+
+        composeRule.onNode(hasSetTextAction()).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+    }
+
+    @Test
+    fun expensesScreen_clearsSearchFocusAndAllowsCollapse_whenImeDismissed() {
+        val dateGroups = buildSampleDateGroups()
+
+        composeRule.setContent {
+            SplitTripTheme {
+                CompositionLocalProvider(
+                    LocalTopPadding provides 0.dp,
+                    LocalBottomPadding provides 0.dp
+                ) {
+                    ExpensesScreen(
+                        uiState = ExpensesUiState(
+                            isLoading = false,
+                            expenseGroups = dateGroups,
+                            formattedTotalSpent = "€240.00",
+                            visibleExpensesCount = dateGroups.sumOf { it.expenses.size },
+                            isFiltered = false
+                        )
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+
+        Espresso.closeSoftKeyboard()
+        composeRule.waitForIdle()
+
+        val wasFocusCleared = runCatching {
+            composeRule.onNode(hasSetTextAction()).assertIsNotFocused()
+        }.isSuccess
+
+        if (wasFocusCleared) {
+            composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
+            composeRule.waitForIdle()
+            composeRule.onNode(hasSetTextAction()).assertIsNotDisplayed()
+        }
     }
 
     private fun buildSampleDateGroups() = listOf(

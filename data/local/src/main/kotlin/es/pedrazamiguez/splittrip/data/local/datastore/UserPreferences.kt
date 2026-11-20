@@ -3,12 +3,14 @@ package es.pedrazamiguez.splittrip.data.local.datastore
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.OptionalUpdateDismissal
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import java.time.YearMonth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -49,6 +51,7 @@ class UserPreferences(
         private const val DEFAULT_CURRENCY = "default_currency"
         private const val ACTIVE_AI_ENGINE = "active_ai_engine"
         private const val IS_RECONCILED = "is_reconciled"
+        private const val AI_RECEIPT_SCAN_COUNT_PREFIX = "ai_receipt_scan_count"
     }
 
     // ── Device ID (Device-scoped) ────────────────────────────────────────
@@ -328,6 +331,21 @@ class UserPreferences(
     suspend fun setIsReconciled(reconciled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[booleanPreferencesKey(userKey(IS_RECONCILED))] = reconciled
+        }
+    }
+
+    // ── Monthly AI Receipt Scan Quota (User-scoped, calendar-month keyed) ──
+
+    fun getMonthlyAiReceiptScanCount(yearMonth: YearMonth): Flow<Int> = userScopedFlow { userId ->
+        val key = intPreferencesKey("${userId}_${AI_RECEIPT_SCAN_COUNT_PREFIX}_$yearMonth")
+        context.dataStore.data.map { prefs -> prefs[key] ?: 0 }
+    }
+
+    suspend fun incrementMonthlyAiReceiptScanCount(yearMonth: YearMonth) {
+        val key = intPreferencesKey(userKey("${AI_RECEIPT_SCAN_COUNT_PREFIX}_$yearMonth"))
+        context.dataStore.edit { prefs ->
+            val current = prefs[key] ?: 0
+            prefs[key] = current + 1
         }
     }
 }

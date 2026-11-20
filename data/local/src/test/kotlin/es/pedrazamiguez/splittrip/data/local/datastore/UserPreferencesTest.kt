@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.every
 import io.mockk.mockk
+import java.time.YearMonth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -552,5 +553,54 @@ class UserPreferencesTest {
             prefs.getOptionalUpdateDismissal()
         )
         assertNull(prefs.selectedGroupId.first())
+    }
+
+    // ── Monthly AI Receipt Scan Count Tests ──────────────────────────────
+
+    @Test
+    fun `monthlyAiReceiptScanCount defaults to zero for new month`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+
+        val count = prefs.getMonthlyAiReceiptScanCount(YearMonth.of(2026, 11)).first()
+
+        assertEquals(0, count)
+    }
+
+    @Test
+    fun `incrementMonthlyAiReceiptScanCount increments count sequentially for same month`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        val november = YearMonth.of(2026, 11)
+
+        prefs.incrementMonthlyAiReceiptScanCount(november)
+        prefs.incrementMonthlyAiReceiptScanCount(november)
+
+        assertEquals(2, prefs.getMonthlyAiReceiptScanCount(november).first())
+    }
+
+    @Test
+    fun `monthlyAiReceiptScanCount resets across different calendar months`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        val november = YearMonth.of(2026, 11)
+        val december = YearMonth.of(2026, 12)
+
+        prefs.incrementMonthlyAiReceiptScanCount(november)
+
+        assertEquals(1, prefs.getMonthlyAiReceiptScanCount(november).first())
+        assertEquals(0, prefs.getMonthlyAiReceiptScanCount(december).first())
+    }
+
+    @Test
+    fun `monthlyAiReceiptScanCount is isolated per user and cleared on clearAll`() = runTest {
+        val november = YearMonth.of(2026, 11)
+        val prefsA = createUserPreferences(USER_A_ID)
+        prefsA.incrementMonthlyAiReceiptScanCount(november)
+
+        val prefsB = createUserPreferences(USER_B_ID)
+        assertEquals(0, prefsB.getMonthlyAiReceiptScanCount(november).first())
+
+        val prefsAForClear = createUserPreferences(USER_A_ID)
+        prefsAForClear.clearAll()
+
+        assertEquals(0, prefsAForClear.getMonthlyAiReceiptScanCount(november).first())
     }
 }

@@ -480,4 +480,14 @@
     <string name="expenses_extras_add_on_fee_plural">Comisiones</string>
     <string name="expenses_extras_add_on_surcharge_plural">Recargos</string>
     <string name="expenses_extras_add_on_tip_plural">Propinas</string>
+
+    <!-- AI Receipt Monthly Quota -->
+    <plurals name="expense_autofill_free_scans_remaining">
+        <item quantity="one">%1$d escaneo gratis restante este mes</item>
+        <item quantity="other">%1$d escaneos gratis restantes este mes</item>
+    </plurals>
+    <string name="expense_autofill_free_scans_exhausted">0 escaneos gratis restantes este mes</string>
+    <string name="expense_autofill_monthly_scans_exhausted">Límite mensual de escaneos alcanzado</string>
+    <string name="expense_autofill_monthly_limit_reached">Límite mensual de escaneos IA gratis alcanzado (%1$d). Pásate a Pro para más.</string>
+    <string name="expense_autofill_pro_monthly_limit_reached">Límite mensual de escaneos IA alcanzado (%1$d).</string>
 </resources>

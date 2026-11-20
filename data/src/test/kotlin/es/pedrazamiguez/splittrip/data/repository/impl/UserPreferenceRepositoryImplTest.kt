@@ -9,6 +9,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import java.time.YearMonth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -201,5 +202,25 @@ class UserPreferenceRepositoryImplTest {
         repository.clearAll()
 
         coVerify(exactly = 1) { userPreferences.clearAll() }
+    }
+
+    @Test
+    fun `getMonthlyAiReceiptScanCount delegates to userPreferences`() = runTest {
+        val yearMonth = YearMonth.of(2026, 11)
+        every { userPreferences.getMonthlyAiReceiptScanCount(yearMonth) } returns flowOf(2)
+
+        val result = repository.getMonthlyAiReceiptScanCount(yearMonth).first()
+
+        assertEquals(2, result)
+    }
+
+    @Test
+    fun `incrementMonthlyAiReceiptScanCount delegates to userPreferences`() = runTest {
+        val yearMonth = YearMonth.of(2026, 11)
+        coEvery { userPreferences.incrementMonthlyAiReceiptScanCount(yearMonth) } just runs
+
+        repository.incrementMonthlyAiReceiptScanCount(yearMonth)
+
+        coVerify(exactly = 1) { userPreferences.incrementMonthlyAiReceiptScanCount(yearMonth) }
     }
 }

@@ -16,12 +16,19 @@ interface FeatureGateService {
      * For group-level creator-bound capabilities (e.g. cover photo uploads), if [groupId] is provided,
      * access is evaluated against the group creator's tier.
      * For user-level capabilities (e.g. AI receipt OCR scanning), access is evaluated
-     * against the acting authenticated user's tier.
+     * against the acting authenticated user's tier. For [GatedFeature.AI_RECEIPT_SCANNING],
+     * access evaluates monthly scan consumption against the user's tier quota
+     * (`aiReceiptMonthlyLimitFree` / `aiReceiptMonthlyLimitPro`).
      *
      * @param feature The feature to check.
      * @param groupId The optional ID of the group context, if evaluating a group-level capability.
      */
     fun isFeatureEnabled(feature: GatedFeature, groupId: String? = null): Flow<Boolean>
+
+    /**
+     * Observes the acting user's monthly AI receipt scanning quota for the current calendar month.
+     */
+    fun observeAiReceiptQuota(): Flow<AiReceiptQuota>
 
     /**
      * Checks if the acting authenticated user is on the Pro subscription tier.
