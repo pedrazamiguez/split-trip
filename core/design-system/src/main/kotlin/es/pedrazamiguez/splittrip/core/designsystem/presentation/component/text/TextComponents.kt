@@ -145,17 +145,19 @@ fun CardTitleText(
  * Use above a sheet's action list, as the main title of a modal, or for a prominent
  * item name (e.g., expense title, selected group name) displayed at feature level.
  *
- * @param text     Text content to display.
- * @param modifier Modifier applied to the underlying [Text].
- * @param color    Overrides the default `onSurface` colour.
- * @param maxLines Defaults to unlimited. Pass a value to truncate with ellipsis.
+ * @param text      Text content to display.
+ * @param modifier  Modifier applied to the underlying [Text].
+ * @param color     Overrides the default `onSurface` colour.
+ * @param maxLines  Defaults to unlimited. Pass a value to truncate with ellipsis.
+ * @param textAlign Text alignment.
  */
 @Composable
 fun SheetTitleText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     Text(
         text = text,
@@ -164,7 +166,8 @@ fun SheetTitleText(
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold,
         maxLines = maxLines,
-        overflow = overflowFor(maxLines)
+        overflow = overflowFor(maxLines),
+        textAlign = textAlign
     )
 }
 

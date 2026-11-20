@@ -58,7 +58,7 @@ class SubunitManagementScreenUiProviderImplTest {
             groupId = "group-1",
             proRequiredMessage = "Pro required",
             navigateToCreate = { createdRoute = it },
-            navigateToSubscriptions = { navigatedToSubscriptions = true },
+            showProPreview = { navigatedToSubscriptions = true },
             showNotification = { shownNotification = it }
         )
 
@@ -68,9 +68,9 @@ class SubunitManagementScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick shows notification and navigates to subscriptions when disabled and user is not pro`() {
+    fun `handleMainActionClick opens pro preview without notification when disabled and user is not pro`() {
         var createdRoute: String? = null
-        var navigatedToSubscriptions = false
+        var proPreviewShown = false
         var shownNotification: String? = null
 
         uiProvider.handleMainActionClick(
@@ -79,13 +79,13 @@ class SubunitManagementScreenUiProviderImplTest {
             groupId = "group-1",
             proRequiredMessage = "Pro required",
             navigateToCreate = { createdRoute = it },
-            navigateToSubscriptions = { navigatedToSubscriptions = true },
+            showProPreview = { proPreviewShown = true },
             showNotification = { shownNotification = it }
         )
 
         assertEquals(null, createdRoute)
-        assertTrue(navigatedToSubscriptions)
-        assertEquals("Pro required", shownNotification)
+        assertTrue(proPreviewShown)
+        assertEquals(null, shownNotification)
         verify(exactly = 1) {
             telemetryTracker.trackEvent(
                 MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
@@ -100,9 +100,9 @@ class SubunitManagementScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick shows notification without navigating to subscriptions when disabled and user is pro`() {
+    fun `handleMainActionClick shows notification without pro preview when disabled and user is pro`() {
         var createdRoute: String? = null
-        var navigatedToSubscriptions = false
+        var proPreviewShown = false
         var shownNotification: String? = null
 
         uiProvider.handleMainActionClick(
@@ -111,12 +111,12 @@ class SubunitManagementScreenUiProviderImplTest {
             groupId = "group-1",
             proRequiredMessage = "Pro required",
             navigateToCreate = { createdRoute = it },
-            navigateToSubscriptions = { navigatedToSubscriptions = true },
+            showProPreview = { proPreviewShown = true },
             showNotification = { shownNotification = it }
         )
 
         assertEquals(null, createdRoute)
-        assertFalse(navigatedToSubscriptions)
+        assertFalse(proPreviewShown)
         assertEquals("Pro required", shownNotification)
         verify(exactly = 1) {
             telemetryTracker.trackEvent(
@@ -148,9 +148,9 @@ class SubunitManagementScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick navigates to upgrade when creation disabled and user is not pro`() {
+    fun `handleMainActionClick invokes showProPreview when creation disabled and user is not pro`() {
         val mockNavController = mockk<NavController>(relaxed = true)
-        val navigateToSubscriptions = {
+        val showProPreview = {
             upgradeNavigator.navigateToUpgrade(mockNavController)
         }
 
@@ -160,7 +160,7 @@ class SubunitManagementScreenUiProviderImplTest {
             groupId = "group-1",
             proRequiredMessage = "Pro required",
             navigateToCreate = {},
-            navigateToSubscriptions = navigateToSubscriptions,
+            showProPreview = showProPreview,
             showNotification = {}
         )
 

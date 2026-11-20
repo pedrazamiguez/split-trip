@@ -3,6 +3,9 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.screen.impl
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -12,6 +15,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
@@ -61,6 +66,21 @@ class SubunitManagementScreenUiProviderImpl(
                 .isActingUserPro()
                 .collectAsStateWithLifecycle(initialValue = false)
             val proRequiredMessage = stringResource(R.string.subunit_error_pro_required)
+            var showProPreviewSheet by remember { mutableStateOf(false) }
+
+            if (showProPreviewSheet) {
+                ProFeaturePreviewBottomSheet(
+                    previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                    onUpgrade = {
+                        showProPreviewSheet = false
+                        upgradeNavigator.navigateToUpgrade(
+                            rootNavController,
+                            source = MonetizationTelemetry.EntrySource.SUBUNIT_MANAGEMENT
+                        )
+                    },
+                    onDismiss = { showProPreviewSheet = false }
+                )
+            }
 
             return MainAction(
                 icon = TablerIcons.Outline.SquareRoundedPlus,
@@ -72,12 +92,7 @@ class SubunitManagementScreenUiProviderImpl(
                         groupId = groupId,
                         proRequiredMessage = proRequiredMessage,
                         navigateToCreate = { targetRoute -> navController.navigate(targetRoute) },
-                        navigateToSubscriptions = {
-                            upgradeNavigator.navigateToUpgrade(
-                                rootNavController,
-                                source = MonetizationTelemetry.EntrySource.SUBUNIT_MANAGEMENT
-                            )
-                        },
+                        showProPreview = { showProPreviewSheet = true },
                         showNotification = { message -> pillController.showPill(message) }
                     )
                 },
@@ -95,7 +110,7 @@ class SubunitManagementScreenUiProviderImpl(
         groupId: String,
         proRequiredMessage: String,
         navigateToCreate: (String) -> Unit,
-        navigateToSubscriptions: () -> Unit,
+        showProPreview: () -> Unit,
         showNotification: (String) -> Unit
     ) {
         if (isSubunitCreationEnabled) {
@@ -106,9 +121,10 @@ class SubunitManagementScreenUiProviderImpl(
                 entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_FAB,
                 upgradePrompted = !isActingUserPro
             )
-            showNotification(proRequiredMessage)
-            if (!isActingUserPro) {
-                navigateToSubscriptions()
+            if (isActingUserPro) {
+                showNotification(proRequiredMessage)
+            } else {
+                showProPreview()
             }
         }
     }

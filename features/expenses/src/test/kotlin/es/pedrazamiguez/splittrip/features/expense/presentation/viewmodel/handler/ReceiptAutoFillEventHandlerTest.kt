@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
@@ -171,7 +173,7 @@ class ReceiptAutoFillEventHandlerTest {
         }
 
         @Test
-        fun `handleSetAiModeActive true when AI scanning disabled emits NavigateToSubscriptions`() = runTest {
+        fun `handleSetAiModeActive true when AI scanning disabled emits ShowProFeaturePreview`() = runTest {
             every { featureGateService.observeAiReceiptQuota() } returns flowOf(
                 AiReceiptQuota(usedScans = 0, monthlyLimit = 0, isProTier = false)
             )
@@ -187,10 +189,12 @@ class ReceiptAutoFillEventHandlerTest {
             assertEquals(AddExpenseStep.TITLE, uiState.value.currentStep)
             assertEquals(
                 listOf(
-                    AddExpenseUiAction.ShowPill(
-                        UiText.StringResource(R.string.expense_autofill_pro_required)
-                    ),
-                    AddExpenseUiAction.NavigateToSubscriptions
+                    AddExpenseUiAction.ShowProFeaturePreview(
+                        ProFeaturePreviewPrompt(
+                            previewType = ProFeaturePreviewType.AI_RECEIPT_SCANNING,
+                            entrySource = MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING
+                        )
+                    )
                 ),
                 actions.replayCache
             )
@@ -235,7 +239,7 @@ class ReceiptAutoFillEventHandlerTest {
             }
 
         @Test
-        fun `handleSetAiModeActive true when Free trial exhausted emits pill and NavigateToSubscriptions`() =
+        fun `handleSetAiModeActive true when Free trial exhausted emits ShowProFeaturePreview`() =
             runTest {
                 every { featureGateService.observeAiReceiptQuota() } returns flowOf(
                     AiReceiptQuota(usedScans = 3, monthlyLimit = 3, isProTier = false)
@@ -251,10 +255,12 @@ class ReceiptAutoFillEventHandlerTest {
                 assertFalse(uiState.value.isAiModeActive)
                 assertEquals(
                     listOf(
-                        AddExpenseUiAction.ShowPill(
-                            UiText.StringResource(R.string.expense_autofill_monthly_limit_reached, 3)
-                        ),
-                        AddExpenseUiAction.NavigateToSubscriptions
+                        AddExpenseUiAction.ShowProFeaturePreview(
+                            ProFeaturePreviewPrompt(
+                                previewType = ProFeaturePreviewType.AI_RECEIPT_SCANNING,
+                                entrySource = MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING
+                            )
+                        )
                     ),
                     actions.replayCache
                 )
@@ -335,7 +341,7 @@ class ReceiptAutoFillEventHandlerTest {
         )
 
         @Test
-        fun `handleReceiptAttached when AI scanning is disabled emits NavigateToSubscriptions`() = runTest {
+        fun `handleReceiptAttached when AI scanning is disabled emits ShowProFeaturePreview`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
             every { featureGateService.observeAiReceiptQuota() } returns flowOf(
                 AiReceiptQuota(usedScans = 0, monthlyLimit = 0, isProTier = false)
@@ -345,10 +351,12 @@ class ReceiptAutoFillEventHandlerTest {
 
             assertEquals(
                 listOf(
-                    AddExpenseUiAction.ShowPill(
-                        UiText.StringResource(R.string.expense_autofill_pro_required)
-                    ),
-                    AddExpenseUiAction.NavigateToSubscriptions
+                    AddExpenseUiAction.ShowProFeaturePreview(
+                        ProFeaturePreviewPrompt(
+                            previewType = ProFeaturePreviewType.AI_RECEIPT_SCANNING,
+                            entrySource = MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING
+                        )
+                    )
                 ),
                 actions.replayCache
             )
@@ -369,7 +377,7 @@ class ReceiptAutoFillEventHandlerTest {
         }
 
         @Test
-        fun `handleReceiptAttached when Free trial exhausted blocks extraction and navigates`() =
+        fun `handleReceiptAttached when Free trial exhausted blocks extraction and emits ShowProFeaturePreview`() =
             runTest {
                 every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
                 every { featureGateService.observeAiReceiptQuota() } returns flowOf(
@@ -380,10 +388,12 @@ class ReceiptAutoFillEventHandlerTest {
 
                 assertEquals(
                     listOf(
-                        AddExpenseUiAction.ShowPill(
-                            UiText.StringResource(R.string.expense_autofill_monthly_limit_reached, 3)
-                        ),
-                        AddExpenseUiAction.NavigateToSubscriptions
+                        AddExpenseUiAction.ShowProFeaturePreview(
+                            ProFeaturePreviewPrompt(
+                                previewType = ProFeaturePreviewType.AI_RECEIPT_SCANNING,
+                                entrySource = MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING
+                            )
+                        )
                     ),
                     actions.replayCache
                 )

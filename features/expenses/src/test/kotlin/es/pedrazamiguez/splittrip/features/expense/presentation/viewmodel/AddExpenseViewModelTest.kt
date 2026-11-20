@@ -2296,7 +2296,7 @@ class AddExpenseViewModelTest {
         }
 
         @Test
-        fun `SetAiModeActive true when gated emits NavigateToSubscriptions action`() = runTest {
+        fun `SetAiModeActive true when gated emits ShowProFeaturePreview action`() = runTest {
             quotaFlow.value = AiReceiptQuota(
                 usedScans = 3,
                 monthlyLimit = 3,
@@ -2312,7 +2312,7 @@ class AddExpenseViewModelTest {
             viewModel.onEvent(AddExpenseUiEvent.SetAiModeActive(true))
             advanceUntilIdle()
 
-            assertTrue(actions.any { it is AddExpenseUiAction.NavigateToSubscriptions })
+            assertTrue(actions.any { it is AddExpenseUiAction.ShowProFeaturePreview })
             assertFalse(viewModel.uiState.value.isAiModeActive)
             job.cancel()
         }

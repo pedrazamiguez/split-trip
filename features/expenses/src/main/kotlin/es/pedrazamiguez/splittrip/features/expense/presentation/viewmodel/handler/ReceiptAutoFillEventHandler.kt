@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
@@ -205,11 +207,19 @@ class ReceiptAutoFillEventHandler(
             entryPoint = entryPoint,
             upgradePrompted = quota.requiresUpgrade
         )
-        _actionsFlow.emit(
-            AddExpenseUiAction.ShowPill(aiReceiptQuotaUiMapper.mapBlockedMessage(quota))
-        )
         if (quota.requiresUpgrade) {
-            _actionsFlow.emit(AddExpenseUiAction.NavigateToSubscriptions)
+            _actionsFlow.emit(
+                AddExpenseUiAction.ShowProFeaturePreview(
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.AI_RECEIPT_SCANNING,
+                        entrySource = MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING
+                    )
+                )
+            )
+        } else {
+            _actionsFlow.emit(
+                AddExpenseUiAction.ShowPill(aiReceiptQuotaUiMapper.mapBlockedMessage(quota))
+            )
         }
     }
 

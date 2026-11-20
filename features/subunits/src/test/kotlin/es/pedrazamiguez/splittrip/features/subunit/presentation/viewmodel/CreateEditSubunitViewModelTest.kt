@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -188,42 +190,90 @@ class CreateEditSubunitViewModelTest {
         }
 
         @Test
-        fun `init emits subscriptions when creation disabled and not pro`() = runTest(testDispatcher) {
-            every {
-                featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
-            } returns flowOf(false)
-            every { featureGateService.isActingUserPro() } returns flowOf(false)
-            setupDefaultMocks()
-            createViewModel()
+        fun `init emits ShowProFeaturePreview with navigateBackOnDismiss when creation disabled and not pro`() =
+            runTest(testDispatcher) {
+                every {
+                    featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
+                } returns flowOf(false)
+                every { featureGateService.isActingUserPro() } returns flowOf(false)
+                setupDefaultMocks()
+                createViewModel()
 
-            val actions = mutableListOf<CreateEditSubunitUiAction>()
-            val collectJob = backgroundScope.launch { viewModel.actions.collect { actions.add(it) } }
+                val actions = mutableListOf<CreateEditSubunitUiAction>()
+                val collectJob = backgroundScope.launch { viewModel.actions.collect { actions.add(it) } }
 
-            viewModel.init("group-1", null)
-            advanceUntilIdle()
+                viewModel.init("group-1", null)
+                advanceUntilIdle()
 
-            assertEquals(3, actions.size)
-            assertEquals(
-                CreateEditSubunitUiAction.ShowError(UiText.StringResource(R.string.subunit_error_pro_required)),
-                actions[0]
-            )
-            assertEquals(CreateEditSubunitUiAction.NavigateToSubscriptions, actions[1])
-            assertEquals(CreateEditSubunitUiAction.NavigateBack, actions[2])
-            verify(exactly = 1) {
-                telemetryTracker.trackEvent(
-                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
-                    mapOf(
-                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
-                        MonetizationTelemetry.Param.ENTRY_POINT to
-                            MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_INIT,
-                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
-                    )
+                assertEquals(
+                    listOf(
+                        CreateEditSubunitUiAction.ShowProFeaturePreview(
+                            prompt = ProFeaturePreviewPrompt(
+                                previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                                entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
+                            ),
+                            navigateBackOnDismiss = true
+                        )
+                    ),
+                    actions
                 )
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                            MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_INIT,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
+
+                collectJob.cancel()
             }
 
-            collectJob.cancel()
-        }
+        @Test
+        fun `init emits ShowError and NavigateBack without preview when disabled and user is Pro`() =
+            runTest(testDispatcher) {
+                every {
+                    featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
+                } returns flowOf(false)
+                every { featureGateService.isActingUserPro() } returns flowOf(true)
+                setupDefaultMocks()
+                createViewModel()
+
+                val actions = mutableListOf<CreateEditSubunitUiAction>()
+                val collectJob = backgroundScope.launch { viewModel.actions.collect { actions.add(it) } }
+
+                viewModel.init("group-1", null)
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf(
+                        CreateEditSubunitUiAction.ShowError(
+                            UiText.StringResource(R.string.subunit_error_pro_required)
+                        ),
+                        CreateEditSubunitUiAction.NavigateBack
+                    ),
+                    actions
+                )
+                assertFalse(actions.any { it is CreateEditSubunitUiAction.ShowProFeaturePreview })
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                            MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_INIT,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                        )
+                    )
+                }
+
+                collectJob.cancel()
+            }
 
         @Test
         fun `UpdateName updates name and clears error`() = runTest(testDispatcher) {
@@ -407,58 +457,65 @@ class CreateEditSubunitViewModelTest {
         }
 
         @Test
-        fun `when feature gate disables subunit creation emits ShowError and aborts save`() = runTest(testDispatcher) {
-            setupDefaultMocks()
-            every {
-                featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
-            } returns flowOf(false)
-            every { featureGateService.isActingUserPro() } returns flowOf(false)
-            createViewModel()
+        fun `when feature gate disables subunit creation emits ShowProFeaturePreview and aborts save`() =
+            runTest(testDispatcher) {
+                setupDefaultMocks()
+                every {
+                    featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
+                } returns flowOf(false)
+                every { featureGateService.isActingUserPro() } returns flowOf(false)
+                createViewModel()
 
-            val actions = mutableListOf<CreateEditSubunitUiAction>()
-            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
-            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.actions.collect { actions.add(it) }
-            }
+                val actions = mutableListOf<CreateEditSubunitUiAction>()
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.actions.collect { actions.add(it) }
+                }
 
-            viewModel.init("group-1", null)
-            advanceUntilIdle()
+                viewModel.init("group-1", null)
+                advanceUntilIdle()
+                actions.clear()
 
-            viewModel.onEvent(CreateEditSubunitUiEvent.UpdateName("Family"))
-            viewModel.onEvent(CreateEditSubunitUiEvent.ToggleMember("user-3"))
-            advanceUntilIdle()
+                viewModel.onEvent(CreateEditSubunitUiEvent.UpdateName("Family"))
+                viewModel.onEvent(CreateEditSubunitUiEvent.ToggleMember("user-3"))
+                advanceUntilIdle()
 
-            viewModel.onEvent(CreateEditSubunitUiEvent.Save)
-            advanceUntilIdle()
+                viewModel.onEvent(CreateEditSubunitUiEvent.Save)
+                advanceUntilIdle()
 
-            coVerify(exactly = 0) { createSubunitUseCase(any(), any()) }
-            assertFalse(viewModel.uiState.value.isSaving)
-            val errorAction = actions.filterIsInstance<CreateEditSubunitUiAction.ShowError>().firstOrNull()
-            assertNotNull(errorAction)
-            assertEquals(
-                UiText.StringResource(R.string.subunit_error_pro_required),
-                errorAction?.message
-            )
-            assertTrue(actions.any { it is CreateEditSubunitUiAction.NavigateToSubscriptions })
-            verify(exactly = 1) {
-                telemetryTracker.trackEvent(
-                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
-                    mapOf(
-                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
-                        MonetizationTelemetry.Param.ENTRY_POINT to
-                            MonetizationTelemetry.GateEntryPoint.SUBUNIT_SUBMIT,
-                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
-                    )
+                coVerify(exactly = 0) { createSubunitUseCase(any(), any()) }
+                assertFalse(viewModel.uiState.value.isSaving)
+                assertEquals(
+                    listOf(
+                        CreateEditSubunitUiAction.ShowProFeaturePreview(
+                            prompt = ProFeaturePreviewPrompt(
+                                previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                                entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
+                            ),
+                            navigateBackOnDismiss = false
+                        )
+                    ),
+                    actions
                 )
-            }
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                            MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.SUBUNIT_SUBMIT,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
 
-            collectJob.cancel()
-            actionsJob.cancel()
-        }
+                collectJob.cancel()
+                actionsJob.cancel()
+            }
 
         @Test
-        fun `when creation disabled but user is Pro emits ShowError and no paywall`() = runTest(testDispatcher) {
+        fun `when creation disabled but user is Pro emits ShowError and no pro preview`() = runTest(testDispatcher) {
             setupDefaultMocks()
             every {
                 featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group-1")
@@ -490,7 +547,7 @@ class CreateEditSubunitViewModelTest {
                 UiText.StringResource(R.string.subunit_error_pro_required),
                 errorAction?.message
             )
-            assertFalse(actions.any { it is CreateEditSubunitUiAction.NavigateToSubscriptions })
+            assertFalse(actions.any { it is CreateEditSubunitUiAction.ShowProFeaturePreview })
             verify(exactly = 1) {
                 telemetryTracker.trackEvent(
                     MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,

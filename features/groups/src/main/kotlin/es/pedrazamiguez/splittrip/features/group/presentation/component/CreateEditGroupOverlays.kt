@@ -1,12 +1,10 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.component
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.UpgradeConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
 @Suppress("LongParameterList")
@@ -22,8 +20,6 @@ fun CreateEditGroupOverlays(
     onUpgrade: () -> Unit,
     onDismissUpgrade: () -> Unit
 ) {
-    val context = LocalContext.current
-
     if (showScanner) {
         QrScannerDialog(
             onDismissRequest = onDismissScanner,
@@ -41,11 +37,9 @@ fun CreateEditGroupOverlays(
         )
     }
 
-    if (state.showUpgradeDialog) {
-        UpgradeConfirmationDialog(
-            title = state.upgradeDialogTitle?.asString(context)
-                ?: stringResource(DesignSystemR.string.upgrade_dialog_title),
-            text = state.upgradeDialogMessage?.asString(context) ?: "",
+    state.proPreviewPrompt?.let { prompt ->
+        ProFeaturePreviewBottomSheet(
+            previewType = prompt.previewType,
             onUpgrade = onUpgrade,
             onDismiss = onDismissUpgrade
         )

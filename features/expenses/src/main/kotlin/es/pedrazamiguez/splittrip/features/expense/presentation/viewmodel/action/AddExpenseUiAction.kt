@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 
 sealed interface AddExpenseUiAction {
     data object None : AddExpenseUiAction
@@ -32,5 +33,7 @@ sealed interface AddExpenseUiAction {
     data object RequestExitConfirmation : AddExpenseUiAction
 
     /** Fired when attempting to use a Pro-only feature without an active subscription. */
-    data object NavigateToSubscriptions : AddExpenseUiAction
+    data class ShowProFeaturePreview(
+        val prompt: ProFeaturePreviewPrompt
+    ) : AddExpenseUiAction
 }

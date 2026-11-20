@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
@@ -302,26 +304,26 @@ class CreateEditGroupSubmitEventHandlerImpl(
             entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_SUBMIT,
             upgradePrompted = limitResult.upgradeRequired
         )
-        val errorRes = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
-        _uiState.update {
-            it.copy(
-                isLoading = false,
-                error = errorRes,
-                showUpgradeDialog = limitResult.upgradeRequired,
-                upgradeDialogTitle = if (limitResult.upgradeRequired) {
-                    UiText.StringResource(DesignSystemR.string.upgrade_dialog_title)
-                } else {
-                    null
-                },
-                upgradeDialogMessage = if (limitResult.upgradeRequired) errorRes else null,
-                upgradeEntrySource = if (limitResult.upgradeRequired) {
-                    MonetizationTelemetry.EntrySource.GROUP_CREATION
-                } else {
-                    null
-                }
-            )
+        if (limitResult.upgradeRequired) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    proPreviewPrompt = ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.UNLIMITED_GROUPS,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_CREATION
+                    )
+                )
+            }
+        } else {
+            val errorRes = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    error = errorRes
+                )
+            }
+            _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
         }
-        _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
     }
 
     private suspend fun handleMembersLimitBlocked(memberLimitResult: LimitResult.Blocked) {
@@ -330,33 +332,29 @@ class CreateEditGroupSubmitEventHandlerImpl(
             entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_SUBMIT,
             upgradePrompted = memberLimitResult.upgradeRequired
         )
-        val errorRes = if (memberLimitResult.upgradeRequired) {
-            UiText.StringResource(R.string.group_error_limit_members_exceeded)
+        if (memberLimitResult.upgradeRequired) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    proPreviewPrompt = ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.EXPANDED_GROUP_MEMBERS,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
+                    )
+                )
+            }
         } else {
-            UiText.StringResource(
+            val errorRes = UiText.StringResource(
                 R.string.group_error_limit_members_registered_exceeded,
                 appConfigService.maxMembersPerGroup.value
             )
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    error = errorRes
+                )
+            }
+            _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
         }
-        _uiState.update {
-            it.copy(
-                isLoading = false,
-                error = errorRes,
-                showUpgradeDialog = memberLimitResult.upgradeRequired,
-                upgradeDialogTitle = if (memberLimitResult.upgradeRequired) {
-                    UiText.StringResource(DesignSystemR.string.upgrade_dialog_title)
-                } else {
-                    null
-                },
-                upgradeDialogMessage = if (memberLimitResult.upgradeRequired) errorRes else null,
-                upgradeEntrySource = if (memberLimitResult.upgradeRequired) {
-                    MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
-                } else {
-                    null
-                }
-            )
-        }
-        _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
     }
 
     private fun createGroup(onSuccess: () -> Unit) {

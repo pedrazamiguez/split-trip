@@ -57,6 +57,8 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupDet
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupsViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupMemberEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupMemberEventHandlerImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandlerImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupSubmitEventHandler
@@ -130,15 +132,29 @@ val groupsUiModule = module {
         )
     }
 
+    factory<CreateEditGroupMemberEventHandler> {
+        val searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>()
+        val emailValidationService = get<EmailValidationService>()
+        val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
+        val authenticationService = get<AuthenticationService>()
+        val telemetryTracker = get<TelemetryTracker>()
+        CreateEditGroupMemberEventHandlerImpl(
+            searchUsersByEmailUseCase = searchUsersByEmailUseCase,
+            emailValidationService = emailValidationService,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            authenticationService = authenticationService,
+            telemetryTracker = telemetryTracker
+        )
+    }
+
     viewModel {
         val navigationEventHandler = get<CreateEditGroupNavigationEventHandler>()
         val imageEventHandler = get<CreateEditGroupImageEventHandler>()
         val submitEventHandler = get<CreateEditGroupSubmitEventHandler>()
+        val createEditGroupMemberEventHandler = get<CreateEditGroupMemberEventHandler>()
         val getGroupByIdUseCase = get<GetGroupByIdUseCase>()
         val getSupportedCurrenciesUseCase = get<GetSupportedCurrenciesUseCase>()
         val getUserDefaultCurrencyUseCase = get<GetUserDefaultCurrencyUseCase>()
-        val searchUsersByEmailUseCase = get<SearchUsersByEmailUseCase>()
-        val emailValidationService = get<EmailValidationService>()
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val groupUiMapper = get<GroupUiMapper>()
         val featureGateService = get<FeatureGateService>()
@@ -153,11 +169,10 @@ val groupsUiModule = module {
             navigationEventHandler = navigationEventHandler,
             imageEventHandler = imageEventHandler,
             submitEventHandler = submitEventHandler,
+            createEditGroupMemberEventHandler = createEditGroupMemberEventHandler,
             getGroupByIdUseCase = getGroupByIdUseCase,
             getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
-            searchUsersByEmailUseCase = searchUsersByEmailUseCase,
-            emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
             featureGateService = featureGateService,
