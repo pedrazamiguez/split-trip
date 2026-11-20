@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavContro
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.features.subunit.R
 import es.pedrazamiguez.splittrip.features.subunit.presentation.screen.SubunitManagementScreen
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.SubunitManagementViewModel
@@ -63,7 +64,10 @@ fun SubunitManagementFeature(
 
                 SubunitManagementUiAction.NavigateToSubscriptions -> {
                     pillController.showPill(message = proRequiredMessage)
-                    upgradeNavigator.navigateToUpgrade(rootNavController)
+                    upgradeNavigator.navigateToUpgrade(
+                        rootNavController,
+                        source = MonetizationTelemetry.EntrySource.SUBUNIT_MANAGEMENT
+                    )
                 }
             }
         }

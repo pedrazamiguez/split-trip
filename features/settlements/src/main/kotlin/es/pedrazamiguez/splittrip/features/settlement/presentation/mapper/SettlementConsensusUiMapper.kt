@@ -36,7 +36,11 @@ class SettlementConsensusUiMapper(
         val groupedRecords = activeRecords.groupBy { record ->
             val isCurrentUserPayer = record.settlement.fromUserId == currentUserId
             val counterpartyId = if (isCurrentUserPayer) record.settlement.toUserId else record.settlement.fromUserId
-            Triple(counterpartyId, record.settlement.currency, record.status)
+            ConsensusGroupKey(
+                counterpartyId = counterpartyId,
+                currency = record.settlement.currency,
+                status = record.status
+            )
         }
 
         return groupedRecords.values
@@ -128,8 +132,8 @@ class SettlementConsensusUiMapper(
             disputeReason = primaryRecord.disputeReason,
             status = primaryRecord.status,
             canNudge = canNudge,
-            isNudgeRateLimited = nudgeInfo.first,
-            nudgeButtonLabel = nudgeInfo.second
+            isNudgeRateLimited = nudgeInfo.isRateLimited,
+            nudgeButtonLabel = nudgeInfo.label
         )
     }
 
@@ -179,9 +183,9 @@ class SettlementConsensusUiMapper(
         currentTimeMillis: Long,
         isCash: Boolean,
         isSuggested: Boolean = false
-    ): Pair<Boolean, String> {
+    ): NudgeButtonState {
         if (isCash || isSuggested) {
-            return Pair(true, "")
+            return NudgeButtonState(isRateLimited = true, label = "")
         }
         val lastNudgeTs = records.maxOfOrNull { nudgeTimestamps[it.id] ?: 0L } ?: 0L
         val rateLimitMillis = rateLimitHours * MILLIS_PER_HOUR
@@ -191,7 +195,7 @@ class SettlementConsensusUiMapper(
         } else {
             resourceProvider.getString(R.string.your_balance_settlement_remind)
         }
-        return Pair(isNudgeRateLimited, nudgeButtonLabel)
+        return NudgeButtonState(isRateLimited = isNudgeRateLimited, label = nudgeButtonLabel)
     }
 
     private fun resolvePocketTypeLabel(sourcePocket: SettlementPocketType): String = when (sourcePocket) {
@@ -258,6 +262,17 @@ class SettlementConsensusUiMapper(
             else -> ActionCapabilities(canConfirm = false, confirmLabel = "", canDispute = false)
         }
     }
+
+    private data class ConsensusGroupKey(
+        val counterpartyId: String,
+        val currency: String,
+        val status: SettlementStatus
+    )
+
+    private data class NudgeButtonState(
+        val isRateLimited: Boolean,
+        val label: String
+    )
 
     private data class StatusDetails(val label: String, val style: PassportTagStyle)
 

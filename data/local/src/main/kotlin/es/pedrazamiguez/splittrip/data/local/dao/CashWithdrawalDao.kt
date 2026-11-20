@@ -6,6 +6,7 @@ import androidx.room.Transaction
 import androidx.room.Upsert
 import es.pedrazamiguez.splittrip.data.local.entity.CashWithdrawalEntity
 import es.pedrazamiguez.splittrip.data.local.entity.SyncStatusEntry
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawalRemainingAmountUpdate
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -116,9 +117,9 @@ interface CashWithdrawalDao {
      * Used during FIFO cash expense processing to batch all tranche deductions together.
      */
     @Transaction
-    suspend fun updateRemainingAmounts(updates: List<Pair<String, Long>>) {
-        for ((withdrawalId, newRemaining) in updates) {
-            updateRemainingAmount(withdrawalId, newRemaining)
+    suspend fun updateRemainingAmounts(updates: List<CashWithdrawalRemainingAmountUpdate>) {
+        for (update in updates) {
+            updateRemainingAmount(update.withdrawalId, update.remainingAmountCents)
         }
     }
 

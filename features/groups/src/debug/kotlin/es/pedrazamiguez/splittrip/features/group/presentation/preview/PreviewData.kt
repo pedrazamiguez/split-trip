@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.preview
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -114,6 +115,25 @@ val GROUP_DOMAIN_MULTI_CURRENCY: Group = Group(
 
 val PREVIEW_GROUPS = listOf(GROUP_DOMAIN_1, GROUP_DOMAIN_2)
 val PREVIEW_GROUPS_WITH_MANY = listOf(GROUP_DOMAIN_1, GROUP_DOMAIN_NO_IMAGE, GROUP_DOMAIN_2)
+
+val GROUP_DOMAIN_ARCHIVED: Group = GROUP_DOMAIN_1.copy(
+    id = "e5f7a9b1-c3d4-4678-9abc-def012345678",
+    status = GroupStatus.ARCHIVED
+)
+
+val GROUP_DOMAIN_ARCHIVED_NO_IMAGE: Group = GROUP_DOMAIN_NO_IMAGE.copy(
+    id = "f6a8b0c2-d4e5-4789-abcd-ef0123456789",
+    status = GroupStatus.ARCHIVED
+)
+
+val PREVIEW_GROUPS_WITH_ARCHIVED: List<Group> = listOf(
+    GROUP_DOMAIN_ARCHIVED,
+    GROUP_DOMAIN_2.copy(
+        id = "a1b2c3d4-e5f6-4789-abcd-0123456789ab",
+        status = GroupStatus.ARCHIVED
+    ),
+    GROUP_DOMAIN_NO_IMAGE
+)
 
 val CURRENCY_USD = Currency(
     "USD",

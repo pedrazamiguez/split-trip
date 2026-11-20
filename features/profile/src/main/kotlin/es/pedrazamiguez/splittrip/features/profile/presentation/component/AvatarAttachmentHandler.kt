@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestCameraPermission
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CameraAttachmentTarget
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import java.io.File
 
@@ -87,7 +88,7 @@ internal fun AvatarAttachmentHandler(
     }
 }
 
-private fun createAvatarCameraUri(context: Context): Pair<File, Uri> {
+private fun createAvatarCameraUri(context: Context): CameraAttachmentTarget {
     val avatarsDir = File(context.filesDir, "avatars_temp").also { it.mkdirs() }
     val tempFile = File.createTempFile("avatar_camera_", ".jpg", avatarsDir)
     val uri = FileProvider.getUriForFile(
@@ -95,5 +96,5 @@ private fun createAvatarCameraUri(context: Context): Pair<File, Uri> {
         "${context.packageName}.fileprovider",
         tempFile
     )
-    return tempFile to uri
+    return CameraAttachmentTarget(file = tempFile, uri = uri)
 }

@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawalRemainingAmountUpdate
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import java.time.LocalDateTime
@@ -225,7 +226,12 @@ class CashWithdrawalRepositoryImpl(
         withdrawals: List<CashWithdrawal>
     ) {
         // Batch all local DB updates in a single transaction
-        val updates = withdrawals.map { it.id to it.remainingAmount }
+        val updates = withdrawals.map {
+            CashWithdrawalRemainingAmountUpdate(
+                withdrawalId = it.id,
+                remainingAmountCents = it.remainingAmount
+            )
+        }
         localWriteDataSource.updateRemainingAmounts(updates)
 
         // Sync all updated withdrawals to the cloud in a single background job — no extra

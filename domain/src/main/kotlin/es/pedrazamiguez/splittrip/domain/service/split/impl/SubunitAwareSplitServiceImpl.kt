@@ -151,10 +151,10 @@ class SubunitAwareSplitServiceImpl(
             val pct = BigDecimal(split.amountCents)
                 .multiply(hundredBd)
                 .divide(totalBd, 2, RoundingMode.DOWN)
-            split to pct
+            RawSplitPercentage(split = split, percentage = pct)
         }
 
-        val allocatedPct = rawPcts.sumOf { it.second }
+        val allocatedPct = rawPcts.sumOf { it.percentage }
         var remainderUnits = remainingPct.subtract(allocatedPct)
             .divide(smallestUnit, 0, RoundingMode.DOWN)
             .toInt()
@@ -172,6 +172,16 @@ class SubunitAwareSplitServiceImpl(
 
         return withPct + updatedWithoutPct
     }
+
+    private data class RawSplitPercentage(
+        val split: ExpenseSplit,
+        val percentage: BigDecimal
+    )
+
+    private data class MemberRawAmount(
+        val userId: String,
+        val rawAmountCents: Long
+    )
 
     private companion object {
         private const val HUNDRED = "100"
@@ -352,10 +362,10 @@ class SubunitAwareSplitServiceImpl(
             val rawAmount = totalBd.multiply(weight)
                 .setScale(0, RoundingMode.DOWN)
                 .toLong()
-            userId to rawAmount
+            MemberRawAmount(userId = userId, rawAmountCents = rawAmount)
         }
 
-        val allocatedTotal = rawAmounts.sumOf { it.second }
+        val allocatedTotal = rawAmounts.sumOf { it.rawAmountCents }
         var remainder = totalCents - allocatedTotal
 
         return rawAmounts.associate { (userId, rawAmount) ->

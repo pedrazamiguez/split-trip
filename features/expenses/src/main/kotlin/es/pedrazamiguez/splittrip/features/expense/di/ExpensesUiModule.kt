@@ -309,7 +309,8 @@ val expensesUiModule = module {
             receiptExtractionService = get<ReceiptExtractionService>(),
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            telemetryTracker = get<TelemetryTracker>()
         )
 
         val expenseFlowStrategyFactory = ExpenseFlowStrategyFactory(

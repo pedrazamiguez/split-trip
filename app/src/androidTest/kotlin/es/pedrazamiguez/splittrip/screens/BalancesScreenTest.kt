@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -205,5 +206,69 @@ class BalancesScreenTest {
 
         assertEquals(1, addMoneyClicks)
         assertEquals(1, withdrawClicks)
+    }
+
+    @Test
+    fun rendersGroupPocketBalanceCard_archived_displaysArchivedTagAndReadOnlyNoticeAndHidesActions() {
+        val archivedLabel = context.getString(DesignSystemR.string.group_detail_archived_label)
+        val readOnlyNotice = context.getString(R.string.balances_archived_readonly_notice)
+        val contributeText = context.getString(R.string.balances_add_money)
+        val withdrawText = context.getString(R.string.balances_withdraw_cash)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                GroupPocketBalanceCard(
+                    balance = GroupPocketBalanceUiModel(
+                        groupName = "Romania",
+                        formattedBalance = "RON120.00",
+                        formattedTotalContributed = "RON200.00",
+                        formattedTotalSpent = "RON80.00",
+                        currency = "RON"
+                    ),
+                    isGroupArchived = true
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(archivedLabel).assertIsDisplayed()
+        composeRule.onNodeWithText(readOnlyNotice).assertIsDisplayed()
+        composeRule.onNodeWithText(contributeText).assertDoesNotExist()
+        composeRule.onNodeWithText(withdrawText).assertDoesNotExist()
+    }
+
+    @Test
+    fun rendersBalancesScreen_archivedWithData_displaysArchivedIndicatorInCard() {
+        val archivedLabel = context.getString(DesignSystemR.string.group_detail_archived_label)
+        val readOnlyNotice = context.getString(R.string.balances_archived_readonly_notice)
+        val contributeText = context.getString(R.string.balances_add_money)
+        val withdrawText = context.getString(R.string.balances_withdraw_cash)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                BalancesScreen(
+                    uiState = BalancesUiState(
+                        isLoading = false,
+                        groupId = "group-1",
+                        isGroupArchived = true,
+                        pocketBalance = GroupPocketBalanceUiModel(
+                            groupName = "Romania",
+                            formattedBalance = "RON120.00",
+                            formattedTotalContributed = "RON200.00",
+                            formattedTotalSpent = "RON80.00",
+                            currency = "RON"
+                        )
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(archivedLabel).assertIsDisplayed()
+        composeRule.onNodeWithText(readOnlyNotice).assertIsDisplayed()
+        composeRule.onNodeWithText(contributeText).assertDoesNotExist()
+        composeRule.onNodeWithText(withdrawText).assertDoesNotExist()
     }
 }

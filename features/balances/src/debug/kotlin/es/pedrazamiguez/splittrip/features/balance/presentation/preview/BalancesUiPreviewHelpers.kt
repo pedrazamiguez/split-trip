@@ -112,7 +112,10 @@ fun ActivityListPreviewHelper(
     content: @Composable (ImmutableList<ActivityItemUiModel>) -> Unit
 ) {
     MappedPreview(
-        domain = domainContributions to domainWithdrawals,
+        domain = BalancesPreviewInputs.ActivityInput(
+            contributions = domainContributions,
+            withdrawals = domainWithdrawals
+        ),
         mapper = { localeProvider, resourceProvider ->
             BalancesUiMapper(
                 localeProvider = localeProvider,
@@ -123,8 +126,8 @@ fun ActivityListPreviewHelper(
         },
         transform = { mapper, domain ->
             mapper.mapActivity(
-                contributions = domain.first,
-                withdrawals = domain.second,
+                contributions = domain.contributions,
+                withdrawals = domain.withdrawals,
                 groupCurrency = groupCurrency,
                 currentUserId = null,
                 memberProfiles = memberProfiles
@@ -244,7 +247,11 @@ fun CashBreakdownPreviewHelper(
     content: @Composable (breakdown: ImmutableList<CashBreakdownUiModel>, formattedTotal: String) -> Unit
 ) {
     MappedPreview(
-        domain = Triple(memberBalance, withdrawals, groupCurrency),
+        domain = BalancesPreviewInputs.CashBreakdownInput(
+            memberBalance = memberBalance,
+            withdrawals = withdrawals,
+            groupCurrency = groupCurrency
+        ),
         mapper = { localeProvider, resourceProvider ->
             BalancesUiMapper(
                 localeProvider = localeProvider,
@@ -265,7 +272,10 @@ fun CashBreakdownPreviewHelper(
                     groupMemberIds = listOf("user-1", "user-2")
                 )
             ).first()
-            uiModel.cashBreakdown to uiModel.formattedCashInHand
+            BalancesPreviewInputs.CashBreakdownOutput(
+                breakdown = uiModel.cashBreakdown,
+                formattedTotal = uiModel.formattedCashInHand
+            )
         },
         content = { (breakdown, total) -> content(breakdown, total) }
     )

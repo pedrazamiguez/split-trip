@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawalRemainingAmountUpdate
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -604,7 +605,10 @@ class CashWithdrawalRepositoryImplTest {
 
             coVerify {
                 localWriteDataSource.updateRemainingAmounts(
-                    listOf("w-1" to 600000L, "w-2" to 400000L)
+                    listOf(
+                        CashWithdrawalRemainingAmountUpdate("w-1", 600000L),
+                        CashWithdrawalRemainingAmountUpdate("w-2", 400000L)
+                    )
                 )
             }
             coVerify { cloudDataSource.updateWithdrawal(testGroupId, w1) }

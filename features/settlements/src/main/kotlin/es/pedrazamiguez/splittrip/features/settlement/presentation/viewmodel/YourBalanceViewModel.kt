@@ -82,7 +82,7 @@ class YourBalanceViewModel(
                 )
             }
 
-            val baseStateFlow = combine(
+            val debouncedSnapshotFlow = combine(
                 transactionsFlow,
                 useCases.getNudgeTimestampsFlowUseCase(),
                 appConfigService.settlementNudgeRateLimitHours
@@ -96,87 +96,88 @@ class YourBalanceViewModel(
                     nudgeTimestamps = nudgeTimestamps,
                     rateLimitHours = rateLimitHours
                 )
-            }
-                .debounce { appConfigService.balanceComputationDebounceMs.value }
-                .combine(_isCashBreakdownVisible) { snapshot, isCashBreakdownVisible ->
-                    Pair(snapshot, isCashBreakdownVisible)
-                }
-                .combine(_isChartCashOnly) { (snapshot, isCashBreakdownVisible), isChartCashOnly ->
-                    val hasCash = snapshot.withdrawals.isNotEmpty()
-                    val actualIsChartCashOnly = isChartCashOnly ?: hasCash
+            }.debounce { appConfigService.balanceComputationDebounceMs.value }
 
-                    val memberBalances = useCases.getMemberBalancesFlowUseCase.computeMemberBalances(
-                        MemberBalanceCalculationInputs(
-                            contributions = snapshot.contributions,
-                            withdrawals = snapshot.withdrawals,
-                            expenses = snapshot.expenses,
-                            subunits = snapshot.subunits,
-                            groupMemberIds = groupMemberIds,
-                            groupCurrency = currency,
-                            settlements = snapshot.settlements
-                        )
+            val baseStateFlow = combine(
+                debouncedSnapshotFlow,
+                _isCashBreakdownVisible,
+                _isChartCashOnly
+            ) { snapshot, isCashBreakdownVisible, isChartCashOnly ->
+                val hasCash = snapshot.withdrawals.isNotEmpty()
+                val actualIsChartCashOnly = isChartCashOnly ?: hasCash
+
+                val memberBalances = useCases.getMemberBalancesFlowUseCase.computeMemberBalances(
+                    MemberBalanceCalculationInputs(
+                        contributions = snapshot.contributions,
+                        withdrawals = snapshot.withdrawals,
+                        expenses = snapshot.expenses,
+                        subunits = snapshot.subunits,
+                        groupMemberIds = groupMemberIds,
+                        groupCurrency = currency,
+                        settlements = snapshot.settlements
                     )
+                )
 
-                    val currentMemberBalance = memberBalances.firstOrNull {
-                        it.userId == currentUserId
-                    }
+                val currentMemberBalance = memberBalances.firstOrNull {
+                    it.userId == currentUserId
+                }
 
-                    val subunitsMap = snapshot.subunits.associateBy { it.id }
+                val subunitsMap = snapshot.subunits.associateBy { it.id }
 
-                    val personalPosition = currentMemberBalance?.let { balance ->
-                        yourBalanceUiMapper.toPersonalPosition(
-                            memberBalance = balance,
-                            groupCurrencyCode = currency,
-                            withdrawals = snapshot.withdrawals,
-                            subunitsMap = subunitsMap,
-                            groupMemberIds = groupMemberIds
-                        )
-                    }
+                val personalPosition = currentMemberBalance?.let { balance ->
+                    yourBalanceUiMapper.toPersonalPosition(
+                        memberBalance = balance,
+                        groupCurrencyCode = currency,
+                        withdrawals = snapshot.withdrawals,
+                        subunitsMap = subunitsMap,
+                        groupMemberIds = groupMemberIds
+                    )
+                }
 
-                    val memberProfiles = if (groupMemberIds.isNotEmpty()) {
-                        try {
-                            useCases.getMemberProfilesUseCase(groupMemberIds)
-                        } catch (e: Exception) {
-                            Timber.w(e, "Failed to fetch member profiles for group $groupId")
-                            emptyMap()
-                        }
-                    } else {
+                val memberProfiles = if (groupMemberIds.isNotEmpty()) {
+                    try {
+                        useCases.getMemberProfilesUseCase(groupMemberIds)
+                    } catch (e: Exception) {
+                        Timber.w(e, "Failed to fetch member profiles for group $groupId")
                         emptyMap()
                     }
-
-                    val allSettlementRecords = useCases.getSettlementSuggestionsUseCase.getEphemeralSettlements(
-                        groupId = groupId,
-                        memberBalances = memberBalances,
-                        groupCurrency = currency,
-                        persistedRecords = snapshot.settlements
-                    )
-
-                    val settlementConsensus = settlementConsensusUiMapper.toConsensusItems(
-                        settlements = allSettlementRecords,
-                        currentUserId = currentUserId,
-                        groupCreatorId = group?.createdBy ?: "",
-                        memberProfiles = memberProfiles,
-                        nudgeTimestamps = snapshot.nudgeTimestamps,
-                        rateLimitHours = snapshot.rateLimitHours
-                    )
-
-                    val spendingChart = memberSpendingChartUiMapper.toChartUiModel(
-                        memberBalances = memberBalances,
-                        cashOnly = actualIsChartCashOnly,
-                        currentUserId = currentUserId,
-                        memberProfiles = memberProfiles,
-                        groupCurrencyCode = currency
-                    )
-
-                    YourBalanceUiState(
-                        isLoading = false,
-                        personalPosition = personalPosition,
-                        isCashBreakdownVisible = isCashBreakdownVisible,
-                        settlementConsensus = settlementConsensus,
-                        spendingChart = spendingChart,
-                        isChartCashOnly = actualIsChartCashOnly
-                    )
+                } else {
+                    emptyMap()
                 }
+
+                val allSettlementRecords = useCases.getSettlementSuggestionsUseCase.getEphemeralSettlements(
+                    groupId = groupId,
+                    memberBalances = memberBalances,
+                    groupCurrency = currency,
+                    persistedRecords = snapshot.settlements
+                )
+
+                val settlementConsensus = settlementConsensusUiMapper.toConsensusItems(
+                    settlements = allSettlementRecords,
+                    currentUserId = currentUserId,
+                    groupCreatorId = group?.createdBy ?: "",
+                    memberProfiles = memberProfiles,
+                    nudgeTimestamps = snapshot.nudgeTimestamps,
+                    rateLimitHours = snapshot.rateLimitHours
+                )
+
+                val spendingChart = memberSpendingChartUiMapper.toChartUiModel(
+                    memberBalances = memberBalances,
+                    cashOnly = actualIsChartCashOnly,
+                    currentUserId = currentUserId,
+                    memberProfiles = memberProfiles,
+                    groupCurrencyCode = currency
+                )
+
+                YourBalanceUiState(
+                    isLoading = false,
+                    personalPosition = personalPosition,
+                    isCashBreakdownVisible = isCashBreakdownVisible,
+                    settlementConsensus = settlementConsensus,
+                    spendingChart = spendingChart,
+                    isChartCashOnly = actualIsChartCashOnly
+                )
+            }
 
             baseStateFlow
                 .combine(networkMonitor.isOnline) { baseState, isOnline ->

@@ -21,6 +21,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestCameraPermission
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CameraAttachmentTarget
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import java.io.File
 
@@ -135,7 +136,7 @@ fun ReceiptSourceSelectionSheet(
     )
 }
 
-private fun createReceiptCameraUri(context: Context): Pair<File, Uri> {
+private fun createReceiptCameraUri(context: Context): CameraAttachmentTarget {
     val receiptsDir = File(context.filesDir, "receipts").also { it.mkdirs() }
     val tempFile = File.createTempFile("camera_", ".jpg", receiptsDir)
     val uri = FileProvider.getUriForFile(
@@ -143,5 +144,5 @@ private fun createReceiptCameraUri(context: Context): Pair<File, Uri> {
         "${context.packageName}.fileprovider",
         tempFile
     )
-    return tempFile to uri
+    return CameraAttachmentTarget(file = tempFile, uri = uri)
 }

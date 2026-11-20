@@ -143,11 +143,11 @@ class AddOnCrudDelegateTest {
                 selectedPaymentMethod = cardMethod
             )
 
-            val (isForeign, isCash, shouldLock) = delegate.resolveAddOnCurrencyContext(state)
+            val result = delegate.resolveAddOnCurrencyContext(state)
 
-            assertFalse(isForeign)
-            assertFalse(isCash)
-            assertFalse(shouldLock)
+            assertFalse(result.isForeign)
+            assertFalse(result.isCash)
+            assertFalse(result.shouldLockRate)
         }
 
         @Test
@@ -158,11 +158,11 @@ class AddOnCrudDelegateTest {
                 selectedPaymentMethod = cardMethod
             )
 
-            val (isForeign, isCash, shouldLock) = delegate.resolveAddOnCurrencyContext(state)
+            val result = delegate.resolveAddOnCurrencyContext(state)
 
-            assertTrue(isForeign)
-            assertFalse(isCash)
-            assertFalse(shouldLock)
+            assertTrue(result.isForeign)
+            assertFalse(result.isCash)
+            assertFalse(result.shouldLockRate)
         }
 
         @Test
@@ -173,11 +173,11 @@ class AddOnCrudDelegateTest {
                 selectedPaymentMethod = cashMethod
             )
 
-            val (isForeign, isCash, shouldLock) = delegate.resolveAddOnCurrencyContext(state)
+            val result = delegate.resolveAddOnCurrencyContext(state)
 
-            assertTrue(isForeign)
-            assertTrue(isCash)
-            assertTrue(shouldLock)
+            assertTrue(result.isForeign)
+            assertTrue(result.isCash)
+            assertTrue(result.shouldLockRate)
         }
 
         @Test
@@ -188,11 +188,11 @@ class AddOnCrudDelegateTest {
                 selectedPaymentMethod = cashMethod
             )
 
-            val (isForeign, isCash, shouldLock) = delegate.resolveAddOnCurrencyContext(state)
+            val result = delegate.resolveAddOnCurrencyContext(state)
 
-            assertFalse(isForeign)
-            assertTrue(isCash)
-            assertFalse(shouldLock)
+            assertFalse(result.isForeign)
+            assertTrue(result.isCash)
+            assertFalse(result.shouldLockRate)
         }
     }
 

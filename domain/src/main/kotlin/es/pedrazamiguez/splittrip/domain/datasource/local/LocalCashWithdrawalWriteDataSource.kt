@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.datasource.local
 
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawalRemainingAmountUpdate
 
 /**
  * Write-only interface for local cash withdrawal data mutations.
@@ -19,7 +20,7 @@ interface LocalCashWithdrawalWriteDataSource {
      * Atomically updates the remaining amount on multiple withdrawals in a single transaction.
      * Used during FIFO cash expense processing to batch all tranche deductions together.
      */
-    suspend fun updateRemainingAmounts(updates: List<Pair<String, Long>>)
+    suspend fun updateRemainingAmounts(updates: List<CashWithdrawalRemainingAmountUpdate>)
 
     suspend fun deleteWithdrawal(withdrawalId: String)
 

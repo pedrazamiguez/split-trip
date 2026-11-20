@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -116,6 +118,11 @@ class SubunitManagementViewModel(
                 _actions.emit(SubunitManagementUiAction.NavigateToCreateSubunit(_groupId.value))
             } else {
                 val isPro = featureGateService.isActingUserPro().first()
+                telemetryTracker.trackFeatureGateBlocked(
+                    feature = GatedFeature.SUBUNIT_CREATION,
+                    entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_EVENT,
+                    upgradePrompted = !isPro
+                )
                 if (isPro) {
                     _actions.emit(
                         SubunitManagementUiAction.ShowError(

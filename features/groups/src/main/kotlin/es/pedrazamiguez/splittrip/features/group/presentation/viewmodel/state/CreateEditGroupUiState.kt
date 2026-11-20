@@ -40,6 +40,7 @@ data class CreateEditGroupUiState(
     val showUpgradeDialog: Boolean = false,
     val upgradeDialogTitle: UiText? = null,
     val upgradeDialogMessage: UiText? = null,
+    val upgradeEntrySource: String? = null,
     val isCreationBlocked: Boolean = false,
     val maxMembersLimit: Int = 4,
     val isGroupPro: Boolean = false,

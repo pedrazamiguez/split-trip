@@ -40,10 +40,10 @@ class ExpensesFilterUiMapperTest {
     inner class ExtractDateBounds {
 
         @Test
-        fun `returns null pair when expenses list is empty`() {
-            val (minDate, maxDate) = mapper.extractDateBounds(emptyList())
-            assertNull(minDate)
-            assertNull(maxDate)
+        fun `returns null bounds when expenses list is empty`() {
+            val bounds = mapper.extractDateBounds(emptyList())
+            assertNull(bounds.startDate)
+            assertNull(bounds.endDate)
         }
 
         @Test
@@ -62,10 +62,10 @@ class ExpensesFilterUiMapperTest {
                 operationDate = LocalDateTime.of(2026, 6, 20, 18, 0)
             )
 
-            val (minDate, maxDate) = mapper.extractDateBounds(listOf(expense1, expense2, expense3))
+            val bounds = mapper.extractDateBounds(listOf(expense1, expense2, expense3))
 
-            assertEquals(LocalDate.of(2026, 6, 2), minDate)
-            assertEquals(LocalDate.of(2026, 6, 20), maxDate)
+            assertEquals(LocalDate.of(2026, 6, 2), bounds.startDate)
+            assertEquals(LocalDate.of(2026, 6, 20), bounds.endDate)
         }
 
         @Test
@@ -73,10 +73,10 @@ class ExpensesFilterUiMapperTest {
             val nullDateExpense = Expense(id = "exp-null", operationDate = null, createdAt = null)
             val validExpense = Expense(id = "exp-valid", createdAt = LocalDateTime.of(2026, 6, 5, 8, 0))
 
-            val (minDate, maxDate) = mapper.extractDateBounds(listOf(nullDateExpense, validExpense))
+            val bounds = mapper.extractDateBounds(listOf(nullDateExpense, validExpense))
 
-            assertEquals(LocalDate.of(2026, 6, 5), minDate)
-            assertEquals(LocalDate.of(2026, 6, 5), maxDate)
+            assertEquals(LocalDate.of(2026, 6, 5), bounds.startDate)
+            assertEquals(LocalDate.of(2026, 6, 5), bounds.endDate)
         }
 
         @Test
@@ -86,10 +86,10 @@ class ExpensesFilterUiMapperTest {
                 createdAt = LocalDateTime.of(2026, 10, 27, 22, 58, 0)
             )
 
-            val (minDate, maxDate) = mapper.extractDateBounds(listOf(expense), zoneId = ZoneId.of("Asia/Shanghai"))
+            val bounds = mapper.extractDateBounds(listOf(expense), zoneId = ZoneId.of("Asia/Shanghai"))
 
-            assertEquals(LocalDate.of(2026, 10, 28), minDate)
-            assertEquals(LocalDate.of(2026, 10, 28), maxDate)
+            assertEquals(LocalDate.of(2026, 10, 28), bounds.startDate)
+            assertEquals(LocalDate.of(2026, 10, 28), bounds.endDate)
         }
     }
 
@@ -173,37 +173,37 @@ class ExpensesFilterUiMapperTest {
 
         @Test
         fun `calculates TODAY range`() {
-            val (start, end) = mapper.calculatePresetRange(DateRangePreset.TODAY, anchor)
-            assertEquals(anchor, start)
-            assertEquals(anchor, end)
+            val range = mapper.calculatePresetRange(DateRangePreset.TODAY, anchor)
+            assertEquals(anchor, range.startDate)
+            assertEquals(anchor, range.endDate)
         }
 
         @Test
         fun `calculates YESTERDAY range`() {
-            val (start, end) = mapper.calculatePresetRange(DateRangePreset.YESTERDAY, anchor)
-            assertEquals(LocalDate.of(2026, 8, 17), start)
-            assertEquals(LocalDate.of(2026, 8, 17), end)
+            val range = mapper.calculatePresetRange(DateRangePreset.YESTERDAY, anchor)
+            assertEquals(LocalDate.of(2026, 8, 17), range.startDate)
+            assertEquals(LocalDate.of(2026, 8, 17), range.endDate)
         }
 
         @Test
         fun `calculates THIS_WEEK range from Monday`() {
-            val (start, end) = mapper.calculatePresetRange(DateRangePreset.THIS_WEEK, anchor)
-            assertEquals(LocalDate.of(2026, 8, 17), start) // Monday
-            assertEquals(anchor, end)
+            val range = mapper.calculatePresetRange(DateRangePreset.THIS_WEEK, anchor)
+            assertEquals(LocalDate.of(2026, 8, 17), range.startDate) // Monday
+            assertEquals(anchor, range.endDate)
         }
 
         @Test
         fun `calculates LAST_15_DAYS range`() {
-            val (start, end) = mapper.calculatePresetRange(DateRangePreset.LAST_15_DAYS, anchor)
-            assertEquals(LocalDate.of(2026, 8, 4), start)
-            assertEquals(anchor, end)
+            val range = mapper.calculatePresetRange(DateRangePreset.LAST_15_DAYS, anchor)
+            assertEquals(LocalDate.of(2026, 8, 4), range.startDate)
+            assertEquals(anchor, range.endDate)
         }
 
         @Test
         fun `calculates THIS_MONTH range`() {
-            val (start, end) = mapper.calculatePresetRange(DateRangePreset.THIS_MONTH, anchor)
-            assertEquals(LocalDate.of(2026, 8, 1), start)
-            assertEquals(anchor, end)
+            val range = mapper.calculatePresetRange(DateRangePreset.THIS_MONTH, anchor)
+            assertEquals(LocalDate.of(2026, 8, 1), range.startDate)
+            assertEquals(anchor, range.endDate)
         }
     }
 

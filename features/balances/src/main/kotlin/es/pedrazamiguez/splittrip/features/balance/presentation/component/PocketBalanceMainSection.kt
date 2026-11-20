@@ -12,9 +12,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickableNoRipple
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.AnimatedAmount
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.BalanceMetricType
@@ -28,25 +33,34 @@ internal fun PocketBalanceMainSection(
     balanceRollingUp: Boolean,
     onBalanceAnimationComplete: () -> Unit,
     modifier: Modifier = Modifier,
+    isGroupArchived: Boolean = false,
     onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
+    val postTitleSpacing = if (isGroupArchived) MaterialTheme.spacing.Small else MaterialTheme.spacing.Medium
+    val showSecondaryBalances = hasSecondaryBalances(balance)
+
     BoxWithConstraints(modifier = modifier) {
-        val isNarrowScreen = maxWidth < UiConstants.NARROW_SCREEN_BREAKPOINT
-        val amountStyle = if (isNarrowScreen) {
+        val amountStyle = if (maxWidth < UiConstants.NARROW_SCREEN_BREAKPOINT) {
             MaterialTheme.typography.headlineMedium
         } else {
             MaterialTheme.typography.displaySmall
         }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             if (balance.groupName.isNotBlank()) {
                 Text(
                     text = balance.groupName,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(postTitleSpacing))
+            }
+            if (isGroupArchived) {
+                PassportTag(
+                    text = stringResource(DesignSystemR.string.group_detail_archived_label),
+                    icon = TablerIcons.Outline.Lock,
+                    style = PassportTagStyle.WARNING
                 )
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
             }
@@ -71,16 +85,15 @@ internal fun PocketBalanceMainSection(
                     onAnimationComplete = onBalanceAnimationComplete
                 )
             }
-            if (balance.formattedAvailableBalance != null ||
-                balance.formattedScheduledHoldAmount != null ||
-                balance.formattedRefundableHoldAmount != null
-            ) {
+            if (showSecondaryBalances) {
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
-                SecondaryBalancesRow(
-                    balance = balance,
-                    onShowMetricInfo = onShowMetricInfo
-                )
+                SecondaryBalancesRow(balance = balance, onShowMetricInfo = onShowMetricInfo)
             }
         }
     }
 }
+
+private fun hasSecondaryBalances(balance: GroupPocketBalanceUiModel): Boolean =
+    balance.formattedAvailableBalance != null ||
+        balance.formattedScheduledHoldAmount != null ||
+        balance.formattedRefundableHoldAmount != null

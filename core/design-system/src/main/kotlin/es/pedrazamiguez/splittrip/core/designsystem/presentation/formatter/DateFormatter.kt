@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val SHORT_TIME_CACHE_KEY = "LOCALIZED_SHORT_TIME"
 
-private val dateTimeFormatterCache = ConcurrentHashMap<Pair<String, Locale>, DateTimeFormatter>()
+private val dateTimeFormatterCache = ConcurrentHashMap<PatternLocaleCacheKey, DateTimeFormatter>()
 
 internal fun getDateTimeFormatterCacheSize(): Int = dateTimeFormatterCache.size
 internal fun clearDateFormatterCache() {
@@ -17,12 +17,12 @@ internal fun clearDateFormatterCache() {
 }
 
 private fun getOrCreateDateTimeFormatter(pattern: String, locale: Locale): DateTimeFormatter =
-    dateTimeFormatterCache.computeIfAbsent(pattern to locale) { (p, l) ->
+    dateTimeFormatterCache.computeIfAbsent(PatternLocaleCacheKey(pattern, locale)) { (p, l) ->
         DateTimeFormatter.ofPattern(p, l)
     }
 
 private fun getOrCreateShortTimeFormatter(locale: Locale): DateTimeFormatter =
-    dateTimeFormatterCache.computeIfAbsent(SHORT_TIME_CACHE_KEY to locale) { (_, l) ->
+    dateTimeFormatterCache.computeIfAbsent(PatternLocaleCacheKey(SHORT_TIME_CACHE_KEY, locale)) { (_, l) ->
         DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(l)
     }
 

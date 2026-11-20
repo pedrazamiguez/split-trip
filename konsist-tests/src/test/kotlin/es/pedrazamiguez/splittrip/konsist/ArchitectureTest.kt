@@ -567,4 +567,64 @@ class ArchitectureTest {
                 }
         }
     }
+
+    @Nested
+    @DisplayName("Type Safety Constraints")
+    inner class TypeSafetyConstraints {
+
+        private val genericTupleTypeRegex = """\b(Pair|Triple)\b""".toRegex()
+        private val genericTupleUsageRegex = """\b(Pair|Triple)\s*[< (]""".replace(" ", "").toRegex()
+        private val commentOrStringRegex = (
+            "(/\\*[\\s\\S]*?\\*/)|(//.*)|" +
+                "(\"\"\"[\\s\\S]*?\"\"\"|\"(?:\\\\.|[^\"\\\\])*\")|('(?:\\\\.|[^'\\\\])')"
+            ).toRegex()
+        private val tupleErrorMessage =
+            "Generic Pair/Triple tuples are forbidden in production code. " +
+                "Introduce a descriptive data class with named properties instead."
+
+        @Test
+        @DisplayName("Production functions must not use Pair or Triple in parameters or return types")
+        fun `production functions must not use Pair or Triple in signatures`() {
+            projectProductionScope
+                .functions(includeNested = true, includeLocal = true)
+                .assertTrue(additionalMessage = tupleErrorMessage) { function ->
+                    val hasTupleReturnType = function.returnType?.text
+                        ?.let { genericTupleTypeRegex.containsMatchIn(it) } == true
+                    val hasTupleParam = function.parameters.any { param ->
+                        genericTupleTypeRegex.containsMatchIn(param.type.text)
+                    }
+                    !hasTupleReturnType && !hasTupleParam
+                }
+        }
+
+        @Test
+        @DisplayName("Production properties must not declare Pair or Triple types")
+        fun `production properties must not declare Pair or Triple types`() {
+            projectProductionScope
+                .properties(includeNested = true)
+                .assertTrue(additionalMessage = tupleErrorMessage) { property ->
+                    property.type?.text
+                        ?.let { !genericTupleTypeRegex.containsMatchIn(it) }
+                        ?: true
+                }
+        }
+
+        @Test
+        @DisplayName("Production code must not instantiate or reference Pair or Triple types")
+        fun `production files must not instantiate or reference Pair or Triple`() {
+            projectProductionScope
+                .files
+                .assertTrue(additionalMessage = tupleErrorMessage) { file ->
+                    val cleanedText = commentOrStringRegex.replace(file.text, " ")
+                    val match = genericTupleUsageRegex.find(cleanedText)
+                    if (match != null) {
+                        println(
+                            "Tuple Violation in ${file.name} (${file.projectPath}): " +
+                                "Found '${match.value}'"
+                        )
+                    }
+                    match == null
+                }
+        }
+    }
 }

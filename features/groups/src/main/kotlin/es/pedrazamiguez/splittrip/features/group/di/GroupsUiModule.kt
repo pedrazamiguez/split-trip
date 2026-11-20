@@ -93,9 +93,11 @@ val groupsUiModule = module {
     factory<CreateEditGroupImageEventHandler> {
         val groupImageStorageService = get<GroupImageStorageService>()
         val featureGateService = get<FeatureGateService>()
+        val telemetryTracker = get<TelemetryTracker>()
         CreateEditGroupImageEventHandlerImpl(
             groupImageStorageService = groupImageStorageService,
-            featureGateService = featureGateService
+            featureGateService = featureGateService,
+            telemetryTracker = telemetryTracker
         )
     }
 
@@ -145,6 +147,7 @@ val groupsUiModule = module {
         val getUserGroupsFlowUseCase = get<GetUserGroupsFlowUseCase>()
         val getGroupCurrenciesInUseUseCase = get<GetGroupCurrenciesInUseUseCase>()
         val getNonRemovableGroupMembersUseCase = get<GetNonRemovableGroupMembersUseCase>()
+        val telemetryTracker = get<TelemetryTracker>()
 
         CreateEditGroupViewModel(
             navigationEventHandler = navigationEventHandler,
@@ -162,7 +165,8 @@ val groupsUiModule = module {
             authenticationService = authenticationService,
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             getGroupCurrenciesInUseUseCase = getGroupCurrenciesInUseUseCase,
-            getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase
+            getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase,
+            telemetryTracker = telemetryTracker
         )
     }
 
@@ -259,11 +263,13 @@ val groupsUiModule = module {
         val authenticationService = get<AuthenticationService>()
         val featureGateService = get<FeatureGateService>()
         val upgradeNavigator = get<UpgradeNavigator>()
+        val telemetryTracker = get<TelemetryTracker>()
         GroupsScreenUiProviderImpl(
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             authenticationService = authenticationService,
             featureGateService = featureGateService,
-            upgradeNavigator = upgradeNavigator
+            upgradeNavigator = upgradeNavigator,
+            telemetryTracker = telemetryTracker
         )
     } bind ScreenUiProvider::class
     single { CreateGroupScreenUiProviderImpl() } bind ScreenUiProvider::class

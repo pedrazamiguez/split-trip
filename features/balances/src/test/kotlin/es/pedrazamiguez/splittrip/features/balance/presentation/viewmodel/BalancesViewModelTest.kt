@@ -416,6 +416,33 @@ class BalancesViewModelTest {
 
                 collectJob.cancel()
             }
+
+        @Test
+        fun `observeGroupUseCase emission with archived status updates isGroupArchived to true`() =
+            runTest(testDispatcher) {
+                // Given
+                val groupFlow = MutableStateFlow(testGroup)
+                every { observeGroupUseCase(testGroupId) } returns groupFlow
+
+                viewModel = createViewModel()
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                // When - Initial load with ACTIVE group
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                // Then - Initially not archived
+                assertFalse(viewModel.uiState.value.isGroupArchived)
+
+                // When - Group status changes to ARCHIVED
+                groupFlow.value = testGroup.copy(status = GroupStatus.ARCHIVED)
+                advanceUntilIdle()
+
+                // Then - isGroupArchived reactively updates to true
+                assertTrue(viewModel.uiState.value.isGroupArchived)
+
+                collectJob.cancel()
+            }
     }
 
     @Nested

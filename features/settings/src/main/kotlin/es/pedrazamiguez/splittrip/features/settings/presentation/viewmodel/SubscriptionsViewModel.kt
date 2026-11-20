@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
@@ -32,6 +34,7 @@ import timber.log.Timber
 private const val GOOGLE_PLAY_SUBSCRIPTIONS_URL =
     "https://play.google.com/store/account/subscriptions?package=es.pedrazamiguez.splittrip"
 
+@Suppress("TooManyFunctions")
 class SubscriptionsViewModel(
     private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
     private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
@@ -40,7 +43,9 @@ class SubscriptionsViewModel(
     private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
     private val reconcileSubscriptionEntitlementsUseCase: ReconcileSubscriptionEntitlementsUseCase,
     private val subscriptionsUiMapper: SubscriptionsUiMapper,
-    private val billingService: BillingService
+    private val billingService: BillingService,
+    private val telemetryTracker: TelemetryTracker,
+    private val entrySource: String? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SubscriptionsUiState())
@@ -48,6 +53,8 @@ class SubscriptionsViewModel(
 
     private val _actions = Channel<SubscriptionsUiAction>(Channel.BUFFERED)
     val actions = _actions.receiveAsFlow()
+
+    private var hasTrackedPaywallView: Boolean = false
 
     init {
         observeSubscriptionProfile()
@@ -116,23 +123,46 @@ class SubscriptionsViewModel(
             billingService.purchaseUpdates.collect { status ->
                 when (status) {
                     is PurchaseStatus.Success -> {
-                        handlePurchaseSuccess(isAlreadyOwned = false)
+                        val interval = resolveBillingInterval(status.productId)
+                        handlePurchaseSuccess(isAlreadyOwned = false, billingInterval = interval)
                     }
                     is PurchaseStatus.Pending -> {
+                        telemetryTracker.trackEvent(
+                            MonetizationTelemetry.Event.PURCHASE_PENDING,
+                            mapOf(
+                                MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase(),
+                                MonetizationTelemetry.Param.BILLING_INTERVAL to
+                                    _uiState.value.selectedInterval.name.lowercase()
+                            )
+                        )
                         val message = subscriptionsUiMapper.formatPurchasePendingMessage()
                         _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                     }
                     is PurchaseStatus.AlreadyOwned -> {
-                        handlePurchaseSuccess(isAlreadyOwned = true)
+                        handlePurchaseSuccess(
+                            isAlreadyOwned = true,
+                            billingInterval = _uiState.value.selectedInterval
+                        )
                     }
                     is PurchaseStatus.UserCanceled -> {
-                        // User canceled purchase dialog; no action needed
+                        telemetryTracker.trackEvent(
+                            MonetizationTelemetry.Event.PURCHASE_CANCELED,
+                            mapOf(
+                                MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase(),
+                                MonetizationTelemetry.Param.BILLING_INTERVAL to
+                                    _uiState.value.selectedInterval.name.lowercase()
+                            )
+                        )
                     }
                     is PurchaseStatus.Error -> {
                         val errorException = IllegalStateException(
                             "Billing purchase update error: ${status.message ?: "Unknown billing error"}"
                         )
                         Timber.e(errorException, "Billing purchase update error: %s", status.message)
+                        trackPurchaseFailed(
+                            billingInterval = _uiState.value.selectedInterval,
+                            failureStage = MonetizationTelemetry.FailureStage.PURCHASE_UPDATE
+                        )
                         val message = subscriptionsUiMapper.formatBillingError()
                         _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                     }
@@ -141,12 +171,24 @@ class SubscriptionsViewModel(
         }
     }
 
-    private suspend fun handlePurchaseSuccess(isAlreadyOwned: Boolean) {
+    private suspend fun handlePurchaseSuccess(
+        isAlreadyOwned: Boolean,
+        billingInterval: BillingInterval
+    ) {
         try {
             val user = getCurrentUserProfileUseCase()
             if (user != null) {
                 updateUserTierUseCase(user.userId, SubscriptionTier.PRO)
             }
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.PURCHASE_COMPLETED,
+                mapOf(
+                    MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase(),
+                    MonetizationTelemetry.Param.BILLING_INTERVAL to billingInterval.name.lowercase(),
+                    MonetizationTelemetry.Param.IS_ALREADY_OWNED to isAlreadyOwned,
+                    MonetizationTelemetry.Param.ENTRY_SOURCE to resolvedEntrySource()
+                )
+            )
             val message = if (isAlreadyOwned) {
                 subscriptionsUiMapper.formatAlreadyOwnedMessage()
             } else {
@@ -157,6 +199,10 @@ class SubscriptionsViewModel(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to update user tier after purchase")
+            trackPurchaseFailed(
+                billingInterval = billingInterval,
+                failureStage = MonetizationTelemetry.FailureStage.TIER_PERSISTENCE
+            )
             val message = subscriptionsUiMapper.formatBillingError()
             _actions.send(SubscriptionsUiAction.ShowTopPill(message))
         }
@@ -182,6 +228,10 @@ class SubscriptionsViewModel(
             val failureThrowable = result.exceptionOrNull()
                 ?: IllegalStateException("Failed to launch billing flow for product: $productId")
             Timber.e(failureThrowable, "Failed to launch billing flow for product: %s", productId)
+            trackPurchaseFailed(
+                billingInterval = resolveBillingInterval(productId),
+                failureStage = MonetizationTelemetry.FailureStage.LAUNCH_BILLING_FLOW
+            )
             viewModelScope.launch {
                 val message = subscriptionsUiMapper.formatBillingError()
                 _actions.send(SubscriptionsUiAction.ShowTopPill(message))
@@ -236,11 +286,13 @@ class SubscriptionsViewModel(
                         plans = plans
                     )
                 }
+                trackPaywallViewedIfNeeded(currentTier = currentTier)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load subscriptions")
                 _uiState.update { it.copy(isLoading = false) }
+                trackPaywallViewedIfNeeded(currentTier = _uiState.value.currentTier)
                 val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
                 _actions.send(SubscriptionsUiAction.ShowTopPill(message))
             }
@@ -248,6 +300,7 @@ class SubscriptionsViewModel(
     }
 
     private fun handleSelectBillingInterval(interval: BillingInterval) {
+        val previousInterval = _uiState.value.selectedInterval
         val currentTier = _uiState.value.currentTier
         val products = billingService.subscriptionProducts.value
         val updatedPlans = subscriptionsUiMapper.mapPlans(
@@ -259,6 +312,15 @@ class SubscriptionsViewModel(
             it.copy(
                 selectedInterval = interval,
                 plans = updatedPlans
+            )
+        }
+        if (interval != previousInterval) {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.BILLING_INTERVAL_SELECTED,
+                mapOf(
+                    MonetizationTelemetry.Param.BILLING_INTERVAL to interval.name.lowercase(),
+                    MonetizationTelemetry.Param.CURRENT_TIER to currentTier.name.lowercase()
+                )
             )
         }
     }
@@ -306,12 +368,24 @@ class SubscriptionsViewModel(
         val selectedInterval = _uiState.value.selectedInterval
         val hasProduct = billingService.subscriptionProducts.value.any { it.billingInterval == selectedInterval }
         if (!hasProduct) {
+            trackPurchaseFailed(
+                billingInterval = selectedInterval,
+                failureStage = MonetizationTelemetry.FailureStage.PRODUCT_UNAVAILABLE
+            )
             viewModelScope.launch {
                 val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
                 _actions.send(SubscriptionsUiAction.ShowTopPill(message))
             }
             return
         }
+        telemetryTracker.trackEvent(
+            MonetizationTelemetry.Event.PURCHASE_INITIATED,
+            mapOf(
+                MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase(),
+                MonetizationTelemetry.Param.BILLING_INTERVAL to selectedInterval.name.lowercase(),
+                MonetizationTelemetry.Param.ENTRY_SOURCE to resolvedEntrySource()
+            )
+        )
         val productId = if (selectedInterval == BillingInterval.MONTHLY) {
             BillingConstants.PRODUCT_ID_PRO_MONTHLY
         } else {
@@ -324,6 +398,12 @@ class SubscriptionsViewModel(
 
     private fun confirmManageSubscription() {
         _uiState.update { it.copy(showManageSubscriptionDialog = false) }
+        telemetryTracker.trackEvent(
+            MonetizationTelemetry.Event.MANAGE_SUBSCRIPTION_OPENED,
+            mapOf(
+                MonetizationTelemetry.Param.CURRENT_TIER to _uiState.value.currentTier.name.lowercase()
+            )
+        )
         viewModelScope.launch {
             _actions.send(SubscriptionsUiAction.OpenUrl(GOOGLE_PLAY_SUBSCRIPTIONS_URL))
         }
@@ -336,6 +416,7 @@ class SubscriptionsViewModel(
             }
             return
         }
+        telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_ATTEMPTED)
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingAction = true) }
             try {
@@ -344,6 +425,7 @@ class SubscriptionsViewModel(
                     processRestoreSuccess(restoreResult.getOrDefault(false))
                 } else {
                     Timber.e(restoreResult.exceptionOrNull(), "Failed to restore purchases")
+                    telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_FAILED)
                     val message = subscriptionsUiMapper.formatBillingError()
                     _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                 }
@@ -351,6 +433,7 @@ class SubscriptionsViewModel(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to handle restore purchases")
+                telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_FAILED)
                 val message = subscriptionsUiMapper.formatBillingError()
                 _actions.send(SubscriptionsUiAction.ShowTopPill(message))
             } finally {
@@ -365,6 +448,10 @@ class SubscriptionsViewModel(
             if (user != null) {
                 updateUserTierUseCase(user.userId, SubscriptionTier.PRO)
             }
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.RESTORE_PURCHASES_SUCCEEDED,
+                mapOf(MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase())
+            )
             val message = subscriptionsUiMapper.formatRestorePurchasesSuccessMessage()
             _actions.send(SubscriptionsUiAction.ShowTopPill(message))
         } else {
@@ -372,8 +459,45 @@ class SubscriptionsViewModel(
                 .onFailure { error ->
                     Timber.w(error, "Best-effort entitlement reconciliation failed during restore")
                 }
+            telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_EMPTY)
             val message = subscriptionsUiMapper.formatNoPurchasesToRestoreMessage()
             _actions.send(SubscriptionsUiAction.ShowTopPill(message))
         }
     }
+
+    private fun trackPaywallViewedIfNeeded(currentTier: SubscriptionTier) {
+        if (hasTrackedPaywallView) return
+        hasTrackedPaywallView = true
+        telemetryTracker.trackEvent(
+            MonetizationTelemetry.Event.PAYWALL_VIEWED,
+            mapOf(
+                MonetizationTelemetry.Param.ENTRY_SOURCE to resolvedEntrySource(),
+                MonetizationTelemetry.Param.CURRENT_TIER to currentTier.name.lowercase(),
+                MonetizationTelemetry.Param.BILLING_INTERVAL to _uiState.value.selectedInterval.name.lowercase()
+            )
+        )
+    }
+
+    private fun trackPurchaseFailed(
+        billingInterval: BillingInterval,
+        failureStage: String
+    ) {
+        telemetryTracker.trackEvent(
+            MonetizationTelemetry.Event.PURCHASE_FAILED,
+            mapOf(
+                MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase(),
+                MonetizationTelemetry.Param.BILLING_INTERVAL to billingInterval.name.lowercase(),
+                MonetizationTelemetry.Param.FAILURE_STAGE to failureStage
+            )
+        )
+    }
+
+    private fun resolveBillingInterval(productId: String): BillingInterval = when (productId) {
+        BillingConstants.PRODUCT_ID_PRO_MONTHLY -> BillingInterval.MONTHLY
+        BillingConstants.PRODUCT_ID_PRO_ANNUAL -> BillingInterval.ANNUAL
+        else -> _uiState.value.selectedInterval
+    }
+
+    private fun resolvedEntrySource(): String =
+        entrySource ?: MonetizationTelemetry.EntrySource.DIRECT
 }

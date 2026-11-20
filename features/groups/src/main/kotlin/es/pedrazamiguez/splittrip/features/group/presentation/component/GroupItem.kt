@@ -36,6 +36,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 
 private val THUMBNAIL_SIZE = 56.dp
@@ -200,6 +201,12 @@ fun GroupItem(
                                 }
                             }
                         }
+                    }
+
+                    if (groupUiModel.status == GroupStatus.ARCHIVED) {
+                        GroupArchivedTag(
+                            modifier = Modifier.padding(top = MaterialTheme.spacing.ExtraSmall)
+                        )
                     }
                 }
 

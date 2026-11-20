@@ -21,6 +21,11 @@ internal class BillingConnectionCoordinator(
     private val listener: PurchasesUpdatedListener,
     private val ioDispatcher: CoroutineDispatcher
 ) {
+    private data class ConnectionDeferredAcquisition(
+        val deferred: CompletableDeferred<Result<Unit>>,
+        val isInitiator: Boolean
+    )
+
     private val connectionMutex = Mutex()
 
     @Volatile
@@ -61,14 +66,14 @@ internal class BillingConnectionCoordinator(
         executeConnection(deferred)
     }
 
-    private fun getOrCreateConnectionDeferred(): Pair<CompletableDeferred<Result<Unit>>, Boolean> {
+    private fun getOrCreateConnectionDeferred(): ConnectionDeferredAcquisition {
         val existing = activeConnectionDeferred
         return if (existing != null && existing.isActive) {
-            existing to false
+            ConnectionDeferredAcquisition(deferred = existing, isInitiator = false)
         } else {
             val newDeferred = CompletableDeferred<Result<Unit>>()
             activeConnectionDeferred = newDeferred
-            newDeferred to true
+            ConnectionDeferredAcquisition(deferred = newDeferred, isInitiator = true)
         }
     }
 

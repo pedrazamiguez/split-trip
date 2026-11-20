@@ -23,12 +23,16 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.actio
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.event.SubscriptionsUiEvent
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
 @Composable
 fun SubscriptionsFeature(
+    entrySource: String? = null,
     navController: NavHostController = LocalRootNavController.current,
-    viewModel: SubscriptionsViewModel = koinViewModel<SubscriptionsViewModel>()
+    viewModel: SubscriptionsViewModel = koinViewModel<SubscriptionsViewModel>(
+        parameters = { parametersOf(entrySource) }
+    )
 ) {
     val pillController = LocalTopPillController.current
     val context = LocalContext.current
@@ -63,7 +67,7 @@ fun SubscriptionsFeature(
                 }
                 SubscriptionsUiAction.NavigateToAccountStatus -> {
                     navController.navigate(Routes.SETTINGS_ACCOUNT_STATUS) {
-                        popUpTo(Routes.SETTINGS_SUBSCRIPTIONS) { inclusive = true }
+                        popUpTo(Routes.SETTINGS_SUBSCRIPTIONS_ROUTE) { inclusive = true }
                     }
                 }
             }

@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
@@ -23,6 +25,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,6 +62,7 @@ class SubscriptionsViewModelTest {
     private lateinit var reconcileSubscriptionEntitlementsUseCase: ReconcileSubscriptionEntitlementsUseCase
     private lateinit var subscriptionsUiMapper: SubscriptionsUiMapper
     private lateinit var billingService: BillingService
+    private lateinit var telemetryTracker: TelemetryTracker
 
     private val userProfileFlow = MutableSharedFlow<User?>(replay = 1)
     private val proAllowlistAccessFlow = MutableStateFlow(false)
@@ -127,6 +131,7 @@ class SubscriptionsViewModelTest {
         reconcileSubscriptionEntitlementsUseCase = mockk()
         subscriptionsUiMapper = mockk()
         billingService = mockk(relaxed = true)
+        telemetryTracker = mockk(relaxed = true)
 
         userProfileFlow.tryEmit(testUser)
         proAllowlistAccessFlow.value = false
@@ -177,7 +182,7 @@ class SubscriptionsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): SubscriptionsViewModel = SubscriptionsViewModel(
+    private fun createViewModel(entrySource: String? = null): SubscriptionsViewModel = SubscriptionsViewModel(
         getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
         observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
         observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
@@ -185,7 +190,9 @@ class SubscriptionsViewModelTest {
         isUserAnonymousUseCase = isUserAnonymousUseCase,
         reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,
         subscriptionsUiMapper = subscriptionsUiMapper,
-        billingService = billingService
+        billingService = billingService,
+        telemetryTracker = telemetryTracker,
+        entrySource = entrySource
     )
 
     @Nested
@@ -837,5 +844,331 @@ class SubscriptionsViewModelTest {
 
                 job.cancel()
             }
+    }
+
+    @Nested
+    @DisplayName("Telemetry")
+    inner class Telemetry {
+
+        @Test
+        fun `loadSubscriptions tracks paywall_viewed once for non-anonymous user with entry_source and tier`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel(entrySource = MonetizationTelemetry.EntrySource.GROUPS_FAB)
+                advanceUntilIdle()
+
+                viewModel.onEvent(SubscriptionsUiEvent.LoadSubscriptions)
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.PAYWALL_VIEWED,
+                        mapOf(
+                            MonetizationTelemetry.Param.ENTRY_SOURCE to MonetizationTelemetry.EntrySource.GROUPS_FAB,
+                            MonetizationTelemetry.Param.CURRENT_TIER to "free",
+                            MonetizationTelemetry.Param.BILLING_INTERVAL to "annual"
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `loadSubscriptions does not track paywall_viewed when user is anonymous`() =
+            runTest(testDispatcher) {
+                every { isUserAnonymousUseCase() } returns flowOf(true)
+
+                createViewModel(entrySource = MonetizationTelemetry.EntrySource.SETTINGS)
+                advanceUntilIdle()
+
+                verify(exactly = 0) {
+                    telemetryTracker.trackEvent(MonetizationTelemetry.Event.PAYWALL_VIEWED, any())
+                }
+            }
+
+        @Test
+        fun `SelectBillingInterval tracks billing_interval_selected only when interval changes`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(SubscriptionsUiEvent.SelectBillingInterval(BillingInterval.ANNUAL))
+                viewModel.onEvent(SubscriptionsUiEvent.SelectBillingInterval(BillingInterval.MONTHLY))
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.BILLING_INTERVAL_SELECTED,
+                        mapOf(
+                            MonetizationTelemetry.Param.BILLING_INTERVAL to "monthly",
+                            MonetizationTelemetry.Param.CURRENT_TIER to "free"
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `UpgradePlan for PRO tracks purchase_initiated when product is available`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel(entrySource = MonetizationTelemetry.EntrySource.SETTINGS)
+                advanceUntilIdle()
+
+                viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.PRO))
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.PURCHASE_INITIATED,
+                        mapOf(
+                            MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                            MonetizationTelemetry.Param.BILLING_INTERVAL to "annual",
+                            MonetizationTelemetry.Param.ENTRY_SOURCE to MonetizationTelemetry.EntrySource.SETTINGS
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `UpgradePlan for PRO tracks purchase_failed with product_unavailable when product is missing`() =
+            runTest(testDispatcher) {
+                subscriptionProductsFlow.value = emptyList()
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(SubscriptionsUiEvent.UpgradePlan(SubscriptionTier.PRO))
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.PURCHASE_FAILED,
+                        mapOf(
+                            MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                            MonetizationTelemetry.Param.BILLING_INTERVAL to "annual",
+                            MonetizationTelemetry.Param.FAILURE_STAGE to
+                                MonetizationTelemetry.FailureStage.PRODUCT_UNAVAILABLE
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `launchBillingFlow failure tracks purchase_failed with launch_billing_flow stage`() =
+            runTest(testDispatcher) {
+                every {
+                    billingService.launchBillingFlow(any(), BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+                } returns Result.failure(IllegalStateException("Billing unavailable"))
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.launchBillingFlow(mockk(), BillingConstants.PRODUCT_ID_PRO_MONTHLY)
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.PURCHASE_FAILED,
+                        mapOf(
+                            MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                            MonetizationTelemetry.Param.BILLING_INTERVAL to "monthly",
+                            MonetizationTelemetry.Param.FAILURE_STAGE to
+                                MonetizationTelemetry.FailureStage.LAUNCH_BILLING_FLOW
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `purchaseUpdates Success tracks purchase_completed without purchase token or price`() =
+            runTest(testDispatcher) {
+                createViewModel(entrySource = MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING)
+                advanceUntilIdle()
+
+                purchaseUpdatesFlow.emit(
+                    PurchaseStatus.Success(BillingConstants.PRODUCT_ID_PRO_MONTHLY, "secret_token")
+                )
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.PURCHASE_COMPLETED,
+                        mapOf(
+                            MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                            MonetizationTelemetry.Param.BILLING_INTERVAL to "monthly",
+                            MonetizationTelemetry.Param.IS_ALREADY_OWNED to false,
+                            MonetizationTelemetry.Param.ENTRY_SOURCE to
+                                MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `purchaseUpdates AlreadyOwned tracks purchase_completed with is_already_owned true`() =
+            runTest(testDispatcher) {
+                createViewModel()
+                advanceUntilIdle()
+
+                purchaseUpdatesFlow.emit(PurchaseStatus.AlreadyOwned)
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.PURCHASE_COMPLETED,
+                        mapOf(
+                            MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                            MonetizationTelemetry.Param.BILLING_INTERVAL to "annual",
+                            MonetizationTelemetry.Param.IS_ALREADY_OWNED to true,
+                            MonetizationTelemetry.Param.ENTRY_SOURCE to MonetizationTelemetry.EntrySource.DIRECT
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `purchaseUpdates Success when tier update fails tracks purchase_failed with tier_persistence stage`() =
+            runTest(testDispatcher) {
+                coEvery { updateUserTierUseCase(any(), any()) } throws RuntimeException("DB write failed")
+                createViewModel()
+                advanceUntilIdle()
+
+                purchaseUpdatesFlow.emit(
+                    PurchaseStatus.Success(BillingConstants.PRODUCT_ID_PRO_ANNUAL, "token")
+                )
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.PURCHASE_FAILED,
+                        mapOf(
+                            MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                            MonetizationTelemetry.Param.BILLING_INTERVAL to "annual",
+                            MonetizationTelemetry.Param.FAILURE_STAGE to
+                                MonetizationTelemetry.FailureStage.TIER_PERSISTENCE
+                        )
+                    )
+                }
+            }
+
+        @Test
+        fun `purchaseUpdates Pending tracks purchase_pending`() = runTest(testDispatcher) {
+            createViewModel()
+            advanceUntilIdle()
+
+            purchaseUpdatesFlow.emit(PurchaseStatus.Pending)
+            advanceUntilIdle()
+
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.PURCHASE_PENDING,
+                    mapOf(
+                        MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                        MonetizationTelemetry.Param.BILLING_INTERVAL to "annual"
+                    )
+                )
+            }
+        }
+
+        @Test
+        fun `purchaseUpdates UserCanceled tracks purchase_canceled`() = runTest(testDispatcher) {
+            createViewModel()
+            advanceUntilIdle()
+
+            purchaseUpdatesFlow.emit(PurchaseStatus.UserCanceled)
+            advanceUntilIdle()
+
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.PURCHASE_CANCELED,
+                    mapOf(
+                        MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                        MonetizationTelemetry.Param.BILLING_INTERVAL to "annual"
+                    )
+                )
+            }
+        }
+
+        @Test
+        fun `purchaseUpdates Error tracks purchase_failed with purchase_update stage`() = runTest(testDispatcher) {
+            createViewModel()
+            advanceUntilIdle()
+
+            purchaseUpdatesFlow.emit(PurchaseStatus.Error("Billing error"))
+            advanceUntilIdle()
+
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.PURCHASE_FAILED,
+                    mapOf(
+                        MonetizationTelemetry.Param.TARGET_TIER to "pro",
+                        MonetizationTelemetry.Param.BILLING_INTERVAL to "annual",
+                        MonetizationTelemetry.Param.FAILURE_STAGE to MonetizationTelemetry.FailureStage.PURCHASE_UPDATE
+                    )
+                )
+            }
+        }
+
+        @Test
+        fun `RestorePurchases true tracks restore_purchases_attempted and restore_purchases_succeeded`() =
+            runTest(testDispatcher) {
+                coEvery { billingService.restorePurchases() } returns Result.success(true)
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(SubscriptionsUiEvent.RestorePurchases)
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_ATTEMPTED)
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.RESTORE_PURCHASES_SUCCEEDED,
+                        mapOf(MonetizationTelemetry.Param.TARGET_TIER to "pro")
+                    )
+                }
+            }
+
+        @Test
+        fun `RestorePurchases false tracks restore_purchases_attempted and restore_purchases_empty`() =
+            runTest(testDispatcher) {
+                coEvery { billingService.restorePurchases() } returns Result.success(false)
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(SubscriptionsUiEvent.RestorePurchases)
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_ATTEMPTED)
+                    telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_EMPTY)
+                }
+            }
+
+        @Test
+        fun `RestorePurchases failure tracks restore_purchases_attempted and restore_purchases_failed`() =
+            runTest(testDispatcher) {
+                coEvery { billingService.restorePurchases() } returns Result.failure(RuntimeException("Network error"))
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(SubscriptionsUiEvent.RestorePurchases)
+                advanceUntilIdle()
+
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_ATTEMPTED)
+                    telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_FAILED)
+                }
+            }
+
+        @Test
+        fun `ConfirmManageSubscription tracks manage_subscription_opened`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(SubscriptionsUiEvent.ConfirmManageSubscription)
+            advanceUntilIdle()
+
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.MANAGE_SUBSCRIPTION_OPENED,
+                    mapOf(MonetizationTelemetry.Param.CURRENT_TIER to "free")
+                )
+            }
+        }
     }
 }

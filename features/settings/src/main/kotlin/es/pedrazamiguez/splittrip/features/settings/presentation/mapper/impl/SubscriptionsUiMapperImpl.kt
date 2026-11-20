@@ -27,6 +27,11 @@ class SubscriptionsUiMapperImpl(
     private val localeProvider: LocaleProvider
 ) : SubscriptionsUiMapper {
 
+    private data class ProPricingDisplay(
+        val price: UiText,
+        val billingDetail: UiText?
+    )
+
     override fun mapPlans(
         currentTier: SubscriptionTier,
         selectedInterval: BillingInterval,
@@ -115,21 +120,21 @@ class SubscriptionsUiMapperImpl(
     private fun resolveProPricing(
         selectedInterval: BillingInterval,
         matchingProduct: SubscriptionProduct?
-    ): Pair<UiText, UiText?> = when (selectedInterval) {
+    ): ProPricingDisplay = when (selectedInterval) {
         BillingInterval.MONTHLY -> {
             val price = if (matchingProduct != null && matchingProduct.formattedPrice.isNotBlank()) {
                 UiText.DynamicString(matchingProduct.formattedPrice)
             } else {
                 UiText.StringResource(R.string.subscriptions_tier_pro_price_monthly)
             }
-            price to null
+            ProPricingDisplay(price = price, billingDetail = null)
         }
         BillingInterval.ANNUAL -> resolveAnnualProPricing(matchingProduct)
     }
 
     private fun resolveAnnualProPricing(
         matchingProduct: SubscriptionProduct?
-    ): Pair<UiText, UiText> = if (matchingProduct != null && matchingProduct.priceAmountMicros > 0) {
+    ): ProPricingDisplay = if (matchingProduct != null && matchingProduct.priceAmountMicros > 0) {
         val fractionDigits = runCatching {
             Currency.getInstance(matchingProduct.priceCurrencyCode).defaultFractionDigits
         }.getOrDefault(DEFAULT_FRACTION_DIGITS)
@@ -145,14 +150,20 @@ class SubscriptionsUiMapperImpl(
             currencyCode = matchingProduct.priceCurrencyCode,
             locale = localeProvider.getCurrentLocale()
         )
-        UiText.DynamicString(formattedMonthlyEquivalent) to UiText.StringResource(
-            R.string.subscriptions_tier_pro_billing_annual_detail,
-            matchingProduct.formattedPrice
+        ProPricingDisplay(
+            price = UiText.DynamicString(formattedMonthlyEquivalent),
+            billingDetail = UiText.StringResource(
+                R.string.subscriptions_tier_pro_billing_annual_detail,
+                matchingProduct.formattedPrice
+            )
         )
     } else {
-        UiText.StringResource(R.string.subscriptions_tier_pro_price_annual) to UiText.StringResource(
-            R.string.subscriptions_tier_pro_billing_annual_detail,
-            UiText.StringResource(R.string.subscriptions_tier_pro_price_annual_total)
+        ProPricingDisplay(
+            price = UiText.StringResource(R.string.subscriptions_tier_pro_price_annual),
+            billingDetail = UiText.StringResource(
+                R.string.subscriptions_tier_pro_billing_annual_detail,
+                UiText.StringResource(R.string.subscriptions_tier_pro_price_annual_total)
+            )
         )
     }
 }

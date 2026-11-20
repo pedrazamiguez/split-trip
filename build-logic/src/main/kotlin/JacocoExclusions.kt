@@ -146,6 +146,10 @@ object JacocoExclusions {
         // ── Pure data-holder UI models with no testable logic ────────────────────
         // data class with only String fields; behaviour belongs to the mapper.
         "**/presentation/model/CashBalanceUiModel*.*",
+        // Pure data-holder UI models constructed exclusively inside @Composable components
+        "**/presentation/model/ExtractionFieldItem*.*",
+        "**/presentation/model/SecondaryBalanceMetricItem*.*",
+        "**/presentation/model/SpendingBarPiece*.*",
         // ── Presentation view data class — holds Compose ImageVector + lambda ────
         // ImageVector requires Compose runtime; lambdas are structural, not logical.
         "**/presentation/view/SettingItemView*.*",

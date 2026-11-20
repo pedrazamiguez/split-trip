@@ -68,3 +68,18 @@ private fun GroupsScreenNoSelectionPreview() {
         )
     }
 }
+
+/** Selected archived group alongside unselected archived and active groups. */
+@PreviewComplete
+@Composable
+private fun GroupsScreenArchivedSelectedPreview() {
+    GroupsScreenPreviewHelper(domainGroups = PREVIEW_GROUPS_WITH_ARCHIVED) {
+        GroupsScreen(
+            uiState = GroupsUiState(
+                isLoading = false,
+                groups = it
+            ),
+            selectedGroupId = GROUP_DOMAIN_ARCHIVED.id
+        )
+    }
+}

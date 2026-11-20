@@ -77,10 +77,12 @@ val subunitsUiModule = module {
         val observeSelectedGroupUseCase = get<ObserveSelectedGroupUseCase>()
         val featureGateService = get<FeatureGateService>()
         val upgradeNavigator = get<UpgradeNavigator>()
+        val telemetryTracker = get<TelemetryTracker>()
         SubunitManagementScreenUiProviderImpl(
             observeSelectedGroupUseCase = observeSelectedGroupUseCase,
             featureGateService = featureGateService,
-            upgradeNavigator = upgradeNavigator
+            upgradeNavigator = upgradeNavigator,
+            telemetryTracker = telemetryTracker
         )
     } bind ScreenUiProvider::class
     single { CreateEditSubunitScreenUiProviderImpl() } bind ScreenUiProvider::class

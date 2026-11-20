@@ -22,6 +22,11 @@ internal class FeatureGateServiceImpl(
     private val groupRepository: GroupRepository
 ) : FeatureGateService {
 
+    private data class TierLimitFlows(
+        val freeLimitFlow: Flow<Int>,
+        val proLimitFlow: Flow<Int>
+    )
+
     override fun isFeatureEnabled(feature: GatedFeature, groupId: String?): Flow<Boolean> =
         combine(
             appConfigRepository.subscriptionGatingEnabled,
@@ -53,10 +58,14 @@ internal class FeatureGateServiceImpl(
 
     override fun checkLimit(limit: GatedLimit, currentCount: Int, groupId: String?): Flow<LimitResult> {
         val (freeLimitFlow, proLimitFlow) = when (limit) {
-            GatedLimit.MAX_OWNED_GROUPS_COUNT ->
-                appConfigRepository.maxOwnedGroupsFree to appConfigRepository.maxOwnedGroupsPro
-            GatedLimit.MAX_MEMBERS_PER_GROUP ->
-                appConfigRepository.maxMembersPerGroupFree to appConfigRepository.maxMembersPerGroupPro
+            GatedLimit.MAX_OWNED_GROUPS_COUNT -> TierLimitFlows(
+                freeLimitFlow = appConfigRepository.maxOwnedGroupsFree,
+                proLimitFlow = appConfigRepository.maxOwnedGroupsPro
+            )
+            GatedLimit.MAX_MEMBERS_PER_GROUP -> TierLimitFlows(
+                freeLimitFlow = appConfigRepository.maxMembersPerGroupFree,
+                proLimitFlow = appConfigRepository.maxMembersPerGroupPro
+            )
         }
 
         return combine(

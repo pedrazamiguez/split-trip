@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -683,6 +684,36 @@ class GroupUiMapperImplTest {
             // Then
             assertEquals("10 nov ${currentYear - 1}", result.dateText.lowercase())
             assertEquals("10 nov ${currentYear - 1}", result.lastUpdatedText.lowercase())
+        }
+    }
+
+    @Nested
+    inner class GroupStatusMapping {
+
+        @Test
+        fun `maps ACTIVE group status to GroupUiModel`() {
+            // Given
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
+            val group = createGroup().copy(status = GroupStatus.ACTIVE)
+
+            // When
+            val result = mapper.toGroupUiModel(group)
+
+            // Then
+            assertEquals(GroupStatus.ACTIVE, result.status)
+        }
+
+        @Test
+        fun `maps ARCHIVED group status to GroupUiModel`() {
+            // Given
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 travellers"
+            val group = createGroup().copy(status = GroupStatus.ARCHIVED)
+
+            // When
+            val result = mapper.toGroupUiModel(group)
+
+            // Then
+            assertEquals(GroupStatus.ARCHIVED, result.status)
         }
     }
 }

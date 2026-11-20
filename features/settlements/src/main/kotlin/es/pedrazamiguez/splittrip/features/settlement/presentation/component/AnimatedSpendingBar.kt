@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.ChartColors
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.MemberSpendingBarUiModel
+import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SpendingBarPiece
 import es.pedrazamiguez.splittrip.features.settlement.presentation.model.SpilloverSegment
 
 @Composable
@@ -110,14 +111,14 @@ private fun DrawScope.drawSpendingBar(
 
     drawRect(color = surfaceColor, size = Size(totalWidth, barHeight))
 
-    val pieces = mutableListOf<Pair<Color, Float>>()
+    val pieces = mutableListOf<SpendingBarPiece>()
     var accumulatedWidth = 0f
 
     val ownWidth = ownFraction * totalWidth
     if (ownWidth > 0f) {
         accumulatedWidth += ownWidth
         val ownColor = ChartColors[ownColorIndex % ChartColors.size]
-        pieces.add(ownColor to accumulatedWidth)
+        pieces.add(SpendingBarPiece(color = ownColor, accumulatedWidthPx = accumulatedWidth))
     }
 
     ChartColors.indices.forEach { colorIdx ->
@@ -125,17 +126,17 @@ private fun DrawScope.drawSpendingBar(
         val segmentWidth = segmentFraction * totalWidth
         if (segmentWidth > 0f) {
             accumulatedWidth += segmentWidth
-            pieces.add(ChartColors[colorIdx] to accumulatedWidth)
+            pieces.add(SpendingBarPiece(color = ChartColors[colorIdx], accumulatedWidthPx = accumulatedWidth))
         }
     }
 
     val cornerRadius = CornerRadius(barHeight / 2f, barHeight / 2f)
 
-    pieces.reversed().forEach { (color, width) ->
+    pieces.reversed().forEach { piece ->
         drawRoundRect(
-            color = color,
+            color = piece.color,
             topLeft = Offset(0f, 0f),
-            size = Size(width, barHeight),
+            size = Size(piece.accumulatedWidthPx, barHeight),
             cornerRadius = cornerRadius
         )
     }

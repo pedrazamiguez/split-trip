@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
 import es.pedrazamiguez.splittrip.domain.model.MemberBalance
+import es.pedrazamiguez.splittrip.domain.model.MemberBalanceEntry
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -137,5 +138,46 @@ class PocketDebtDistributionServiceImplTest {
         assertEquals(80L, totalToCreditor1)
         assertEquals(70L, totalToCreditor2)
         assertEquals(150L, result.sumOf { it.amount })
+    }
+
+    @Test
+    fun `distribute with MemberBalanceEntry lists allocates proportionally and preserves debtor creditor semantics`() {
+        val deficits = listOf(
+            MemberBalanceEntry(memberId = "Debtor", amountCents = 100L)
+        )
+        val capacities = listOf(
+            MemberBalanceEntry(memberId = "Creditor1", amountCents = 40L),
+            MemberBalanceEntry(memberId = "Creditor2", amountCents = 100L)
+        )
+
+        val result = service.distribute(deficits = deficits, capacities = capacities, groupCurrency = "EUR")
+
+        assertEquals(2, result.size)
+        val toCreditor1 = result.first { it.toUserId == "Creditor1" }
+        val toCreditor2 = result.first { it.toUserId == "Creditor2" }
+
+        assertEquals("Debtor", toCreditor1.fromUserId)
+        assertEquals(40L, toCreditor1.amount)
+        assertEquals("EUR", toCreditor1.currency)
+
+        assertEquals("Debtor", toCreditor2.fromUserId)
+        assertEquals(60L, toCreditor2.amount)
+        assertEquals("EUR", toCreditor2.currency)
+    }
+
+    @Test
+    fun `distribute ignores zero or negative deficit and capacity entries`() {
+        val deficits = listOf(
+            MemberBalanceEntry(memberId = "A", amountCents = 0L),
+            MemberBalanceEntry(memberId = "B", amountCents = -50L)
+        )
+        val capacities = listOf(
+            MemberBalanceEntry(memberId = "C", amountCents = 0L),
+            MemberBalanceEntry(memberId = "D", amountCents = -25L)
+        )
+
+        val result = service.distribute(deficits = deficits, capacities = capacities, groupCurrency = "EUR")
+
+        assertTrue(result.isEmpty())
     }
 }

@@ -28,6 +28,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.AddExpenseScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.AddExpenseViewModel
@@ -89,7 +90,10 @@ fun AddExpenseFeature(
                 AddExpenseUiAction.NavigateBack -> navController.popBackStack()
 
                 AddExpenseUiAction.NavigateToSubscriptions ->
-                    upgradeNavigator.navigateToUpgrade(rootNavController)
+                    upgradeNavigator.navigateToUpgrade(
+                        rootNavController,
+                        source = MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING
+                    )
 
                 AddExpenseUiAction.None -> Unit
             }

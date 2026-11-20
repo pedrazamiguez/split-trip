@@ -46,6 +46,11 @@ internal class ReceiptStorageServiceImpl(
     }
 ) : ReceiptStorageService {
 
+    private data class StoredReceiptFile(
+        val file: File,
+        val mimeType: String
+    )
+
     override suspend fun copyAndCompress(sourceUri: String): ReceiptAttachment =
         withContext(Dispatchers.IO) {
             val uri = Uri.parse(sourceUri)
@@ -236,7 +241,7 @@ internal class ReceiptStorageServiceImpl(
         tempFile: File,
         dir: File,
         uniqueId: String
-    ): Pair<File, String> {
+    ): StoredReceiptFile {
         // Pass 1: decode only bounds from temporary file — no pixels allocated
         val boundsOpts = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
         BitmapFactory.decodeFile(tempFile.absolutePath, boundsOpts)
@@ -260,7 +265,7 @@ internal class ReceiptStorageServiceImpl(
             FileOutputStream(destFile).use { output ->
                 rotatedBitmap.compress(format, WEBP_QUALITY, output)
             }
-            return destFile to WEBP_MIME
+            return StoredReceiptFile(file = destFile, mimeType = WEBP_MIME)
         } finally {
             rotatedBitmap?.recycle()
             if (decodedBitmap != rotatedBitmap && !decodedBitmap.isRecycled) {
@@ -303,14 +308,14 @@ internal class ReceiptStorageServiceImpl(
         dir: File,
         uniqueId: String,
         mimeType: String
-    ): Pair<File, String> {
+    ): StoredReceiptFile {
         val ext = MIME_TO_EXT[mimeType] ?: DEFAULT_EXT
         val destFile = File(dir, "$uniqueId$ext")
         if (!tempFile.renameTo(destFile)) {
             // fallback if rename fails (e.g. across partitions)
             tempFile.copyTo(destFile, overwrite = true)
         }
-        return destFile to mimeType
+        return StoredReceiptFile(file = destFile, mimeType = mimeType)
     }
 
     /**

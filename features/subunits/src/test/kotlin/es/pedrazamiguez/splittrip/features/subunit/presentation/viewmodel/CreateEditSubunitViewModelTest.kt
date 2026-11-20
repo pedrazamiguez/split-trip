@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -25,6 +26,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigDecimal
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
@@ -207,6 +209,18 @@ class CreateEditSubunitViewModelTest {
             )
             assertEquals(CreateEditSubunitUiAction.NavigateToSubscriptions, actions[1])
             assertEquals(CreateEditSubunitUiAction.NavigateBack, actions[2])
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_INIT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
 
             collectJob.cancel()
         }
@@ -426,6 +440,18 @@ class CreateEditSubunitViewModelTest {
                 errorAction?.message
             )
             assertTrue(actions.any { it is CreateEditSubunitUiAction.NavigateToSubscriptions })
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.SUBUNIT_SUBMIT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
 
             collectJob.cancel()
             actionsJob.cancel()
@@ -465,6 +491,18 @@ class CreateEditSubunitViewModelTest {
                 errorAction?.message
             )
             assertFalse(actions.any { it is CreateEditSubunitUiAction.NavigateToSubscriptions })
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.SUBUNIT_SUBMIT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                    )
+                )
+            }
 
             collectJob.cancel()
             actionsJob.cancel()
