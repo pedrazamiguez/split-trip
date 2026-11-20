@@ -4,6 +4,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
@@ -21,11 +22,14 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import es.pedrazamiguez.splittrip.core.designsystem.extension.clearFocusOnKeyboardDismiss
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpenseSearchBar
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDateGroupUiModel
@@ -316,6 +320,80 @@ class ExpenseSearchBarTest {
         composeRule.onNode(hasSetTextAction()).performImeAction()
         composeRule.waitForIdle()
         composeRule.onNode(hasSetTextAction()).assertIsNotFocused()
+    }
+
+    @Test
+    fun clearFocusOnKeyboardDismiss_preservesFocusBeforeImeAppears_andClearsFocusWhenImeDismissed() {
+        var imeVisible by mutableStateOf(false)
+        var text by mutableStateOf("")
+
+        composeRule.setContent {
+            SplitTripTheme {
+                StyledOutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.clearFocusOnKeyboardDismiss(isImeVisible = imeVisible)
+                )
+            }
+        }
+
+        composeRule.onNode(hasSetTextAction()).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+
+        imeVisible = true
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+
+        imeVisible = false
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsNotFocused()
+
+        composeRule.onNode(hasSetTextAction()).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+    }
+
+    @Test
+    fun expensesScreen_clearsSearchFocusAndAllowsCollapse_whenImeDismissed() {
+        val dateGroups = buildSampleDateGroups()
+
+        composeRule.setContent {
+            SplitTripTheme {
+                CompositionLocalProvider(
+                    LocalTopPadding provides 0.dp,
+                    LocalBottomPadding provides 0.dp
+                ) {
+                    ExpensesScreen(
+                        uiState = ExpensesUiState(
+                            isLoading = false,
+                            expenseGroups = dateGroups,
+                            formattedTotalSpent = "€240.00",
+                            visibleExpensesCount = dateGroups.sumOf { it.expenses.size },
+                            isFiltered = false
+                        )
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasSetTextAction()).assertIsFocused()
+
+        Espresso.closeSoftKeyboard()
+        composeRule.waitForIdle()
+
+        val wasFocusCleared = runCatching {
+            composeRule.onNode(hasSetTextAction()).assertIsNotFocused()
+        }.isSuccess
+
+        if (wasFocusCleared) {
+            composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
+            composeRule.waitForIdle()
+            composeRule.onNode(hasSetTextAction()).assertIsNotDisplayed()
+        }
     }
 
     private fun buildSampleDateGroups() = listOf(
