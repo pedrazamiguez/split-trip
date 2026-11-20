@@ -65,21 +65,24 @@ fun CategorySpendingScreen(
             )
         }
     ) {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding)
-        ) {
-            item { CategorySpendingChart(uiState = uiState) }
+        if (uiState.items.isEmpty()) {
+            val emptyConfig = resolveEmptyConfig(uiState.isFiltered)
+            EmptyStateView(
+                title = stringResource(emptyConfig.titleRes),
+                description = stringResource(emptyConfig.descriptionRes),
+                icon = emptyConfig.icon,
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(top = topPadding, bottom = bottomPadding)
+            )
+        } else {
+            LazyColumn(
+                modifier = modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding)
+            ) {
+                item { CategorySpendingChart(uiState = uiState) }
 
-            item {
-                if (uiState.items.isEmpty()) {
-                    val emptyConfig = resolveEmptyConfig(uiState.isFiltered)
-                    EmptyStateView(
-                        title = stringResource(emptyConfig.titleRes),
-                        description = stringResource(emptyConfig.descriptionRes),
-                        icon = emptyConfig.icon
-                    )
-                } else {
+                item {
                     FlatCard(
                         modifier = Modifier
                             .fillMaxWidth()
