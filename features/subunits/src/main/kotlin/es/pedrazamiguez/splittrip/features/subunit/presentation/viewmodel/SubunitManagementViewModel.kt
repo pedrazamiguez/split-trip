@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
@@ -130,7 +132,14 @@ class SubunitManagementViewModel(
                         )
                     )
                 } else {
-                    _actions.emit(SubunitManagementUiAction.NavigateToSubscriptions)
+                    _actions.emit(
+                        SubunitManagementUiAction.ShowProFeaturePreview(
+                            ProFeaturePreviewPrompt(
+                                previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                                entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_MANAGEMENT
+                            )
+                        )
+                    )
                 }
             }
         }

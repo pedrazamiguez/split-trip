@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -253,7 +255,7 @@ class SubunitManagementViewModelTest {
         }
 
         @Test
-        fun `CreateSubunit emits NavigateToSubscriptions when disabled and user is not pro`() = runTest(
+        fun `CreateSubunit emits ShowProFeaturePreview when disabled and user is not pro`() = runTest(
             testDispatcher
         ) {
             setupDefaultMocks()
@@ -273,7 +275,17 @@ class SubunitManagementViewModelTest {
             viewModel.onEvent(SubunitManagementUiEvent.CreateSubunit)
             advanceUntilIdle()
 
-            assertTrue(actions.any { it is SubunitManagementUiAction.NavigateToSubscriptions })
+            assertEquals(
+                listOf(
+                    SubunitManagementUiAction.ShowProFeaturePreview(
+                        ProFeaturePreviewPrompt(
+                            previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                            entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_MANAGEMENT
+                        )
+                    )
+                ),
+                actions
+            )
             verify(exactly = 1) {
                 telemetryTracker.trackEvent(
                     MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
@@ -292,7 +304,7 @@ class SubunitManagementViewModelTest {
         }
 
         @Test
-        fun `CreateSubunit emits ShowError without paywall when acting user is Pro`() = runTest(testDispatcher) {
+        fun `CreateSubunit emits ShowError without pro preview when acting user is Pro`() = runTest(testDispatcher) {
             setupDefaultMocks()
             every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(false)
             every { featureGateService.isActingUserPro() } returns flowOf(true)
@@ -311,7 +323,7 @@ class SubunitManagementViewModelTest {
             advanceUntilIdle()
 
             assertTrue(actions.any { it is SubunitManagementUiAction.ShowError })
-            assertFalse(actions.any { it is SubunitManagementUiAction.NavigateToSubscriptions })
+            assertFalse(actions.any { it is SubunitManagementUiAction.ShowProFeaturePreview })
             verify(exactly = 1) {
                 telemetryTracker.trackEvent(
                     MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,

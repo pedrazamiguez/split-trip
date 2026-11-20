@@ -1,14 +1,13 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
-import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 import io.mockk.coEvery
@@ -96,7 +95,7 @@ class CreateEditGroupImageEventHandlerImplTest {
         }
 
         @Test
-        fun `sets error and emits action when cover upload is disabled by feature gate`() = runTest(testDispatcher) {
+        fun `sets proPreviewPrompt when cover upload is disabled by feature gate`() = runTest(testDispatcher) {
             every { featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, any()) } returns flowOf(false)
             handler.bind(stateFlow, actionsFlow, this)
 
@@ -108,21 +107,14 @@ class CreateEditGroupImageEventHandlerImplTest {
 
             assertNull(stateFlow.value.localGroupImagePath)
             assertEquals(
-                UiText.StringResource(R.string.group_error_limit_cover_upload_disabled),
-                stateFlow.value.error
+                ProFeaturePreviewPrompt(
+                    previewType = ProFeaturePreviewType.GROUP_COVER_PHOTO,
+                    entrySource = MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
+                ),
+                stateFlow.value.proPreviewPrompt
             )
-            assertTrue(stateFlow.value.showUpgradeDialog)
-            assertEquals(
-                UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
-                stateFlow.value.upgradeDialogTitle
-            )
-            assertEquals(
-                UiText.StringResource(R.string.group_error_limit_cover_upload_disabled),
-                stateFlow.value.upgradeDialogMessage
-            )
-            assertEquals(MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD, stateFlow.value.upgradeEntrySource)
             assertFalse(stateFlow.value.isLoading)
-            assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+            assertTrue(actionsList.none { it is CreateEditGroupUiAction.ShowError })
             verify(exactly = 1) {
                 telemetryTracker.trackEvent(
                     MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,

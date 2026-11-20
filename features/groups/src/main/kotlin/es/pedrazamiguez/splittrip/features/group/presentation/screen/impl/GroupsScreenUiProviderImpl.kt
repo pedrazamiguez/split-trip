@@ -3,6 +3,9 @@ package es.pedrazamiguez.splittrip.features.group.presentation.screen.impl
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -14,6 +17,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
@@ -78,6 +83,21 @@ class GroupsScreenUiProviderImpl(
 
             val isAllowed = limitResult is LimitResult.Allowed
             val limitReachedMessage = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
+            var showProPreviewSheet by remember { mutableStateOf(false) }
+
+            if (showProPreviewSheet) {
+                ProFeaturePreviewBottomSheet(
+                    previewType = ProFeaturePreviewType.UNLIMITED_GROUPS,
+                    onUpgrade = {
+                        showProPreviewSheet = false
+                        upgradeNavigator.navigateToUpgrade(
+                            rootNavController,
+                            source = MonetizationTelemetry.EntrySource.GROUPS_FAB
+                        )
+                    },
+                    onDismiss = { showProPreviewSheet = false }
+                )
+            }
 
             return MainAction(
                 icon = TablerIcons.Outline.UsersPlus,
@@ -88,12 +108,7 @@ class GroupsScreenUiProviderImpl(
                         isActingUserPro = isActingUserPro,
                         limitReachedMessage = limitReachedMessage,
                         navigateToCreateGroup = { tabNavController.navigate(Routes.CREATE_GROUP) },
-                        navigateToSubscriptions = {
-                            upgradeNavigator.navigateToUpgrade(
-                                rootNavController,
-                                source = MonetizationTelemetry.EntrySource.GROUPS_FAB
-                            )
-                        },
+                        showProPreview = { showProPreviewSheet = true },
                         showNotification = { message -> pillController.showPill(message.asString(context)) }
                     )
                 },
@@ -110,7 +125,7 @@ class GroupsScreenUiProviderImpl(
         isActingUserPro: Boolean,
         limitReachedMessage: UiText,
         navigateToCreateGroup: () -> Unit,
-        navigateToSubscriptions: () -> Unit,
+        showProPreview: () -> Unit,
         showNotification: (UiText) -> Unit
     ) {
         if (isAllowed) {
@@ -121,9 +136,10 @@ class GroupsScreenUiProviderImpl(
                 entryPoint = MonetizationTelemetry.GateEntryPoint.GROUPS_FAB,
                 upgradePrompted = !isActingUserPro
             )
-            showNotification(limitReachedMessage)
-            if (!isActingUserPro) {
-                navigateToSubscriptions()
+            if (isActingUserPro) {
+                showNotification(limitReachedMessage)
+            } else {
+                showProPreview()
             }
         }
     }

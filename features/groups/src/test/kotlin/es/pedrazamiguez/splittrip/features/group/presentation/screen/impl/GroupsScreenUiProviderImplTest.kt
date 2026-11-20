@@ -56,7 +56,7 @@ class GroupsScreenUiProviderImplTest {
     @Test
     fun `handleMainActionClick navigates to create group when allowed`() {
         var navigatedToCreate = false
-        var navigatedToSubscriptions = false
+        var proPreviewShown = false
         var shownNotification: UiText? = null
 
         uiProvider.handleMainActionClick(
@@ -64,20 +64,20 @@ class GroupsScreenUiProviderImplTest {
             isActingUserPro = false,
             limitReachedMessage = testMessage,
             navigateToCreateGroup = { navigatedToCreate = true },
-            navigateToSubscriptions = { navigatedToSubscriptions = true },
+            showProPreview = { proPreviewShown = true },
             showNotification = { shownNotification = it }
         )
 
         assertTrue(navigatedToCreate)
-        assertFalse(navigatedToSubscriptions)
+        assertFalse(proPreviewShown)
         assertEquals(null, shownNotification)
         verify(exactly = 0) { telemetryTracker.trackEvent(MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED, any()) }
     }
 
     @Test
-    fun `handleMainActionClick navigates to subscriptions when blocked for non-pro user`() {
+    fun `handleMainActionClick opens pro preview without notification when blocked for non-pro user`() {
         var navigatedToCreate = false
-        var navigatedToSubscriptions = false
+        var proPreviewShown = false
         var shownNotification: UiText? = null
 
         uiProvider.handleMainActionClick(
@@ -85,13 +85,13 @@ class GroupsScreenUiProviderImplTest {
             isActingUserPro = false,
             limitReachedMessage = testMessage,
             navigateToCreateGroup = { navigatedToCreate = true },
-            navigateToSubscriptions = { navigatedToSubscriptions = true },
+            showProPreview = { proPreviewShown = true },
             showNotification = { shownNotification = it }
         )
 
         assertFalse(navigatedToCreate)
-        assertTrue(navigatedToSubscriptions)
-        assertEquals(testMessage, shownNotification)
+        assertTrue(proPreviewShown)
+        assertEquals(null, shownNotification)
         verify(exactly = 1) {
             telemetryTracker.trackEvent(
                 MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
@@ -106,9 +106,9 @@ class GroupsScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick shows notification without paywall when blocked for pro user`() {
+    fun `handleMainActionClick shows notification without pro preview when blocked for pro user`() {
         var navigatedToCreate = false
-        var navigatedToSubscriptions = false
+        var proPreviewShown = false
         var shownNotification: UiText? = null
 
         uiProvider.handleMainActionClick(
@@ -116,12 +116,12 @@ class GroupsScreenUiProviderImplTest {
             isActingUserPro = true,
             limitReachedMessage = testMessage,
             navigateToCreateGroup = { navigatedToCreate = true },
-            navigateToSubscriptions = { navigatedToSubscriptions = true },
+            showProPreview = { proPreviewShown = true },
             showNotification = { shownNotification = it }
         )
 
         assertFalse(navigatedToCreate)
-        assertFalse(navigatedToSubscriptions)
+        assertFalse(proPreviewShown)
         assertEquals(testMessage, shownNotification)
         verify(exactly = 1) {
             telemetryTracker.trackEvent(
@@ -153,9 +153,9 @@ class GroupsScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick navigates to upgrade when blocked and user is not pro`() {
+    fun `handleMainActionClick invokes showProPreview when blocked and user is not pro`() {
         val mockNavController = mockk<NavController>(relaxed = true)
-        val navigateToSubscriptions = {
+        val showProPreview = {
             upgradeNavigator.navigateToUpgrade(mockNavController)
         }
 
@@ -164,7 +164,7 @@ class GroupsScreenUiProviderImplTest {
             isActingUserPro = false,
             limitReachedMessage = testMessage,
             navigateToCreateGroup = {},
-            navigateToSubscriptions = navigateToSubscriptions,
+            showProPreview = showProPreview,
             showNotification = {}
         )
 

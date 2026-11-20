@@ -130,9 +130,12 @@ All components are `@Composable` functions following Material 3 design. They acc
 | `DestructiveConfirmationDialog` | `dialog/DestructiveConfirmationDialog.kt` | Confirmation dialog with a destructive (red) action button. **Use for:** Delete confirmations (Delete Group, Delete Expense). |
 | `ActionBottomSheet` | `sheet/ActionBottomSheet.kt` | Bottom sheet displaying a list of `SheetAction` items with icons. **Use for:** Contextual action menus (long-press on expense, group options). |
 | `CopyableTextSheet` | `sheet/CopyableTextSheet.kt` | Bottom sheet displaying text that can be copied to clipboard. **Use for:** Sharing group invite codes, debug info. |
+| `ProFeaturePreviewBottomSheet` | `sheet/ProFeaturePreviewBottomSheet.kt` | Horizon-styled contextual bottom sheet explaining a gated Pro feature or tier limit with an upgrade CTA (`GradientButton`) and dismiss action (`SecondaryButton`). **Use for:** Presenting Pro value before routing through `UpgradeNavigator`. |
 
-**Model class:**
+**Model classes:**
 - `SheetAction` — represents a single action in `ActionBottomSheet` (icon, label, onClick, optional destructive flag).
+- `ProFeaturePreviewType` — centralized enum mapping `GatedLimit` / `GatedFeature` to localized title, description, highlight copy, and Tabler icon.
+- `ProFeaturePreviewPrompt` — `@Immutable` payload pairing `ProFeaturePreviewType` with its `MonetizationTelemetry.EntrySource`.
 
 ### A.8 Shared Transitions
 
@@ -332,6 +335,7 @@ A convenience wrapper around all the above formatters, injected with `LocaleProv
 | `scaffold/NavigationBarIconPreviews.kt` | `NavigationBarIcon` |
 | `sheet/ActionBottomSheetPreviews.kt` | `ActionBottomSheet` |
 | `sheet/CopyableTextSheetPreviews.kt` | `CopyableTextSheet` |
+| `sheet/ProFeaturePreviewBottomSheetPreviews.kt` | `ProFeaturePreviewBottomSheet` |
 
 ---
 

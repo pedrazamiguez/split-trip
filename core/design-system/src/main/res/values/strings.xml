@@ -198,6 +198,25 @@
     <string name="upgrade_dialog_dismiss">Not now</string>
     <string name="badge_pro">PRO</string>
 
+    <!-- Pro Feature Preview Bottom Sheet -->
+    <string name="pro_preview_badge_label">SplitTrip Pro</string>
+    <string name="pro_preview_cta_unlock">Unlock with SplitTrip Pro</string>
+    <string name="pro_preview_unlimited_groups_title">Create unlimited trips</string>
+    <string name="pro_preview_unlimited_groups_description">You\'ve reached the Free plan limit for active groups you own. Upgrade to SplitTrip Pro to organize as many trips and shared budgets as you need.</string>
+    <string name="pro_preview_unlimited_groups_highlight">Unlimited active trips, plus an ad-free experience</string>
+    <string name="pro_preview_expanded_members_title">Bring the whole crew</string>
+    <string name="pro_preview_expanded_members_description">Free trips support a limited number of travelers. Unlock SplitTrip Pro to invite larger friend groups and families into a single shared ledger.</string>
+    <string name="pro_preview_expanded_members_highlight">Add up to 20 travelers per group effortlessly</string>
+    <string name="pro_preview_group_cover_title">Personalize your trip cover</string>
+    <string name="pro_preview_group_cover_description">Make every adventure stand out in your journal with custom cover photos from your camera or gallery.</string>
+    <string name="pro_preview_group_cover_highlight">Custom cover photos synced across all group members</string>
+    <string name="pro_preview_subunit_creation_title">Split fairly by couples &amp; families</string>
+    <string name="pro_preview_subunit_creation_description">Group travelers into shared subunits with custom percentages so couples, families, or rooms settle together automatically.</string>
+    <string name="pro_preview_subunit_creation_highlight">Automatic two-level splits and unified subunit balances</string>
+    <string name="pro_preview_ai_receipt_title">Auto-fill expenses with AI</string>
+    <string name="pro_preview_ai_receipt_description">Snap a photo or attach a receipt and let on-device AI extract the amount, currency, merchant, date, and category in seconds.</string>
+    <string name="pro_preview_ai_receipt_highlight">Private, on-device AI receipt scanning — no manual typing</string>
+
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">At least 8 characters</string>
     <string name="password_requirement_uppercase">At least one uppercase letter (A-Z)</string>

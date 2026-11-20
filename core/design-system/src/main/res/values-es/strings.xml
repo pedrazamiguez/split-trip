@@ -198,6 +198,25 @@
     <string name="upgrade_dialog_dismiss">Ahora no</string>
     <string name="badge_pro">PRO</string>
 
+    <!-- Pro Feature Preview Bottom Sheet -->
+    <string name="pro_preview_badge_label">SplitTrip Pro</string>
+    <string name="pro_preview_cta_unlock">Desbloquear con SplitTrip Pro</string>
+    <string name="pro_preview_unlimited_groups_title">Crea viajes ilimitados</string>
+    <string name="pro_preview_unlimited_groups_description">Has alcanzado el límite de grupos propios del plan gratuito. Mejora a SplitTrip Pro para organizar todos los viajes y presupuestos compartidos que necesites.</string>
+    <string name="pro_preview_unlimited_groups_highlight">Viajes activos ilimitados y una experiencia sin anuncios</string>
+    <string name="pro_preview_expanded_members_title">Trae a todo el grupo</string>
+    <string name="pro_preview_expanded_members_description">Los viajes gratuitos admiten un número limitado de viajeros. Desbloquea SplitTrip Pro para invitar a grupos más grandes de amigos y familias.</string>
+    <string name="pro_preview_expanded_members_highlight">Añade hasta 20 viajeros por grupo sin esfuerzo</string>
+    <string name="pro_preview_group_cover_title">Personaliza la portada del viaje</string>
+    <string name="pro_preview_group_cover_description">Haz que cada aventura destaque en tu diario con fotos de portada personalizadas desde tu cámara o galería.</string>
+    <string name="pro_preview_group_cover_highlight">Fotos de portada personalizadas sincronizadas para todos los miembros</string>
+    <string name="pro_preview_subunit_creation_title">Divide de forma justa por parejas y familias</string>
+    <string name="pro_preview_subunit_creation_description">Agrupa a los viajeros en subunidades compartidas con porcentajes personalizados para que parejas, familias o habitaciones liquiden juntos automáticamente.</string>
+    <string name="pro_preview_subunit_creation_highlight">Repartos automáticos en dos niveles y balances unificados por subunidad</string>
+    <string name="pro_preview_ai_receipt_title">Autocompleta gastos con IA</string>
+    <string name="pro_preview_ai_receipt_description">Haz una foto o adjunta un recibo y deja que la IA en tu dispositivo extraiga el importe, la moneda, el comercio, la fecha y la categoría en segundos.</string>
+    <string name="pro_preview_ai_receipt_highlight">Escaneo de recibos con IA privada en tu dispositivo, sin teclear manualmente</string>
+
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">Al menos 8 caracteres</string>
     <string name="password_requirement_uppercase">Al menos una letra mayúscula (A-Z)</string>

@@ -250,14 +250,12 @@ class CreateEditGroupUiStateTest {
     }
 
     @Nested
-    inner class UpgradeDialogDefaults {
+    inner class ProPreviewDefaults {
 
         @Test
-        fun `upgrade dialog state defaults to hidden with null strings`() {
+        fun `proPreviewPrompt defaults to null`() {
             val state = CreateEditGroupUiState()
-            assertFalse(state.showUpgradeDialog)
-            assertNull(state.upgradeDialogTitle)
-            assertNull(state.upgradeDialogMessage)
+            assertNull(state.proPreviewPrompt)
         }
     }
 }

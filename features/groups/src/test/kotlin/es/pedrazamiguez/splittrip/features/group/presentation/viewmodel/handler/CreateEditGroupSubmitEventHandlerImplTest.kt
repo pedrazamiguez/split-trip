@@ -1,7 +1,8 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
@@ -194,7 +195,9 @@ class CreateEditGroupSubmitEventHandlerImplTest {
         }
 
         @Test
-        fun `emits ShowError when group limit is blocked`() = runTest(testDispatcher) {
+        fun `sets UNLIMITED_GROUPS proPreviewPrompt when group limit is blocked with upgrade required`() = runTest(
+            testDispatcher
+        ) {
             coEvery { featureGateService.checkLimit(any(), any(), any()) } returns flowOf(
                 LimitResult.Blocked(limit = GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = true)
             )
@@ -206,17 +209,15 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             handler.handleSubmit {}
             advanceUntilIdle()
 
-            assertTrue(actions.any { it is CreateEditGroupUiAction.ShowError })
-            assertTrue(stateFlow.value.showUpgradeDialog)
+            assertTrue(actions.none { it is CreateEditGroupUiAction.ShowError })
+            assertFalse(stateFlow.value.isLoading)
             assertEquals(
-                UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
-                stateFlow.value.upgradeDialogTitle
+                ProFeaturePreviewPrompt(
+                    previewType = ProFeaturePreviewType.UNLIMITED_GROUPS,
+                    entrySource = MonetizationTelemetry.EntrySource.GROUP_CREATION
+                ),
+                stateFlow.value.proPreviewPrompt
             )
-            assertEquals(
-                UiText.StringResource(R.string.group_error_limit_groups_exceeded),
-                stateFlow.value.upgradeDialogMessage
-            )
-            assertEquals(MonetizationTelemetry.EntrySource.GROUP_CREATION, stateFlow.value.upgradeEntrySource)
             verify(exactly = 1) {
                 telemetryTracker.trackEvent(
                     MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
@@ -232,7 +233,9 @@ class CreateEditGroupSubmitEventHandlerImplTest {
         }
 
         @Test
-        fun `does not show upgrade dialog when group limit has no upgrade required`() = runTest(testDispatcher) {
+        fun `emits ShowError without proPreviewPrompt when group limit has no upgrade required`() = runTest(
+            testDispatcher
+        ) {
             coEvery { featureGateService.checkLimit(any(), any(), any()) } returns flowOf(
                 LimitResult.Blocked(limit = GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = false)
             )
@@ -245,9 +248,18 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             advanceUntilIdle()
 
             assertTrue(actions.any { it is CreateEditGroupUiAction.ShowError })
-            assertFalse(stateFlow.value.showUpgradeDialog)
-            assertNull(stateFlow.value.upgradeDialogTitle)
-            assertNull(stateFlow.value.upgradeDialogMessage)
+            assertNull(stateFlow.value.proPreviewPrompt)
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                        MonetizationTelemetry.Param.GATE_NAME to "max_owned_groups_count",
+                        MonetizationTelemetry.Param.ENTRY_POINT to MonetizationTelemetry.GateEntryPoint.GROUP_SUBMIT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                    )
+                )
+            }
             collectJob.cancel()
         }
 
@@ -446,17 +458,15 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             handler.handleSubmit {}
             advanceUntilIdle()
 
-            assertTrue(actions.any { it is CreateEditGroupUiAction.ShowError })
-            assertTrue(stateFlow.value.showUpgradeDialog)
+            assertTrue(actions.none { it is CreateEditGroupUiAction.ShowError })
+            assertFalse(stateFlow.value.isLoading)
             assertEquals(
-                UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
-                stateFlow.value.upgradeDialogTitle
+                ProFeaturePreviewPrompt(
+                    previewType = ProFeaturePreviewType.EXPANDED_GROUP_MEMBERS,
+                    entrySource = MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
+                ),
+                stateFlow.value.proPreviewPrompt
             )
-            assertEquals(
-                UiText.StringResource(R.string.group_error_limit_members_exceeded),
-                stateFlow.value.upgradeDialogMessage
-            )
-            assertEquals(MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT, stateFlow.value.upgradeEntrySource)
             coVerify(exactly = 0) { updateGroupUseCase(any()) }
             verify(exactly = 1) {
                 telemetryTracker.trackEvent(
@@ -502,9 +512,7 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             advanceUntilIdle()
 
             assertTrue(actions.any { it is CreateEditGroupUiAction.ShowError })
-            assertFalse(stateFlow.value.showUpgradeDialog)
-            assertNull(stateFlow.value.upgradeDialogTitle)
-            assertNull(stateFlow.value.upgradeDialogMessage)
+            assertNull(stateFlow.value.proPreviewPrompt)
             coVerify(exactly = 0) { updateGroupUseCase(any()) }
             verify(exactly = 1) {
                 telemetryTracker.trackEvent(

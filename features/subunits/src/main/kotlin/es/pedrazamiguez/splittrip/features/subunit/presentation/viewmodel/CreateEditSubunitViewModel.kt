@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
@@ -218,15 +220,24 @@ class CreateEditSubunitViewModel(
                 entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_INIT,
                 upgradePrompted = !isPro
             )
-            _actions.emit(
-                CreateEditSubunitUiAction.ShowError(
-                    UiText.StringResource(R.string.subunit_error_pro_required)
+            if (isPro) {
+                _actions.emit(
+                    CreateEditSubunitUiAction.ShowError(
+                        UiText.StringResource(R.string.subunit_error_pro_required)
+                    )
                 )
-            )
-            if (!isPro) {
-                _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
+                _actions.emit(CreateEditSubunitUiAction.NavigateBack)
+            } else {
+                _actions.emit(
+                    CreateEditSubunitUiAction.ShowProFeaturePreview(
+                        prompt = ProFeaturePreviewPrompt(
+                            previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                            entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
+                        ),
+                        navigateBackOnDismiss = true
+                    )
+                )
             }
-            _actions.emit(CreateEditSubunitUiAction.NavigateBack)
         }
     }
 
@@ -485,13 +496,22 @@ class CreateEditSubunitViewModel(
                 upgradePrompted = !isPro
             )
             _formState.update { it.copy(isSaving = false) }
-            _actions.emit(
-                CreateEditSubunitUiAction.ShowError(
-                    UiText.StringResource(R.string.subunit_error_pro_required)
+            if (isPro) {
+                _actions.emit(
+                    CreateEditSubunitUiAction.ShowError(
+                        UiText.StringResource(R.string.subunit_error_pro_required)
+                    )
                 )
-            )
-            if (!isPro) {
-                _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
+            } else {
+                _actions.emit(
+                    CreateEditSubunitUiAction.ShowProFeaturePreview(
+                        prompt = ProFeaturePreviewPrompt(
+                            previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                            entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
+                        ),
+                        navigateBackOnDismiss = false
+                    )
+                )
             }
             return false
         }
