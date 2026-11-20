@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -69,7 +70,7 @@ fun ExpensesScreen(
     var selectedExpenseForMenu by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var expenseToDelete by remember { mutableStateOf<ExpenseUiModel?>(null) }
     var expenseToCancel by remember { mutableStateOf<ExpenseUiModel?>(null) }
-    var isSearchFocused by remember { mutableStateOf(false) }
+    var isSearchFocused by remember(uiState.groupId) { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
     val headerState = rememberScrollAwareHeaderState()
@@ -106,87 +107,89 @@ fun ExpensesScreen(
                 }
 
                 else -> {
-                    val sharedTransitionScope = LocalSharedTransitionScope.current
-                    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
-                    ScrollAwareHeaderContainer(
-                        listState = listState,
-                        headerState = headerState,
-                        isPinned = isSearchFocused || uiState.isSearchResultEmpty,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = topPadding),
-                        header = {
-                            ExpensesListHeader(
-                                formattedTotalSpent = uiState.formattedTotalSpent,
-                                formattedTotalScheduled = uiState.formattedTotalScheduled,
-                                visibleExpensesCount = uiState.visibleExpensesCount,
-                                isFiltered = uiState.isFiltered,
-                                searchQuery = uiState.searchQuery,
-                                onSearchQueryChanged = onSearchQueryChanged,
-                                onSearchFocusChanged = { isSearchFocused = it }
-                            )
-                        },
-                        content = { headerHeight ->
-                            if (uiState.isSearchResultEmpty) {
-                                EmptyStateView(
-                                    title = stringResource(R.string.expenses_search_empty_title),
-                                    description = stringResource(R.string.expenses_search_empty_description),
-                                    icon = TablerIcons.Outline.Search,
-                                    modifier = Modifier.padding(
-                                        top = headerHeight,
-                                        bottom = bottomPadding
-                                    )
+                    key(uiState.groupId) {
+                        val sharedTransitionScope = LocalSharedTransitionScope.current
+                        val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
+                        ScrollAwareHeaderContainer(
+                            listState = listState,
+                            headerState = headerState,
+                            isPinned = isSearchFocused || uiState.isSearchResultEmpty,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = topPadding),
+                            header = {
+                                ExpensesListHeader(
+                                    formattedTotalSpent = uiState.formattedTotalSpent,
+                                    formattedTotalScheduled = uiState.formattedTotalScheduled,
+                                    visibleExpensesCount = uiState.visibleExpensesCount,
+                                    isFiltered = uiState.isFiltered,
+                                    searchQuery = uiState.searchQuery,
+                                    onSearchQueryChanged = onSearchQueryChanged,
+                                    onSearchFocusChanged = { isSearchFocused = it }
                                 )
-                            } else {
-                                LazyColumn(
-                                    state = listState,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(
-                                        start = MaterialTheme.spacing.Default,
-                                        top = headerHeight,
-                                        end = MaterialTheme.spacing.Default,
-                                        bottom = MaterialTheme.spacing.Default + bottomPadding
-                                    ),
-                                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-                                ) {
-                                    uiState.expenseGroups.forEach { dateGroup ->
-                                        stickyHeader(
-                                            key = "header-${dateGroup.dateText}",
-                                            contentType = "date_header"
-                                        ) {
-                                            DateHeaderItem(
-                                                dateText = dateGroup.dateText,
-                                                formattedDayTotal = dateGroup.formattedDayTotal,
-                                                formattedDayScheduled = dateGroup.formattedDayScheduled
-                                            )
-                                        }
+                            },
+                            content = { headerHeight ->
+                                if (uiState.isSearchResultEmpty) {
+                                    EmptyStateView(
+                                        title = stringResource(R.string.expenses_search_empty_title),
+                                        description = stringResource(R.string.expenses_search_empty_description),
+                                        icon = TablerIcons.Outline.Search,
+                                        modifier = Modifier.padding(
+                                            top = headerHeight,
+                                            bottom = bottomPadding
+                                        )
+                                    )
+                                } else {
+                                    LazyColumn(
+                                        state = listState,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(
+                                            start = MaterialTheme.spacing.Default,
+                                            top = headerHeight,
+                                            end = MaterialTheme.spacing.Default,
+                                            bottom = MaterialTheme.spacing.Default + bottomPadding
+                                        ),
+                                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+                                    ) {
+                                        uiState.expenseGroups.forEach { dateGroup ->
+                                            stickyHeader(
+                                                key = "header-${dateGroup.dateText}",
+                                                contentType = "date_header"
+                                            ) {
+                                                DateHeaderItem(
+                                                    dateText = dateGroup.dateText,
+                                                    formattedDayTotal = dateGroup.formattedDayTotal,
+                                                    formattedDayScheduled = dateGroup.formattedDayScheduled
+                                                )
+                                            }
 
-                                        items(
-                                            items = dateGroup.expenses,
-                                            key = { it.id },
-                                            contentType = { "expense_item" }
-                                        ) { expense ->
-                                            ExpenseItem(
-                                                expenseUiModel = expense,
-                                                modifier = Modifier.animateItem(),
-                                                innerModifier = Modifier.sharedElementAnimation(
-                                                    key = SharedElementKeys.expenseCard(expense.id),
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                    animatedVisibilityScope = animatedVisibilityScope
-                                                ),
-                                                onClick = onExpenseClicked,
-                                                onLongClick = {
-                                                    if (!uiState.isGroupArchived) {
-                                                        selectedExpenseForMenu = expense
+                                            items(
+                                                items = dateGroup.expenses,
+                                                key = { it.id },
+                                                contentType = { "expense_item" }
+                                            ) { expense ->
+                                                ExpenseItem(
+                                                    expenseUiModel = expense,
+                                                    modifier = Modifier.animateItem(),
+                                                    innerModifier = Modifier.sharedElementAnimation(
+                                                        key = SharedElementKeys.expenseCard(expense.id),
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                        animatedVisibilityScope = animatedVisibilityScope
+                                                    ),
+                                                    onClick = onExpenseClicked,
+                                                    onLongClick = {
+                                                        if (!uiState.isGroupArchived) {
+                                                            selectedExpenseForMenu = expense
+                                                        }
                                                     }
-                                                }
-                                            )
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

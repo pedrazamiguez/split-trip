@@ -934,6 +934,33 @@ class ExpensesViewModelTest {
         }
 
         @Test
+        fun `rapid sequential SearchQueryChanged events settle on final query and filter accurately`() =
+            runTest(testDispatcher) {
+                // Given
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(
+                    listOf(testExpense1, testExpense2)
+                )
+                viewModel = createViewModel()
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                // When - Dispatch rapid sequential keystrokes without advancing debounce between them
+                listOf("d", "di", "din", "dinn", "dinne", "dinner").forEach { query ->
+                    viewModel.onEvent(ExpensesUiEvent.SearchQueryChanged(query))
+                }
+                advanceTimeBy(300)
+                advanceUntilIdle()
+
+                // Then
+                assertEquals("dinner", viewModel.uiState.value.searchQuery)
+                assertEquals(1, allExpenses().size)
+                assertEquals("Dinner", allExpenses()[0].title)
+
+                collectJob.cancel()
+            }
+
+        @Test
         fun `debounced search filters expenses by title case-insensitively`() = runTest(testDispatcher) {
             // Given
             every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(
