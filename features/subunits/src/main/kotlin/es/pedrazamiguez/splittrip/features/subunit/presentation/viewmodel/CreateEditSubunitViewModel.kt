@@ -6,6 +6,8 @@ import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
@@ -210,12 +212,18 @@ class CreateEditSubunitViewModel(
             ).first()
             if (isEnabled) return@launch
 
+            val isPro = featureGateService.isActingUserPro().first()
+            telemetryTracker.trackFeatureGateBlocked(
+                feature = GatedFeature.SUBUNIT_CREATION,
+                entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_INIT,
+                upgradePrompted = !isPro
+            )
             _actions.emit(
                 CreateEditSubunitUiAction.ShowError(
                     UiText.StringResource(R.string.subunit_error_pro_required)
                 )
             )
-            if (!featureGateService.isActingUserPro().first()) {
+            if (!isPro) {
                 _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
             }
             _actions.emit(CreateEditSubunitUiAction.NavigateBack)
@@ -470,13 +478,18 @@ class CreateEditSubunitViewModel(
             groupId = groupId
         ).first()
         if (!isEnabled) {
+            val isPro = featureGateService.isActingUserPro().first()
+            telemetryTracker.trackFeatureGateBlocked(
+                feature = GatedFeature.SUBUNIT_CREATION,
+                entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_SUBMIT,
+                upgradePrompted = !isPro
+            )
             _formState.update { it.copy(isSaving = false) }
             _actions.emit(
                 CreateEditSubunitUiAction.ShowError(
                     UiText.StringResource(R.string.subunit_error_pro_required)
                 )
             )
-            val isPro = featureGateService.isActingUserPro().first()
             if (!isPro) {
                 _actions.emit(CreateEditSubunitUiAction.NavigateToSubscriptions)
             }

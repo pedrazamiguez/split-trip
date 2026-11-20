@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
@@ -273,6 +274,18 @@ class SubunitManagementViewModelTest {
             advanceUntilIdle()
 
             assertTrue(actions.any { it is SubunitManagementUiAction.NavigateToSubscriptions })
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_EVENT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
 
             collectJob.cancel()
             actionsJob.cancel()
@@ -299,6 +312,18 @@ class SubunitManagementViewModelTest {
 
             assertTrue(actions.any { it is SubunitManagementUiAction.ShowError })
             assertFalse(actions.any { it is SubunitManagementUiAction.NavigateToSubscriptions })
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_EVENT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                    )
+                )
+            }
 
             collectJob.cancel()
             actionsJob.cancel()

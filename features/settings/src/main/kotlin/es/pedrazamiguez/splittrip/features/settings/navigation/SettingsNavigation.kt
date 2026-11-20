@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.features.settings.navigation
 
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.AccountSecurityFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.AccountStatusFeature
@@ -24,8 +26,18 @@ fun NavGraphBuilder.settingsGraph() {
     composable(Routes.SETTINGS_ACCOUNT_STATUS) {
         AccountStatusFeature()
     }
-    composable(Routes.SETTINGS_SUBSCRIPTIONS) {
-        SubscriptionsFeature()
+    composable(
+        route = Routes.SETTINGS_SUBSCRIPTIONS_ROUTE,
+        arguments = listOf(
+            navArgument(Routes.SETTINGS_SUBSCRIPTIONS_ARG_SOURCE) {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    ) { backStackEntry ->
+        val entrySource = backStackEntry.arguments?.getString(Routes.SETTINGS_SUBSCRIPTIONS_ARG_SOURCE)
+        SubscriptionsFeature(entrySource = entrySource)
     }
     composable(Routes.SETTINGS_SECURITY) {
         AccountSecurityFeature()

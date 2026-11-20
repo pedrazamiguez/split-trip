@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settings.di
 
 import android.app.Application
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.service.CloudMetadataService
@@ -225,7 +226,8 @@ val settingsUiModule = module {
         )
     }
 
-    viewModel {
+    viewModel { params ->
+        val entrySource = params.getOrNull<String>()
         val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
         val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
         val observeProAllowlistAccessUseCase = get<ObserveProAllowlistAccessUseCase>()
@@ -234,6 +236,7 @@ val settingsUiModule = module {
         val reconcileSubscriptionEntitlementsUseCase = get<ReconcileSubscriptionEntitlementsUseCase>()
         val subscriptionsUiMapper = get<SubscriptionsUiMapper>()
         val billingService = get<BillingService>()
+        val telemetryTracker = get<TelemetryTracker>()
         SubscriptionsViewModel(
             getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
             observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
@@ -242,7 +245,9 @@ val settingsUiModule = module {
             isUserAnonymousUseCase = isUserAnonymousUseCase,
             reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,
             subscriptionsUiMapper = subscriptionsUiMapper,
-            billingService = billingService
+            billingService = billingService,
+            telemetryTracker = telemetryTracker,
+            entrySource = entrySource
         )
     }
 

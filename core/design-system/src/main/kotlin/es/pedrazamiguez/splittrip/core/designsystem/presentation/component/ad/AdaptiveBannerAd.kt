@@ -16,6 +16,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,7 +34,10 @@ import timber.log.Timber
 fun AdaptiveBannerAd(
     adUnitId: String,
     isAdEnabled: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAdLoaded: () -> Unit = {},
+    onAdImpression: () -> Unit = {},
+    onAdFailedToLoad: (errorCode: Int) -> Unit = {}
 ) {
     if (!isAdEnabled || adUnitId.isBlank()) {
         Spacer(modifier = modifier.height(0.dp))
@@ -42,27 +46,28 @@ fun AdaptiveBannerAd(
 
     var isAdLoaded by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val currentOnAdLoaded by rememberUpdatedState(onAdLoaded)
+    val currentOnAdImpression by rememberUpdatedState(onAdImpression)
+    val currentOnAdFailedToLoad by rememberUpdatedState(onAdFailedToLoad)
 
     val adView = remember(adUnitId) {
         AdView(context).apply {
             setAdUnitId(adUnitId)
             setAdSize(calculateAdaptiveBannerSize(context))
-            adListener = object : AdListener() {
-                override fun onAdLoaded() {
+            adListener = createAdaptiveBannerAdListener(
+                onLoaded = {
                     isAdLoaded = true
                     Timber.d("AdaptiveBannerAd: Ad loaded successfully for adUnitId=%s", adUnitId)
-                }
-
-                override fun onAdFailedToLoad(error: LoadAdError) {
+                    currentOnAdLoaded()
+                },
+                onImpression = {
+                    currentOnAdImpression()
+                },
+                onFailedToLoad = { errorCode ->
                     isAdLoaded = false
-                    Timber.w(
-                        "AdaptiveBannerAd: Failed to load ad (%s: %s) for adUnitId=%s",
-                        error.code,
-                        error.message,
-                        adUnitId
-                    )
+                    currentOnAdFailedToLoad(errorCode)
                 }
-            }
+            )
             loadAd(AdRequest.Builder().build())
         }
     }
@@ -94,4 +99,27 @@ private fun calculateAdaptiveBannerSize(context: Context): AdSize {
     val density = displayMetrics.density
     val adWidth = (widthPixels / density).toInt()
     return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, adWidth)
+}
+
+internal fun createAdaptiveBannerAdListener(
+    onLoaded: () -> Unit,
+    onImpression: () -> Unit,
+    onFailedToLoad: (Int) -> Unit
+): AdListener = object : AdListener() {
+    override fun onAdLoaded() {
+        onLoaded()
+    }
+
+    override fun onAdImpression() {
+        onImpression()
+    }
+
+    override fun onAdFailedToLoad(error: LoadAdError) {
+        Timber.w(
+            "AdaptiveBannerAd: Failed to load ad (%s: %s)",
+            error.code,
+            error.message
+        )
+        onFailedToLoad(error.code)
+    }
 }

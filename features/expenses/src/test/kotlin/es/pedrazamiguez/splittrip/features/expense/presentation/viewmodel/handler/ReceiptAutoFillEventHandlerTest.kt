@@ -3,6 +3,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -23,6 +25,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -57,6 +60,7 @@ class ReceiptAutoFillEventHandlerTest {
     private lateinit var formattingHelper: FormattingHelper
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
     private lateinit var featureGateService: FeatureGateService
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actions: MutableSharedFlow<AddExpenseUiAction>
 
@@ -87,12 +91,14 @@ class ReceiptAutoFillEventHandlerTest {
         featureGateService = mockk {
             every { isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(true)
         }
+        telemetryTracker = mockk(relaxed = true)
         handler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = extractReceiptFieldsUseCase,
             receiptExtractionService = receiptExtractionService,
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
             featureGateService = featureGateService,
+            telemetryTracker = telemetryTracker,
             zoneIdProvider = { ZoneOffset.UTC }
         )
         handler.setOnCurrencySelected { capturedCurrencySelections.add(it) }
@@ -175,6 +181,17 @@ class ReceiptAutoFillEventHandlerTest {
                 ),
                 actions.replayCache
             )
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                        MonetizationTelemetry.Param.GATE_NAME to "ai_receipt_scanning",
+                        MonetizationTelemetry.Param.ENTRY_POINT to MonetizationTelemetry.GateEntryPoint.AI_MODE_TOGGLE,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
         }
     }
 
@@ -220,6 +237,18 @@ class ReceiptAutoFillEventHandlerTest {
             )
             coVerify(exactly = 0) { extractReceiptFieldsUseCase(any()) }
             assertFalse(uiState.value.isAnalyzingReceipt)
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                        MonetizationTelemetry.Param.GATE_NAME to "ai_receipt_scanning",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.AI_RECEIPT_ATTACH,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
         }
 
         @Test
@@ -308,6 +337,7 @@ class ReceiptAutoFillEventHandlerTest {
                 formattingHelper = formattingHelper,
                 addExpenseUiMapper = addExpenseUiMapper,
                 featureGateService = featureGateService,
+                telemetryTracker = telemetryTracker,
                 zoneIdProvider = { ZoneId.of("Asia/Shanghai") }
             )
             shanghaiHandler.bind(uiState, actions, TestScope(UnconfinedTestDispatcher()))

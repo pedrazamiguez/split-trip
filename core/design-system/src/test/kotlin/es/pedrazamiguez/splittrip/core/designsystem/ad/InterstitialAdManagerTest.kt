@@ -7,6 +7,8 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.usecase.ad.ShouldShowAdsUseCase
 import io.mockk.every
@@ -40,6 +42,7 @@ class InterstitialAdManagerTest {
     private lateinit var testDispatcher: TestDispatcher
 
     private lateinit var appConfigRepository: AppConfigRepository
+    private lateinit var telemetryTracker: TelemetryTracker
 
     private val shouldShowAdsFlow = MutableStateFlow(true)
     private val shouldShowAdsUseCase = object : ShouldShowAdsUseCase {
@@ -60,6 +63,7 @@ class InterstitialAdManagerTest {
             every { adInterstitialActionFrequency } returns frequencyFlow
             every { adInterstitialMinIntervalSeconds } returns minIntervalFlow
         }
+        telemetryTracker = mockk(relaxed = true)
         currentTime = 1000000L
     }
 
@@ -72,6 +76,7 @@ class InterstitialAdManagerTest {
         return InterstitialAdManager(
             appConfigRepository = appConfigRepository,
             shouldShowAdsUseCase = shouldShowAdsUseCase,
+            telemetryTracker = telemetryTracker,
             coroutineScope = scope,
             timeProvider = { currentTime }
         )
@@ -92,13 +97,22 @@ class InterstitialAdManagerTest {
 
         assertTrue(completed)
         verify(exactly = 0) { mockAd.show(any()) }
+        verify {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.AD_ELIGIBILITY_EVALUATED,
+                mapOf(
+                    MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL,
+                    MonetizationTelemetry.Param.IS_ELIGIBLE to false,
+                    MonetizationTelemetry.Param.REASON to MonetizationTelemetry.AdEligibilityReason.ADS_DISABLED
+                )
+            )
+        }
     }
 
     @Test
     fun `onActionCompleted executes onComplete immediately when no ad is preloaded`() = runTest(testDispatcher) {
         val manager = createManager(backgroundScope)
-        shouldShowAdsFlow.value = true
-        advanceUntilIdle()
+        manager.setAdEnabled(true)
 
         val mockActivity = mockk<Activity>()
         manager.setCachedAd(null)
@@ -108,13 +122,22 @@ class InterstitialAdManagerTest {
         manager.onActionCompleted(mockActivity) { completed = true }
 
         assertTrue(completed)
+        verify {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.AD_ELIGIBILITY_EVALUATED,
+                mapOf(
+                    MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL,
+                    MonetizationTelemetry.Param.IS_ELIGIBLE to false,
+                    MonetizationTelemetry.Param.REASON to MonetizationTelemetry.AdEligibilityReason.NO_CACHED_AD
+                )
+            )
+        }
     }
 
     @Test
     fun `onActionCompleted respects action frequency cap before attempting to show ad`() = runTest(testDispatcher) {
         val manager = createManager(backgroundScope)
-        shouldShowAdsFlow.value = true
-        advanceUntilIdle()
+        manager.setAdEnabled(true)
 
         val mockActivity = mockk<Activity>()
         val mockAd = mockk<InterstitialAd>(relaxed = true)
@@ -127,13 +150,22 @@ class InterstitialAdManagerTest {
         assertTrue(completed)
         verify(exactly = 0) { mockAd.show(any()) }
         assertEquals(2, manager.getActionCounter())
+        verify {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.AD_ELIGIBILITY_EVALUATED,
+                mapOf(
+                    MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL,
+                    MonetizationTelemetry.Param.IS_ELIGIBLE to false,
+                    MonetizationTelemetry.Param.REASON to MonetizationTelemetry.AdEligibilityReason.FREQUENCY_CAP
+                )
+            )
+        }
     }
 
     @Test
     fun `onActionCompleted respects min interval seconds cooldown before showing ad`() = runTest(testDispatcher) {
         val manager = createManager(backgroundScope)
-        shouldShowAdsFlow.value = true
-        advanceUntilIdle()
+        manager.setAdEnabled(true)
 
         val mockActivity = mockk<Activity>()
         val mockAd = mockk<InterstitialAd>(relaxed = true)
@@ -147,6 +179,17 @@ class InterstitialAdManagerTest {
         assertTrue(completed)
         verify(exactly = 0) { mockAd.show(any()) }
         assertEquals(3, manager.getActionCounter())
+        verify {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.AD_ELIGIBILITY_EVALUATED,
+                mapOf(
+                    MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL,
+                    MonetizationTelemetry.Param.IS_ELIGIBLE to false,
+                    MonetizationTelemetry.Param.REASON to
+                        MonetizationTelemetry.AdEligibilityReason.MIN_INTERVAL_COOLDOWN
+                )
+            )
+        }
     }
 
     @Test
@@ -169,10 +212,29 @@ class InterstitialAdManagerTest {
         verify(exactly = 1) { mockAd.show(mockActivity) }
         assertEquals(0, manager.getActionCounter())
 
-        // Simulate ad dismissal
+        // Simulate ad show and dismissal
+        callbackSlot.captured.onAdShowedFullScreenContent()
         callbackSlot.captured.onAdDismissedFullScreenContent()
         assertTrue(completed)
         assertNull(manager.getCachedAd())
+        verify {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.AD_ELIGIBILITY_EVALUATED,
+                mapOf(
+                    MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL,
+                    MonetizationTelemetry.Param.IS_ELIGIBLE to true,
+                    MonetizationTelemetry.Param.REASON to MonetizationTelemetry.AdEligibilityReason.ELIGIBLE
+                )
+            )
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.AD_IMPRESSION,
+                mapOf(MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL)
+            )
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.AD_DISMISSED,
+                mapOf(MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL)
+            )
+        }
     }
 
     @Test
@@ -196,10 +258,21 @@ class InterstitialAdManagerTest {
         assertEquals(0, manager.getActionCounter())
 
         // Simulate show failure
-        val mockError = mockk<AdError>(relaxed = true)
+        val mockError = mockk<AdError>(relaxed = true) {
+            every { code } returns 7
+        }
         callbackSlot.captured.onAdFailedToShowFullScreenContent(mockError)
         assertTrue(completed)
         assertNull(manager.getCachedAd())
+        verify {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.AD_SHOW_FAILED,
+                mapOf(
+                    MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL,
+                    MonetizationTelemetry.Param.ERROR_CODE to 7
+                )
+            )
+        }
     }
 
     @Test
@@ -280,6 +353,12 @@ class InterstitialAdManagerTest {
 
             callbackSlot.captured.onAdLoaded(mockAd)
             assertEquals(mockAd, manager.getCachedAd())
+            verify {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.AD_LOADED,
+                    mapOf(MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL)
+                )
+            }
         } finally {
             unmockkStatic(InterstitialAd::class)
         }
@@ -293,7 +372,9 @@ class InterstitialAdManagerTest {
             manager.setAdEnabled(true)
 
             val mockContext = mockk<Context>()
-            val mockError = mockk<LoadAdError>(relaxed = true)
+            val mockError = mockk<LoadAdError>(relaxed = true) {
+                every { code } returns 2
+            }
             val callbackSlot = slot<InterstitialAdLoadCallback>()
 
             every {
@@ -309,6 +390,15 @@ class InterstitialAdManagerTest {
 
             callbackSlot.captured.onAdFailedToLoad(mockError)
             assertNull(manager.getCachedAd())
+            verify {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.AD_LOAD_FAILED,
+                    mapOf(
+                        MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL,
+                        MonetizationTelemetry.Param.ERROR_CODE to 2
+                    )
+                )
+            }
         } finally {
             unmockkStatic(InterstitialAd::class)
         }
@@ -333,6 +423,16 @@ class InterstitialAdManagerTest {
 
             manager.preloadAd(mockContext)
             assertNull(manager.getCachedAd())
+            verify {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.AD_LOAD_FAILED,
+                    mapOf(
+                        MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.INTERSTITIAL,
+                        MonetizationTelemetry.Param.FAILURE_STAGE to
+                            MonetizationTelemetry.FailureStage.AD_LOAD_EXCEPTION
+                    )
+                )
+            }
         } finally {
             unmockkStatic(InterstitialAd::class)
         }

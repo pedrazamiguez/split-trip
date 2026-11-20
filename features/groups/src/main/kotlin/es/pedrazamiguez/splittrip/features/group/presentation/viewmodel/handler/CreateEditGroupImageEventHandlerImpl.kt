@@ -2,6 +2,9 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -18,7 +21,8 @@ import timber.log.Timber
 
 class CreateEditGroupImageEventHandlerImpl(
     private val groupImageStorageService: GroupImageStorageService,
-    private val featureGateService: FeatureGateService
+    private val featureGateService: FeatureGateService,
+    private val telemetryTracker: TelemetryTracker
 ) : CreateEditGroupImageEventHandler {
     private lateinit var _uiState: MutableStateFlow<CreateEditGroupUiState>
     private lateinit var _actions: MutableSharedFlow<CreateEditGroupUiAction>
@@ -47,6 +51,11 @@ class CreateEditGroupImageEventHandlerImpl(
                 groupId = initialGroup?.id
             ).collect { isEnabled ->
                 if (!isEnabled) {
+                    telemetryTracker.trackFeatureGateBlocked(
+                        feature = GatedFeature.GROUP_COVER_UPLOAD,
+                        entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_COVER_PICK,
+                        upgradePrompted = true
+                    )
                     val errorRes = UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
                     _uiState.update {
                         it.copy(
@@ -54,7 +63,8 @@ class CreateEditGroupImageEventHandlerImpl(
                             error = errorRes,
                             showUpgradeDialog = true,
                             upgradeDialogTitle = UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
-                            upgradeDialogMessage = errorRes
+                            upgradeDialogMessage = errorRes,
+                            upgradeEntrySource = MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
                         )
                     }
                     _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
