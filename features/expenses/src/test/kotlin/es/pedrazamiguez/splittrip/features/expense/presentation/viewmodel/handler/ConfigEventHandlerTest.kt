@@ -15,8 +15,8 @@ import es.pedrazamiguez.splittrip.domain.model.GroupExpenseConfig
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
@@ -24,10 +24,12 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategor
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
+import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseAddOnUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -62,6 +64,8 @@ class ConfigEventHandlerTest {
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var authenticationService: AuthenticationService
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
+    private lateinit var aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper
+    private lateinit var resourceProvider: ResourceProvider
     private lateinit var receiptExtractionService: ReceiptExtractionService
     private lateinit var featureGateService: FeatureGateService
     private val capturedActions = mutableListOf<PostConfigAction>()
@@ -97,20 +101,18 @@ class ConfigEventHandlerTest {
         capturedActions.clear()
 
         val localeProvider = mockk<LocaleProvider>()
-        val resourceProvider = mockk<ResourceProvider>(relaxed = true)
+        resourceProvider = mockk<ResourceProvider>(relaxed = true)
         every { localeProvider.getCurrentLocale() } returns Locale.US
 
         val splitPreviewService = SplitPreviewServiceImpl()
         val remainderDistributionService = RemainderDistributionServiceImpl()
-
         val formattingHelper = FormattingHelper(localeProvider)
-        val userUiMapper = mockk<UserUiMapper>(relaxed = true)
         val addExpenseSplitMapper = AddExpenseSplitUiMapper(
             localeProvider,
             formattingHelper,
             splitPreviewService,
             EntitySplitFlattenDelegate(splitPreviewService, remainderDistributionService),
-            userUiMapper
+            mockk<UserUiMapper>(relaxed = true)
         )
         val addExpenseOptionsMapper = AddExpenseOptionsUiMapper(resourceProvider, mockk(relaxed = true))
         addExpenseUiMapper = AddExpenseUiMapper(
@@ -123,25 +125,14 @@ class ConfigEventHandlerTest {
             remainderDistributionService = remainderDistributionService,
             formattingHelper = formattingHelper
         )
-
         receiptExtractionService = mockk(relaxed = true)
+        aiReceiptQuotaUiMapper = AiReceiptQuotaUiMapper(resourceProvider)
+        val aiQuota = AiReceiptQuota(usedScans = 0, monthlyLimit = 100, isProTier = true)
         featureGateService = mockk(relaxed = true) {
-            every { isFeatureEnabled(any(), any()) } returns flowOf(true)
+            every { observeAiReceiptQuota() } returns flowOf(aiQuota)
         }
 
-        handler = ConfigEventHandler(
-            getGroupExpenseConfigUseCase = getGroupExpenseConfigUseCase,
-            getGroupLastUsedCurrencyUseCase = getGroupLastUsedCurrencyUseCase,
-            getGroupLastUsedPaymentMethodUseCase = getGroupLastUsedPaymentMethodUseCase,
-            getGroupLastUsedCategoryUseCase = getGroupLastUsedCategoryUseCase,
-            getMemberProfilesUseCase = getMemberProfilesUseCase,
-            authenticationService = authenticationService,
-            addExpenseOptionsMapper = addExpenseOptionsMapper,
-            addExpenseSplitMapper = addExpenseSplitMapper,
-            addExpenseUiMapper = addExpenseUiMapper,
-            receiptExtractionService = receiptExtractionService,
-            featureGateService = featureGateService
-        )
+        handler = createHandler(addExpenseOptionsMapper, addExpenseSplitMapper)
         handler.setPostConfigCallback { capturedActions.add(it) }
 
         // Default use case stubs
@@ -153,6 +144,24 @@ class ConfigEventHandlerTest {
         uiState = MutableStateFlow(AddExpenseUiState())
         actions = MutableSharedFlow()
     }
+
+    private fun createHandler(
+        addExpenseOptionsMapper: AddExpenseOptionsUiMapper,
+        addExpenseSplitMapper: AddExpenseSplitUiMapper
+    ): ConfigEventHandler = ConfigEventHandler(
+        getGroupExpenseConfigUseCase = getGroupExpenseConfigUseCase,
+        getGroupLastUsedCurrencyUseCase = getGroupLastUsedCurrencyUseCase,
+        getGroupLastUsedPaymentMethodUseCase = getGroupLastUsedPaymentMethodUseCase,
+        getGroupLastUsedCategoryUseCase = getGroupLastUsedCategoryUseCase,
+        getMemberProfilesUseCase = getMemberProfilesUseCase,
+        authenticationService = authenticationService,
+        addExpenseOptionsMapper = addExpenseOptionsMapper,
+        addExpenseSplitMapper = addExpenseSplitMapper,
+        addExpenseUiMapper = addExpenseUiMapper,
+        receiptExtractionService = receiptExtractionService,
+        featureGateService = featureGateService,
+        aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper
+    )
 
     // ── Null / blank groupId ─────────────────────────────────────────────
 
@@ -794,7 +803,9 @@ class ConfigEventHandlerTest {
         @Test
         fun `applyConfig when AI scanning is enabled sets isAiModeActive and starts on RECEIPT step`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
-            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(true)
+            every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 100, isProTier = true)
+            )
 
             handler.bind(uiState, actions, this)
             handler.applyConfig("group-1", testConfig)
@@ -803,13 +814,16 @@ class ConfigEventHandlerTest {
             assertTrue(uiState.value.isAiModeActive)
             assertFalse(uiState.value.isAiGated)
             assertFalse(uiState.value.isAiProFeature)
+            assertNull(uiState.value.aiRemainingScansLabel)
             assertEquals(AddExpenseStep.RECEIPT, uiState.value.currentStep)
         }
 
         @Test
         fun `applyConfig when AI scanning is gated sets isAiGated and starts on TITLE step`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
-            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(false)
+            every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 0, isProTier = false)
+            )
 
             handler.bind(uiState, actions, this)
             handler.applyConfig("group-1", testConfig)
@@ -822,9 +836,53 @@ class ConfigEventHandlerTest {
         }
 
         @Test
+        fun `applyConfig for Free user with remaining trial scans enables AI mode and sets remaining scans label`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                    AiReceiptQuota(usedScans = 1, monthlyLimit = 3, isProTier = false)
+                )
+                every {
+                    resourceProvider.getQuantityString(R.plurals.expense_autofill_free_scans_remaining, 2, 2)
+                } returns "2 free scans left this month"
+
+                handler.bind(uiState, actions, this)
+                handler.applyConfig("group-1", testConfig)
+
+                assertTrue(uiState.value.isAiModeActive)
+                assertFalse(uiState.value.isAiGated)
+                assertFalse(uiState.value.isAiProFeature)
+                assertEquals("2 free scans left this month", uiState.value.aiRemainingScansLabel)
+                assertEquals(AddExpenseStep.RECEIPT, uiState.value.currentStep)
+            }
+
+        @Test
+        fun `applyConfig for Free user with exhausted quota gates AI mode and starts on TITLE step`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                    AiReceiptQuota(usedScans = 3, monthlyLimit = 3, isProTier = false)
+                )
+                every {
+                    resourceProvider.getString(R.string.expense_autofill_free_scans_exhausted)
+                } returns "0 free scans left this month"
+
+                handler.bind(uiState, actions, this)
+                handler.applyConfig("group-1", testConfig)
+
+                assertFalse(uiState.value.isAiModeActive)
+                assertTrue(uiState.value.isAiGated)
+                assertTrue(uiState.value.isAiProFeature)
+                assertEquals("0 free scans left this month", uiState.value.aiRemainingScansLabel)
+                assertEquals(AddExpenseStep.TITLE, uiState.value.currentStep)
+            }
+
+        @Test
         fun `applyConfig in edit mode keeps isAiModeActive false even when AI scanning is enabled`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
-            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(true)
+            every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 100, isProTier = true)
+            )
 
             uiState.value = AddExpenseUiState(isEditMode = true)
             handler.bind(uiState, actions, this)
@@ -840,7 +898,9 @@ class ConfigEventHandlerTest {
         @Test
         fun `applyConfig when device lacks AI capability keeps isAiModeActive false even when tier is Pro`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.UNSUPPORTED
-            every { featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING, any()) } returns flowOf(true)
+            every { featureGateService.observeAiReceiptQuota() } returns flowOf(
+                AiReceiptQuota(usedScans = 0, monthlyLimit = 100, isProTier = true)
+            )
 
             handler.bind(uiState, actions, this)
             handler.applyConfig("group-1", testConfig)

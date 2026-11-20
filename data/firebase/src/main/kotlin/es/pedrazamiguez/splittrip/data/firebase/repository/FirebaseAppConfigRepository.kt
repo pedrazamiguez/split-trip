@@ -331,7 +331,7 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_MAX_OWNED_GROUPS_PRO = 100
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_FREE = 4
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_PRO = 20
-        private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 0
+        private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 3
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = 100
         private const val DEFAULT_EXTRACTED_DATE_MAX_FUTURE_DAYS = 30
         private const val DEFAULT_SUPPORT_EMAIL = "support@splittrip.eu"

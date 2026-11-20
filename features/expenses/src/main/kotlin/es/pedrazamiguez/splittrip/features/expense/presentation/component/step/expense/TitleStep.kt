@@ -40,11 +40,13 @@ fun TitleStep(
         ) {
             if (uiState.isAiCapable && !uiState.isAiModeActive && !uiState.isEditMode) {
                 AiScanPromptCard(
-                    isProFeature = uiState.isAiProFeature || uiState.isAiGated,
+                    isProFeature = uiState.isAiProFeature,
                     onSwitchToAi = {
                         onEvent(AddExpenseUiEvent.SetAiModeActive(true))
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    remainingScansLabel = uiState.aiRemainingScansLabel,
+                    isQuotaExhausted = uiState.isAiGated
                 )
             }
 

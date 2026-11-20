@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.repository
 
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.OptionalUpdateDismissal
+import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 
 @Suppress("TooManyFunctions")
@@ -33,6 +34,9 @@ interface UserPreferenceRepository {
 
     suspend fun getOptionalUpdateDismissal(): OptionalUpdateDismissal?
     suspend fun recordOptionalUpdateDismissal(versionCode: Long, timestampMs: Long)
+
+    fun getMonthlyAiReceiptScanCount(yearMonth: YearMonth): Flow<Int>
+    suspend fun incrementMonthlyAiReceiptScanCount(yearMonth: YearMonth)
 
     suspend fun clearAll()
 }

@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudUserDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -29,7 +30,8 @@ val authenticationDataModule = module {
             authenticationService = get<AuthenticationService>(),
             appConfigRepository = get<AppConfigRepository>(),
             userRepository = get<UserRepository>(),
-            groupRepository = get<GroupRepository>()
+            groupRepository = get<GroupRepository>(),
+            userPreferenceRepository = get<UserPreferenceRepository>()
         )
     }
 }

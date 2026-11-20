@@ -56,7 +56,7 @@ SplitTrip parameters are organized into 5 functional groups:
 | `max_owned_groups_pro` | `NUMBER` | `100` | Maximum number of groups a Pro tier user can own concurrently. |
 | `max_members_per_group_free` | `NUMBER` | `4` | Maximum member cap for groups owned by a Free user. |
 | `max_members_per_group_pro` | `NUMBER` | `20` | Maximum member cap for groups owned by a Pro user. |
-| `ai_receipt_monthly_limit_free` | `NUMBER` | `0` | Monthly quota of AI receipt scans allocated to Free users. |
+| `ai_receipt_monthly_limit_free` | `NUMBER` | `3` | Monthly quota of AI receipt scans allocated to Free users. |
 | `ai_receipt_monthly_limit_pro` | `NUMBER` | `100` | Monthly quota of AI receipt scans allocated to Pro users. |
 
 ### Group 2: Groups
