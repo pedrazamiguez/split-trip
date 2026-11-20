@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import es.pedrazamiguez.splittrip.core.designsystem.extension.clearFocusOnKeyboardDismiss
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Search
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
@@ -58,8 +59,10 @@ fun ExpenseSearchBar(
         keyboardActions = KeyboardActions(
             onSearch = { focusManager.clearFocus() }
         ),
-        modifier = modifier.onFocusChanged { focusState ->
-            onFocusChanged(focusState.hasFocus)
-        }
+        modifier = modifier
+            .clearFocusOnKeyboardDismiss()
+            .onFocusChanged { focusState ->
+                onFocusChanged(focusState.hasFocus)
+            }
     )
 }

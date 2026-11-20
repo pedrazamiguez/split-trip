@@ -10,15 +10,22 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 
@@ -235,4 +242,45 @@ fun Modifier.debouncedCombinedClickableNoRipple(
         onDoubleClick = onDoubleClick,
         onClick = debouncedOnClick
     )
+}
+
+/**
+ * Clears Compose focus when the soft keyboard (IME) transitions from visible to hidden while
+ * this modifier's target is focused.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+fun Modifier.clearFocusOnKeyboardDismiss(): Modifier = composed {
+    clearFocusOnKeyboardDismiss(isImeVisible = WindowInsets.isImeVisible)
+}
+
+/**
+ * Clears Compose focus when [isImeVisible] transitions from `true` to `false` while this
+ * modifier's target is focused, ignoring initial `false` states before the keyboard opens.
+ */
+fun Modifier.clearFocusOnKeyboardDismiss(
+    isImeVisible: Boolean
+): Modifier = composed {
+    var isFocused by remember { mutableStateOf(false) }
+    var keyboardAppearedSinceLastFocused by remember { mutableStateOf(false) }
+
+    if (isFocused) {
+        val focusManager = LocalFocusManager.current
+        LaunchedEffect(isImeVisible) {
+            if (isImeVisible) {
+                keyboardAppearedSinceLastFocused = true
+            } else if (keyboardAppearedSinceLastFocused) {
+                focusManager.clearFocus()
+            }
+        }
+    }
+
+    onFocusChanged { focusState ->
+        val hasFocus = focusState.hasFocus
+        if (isFocused != hasFocus) {
+            isFocused = hasFocus
+            if (hasFocus) {
+                keyboardAppearedSinceLastFocused = false
+            }
+        }
+    }
 }
