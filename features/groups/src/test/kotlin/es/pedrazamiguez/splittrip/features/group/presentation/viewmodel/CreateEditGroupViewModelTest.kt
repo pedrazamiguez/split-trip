@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -42,6 +43,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -157,7 +159,11 @@ class CreateEditGroupViewModelTest {
 
     private fun createViewModel(): CreateEditGroupViewModel {
         val navigationEventHandler = CreateEditGroupNavigationEventHandlerImpl()
-        val imageEventHandler = CreateEditGroupImageEventHandlerImpl(groupImageStorageService, featureGateService)
+        val imageEventHandler = CreateEditGroupImageEventHandlerImpl(
+            groupImageStorageService,
+            featureGateService,
+            telemetryTracker
+        )
         val submitEventHandler = CreateEditGroupSubmitEventHandlerImpl(
             createGroupUseCase = createGroupUseCase,
             updateGroupUseCase = updateGroupUseCase,
@@ -189,6 +195,7 @@ class CreateEditGroupViewModelTest {
             getUserGroupsFlowUseCase = getUserGroupsFlowUseCase,
             getGroupCurrenciesInUseUseCase = getGroupCurrenciesInUseUseCase,
             getNonRemovableGroupMembersUseCase = getNonRemovableGroupMembersUseCase,
+            telemetryTracker = telemetryTracker,
             defaultDispatcher = testDispatcher
         )
     }
@@ -1119,7 +1126,11 @@ class CreateEditGroupViewModelTest {
 
                 assertFalse(viewModel.uiState.value.showUpgradeDialog)
                 assertEquals(
-                    listOf(CreateEditGroupUiAction.NavigateToSubscriptions),
+                    listOf(
+                        CreateEditGroupUiAction.NavigateToSubscriptions(
+                            MonetizationTelemetry.EntrySource.GROUP_CREATION
+                        )
+                    ),
                     actionsList
                 )
                 job.cancel()
@@ -1181,6 +1192,22 @@ class CreateEditGroupViewModelTest {
 
                 assertTrue(customVm.uiState.value.isCreationBlocked)
                 assertTrue(customVm.uiState.value.showUpgradeDialog)
+                assertEquals(
+                    MonetizationTelemetry.EntrySource.GROUP_CREATION,
+                    customVm.uiState.value.upgradeEntrySource
+                )
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                            MonetizationTelemetry.Param.GATE_NAME to "max_owned_groups_count",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.GROUP_CREATE_INIT,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
             }
 
         @Test
@@ -1199,10 +1226,24 @@ class CreateEditGroupViewModelTest {
                         CreateEditGroupUiAction.ShowError(
                             UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
                         ),
-                        CreateEditGroupUiAction.NavigateToSubscriptions
+                        CreateEditGroupUiAction.NavigateToSubscriptions(
+                            MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
+                        )
                     ),
                     actionsList
                 )
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                            MonetizationTelemetry.Param.GATE_NAME to "group_cover_upload",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.GROUP_COVER_LOCKED_PREVIEW,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
                 job.cancel()
             }
 
@@ -1218,9 +1259,25 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(
-                    listOf(CreateEditGroupUiAction.NavigateToSubscriptions),
+                    listOf(
+                        CreateEditGroupUiAction.NavigateToSubscriptions(
+                            MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
+                        )
+                    ),
                     actionsList
                 )
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                            MonetizationTelemetry.Param.GATE_NAME to "max_members_per_group",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_UPSELL,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
                 job.cancel()
             }
 
@@ -1251,7 +1308,67 @@ class CreateEditGroupViewModelTest {
 
                 assertEquals(4, viewModel.uiState.value.selectedMembers.size)
                 assertTrue(viewModel.uiState.value.showUpgradeDialog)
+                assertEquals(
+                    MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT,
+                    viewModel.uiState.value.upgradeEntrySource
+                )
                 assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                            MonetizationTelemetry.Param.GATE_NAME to "max_members_per_group",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_SELECT,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
+                job.cancel()
+            }
+
+        @Test
+        fun `handleMemberScanned when limit reached triggers upgrade dialog, emits ShowError, and tracks gate`() =
+            runTest(testDispatcher) {
+                val actionsList = mutableListOf<CreateEditGroupUiAction>()
+                val job = launch {
+                    viewModel.actions.collect { actionsList.add(it) }
+                }
+
+                viewModel.init(null)
+                advanceUntilIdle()
+
+                val members = (1..4).map { idx ->
+                    User(userId = "user-$idx", email = "user$idx@example.com")
+                }
+                members.forEach { user ->
+                    viewModel.onEvent(CreateEditGroupUiEvent.MemberSelected(user)) {}
+                }
+                advanceUntilIdle()
+
+                viewModel.onEvent(CreateEditGroupUiEvent.MemberScanned("user-5", "user5@example.com")) {}
+                advanceUntilIdle()
+
+                assertEquals(4, viewModel.uiState.value.selectedMembers.size)
+                assertTrue(viewModel.uiState.value.showUpgradeDialog)
+                assertEquals(
+                    MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT,
+                    viewModel.uiState.value.upgradeEntrySource
+                )
+                assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                            MonetizationTelemetry.Param.GATE_NAME to "max_members_per_group",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_SCAN,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
                 job.cancel()
             }
     }

@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavContro
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.features.subunit.presentation.screen.CreateEditSubunitScreen
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.CreateEditSubunitViewModel
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.action.CreateEditSubunitUiAction
@@ -71,7 +72,10 @@ fun CreateEditSubunitFeature(
                 }
 
                 CreateEditSubunitUiAction.NavigateToSubscriptions -> {
-                    upgradeNavigator.navigateToUpgrade(rootNavController)
+                    upgradeNavigator.navigateToUpgrade(
+                        rootNavController,
+                        source = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
+                    )
                 }
             }
         }

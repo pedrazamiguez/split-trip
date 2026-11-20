@@ -58,8 +58,8 @@ fun CreateEditGroupFeature(
                 is CreateEditGroupUiAction.ShowError -> pillController.showPill(action.message.asString(context))
                 CreateEditGroupUiAction.NavigateBack -> navController.popBackStack()
                 CreateEditGroupUiAction.RequestExitConfirmation -> showExitConfirmation = true
-                CreateEditGroupUiAction.NavigateToSubscriptions -> {
-                    upgradeNavigator.navigateToUpgrade(rootNavController)
+                is CreateEditGroupUiAction.NavigateToSubscriptions -> {
+                    upgradeNavigator.navigateToUpgrade(rootNavController, source = action.entrySource)
                 }
                 is CreateEditGroupUiAction.NavigateToRoute -> rootNavController.navigate(action.route)
             }

@@ -16,6 +16,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.Lo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
@@ -27,6 +30,7 @@ class SubunitManagementScreenUiProviderImpl(
     private val observeSelectedGroupUseCase: ObserveSelectedGroupUseCase,
     private val featureGateService: FeatureGateService,
     private val upgradeNavigator: UpgradeNavigator,
+    private val telemetryTracker: TelemetryTracker,
     override val route: String = Routes.MANAGE_SUBUNITS
 ) : ScreenUiProvider {
 
@@ -68,7 +72,12 @@ class SubunitManagementScreenUiProviderImpl(
                         groupId = groupId,
                         proRequiredMessage = proRequiredMessage,
                         navigateToCreate = { targetRoute -> navController.navigate(targetRoute) },
-                        navigateToSubscriptions = { upgradeNavigator.navigateToUpgrade(rootNavController) },
+                        navigateToSubscriptions = {
+                            upgradeNavigator.navigateToUpgrade(
+                                rootNavController,
+                                source = MonetizationTelemetry.EntrySource.SUBUNIT_MANAGEMENT
+                            )
+                        },
                         showNotification = { message -> pillController.showPill(message) }
                     )
                 },
@@ -92,6 +101,11 @@ class SubunitManagementScreenUiProviderImpl(
         if (isSubunitCreationEnabled) {
             navigateToCreate(Routes.createEditSubunitRoute(groupId))
         } else {
+            telemetryTracker.trackFeatureGateBlocked(
+                feature = GatedFeature.SUBUNIT_CREATION,
+                entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_FAB,
+                upgradePrompted = !isActingUserPro
+            )
             showNotification(proRequiredMessage)
             if (!isActingUserPro) {
                 navigateToSubscriptions()

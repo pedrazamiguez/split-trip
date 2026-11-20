@@ -3,6 +3,9 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -38,6 +41,7 @@ class ReceiptAutoFillEventHandler(
     private val formattingHelper: FormattingHelper,
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val featureGateService: FeatureGateService,
+    private val telemetryTracker: TelemetryTracker,
     private val zoneIdProvider: () -> ZoneId = { ZoneId.systemDefault() }
 ) : AddExpenseEventHandler {
 
@@ -111,6 +115,11 @@ class ReceiptAutoFillEventHandler(
     ) {
         val isEnabled = featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first()
         if (!isEnabled) {
+            telemetryTracker.trackFeatureGateBlocked(
+                feature = GatedFeature.AI_RECEIPT_SCANNING,
+                entryPoint = MonetizationTelemetry.GateEntryPoint.AI_RECEIPT_ATTACH,
+                upgradePrompted = true
+            )
             _actionsFlow.emit(
                 AddExpenseUiAction.ShowPill(
                     UiText.StringResource(R.string.expense_autofill_pro_required)
@@ -166,6 +175,11 @@ class ReceiptAutoFillEventHandler(
             scope.launch {
                 val isEnabled = featureGateService.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first()
                 if (!isEnabled) {
+                    telemetryTracker.trackFeatureGateBlocked(
+                        feature = GatedFeature.AI_RECEIPT_SCANNING,
+                        entryPoint = MonetizationTelemetry.GateEntryPoint.AI_MODE_TOGGLE,
+                        upgradePrompted = true
+                    )
                     _actionsFlow.emit(
                         AddExpenseUiAction.ShowPill(
                             UiText.StringResource(R.string.expense_autofill_pro_required)

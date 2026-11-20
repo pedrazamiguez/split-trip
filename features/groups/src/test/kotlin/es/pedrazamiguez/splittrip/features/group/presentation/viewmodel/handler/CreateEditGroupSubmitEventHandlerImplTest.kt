@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveCurrencyException
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
@@ -28,6 +29,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -214,6 +216,18 @@ class CreateEditGroupSubmitEventHandlerImplTest {
                 UiText.StringResource(R.string.group_error_limit_groups_exceeded),
                 stateFlow.value.upgradeDialogMessage
             )
+            assertEquals(MonetizationTelemetry.EntrySource.GROUP_CREATION, stateFlow.value.upgradeEntrySource)
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                        MonetizationTelemetry.Param.GATE_NAME to "max_owned_groups_count",
+                        MonetizationTelemetry.Param.ENTRY_POINT to MonetizationTelemetry.GateEntryPoint.GROUP_SUBMIT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
             collectJob.cancel()
         }
 
@@ -442,7 +456,20 @@ class CreateEditGroupSubmitEventHandlerImplTest {
                 UiText.StringResource(R.string.group_error_limit_members_exceeded),
                 stateFlow.value.upgradeDialogMessage
             )
+            assertEquals(MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT, stateFlow.value.upgradeEntrySource)
             coVerify(exactly = 0) { updateGroupUseCase(any()) }
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                        MonetizationTelemetry.Param.GATE_NAME to "max_members_per_group",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_SUBMIT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
             collectJob.cancel()
         }
 
@@ -479,6 +506,18 @@ class CreateEditGroupSubmitEventHandlerImplTest {
             assertNull(stateFlow.value.upgradeDialogTitle)
             assertNull(stateFlow.value.upgradeDialogMessage)
             coVerify(exactly = 0) { updateGroupUseCase(any()) }
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                        MonetizationTelemetry.Param.GATE_NAME to "max_members_per_group",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_SUBMIT,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                    )
+                )
+            }
             collectJob.cancel()
         }
     }

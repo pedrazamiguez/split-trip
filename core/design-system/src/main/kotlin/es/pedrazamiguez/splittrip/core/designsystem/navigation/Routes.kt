@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.core.designsystem.navigation
 
 import android.net.Uri
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 object Routes {
     const val LOGIN = "login"
@@ -38,6 +40,9 @@ object Routes {
     const val SETTINGS_THEME = "settings_theme"
     const val SETTINGS_ACCOUNT_STATUS = "settings_account_status"
     const val SETTINGS_SUBSCRIPTIONS = "settings_subscriptions"
+    const val SETTINGS_SUBSCRIPTIONS_ARG_SOURCE = "source"
+    const val SETTINGS_SUBSCRIPTIONS_ROUTE =
+        "$SETTINGS_SUBSCRIPTIONS?$SETTINGS_SUBSCRIPTIONS_ARG_SOURCE={$SETTINGS_SUBSCRIPTIONS_ARG_SOURCE}"
     const val SETTINGS_SECURITY = "settings_security"
     const val SETTINGS_FAQ = "settings_faq"
     const val SETTINGS_PRIVACY_POLICY = "settings_privacy_policy"
@@ -91,4 +96,12 @@ object Routes {
 
     fun contributionDetailRoute(groupId: String, contributionId: String): String =
         "contribution_detail/$groupId/$contributionId"
+
+    fun settingsSubscriptionsRoute(source: String? = null): String =
+        if (source != null) {
+            val encodedSource = URLEncoder.encode(source, StandardCharsets.UTF_8.name())
+            "$SETTINGS_SUBSCRIPTIONS?$SETTINGS_SUBSCRIPTIONS_ARG_SOURCE=$encodedSource"
+        } else {
+            SETTINGS_SUBSCRIPTIONS
+        }
 }

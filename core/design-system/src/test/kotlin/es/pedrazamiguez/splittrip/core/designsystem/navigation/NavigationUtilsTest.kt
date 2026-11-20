@@ -280,6 +280,22 @@ class NavigationUtilsTest {
                 NavigationUtils.resolveUpgradeDestination(isAnonymous = false)
             )
         }
+
+        @Test
+        fun `returns SETTINGS_SUBSCRIPTIONS with source query param when user is not anonymous and source provided`() {
+            assertEquals(
+                "settings_subscriptions?source=groups_fab",
+                NavigationUtils.resolveUpgradeDestination(isAnonymous = false, source = "groups_fab")
+            )
+        }
+
+        @Test
+        fun `returns SETTINGS_ACCOUNT_STATUS when user is anonymous even if source is provided`() {
+            assertEquals(
+                Routes.SETTINGS_ACCOUNT_STATUS,
+                NavigationUtils.resolveUpgradeDestination(isAnonymous = true, source = "groups_fab")
+            )
+        }
     }
 
     // ═════════════════════════════════════════════════════════════════════

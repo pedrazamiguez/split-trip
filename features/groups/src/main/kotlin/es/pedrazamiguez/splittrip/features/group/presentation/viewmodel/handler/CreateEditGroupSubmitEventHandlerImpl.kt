@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveCurrencyException
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
@@ -295,6 +297,11 @@ class CreateEditGroupSubmitEventHandlerImpl(
     }
 
     private suspend fun handleGroupsLimitBlocked(limitResult: LimitResult.Blocked) {
+        telemetryTracker.trackLimitGateBlocked(
+            limit = GatedLimit.MAX_OWNED_GROUPS_COUNT,
+            entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_SUBMIT,
+            upgradePrompted = limitResult.upgradeRequired
+        )
         val errorRes = UiText.StringResource(R.string.group_error_limit_groups_exceeded)
         _uiState.update {
             it.copy(
@@ -306,13 +313,23 @@ class CreateEditGroupSubmitEventHandlerImpl(
                 } else {
                     null
                 },
-                upgradeDialogMessage = if (limitResult.upgradeRequired) errorRes else null
+                upgradeDialogMessage = if (limitResult.upgradeRequired) errorRes else null,
+                upgradeEntrySource = if (limitResult.upgradeRequired) {
+                    MonetizationTelemetry.EntrySource.GROUP_CREATION
+                } else {
+                    null
+                }
             )
         }
         _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
     }
 
     private suspend fun handleMembersLimitBlocked(memberLimitResult: LimitResult.Blocked) {
+        telemetryTracker.trackLimitGateBlocked(
+            limit = GatedLimit.MAX_MEMBERS_PER_GROUP,
+            entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_SUBMIT,
+            upgradePrompted = memberLimitResult.upgradeRequired
+        )
         val errorRes = if (memberLimitResult.upgradeRequired) {
             UiText.StringResource(R.string.group_error_limit_members_exceeded)
         } else {
@@ -331,7 +348,12 @@ class CreateEditGroupSubmitEventHandlerImpl(
                 } else {
                     null
                 },
-                upgradeDialogMessage = if (memberLimitResult.upgradeRequired) errorRes else null
+                upgradeDialogMessage = if (memberLimitResult.upgradeRequired) errorRes else null,
+                upgradeEntrySource = if (memberLimitResult.upgradeRequired) {
+                    MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
+                } else {
+                    null
+                }
             )
         }
         _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))

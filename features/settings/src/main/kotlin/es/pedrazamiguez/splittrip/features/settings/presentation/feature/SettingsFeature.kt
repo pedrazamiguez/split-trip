@@ -27,6 +27,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestNo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.SettingsScreen
@@ -100,7 +101,11 @@ fun SettingsFeature(
     FeatureScaffold(currentRoute = Routes.SETTINGS, scrollContentUnderTopBar = true) {
         SettingsScreen(
             onAccountStatusClick = { navController.navigate(Routes.SETTINGS_ACCOUNT_STATUS) },
-            onSubscriptionsClick = { navController.navigate(Routes.SETTINGS_SUBSCRIPTIONS) },
+            onSubscriptionsClick = {
+                navController.navigate(
+                    Routes.settingsSubscriptionsRoute(MonetizationTelemetry.EntrySource.SETTINGS)
+                )
+            },
             onAccountSecurityClick = { navController.navigate(Routes.SETTINGS_SECURITY) },
             onNotificationsClick = {
                 if (isAnonymous) {

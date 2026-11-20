@@ -67,10 +67,11 @@ object NavigationUtils {
      * to [Routes.SETTINGS_SUBSCRIPTIONS].
      *
      * @param isAnonymous Whether the acting user has an anonymous (guest) auth session.
-     * @return [Routes.SETTINGS_ACCOUNT_STATUS] if anonymous, [Routes.SETTINGS_SUBSCRIPTIONS] otherwise.
+     * @param source Optional entry-source attribution for paywall telemetry.
+     * @return [Routes.SETTINGS_ACCOUNT_STATUS] if anonymous, [Routes.settingsSubscriptionsRoute] otherwise.
      */
-    fun resolveUpgradeDestination(isAnonymous: Boolean): String =
-        if (isAnonymous) Routes.SETTINGS_ACCOUNT_STATUS else Routes.SETTINGS_SUBSCRIPTIONS
+    fun resolveUpgradeDestination(isAnonymous: Boolean, source: String? = null): String =
+        if (isAnonymous) Routes.SETTINGS_ACCOUNT_STATUS else Routes.settingsSubscriptionsRoute(source)
 
     /**
      * Filters and sorts [NavigationProvider]s to only include tabs that should

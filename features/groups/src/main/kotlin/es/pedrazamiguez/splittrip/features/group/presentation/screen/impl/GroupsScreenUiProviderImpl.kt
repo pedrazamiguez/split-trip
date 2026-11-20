@@ -20,6 +20,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUi
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalProfileAvatarUrl
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.ProfileAvatarButton
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
@@ -33,6 +36,7 @@ class GroupsScreenUiProviderImpl(
     private val authenticationService: AuthenticationService,
     private val featureGateService: FeatureGateService,
     private val upgradeNavigator: UpgradeNavigator,
+    private val telemetryTracker: TelemetryTracker,
     override val route: String = Routes.GROUPS
 ) : ScreenUiProvider {
 
@@ -84,7 +88,12 @@ class GroupsScreenUiProviderImpl(
                         isActingUserPro = isActingUserPro,
                         limitReachedMessage = limitReachedMessage,
                         navigateToCreateGroup = { tabNavController.navigate(Routes.CREATE_GROUP) },
-                        navigateToSubscriptions = { upgradeNavigator.navigateToUpgrade(rootNavController) },
+                        navigateToSubscriptions = {
+                            upgradeNavigator.navigateToUpgrade(
+                                rootNavController,
+                                source = MonetizationTelemetry.EntrySource.GROUPS_FAB
+                            )
+                        },
                         showNotification = { message -> pillController.showPill(message.asString(context)) }
                     )
                 },
@@ -107,6 +116,11 @@ class GroupsScreenUiProviderImpl(
         if (isAllowed) {
             navigateToCreateGroup()
         } else {
+            telemetryTracker.trackLimitGateBlocked(
+                limit = GatedLimit.MAX_OWNED_GROUPS_COUNT,
+                entryPoint = MonetizationTelemetry.GateEntryPoint.GROUPS_FAB,
+                upgradePrompted = !isActingUserPro
+            )
             showNotification(limitReachedMessage)
             if (!isActingUserPro) {
                 navigateToSubscriptions()

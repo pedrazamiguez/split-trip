@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -42,6 +44,7 @@ class CreateEditGroupImageEventHandlerImplTest {
 
     private lateinit var groupImageStorageService: GroupImageStorageService
     private lateinit var featureGateService: FeatureGateService
+    private lateinit var telemetryTracker: TelemetryTracker
     private lateinit var stateFlow: MutableStateFlow<CreateEditGroupUiState>
     private lateinit var actionsFlow: MutableSharedFlow<CreateEditGroupUiAction>
     private lateinit var handler: CreateEditGroupImageEventHandlerImpl
@@ -53,9 +56,10 @@ class CreateEditGroupImageEventHandlerImplTest {
         featureGateService = mockk(relaxed = true) {
             every { isFeatureEnabled(any(), any()) } returns flowOf(true)
         }
+        telemetryTracker = mockk(relaxed = true)
         stateFlow = MutableStateFlow(CreateEditGroupUiState())
         actionsFlow = MutableSharedFlow(replay = 1)
-        handler = CreateEditGroupImageEventHandlerImpl(groupImageStorageService, featureGateService)
+        handler = CreateEditGroupImageEventHandlerImpl(groupImageStorageService, featureGateService, telemetryTracker)
     }
 
     @AfterEach
@@ -116,8 +120,21 @@ class CreateEditGroupImageEventHandlerImplTest {
                 UiText.StringResource(R.string.group_error_limit_cover_upload_disabled),
                 stateFlow.value.upgradeDialogMessage
             )
+            assertEquals(MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD, stateFlow.value.upgradeEntrySource)
             assertFalse(stateFlow.value.isLoading)
             assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                        MonetizationTelemetry.Param.GATE_NAME to "group_cover_upload",
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.GROUP_COVER_PICK,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
             job.cancel()
         }
 

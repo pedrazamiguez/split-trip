@@ -58,6 +58,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.LocalPro
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.designsystem.transition.LocalSharedTransitionScope
 import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.features.main.presentation.component.BottomNavigationBar
 import es.pedrazamiguez.splittrip.features.main.presentation.viewmodel.MainViewModel
@@ -200,7 +201,28 @@ fun MainScreen(
                 Column {
                     AdaptiveBannerAd(
                         adUnitId = bannerAdUnitId,
-                        isAdEnabled = shouldShowAds && shouldShowBottomBar
+                        isAdEnabled = shouldShowAds && shouldShowBottomBar,
+                        onAdLoaded = {
+                            telemetryTracker.trackEvent(
+                                MonetizationTelemetry.Event.AD_LOADED,
+                                mapOf(MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.BANNER)
+                            )
+                        },
+                        onAdImpression = {
+                            telemetryTracker.trackEvent(
+                                MonetizationTelemetry.Event.AD_IMPRESSION,
+                                mapOf(MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.BANNER)
+                            )
+                        },
+                        onAdFailedToLoad = { errorCode ->
+                            telemetryTracker.trackEvent(
+                                MonetizationTelemetry.Event.AD_LOAD_FAILED,
+                                mapOf(
+                                    MonetizationTelemetry.Param.AD_TYPE to MonetizationTelemetry.AdType.BANNER,
+                                    MonetizationTelemetry.Param.ERROR_CODE to errorCode
+                                )
+                            )
+                        }
                     )
                     AnimatedVisibility(
                         visible = isInitialLoadComplete && shouldShowBottomBar,

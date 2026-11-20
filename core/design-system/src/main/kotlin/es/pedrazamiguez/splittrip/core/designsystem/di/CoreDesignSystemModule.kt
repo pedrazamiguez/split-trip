@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigatorI
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -40,13 +41,15 @@ val coreDesignSystemModule = module {
     single {
         InterstitialAdManager(
             appConfigRepository = get<AppConfigRepository>(),
-            shouldShowAdsUseCase = get<ShouldShowAdsUseCase>()
+            shouldShowAdsUseCase = get<ShouldShowAdsUseCase>(),
+            telemetryTracker = get<TelemetryTracker>()
         )
     }
 
     single<UpgradeNavigator> {
         UpgradeNavigatorImpl(
-            authenticationService = get<AuthenticationService>()
+            authenticationService = get<AuthenticationService>(),
+            telemetryTracker = get<TelemetryTracker>()
         )
     }
 

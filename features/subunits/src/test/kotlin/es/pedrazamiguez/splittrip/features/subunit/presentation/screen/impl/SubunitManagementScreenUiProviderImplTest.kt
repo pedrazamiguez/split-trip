@@ -3,6 +3,8 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.screen.impl
 import androidx.navigation.NavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
@@ -18,11 +20,13 @@ class SubunitManagementScreenUiProviderImplTest {
     private val observeSelectedGroupUseCase: ObserveSelectedGroupUseCase = mockk()
     private val featureGateService: FeatureGateService = mockk()
     private val upgradeNavigator: UpgradeNavigator = mockk(relaxed = true)
+    private val telemetryTracker: TelemetryTracker = mockk(relaxed = true)
 
     private val uiProvider = SubunitManagementScreenUiProviderImpl(
         observeSelectedGroupUseCase = observeSelectedGroupUseCase,
         featureGateService = featureGateService,
-        upgradeNavigator = upgradeNavigator
+        upgradeNavigator = upgradeNavigator,
+        telemetryTracker = telemetryTracker
     )
 
     @Test
@@ -36,6 +40,7 @@ class SubunitManagementScreenUiProviderImplTest {
             observeSelectedGroupUseCase = observeSelectedGroupUseCase,
             featureGateService = featureGateService,
             upgradeNavigator = upgradeNavigator,
+            telemetryTracker = telemetryTracker,
             route = "custom_route"
         )
         assertEquals("custom_route", customRouteProvider.route)
@@ -81,6 +86,17 @@ class SubunitManagementScreenUiProviderImplTest {
         assertEquals(null, createdRoute)
         assertTrue(navigatedToSubscriptions)
         assertEquals("Pro required", shownNotification)
+        verify(exactly = 1) {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                mapOf(
+                    MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                    MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                    MonetizationTelemetry.Param.ENTRY_POINT to MonetizationTelemetry.GateEntryPoint.SUBUNIT_FAB,
+                    MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                )
+            )
+        }
     }
 
     @Test
@@ -102,6 +118,17 @@ class SubunitManagementScreenUiProviderImplTest {
         assertEquals(null, createdRoute)
         assertFalse(navigatedToSubscriptions)
         assertEquals("Pro required", shownNotification)
+        verify(exactly = 1) {
+            telemetryTracker.trackEvent(
+                MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                mapOf(
+                    MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
+                    MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                    MonetizationTelemetry.Param.ENTRY_POINT to MonetizationTelemetry.GateEntryPoint.SUBUNIT_FAB,
+                    MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                )
+            )
+        }
     }
 
     @Test
