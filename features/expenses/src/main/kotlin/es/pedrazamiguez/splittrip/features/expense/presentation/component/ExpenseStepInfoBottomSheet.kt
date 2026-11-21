@@ -75,6 +75,17 @@ internal fun ExpenseStepInfoBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (step.infoItems.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+                ) {
+                    step.infoItems.forEach { item ->
+                        ExpenseStepInfoItemRow(item = item)
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
 
             GradientButton(
