@@ -191,12 +191,10 @@ val settingsUiModule = module {
     viewModel {
         val getDeveloperInfoUseCase = get<GetDeveloperInfoUseCase>()
         val getAppLanguageUseCase = get<GetAppLanguageUseCase>()
-        val getDiagnosticLogsUseCase = get<GetDiagnosticLogsUseCase>()
         val developerInfoUiMapper = get<DeveloperInfoUiMapper>()
         DeveloperInfoViewModel(
             getDeveloperInfoUseCase = getDeveloperInfoUseCase,
             getAppLanguageUseCase = getAppLanguageUseCase,
-            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase,
             developerInfoUiMapper = developerInfoUiMapper
         )
     }
