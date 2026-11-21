@@ -1493,6 +1493,7 @@ class AddExpenseUseCaseTest {
             val expenseWithReceipt = baseExpense.copy(
                 receiptAttachment = ReceiptAttachment(
                     localUri = "file:///receipts/r1.jpg",
+                    mimeType = "image/jpeg",
                     capturedAtMillis = 1_000L
                 )
             )
@@ -1521,6 +1522,7 @@ class AddExpenseUseCaseTest {
             val expenseWithReceipt = baseExpense.copy(
                 receiptAttachment = ReceiptAttachment(
                     localUri = "file:///receipts/r1.jpg",
+                    mimeType = "image/jpeg",
                     capturedAtMillis = 1_000L
                 )
             )

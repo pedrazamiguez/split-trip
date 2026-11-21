@@ -509,6 +509,7 @@ class UpdateExpenseUseCaseTest {
         fun `does not increment when keeping same receipt even if remoteUrl differs`() = runTest {
             val originalReceipt = ReceiptAttachment(
                 localUri = "file:///receipts/r1.jpg",
+                mimeType = "image/jpeg",
                 remoteUrl = null,
                 capturedAtMillis = 1_000L
             )
@@ -532,6 +533,7 @@ class UpdateExpenseUseCaseTest {
             coEvery { expenseRepository.getExpenseById(expenseId) } returns originalExpense.copy(
                 receiptAttachment = ReceiptAttachment(
                     localUri = "file:///receipts/r1.jpg",
+                    mimeType = "image/jpeg",
                     capturedAtMillis = 1_000L
                 )
             )
@@ -552,6 +554,7 @@ class UpdateExpenseUseCaseTest {
             val updated = updatedExpense.copy(
                 receiptAttachment = ReceiptAttachment(
                     localUri = "file:///receipts/new.jpg",
+                    mimeType = "image/jpeg",
                     capturedAtMillis = 2_000L
                 )
             )
@@ -569,12 +572,14 @@ class UpdateExpenseUseCaseTest {
             coEvery { expenseRepository.getExpenseById(expenseId) } returns originalExpense.copy(
                 receiptAttachment = ReceiptAttachment(
                     localUri = "file:///receipts/old.jpg",
+                    mimeType = "image/jpeg",
                     capturedAtMillis = 1_000L
                 )
             )
             val updated = updatedExpense.copy(
                 receiptAttachment = ReceiptAttachment(
                     localUri = "file:///receipts/new.jpg",
+                    mimeType = "image/jpeg",
                     capturedAtMillis = 2_000L
                 )
             )

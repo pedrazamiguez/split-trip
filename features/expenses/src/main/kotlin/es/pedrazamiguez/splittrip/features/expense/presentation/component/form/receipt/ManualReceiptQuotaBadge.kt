@@ -31,12 +31,12 @@ fun ManualReceiptQuotaBadge(
     val containerColor = if (isExhausted) {
         MaterialTheme.colorScheme.errorContainer
     } else {
-        MaterialTheme.colorScheme.secondaryContainer
+        MaterialTheme.colorScheme.surfaceContainerHigh
     }
     val contentColor = if (isExhausted) {
         MaterialTheme.colorScheme.onErrorContainer
     } else {
-        MaterialTheme.colorScheme.onSecondaryContainer
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
     val icon = if (isExhausted) {
         TablerIcons.Outline.Lock

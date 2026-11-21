@@ -423,7 +423,7 @@
 
     <!-- AI Scan Pro Gate and Manual Receipt Demarcation -->
     <string name="expense_autofill_unlock_with_pro">Desbloquea escaneo IA con Pro</string>
-    <string name="add_expense_receipt_manual_description">Adjunta una foto o PDF como comprobante de compra para todos los miembros. Las cuentas gratuitas incluyen un cupo mensual de adjuntos; con SplitTrip Pro son ilimitados.</string>
+    <string name="add_expense_receipt_manual_description">Foto o PDF opcional para los miembros del grupo.</string>
 
     <!-- Step Info Bottom Sheet -->
     <string name="action_step_info">Sobre este paso</string>
