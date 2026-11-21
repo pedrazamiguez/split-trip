@@ -8,7 +8,10 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.ChartColors
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.model.AddOnTypeSpendingInsight
 import es.pedrazamiguez.splittrip.domain.model.BreakdownPercentage
 import es.pedrazamiguez.splittrip.domain.model.CategorySpendingInsight
 import es.pedrazamiguez.splittrip.domain.model.DailySpendingPoint
@@ -16,8 +19,10 @@ import es.pedrazamiguez.splittrip.domain.model.EntitySpendingInsight
 import es.pedrazamiguez.splittrip.domain.model.EntitySpendingType
 import es.pedrazamiguez.splittrip.domain.model.GroupSpendingInsights
 import es.pedrazamiguez.splittrip.domain.model.MemberSpendingInsight
+import es.pedrazamiguez.splittrip.domain.model.SpendingAddOnsSummary
 import es.pedrazamiguez.splittrip.domain.model.SpendingBurnRateInsight
 import es.pedrazamiguez.splittrip.domain.model.SpendingInsightsPeriod
+import es.pedrazamiguez.splittrip.domain.model.SubcategorySpendingInsight
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.EntityBreakdownMode
@@ -56,7 +61,11 @@ class SpendingInsightsUiMapperTest {
             DesignSystemR.string.user_pending_fallback to "Pending",
             CommonR.string.expense_category_food to "Food",
             CommonR.string.expense_category_lodging to "Lodging",
-            CommonR.string.expense_category_transport to "Transport"
+            CommonR.string.expense_category_transport to "Transport",
+            CommonR.string.expense_subcategory_restaurant to "Restaurant",
+            R.string.balances_extras_add_on_fee_plural to "Fees",
+            R.string.balances_extras_add_on_surcharge_plural to "Surcharges",
+            R.string.balances_extras_add_on_tip_plural to "Tips"
         )
     }
 
@@ -90,7 +99,9 @@ class SpendingInsightsUiMapperTest {
     private fun formatStringResource(resId: Int, args: Array<Any>): String = when (resId) {
         R.string.balances_insights_period_range -> "${args[0]} – ${args[1]}"
         R.string.balances_insights_period_summary -> "${args[0]} · ${args[1]}"
-        R.string.balances_insights_extras_included -> "Includes ${args[0]} in extras"
+        R.string.balances_insights_add_ons_share -> "${args[0]} of spend"
+        R.string.balances_insights_add_ons_withdrawal_note -> "Includes ${args[0]} in withdrawal fees"
+        R.string.balances_insights_add_ons_discounts_note -> "Saved ${args[0]} with discounts"
         R.string.balances_insights_daily_average_value -> "${args[0]} / day"
         R.string.balances_insights_monthly_pace_value -> "${args[0]} / mo"
         R.string.balances_insights_daily_bar_cd -> "${args[0]}, ${args[1]}"
@@ -177,7 +188,6 @@ class SpendingInsightsUiMapperTest {
             currency = "EUR",
             period = SpendingInsightsPeriod.ThisMonth,
             totalSpentCents = 12500L,
-            totalExtrasCents = 500L,
             expenseCount = 3,
             windowStartDate = LocalDate.of(2026, 11, 1),
             windowEndDate = LocalDate.of(2026, 11, 30),
@@ -200,10 +210,7 @@ class SpendingInsightsUiMapperTest {
 
         val burnRate = state.burnRate!!
         assertEquals(formattingHelper.formatCentsWithCurrency(12500L, "EUR"), burnRate.formattedTotalSpent)
-        assertEquals(
-            "Includes ${formattingHelper.formatCentsWithCurrency(500L, "EUR")} in extras",
-            burnRate.formattedExtrasCaption
-        )
+        assertNull(burnRate.addOnsBreakdown)
         assertEquals(
             "${formattingHelper.formatCentsWithCurrency(625L, "EUR")} / day",
             burnRate.formattedDailyAverage
@@ -216,6 +223,55 @@ class SpendingInsightsUiMapperTest {
         )
         assertEquals(formattingHelper.formatCentsWithCurrency(9000L, "EUR"), burnRate.formattedPeakDayAmount)
         assertEquals(formattingHelper.formatShortDate(peakDate, 2026), burnRate.formattedPeakDayDate)
+    }
+
+    @Test
+    fun `maps addOnsSummary into AddOnBreakdownUiModel with share notes and type breakdown`() {
+        val insights = baseInsights(
+            currency = "EUR",
+            totalSpentCents = 12500L,
+            totalExtrasCents = 700L,
+            addOnsSummary = SpendingAddOnsSummary(
+                totalExtrasCents = 700L,
+                expenseExtrasCents = 500L,
+                withdrawalFeesCents = 200L,
+                totalDiscountsCents = 150L,
+                extrasShareRatio = BigDecimal("0.0400"),
+                extrasBreakdownPercentage = BreakdownPercentage.Whole(4),
+                typeBreakdown = listOf(
+                    AddOnTypeSpendingInsight(
+                        type = AddOnType.FEE,
+                        totalAmountCents = 700L,
+                        itemCount = 2
+                    )
+                )
+            ),
+            expenseCount = 3
+        )
+
+        val state = mapper.mapToUiState(
+            insights = insights,
+            selectedPreset = SpendingPeriodPreset.ALL_TIME,
+            customStartDate = null,
+            customEndDate = null,
+            entityBreakdownMode = EntityBreakdownMode.BY_SUBUNIT,
+            selectedDayBarId = null,
+            referenceYear = 2026
+        )
+
+        val addOns = state.burnRate!!.addOnsBreakdown!!
+        assertEquals(formattingHelper.formatCentsWithCurrency(700L, "EUR"), addOns.formattedTotalExtras)
+        assertEquals("4% of spend", addOns.formattedPercentageOfSpending)
+        assertEquals(
+            "Includes ${formattingHelper.formatCentsWithCurrency(200L, "EUR")} in withdrawal fees",
+            addOns.formattedWithdrawalFeesNote
+        )
+        assertEquals(
+            "Saved ${formattingHelper.formatCentsWithCurrency(150L, "EUR")} with discounts",
+            addOns.formattedDiscountsSavedNote
+        )
+        assertEquals(1, addOns.typeBreakdown.size)
+        assertEquals("Fees", addOns.typeBreakdown[0].label)
     }
 
     @Test
@@ -274,6 +330,54 @@ class SpendingInsightsUiMapperTest {
         assertEquals(ChartColors[1], state.categoryItems[1].color)
         assertEquals("0%", state.categoryItems[2].formattedPercentage)
         assertEquals(ChartColors[2], state.categoryItems[2].color)
+    }
+
+    @Test
+    fun `maps subcategory insights and active filter metadata into UiState`() {
+        val insights = baseInsights(
+            currency = "USD",
+            totalSpentCents = 15000L,
+            expenseCount = 3,
+            isFiltered = true,
+            categories = listOf(
+                CategorySpendingInsight(
+                    category = ExpenseCategory.FOOD,
+                    totalAmountCents = 15000L,
+                    expenseCount = 3,
+                    percentage = BigDecimal("100.00"),
+                    shareRatio = BigDecimal.ONE,
+                    breakdownPercentage = BreakdownPercentage.Whole(100),
+                    subcategories = listOf(
+                        SubcategorySpendingInsight(
+                            subcategory = ExpenseSubcategory.RESTAURANT,
+                            totalAmountCents = 15000L,
+                            expenseCount = 3,
+                            percentage = BigDecimal("100.00"),
+                            shareRatio = BigDecimal.ONE,
+                            breakdownPercentage = BreakdownPercentage.Whole(100)
+                        )
+                    )
+                )
+            )
+        )
+
+        val state = mapper.mapToUiState(
+            insights = insights,
+            selectedPreset = SpendingPeriodPreset.ALL_TIME,
+            customStartDate = null,
+            customEndDate = null,
+            entityBreakdownMode = EntityBreakdownMode.BY_SUBUNIT,
+            selectedDayBarId = null,
+            referenceYear = 2026,
+            activeFilterCount = 2
+        )
+
+        assertTrue(state.isFiltered)
+        assertEquals(2, state.activeFilterCount)
+        assertEquals(1, state.categoryItems[0].subcategories.size)
+        assertEquals("Restaurant", state.categoryItems[0].subcategories[0].subcategoryName)
+        assertEquals("100%", state.categoryItems[0].subcategories[0].formattedPercentage)
+        assertEquals("3 expenses", state.categoryItems[0].subcategories[0].expenseCountLabel)
     }
 
     @Test
@@ -466,6 +570,8 @@ class SpendingInsightsUiMapperTest {
         hasAnyGroupExpenses: Boolean = true,
         totalSpentCents: Long = 0L,
         totalExtrasCents: Long = 0L,
+        addOnsSummary: SpendingAddOnsSummary = SpendingAddOnsSummary(totalExtrasCents = totalExtrasCents),
+        isFiltered: Boolean = false,
         expenseCount: Int = 0,
         windowStartDate: LocalDate? = null,
         windowEndDate: LocalDate? = null,
@@ -491,6 +597,8 @@ class SpendingInsightsUiMapperTest {
         totalSpentCents = totalSpentCents,
         totalBaseSpentCents = totalSpentCents - totalExtrasCents,
         totalExtrasCents = totalExtrasCents,
+        addOnsSummary = addOnsSummary,
+        isFiltered = isFiltered,
         expenseCount = expenseCount,
         burnRate = SpendingBurnRateInsight(
             windowStartDate = windowStartDate,

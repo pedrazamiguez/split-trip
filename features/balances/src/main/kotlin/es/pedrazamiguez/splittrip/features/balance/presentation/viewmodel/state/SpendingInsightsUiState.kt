@@ -24,6 +24,8 @@ data class SpendingInsightsUiState(
     val newestExpenseDate: LocalDate? = null,
     val hasAnyGroupExpenses: Boolean = false,
     val hasPeriodExpenses: Boolean = false,
+    val isFiltered: Boolean = false,
+    val activeFilterCount: Int = 0,
     val burnRate: SpendingBurnRateUiModel? = null,
     val selectedDayBarId: String? = null,
     val categoryItems: ImmutableList<CategoryInsightUiModel> = persistentListOf(),

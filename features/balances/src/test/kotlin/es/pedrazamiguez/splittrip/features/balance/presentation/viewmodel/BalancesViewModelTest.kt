@@ -2,11 +2,9 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
-import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.BalancesDashboardDomainModel
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
-import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.GroupPocketBalance
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
@@ -442,46 +440,6 @@ class BalancesViewModelTest {
 
                 // Then - isGroupArchived reactively updates to true
                 assertTrue(viewModel.uiState.value.isGroupArchived)
-
-                collectJob.cancel()
-            }
-
-        @Test
-        fun `hasSpendingActivity is true when active expenses exist and false when empty or only cancelled`() =
-            runTest(testDispatcher) {
-                val dashboardFlow = MutableStateFlow(
-                    BalancesDashboardDomainModel(
-                        balance = testBalance,
-                        contributions = emptyList(),
-                        withdrawals = emptyList(),
-                        subunits = emptyList(),
-                        expenses = emptyList(),
-                        settlements = emptyList(),
-                        memberBalances = emptyList(),
-                        settlementSuggestions = emptyList(),
-                        memberProfiles = emptyMap()
-                    )
-                )
-                every { getBalancesDashboardFlowUseCase(any(), any(), any()) } returns dashboardFlow
-
-                viewModel = createViewModel()
-                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
-
-                viewModel.setSelectedGroup(testGroupId)
-                advanceUntilIdle()
-                assertFalse(viewModel.uiState.value.hasSpendingActivity)
-
-                dashboardFlow.value = dashboardFlow.value.copy(
-                    expenses = listOf(Expense(id = "e-cancelled", paymentStatus = PaymentStatus.CANCELLED))
-                )
-                advanceUntilIdle()
-                assertFalse(viewModel.uiState.value.hasSpendingActivity)
-
-                dashboardFlow.value = dashboardFlow.value.copy(
-                    expenses = listOf(Expense(id = "e-active", paymentStatus = PaymentStatus.FINISHED))
-                )
-                advanceUntilIdle()
-                assertTrue(viewModel.uiState.value.hasSpendingActivity)
 
                 collectJob.cancel()
             }

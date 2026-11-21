@@ -496,18 +496,8 @@
     <string name="expense_step_info_review_title">Resumen y confirmación</string>
     <string name="expense_step_info_review_description">Comprueba el resumen completo de tu gasto, incluyendo el importe, la conversión de moneda, el origen de los fondos, el reparto y los extras, antes de guardar.\n\n¿Quieres ajustar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar cualquier gasto más adelante desde su pantalla de detalle.</string>
 
-    <!-- Category Spending -->
-    <string name="expenses_category_spending_title">Gastos por categoría</string>
-    <string name="expenses_category_expand">Mostrar subcategorías de %1$s</string>
-    <string name="expenses_category_collapse">Ocultar subcategorías de %1$s</string>
-    <string name="expenses_category_spending_total_spent">Total gastado</string>
-    <string name="expenses_category_spending_empty_title">Sin gastos todavía</string>
-    <string name="expenses_category_spending_empty_description">Los gastos registrados en este grupo aparecerán aquí desglosados por categoría.</string>
-    <string name="expenses_category_spending_filtered_empty_title">No se han encontrado gastos</string>
-    <string name="expenses_category_spending_filtered_empty_description">Prueba a ajustar o borrar los filtros activos en la pantalla de Gastos.</string>
-    <string name="expenses_extras_add_on_fee_plural">Comisiones</string>
-    <string name="expenses_extras_add_on_surcharge_plural">Recargos</string>
-    <string name="expenses_extras_add_on_tip_plural">Propinas</string>
+    <!-- Spending Insights Action -->
+    <string name="expenses_spending_insights_cd">Ver análisis de gastos</string>
 
     <!-- AI Receipt Monthly Quota -->
     <plurals name="expense_autofill_free_scans_remaining">

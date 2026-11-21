@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
+import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.balance.presentation.screen.SpendingInsightsScreen
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.SpendingInsightsViewModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.SpendingInsightsUiAction
@@ -20,6 +21,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SpendingInsightsFeature(
+    initialFilterCriteria: ExpenseFilterCriteria = ExpenseFilterCriteria(),
     spendingInsightsViewModel: SpendingInsightsViewModel = koinViewModel<SpendingInsightsViewModel>(),
     sharedViewModel: SharedViewModel = koinViewModel(
         viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
@@ -31,6 +33,11 @@ fun SpendingInsightsFeature(
 
     val uiState by spendingInsightsViewModel.uiState.collectAsStateWithLifecycle()
     val selectedGroupId by sharedViewModel.selectedGroupId.collectAsStateWithLifecycle()
+
+    // Apply filter criteria before selectedGroupId so initial emission uses active filters without flashing.
+    LaunchedEffect(initialFilterCriteria) {
+        spendingInsightsViewModel.setFilterCriteria(initialFilterCriteria)
+    }
 
     LaunchedEffect(selectedGroupId) {
         spendingInsightsViewModel.setSelectedGroup(selectedGroupId)

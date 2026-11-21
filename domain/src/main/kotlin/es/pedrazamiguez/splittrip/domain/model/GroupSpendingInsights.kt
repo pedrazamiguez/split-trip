@@ -12,6 +12,8 @@ data class GroupSpendingInsights(
     val totalSpentCents: Long,
     val totalBaseSpentCents: Long,
     val totalExtrasCents: Long,
+    val addOnsSummary: SpendingAddOnsSummary = SpendingAddOnsSummary(),
+    val isFiltered: Boolean = false,
     val expenseCount: Int,
     val burnRate: SpendingBurnRateInsight,
     val categoryBreakdown: List<CategorySpendingInsight>,

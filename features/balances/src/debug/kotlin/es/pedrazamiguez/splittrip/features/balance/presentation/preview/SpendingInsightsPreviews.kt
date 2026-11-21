@@ -1,25 +1,26 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.preview
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.ChartColors
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bed
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Route
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ToolsKitchen2
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
+import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
-import es.pedrazamiguez.splittrip.features.balance.presentation.component.SpendingInsightsEntryCard
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.AddOnBreakdownUiModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.AddOnTypeBreakdownUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CategoryInsightUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.DailySpendingBarUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.EntityBreakdownMode
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.EntitySpendingInsightUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingBurnRateUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingPeriodPreset
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.SubcategoryInsightUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.screen.SpendingInsightsScreen
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.SpendingInsightsUiState
 import java.time.LocalDate
@@ -78,9 +79,30 @@ private val PREVIEW_DAILY_BARS = persistentListOf(
     )
 )
 
+private val PREVIEW_ADD_ONS = AddOnBreakdownUiModel(
+    formattedTotalExtras = "€15.00",
+    formattedPercentageOfSpending = "4% of spend",
+    formattedWithdrawalFeesNote = "Includes €3.00 in withdrawal fees",
+    formattedDiscountsSavedNote = "Saved €5.00 with discounts",
+    typeBreakdown = persistentListOf(
+        AddOnTypeBreakdownUiModel(
+            type = AddOnType.FEE,
+            label = "Fees",
+            icon = AddOnType.FEE.toIconVector(),
+            formattedAmount = "€9.00"
+        ),
+        AddOnTypeBreakdownUiModel(
+            type = AddOnType.TIP,
+            label = "Tips",
+            icon = AddOnType.TIP.toIconVector(),
+            formattedAmount = "€6.00"
+        )
+    )
+)
+
 private val PREVIEW_BURN_RATE = SpendingBurnRateUiModel(
     formattedTotalSpent = "€340.00",
-    formattedExtrasCaption = "Includes €15.00 in extras",
+    addOnsBreakdown = PREVIEW_ADD_ONS,
     formattedDailyAverage = "€68.00 / day",
     activeDaysLabel = "4 active days",
     formattedMonthlyPace = "€1,420.00 / mo",
@@ -100,7 +122,25 @@ private val PREVIEW_CATEGORIES = persistentListOf(
         formattedPercentage = "50%",
         expenseCountLabel = "3 expenses",
         progress = 0.50f,
-        color = ChartColors[0]
+        color = ChartColors[0],
+        subcategories = persistentListOf(
+            SubcategoryInsightUiModel(
+                subcategory = ExpenseSubcategory.RESTAURANT,
+                subcategoryName = "Restaurant",
+                subcategoryIcon = ExpenseSubcategory.RESTAURANT.toIconVector(),
+                formattedAmount = "€120.00",
+                formattedPercentage = "71%",
+                expenseCountLabel = "2 expenses"
+            ),
+            SubcategoryInsightUiModel(
+                subcategory = ExpenseSubcategory.CAFE_BREAKFAST,
+                subcategoryName = "Cafe & breakfast",
+                subcategoryIcon = ExpenseSubcategory.CAFE_BREAKFAST.toIconVector(),
+                formattedAmount = "€50.00",
+                formattedPercentage = "29%",
+                expenseCountLabel = "1 expense"
+            )
+        )
     ),
     CategoryInsightUiModel(
         category = ExpenseCategory.LODGING,
@@ -282,11 +322,16 @@ private fun SpendingInsightsScreenCustomRangePreview() {
 
 @PreviewComplete
 @Composable
-private fun SpendingInsightsEntryCardPreview() {
+private fun SpendingInsightsScreenFilteredEmptyPreview() {
     PreviewThemeWrapper {
-        SpendingInsightsEntryCard(
-            onClick = {},
-            modifier = Modifier.padding(MaterialTheme.spacing.Default)
+        SpendingInsightsScreen(
+            uiState = SpendingInsightsUiState(
+                isLoading = false,
+                groupId = "group-1",
+                hasAnyGroupExpenses = false,
+                isFiltered = true,
+                activeFilterCount = 2
+            )
         )
     }
 }

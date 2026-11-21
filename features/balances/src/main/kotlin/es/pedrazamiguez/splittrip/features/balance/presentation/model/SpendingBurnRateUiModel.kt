@@ -7,7 +7,7 @@ import kotlinx.collections.immutable.persistentListOf
 @Immutable
 data class SpendingBurnRateUiModel(
     val formattedTotalSpent: String,
-    val formattedExtrasCaption: String?,
+    val addOnsBreakdown: AddOnBreakdownUiModel? = null,
     val formattedDailyAverage: String,
     val activeDaysLabel: String,
     val formattedMonthlyPace: String?,

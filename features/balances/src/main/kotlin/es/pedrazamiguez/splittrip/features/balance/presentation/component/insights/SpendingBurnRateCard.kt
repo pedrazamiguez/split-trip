@@ -53,9 +53,6 @@ internal fun SpendingBurnRateCard(
             Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)) {
                 SecondaryBodyText(text = stringResource(R.string.balances_insights_total_spent_label))
                 SheetTitleText(text = burnRate.formattedTotalSpent)
-                burnRate.formattedExtrasCaption?.let { extrasCaption ->
-                    CaptionText(text = extrasCaption)
-                }
             }
 
             Row(
@@ -88,6 +85,10 @@ internal fun SpendingBurnRateCard(
                         SecondaryBodyText(text = peakDate)
                     }
                 }
+            }
+
+            burnRate.addOnsBreakdown?.let { addOnsBreakdown ->
+                AddOnsSummaryTile(addOnsBreakdown = addOnsBreakdown)
             }
 
             val monthlyPaceLabel = burnRate.monthlyPaceLabel

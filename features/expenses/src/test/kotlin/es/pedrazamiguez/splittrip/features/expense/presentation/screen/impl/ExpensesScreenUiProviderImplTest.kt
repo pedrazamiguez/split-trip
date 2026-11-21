@@ -49,8 +49,8 @@ class ExpensesScreenUiProviderImplTest {
     }
 
     @Test
-    fun `category spending route matches expected destination`() {
-        assertEquals("category_spending", Routes.CATEGORY_SPENDING)
+    fun `spending insights route matches expected destination`() {
+        assertEquals("spending_insights", Routes.SPENDING_INSIGHTS)
     }
 
     @Test

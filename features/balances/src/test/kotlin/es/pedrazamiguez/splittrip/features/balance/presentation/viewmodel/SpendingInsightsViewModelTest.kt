@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.GroupSpendingInsights
 import es.pedrazamiguez.splittrip.domain.model.SpendingBurnRateInsight
 import es.pedrazamiguez.splittrip.domain.model.SpendingInsightsPeriod
@@ -52,11 +54,12 @@ class SpendingInsightsViewModelTest {
         getGroupSpendingInsightsFlowUseCase = mockk()
         spendingInsightsUiMapper = mockk()
 
-        every { getGroupSpendingInsightsFlowUseCase(any(), any(), any()) } answers {
+        every { getGroupSpendingInsightsFlowUseCase(any(), any(), any(), any()) } answers {
             val groupId = firstArg<String>()
             val periodFlow = secondArg<Flow<SpendingInsightsPeriod>>()
-            periodFlow.map { period ->
-                createInsights(groupId = groupId, period = period)
+            val filterFlow = thirdArg<Flow<ExpenseFilterCriteria>>()
+            kotlinx.coroutines.flow.combine(periodFlow, filterFlow) { period, filter ->
+                createInsights(groupId = groupId, period = period, isFiltered = filter.isActive)
             }
         }
 
@@ -68,7 +71,8 @@ class SpendingInsightsViewModelTest {
                 customEndDate = any(),
                 entityBreakdownMode = any(),
                 selectedDayBarId = any(),
-                referenceYear = any()
+                referenceYear = any(),
+                activeFilterCount = any()
             )
         } answers {
             val insights = arg<GroupSpendingInsights>(0)
@@ -77,6 +81,7 @@ class SpendingInsightsViewModelTest {
             val end = arg<LocalDate?>(3)
             val mode = arg<EntityBreakdownMode>(4)
             val selectedDayBarId = arg<String?>(5)
+            val activeFilterCount = arg<Int>(7)
             SpendingInsightsUiState(
                 isLoading = false,
                 groupId = insights.groupId,
@@ -87,6 +92,8 @@ class SpendingInsightsViewModelTest {
                 newestExpenseDate = insights.newestExpenseDate,
                 hasAnyGroupExpenses = true,
                 hasPeriodExpenses = true,
+                isFiltered = insights.isFiltered,
+                activeFilterCount = activeFilterCount,
                 selectedDayBarId = selectedDayBarId,
                 entityBreakdownMode = mode
             )
@@ -199,7 +206,7 @@ class SpendingInsightsViewModelTest {
     @Test
     fun `SelectDayBar updates selectedDayBarId without restarting upstream flow`() = runTest(testDispatcher) {
         val upstreamTrigger = MutableStateFlow(0)
-        every { getGroupSpendingInsightsFlowUseCase("group-1", any(), any()) } answers {
+        every { getGroupSpendingInsightsFlowUseCase("group-1", any(), any(), any()) } answers {
             upstreamTrigger.map { createInsights("group-1", SpendingInsightsPeriod.AllTime) }
         }
         viewModel = createViewModel()
@@ -212,7 +219,7 @@ class SpendingInsightsViewModelTest {
         advanceUntilIdle()
 
         assertEquals("2026-11-08", viewModel.uiState.value.selectedDayBarId)
-        verify(exactly = 1) { getGroupSpendingInsightsFlowUseCase("group-1", any(), any()) }
+        verify(exactly = 1) { getGroupSpendingInsightsFlowUseCase("group-1", any(), any(), any()) }
         collectJob.cancel()
     }
 
@@ -252,7 +259,7 @@ class SpendingInsightsViewModelTest {
 
     @Test
     fun `upstream flow error emits ShowLoadError action and clears loading state`() = runTest(testDispatcher) {
-        every { getGroupSpendingInsightsFlowUseCase(any(), any(), any()) } returns flow {
+        every { getGroupSpendingInsightsFlowUseCase(any(), any(), any(), any()) } returns flow {
             throw IOException("Boom")
         }
         viewModel = createViewModel()
@@ -298,6 +305,39 @@ class SpendingInsightsViewModelTest {
         collectJob.cancel()
     }
 
+    @Test
+    fun `setFilterCriteria seeds custom date preset and ClearExpenseFilters resets filter state`() =
+        runTest(testDispatcher) {
+            val start = LocalDate.of(2026, 11, 2)
+            val end = LocalDate.of(2026, 11, 10)
+            val criteria = ExpenseFilterCriteria(
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                startDate = start,
+                endDate = end
+            )
+
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setFilterCriteria(criteria)
+            viewModel.setSelectedGroup("group-1")
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isFiltered)
+            assertEquals(2, viewModel.uiState.value.activeFilterCount)
+            assertEquals(SpendingPeriodPreset.CUSTOM, viewModel.uiState.value.selectedPreset)
+            assertEquals(start, viewModel.uiState.value.customStartDate)
+            assertEquals(end, viewModel.uiState.value.customEndDate)
+
+            viewModel.onEvent(SpendingInsightsUiEvent.ClearExpenseFilters)
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isFiltered)
+            assertEquals(0, viewModel.uiState.value.activeFilterCount)
+            assertEquals(SpendingPeriodPreset.ALL_TIME, viewModel.uiState.value.selectedPreset)
+            collectJob.cancel()
+        }
+
     private fun createViewModel(): SpendingInsightsViewModel = SpendingInsightsViewModel(
         getGroupSpendingInsightsFlowUseCase = getGroupSpendingInsightsFlowUseCase,
         spendingInsightsUiMapper = spendingInsightsUiMapper,
@@ -307,7 +347,8 @@ class SpendingInsightsViewModelTest {
 
     private fun createInsights(
         groupId: String,
-        period: SpendingInsightsPeriod
+        period: SpendingInsightsPeriod,
+        isFiltered: Boolean = false
     ): GroupSpendingInsights = GroupSpendingInsights(
         groupId = groupId,
         currency = "EUR",
@@ -318,6 +359,7 @@ class SpendingInsightsViewModelTest {
         totalSpentCents = 10000L,
         totalBaseSpentCents = 10000L,
         totalExtrasCents = 0L,
+        isFiltered = isFiltered,
         expenseCount = 2,
         burnRate = SpendingBurnRateInsight(
             windowStartDate = LocalDate.of(2026, 11, 1),

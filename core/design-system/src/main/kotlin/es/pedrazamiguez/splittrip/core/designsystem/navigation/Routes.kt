@@ -22,7 +22,8 @@ object Routes {
     const val YOUR_BALANCE = "your_balance"
     const val YOUR_POSITION = YOUR_BALANCE
     const val SPENDING_INSIGHTS = "spending_insights"
-    const val CATEGORY_SPENDING = "category_spending"
+    const val KEY_EXPENSE_FILTER_CRITERIA = "initialFilterCriteria"
+    const val SPENDING_INSIGHTS_CONTRIBUTOR_QUALIFIER = "spending_insights_tab_contributor"
     const val CONTRIBUTION_WIZARD_ARG_GROUP_ID = "groupId"
     const val CONTRIBUTION_WIZARD_ARG_CONTRIBUTION_ID = "contributionId"
     const val CONTRIBUTION_WIZARD =

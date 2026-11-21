@@ -1,8 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
-import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
-import es.pedrazamiguez.splittrip.domain.model.CategorySpendingInsight
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.DailySpendingPoint
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.GroupSpendingInsights
@@ -14,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.SpendingInsightsService
 import es.pedrazamiguez.splittrip.domain.service.insights.EligibleInsightExpense
+import es.pedrazamiguez.splittrip.domain.service.insights.SpendingInsightsCategoryCalculator
 import es.pedrazamiguez.splittrip.domain.service.insights.SpendingInsightsEntityBreakdownCalculator
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -27,6 +27,10 @@ class SpendingInsightsServiceImpl(
 ) : SpendingInsightsService {
 
     private val breakdownCalculator = SpendingInsightsEntityBreakdownCalculator(remainderDistributionService)
+    private val categoryCalculator = SpendingInsightsCategoryCalculator(
+        breakdownCalculator = breakdownCalculator,
+        remainderDistributionService = remainderDistributionService
+    )
 
     private data class DatedInsightExpense(
         val eligible: EligibleInsightExpense,
@@ -39,12 +43,6 @@ class SpendingInsightsServiceImpl(
         val elapsedDays: Int,
         val totalWindowDays: Int,
         val seriesEndDate: LocalDate?
-    )
-
-    private data class CategoryAggregate(
-        val category: ExpenseCategory,
-        val totalAmountCents: Long,
-        val expenseCount: Int
     )
 
     private data class DailyAggregate(
@@ -62,7 +60,9 @@ class SpendingInsightsServiceImpl(
         period: SpendingInsightsPeriod,
         memberProfiles: Map<String, User>,
         currentUserId: String?,
-        today: LocalDate
+        today: LocalDate,
+        withdrawals: List<CashWithdrawal>,
+        isFiltered: Boolean
     ): GroupSpendingInsights {
         val eligibleExpenses = filterEligibleExpenses(expenses, today)
         val datedEligibleDates = eligibleExpenses.mapNotNull { it.date }
@@ -75,28 +75,16 @@ class SpendingInsightsServiceImpl(
             oldestExpenseDate = oldestExpenseDate,
             newestExpenseDate = newestExpenseDate
         )
-        val periodExpenses = filterExpensesForWindow(
-            eligibleExpenses = eligibleExpenses,
-            period = period,
-            window = resolvedWindow
-        )
-
-        val totalSpentCents = periodExpenses.sumOf { it.eligible.effectiveAmountCents }
-        val totalBaseSpentCents = periodExpenses.sumOf { it.eligible.expense.groupAmount }
-        val totalExtrasCents = periodExpenses.sumOf { it.eligible.extrasCents }
-
-        val burnRate = buildBurnRate(
-            period = period,
-            periodExpenses = periodExpenses,
-            window = resolvedWindow,
+        val periodExpenses = filterExpensesForWindow(eligibleExpenses, period, resolvedWindow)
+        val periodWithdrawals = filterWithdrawalsForWindow(withdrawals, period, resolvedWindow)
+        val eligiblePeriodExpenses = periodExpenses.map { it.eligible }
+        val totalSpentCents = eligiblePeriodExpenses.sumOf { it.effectiveAmountCents }
+        val addOnsSummary = categoryCalculator.buildAddOnsSummary(
+            periodExpenses = eligiblePeriodExpenses,
+            periodWithdrawals = periodWithdrawals,
             totalSpentCents = totalSpentCents
         )
-        val categoryBreakdown = buildCategoryBreakdown(periodExpenses, totalSpentCents)
-        val memberAndEntity = breakdownCalculator.calculate(
-            periodExpenses = periodExpenses.map { it.eligible },
-            subunits = subunits,
-            groupMemberIds = groupMemberIds
-        )
+        val memberAndEntity = breakdownCalculator.calculate(eligiblePeriodExpenses, subunits, groupMemberIds)
 
         return GroupSpendingInsights(
             groupId = groupId,
@@ -106,11 +94,13 @@ class SpendingInsightsServiceImpl(
             oldestExpenseDate = oldestExpenseDate,
             newestExpenseDate = newestExpenseDate,
             totalSpentCents = totalSpentCents,
-            totalBaseSpentCents = totalBaseSpentCents,
-            totalExtrasCents = totalExtrasCents,
+            totalBaseSpentCents = eligiblePeriodExpenses.sumOf { it.expense.groupAmount },
+            totalExtrasCents = addOnsSummary.totalExtrasCents,
+            addOnsSummary = addOnsSummary,
+            isFiltered = isFiltered,
             expenseCount = periodExpenses.size,
-            burnRate = burnRate,
-            categoryBreakdown = categoryBreakdown,
+            burnRate = buildBurnRate(period, periodExpenses, resolvedWindow, totalSpentCents),
+            categoryBreakdown = categoryCalculator.buildCategoryBreakdown(eligiblePeriodExpenses, totalSpentCents),
             memberBreakdown = memberAndEntity.memberBreakdown,
             entityBreakdown = memberAndEntity.entityBreakdown,
             hasSubunits = memberAndEntity.hasSubunits,
@@ -248,39 +238,19 @@ class SpendingInsightsServiceImpl(
         }
     }
 
-    private fun buildCategoryBreakdown(
-        periodExpenses: List<DatedInsightExpense>,
-        totalSpentCents: Long
-    ): List<CategorySpendingInsight> {
-        if (periodExpenses.isEmpty() || totalSpentCents <= 0L) return emptyList()
-
-        val sorted = periodExpenses
-            .groupBy { it.eligible.expense.category }
-            .map { (category, items) ->
-                CategoryAggregate(
-                    category = category,
-                    totalAmountCents = items.sumOf { it.eligible.effectiveAmountCents },
-                    expenseCount = items.size
-                )
-            }
-            .sortedWith(
-                compareByDescending<CategoryAggregate> { it.totalAmountCents }
-                    .thenBy { it.category.ordinal }
-            )
-
-        val metrics = breakdownCalculator.computeBreakdownMetrics(
-            amounts = sorted.map { it.totalAmountCents },
-            totalCents = totalSpentCents
-        )
-        return sorted.mapIndexed { index, item ->
-            CategorySpendingInsight(
-                category = item.category,
-                totalAmountCents = item.totalAmountCents,
-                expenseCount = item.expenseCount,
-                percentage = metrics.percentages[index],
-                shareRatio = breakdownCalculator.computeShareRatio(item.totalAmountCents, metrics.totalCents),
-                breakdownPercentage = metrics.breakdownPercentages[index]
-            )
+    private fun filterWithdrawalsForWindow(
+        withdrawals: List<CashWithdrawal>,
+        period: SpendingInsightsPeriod,
+        window: ResolvedWindow
+    ): List<CashWithdrawal> {
+        if (withdrawals.isEmpty() || period is SpendingInsightsPeriod.AllTime) {
+            return withdrawals
+        }
+        val start = window.startDate ?: return emptyList()
+        val end = window.endDate ?: return emptyList()
+        return withdrawals.filter { withdrawal ->
+            val date = withdrawal.createdAt?.toLocalDate() ?: return@filter false
+            !date.isBefore(start) && !date.isAfter(end)
         }
     }
 

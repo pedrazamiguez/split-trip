@@ -31,7 +31,6 @@ internal fun BalancesBodyContent(
     onNavigateToContributionDetail: (String) -> Unit,
     onNavigateToWithdrawal: () -> Unit,
     modifier: Modifier = Modifier,
-    onNavigateToSpendingInsights: () -> Unit = {},
     onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
     val topPadding = LocalTopPadding.current
@@ -76,7 +75,6 @@ internal fun BalancesBodyContent(
                         onNavigateToContribution = onNavigateToContribution,
                         onNavigateToContributionDetail = onNavigateToContributionDetail,
                         onNavigateToWithdrawal = onNavigateToWithdrawal,
-                        onNavigateToSpendingInsights = onNavigateToSpendingInsights,
                         onShowMetricInfo = onShowMetricInfo
                     )
                 }

@@ -9,5 +9,6 @@ data class CategorySpendingInsight(
     val expenseCount: Int,
     val percentage: BigDecimal,
     val shareRatio: BigDecimal,
-    val breakdownPercentage: BreakdownPercentage
+    val breakdownPercentage: BreakdownPercentage,
+    val subcategories: List<SubcategorySpendingInsight> = emptyList()
 )

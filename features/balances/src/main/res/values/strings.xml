@@ -143,8 +143,6 @@
     <!-- Spending Insights -->
     <string name="balances_insights_title">Spending insights</string>
     <string name="balances_insights_action_cd">View spending insights</string>
-    <string name="balances_insights_entry_title">Spending insights</string>
-    <string name="balances_insights_entry_subtitle">Categories, spending pace &amp; shares</string>
     <string name="balances_insights_period_all_time">All time</string>
     <string name="balances_insights_period_this_month">This month</string>
     <string name="balances_insights_period_last_month">Last month</string>
@@ -157,7 +155,10 @@
     <string name="balances_insights_period_summary">%1$s · %2$s</string>
     <string name="balances_insights_burn_rate_title">Spending pace</string>
     <string name="balances_insights_total_spent_label">Total spent</string>
-    <string name="balances_insights_extras_included">Includes %1$s in extras</string>
+    <string name="balances_insights_add_ons_title">Add-ons &amp; fees</string>
+    <string name="balances_insights_add_ons_share">%1$s of spend</string>
+    <string name="balances_insights_add_ons_withdrawal_note">Includes %1$s in withdrawal fees</string>
+    <string name="balances_insights_add_ons_discounts_note">Saved %1$s with discounts</string>
     <string name="balances_insights_daily_average_label">Daily average</string>
     <string name="balances_insights_daily_average_value">%1$s / day</string>
     <string name="balances_insights_peak_day_label">Peak day</string>
@@ -169,11 +170,17 @@
     <string name="balances_insights_daily_bar_detail">%1$s · %2$s · %3$s</string>
     <string name="balances_insights_daily_bar_cd">%1$s, %2$s</string>
     <string name="balances_insights_category_title">By category</string>
+    <string name="balances_insights_category_expand_cd">Expand %1$s subcategories</string>
+    <string name="balances_insights_category_collapse_cd">Collapse %1$s subcategories</string>
     <string name="balances_insights_entity_title">Spending share</string>
     <string name="balances_insights_mode_subunits">Subunits</string>
     <string name="balances_insights_mode_members">Members</string>
+    <string name="balances_insights_filtered_banner_title">Filtered by Expenses</string>
+    <string name="balances_insights_filtered_banner_clear">Show all</string>
     <string name="balances_insights_empty_title">No spending insights yet</string>
     <string name="balances_insights_empty_description">Log group expenses to explore category breakdowns, spending pace, and member shares.</string>
+    <string name="balances_insights_empty_filtered_title">No matching expenses</string>
+    <string name="balances_insights_empty_filtered_description">Try clearing or adjusting your active filters to explore spending insights.</string>
     <string name="balances_insights_empty_period_title">No expenses in this period</string>
     <string name="balances_insights_empty_period_description">Try selecting another time window to inspect your group\'s spending.</string>
     <string name="balances_insights_error_loading">Failed to load spending insights</string>
@@ -189,6 +196,10 @@
     <plurals name="balances_insights_member_count">
         <item quantity="one">%1$d member</item>
         <item quantity="other">%1$d members</item>
+    </plurals>
+    <plurals name="balances_insights_filter_count">
+        <item quantity="one">%1$d filter</item>
+        <item quantity="other">%1$d filters</item>
     </plurals>
 
 </resources>

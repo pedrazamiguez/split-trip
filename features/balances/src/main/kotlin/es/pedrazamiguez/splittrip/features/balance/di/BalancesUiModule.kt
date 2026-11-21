@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.balance.di
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
@@ -19,6 +20,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLastSeenBalanceUseCase
 import es.pedrazamiguez.splittrip.features.balance.navigation.impl.BalancesNavigationProviderImpl
+import es.pedrazamiguez.splittrip.features.balance.navigation.impl.SpendingInsightsTabGraphContributorImpl
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.SettlementsUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.SpendingInsightsUiMapper
@@ -30,6 +32,7 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandlerImpl
 import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
@@ -109,4 +112,8 @@ val balancesUiModule = module {
     single {
         SpendingInsightsScreenUiProviderImpl()
     } bind ScreenUiProvider::class
+
+    factory(named(Routes.SPENDING_INSIGHTS_CONTRIBUTOR_QUALIFIER)) {
+        SpendingInsightsTabGraphContributorImpl()
+    } bind TabGraphContributor::class
 }

@@ -24,8 +24,7 @@ fun BalancesScreen(
     onNavigateToContribution: () -> Unit = {},
     onNavigateToContributionDetail: (String) -> Unit = {},
     onNavigateToEditContribution: (String) -> Unit = {},
-    onNavigateToWithdrawal: () -> Unit = {},
-    onNavigateToSpendingInsights: () -> Unit = {}
+    onNavigateToWithdrawal: () -> Unit = {}
 ) {
     var contributionPendingDelete by remember { mutableStateOf<ContributionUiModel?>(null) }
     var withdrawalPendingDelete by remember { mutableStateOf<CashWithdrawalUiModel?>(null) }
@@ -37,7 +36,6 @@ fun BalancesScreen(
         onNavigateToContribution = onNavigateToContribution,
         onNavigateToContributionDetail = onNavigateToContributionDetail,
         onNavigateToWithdrawal = onNavigateToWithdrawal,
-        onNavigateToSpendingInsights = onNavigateToSpendingInsights,
         onShowMetricInfo = { selectedMetricInfo = it },
         modifier = Modifier
     )

@@ -7,7 +7,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIc
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
-import es.pedrazamiguez.splittrip.domain.model.BreakdownPercentage
 import es.pedrazamiguez.splittrip.domain.model.EntitySpendingInsight
 import es.pedrazamiguez.splittrip.domain.model.EntitySpendingType
 import es.pedrazamiguez.splittrip.domain.model.GroupSpendingInsights
@@ -45,7 +44,8 @@ class SpendingInsightsUiMapper(
         customEndDate: LocalDate?,
         entityBreakdownMode: EntityBreakdownMode,
         selectedDayBarId: String?,
-        referenceYear: Int = LocalDate.now().year
+        referenceYear: Int = LocalDate.now().year,
+        activeFilterCount: Int = 0
     ): SpendingInsightsUiState {
         val hasPeriodExpenses = insights.expenseCount > 0 && insights.totalSpentCents > 0L
         val periodSummaryLabel = buildPeriodSummaryLabel(
@@ -96,6 +96,8 @@ class SpendingInsightsUiMapper(
             newestExpenseDate = insights.newestExpenseDate,
             hasAnyGroupExpenses = insights.hasAnyGroupExpenses,
             hasPeriodExpenses = hasPeriodExpenses,
+            isFiltered = insights.isFiltered,
+            activeFilterCount = activeFilterCount,
             burnRate = mappedBurnRate,
             selectedDayBarId = resolvedSelectedDayBarId,
             categoryItems = categoryItems,
@@ -173,14 +175,11 @@ class SpendingInsightsUiMapper(
             cents = insights.totalSpentCents,
             currencyCode = insights.currency
         )
-        val formattedExtrasCaption = if (insights.totalExtrasCents > 0L) {
-            resourceProvider.getString(
-                R.string.balances_insights_extras_included,
-                formattingHelper.formatCentsWithCurrency(insights.totalExtrasCents, insights.currency)
-            )
-        } else {
-            null
-        }
+        val addOnsBreakdown = mapAddOnsBreakdown(
+            insights = insights,
+            formattingHelper = formattingHelper,
+            resourceProvider = resourceProvider
+        )
         val formattedDailyAverage = resourceProvider.getString(
             R.string.balances_insights_daily_average_value,
             formattingHelper.formatCentsWithCurrency(burnRate.averageDailySpendCents, insights.currency)
@@ -197,7 +196,7 @@ class SpendingInsightsUiMapper(
 
         return SpendingBurnRateUiModel(
             formattedTotalSpent = formattedTotalSpent,
-            formattedExtrasCaption = formattedExtrasCaption,
+            addOnsBreakdown = addOnsBreakdown,
             formattedDailyAverage = formattedDailyAverage,
             activeDaysLabel = activeDaysLabel,
             formattedMonthlyPace = monthlyPace?.formattedValue,
@@ -294,7 +293,13 @@ class SpendingInsightsUiMapper(
                     item.expenseCount
                 ),
                 progress = item.shareRatio.toFloat().coerceIn(0f, 1f),
-                color = ChartColors[index % ChartColors.size]
+                color = ChartColors[index % ChartColors.size],
+                subcategories = mapSubcategoryItems(
+                    subcategories = item.subcategories,
+                    currency = insights.currency,
+                    formattingHelper = formattingHelper,
+                    resourceProvider = resourceProvider
+                )
             )
         }.toImmutableList()
 
@@ -403,10 +408,4 @@ class SpendingInsightsUiMapper(
             color = ChartColors[index % ChartColors.size]
         )
     }
-}
-
-private fun BreakdownPercentage.toDisplayString(): String = when (this) {
-    BreakdownPercentage.Zero -> "0%"
-    BreakdownPercentage.SubOnePercent -> "<1%"
-    is BreakdownPercentage.Whole -> "$percent%"
 }

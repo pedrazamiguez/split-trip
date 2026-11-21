@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
-import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetBalancesDashboardFlowUseCase
@@ -190,7 +189,6 @@ class BalancesViewModel(
                             formattedBalance != lastSeen,
                         previousBalance = lastSeen ?: "",
                         balanceRollingUp = previousCents == null || currentCents >= previousCents,
-                        hasSpendingActivity = expenses.any { it.paymentStatus != PaymentStatus.CANCELLED },
                         settlements = mappedSettlements
                     )
                 }

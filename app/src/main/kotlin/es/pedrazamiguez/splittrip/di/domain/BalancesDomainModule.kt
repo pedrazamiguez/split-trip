@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CashDebtScalingService
 import es.pedrazamiguez.splittrip.domain.service.DebtSimplificationService
+import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
@@ -247,16 +248,20 @@ val balancesDomainModule = module {
         val groupRepository = get<GroupRepository>()
         val expenseRepository = get<ExpenseRepository>()
         val subunitRepository = get<SubunitRepository>()
+        val cashWithdrawalRepository = get<CashWithdrawalRepository>()
         val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
         val spendingInsightsService = get<SpendingInsightsService>()
+        val expenseFilterService = get<ExpenseFilterService>()
         val authenticationService = get<AuthenticationService>()
         val appConfigService = get<AppConfigService>()
         GetGroupSpendingInsightsFlowUseCaseImpl(
             groupRepository = groupRepository,
             expenseRepository = expenseRepository,
             subunitRepository = subunitRepository,
+            cashWithdrawalRepository = cashWithdrawalRepository,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             spendingInsightsService = spendingInsightsService,
+            expenseFilterService = expenseFilterService,
             authenticationService = authenticationService,
             appConfigService = appConfigService
         )

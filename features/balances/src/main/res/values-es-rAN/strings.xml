@@ -115,8 +115,6 @@
     <string name="balances_your_balance_title">Tu balançe</string>
     <string name="balances_insights_title">Análiçî de gâttô</string>
     <string name="balances_insights_action_cd">Bêh análiçî de gâttô</string>
-    <string name="balances_insights_entry_title">Análiçî de gâttô</string>
-    <string name="balances_insights_entry_subtitle">Categoríâ, rîmmo de gâtto y reparto</string>
     <string name="balances_insights_period_all_time">Tó el îttoriâh</string>
     <string name="balances_insights_period_this_month">Êtte mê</string>
     <string name="balances_insights_period_last_month">Mê paçao</string>
@@ -129,7 +127,10 @@
     <string name="balances_insights_period_summary">%1$s · %2$s</string>
     <string name="balances_insights_burn_rate_title">Rîmmo de gâtto</string>
     <string name="balances_insights_total_spent_label">Totâh gâttao</string>
-    <string name="balances_insights_extras_included">Incluye %1$s en êttrâ</string>
+    <string name="balances_insights_add_ons_title">Êttrâ y comiçionê</string>
+    <string name="balances_insights_add_ons_share">%1$s der gâtto</string>
+    <string name="balances_insights_add_ons_withdrawal_note">Incluye %1$s en comiçionê de cahero</string>
+    <string name="balances_insights_add_ons_discounts_note">Aorrao %1$s en dêccuentô</string>
     <string name="balances_insights_daily_average_label">Media diaria</string>
     <string name="balances_insights_daily_average_value">%1$s / día</string>
     <string name="balances_insights_peak_day_label">Día de mayôh gâtto</string>
@@ -141,11 +142,17 @@
     <string name="balances_insights_daily_bar_detail">%1$s · %2$s · %3$s</string>
     <string name="balances_insights_daily_bar_cd">%1$s, %2$s</string>
     <string name="balances_insights_category_title">Por categoría</string>
+    <string name="balances_insights_category_expand_cd">Môttrâh çûccategoríâ de %1$s</string>
+    <string name="balances_insights_category_collapse_cd">Ocurtâh çûccategoríâ de %1$s</string>
     <string name="balances_insights_entity_title">Reparto der gâtto</string>
     <string name="balances_insights_mode_subunits">Çubunidadê</string>
     <string name="balances_insights_mode_members">Miembrô</string>
+    <string name="balances_insights_filtered_banner_title">Firtrao dêdde Gâttô</string>
+    <string name="balances_insights_filtered_banner_clear">Bêh tó</string>
     <string name="balances_insights_empty_title">Todabía no ay análiçî</string>
     <string name="balances_insights_empty_description">Rehîttra gâttô en er grupo pa bêh er dêggloçe por categoríâ, el rîmmo de gâtto y el reparto por miembro.</string>
+    <string name="balances_insights_empty_filtered_title">No çe an encontrao gâttô</string>
+    <string name="balances_insights_empty_filtered_description">Prueba a borrâh o ahûttâh lô firtrô âttibô pa bêh el análiçî de gâttô.</string>
     <string name="balances_insights_empty_period_title">Çin gâttô en êtte periodo</string>
     <string name="balances_insights_empty_period_description">Prueba a elehîh otro periodo pa conçurtâh lô gâttô der grupo.</string>
     <string name="balances_insights_error_loading">No çe pudo cargâh el análiçî de gâttô</string>
@@ -160,5 +167,9 @@
     <plurals name="balances_insights_member_count">
         <item quantity="one">%1$d miembro</item>
         <item quantity="other">%1$d miembrô</item>
+    </plurals>
+    <plurals name="balances_insights_filter_count">
+        <item quantity="one">%1$d firtro</item>
+        <item quantity="other">%1$d firtrô</item>
     </plurals>
 </resources>

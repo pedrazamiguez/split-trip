@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.balance.presentation.component
+package es.pedrazamiguez.splittrip.features.balance.presentation.component.insights
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,59 +11,60 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debounced
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartBar
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronRight
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Filter
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.features.balance.R
 
-private val ENTRY_ICON_CONTAINER_SIZE = 40.dp
-private val ENTRY_ICON_SIZE = 20.dp
+private val FILTER_ICON_CONTAINER_SIZE = 36.dp
+private val FILTER_ICON_SIZE = 18.dp
 
 @Composable
-fun SpendingInsightsEntryCard(
-    onClick: () -> Unit,
+internal fun SpendingInsightsFilterBanner(
+    activeFilterCount: Int,
+    onClearFilters: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    FlatCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .debouncedClickable(
-                role = Role.Button,
-                onClickLabel = stringResource(R.string.balances_insights_action_cd),
-                onClick = onClick
-            )
-    ) {
+    val onDebouncedClear = debounced(onClick = onClearFilters)
+
+    FlatCard(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(MaterialTheme.spacing.Default),
+                .padding(
+                    start = MaterialTheme.spacing.Default,
+                    top = MaterialTheme.spacing.Small,
+                    end = MaterialTheme.spacing.Small,
+                    bottom = MaterialTheme.spacing.Small
+                ),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(ENTRY_ICON_CONTAINER_SIZE)
+                    .size(FILTER_ICON_CONTAINER_SIZE)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = TablerIcons.Outline.ChartBar,
+                    imageVector = TablerIcons.Outline.Filter,
                     contentDescription = null,
-                    modifier = Modifier.size(ENTRY_ICON_SIZE),
+                    modifier = Modifier.size(FILTER_ICON_SIZE),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
@@ -72,15 +73,22 @@ fun SpendingInsightsEntryCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
             ) {
-                CardTitleText(text = stringResource(R.string.balances_insights_entry_title))
-                SecondaryBodyText(text = stringResource(R.string.balances_insights_entry_subtitle))
+                CardTitleText(text = stringResource(R.string.balances_insights_filtered_banner_title))
+                if (activeFilterCount > 0) {
+                    PassportTag(
+                        text = pluralStringResource(
+                            R.plurals.balances_insights_filter_count,
+                            activeFilterCount,
+                            activeFilterCount
+                        ),
+                        style = PassportTagStyle.INFO
+                    )
+                }
             }
 
-            Icon(
-                imageVector = TablerIcons.Outline.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            TextButton(onClick = onDebouncedClear) {
+                Text(text = stringResource(R.string.balances_insights_filtered_banner_clear))
+            }
         }
     }
 }

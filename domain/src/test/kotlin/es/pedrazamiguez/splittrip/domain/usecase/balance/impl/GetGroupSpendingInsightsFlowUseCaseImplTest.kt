@@ -1,6 +1,9 @@
 package es.pedrazamiguez.splittrip.domain.usecase.balance.impl
 
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.GroupSpendingInsights
@@ -8,11 +11,13 @@ import es.pedrazamiguez.splittrip.domain.model.SpendingBurnRateInsight
 import es.pedrazamiguez.splittrip.domain.model.SpendingInsightsPeriod
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.SpendingInsightsService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSpendingInsightsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
@@ -42,8 +47,10 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
     private lateinit var groupRepository: GroupRepository
     private lateinit var expenseRepository: ExpenseRepository
     private lateinit var subunitRepository: SubunitRepository
+    private lateinit var cashWithdrawalRepository: CashWithdrawalRepository
     private lateinit var getMemberProfilesUseCase: GetMemberProfilesUseCase
     private lateinit var spendingInsightsService: SpendingInsightsService
+    private lateinit var expenseFilterService: ExpenseFilterService
     private lateinit var authenticationService: AuthenticationService
     private lateinit var appConfigService: AppConfigService
 
@@ -56,8 +63,10 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
         groupRepository = mockk()
         expenseRepository = mockk()
         subunitRepository = mockk()
+        cashWithdrawalRepository = mockk()
         getMemberProfilesUseCase = mockk()
         spendingInsightsService = mockk()
+        expenseFilterService = mockk()
         authenticationService = mockk()
         appConfigService = mockk {
             every { defaultCurrencyCode } returns MutableStateFlow("EUR")
@@ -65,14 +74,18 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
         }
 
         every { authenticationService.currentUserId() } returns "u1"
+        every { cashWithdrawalRepository.getGroupWithdrawalsFlow(any()) } returns flowOf(emptyList())
+        every { expenseFilterService.filter(any(), any()) } answers { firstArg() }
         coEvery { getMemberProfilesUseCase(any()) } returns emptyMap()
 
         useCase = GetGroupSpendingInsightsFlowUseCaseImpl(
             groupRepository = groupRepository,
             expenseRepository = expenseRepository,
             subunitRepository = subunitRepository,
+            cashWithdrawalRepository = cashWithdrawalRepository,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             spendingInsightsService = spendingInsightsService,
+            expenseFilterService = expenseFilterService,
             authenticationService = authenticationService,
             appConfigService = appConfigService
         )
@@ -312,6 +325,53 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
         assertEquals(1, emissions.size)
         job.cancel()
     }
+
+    @Test
+    fun `applies expenseFilterService and excludes withdrawals when filterCriteria is active`() =
+        runTest(testDispatcher) {
+            val e1 = Expense(id = "e1", groupId = "g1", groupAmount = 1000L, category = ExpenseCategory.FOOD)
+            val e2 = Expense(id = "e2", groupId = "g1", groupAmount = 2000L, category = ExpenseCategory.TRANSPORT)
+            val withdrawal = CashWithdrawal(id = "w1", groupId = "g1")
+            val activeCriteria = ExpenseFilterCriteria(selectedCategories = setOf(ExpenseCategory.FOOD))
+            val expected = emptyInsights(groupId = "g1", currency = "EUR", period = SpendingInsightsPeriod.AllTime)
+                .copy(isFiltered = true)
+
+            every { groupRepository.getGroupByIdFlow("g1") } returns flowOf(Group(id = "g1", currency = "EUR"))
+            every { expenseRepository.getGroupExpensesFlow("g1") } returns flowOf(listOf(e1, e2))
+            every { subunitRepository.getGroupSubunitsFlow("g1") } returns flowOf(emptyList())
+            every { cashWithdrawalRepository.getGroupWithdrawalsFlow("g1") } returns flowOf(listOf(withdrawal))
+            every { expenseFilterService.filter(listOf(e1, e2), activeCriteria) } returns listOf(e1)
+            every {
+                spendingInsightsService.calculate(
+                    groupId = "g1",
+                    currency = "EUR",
+                    expenses = listOf(e1),
+                    subunits = emptyList(),
+                    groupMemberIds = emptyList(),
+                    period = SpendingInsightsPeriod.AllTime,
+                    memberProfiles = emptyMap(),
+                    currentUserId = "u1",
+                    today = fixedToday,
+                    withdrawals = emptyList(),
+                    isFiltered = true
+                )
+            } returns expected
+
+            val emissions = mutableListOf<GroupSpendingInsights>()
+            val job = launch {
+                useCase(
+                    groupId = "g1",
+                    periodFlow = flowOf(SpendingInsightsPeriod.AllTime),
+                    filterCriteriaFlow = flowOf(activeCriteria)
+                ) { fixedToday }.collect { emissions.add(it) }
+            }
+            advanceUntilIdle()
+
+            assertEquals(1, emissions.size)
+            assertEquals(true, emissions.first().isFiltered)
+            verify(exactly = 1) { expenseFilterService.filter(listOf(e1, e2), activeCriteria) }
+            job.cancel()
+        }
 
     private fun emptyInsights(
         groupId: String,

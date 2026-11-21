@@ -79,11 +79,6 @@ fun BalancesFeature(
         onNavigateToEditContribution = { contributionId ->
             navController.navigate(Routes.contributionWizardRoute(selectedGroupId ?: "", contributionId))
         },
-        onNavigateToWithdrawal = { navController.navigate(Routes.ADD_CASH_WITHDRAWAL) },
-        onNavigateToSpendingInsights = {
-            navController.navigate(Routes.SPENDING_INSIGHTS) {
-                launchSingleTop = true
-            }
-        }
+        onNavigateToWithdrawal = { navController.navigate(Routes.ADD_CASH_WITHDRAWAL) }
     )
 }

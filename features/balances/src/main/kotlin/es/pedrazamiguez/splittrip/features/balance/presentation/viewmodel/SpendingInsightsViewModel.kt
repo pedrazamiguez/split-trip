@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.SpendingInsightsPeriod
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSpendingInsightsFlowUseCase
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -53,6 +54,7 @@ class SpendingInsightsViewModel(
     )
 
     private val _selectedGroupId = MutableStateFlow<String?>(null)
+    private val _filterCriteria = MutableStateFlow(ExpenseFilterCriteria())
     private val _selectionState = MutableStateFlow(SpendingInsightsSelectionState())
     private val _actions = MutableSharedFlow<SpendingInsightsUiAction>()
     val actions: SharedFlow<SpendingInsightsUiAction> = _actions.asSharedFlow()
@@ -71,12 +73,17 @@ class SpendingInsightsViewModel(
                 getGroupSpendingInsightsFlowUseCase(
                     groupId = groupId,
                     periodFlow = periodFlow,
+                    filterCriteriaFlow = _filterCriteria,
                     todayProvider = todayProvider
                 ),
-                _selectionState
-            ) { insights, selection ->
+                _selectionState,
+                _filterCriteria
+            ) { insights, selection, filterCriteria ->
                 latestOldestExpenseDate = insights.oldestExpenseDate
                 latestNewestExpenseDate = insights.newestExpenseDate
+
+                val effectiveFilterCount = filterCriteria.activeFilterCount +
+                    if (filterCriteria.isSearchFiltered) 1 else 0
 
                 spendingInsightsUiMapper.mapToUiState(
                     insights = insights,
@@ -85,7 +92,8 @@ class SpendingInsightsViewModel(
                     customEndDate = selection.customEndDate,
                     entityBreakdownMode = selection.entityBreakdownMode,
                     selectedDayBarId = selection.selectedDayBarId,
-                    referenceYear = todayProvider().year
+                    referenceYear = todayProvider().year,
+                    activeFilterCount = effectiveFilterCount
                 )
             }
                 .catch { throwable ->
@@ -114,13 +122,33 @@ class SpendingInsightsViewModel(
         )
 
     fun setSelectedGroup(groupId: String?) {
-        if (groupId != _selectedGroupId.value) {
-            if (groupId != null) {
+        val previousGroupId = _selectedGroupId.value
+        if (groupId != previousGroupId) {
+            if (previousGroupId != null && groupId != null) {
+                _filterCriteria.value = ExpenseFilterCriteria()
                 _selectionState.value = SpendingInsightsSelectionState()
                 latestOldestExpenseDate = null
                 latestNewestExpenseDate = null
             }
             _selectedGroupId.value = groupId
+        }
+    }
+
+    fun setFilterCriteria(criteria: ExpenseFilterCriteria) {
+        if (criteria != _filterCriteria.value) {
+            _filterCriteria.value = criteria
+            if (criteria.startDate != null && criteria.endDate != null) {
+                val start = minOf(criteria.startDate!!, criteria.endDate!!)
+                val end = maxOf(criteria.startDate!!, criteria.endDate!!)
+                _selectionState.update { current ->
+                    current.copy(
+                        preset = SpendingPeriodPreset.CUSTOM,
+                        customStartDate = start,
+                        customEndDate = end,
+                        selectedDayBarId = null
+                    )
+                }
+            }
         }
     }
 
@@ -135,10 +163,28 @@ class SpendingInsightsViewModel(
             is SpendingInsightsUiEvent.SelectEntityBreakdownMode -> {
                 _selectionState.update { it.copy(entityBreakdownMode = event.mode) }
             }
+            SpendingInsightsUiEvent.ClearExpenseFilters -> handleClearExpenseFilters()
             SpendingInsightsUiEvent.NavigateBack -> {
                 viewModelScope.launch {
                     _actions.emit(SpendingInsightsUiAction.NavigateBack)
                 }
+            }
+        }
+    }
+
+    private fun handleClearExpenseFilters() {
+        val wasDateFiltered = _filterCriteria.value.isDateFiltered
+        _filterCriteria.value = ExpenseFilterCriteria()
+        _selectionState.update { current ->
+            if (wasDateFiltered && current.preset == SpendingPeriodPreset.CUSTOM) {
+                current.copy(
+                    preset = SpendingPeriodPreset.ALL_TIME,
+                    customStartDate = null,
+                    customEndDate = null,
+                    selectedDayBarId = null
+                )
+            } else {
+                current.copy(selectedDayBarId = null)
             }
         }
     }

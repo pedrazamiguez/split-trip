@@ -4,6 +4,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Immutable
 data class CategoryInsightUiModel(
@@ -14,5 +16,6 @@ data class CategoryInsightUiModel(
     val formattedPercentage: String,
     val expenseCountLabel: String,
     val progress: Float,
-    val color: Color
+    val color: Color,
+    val subcategories: ImmutableList<SubcategoryInsightUiModel> = persistentListOf()
 )
