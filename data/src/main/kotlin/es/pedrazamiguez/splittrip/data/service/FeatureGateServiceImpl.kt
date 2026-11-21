@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.service.featuregate.ManualReceiptQuota
+import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -38,6 +39,11 @@ internal class FeatureGateServiceImpl(
         if (feature == GatedFeature.AI_RECEIPT_SCANNING) {
             return observeAiReceiptQuota()
                 .map { it.canScan }
+                .distinctUntilChanged()
+        }
+        if (feature == GatedFeature.GROUP_COVER_UPLOAD) {
+            return observeMediaUploadQuota()
+                .map { it.canUpload }
                 .distinctUntilChanged()
         }
 
@@ -84,14 +90,26 @@ internal class FeatureGateServiceImpl(
         }.distinctUntilChanged()
 
     override fun observeManualReceiptQuota(): Flow<ManualReceiptQuota> =
+        observeMediaUploadQuota()
+            .map { quota ->
+                ManualReceiptQuota(
+                    usedAttachments = quota.usedUploads,
+                    monthlyFreeLimit = quota.monthlyFreeLimit,
+                    isProTier = quota.isProTier,
+                    isGatingEnabled = quota.isGatingEnabled
+                )
+            }
+            .distinctUntilChanged()
+
+    override fun observeMediaUploadQuota(): Flow<MediaUploadQuota> =
         combine(
             appConfigRepository.subscriptionGatingEnabled,
             observeActingUserTier(),
             appConfigRepository.manualReceiptMonthlyLimitFree,
             userPreferenceRepository.getMonthlyManualReceiptAttachmentCount(yearMonthProvider())
-        ) { gatingEnabled, actingTier, freeLimit, usedAttachments ->
-            ManualReceiptQuota(
-                usedAttachments = usedAttachments.coerceAtLeast(0),
+        ) { gatingEnabled, actingTier, freeLimit, usedUploads ->
+            MediaUploadQuota(
+                usedUploads = usedUploads.coerceAtLeast(0),
                 monthlyFreeLimit = freeLimit.coerceAtLeast(0),
                 isProTier = actingTier == SubscriptionTier.PRO,
                 isGatingEnabled = gatingEnabled
@@ -121,6 +139,10 @@ internal class FeatureGateServiceImpl(
                 freeLimitFlow = appConfigRepository.manualReceiptMonthlyLimitFree,
                 proLimitFlow = flowOf(Int.MAX_VALUE)
             )
+            GatedLimit.MAX_SUBUNITS_PER_GROUP -> TierLimitFlows(
+                freeLimitFlow = appConfigRepository.maxSubunitsPerGroupFree,
+                proLimitFlow = appConfigRepository.maxSubunitsPerGroupPro
+            )
         }
 
         return combine(
@@ -139,6 +161,11 @@ internal class FeatureGateServiceImpl(
                     GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS -> actingTier
                     GatedLimit.MAX_MEMBERS_PER_GROUP ->
                         resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
+                    GatedLimit.MAX_SUBUNITS_PER_GROUP -> if (actingTier == SubscriptionTier.PRO) {
+                        SubscriptionTier.PRO
+                    } else {
+                        resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
+                    }
                 }
                 evaluateLimit(
                     limit = limit,
@@ -158,15 +185,25 @@ internal class FeatureGateServiceImpl(
         freeLimit: Int,
         proLimit: Int
     ): LimitResult {
-        if (effectiveTier == SubscriptionTier.PRO && limit == GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS) {
+        val maxAllowed = if (effectiveTier == SubscriptionTier.PRO) proLimit else freeLimit
+        if (isUnlimitedProLimit(limit, effectiveTier, maxAllowed)) {
             return LimitResult.Allowed
         }
-        val maxAllowed = if (effectiveTier == SubscriptionTier.PRO) proLimit else freeLimit
         return if (currentCount >= maxAllowed) {
             LimitResult.Blocked(limit, upgradeRequired = effectiveTier != SubscriptionTier.PRO)
         } else {
             LimitResult.Allowed
         }
+    }
+
+    private fun isUnlimitedProLimit(
+        limit: GatedLimit,
+        effectiveTier: SubscriptionTier,
+        maxAllowed: Int
+    ): Boolean {
+        if (effectiveTier != SubscriptionTier.PRO) return false
+        return limit == GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS ||
+            (limit == GatedLimit.MAX_SUBUNITS_PER_GROUP && maxAllowed < 0)
     }
 
     private fun observeActingUserTier(): Flow<SubscriptionTier> =

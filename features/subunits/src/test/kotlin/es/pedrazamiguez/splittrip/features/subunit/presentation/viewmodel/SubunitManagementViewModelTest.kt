@@ -9,7 +9,8 @@ import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
+import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.DeleteSubunitUseCase
@@ -131,8 +132,9 @@ class SubunitManagementViewModelTest {
         coEvery { getMemberProfilesUseCase(testGroup.members) } returns testMemberProfiles
         every { getGroupSubunitsFlowUseCase("group-1") } returns flowOf(subunits)
         every { observeGroupUseCase("group-1") } returns flowOf(testGroup)
-        every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(true)
-        every { featureGateService.isActingUserPro() } returns flowOf(false)
+        every {
+            featureGateService.checkLimit(GatedLimit.MAX_SUBUNITS_PER_GROUP, any(), any())
+        } returns flowOf(LimitResult.Allowed)
         every {
             subunitUiMapper.toSubunitUiModelList(any(), any(), any())
         } returns listOf(testSubunitUiModel).toImmutableList()
@@ -238,9 +240,29 @@ class SubunitManagementViewModelTest {
         }
 
         @Test
-        fun `uiState reflects disabled state when feature gate disables creation`() = runTest(testDispatcher) {
+        fun `uiState reflects enabled state for Free user with 0 subunits and disabled with 1 subunit`() =
+            runTest(testDispatcher) {
+                setupDefaultMocks(subunits = emptyList())
+                every {
+                    featureGateService.checkLimit(GatedLimit.MAX_SUBUNITS_PER_GROUP, 0, "group-1")
+                } returns flowOf(LimitResult.Allowed)
+                createViewModel()
+
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                viewModel.setGroupId("group-1")
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.isSubunitCreationEnabled)
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `uiState reflects disabled state when limit gate blocks creation`() = runTest(testDispatcher) {
             setupDefaultMocks()
-            every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(false)
+            every {
+                featureGateService.checkLimit(GatedLimit.MAX_SUBUNITS_PER_GROUP, 1, "group-1")
+            } returns flowOf(LimitResult.Blocked(GatedLimit.MAX_SUBUNITS_PER_GROUP, upgradeRequired = true))
             createViewModel()
 
             val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
@@ -255,12 +277,13 @@ class SubunitManagementViewModelTest {
         }
 
         @Test
-        fun `CreateSubunit emits ShowProFeaturePreview when disabled and user is not pro`() = runTest(
+        fun `CreateSubunit emits ShowProFeaturePreview when blocked and upgradeRequired is true`() = runTest(
             testDispatcher
         ) {
             setupDefaultMocks()
-            every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(false)
-            every { featureGateService.isActingUserPro() } returns flowOf(false)
+            every {
+                featureGateService.checkLimit(GatedLimit.MAX_SUBUNITS_PER_GROUP, 1, "group-1")
+            } returns flowOf(LimitResult.Blocked(GatedLimit.MAX_SUBUNITS_PER_GROUP, upgradeRequired = true))
             createViewModel()
 
             val actions = mutableListOf<SubunitManagementUiAction>()
@@ -280,7 +303,7 @@ class SubunitManagementViewModelTest {
                     SubunitManagementUiAction.ShowProFeaturePreview(
                         ProFeaturePreviewPrompt(
                             previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
-                            entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_MANAGEMENT
+                            entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
                         )
                     )
                 ),
@@ -290,8 +313,8 @@ class SubunitManagementViewModelTest {
                 telemetryTracker.trackEvent(
                     MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
                     mapOf(
-                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                        MonetizationTelemetry.Param.GATE_NAME to "max_subunits_per_group",
                         MonetizationTelemetry.Param.ENTRY_POINT to
                             MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_EVENT,
                         MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
@@ -304,42 +327,44 @@ class SubunitManagementViewModelTest {
         }
 
         @Test
-        fun `CreateSubunit emits ShowError without pro preview when acting user is Pro`() = runTest(testDispatcher) {
-            setupDefaultMocks()
-            every { featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, any()) } returns flowOf(false)
-            every { featureGateService.isActingUserPro() } returns flowOf(true)
-            createViewModel()
+        fun `CreateSubunit emits ShowError without pro preview when blocked and upgradeRequired is false`() =
+            runTest(testDispatcher) {
+                setupDefaultMocks()
+                every {
+                    featureGateService.checkLimit(GatedLimit.MAX_SUBUNITS_PER_GROUP, 1, "group-1")
+                } returns flowOf(LimitResult.Blocked(GatedLimit.MAX_SUBUNITS_PER_GROUP, upgradeRequired = false))
+                createViewModel()
 
-            val actions = mutableListOf<SubunitManagementUiAction>()
-            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
-            val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.actions.collect { actions.add(it) }
-            }
+                val actions = mutableListOf<SubunitManagementUiAction>()
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+                val actionsJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.actions.collect { actions.add(it) }
+                }
 
-            viewModel.setGroupId("group-1")
-            advanceUntilIdle()
+                viewModel.setGroupId("group-1")
+                advanceUntilIdle()
 
-            viewModel.onEvent(SubunitManagementUiEvent.CreateSubunit)
-            advanceUntilIdle()
+                viewModel.onEvent(SubunitManagementUiEvent.CreateSubunit)
+                advanceUntilIdle()
 
-            assertTrue(actions.any { it is SubunitManagementUiAction.ShowError })
-            assertFalse(actions.any { it is SubunitManagementUiAction.ShowProFeaturePreview })
-            verify(exactly = 1) {
-                telemetryTracker.trackEvent(
-                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
-                    mapOf(
-                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                        MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
-                        MonetizationTelemetry.Param.ENTRY_POINT to
-                            MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_EVENT,
-                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                assertTrue(actions.any { it is SubunitManagementUiAction.ShowError })
+                assertFalse(actions.any { it is SubunitManagementUiAction.ShowProFeaturePreview })
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                            MonetizationTelemetry.Param.GATE_NAME to "max_subunits_per_group",
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_EVENT,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
+                        )
                     )
-                )
-            }
+                }
 
-            collectJob.cancel()
-            actionsJob.cancel()
-        }
+                collectJob.cancel()
+                actionsJob.cancel()
+            }
 
         @Test
         fun `EditSubunit emits NavigateToEditSubunit action`() = runTest(testDispatcher) {

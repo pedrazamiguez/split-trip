@@ -8,7 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardNavigator
-import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
@@ -18,7 +18,8 @@ import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.SubunitShareDistributionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
+import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.CreateSubunitUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
@@ -208,36 +209,11 @@ class CreateEditSubunitViewModel(
 
     private fun validateCreationAllowedOnInit(groupId: String) {
         viewModelScope.launch {
-            val isEnabled = featureGateService.isFeatureEnabled(
-                feature = GatedFeature.SUBUNIT_CREATION,
-                groupId = groupId
-            ).first()
-            if (isEnabled) return@launch
-
-            val isPro = featureGateService.isActingUserPro().first()
-            telemetryTracker.trackFeatureGateBlocked(
-                feature = GatedFeature.SUBUNIT_CREATION,
+            checkSubunitCreationLimit(
+                groupId = groupId,
                 entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_INIT,
-                upgradePrompted = !isPro
+                navigateBackOnDismiss = true
             )
-            if (isPro) {
-                _actions.emit(
-                    CreateEditSubunitUiAction.ShowError(
-                        UiText.StringResource(R.string.subunit_error_pro_required)
-                    )
-                )
-                _actions.emit(CreateEditSubunitUiAction.NavigateBack)
-            } else {
-                _actions.emit(
-                    CreateEditSubunitUiAction.ShowProFeaturePreview(
-                        prompt = ProFeaturePreviewPrompt(
-                            previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
-                            entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
-                        ),
-                        navigateBackOnDismiss = true
-                    )
-                )
-            }
         }
     }
 
@@ -484,38 +460,57 @@ class CreateEditSubunitViewModel(
     }
 
     private suspend fun checkFeatureGate(groupId: String): Boolean {
-        val isEnabled = featureGateService.isFeatureEnabled(
-            feature = GatedFeature.SUBUNIT_CREATION,
+        val allowed = checkSubunitCreationLimit(
+            groupId = groupId,
+            entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_SUBMIT,
+            navigateBackOnDismiss = false
+        )
+        if (!allowed) {
+            _formState.update { it.copy(isSaving = false) }
+        }
+        return allowed
+    }
+
+    private suspend fun checkSubunitCreationLimit(
+        groupId: String,
+        entryPoint: String,
+        navigateBackOnDismiss: Boolean
+    ): Boolean {
+        val currentCount = getGroupSubunitsFlowUseCase(groupId).first().size
+        val limitResult = featureGateService.checkLimit(
+            limit = GatedLimit.MAX_SUBUNITS_PER_GROUP,
+            currentCount = currentCount,
             groupId = groupId
         ).first()
-        if (!isEnabled) {
-            val isPro = featureGateService.isActingUserPro().first()
-            telemetryTracker.trackFeatureGateBlocked(
-                feature = GatedFeature.SUBUNIT_CREATION,
-                entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_SUBMIT,
-                upgradePrompted = !isPro
+        if (limitResult is LimitResult.Allowed) return true
+
+        val blocked = limitResult as LimitResult.Blocked
+        telemetryTracker.trackLimitGateBlocked(
+            limit = GatedLimit.MAX_SUBUNITS_PER_GROUP,
+            entryPoint = entryPoint,
+            upgradePrompted = blocked.upgradeRequired
+        )
+        if (blocked.upgradeRequired) {
+            _actions.emit(
+                CreateEditSubunitUiAction.ShowProFeaturePreview(
+                    prompt = ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                        entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
+                    ),
+                    navigateBackOnDismiss = navigateBackOnDismiss
+                )
             )
-            _formState.update { it.copy(isSaving = false) }
-            if (isPro) {
-                _actions.emit(
-                    CreateEditSubunitUiAction.ShowError(
-                        UiText.StringResource(R.string.subunit_error_pro_required)
-                    )
+        } else {
+            _actions.emit(
+                CreateEditSubunitUiAction.ShowError(
+                    UiText.StringResource(R.string.subunit_error_limit_reached)
                 )
-            } else {
-                _actions.emit(
-                    CreateEditSubunitUiAction.ShowProFeaturePreview(
-                        prompt = ProFeaturePreviewPrompt(
-                            previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
-                            entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
-                        ),
-                        navigateBackOnDismiss = false
-                    )
-                )
+            )
+            if (navigateBackOnDismiss) {
+                _actions.emit(CreateEditSubunitUiAction.NavigateBack)
             }
-            return false
         }
-        return true
+        return false
     }
 
     private fun parseAndValidateShares(form: FormState): Map<String, BigDecimal>? {

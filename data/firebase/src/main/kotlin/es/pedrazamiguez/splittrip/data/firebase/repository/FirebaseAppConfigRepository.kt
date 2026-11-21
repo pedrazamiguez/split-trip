@@ -58,6 +58,12 @@ class FirebaseAppConfigRepository(
     private val _manualReceiptMonthlyLimitFree = MutableStateFlow(DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE)
     override val manualReceiptMonthlyLimitFree: StateFlow<Int> = _manualReceiptMonthlyLimitFree.asStateFlow()
 
+    private val _maxSubunitsPerGroupFree = MutableStateFlow(DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE)
+    override val maxSubunitsPerGroupFree: StateFlow<Int> = _maxSubunitsPerGroupFree.asStateFlow()
+
+    private val _maxSubunitsPerGroupPro = MutableStateFlow(DEFAULT_MAX_SUBUNITS_PER_GROUP_PRO)
+    override val maxSubunitsPerGroupPro: StateFlow<Int> = _maxSubunitsPerGroupPro.asStateFlow()
+
     private val _extractedDateMaxFutureDays = MutableStateFlow(DEFAULT_EXTRACTED_DATE_MAX_FUTURE_DAYS)
     override val extractedDateMaxFutureDays: StateFlow<Int> = _extractedDateMaxFutureDays.asStateFlow()
 
@@ -243,8 +249,23 @@ class FirebaseAppConfigRepository(
         _manualReceiptMonthlyLimitFree.value =
             if (manualReceiptLimitFree >= 0) manualReceiptLimitFree else DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE
 
+        updateSubunitLimitFlows()
+
         val proAllowlistStr = remoteConfig.getString("pro_allowlist_email_hashes")
         _proAllowlistEmailHashes.value = parseAllowlistHashes(proAllowlistStr, DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES)
+    }
+
+    private fun updateSubunitLimitFlows() {
+        val maxSubunitsFree = remoteConfig.getLong("max_subunits_per_group_free").toInt()
+        _maxSubunitsPerGroupFree.value =
+            if (maxSubunitsFree >= 0) maxSubunitsFree else DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE
+
+        val maxSubunitsPro = remoteConfig.getLong("max_subunits_per_group_pro").toInt()
+        _maxSubunitsPerGroupPro.value = when {
+            maxSubunitsPro < 0 -> UNLIMITED_SUBUNITS_PER_GROUP
+            maxSubunitsPro > 0 -> maxSubunitsPro
+            else -> DEFAULT_MAX_SUBUNITS_PER_GROUP_PRO
+        }
     }
 
     private fun updateSubscriptionFlags() {
@@ -341,6 +362,9 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 3
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = 100
         private const val DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE = 5
+        private const val DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE = 1
+        private const val UNLIMITED_SUBUNITS_PER_GROUP = -1
+        private const val DEFAULT_MAX_SUBUNITS_PER_GROUP_PRO = UNLIMITED_SUBUNITS_PER_GROUP
         private const val DEFAULT_EXTRACTED_DATE_MAX_FUTURE_DAYS = 30
         private const val DEFAULT_SUPPORT_EMAIL = "support@splittrip.eu"
         private const val DEFAULT_SETTLEMENT_NUDGE_RATE_LIMIT_HOURS = 24L

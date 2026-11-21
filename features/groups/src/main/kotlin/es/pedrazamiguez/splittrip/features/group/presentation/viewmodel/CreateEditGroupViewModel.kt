@@ -6,7 +6,6 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
-import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
 import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
@@ -16,7 +15,6 @@ import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
@@ -103,7 +101,7 @@ class CreateEditGroupViewModel(
         if (isInitialized) return
         isInitialized = true
 
-        observeCoverUploadGate(groupId)
+        observeCoverUploadGate()
 
         if (groupId == null) {
             checkGroupCreationLimit()
@@ -115,10 +113,10 @@ class CreateEditGroupViewModel(
         loadInitialUserData(groupId)
     }
 
-    private fun observeCoverUploadGate(groupId: String?) {
+    private fun observeCoverUploadGate() {
         viewModelScope.launch {
-            featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId).collect { isEnabled ->
-                _uiState.update { it.copy(isCoverUploadEnabled = isEnabled) }
+            featureGateService.observeMediaUploadQuota().collect { quota ->
+                _uiState.update { it.copy(isCoverUploadEnabled = quota.canUpload) }
             }
         }
     }
@@ -259,8 +257,8 @@ class CreateEditGroupViewModel(
                 }
             }
             is CreateEditGroupUiEvent.LockedCoverPhotoClicked -> {
-                telemetryTracker.trackFeatureGateBlocked(
-                    feature = GatedFeature.GROUP_COVER_UPLOAD,
+                telemetryTracker.trackLimitGateBlocked(
+                    limit = GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS,
                     entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_COVER_LOCKED_PREVIEW,
                     upgradePrompted = true
                 )

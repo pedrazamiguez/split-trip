@@ -108,6 +108,18 @@ class RemoteConfigTemplateConsistencyTest {
     }
 
     @Test
+    fun `max_subunits_per_group_free defaults to 1 in template and XML`() {
+        assertEquals("1", templateParameters["max_subunits_per_group_free"]?.defaultValue)
+        assertEquals("1", xmlDefaults["max_subunits_per_group_free"])
+    }
+
+    @Test
+    fun `max_subunits_per_group_pro defaults to -1 in template and XML`() {
+        assertEquals("-1", templateParameters["max_subunits_per_group_pro"]?.defaultValue)
+        assertEquals("-1", xmlDefaults["max_subunits_per_group_pro"])
+    }
+
+    @Test
     fun `every parameter specifies a valid valueType and non-empty description`() {
         val validTypes = setOf("STRING", "BOOLEAN", "NUMBER", "JSON")
         templateParameters.forEach { (key, param) ->

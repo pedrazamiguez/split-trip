@@ -19,6 +19,7 @@
     <string name="subunit_deleted_success">Çubunidá eliminá</string>
     <string name="subunit_error_save_failed">Argo çalió mâh. Inténtalo de nuebo</string>
     <string name="subunit_error_pro_required">La creaçión de çubunidadê requiere SplîTTrîh Pro o un grupo creao por un çûccrîttôh Pro.</string>
+    <string name="subunit_error_limit_reached">Âh arcançao er número máççimo de çubunidadê pa êtte grupo.</string>
     <string name="subunit_error_delete_failed">Errôh al eliminâh la çubunidá. Inténtalo de nuebo</string>
     <string name="subunit_delete_title">¿Eliminâh çubunidá?</string>
     <string name="subunit_delete_warning">¿Çeguro que quierê eliminâh \"%1$s\"?</string>

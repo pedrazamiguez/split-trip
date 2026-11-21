@@ -49,6 +49,14 @@
         <value>5</value>
     </entry>
     <entry>
+        <key>max_subunits_per_group_free</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>max_subunits_per_group_pro</key>
+        <value>-1</value>
+    </entry>
+    <entry>
         <key>extracted_date_max_future_days</key>
         <value>30</value>
     </entry>

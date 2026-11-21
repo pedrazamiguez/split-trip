@@ -47,6 +47,8 @@ class FeatureGateServiceImplTest {
     private val aiReceiptMonthlyLimitFree = MutableStateFlow(3)
     private val aiReceiptMonthlyLimitPro = MutableStateFlow(100)
     private val manualReceiptMonthlyLimitFree = MutableStateFlow(5)
+    private val maxSubunitsPerGroupFree = MutableStateFlow(1)
+    private val maxSubunitsPerGroupPro = MutableStateFlow(-1)
     private val monthlyScanCount = MutableStateFlow(0)
     private val monthlyManualReceiptCount = MutableStateFlow(0)
     private val proAllowlistEmailHashes = MutableStateFlow<Set<String>>(emptySet())
@@ -67,6 +69,8 @@ class FeatureGateServiceImplTest {
         every { appConfigRepository.aiReceiptMonthlyLimitFree } returns aiReceiptMonthlyLimitFree
         every { appConfigRepository.aiReceiptMonthlyLimitPro } returns aiReceiptMonthlyLimitPro
         every { appConfigRepository.manualReceiptMonthlyLimitFree } returns manualReceiptMonthlyLimitFree
+        every { appConfigRepository.maxSubunitsPerGroupFree } returns maxSubunitsPerGroupFree
+        every { appConfigRepository.maxSubunitsPerGroupPro } returns maxSubunitsPerGroupPro
         every { appConfigRepository.proAllowlistEmailHashes } returns proAllowlistEmailHashes
         every { userPreferenceRepository.getMonthlyAiReceiptScanCount(fixedYearMonth) } returns monthlyScanCount
         every {
@@ -83,6 +87,8 @@ class FeatureGateServiceImplTest {
         aiReceiptMonthlyLimitFree.value = 3
         aiReceiptMonthlyLimitPro.value = 100
         manualReceiptMonthlyLimitFree.value = 5
+        maxSubunitsPerGroupFree.value = 1
+        maxSubunitsPerGroupPro.value = -1
         monthlyScanCount.value = 0
         monthlyManualReceiptCount.value = 0
         proAllowlistEmailHashes.value = emptySet()
@@ -111,9 +117,10 @@ class FeatureGateServiceImplTest {
     }
 
     @Test
-    fun `isFeatureEnabled when anonymous returns false for all gated features when AI limit is zero`() = runTest {
+    fun `isFeatureEnabled when anonymous returns false for all gated features when limits are zero`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns true
         aiReceiptMonthlyLimitFree.value = 0
+        manualReceiptMonthlyLimitFree.value = 0
 
         assertFalse(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).first())
         assertFalse(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION).first())
@@ -189,9 +196,10 @@ class FeatureGateServiceImplTest {
         monthlyScanCount.value = 3
         assertFalse(service.isFeatureEnabled(GatedFeature.AI_RECEIPT_SCANNING).first())
 
-        // Group-level capability without groupId: evaluates acting user (Free) -> false
-        assertFalse(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).first())
+        // Collaborative capability without groupId: evaluates acting user (Free) -> false
         assertFalse(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION).first())
+        // Cover upload uses acting user's monthly media quota (enabled while under quota)
+        assertTrue(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).first())
 
         // Group created by PRO user
         val proGroup = Group(id = "group_pro", createdBy = "creator_pro")
@@ -200,7 +208,6 @@ class FeatureGateServiceImplTest {
         coEvery { userRepository.getUsersByIds(listOf("creator_pro")) } returns mapOf("creator_pro" to proCreator)
 
         // Group-level capability sponsored by Pro creator is enabled for Free member!
-        assertTrue(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId = "group_pro").first())
         assertTrue(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, groupId = "group_pro").first())
 
         // Group created by FREE user
@@ -209,8 +216,7 @@ class FeatureGateServiceImplTest {
         coEvery { groupRepository.getGroupById("group_free") } returns freeGroup
         coEvery { userRepository.getUsersByIds(listOf("creator_free")) } returns mapOf("creator_free" to freeCreator)
 
-        // Group-level capability with Free creator remains disabled
-        assertFalse(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId = "group_free").first())
+        // Collaborative capability with Free creator remains disabled
         assertFalse(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, groupId = "group_free").first())
     }
 
@@ -306,13 +312,13 @@ class FeatureGateServiceImplTest {
 
         // Group not found -> falls back to acting user tier (FREE)
         coEvery { groupRepository.getGroupById("missing_group") } returns null
-        assertFalse(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, "missing_group").first())
+        assertFalse(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "missing_group").first())
 
         // Group creator not found -> falls back to FREE
         val groupWithUnknownCreator = Group(id = "group_unknown", createdBy = "unknown_user")
         coEvery { groupRepository.getGroupById("group_unknown") } returns groupWithUnknownCreator
         coEvery { userRepository.getUsersByIds(listOf("unknown_user")) } returns emptyMap()
-        assertFalse(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, "group_unknown").first())
+        assertFalse(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, "group_unknown").first())
     }
 
     @Test
@@ -343,7 +349,7 @@ class FeatureGateServiceImplTest {
     }
 
     @Test
-    fun `acting PRO in Free group enables SUBUNIT_CREATION but keeps cover creator-bound`() = runTest {
+    fun `acting PRO in Free group enables SUBUNIT_CREATION and GROUP_COVER_UPLOAD`() = runTest {
         coEvery { authenticationService.isAnonymous() } returns false
         every { userRepository.observeCurrentUserProfile() } returns flowOf(
             User(
@@ -358,11 +364,9 @@ class FeatureGateServiceImplTest {
         coEvery { groupRepository.getGroupById("group_free") } returns freeGroup
         coEvery { userRepository.getUsersByIds(listOf("creator_free")) } returns mapOf("creator_free" to freeCreator)
 
-        // Subunit creation is enabled because acting user is PRO
+        // Subunit creation and cover upload are enabled because acting user is PRO
         assertTrue(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, groupId = "group_free").first())
-
-        // Group cover upload remains disabled because creator is FREE
-        assertFalse(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId = "group_free").first())
+        assertTrue(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId = "group_free").first())
     }
 
     @Test
@@ -570,7 +574,7 @@ class FeatureGateServiceImplTest {
             }
             val groupEmissions = mutableListOf<Boolean>()
             val groupJob = launch {
-                service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId = "group-vip")
+                service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, groupId = "group-vip")
                     .take(2)
                     .toList(groupEmissions)
             }
