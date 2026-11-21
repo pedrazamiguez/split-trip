@@ -41,10 +41,10 @@ internal fun PlanAllowanceQuotaItem(
     }
 
     val tagStyle = when (quota.status) {
-        AllowanceUsageStatus.HEALTHY -> PassportTagStyle.SECONDARY
+        AllowanceUsageStatus.HEALTHY -> PassportTagStyle.SUCCESS
         AllowanceUsageStatus.APPROACHING_LIMIT -> PassportTagStyle.WARNING
         AllowanceUsageStatus.EXHAUSTED -> PassportTagStyle.ERROR
-        AllowanceUsageStatus.UNLIMITED -> PassportTagStyle.SUCCESS
+        AllowanceUsageStatus.UNLIMITED -> PassportTagStyle.INFO
     }
 
     val barColor = when (quota.status) {

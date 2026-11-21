@@ -50,7 +50,7 @@ internal fun PlanAllowancePerkRow(
     }
 
     val badgeIcon = if (perk.isIncluded) TablerIcons.Outline.Check else TablerIcons.Outline.Lock
-    val badgeStyle = if (perk.isIncluded) PassportTagStyle.SECONDARY else PassportTagStyle.NEUTRAL
+    val badgeStyle = if (perk.isIncluded) PassportTagStyle.INFO else PassportTagStyle.NEUTRAL
 
     Row(
         modifier = modifier.fillMaxWidth(),

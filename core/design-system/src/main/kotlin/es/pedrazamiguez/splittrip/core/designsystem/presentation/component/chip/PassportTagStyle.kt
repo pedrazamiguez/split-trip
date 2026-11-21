@@ -4,6 +4,7 @@ enum class PassportTagStyle {
     PRIMARY,
     SECONDARY,
     TERTIARY,
+    INFO,
     WARNING,
     SUCCESS,
     ERROR,
