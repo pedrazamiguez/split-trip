@@ -15,6 +15,7 @@ interface AppConfigRepository {
     val maxMembersPerGroupPro: StateFlow<Int>
     val aiReceiptMonthlyLimitFree: StateFlow<Int>
     val aiReceiptMonthlyLimitPro: StateFlow<Int>
+    val manualReceiptMonthlyLimitFree: StateFlow<Int>
     val extractedDateMaxFutureDays: StateFlow<Int>
     val supportEmailAddress: StateFlow<String>
     val settlementNudgeRateLimitHours: StateFlow<Long>

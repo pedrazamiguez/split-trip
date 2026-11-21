@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersPlus
@@ -47,6 +48,12 @@ enum class ProFeaturePreviewType(
         descriptionRes = R.string.pro_preview_ai_receipt_description,
         highlightRes = R.string.pro_preview_ai_receipt_highlight,
         icon = TablerIcons.Outline.PhotoAi
+    ),
+    UNLIMITED_RECEIPTS(
+        titleRes = R.string.pro_preview_unlimited_receipts_title,
+        descriptionRes = R.string.pro_preview_unlimited_receipts_description,
+        highlightRes = R.string.pro_preview_unlimited_receipts_highlight,
+        icon = TablerIcons.Outline.Receipt
     );
 
     companion object {
@@ -54,6 +61,7 @@ enum class ProFeaturePreviewType(
             GatedLimit.MAX_OWNED_GROUPS_COUNT -> UNLIMITED_GROUPS
             GatedLimit.MAX_MEMBERS_PER_GROUP -> EXPANDED_GROUP_MEMBERS
             GatedLimit.AI_RECEIPT_MONTHLY_SCANS -> AI_RECEIPT_SCANNING
+            GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS -> UNLIMITED_RECEIPTS
         }
 
         fun fromGatedFeature(feature: GatedFeature): ProFeaturePreviewType = when (feature) {

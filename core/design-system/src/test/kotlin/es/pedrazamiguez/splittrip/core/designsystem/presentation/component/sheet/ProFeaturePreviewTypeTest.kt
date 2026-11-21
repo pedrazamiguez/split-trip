@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersPlus
@@ -39,6 +40,14 @@ class ProFeaturePreviewTypeTest {
 
         assertEquals(ProFeaturePreviewType.AI_RECEIPT_SCANNING, result)
         assertEquals(TablerIcons.Outline.PhotoAi, result.icon)
+    }
+
+    @Test
+    fun `fromGatedLimit maps MANUAL_RECEIPT_MONTHLY_ATTACHMENTS to UNLIMITED_RECEIPTS`() {
+        val result = ProFeaturePreviewType.fromGatedLimit(GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS)
+
+        assertEquals(ProFeaturePreviewType.UNLIMITED_RECEIPTS, result)
+        assertEquals(TablerIcons.Outline.Receipt, result.icon)
     }
 
     @Test

@@ -67,6 +67,13 @@
           "description": "Monthly quota of AI receipt scans allocated to Pro users.",
           "valueType": "NUMBER"
         },
+        "manual_receipt_monthly_limit_free": {
+          "defaultValue": {
+            "value": "5"
+          },
+          "description": "Monthly quota of manual receipt attachments allocated to Free users.",
+          "valueType": "NUMBER"
+        },
         "pro_allowlist_email_hashes": {
           "defaultValue": {
             "value": "834495755dc5f3b5eaa8541a7e76fa12233135ba4911294620550994dea5ccb4"

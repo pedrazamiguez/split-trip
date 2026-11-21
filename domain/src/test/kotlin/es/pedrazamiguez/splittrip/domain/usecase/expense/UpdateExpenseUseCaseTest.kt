@@ -9,10 +9,12 @@ import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -29,6 +31,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.time.YearMonth
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -48,11 +51,13 @@ class UpdateExpenseUseCaseTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var addOnCalculationService: AddOnCalculationService
     private lateinit var groupRepository: GroupRepository
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var useCase: UpdateExpenseUseCase
 
     private val groupId = "group-123"
     private val currentUserId = "current-user-456"
     private val expenseId = "expense-1"
+    private val fixedYearMonth = YearMonth.of(2026, 11)
 
     private val originalExpense = Expense(
         id = expenseId,
@@ -81,6 +86,7 @@ class UpdateExpenseUseCaseTest {
         authenticationService = mockk()
         addOnCalculationService = mockk()
         groupRepository = mockk()
+        userPreferenceRepository = mockk(relaxed = true)
 
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
         every { authenticationService.requireUserId() } returns currentUserId
@@ -101,7 +107,9 @@ class UpdateExpenseUseCaseTest {
             groupMembershipService = groupMembershipService,
             contributionRepository = contributionRepository,
             authenticationService = authenticationService,
-            addOnCalculationService = addOnCalculationService
+            addOnCalculationService = addOnCalculationService,
+            userPreferenceRepository = userPreferenceRepository,
+            yearMonthProvider = { fixedYearMonth }
         )
 
         useCase = UpdateExpenseUseCaseImpl(
@@ -491,6 +499,92 @@ class UpdateExpenseUseCaseTest {
             assertNotNull(ex)
             assertEquals("Primary failure", ex?.message)
             assertTrue(ex!!.suppressed.any { it.message == "Restore expense failed" })
+        }
+    }
+
+    @Nested
+    inner class ReceiptAttachmentQuota {
+
+        @Test
+        fun `does not increment when keeping same receipt even if remoteUrl differs`() = runTest {
+            val originalReceipt = ReceiptAttachment(
+                localUri = "file:///receipts/r1.jpg",
+                remoteUrl = null,
+                capturedAtMillis = 1_000L
+            )
+            coEvery { expenseRepository.getExpenseById(expenseId) } returns originalExpense.copy(
+                receiptAttachment = originalReceipt
+            )
+            val updated = updatedExpense.copy(
+                receiptAttachment = originalReceipt.copy(remoteUrl = "https://storage/r1.jpg")
+            )
+
+            val result = useCase(groupId, updated)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 0) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(any())
+            }
+        }
+
+        @Test
+        fun `does not increment when removing receipt`() = runTest {
+            coEvery { expenseRepository.getExpenseById(expenseId) } returns originalExpense.copy(
+                receiptAttachment = ReceiptAttachment(
+                    localUri = "file:///receipts/r1.jpg",
+                    capturedAtMillis = 1_000L
+                )
+            )
+
+            val result = useCase(groupId, updatedExpense.copy(receiptAttachment = null))
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 0) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(any())
+            }
+        }
+
+        @Test
+        fun `increments once when adding receipt to expense that had none`() = runTest {
+            coEvery { expenseRepository.getExpenseById(expenseId) } returns originalExpense.copy(
+                receiptAttachment = null
+            )
+            val updated = updatedExpense.copy(
+                receiptAttachment = ReceiptAttachment(
+                    localUri = "file:///receipts/new.jpg",
+                    capturedAtMillis = 2_000L
+                )
+            )
+
+            val result = useCase(groupId, updated)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(fixedYearMonth)
+            }
+        }
+
+        @Test
+        fun `increments once when replacing existing receipt with new one`() = runTest {
+            coEvery { expenseRepository.getExpenseById(expenseId) } returns originalExpense.copy(
+                receiptAttachment = ReceiptAttachment(
+                    localUri = "file:///receipts/old.jpg",
+                    capturedAtMillis = 1_000L
+                )
+            )
+            val updated = updatedExpense.copy(
+                receiptAttachment = ReceiptAttachment(
+                    localUri = "file:///receipts/new.jpg",
+                    capturedAtMillis = 2_000L
+                )
+            )
+
+            val result = useCase(groupId, updated)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(fixedYearMonth)
+            }
         }
     }
 }

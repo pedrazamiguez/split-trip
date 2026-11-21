@@ -423,7 +423,7 @@
 
     <!-- AI Scan Pro Gate and Manual Receipt Demarcation -->
     <string name="expense_autofill_unlock_with_pro">Unlock AI Scan with Pro</string>
-    <string name="add_expense_receipt_manual_description">Attach a receipt photo or PDF as proof of purchase for all members.</string>
+    <string name="add_expense_receipt_manual_description">Attach a receipt photo or PDF as proof of purchase for all members. Free accounts include a monthly attachment allowance; SplitTrip Pro is unlimited.</string>
 
     <!-- Step Info Bottom Sheet -->
     <string name="action_step_info">About this step</string>
@@ -484,7 +484,7 @@
     <string name="expense_step_info_payment_status_item_cancelled_description">Available when editing any expense, even if it wasn\'t marked refundable. Marks the payment as cancelled or refunded so the money is excluded from active balances and returned to the pocket.</string>
 
     <string name="expense_step_info_receipt_title">Receipt attachment</string>
-    <string name="expense_step_info_receipt_description">Attach a photo from your camera or gallery, or upload a PDF as proof of purchase for all members. Optional, and you can skip it anytime.\n\nOn supported devices, you can also use AI Receipt Scan (powered by on-device Gemini Nano) to fill in expense details automatically. Free users include a monthly allowance of AI scans, with higher limits in SplitTrip Pro.</string>
+    <string name="expense_step_info_receipt_description">Attach a photo from your camera or gallery, or upload a PDF as proof of purchase for all members. Optional, and you can skip it anytime. Free accounts include a monthly allowance of manual attachments, while SplitTrip Pro includes unlimited attachments.\n\nOn supported devices, you can also use AI Receipt Scan (powered by on-device Gemini Nano) to fill in expense details automatically. Free users include a monthly allowance of AI scans, with higher limits in SplitTrip Pro.</string>
 
     <string name="expense_step_info_add_ons_title">Add-ons &amp; extras</string>
     <string name="expense_step_info_add_ons_description">Break down tips, fees, surcharges, or discounts as a fixed amount or a percentage. Optional and empty by default. All extras are shared proportionally based on each person\'s share of the base expense.</string>
@@ -518,4 +518,13 @@
     <string name="expense_autofill_monthly_scans_exhausted">Monthly scan limit reached</string>
     <string name="expense_autofill_monthly_limit_reached">Monthly free AI scan limit reached (%1$d). Upgrade to Pro for more.</string>
     <string name="expense_autofill_pro_monthly_limit_reached">Monthly AI scan limit reached (%1$d).</string>
+
+    <!-- Manual Receipt Monthly Quota -->
+    <plurals name="add_expense_receipt_free_attachments_remaining">
+        <item quantity="one">%1$d free receipt left this month</item>
+        <item quantity="other">%1$d free receipts left this month</item>
+    </plurals>
+    <string name="add_expense_receipt_free_attachments_exhausted">0 free receipts left this month</string>
+    <string name="add_expense_receipt_unlock_with_pro">Unlock unlimited receipts with Pro</string>
+    <string name="add_expense_receipt_monthly_limit_reached">You\'ve used your %1$d monthly receipt attachments.</string>
 </resources>

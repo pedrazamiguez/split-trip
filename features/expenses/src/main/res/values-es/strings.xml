@@ -423,7 +423,7 @@
 
     <!-- AI Scan Pro Gate and Manual Receipt Demarcation -->
     <string name="expense_autofill_unlock_with_pro">Desbloquea escaneo IA con Pro</string>
-    <string name="add_expense_receipt_manual_description">Adjunta una foto o PDF como comprobante de compra para todos los miembros.</string>
+    <string name="add_expense_receipt_manual_description">Adjunta una foto o PDF como comprobante de compra para todos los miembros. Las cuentas gratuitas incluyen un cupo mensual de adjuntos; con SplitTrip Pro son ilimitados.</string>
 
     <!-- Step Info Bottom Sheet -->
     <string name="action_step_info">Sobre este paso</string>
@@ -484,7 +484,7 @@
     <string name="expense_step_info_payment_status_item_cancelled_description">Disponible al editar cualquier gasto, aunque no se marcara como reembolsable. Indica que el pago se canceló o reembolsó para excluirlo de los balances activos y devolver el dinero al pocket.</string>
 
     <string name="expense_step_info_receipt_title">Recibo adjunto</string>
-    <string name="expense_step_info_receipt_description">Adjunta una foto desde la cámara o galería, o sube un PDF como comprobante para todos los miembros. Es opcional y puedes omitirlo cuando quieras.\n\nEn dispositivos compatibles, también puedes usar el escáner de recibos con IA (con Gemini Nano en el dispositivo) para rellenar los datos del gasto automáticamente. Las cuentas gratuitas incluyen un cupo mensual de escaneos, con límites mayores en SplitTrip Pro.</string>
+    <string name="expense_step_info_receipt_description">Adjunta una foto desde la cámara o galería, o sube un PDF como comprobante para todos los miembros. Es opcional y puedes omitirlo cuando quieras. Las cuentas gratuitas incluyen un cupo mensual de adjuntos manuales, mientras que SplitTrip Pro incluye adjuntos ilimitados.\n\nEn dispositivos compatibles, también puedes usar el escáner de recibos con IA (con Gemini Nano en el dispositivo) para rellenar los datos del gasto automáticamente. Las cuentas gratuitas incluyen un cupo mensual de escaneos, con límites mayores en SplitTrip Pro.</string>
 
     <string name="expense_step_info_add_ons_title">Extras y suplementos</string>
     <string name="expense_step_info_add_ons_description">Desglosa propinas, comisiones, recargos o descuentos como un importe fijo o un porcentaje. Es opcional y está vacío por defecto. Todos los extras se reparten proporcionalmente según la parte de cada persona en el gasto base.</string>
@@ -518,4 +518,13 @@
     <string name="expense_autofill_monthly_scans_exhausted">Límite mensual de escaneos alcanzado</string>
     <string name="expense_autofill_monthly_limit_reached">Límite mensual de escaneos IA gratis alcanzado (%1$d). Pásate a Pro para más.</string>
     <string name="expense_autofill_pro_monthly_limit_reached">Límite mensual de escaneos IA alcanzado (%1$d).</string>
+
+    <!-- Manual Receipt Monthly Quota -->
+    <plurals name="add_expense_receipt_free_attachments_remaining">
+        <item quantity="one">%1$d recibo gratis restante este mes</item>
+        <item quantity="other">%1$d recibos gratis restantes este mes</item>
+    </plurals>
+    <string name="add_expense_receipt_free_attachments_exhausted">0 recibos gratis restantes este mes</string>
+    <string name="add_expense_receipt_unlock_with_pro">Desbloquea recibos ilimitados con Pro</string>
+    <string name="add_expense_receipt_monthly_limit_reached">Has usado tus %1$d adjuntos de recibos mensuales.</string>
 </resources>

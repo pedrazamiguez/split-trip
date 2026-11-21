@@ -48,6 +48,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("max_members_per_group_pro") } returns 30L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns 5L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 150L
+        every { firebaseRemoteConfig.getLong("manual_receipt_monthly_limit_free") } returns 5L
         every { firebaseRemoteConfig.getLong("extracted_date_max_future_days") } returns 45L
         every { firebaseRemoteConfig.getString("support_email_address") } returns "test-support@splittrip.com"
         every { firebaseRemoteConfig.getLong("settlement_nudge_rate_limit_hours") } returns 48L
@@ -229,6 +230,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("max_members_per_group_pro") } returns -1L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns -1L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 0L
+        every { firebaseRemoteConfig.getLong("manual_receipt_monthly_limit_free") } returns -1L
         every { firebaseRemoteConfig.getString("support_email_address") } returns ""
         every { firebaseRemoteConfig.getLong("ad_interstitial_action_frequency") } returns 0L
         every { firebaseRemoteConfig.getLong("ad_interstitial_min_interval_seconds") } returns 0L
@@ -248,6 +250,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(20, fallbackRepo.maxMembersPerGroupPro.value)
         assertEquals(3, fallbackRepo.aiReceiptMonthlyLimitFree.value)
         assertEquals(100, fallbackRepo.aiReceiptMonthlyLimitPro.value)
+        assertEquals(5, fallbackRepo.manualReceiptMonthlyLimitFree.value)
         assertEquals("support@splittrip.eu", fallbackRepo.supportEmailAddress.value)
         assertEquals(2, fallbackRepo.adInterstitialActionFrequency.value)
         assertEquals(90L, fallbackRepo.adInterstitialMinIntervalSeconds.value)
@@ -265,6 +268,15 @@ class FirebaseAppConfigRepositoryTest {
         val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
 
         assertEquals(0, repo.aiReceiptMonthlyLimitFree.value)
+    }
+
+    @Test
+    fun `updateFlowsFromConfig preserves explicit zero for manual_receipt_monthly_limit_free`() {
+        every { firebaseRemoteConfig.getLong("manual_receipt_monthly_limit_free") } returns 0L
+
+        val repo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+
+        assertEquals(0, repo.manualReceiptMonthlyLimitFree.value)
     }
 
     @Test
@@ -543,6 +555,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("max_members_per_group_pro") } returns 50L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns 10L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 250L
+        every { firebaseRemoteConfig.getLong("manual_receipt_monthly_limit_free") } returns 8L
         every { firebaseRemoteConfig.getLong("extracted_date_max_future_days") } returns 60L
         every { firebaseRemoteConfig.getString("support_email_address") } returns "fetch-support@splittrip.com"
         every { firebaseRemoteConfig.getLong("settlement_nudge_rate_limit_hours") } returns 12L

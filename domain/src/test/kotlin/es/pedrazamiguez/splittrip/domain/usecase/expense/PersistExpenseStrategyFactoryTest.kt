@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -31,7 +32,8 @@ class PersistExpenseStrategyFactoryTest {
             groupMembershipService = mockk<GroupMembershipService>(relaxed = true),
             contributionRepository = mockk<ContributionRepository>(relaxed = true),
             authenticationService = mockk<AuthenticationService>(relaxed = true),
-            addOnCalculationService = mockk<AddOnCalculationService>(relaxed = true)
+            addOnCalculationService = mockk<AddOnCalculationService>(relaxed = true),
+            userPreferenceRepository = mockk<UserPreferenceRepository>(relaxed = true)
         )
     }
 

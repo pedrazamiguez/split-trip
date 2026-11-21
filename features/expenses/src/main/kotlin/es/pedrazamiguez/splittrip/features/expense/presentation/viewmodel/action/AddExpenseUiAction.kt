@@ -36,4 +36,7 @@ sealed interface AddExpenseUiAction {
     data class ShowProFeaturePreview(
         val prompt: ProFeaturePreviewPrompt
     ) : AddExpenseUiAction
+
+    /** Fired when the user is allowed to open the receipt source picker (camera / gallery / PDF). */
+    data object OpenReceiptPickerSource : AddExpenseUiAction
 }

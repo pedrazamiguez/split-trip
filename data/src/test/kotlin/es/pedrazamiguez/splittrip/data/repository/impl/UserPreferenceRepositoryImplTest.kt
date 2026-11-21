@@ -223,4 +223,24 @@ class UserPreferenceRepositoryImplTest {
 
         coVerify(exactly = 1) { userPreferences.incrementMonthlyAiReceiptScanCount(yearMonth) }
     }
+
+    @Test
+    fun `getMonthlyManualReceiptAttachmentCount delegates to userPreferences`() = runTest {
+        val yearMonth = YearMonth.of(2026, 11)
+        every { userPreferences.getMonthlyManualReceiptAttachmentCount(yearMonth) } returns flowOf(4)
+
+        val result = repository.getMonthlyManualReceiptAttachmentCount(yearMonth).first()
+
+        assertEquals(4, result)
+    }
+
+    @Test
+    fun `incrementMonthlyManualReceiptAttachmentCount delegates to userPreferences`() = runTest {
+        val yearMonth = YearMonth.of(2026, 11)
+        coEvery { userPreferences.incrementMonthlyManualReceiptAttachmentCount(yearMonth) } just runs
+
+        repository.incrementMonthlyManualReceiptAttachmentCount(yearMonth)
+
+        coVerify(exactly = 1) { userPreferences.incrementMonthlyManualReceiptAttachmentCount(yearMonth) }
+    }
 }

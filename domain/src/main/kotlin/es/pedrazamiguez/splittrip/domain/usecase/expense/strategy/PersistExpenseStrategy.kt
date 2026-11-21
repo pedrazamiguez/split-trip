@@ -5,14 +5,17 @@ import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import java.time.YearMonth
 import java.util.UUID
 
 interface PersistExpenseStrategy {
@@ -34,7 +37,9 @@ abstract class BasePersistExpenseStrategy(
     protected val groupMembershipService: GroupMembershipService,
     protected val contributionRepository: ContributionRepository,
     protected val authenticationService: AuthenticationService,
-    protected val addOnCalculationService: AddOnCalculationService
+    protected val addOnCalculationService: AddOnCalculationService,
+    protected val userPreferenceRepository: UserPreferenceRepository,
+    private val yearMonthProvider: () -> YearMonth = { YearMonth.now() }
 ) : PersistExpenseStrategy {
 
     protected suspend fun computeCashFifoResult(
@@ -139,6 +144,25 @@ abstract class BasePersistExpenseStrategy(
             subunitId
         }
         else -> null
+    }
+
+    protected suspend fun recordReceiptAttachmentIfApplicable(
+        original: ReceiptAttachment?,
+        saved: ReceiptAttachment?
+    ) {
+        if (isNewOrReplacedReceipt(original = original, updated = saved)) {
+            userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(yearMonthProvider())
+        }
+    }
+
+    private fun isNewOrReplacedReceipt(
+        original: ReceiptAttachment?,
+        updated: ReceiptAttachment?
+    ): Boolean {
+        if (updated == null) return false
+        if (original == null) return true
+        return updated.localUri != original.localUri ||
+            updated.capturedAtMillis != original.capturedAtMillis
     }
 
     protected data class CashFifoResult(

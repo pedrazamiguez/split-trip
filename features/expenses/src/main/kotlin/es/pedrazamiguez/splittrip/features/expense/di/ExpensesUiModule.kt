@@ -63,6 +63,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.CategoryS
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpensesFilterUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.PaymentStatusBadgeUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.AddExpenseScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.CategorySpendingScreenUiProviderImpl
@@ -135,6 +136,12 @@ val expensesUiModule = module {
 
     single {
         AiReceiptQuotaUiMapper(
+            resourceProvider = get<ResourceProvider>()
+        )
+    }
+
+    single {
+        ManualReceiptQuotaUiMapper(
             resourceProvider = get<ResourceProvider>()
         )
     }
@@ -248,6 +255,7 @@ val expensesUiModule = module {
 
         val featureGateService = get<FeatureGateService>()
         val aiReceiptQuotaUiMapper = get<AiReceiptQuotaUiMapper>()
+        val manualReceiptQuotaUiMapper = get<ManualReceiptQuotaUiMapper>()
 
         val configEventHandler = ConfigEventHandler(
             getGroupExpenseConfigUseCase = get<GetGroupExpenseConfigUseCase>(),
@@ -261,7 +269,8 @@ val expensesUiModule = module {
             addExpenseUiMapper = addExpenseUiMapper,
             receiptExtractionService = get<ReceiptExtractionService>(),
             featureGateService = featureGateService,
-            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper
+            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
+            manualReceiptQuotaUiMapper = manualReceiptQuotaUiMapper
         )
 
         val submitResultDelegate = SubmitResultDelegate(
@@ -310,7 +319,10 @@ val expensesUiModule = module {
         val formEventHandler = FormEventHandler(
             addExpenseUiMapper = addExpenseUiMapper,
             addExpenseOptionsUiMapper = addExpenseOptionsUiMapper,
-            attachReceiptUseCase = get<AttachReceiptUseCase>()
+            attachReceiptUseCase = get<AttachReceiptUseCase>(),
+            featureGateService = featureGateService,
+            manualReceiptQuotaUiMapper = manualReceiptQuotaUiMapper,
+            telemetryTracker = get<TelemetryTracker>()
         )
 
         val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(

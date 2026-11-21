@@ -9,11 +9,13 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import java.time.YearMonth
 
 class UpdateExpensePersistStrategy(
     expenseRepository: ExpenseRepository,
@@ -23,7 +25,9 @@ class UpdateExpensePersistStrategy(
     groupMembershipService: GroupMembershipService,
     contributionRepository: ContributionRepository,
     authenticationService: AuthenticationService,
-    addOnCalculationService: AddOnCalculationService
+    addOnCalculationService: AddOnCalculationService,
+    userPreferenceRepository: UserPreferenceRepository,
+    yearMonthProvider: () -> YearMonth = { YearMonth.now() }
 ) : BasePersistExpenseStrategy(
     expenseRepository,
     cashWithdrawalRepository,
@@ -32,7 +36,9 @@ class UpdateExpensePersistStrategy(
     groupMembershipService,
     contributionRepository,
     authenticationService,
-    addOnCalculationService
+    addOnCalculationService,
+    userPreferenceRepository,
+    yearMonthProvider
 ) {
 
     override suspend fun persist(
@@ -72,6 +78,11 @@ class UpdateExpensePersistStrategy(
                     pairedSubunitId
                 )
             }
+
+            recordReceiptAttachmentIfApplicable(
+                original = originalState.expense.receiptAttachment,
+                saved = savedExpense.receiptAttachment
+            )
         } catch (exception: Exception) {
             rollback(
                 groupId = groupId,

@@ -174,6 +174,9 @@
     <string name="pro_preview_ai_receipt_title">Autocompleta gâttô con IA</string>
     <string name="pro_preview_ai_receipt_description">Âh una foto o âhhunta un reçibo y deha que la IA en tu dîppoçitibo êttraiga el importe, la moneda, er comerçio, la fexa y la categoría en çegundô.</string>
     <string name="pro_preview_ai_receipt_highlight">Êccaneo de reçibô con IA pribá en tu dîppoçitibo, çin tecleâh manuarmente</string>
+    <string name="pro_preview_unlimited_receipts_title">Âhhunta reçibô ilimitáô</string>
+    <string name="pro_preview_unlimited_receipts_description">Guarda toâ lâ fotô y PDF de tû reçibô âhhuntô y çincroniçáô pa tó tu grupo, çin límite mençuâh de âhhuntô.</string>
+    <string name="pro_preview_unlimited_receipts_highlight">Fotô y PDF de reçibô ilimitáô çincroniçáô en la nube pa cá biahe</string>
     <string name="password_requirement_min_length">Ar menô 8 carâtterê</string>
     <string name="password_requirement_uppercase">Ar menô una letra mayúccula (A-Z)</string>
     <string name="password_requirement_lowercase">Ar menô una letra minúccula (a-z)</string>

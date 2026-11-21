@@ -356,7 +356,7 @@
     <string name="confirm_payment_actual_amount_field_label">Cargo reâh en %1$s</string>
     <string name="expense_detail_expected_with_shift">Êttimao: %1$s (dêbbiaçión: %2$s)</string>
     <string name="expense_autofill_unlock_with_pro">Dêbbloquea êccaneo IA con Pro</string>
-    <string name="add_expense_receipt_manual_description">Âhhunta una foto o PDF como comprobante de compra pa tôh lô miembrô.</string>
+    <string name="add_expense_receipt_manual_description">Âhhunta una foto o PDF como comprobante de compra pa tôh lô miembrô. Lâ cuentâ gratuitâ incluyen un cupo mençuâh de âhhuntô; con SplîTTrîh Pro çon ilimitáô.</string>
     <string name="action_step_info">Çobre êtte paço</string>
     <string name="expense_step_info_dismiss">Entendío</string>
     <string name="expense_step_info_title_title">Conçêtto der gâtto</string>
@@ -404,7 +404,7 @@
     <string name="expense_step_info_payment_status_item_cancelled_title">Cançelao / Reemborçao</string>
     <string name="expense_step_info_payment_status_item_cancelled_description">Dîpponible al editâh cuarquiêh gâtto, aunque no çe marcara como reemborçable. Indica que er pago çe cançeló o reemborçó pa êccluîl-lo de lô balançê âttibô y deborbêh er dinero ar pockêh.</string>
     <string name="expense_step_info_receipt_title">Reçibo âhhunto</string>
-    <string name="expense_step_info_receipt_description">Âhhunta una foto dêdde la cámara o galería, o çube un PDF como comprobante pa tôh lô miembrô. Êh ôççionâh y puedê omitîl-lo cuando quierâ.\n\nEn dîppoçitibô compatiblê, también puedê uçâh el êccánê de reçibô con IA (con Hemini Nano en er dîppoçitibo) pa reyenâh lô datô der gâtto automáticamente. Lâ cuentâ gratuitâ incluyen un cupo mençuâh de êccaneô, con límitê mayorê en SplîTTrîh Pro.</string>
+    <string name="expense_step_info_receipt_description">Âhhunta una foto dêdde la cámara o galería, o çube un PDF como comprobante pa tôh lô miembrô. Êh ôççionâh y puedê omitîl-lo cuando quierâ. Lâ cuentâ gratuitâ incluyen un cupo mençuâh de âhhuntô manualê, mientrâ que SplîTTrîh Pro incluye âhhuntô ilimitáô.\n\nEn dîppoçitibô compatiblê, también puedê uçâh el êccánê de reçibô con IA (con Hemini Nano en er dîppoçitibo) pa reyenâh lô datô der gâtto automáticamente. Lâ cuentâ gratuitâ incluyen un cupo mençuâh de êccaneô, con límitê mayorê en SplîTTrîh Pro.</string>
     <string name="expense_step_info_add_ons_title">Êttrâ y çuplementô</string>
     <string name="expense_step_info_add_ons_description">Dêggloça propinâ, comiçionê, recargô o dêccuentô como un importe fiho o un porçentahe. Êh ôççionâh y êttá baçío por defêtto. Tôh lô êttrâ çe reparten proporçionarmente çegún la parte de cá perçona en er gâtto baçe.</string>
     <string name="expense_step_info_add_ons_item_on_top_title">Adiçionâh</string>
@@ -432,4 +432,11 @@
     <string name="expense_autofill_monthly_scans_exhausted">Límite mençuâh de êccaneô arcançao</string>
     <string name="expense_autofill_monthly_limit_reached">Límite mençuâh de êccaneô IA gratî arcançao (%1$d). Páçate a Pro pa mâh.</string>
     <string name="expense_autofill_pro_monthly_limit_reached">Límite mençuâh de êccaneô IA arcançao (%1$d).</string>
+    <plurals name="add_expense_receipt_free_attachments_remaining">
+        <item quantity="one">%1$d reçibo gratî rêttante êtte mê</item>
+        <item quantity="other">%1$d reçibô gratî rêttantê êtte mê</item>
+    </plurals>
+    <string name="add_expense_receipt_free_attachments_exhausted">0 reçibô gratî rêttantê êtte mê</string>
+    <string name="add_expense_receipt_unlock_with_pro">Dêbbloquea reçibô ilimitáô con Pro</string>
+    <string name="add_expense_receipt_monthly_limit_reached">Âh uçao tû %1$d âhhuntô de reçibô mençualê.</string>
 </resources>

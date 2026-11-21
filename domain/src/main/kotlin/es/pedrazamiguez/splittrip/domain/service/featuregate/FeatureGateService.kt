@@ -31,6 +31,11 @@ interface FeatureGateService {
     fun observeAiReceiptQuota(): Flow<AiReceiptQuota>
 
     /**
+     * Observes the acting user's monthly manual receipt attachment quota for the current calendar month.
+     */
+    fun observeManualReceiptQuota(): Flow<ManualReceiptQuota>
+
+    /**
      * Checks if the acting authenticated user is on the Pro subscription tier.
      */
     fun isActingUserPro(): Flow<Boolean>

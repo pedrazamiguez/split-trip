@@ -53,6 +53,7 @@ class AppConfigServiceImplTest {
         val maxMembersPerGroupProFlow = MutableStateFlow(20)
         val aiReceiptMonthlyLimitFreeFlow = MutableStateFlow(0)
         val aiReceiptMonthlyLimitProFlow = MutableStateFlow(100)
+        val manualReceiptMonthlyLimitFreeFlow = MutableStateFlow(5)
 
         every { repository.subscriptionGatingEnabled } returns subscriptionGatingEnabledFlow
         every { repository.billingSimulationEnabled } returns billingSimulationEnabledFlow
@@ -62,6 +63,7 @@ class AppConfigServiceImplTest {
         every { repository.maxMembersPerGroupPro } returns maxMembersPerGroupProFlow
         every { repository.aiReceiptMonthlyLimitFree } returns aiReceiptMonthlyLimitFreeFlow
         every { repository.aiReceiptMonthlyLimitPro } returns aiReceiptMonthlyLimitProFlow
+        every { repository.manualReceiptMonthlyLimitFree } returns manualReceiptMonthlyLimitFreeFlow
 
         val service = AppConfigServiceImpl(repository)
 
@@ -73,6 +75,8 @@ class AppConfigServiceImplTest {
         assertEquals(maxMembersPerGroupProFlow, service.maxMembersPerGroupPro)
         assertEquals(aiReceiptMonthlyLimitFreeFlow, service.aiReceiptMonthlyLimitFree)
         assertEquals(aiReceiptMonthlyLimitProFlow, service.aiReceiptMonthlyLimitPro)
+        assertEquals(manualReceiptMonthlyLimitFreeFlow, service.manualReceiptMonthlyLimitFree)
+        assertEquals(5, service.manualReceiptMonthlyLimitFree.value)
         assertEquals(true, service.subscriptionGatingEnabled.value)
         assertEquals(false, service.billingSimulationEnabled.value)
         assertEquals(1, service.maxOwnedGroupsFree.value)

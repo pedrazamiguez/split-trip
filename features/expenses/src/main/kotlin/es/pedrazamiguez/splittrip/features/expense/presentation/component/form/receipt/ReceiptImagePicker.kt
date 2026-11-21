@@ -28,6 +28,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Camera
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
@@ -45,7 +46,8 @@ fun ReceiptImagePicker(
     onPickerRequested: () -> Unit,
     onRemoveImage: () -> Unit,
     modifier: Modifier = Modifier,
-    onViewImage: (() -> Unit)? = null
+    onViewImage: (() -> Unit)? = null,
+    isLocked: Boolean = false
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -140,13 +142,19 @@ fun ReceiptImagePicker(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = TablerIcons.Outline.Camera,
+                    imageVector = if (isLocked) TablerIcons.Outline.Lock else TablerIcons.Outline.Camera,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 BodyText(
-                    text = stringResource(R.string.add_expense_receipt_attach),
+                    text = stringResource(
+                        if (isLocked) {
+                            R.string.add_expense_receipt_unlock_with_pro
+                        } else {
+                            R.string.add_expense_receipt_attach
+                        }
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = MaterialTheme.spacing.Small)
                 )
