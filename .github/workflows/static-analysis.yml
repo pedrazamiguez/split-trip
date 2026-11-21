@@ -44,11 +44,36 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Guard against incomplete Gradle dependency cache
+        run: |
+          if [ -z "$(find ~/.gradle/caches/modules-*/files-* -name '*.jar' -print -quit 2>/dev/null)" ]; then
+            echo "Gradle dependency files cache missing or empty; clearing dependency resolution metadata."
+            rm -rf ~/.gradle/caches/modules-*/metadata-*
+          fi
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Run Ktlint Check
-        run: ./gradlew ktlintCheck
+        run: |
+          set -o pipefail
+          if ! ./gradlew ktlintCheck 2>&1 | tee /tmp/gradle-ktlint.log; then
+            if grep -qE "Could not find|Could not resolve|Could not GET|Could not HEAD" /tmp/gradle-ktlint.log; then
+              echo "Dependency resolution failed; clearing metadata and retrying with --refresh-dependencies..."
+              rm -rf ~/.gradle/caches/modules-*/metadata-*
+              ./gradlew ktlintCheck --refresh-dependencies
+            else
+              exit 1
+            fi
+          fi
+
+      - name: Discard Gradle dependency metadata on failure
+        if: failure()
+        run: |
+          rm -rf ~/.gradle/caches/modules-*/metadata-*
+          if [ -z "$(find ~/.gradle/caches/modules-*/files-* -name '*.jar' -print -quit 2>/dev/null)" ]; then
+            rm -rf ~/.gradle/caches/modules-*
+          fi
 
   detekt:
     name: Detekt (Code Quality)
@@ -83,11 +108,36 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Guard against incomplete Gradle dependency cache
+        run: |
+          if [ -z "$(find ~/.gradle/caches/modules-*/files-* -name '*.jar' -print -quit 2>/dev/null)" ]; then
+            echo "Gradle dependency files cache missing or empty; clearing dependency resolution metadata."
+            rm -rf ~/.gradle/caches/modules-*/metadata-*
+          fi
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Run Detekt with SARIF output
-        run: ./gradlew detekt --continue
+        run: |
+          set -o pipefail
+          if ! ./gradlew detekt --continue 2>&1 | tee /tmp/gradle-detekt.log; then
+            if grep -qE "Could not find|Could not resolve|Could not GET|Could not HEAD" /tmp/gradle-detekt.log; then
+              echo "Dependency resolution failed; clearing metadata and retrying with --refresh-dependencies..."
+              rm -rf ~/.gradle/caches/modules-*/metadata-*
+              ./gradlew detekt --continue --refresh-dependencies
+            else
+              exit 1
+            fi
+          fi
+
+      - name: Discard Gradle dependency metadata on failure
+        if: failure()
+        run: |
+          rm -rf ~/.gradle/caches/modules-*/metadata-*
+          if [ -z "$(find ~/.gradle/caches/modules-*/files-* -name '*.jar' -print -quit 2>/dev/null)" ]; then
+            rm -rf ~/.gradle/caches/modules-*
+          fi
 
       - name: Merge Detekt SARIF reports
         if: always()
@@ -204,11 +254,36 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Guard against incomplete Gradle dependency cache
+        run: |
+          if [ -z "$(find ~/.gradle/caches/modules-*/files-* -name '*.jar' -print -quit 2>/dev/null)" ]; then
+            echo "Gradle dependency files cache missing or empty; clearing dependency resolution metadata."
+            rm -rf ~/.gradle/caches/modules-*/metadata-*
+          fi
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Run CPD (Copy-Paste Detector)
-        run: ./gradlew cpdCheck --continue
+        run: |
+          set -o pipefail
+          if ! ./gradlew cpdCheck --continue 2>&1 | tee /tmp/gradle-cpd.log; then
+            if grep -qE "Could not find|Could not resolve|Could not GET|Could not HEAD" /tmp/gradle-cpd.log; then
+              echo "Dependency resolution failed; clearing metadata and retrying with --refresh-dependencies..."
+              rm -rf ~/.gradle/caches/modules-*/metadata-*
+              ./gradlew cpdCheck --continue --refresh-dependencies
+            else
+              exit 1
+            fi
+          fi
+
+      - name: Discard Gradle dependency metadata on failure
+        if: failure()
+        run: |
+          rm -rf ~/.gradle/caches/modules-*/metadata-*
+          if [ -z "$(find ~/.gradle/caches/modules-*/files-* -name '*.jar' -print -quit 2>/dev/null)" ]; then
+            rm -rf ~/.gradle/caches/modules-*
+          fi
 
       - name: Convert CPD XML to SARIF
         if: always()
@@ -355,6 +430,13 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Guard against incomplete Gradle dependency cache
+        run: |
+          if [ -z "$(find ~/.gradle/caches/modules-*/files-* -name '*.jar' -print -quit 2>/dev/null)" ]; then
+            echo "Gradle dependency files cache missing or empty; clearing dependency resolution metadata."
+            rm -rf ~/.gradle/caches/modules-*/metadata-*
+          fi
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
@@ -363,7 +445,17 @@ jobs:
         # exit when findings are present. Reports are still generated before the abort, so
         # the SARIF merge and upload steps will always have files to process.
         continue-on-error: true
-        run: ./gradlew lintDebug
+        run: |
+          set -o pipefail
+          if ! ./gradlew lintDebug 2>&1 | tee /tmp/gradle-lint.log; then
+            if grep -qE "Could not find|Could not resolve|Could not GET|Could not HEAD" /tmp/gradle-lint.log; then
+              echo "Dependency resolution failed; clearing metadata and retrying with --refresh-dependencies..."
+              rm -rf ~/.gradle/caches/modules-*/metadata-*
+              ./gradlew lintDebug --refresh-dependencies
+            else
+              exit 1
+            fi
+          fi
 
       - name: Merge Android Lint SARIF reports
         if: always()
