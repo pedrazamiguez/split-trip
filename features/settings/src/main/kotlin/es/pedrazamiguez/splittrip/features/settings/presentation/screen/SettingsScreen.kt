@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.data.buildSetti
 fun SettingsScreen(
     onAccountStatusClick: () -> Unit = {},
     onSubscriptionsClick: () -> Unit = {},
+    onPlanAllowancesClick: () -> Unit = {},
     onAccountSecurityClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onNotificationSwitchToggle: () -> Unit = {},
@@ -55,6 +56,7 @@ fun SettingsScreen(
         onThemeClick = onThemeClick,
         onAccountStatusClick = onAccountStatusClick,
         onSubscriptionsClick = onSubscriptionsClick,
+        onPlanAllowancesClick = onPlanAllowancesClick,
         onAccountSecurityClick = onAccountSecurityClick,
         onBugReportClick = onBugReportClick,
         onFeatureSuggestionClick = onFeatureSuggestionClick,

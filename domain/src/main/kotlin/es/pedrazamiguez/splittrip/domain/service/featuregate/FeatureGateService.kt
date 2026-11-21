@@ -44,6 +44,12 @@ interface FeatureGateService {
     fun observeMediaUploadQuota(): Flow<MediaUploadQuota>
 
     /**
+     * Observes a unified snapshot of the acting user's subscription tier, monthly AI receipt
+     * scan quota, shared monthly media upload quota, owned-group usage, and tier-level allowances.
+     */
+    fun observePlanAllowances(): Flow<PlanAllowances>
+
+    /**
      * Checks if the acting authenticated user is on the Pro subscription tier.
      */
     fun isActingUserPro(): Flow<Boolean>

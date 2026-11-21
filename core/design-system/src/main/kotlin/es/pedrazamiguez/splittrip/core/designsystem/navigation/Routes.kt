@@ -40,6 +40,7 @@ object Routes {
     const val SETTINGS_THEME = "settings_theme"
     const val SETTINGS_ACCOUNT_STATUS = "settings_account_status"
     const val SETTINGS_SUBSCRIPTIONS = "settings_subscriptions"
+    const val SETTINGS_PLAN_ALLOWANCES = "settings_plan_allowances"
     const val SETTINGS_SUBSCRIPTIONS_ARG_SOURCE = "source"
     const val SETTINGS_SUBSCRIPTIONS_ROUTE =
         "$SETTINGS_SUBSCRIPTIONS?$SETTINGS_SUBSCRIPTIONS_ARG_SOURCE={$SETTINGS_SUBSCRIPTIONS_ARG_SOURCE}"

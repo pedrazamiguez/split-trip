@@ -56,6 +56,7 @@ object MonetizationTelemetry {
         const val SUBUNIT_CREATION = "subunit_creation"
         const val AI_RECEIPT_SCANNING = "ai_receipt_scanning"
         const val MANUAL_RECEIPT_ATTACHMENT = "manual_receipt_attachment"
+        const val PLAN_ALLOWANCES = "plan_allowances"
         const val DIRECT = "direct"
     }
 

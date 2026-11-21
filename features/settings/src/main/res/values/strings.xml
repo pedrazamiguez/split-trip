@@ -16,6 +16,8 @@
     <string name="settings_account_status_description">Your account info</string>
     <string name="settings_account_subscriptions_title">Subscriptions</string>
     <string name="settings_account_subscriptions_description">Manage your plan</string>
+    <string name="settings_account_plan_allowances_title">Plan &amp; Allowances</string>
+    <string name="settings_account_plan_allowances_description">View your limits &amp; usage</string>
     <string name="settings_account_security_title">Security &amp; Privacy</string>
     <string name="settings_account_security_description">Keep your account secure</string>
 
@@ -335,5 +337,37 @@
     <string name="developer_diagnostics_copied">Diagnostic logs copied to clipboard</string>
     <string name="settings_developer_diagnostics_title">Diagnostic Logs</string>
     <string name="settings_developer_diagnostics_description">Copy sanitized logs for debugging</string>
+
+    <!-- Plan & Allowances Screen -->
+    <string name="plan_allowances_title">Plan &amp; Allowances</string>
+    <string name="plan_allowances_subtitle">Your quotas and included features</string>
+    <string name="plan_allowances_tier_free_subtitle">Track your monthly quotas and group allowances. Upgrade anytime for more.</string>
+    <string name="plan_allowances_tier_pro_subtitle">You have access to expanded allowances and all Pro features.</string>
+    <string name="plan_allowances_tier_ungated_title">All Features Unlocked</string>
+    <string name="plan_allowances_tier_ungated_subtitle">Plan limits are currently lifted. Enjoy full access to all SplitTrip features.</string>
+    <string name="plan_allowances_badge_free">Free</string>
+    <string name="plan_allowances_badge_pro">Pro</string>
+    <string name="plan_allowances_badge_unlimited">Unlimited</string>
+    <string name="plan_allowances_section_usage">Usage &amp; Quotas</string>
+    <string name="plan_allowances_section_allowances">Tier Allowances &amp; Perks</string>
+    <string name="plan_allowances_quota_ai_scans_title">AI Receipt Scans</string>
+    <string name="plan_allowances_quota_ai_scans_subtitle">Resets every calendar month</string>
+    <string name="plan_allowances_quota_media_uploads_title">Media Uploads</string>
+    <string name="plan_allowances_quota_media_uploads_subtitle">Receipts &amp; group covers · Resets monthly</string>
+    <string name="plan_allowances_quota_owned_groups_title">Owned Groups</string>
+    <string name="plan_allowances_quota_owned_groups_subtitle">Groups created by you</string>
+    <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
+    <string name="plan_allowances_usage_unlimited">%1$s used · Unlimited</string>
+    <string name="plan_allowances_status_remaining">%1$s left</string>
+    <string name="plan_allowances_status_exhausted">Limit reached</string>
+    <string name="plan_allowances_perk_members_title">Members per group</string>
+    <string name="plan_allowances_perk_members_detail">Up to %1$s</string>
+    <string name="plan_allowances_perk_subunits_title">Subunits per group</string>
+    <string name="plan_allowances_perk_subunits_detail">Up to %1$s</string>
+    <string name="plan_allowances_perk_ad_free_title">Ad-free experience</string>
+    <string name="plan_allowances_perk_status_included">Included</string>
+    <string name="plan_allowances_perk_status_pro_only">Pro</string>
+    <string name="plan_allowances_upgrade_title">Need higher limits?</string>
+    <string name="plan_allowances_upgrade_description">Upgrade to SplitTrip Pro for more groups, larger trips, more AI receipt scans, unlimited media uploads, unlimited subunits, and an ad-free experience.</string>
 </resources>
 
