@@ -52,12 +52,12 @@ private fun PassportTagWithIconPreview() {
             PassportTag(
                 text = "Flights",
                 icon = TablerIcons.Outline.Plane,
-                style = PassportTagStyle.PRIMARY
+                style = PassportTagStyle.INFO
             )
             PassportTag(
-                text = "Card",
+                text = "Settled",
                 icon = TablerIcons.Outline.CreditCard,
-                style = PassportTagStyle.SECONDARY
+                style = PassportTagStyle.SUCCESS
             )
             PassportTag(
                 text = "Pending",

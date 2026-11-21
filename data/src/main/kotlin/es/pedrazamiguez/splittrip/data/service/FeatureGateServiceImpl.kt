@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.service
 
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
@@ -14,12 +15,27 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.service.featuregate.ManualReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
+import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+
+private data class TierGroupLimits(
+    val maxOwnedGroupsFree: Int,
+    val maxOwnedGroupsPro: Int,
+    val maxMembersPerGroupFree: Int,
+    val maxMembersPerGroupPro: Int,
+    val maxSubunitsPerGroupFree: Int,
+    val maxSubunitsPerGroupPro: Int
+)
+
+private data class SubunitTierLimits(
+    val freeLimit: Int,
+    val proLimit: Int
+)
 
 internal class FeatureGateServiceImpl(
     private val authenticationService: AuthenticationService,
@@ -115,6 +131,44 @@ internal class FeatureGateServiceImpl(
                 isGatingEnabled = gatingEnabled
             )
         }.distinctUntilChanged()
+
+    override fun observePlanAllowances(): Flow<PlanAllowances> =
+        combine(
+            observeAiReceiptQuota(),
+            observeMediaUploadQuota(),
+            groupRepository.getAllGroupsFlow(),
+            observeTierGroupLimits()
+        ) { aiQuota, mediaQuota, groups, limits ->
+            buildPlanAllowances(
+                aiQuota = aiQuota,
+                mediaQuota = mediaQuota,
+                groups = groups,
+                currentUserId = authenticationService.currentUserId(),
+                limits = limits
+            )
+        }.distinctUntilChanged()
+
+    private fun observeTierGroupLimits(): Flow<TierGroupLimits> =
+        combine(
+            appConfigRepository.maxOwnedGroupsFree,
+            appConfigRepository.maxOwnedGroupsPro,
+            appConfigRepository.maxMembersPerGroupFree,
+            appConfigRepository.maxMembersPerGroupPro,
+            combine(
+                appConfigRepository.maxSubunitsPerGroupFree,
+                appConfigRepository.maxSubunitsPerGroupPro,
+                ::SubunitTierLimits
+            )
+        ) { ownedFree, ownedPro, membersFree, membersPro, subunitLimits ->
+            TierGroupLimits(
+                maxOwnedGroupsFree = ownedFree,
+                maxOwnedGroupsPro = ownedPro,
+                maxMembersPerGroupFree = membersFree,
+                maxMembersPerGroupPro = membersPro,
+                maxSubunitsPerGroupFree = subunitLimits.freeLimit,
+                maxSubunitsPerGroupPro = subunitLimits.proLimit
+            )
+        }
 
     override fun isActingUserPro(): Flow<Boolean> =
         observeActingUserTier()
@@ -245,4 +299,47 @@ internal class FeatureGateServiceImpl(
             creator.tier
         }
     }
+}
+
+private fun buildPlanAllowances(
+    aiQuota: AiReceiptQuota,
+    mediaQuota: MediaUploadQuota,
+    groups: List<Group>,
+    currentUserId: String?,
+    limits: TierGroupLimits
+): PlanAllowances {
+    val isPro = aiQuota.isProTier
+    val isGatingEnabled = aiQuota.isGatingEnabled
+    val tier = if (isPro) SubscriptionTier.PRO else SubscriptionTier.FREE
+    val ownedGroupsUsed = if (currentUserId.isNullOrBlank()) {
+        0
+    } else {
+        groups.count { it.createdBy == currentUserId }
+    }
+    val maxOwnedGroups = (if (isPro) limits.maxOwnedGroupsPro else limits.maxOwnedGroupsFree)
+        .coerceAtLeast(0)
+    val maxMembersPerGroup = (if (isPro) limits.maxMembersPerGroupPro else limits.maxMembersPerGroupFree)
+        .coerceAtLeast(0)
+
+    return PlanAllowances(
+        tier = tier,
+        isGatingEnabled = isGatingEnabled,
+        aiReceiptQuota = aiQuota,
+        mediaUploadQuota = mediaQuota,
+        ownedGroupsUsed = ownedGroupsUsed,
+        maxOwnedGroups = maxOwnedGroups,
+        maxMembersPerGroup = maxMembersPerGroup,
+        maxSubunitsPerGroup = resolveMaxSubunitsPerGroup(isGatingEnabled, isPro, limits),
+        isAdFreeEnabled = !isGatingEnabled || isPro
+    )
+}
+
+private fun resolveMaxSubunitsPerGroup(
+    isGatingEnabled: Boolean,
+    isPro: Boolean,
+    limits: TierGroupLimits
+): Int? = when {
+    !isGatingEnabled -> null
+    isPro -> limits.maxSubunitsPerGroupPro.takeIf { it > 0 }
+    else -> limits.maxSubunitsPerGroupFree.coerceAtLeast(0)
 }

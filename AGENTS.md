@@ -113,6 +113,22 @@ Modifier.debouncedCombinedClickable(
 )
 ```
 
+# Read-Only Chips, Pills & PassportTags — Semantic Colors Only
+
+> [!IMPORTANT]
+> **NEVER use `secondaryContainer` (`#97F0FF`), `secondaryFixed`, `secondaryFixedDim` (`#4FD8EB`), or bright cyan on read-only chips, pills, badges, or `PassportTag`s.**
+
+In Horizon Narrative, bright cyan (`secondaryFixedDim` / `secondaryContainer`) is **strictly reserved** for interactive selected controls (such as a selected `PassportChip` filter/selection stamp). Using it on non-interactive badges or `PassportTag`s makes read-only UI look clickable/selected and visually jarring.
+
+- **For all read-only metadata, status, quota, or allowance pills:** ALWAYS use `PassportTag` (or `PassportTagDefaults.colors(...)`) with semantic `PassportTagStyle`s:
+  - `PassportTagStyle.INFO` — informational values, feature allowances, unlimited states (soft sky blue)
+  - `PassportTagStyle.SUCCESS` — healthy quotas, confirmed/settled/completed states (soft sage green)
+  - `PassportTagStyle.WARNING` — approaching limits, awaiting confirmation (soft warm amber)
+  - `PassportTagStyle.ERROR` — exhausted limits, disputed/failed states (soft rose red)
+  - `PassportTagStyle.NEUTRAL` — dates, locked perks, secondary metadata (`surfaceContainerHigh`)
+  - `PassportTagStyle.PRIMARY` — strong brand emphasis (e.g., category/Pro tier header badge)
+- **Never** map `HEALTHY`, `INCLUDED`, or `INFO` badges to `MaterialTheme.colorScheme.secondaryContainer` or `PassportTagStyle.SECONDARY`.
+
 ## Navigation
 
 - Routes are `const val` in `core/design-system/.../Routes.kt`.
@@ -282,7 +298,7 @@ Before creating any new service, utility, formatter, or UI component, **check th
 | **Currency** | `CurrencySelectorField`, `CurrencyPickerBottomSheet`, `AmountCurrencyCard`, `CurrencyConversionCard` |
 | **Wizard** | `WizardStepLayout`, `WizardStepIndicator`, `WizardNavigationBar` |
 | **Form** | `GradientButton`, `SecondaryButton`, `DestructiveButton`, `FormErrorBanner`, `FormSubmitButton` |
-| **Chip** | `PassportChip` |
+| **Chip** | `PassportChip` (interactive), `PassportTag` (read-only semantic) |
 | **Dialog/Sheet** | `DestructiveConfirmationDialog`, `ActionBottomSheet`, `CopyableTextSheet` |
 | **Transitions** | `SharedTransitionSurface`, `LocalSharedTransitionScope`, `LocalAnimatedVisibilityScope` |
 | **Foundation** | `GlassmorphismDefaults`, `Modifier.horizonGlassEffect()` |

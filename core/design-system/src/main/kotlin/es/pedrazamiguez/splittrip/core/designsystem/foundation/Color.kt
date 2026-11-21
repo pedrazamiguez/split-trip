@@ -88,6 +88,21 @@ val HorizonSecondaryFixedDim = Color(0xFF4FD8EB) // T80 — secondaryFixedDim (s
 val HorizonOnSecondaryFixed = Color(0xFF001F24) // T10 — onSecondaryFixed (selected chip text)
 val HorizonOnSecondaryFixedVariant = Color(0xFF004F58) // T30 — onSecondaryFixedVariant
 
+// --- Semantic Tag & Status Tonal Pairs (soft Horizon tonal containers) ---
+val HorizonSuccessContainer = Color(0xFFD2F1DC) // Light: soft sage green (tone-90)
+val HorizonOnSuccessContainer = Color(0xFF0A3D21) // Light: deep forest green (tone-10)
+val HorizonSuccessContainerDark = Color(0xFF174D2E) // Dark: forest green (tone-30)
+val HorizonOnSuccessContainerDark = Color(0xFFD2F1DC) // Dark: soft sage green (tone-90)
+
+val HorizonInfoContainer = Color(0xFFD6E6FA) // Light: soft sky blue (tone-90)
+val HorizonOnInfoContainer = Color(0xFF00315A) // Light: deep Horizon blue (tone-20)
+val HorizonInfoContainerDark = Color(0xFF00478D) // Dark: Horizon blue (tone-30)
+val HorizonOnInfoContainerDark = Color(0xFFD1E4FF) // Dark: soft sky blue (tone-90)
+
+val HorizonTagSecondaryContainer = Color(0xFFD0ECEF) // Light: muted sea-glass teal
+val HorizonTagSecondaryContainerDark = Color(0xFF004F58) // Dark: deep teal (tone-30)
+val HorizonTagOnSecondaryContainerDark = Color(0xFFD0ECEF) // Dark: muted sea-glass teal
+
 // --- Scrim ---
 val HorizonScrim = Color(0xFF000000)
 

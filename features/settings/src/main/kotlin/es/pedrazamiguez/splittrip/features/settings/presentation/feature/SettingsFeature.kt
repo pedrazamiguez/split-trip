@@ -106,6 +106,7 @@ fun SettingsFeature(
                     Routes.settingsSubscriptionsRoute(MonetizationTelemetry.EntrySource.SETTINGS)
                 )
             },
+            onPlanAllowancesClick = { navController.navigate(Routes.SETTINGS_PLAN_ALLOWANCES) },
             onAccountSecurityClick = { navController.navigate(Routes.SETTINGS_SECURITY) },
             onNotificationsClick = {
                 if (isAnonymous) {

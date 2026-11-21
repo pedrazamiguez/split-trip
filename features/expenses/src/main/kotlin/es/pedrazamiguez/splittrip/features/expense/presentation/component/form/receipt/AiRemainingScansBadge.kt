@@ -18,6 +18,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagDefaults
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 
 /**
  * Compact pill badge showing remaining monthly free AI receipt scans or quota exhaustion.
@@ -28,16 +30,11 @@ fun AiRemainingScansBadge(
     isExhausted: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val containerColor = if (isExhausted) {
-        MaterialTheme.colorScheme.errorContainer
-    } else {
-        MaterialTheme.colorScheme.secondaryContainer
-    }
-    val contentColor = if (isExhausted) {
-        MaterialTheme.colorScheme.onErrorContainer
-    } else {
-        MaterialTheme.colorScheme.onSecondaryContainer
-    }
+    val tagColors = PassportTagDefaults.colors(
+        if (isExhausted) PassportTagStyle.ERROR else PassportTagStyle.INFO
+    )
+    val containerColor = tagColors.containerColor
+    val contentColor = tagColors.contentColor
     val icon = if (isExhausted) {
         TablerIcons.Outline.Lock
     } else {

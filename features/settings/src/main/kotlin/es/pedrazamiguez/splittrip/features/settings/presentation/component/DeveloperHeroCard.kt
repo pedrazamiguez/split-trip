@@ -16,6 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagDefaults
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.DeveloperInfoUiState
 
@@ -43,16 +45,17 @@ fun DeveloperHeroCard(uiState: DeveloperInfoUiState) {
             )
 
             if (uiState.role.isNotBlank()) {
+                val roleColors = PassportTagDefaults.colors(PassportTagStyle.INFO)
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
                 Surface(
                     shape = RoundedCornerShape(ROLE_CORNER_RADIUS),
-                    color = MaterialTheme.colorScheme.secondaryContainer
+                    color = roleColors.containerColor
                 ) {
                     Text(
                         text = uiState.role,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        color = roleColors.contentColor,
                         modifier = Modifier.padding(
                             horizontal = MaterialTheme.spacing.Small,
                             vertical = MaterialTheme.spacing.ExtraSmall

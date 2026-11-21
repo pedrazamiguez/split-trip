@@ -14,6 +14,7 @@ data class SettingsPreferencesParams(
     val onThemeClick: () -> Unit,
     val onAccountStatusClick: () -> Unit,
     val onSubscriptionsClick: () -> Unit,
+    val onPlanAllowancesClick: () -> Unit,
     val onAccountSecurityClick: () -> Unit,
     val onBugReportClick: () -> Unit,
     val onFeatureSuggestionClick: () -> Unit,

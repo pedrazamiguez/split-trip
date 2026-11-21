@@ -378,6 +378,7 @@ A signature chip designed to feel like a **collectible travel stamp**:
 - **Shape:** `CircleShape` (full pill).
 - **No border** in any state — colour shift defines the selected state (No-Line rule).
 - Both `secondaryFixedDim` and `onSecondaryFixed` are tone-stable (same in light and dark by M3 design).
+- **Interactive-only reservation:** `secondaryFixedDim` / `secondaryContainer` bright cyan is strictly for **interactive selected** controls (`PassportChip`). NEVER use it for read-only tags, pills, or badges — use `PassportTag` with semantic `PassportTagStyle` (`INFO`, `SUCCESS`, `WARNING`, `ERROR`, `NEUTRAL`) instead.
 
 Used across: `CategoryChips`, `PaymentMethodChips`, `PaymentStatusChips`, `CondensedChips`, `AddOnItemEditor`, `SearchableChipSelector`, `AsyncSearchableChipSelector`.
 
@@ -393,11 +394,12 @@ A non-interactive display tag component designed for metadata labels, dates, cat
 - **Typography & Icon:** Standard `16.dp` icon size, `4.dp` spacing, `8.dp` horizontal padding, and `labelSmall` Medium typography.
 - **Semantic Styles (`PassportTagStyle`):**
   - `PRIMARY`: `primaryContainer` / `onPrimaryContainer` (e.g., categories, scopes)
-  - `SECONDARY`: `secondaryContainer` / `onSecondaryContainer` (e.g., payment methods)
+  - `SECONDARY`: soft sea-glass teal (`HorizonTagSecondaryContainer` / `HorizonOnTealDark` in light; `HorizonTagSecondaryContainerDark` / `HorizonTagOnSecondaryContainerDark` in dark) (e.g., payment methods)
   - `TERTIARY`: `tertiaryContainer` / `onTertiaryContainer` (e.g., pending statuses)
-  - `WARNING`: `tertiaryContainer` / `onTertiaryContainer` (e.g., awaiting confirmation)
-  - `SUCCESS`: `primaryContainer` / `onPrimaryContainer` (e.g., confirmed/settled)
-  - `ERROR`: `errorContainer` / `onErrorContainer` (e.g., under review)
+  - `INFO`: soft Horizon sky blue (`HorizonInfoContainer` / `HorizonOnInfoContainer` in light; `HorizonInfoContainerDark` / `HorizonOnInfoContainerDark` in dark) (e.g., informational allowances, unlimited quotas)
+  - `WARNING`: `tertiaryContainer` / `onTertiaryContainer` (e.g., awaiting confirmation, approaching limit)
+  - `SUCCESS`: soft sage green (`HorizonSuccessContainer` / `HorizonOnSuccessContainer` in light; `HorizonSuccessContainerDark` / `HorizonOnSuccessContainerDark` in dark) (e.g., confirmed/settled, healthy quotas)
+  - `ERROR`: `errorContainer` / `onErrorContainer` (e.g., under review, limit reached)
   - `NEUTRAL`: `surfaceContainerHigh` / `onSurfaceVariant` (e.g., dates, unstyled tags, pockets)
 
 Used across: `HeroSection` (expense details), `ContributionHeroSection`, `SplitBreakdownSection`, `SubunitGroup`, `GroupSettlementItem`, `SettlementConsensusCard`.

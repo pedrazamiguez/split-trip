@@ -627,4 +627,33 @@ class ArchitectureTest {
                 }
         }
     }
+
+    @Nested
+    @DisplayName("Design System Constraints")
+    inner class DesignSystemConstraints {
+
+        private val forbiddenReadOnlyChipTokens = listOf(
+            "secondaryContainer",
+            "secondaryFixed",
+            "secondaryFixedDim"
+        )
+
+        @Test
+        @DisplayName("Read-only Tag and Badge components must not use secondaryContainer or secondaryFixed tokens")
+        fun `read-only tags and badges must not use interactive cyan chip tokens`() {
+            projectProductionScope
+                .files
+                .filter { file ->
+                    file.name.endsWith("Badge") ||
+                        file.name.endsWith("Tag") ||
+                        file.name.endsWith("TagDefaults")
+                }
+                .assertTrue(
+                    additionalMessage = "Read-only badges/tags must use semantic PassportTagStyle " +
+                        "(INFO, SUCCESS, WARNING, ERROR, NEUTRAL), never secondaryContainer/secondaryFixedDim."
+                ) { file ->
+                    forbiddenReadOnlyChipTokens.none { token -> file.text.contains(token) }
+                }
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.data
 
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartBar
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Hammer
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
@@ -24,6 +25,7 @@ class SettingsDataTest {
     private var themeClickCount = 0
     private var accountStatusClickCount = 0
     private var subscriptionsClickCount = 0
+    private var planAllowancesClickCount = 0
     private var accountSecurityClickCount = 0
     private var bugReportClickCount = 0
     private var featureSuggestionClickCount = 0
@@ -47,6 +49,7 @@ class SettingsDataTest {
         onThemeClick = { themeClickCount++ },
         onAccountStatusClick = { accountStatusClickCount++ },
         onSubscriptionsClick = { subscriptionsClickCount++ },
+        onPlanAllowancesClick = { planAllowancesClickCount++ },
         onAccountSecurityClick = { accountSecurityClickCount++ },
         onBugReportClick = { bugReportClickCount++ },
         onFeatureSuggestionClick = { featureSuggestionClickCount++ },
@@ -101,7 +104,7 @@ class SettingsDataTest {
     inner class AccountSection {
 
         @Test
-        fun `account section contains exactly three items without redundant email option`() {
+        fun `account section contains four items when isAnonymous is false`() {
             val params = createParams()
             val sections = buildSettingsSections(
                 preferencesParams = params,
@@ -109,7 +112,7 @@ class SettingsDataTest {
             )
 
             val accountSection = sections.first { it.titleRes == R.string.settings_section_account }
-            assertEquals(3, accountSection.items.size)
+            assertEquals(4, accountSection.items.size)
 
             val item0 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[0])
             assertEquals(R.string.settings_account_status_title, item0.titleRes)
@@ -122,9 +125,14 @@ class SettingsDataTest {
             assertEquals(TablerIcons.Outline.CreditCard, item1.icon)
 
             val item2 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[2])
-            assertEquals(R.string.settings_account_security_title, item2.titleRes)
-            assertEquals(R.string.settings_account_security_description, item2.descriptionRes)
-            assertEquals(TablerIcons.Outline.Shield, item2.icon)
+            assertEquals(R.string.settings_account_plan_allowances_title, item2.titleRes)
+            assertEquals(R.string.settings_account_plan_allowances_description, item2.descriptionRes)
+            assertEquals(TablerIcons.Outline.ChartBar, item2.icon)
+
+            val item3 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[3])
+            assertEquals(R.string.settings_account_security_title, item3.titleRes)
+            assertEquals(R.string.settings_account_security_description, item3.descriptionRes)
+            assertEquals(TablerIcons.Outline.Shield, item3.icon)
         }
 
         @Test
@@ -160,6 +168,22 @@ class SettingsDataTest {
         }
 
         @Test
+        fun `plan allowances item click delegates to onPlanAllowancesClick callback`() {
+            val params = createParams()
+            val sections = buildSettingsSections(
+                preferencesParams = params,
+                onServicesTestClick = { servicesTestClickCount++ }
+            )
+
+            val accountSection = sections.first { it.titleRes == R.string.settings_section_account }
+            val planAllowancesItem = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[2])
+
+            assertEquals(0, planAllowancesClickCount)
+            planAllowancesItem.onClick?.invoke()
+            assertEquals(1, planAllowancesClickCount)
+        }
+
+        @Test
         fun `account security item click delegates to onAccountSecurityClick callback`() {
             val params = createParams()
             val sections = buildSettingsSections(
@@ -168,7 +192,7 @@ class SettingsDataTest {
             )
 
             val accountSection = sections.first { it.titleRes == R.string.settings_section_account }
-            val securityItem = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[2])
+            val securityItem = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[3])
 
             assertEquals(0, accountSecurityClickCount)
             securityItem.onClick?.invoke()
@@ -185,13 +209,16 @@ class SettingsDataTest {
             )
 
             val accountSection = sections.first { it.titleRes == R.string.settings_section_account }
-            assertEquals(2, accountSection.items.size)
+            assertEquals(3, accountSection.items.size)
 
             val item0 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[0])
             assertEquals(R.string.settings_account_status_title, item0.titleRes)
 
             val item1 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[1])
-            assertEquals(R.string.settings_account_security_title, item1.titleRes)
+            assertEquals(R.string.settings_account_plan_allowances_title, item1.titleRes)
+
+            val item2 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[2])
+            assertEquals(R.string.settings_account_security_title, item2.titleRes)
         }
 
         @Test
@@ -204,7 +231,7 @@ class SettingsDataTest {
             )
 
             val accountSection = sections.first { it.titleRes == R.string.settings_section_account }
-            assertEquals(3, accountSection.items.size)
+            assertEquals(4, accountSection.items.size)
 
             val item1 = assertInstanceOf(SettingsItemModel.Standard::class.java, accountSection.items[1])
             assertEquals(R.string.settings_account_subscriptions_title, item1.titleRes)
