@@ -74,6 +74,17 @@ private fun ExpenseStepInfoBottomSheetContributionScopePreview() {
 
 @PreviewComplete
 @Composable
+private fun ExpenseStepInfoBottomSheetPaymentStatusPreview() {
+    PreviewThemeWrapper {
+        ExpenseStepInfoBottomSheet(
+            step = AddExpenseStep.PAYMENT_STATUS,
+            onDismiss = {}
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
 private fun ExpenseStepInfoBottomSheetAddOnsPreview() {
     PreviewThemeWrapper {
         ExpenseStepInfoBottomSheet(

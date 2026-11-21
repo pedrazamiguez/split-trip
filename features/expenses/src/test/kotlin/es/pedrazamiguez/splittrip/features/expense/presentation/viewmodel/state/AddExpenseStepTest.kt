@@ -405,5 +405,60 @@ class AddExpenseStepTest {
                 assertEquals(expectedPair.second, step.infoDescriptionRes, "Description mismatch for $step")
             }
         }
+
+        @Test
+        fun `multi-option steps have non-empty infoItems with valid unique resources`() {
+            val expectedCounts = mapOf(
+                AddExpenseStep.SPLIT to 3,
+                AddExpenseStep.FUNDING_SOURCE to 2,
+                AddExpenseStep.CONTRIBUTION_SCOPE to 3,
+                AddExpenseStep.PAYMENT_STATUS to 3,
+                AddExpenseStep.ADD_ONS to 2
+            )
+
+            expectedCounts.forEach { (step, expectedSize) ->
+                assertEquals(expectedSize, step.infoItems.size, "Unexpected infoItems size for $step")
+                step.infoItems.forEach { item ->
+                    assertNotEquals(0, item.titleRes, "titleRes should not be 0 for $step")
+                    assertNotEquals(0, item.descriptionRes, "descriptionRes should not be 0 for $step")
+                }
+                assertEquals(
+                    expectedSize,
+                    step.infoItems.map { it.titleRes }.toSet().size,
+                    "Duplicate titleRes in $step"
+                )
+                assertEquals(
+                    expectedSize,
+                    step.infoItems.map { it.descriptionRes }.toSet().size,
+                    "Duplicate descriptionRes in $step"
+                )
+            }
+        }
+
+        @Test
+        fun `single-paragraph steps have empty infoItems`() {
+            val singleParagraphSteps = listOf(
+                AddExpenseStep.TITLE,
+                AddExpenseStep.PAYMENT_METHOD,
+                AddExpenseStep.AMOUNT,
+                AddExpenseStep.EXCHANGE_RATE,
+                AddExpenseStep.CATEGORY,
+                AddExpenseStep.VENDOR_NOTES,
+                AddExpenseStep.RECEIPT,
+                AddExpenseStep.REVIEW
+            )
+
+            singleParagraphSteps.forEach { step ->
+                assertTrue(step.infoItems.isEmpty(), "Expected empty infoItems for $step")
+            }
+        }
+
+        @Test
+        fun `FUNDING_SOURCE infoItems orders Your Money before Group Pocket`() {
+            val items = AddExpenseStep.FUNDING_SOURCE.infoItems
+            assertEquals(2, items.size)
+            assertEquals(R.string.expense_step_info_funding_source_item_your_money_title, items[0].titleRes)
+            assertEquals(R.string.expense_step_info_funding_source_item_group_pocket_title, items[1].titleRes)
+        }
     }
 }
