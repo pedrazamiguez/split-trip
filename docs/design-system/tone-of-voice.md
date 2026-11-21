@@ -1,20 +1,20 @@
 # Tone of Voice & Verbal Identity Guide
 
-This document establishes the verbal identity, tone of voice principles, and copywriting standards for **SplitTrip**. It defines how the app communicates across all user touchpoints—including UI copy, form validation errors, push notifications, wizards, empty states, and system dialogs.
+This document establishes the verbal identity, tone of voice principles, and copywriting standards for **SplitTrip**. It defines how the app communicates across all user touchpoints, including UI copy, form validation errors, push notifications, wizards, empty states, and system dialogs.
 
 ---
 
 ## 1. Brand & Audience Persona
 
-### Brand Persona: *The Expert Travel Companion*
-SplitTrip is the reliable, worldly travel companion who has everything under control. Calm under pressure, transparent with the numbers, and always focused on the trip rather than the bureaucracy of accounting.
+### Brand Persona: *The Reliable Shared-Group Companion*
+SplitTrip is the reliable, worldly companion for shared groups who has everything under control, whether you are managing a flatshare, a couple's monthly budget, a dinner with friends, or a multi-currency trip abroad. Calm under pressure, transparent with the numbers, and always focused on the group rather than the bureaucracy of accounting.
 
-- **Warm & Encouraging:** Welcomes travellers without sounding forced, childish, or overly enthusiastic.
+- **Warm & Encouraging:** Welcomes group members without sounding forced, childish, or overly enthusiastic.
 - **Competent & Direct:** Demystifies complex multi-currency splits and FIFO cash tranches with concise, clear prose.
-- **Unobtrusive:** Steps back so travellers can focus on their adventure.
+- **Unobtrusive:** Steps back so groups can focus on their plans, from everyday shared life to trips abroad.
 
-### Audience Persona: *Modern Group Travellers*
-Our users are young to mid-age friends, couples, families, and colleagues travelling together across borders. They value speed, transparency, and fairness. They appreciate clean design and clear explanations without slang or corporate jargon.
+### Audience Persona: *Everyday Shared Groups & Modern Travellers*
+Our users are couples, flatmates, households, families, friends, and travellers sharing expenses year-round, across the street or across borders. They value speed, transparency, and fairness. They appreciate clean design and clear explanations without slang or corporate jargon.
 
 ---
 
@@ -22,9 +22,9 @@ Our users are young to mid-age friends, couples, families, and colleagues travel
 
 ```
 ┌───────────────────────────┬───────────────────────────┐
-│ 1. Approachable & Warm    │ 2. Clear & Travel-Oriented│
-│ Friendly, respectful,     │ Grounded in trip context, │
-│ never patronizing.        │ not corporate banking.    │
+│ 1. Approachable & Warm    │ 2. Clear & Group-Oriented │
+│ Friendly, respectful,     │ Grounded in shared group  │
+│ never patronizing.        │ life, not corporate banks.│
 ├───────────────────────────┼───────────────────────────┤
 │ 3. Accurate & Empowering  │ 4. Purpose-Driven & Direct│
 │ Technically exact math,   │ Concise microcopy, clear  │
@@ -33,12 +33,13 @@ Our users are young to mid-age friends, couples, families, and colleagues travel
 ```
 
 ### Pillar 1: Approachable & Warm (Not Patronizing)
-- **Do:** Use conversational phrasing and natural warmth (e.g., *"¡Listo! \"%1$s\" está preparado para el viaje"*, *"Compañeros de viaje"*).
+- **Do:** Use conversational phrasing and natural warmth (e.g., *"¡Listo! \"%1$s\" está preparado"*, *"Miembros del grupo"*).
 - **Don't:** Use forced juvenile slang or overly casual language that patronizes adults (e.g., avoid *"Tus compis de aventura"*, *"ready para la aventura"*, *"la pasta"*).
 
-### Pillar 2: Clear & Travel-Oriented (Not Corporate Accounting)
-- **Do:** Frame interactions around the journey and shared experiences (e.g., *"Resumen del viaje"*, *"Registro de gastos"*).
-- **Don't:** Use dry, corporate financial jargon (e.g., avoid *"Posición neta de balance general"*, *"Balance del grupo"* where *"Resumen del viaje"* or *"Estado de cuentas"* is clearer).
+### Pillar 2: Clear & Group-Oriented (Not Corporate Accounting)
+- **Do:** Frame interactions around shared group experiences (everyday budgets and trips alike, e.g., *"Resumen del grupo"*, *"Registro de gastos"*).
+- **Don't:** Use dry, corporate financial jargon (e.g., avoid *"Posición neta de balance general"*, *"Balance del grupo"* where *"Resumen del grupo"* or *"Estado de cuentas"* is clearer), and forbid trip-locked copy in generic group flows (e.g., avoid *"Finalizar viaje"*, *"Crea viajes ilimitados"*, *"Compañeros de viaje"*).
+- **Acquisition Wedge Note:** Play Store acquisition titles and short descriptions (`docs/release/store-listing-metadata.md`) intentionally retain the travel and multi-currency wedge, while all in-app copy is everyday-first.
 
 ### Pillar 3: Accurate & Empowering (Not Overly Simplified)
 - **Do:** Accurately reflect multi-currency, multi-subunit, and offline capabilities (e.g., *"Registro de gastos"*, *"Conversión de moneda"*).
@@ -65,29 +66,31 @@ All copy must align strictly with [`docs/domain/ubiquitous-language.md`](../doma
 | **Extra Charges** | Add-on / Extra | Extra | *Recargo genérico*, *Plus* |
 | **Extra Mode (On top)** | On top | Adicional | *Sumado*, *Plus*, *Añadido* |
 | **Extra Mode (Included)** | Already included / Included | Ya incluido / Incluido | *Integrado*, *Dentro* |
-| **Group Companions** | Travel companions / Members | Compañeros de viaje / Miembros | *Compis*, *Amigotes*, *Peña* |
+| **Group Members** | Members / Group members | Miembros / Miembros del grupo | *Compis*, *Amigotes*, *Peña*, *Compañeros de viaje* (in generic group UI) |
+| **Group Finalisation** | End Group | Finalizar grupo | *End Trip*, *Finalizar viaje*, *Archive*, *Archivar*, *Close*, *Cerrar* (in finalisation CTAs/body copy) |
 | **Settings Subtitle** | Your preferences | Tus preferencias | *Hazla tuya*, *A tu gusto* |
 
 ---
 
 ## 4. Grammar, Formality, and Localization Rules
 
-### Spanish (Castilian — `values-es/`)
+### Spanish (Castilian, `values-es/`)
 - **Grammatical Person:** Use informal second-person singular (*tú* / *tuteo*), but with adult elegance.
 - **Punctuation:** Always include opening exclamation and question marks (`¡`, `¿`).
 - **Currency & Numbers:** Format numbers using European spacing and comma decimals (e.g., `1.250,50 €`). Handled by `FormattingHelper`.
-- **Gender Inclusivity:** Use neutral group terms (*"Compañeros de viaje"*, *"Miembros del grupo"*, *"Viajeros"*).
+- **Gender Inclusivity:** Use neutral group terms (*"Miembros del grupo"*, *"Personas"*, *"Participantes"*).
 
 ### English (`values/`)
 - **Formality:** Modern, clean, conversational British English (en-GB) as the single baseline standard across default resource catalogs (`res/values/strings.xml`).
 - **Spelling & Vocabulary:**
   - `-ise` / `-isation` / `-ising` / `-ised` suffixes instead of `-ize` / `-ization` / `-izing` / `-ized` (*organise*, *customise*, *synchronise*, *synchronisation*, *prioritise*, *recognise*, *monetise*, *authorise*, *normalise*, *finalise*, *neutralise*, *itemise*, *analyse*).
-  - Double 'l' consonants (*traveller*, *travelling*, *cancelled*, *cancelling*, *labelled*).
+  - Double 'l' consonants (*cancelled*, *cancelling*, *labelled*, and *traveller* / *travelling* when travel is explicitly referenced).
   - `-our` endings (*colour*, *favourite*, *behaviour*).
   - `-re` endings (*centre*, *theatre*).
   - Noun / verb distinctions (*licence* [noun] vs. *license* [verb], *practise* [verb] vs. *practice* [noun]).
 - **Sentence Case:** Use Sentence case for subtitles, helper text, and descriptions. Title Case is reserved for TopBar titles and formal modal headers.
 - **Contractions:** Natural contractions (*"Couldn't"*, *"You'll"*, *"Don't"*) are encouraged in body and error copy to maintain warmth.
+- **Punctuation Hygiene:** Avoid em-dashes (`—`) in user-facing UI copy, release copy, and web copy. Prefer commas, parentheses, colons, or short sentences (`·` may be used as a compact UI label separator).
 
 ### Andalusian EPA (`values-es-rAN/`)
 - Translations in `values-es-rAN/` are derived automatically via `./gradlew generateAndaluzStrings`.
@@ -99,19 +102,20 @@ All copy must align strictly with [`docs/domain/ubiquitous-language.md`](../doma
 
 | UI Context | Principle | ✅ Do | ❌ Don't |
 | :--- | :--- | :--- | :--- |
-| **Tab Subtitles** | Grounded in context | *"Travel companions"*, *"Expense log"*, *"Resumen del viaje"* | *"Your travel squad"*, *"Who paid for what?"*, *"Balance del grupo"* |
+| **Tab Subtitles** | Grounded in context | *"Shared groups"*, *"Expense log"*, *"Resumen del grupo"* | *"Your travel squad"*, *"Compañeros de viaje"*, *"Resumen del viaje"*, *"Who paid for what?"*, *"Balance del grupo"* |
 | **Action Buttons** | Explicit verb + target | *"Aportar al pocket"*, *"Retirar efectivo"* | *"Añadir dinero"*, *"Sacar pasta"* |
+| **Group Finalisation** | Direct, non-administrative | *"End Group"*, *"Finalizar grupo"* | *"End Trip"*, *"Finalizar viaje"*, *"Close Trip"*, *"Archivar grupo"* |
 | **Form Validation** | Helpful, friendly guidance | *"¡Ey! Dale un nombre a tu grupo"*, *"¡Ey! ¿Para qué fue este gasto?"* | *"Error: nombre requerido"*, *"¿En qué te gastaste la pasta?"* |
 | **Empty States** | Forward-looking invitation | *"Añade una aportación al pocket del grupo para empezar"* | *"Añade dinero a la cuenta del grupo para empezar"* |
 | **Confirmation Dialogs**| Clear impact statement | *"¿Seguro que quieres eliminar \"%1$s\"? Se borrarán todos los gastos."* | *"¿Borrar esto para siempre?"* |
-| **Success Feedback** | Crisp celebration | *"¡Listo! \"%1$s\" está preparado para el viaje"* | *"¡Listo! \"%1$s\" está ready para la aventura"* |
+| **Success Feedback** | Crisp celebration | *"¡Listo! \"%1$s\" está preparado"* | *"¡Listo! \"%1$s\" está ready para la aventura"*, *"¡Listo! \"%1$s\" está preparado para el viaje"* |
 
 ---
 
 ## 6. Review Checklist for New Features
 
 When writing or reviewing UI strings for SplitTrip:
-1. **Pillars Check:** Is the copy warm, travel-oriented, technically accurate, and direct?
+1. **Pillars Check:** Is the copy warm, everyday-first (group-neutral, natural for both ongoing budgets and trips), technically accurate, and direct?
 2. **Ubiquitous Language:** Does it use *Pocket*, *Acuerdo de pago*, *Aportación*, *Retirada de efectivo*?
 3. **No Slang:** Are forced colloquialisms (*compis*, *pasta*, *ready*) eliminated?
 4. **Bilingual Parity:** Does every string in `values/strings.xml` have an equivalent in `values-es/strings.xml`?

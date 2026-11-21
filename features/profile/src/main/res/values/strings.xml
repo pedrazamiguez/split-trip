@@ -62,7 +62,7 @@
     <string name="profile_guest_title">Guest User</string>
     <string name="profile_guest_subtitle">Offline Session</string>
     <string name="profile_guest_promo_title">Link your account</string>
-    <string name="profile_guest_promo_text">Create a permanent account to invite friends, sync your trips across devices, and keep your data safe.</string>
+    <string name="profile_guest_promo_text">Create a permanent account to invite members, sync your groups across devices, and keep your data safe.</string>
     <string name="profile_guest_promo_button">Link Account</string>
 </resources>
 

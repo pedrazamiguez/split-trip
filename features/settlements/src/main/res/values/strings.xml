@@ -20,7 +20,7 @@
     <string name="your_balance_cash_breakdown_total">Total Cash in Hand</string>
     <string name="your_balance_cash_breakdown_fees">ATM Fees</string>
     <string name="your_balance_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
-    <string name="your_balance_cash_breakdown_atm_fallback">ATM — %1$s</string>
+    <string name="your_balance_cash_breakdown_atm_fallback">ATM · %1$s</string>
     <string name="your_balance_cash_breakdown_group_scope">Group cash (est. share)</string>
     <string name="your_balance_cash_breakdown_personal_scope">Personal cash</string>
     <string name="your_balance_cash_breakdown_unknown_subunit">Subunit cash</string>
@@ -63,7 +63,7 @@
     <string name="group_wizard_back">Back</string>
     <string name="group_wizard_next">Next</string>
     <string name="settlement_overview_title">Settlements</string>
-    <string name="settlement_overview_subtitle">Review and resolve pending settlements before ending the trip</string>
+    <string name="settlement_overview_subtitle">Review and resolve pending settlements before ending the group</string>
     <string name="settlement_overview_section_pending">Pending</string>
     <string name="settlement_overview_section_disputed">Under review</string>
     <string name="settlement_overview_section_resolved">Resolved</string>
@@ -76,12 +76,12 @@
     <string name="settlement_overview_dispute_cancel">Cancel</string>
     <string name="settlement_overview_dispute_success">Review requested successfully</string>
     <string name="settlement_overview_confirm_success">Settlement confirmed successfully</string>
-    <string name="settlement_overview_close_trip">End Trip</string>
-    <string name="settlement_overview_closing_trip">Ending trip…</string>
-    <string name="settlement_overview_trip_closed">Trip ended successfully!</string>
+    <string name="settlement_overview_close_trip">End Group</string>
+    <string name="settlement_overview_closing_trip">Ending group…</string>
+    <string name="settlement_overview_trip_closed">Group ended successfully!</string>
     <string name="settlement_overview_error_confirm">Failed to confirm settlement. Please try again</string>
     <string name="settlement_overview_error_dispute">Failed to request review. Please try again</string>
-    <string name="settlement_overview_error_archive">Failed to end the trip. Please try again</string>
+    <string name="settlement_overview_error_archive">Failed to end the group. Please try again</string>
     <string name="settlement_overview_error_loading">Couldn\'t load settlement data. Please try again</string>
     <string name="settlement_overview_status_suggested">Pending</string>
     <string name="settlement_overview_status_confirmed_by_payer">Awaiting Payee</string>
@@ -96,18 +96,18 @@
 
     <string name="leave_wizard_settlement_section_your_action">Your Action Required</string>
     <string name="leave_wizard_settlement_section_waiting">Waiting on Others</string>
-    <string name="archive_wizard_summary_title">Trip Summary</string>
-    <string name="archive_wizard_summary_subtitle">Review the settlement status before ending the trip.</string>
-    <string name="archive_wizard_summary_ready_title">Ready to End Trip</string>
-    <string name="archive_wizard_summary_ready_desc">All settlements have been successfully resolved. You can proceed directly to end the trip.</string>
+    <string name="archive_wizard_summary_title">Group Summary</string>
+    <string name="archive_wizard_summary_subtitle">Review the settlement status before ending the group.</string>
+    <string name="archive_wizard_summary_ready_title">Ready to End Group</string>
+    <string name="archive_wizard_summary_ready_desc">All settlements have been successfully resolved. You can proceed directly to end the group.</string>
     <string name="archive_wizard_summary_unresolved_title">Pending Settlements</string>
-    <string name="archive_wizard_summary_unresolved_desc">There are pending settlements or settlements under review. You must resolve them before you can end the trip.</string>
+    <string name="archive_wizard_summary_unresolved_desc">There are pending settlements or settlements under review. You must resolve them before you can end the group.</string>
     <string name="archive_wizard_action_title">Consensus Actions</string>
     <string name="archive_wizard_action_subtitle">Review and act on outstanding settlements to reach consensus.</string>
-    <string name="archive_wizard_confirm_title">End Trip</string>
-    <string name="archive_wizard_confirm_impact_title">Trip Impact</string>
-    <string name="archive_wizard_confirm_subtitle">Are you sure you want to end the trip for %1$s?</string>
-    <string name="archive_wizard_confirm_warning_banner">All settlements must be resolved before you can end this trip.</string>
-    <string name="archive_wizard_confirm_desc">Ending this trip will freeze all balances and switch the trip to read-only mode. This action is permanent and cannot be undone.</string>
+    <string name="archive_wizard_confirm_title">End Group</string>
+    <string name="archive_wizard_confirm_impact_title">Group Impact</string>
+    <string name="archive_wizard_confirm_subtitle">Are you sure you want to end %1$s?</string>
+    <string name="archive_wizard_confirm_warning_banner">All settlements must be resolved before you can end this group.</string>
+    <string name="archive_wizard_confirm_desc">Ending this group will freeze all balances and switch the group to read-only mode. This action is permanent and cannot be undone.</string>
     <string name="archive_wizard_go_to_settlements">Go to Settlements</string>
 </resources>

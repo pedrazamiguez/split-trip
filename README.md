@@ -6,12 +6,12 @@
 
 ## Overview
 
-**SplitTrip** is a modular Android application designed for travelers to manage shared
-expenses efficiently. It allows users to create expense groups, track spending in multiple
+**SplitTrip** is a modular Android application designed for groups to manage shared
+expenses efficiently, from everyday living to trips abroad. It allows users to create expense groups, track spending in multiple
 currencies, calculate debts, and sync data across devices.
 
-Built with modern Android practices—including **Jetpack Compose**, **Clean Architecture**, and
-**Offline-First** principles—the app serves as a reference for scalable, multi-module Android
+Built with modern Android practices, including **Jetpack Compose**, **Clean Architecture**, and
+**Offline-First** principles, the app serves as a reference for scalable, multi-module Android
 development.
 
 ### ✨ Key Features

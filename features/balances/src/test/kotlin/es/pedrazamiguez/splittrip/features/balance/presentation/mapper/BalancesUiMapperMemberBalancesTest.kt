@@ -50,7 +50,7 @@ class BalancesUiMapperMemberBalancesTest {
             "Group cash (est. share)"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_personal_scope) } returns "Personal cash"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_atm_fallback, any()) } returns
-            "ATM — Jan 10"
+            "ATM · Jan 10"
         every { resourceProvider.getString(R.string.balances_cash_breakdown_rate, any(), any(), any()) } returns
             "@ 0.027 THB/EUR"
         every {

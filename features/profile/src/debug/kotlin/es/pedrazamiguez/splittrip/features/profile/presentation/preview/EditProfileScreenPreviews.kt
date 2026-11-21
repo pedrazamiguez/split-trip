@@ -14,7 +14,7 @@ fun EditProfileScreenDefaultPreview() {
         EditProfileScreen(
             uiState = EditProfileUiState(
                 displayName = "Antonio García",
-                bio = "Travel enthusiast and developer.",
+                bio = "Software developer and foodie.",
                 avatarUrl = null,
                 isLoading = false
             ),
@@ -45,7 +45,7 @@ fun EditProfileScreenSavingPreview() {
         EditProfileScreen(
             uiState = EditProfileUiState(
                 displayName = "Antonio García",
-                bio = "Travel enthusiast and developer.",
+                bio = "Software developer and foodie.",
                 avatarUrl = null,
                 isSaving = true
             ),

@@ -18,7 +18,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 private fun ActionBottomSheetDefaultPreview() {
     PreviewThemeWrapper {
         ActionBottomSheet(
-            title = stringResource(R.string.preview_sheet_group_title, "Summer Trip 2026"),
+            title = stringResource(R.string.preview_sheet_group_title, "Shared House 2026"),
             icon = TablerIcons.Outline.UsersGroup,
             actions = listOf(
                 SheetAction(

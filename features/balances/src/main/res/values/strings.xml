@@ -17,7 +17,7 @@
     <string name="balances_error_loading">Failed to load balances</string>
     <string name="balances_empty_title">No activity yet</string>
     <string name="balances_empty_description">Log expenses paid out of pocket to see who owes whom, or add a contribution if your group shares a common pocket.</string>
-    <string name="balances_archived_readonly_notice">This trip is archived and read-only. Contributions, withdrawals, and activity edits are disabled.</string>
+    <string name="balances_archived_readonly_notice">This group is archived and read-only. Contributions, withdrawals, and activity edits are disabled.</string>
 
     <!-- Member Balances -->
     <string name="balances_member_balances_title">Member balances</string>
@@ -55,7 +55,7 @@
     <string name="balances_metric_total_contributed_title">Total contributed</string>
     <string name="balances_metric_total_contributed_description">Cumulative sum of all contributions made by members, including both group pocket funds and personal allowances.\n\nThe breakdown of how much each member contributed and their individual balance can be viewed in the member balances section.</string>
     <string name="balances_metric_total_spent_title">Total spent</string>
-    <string name="balances_metric_total_spent_description">Total amount spent on the trip to date.\n\nIncludes all settled expenses, cash expenses, and refundable expenses, since that money has already been spent. It does not include upcoming scheduled expenses or extras.</string>
+    <string name="balances_metric_total_spent_description">Total amount spent by the group to date.\n\nIncludes all settled expenses, cash expenses, and refundable expenses, since that money has already been spent. It does not include upcoming scheduled expenses or extras.</string>
     <string name="balances_metric_cash_in_hand_title">Cash in hand</string>
     <string name="balances_metric_cash_in_hand_description">Physical cash withdrawn by members that has not yet been spent.\n\nThe header total shows the cumulative value converted into the group\'s default currency, while the list below details the exact breakdown across each currency held.</string>
     <string name="balances_metric_extras_title">Extras</string>
@@ -110,7 +110,7 @@
     <!-- %1$s = formatted rate, %2$s = group currency, %3$s = source currency; e.g. "@ 0.027 EUR/THB" -->
     <string name="balances_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
     <!-- Fallback label when a withdrawal has no title; %1$s = short date -->
-    <string name="balances_cash_breakdown_atm_fallback">ATM — %1$s</string>
+    <string name="balances_cash_breakdown_atm_fallback">ATM · %1$s</string>
     <string name="balances_cash_breakdown_view_cd">View cash breakdown</string>
     <!-- Fallback when the subunit referenced by a withdrawal is no longer found (data integrity edge case) -->
     <string name="balances_cash_breakdown_unknown_subunit">Unknown subunit</string>
@@ -134,7 +134,7 @@
     <string name="balances_extras_add_on_surcharge_plural">Surcharges</string>
     <string name="balances_extras_add_on_tip_plural">Tips</string>
     <string name="balances_extras_expense_fallback">Expense</string>
-    <string name="balances_extras_atm_fallback">ATM — %1$s</string>
+    <string name="balances_extras_atm_fallback">ATM · %1$s</string>
 
     <!-- Main Action -->
     <string name="balances_filter">Filter balances</string>

@@ -65,7 +65,7 @@
     <string name="expense_error_invalid_exchange_rate">El tipo de cambio debe ser mayor que cero</string>
     <string name="expense_error_invalid_group_amount">El importe convertido debe ser mayor que cero</string>
     <string name="expense_error_insufficient_cash">No tienes suficiente efectivo\nNecesitas %1$s pero solo tienes %2$s disponible</string>
-    <string name="expense_error_cash_conflict">Otro miembro acaba de usar este efectivo. El importe disponible ha cambiado — revisa e inténtalo de nuevo.</string>
+    <string name="expense_error_cash_conflict">Otro miembro acaba de usar este efectivo. El importe disponible ha cambiado. Revisa e inténtalo de nuevo.</string>
 
     
     <string name="add_expense_cash_conflict_resolution_title">El efectivo ha cambiado</string>
@@ -110,11 +110,11 @@
     <string name="add_expense_cash_no_cash_available_generic">No hay efectivo disponible en esta moneda. Añade una retirada o cambia el método de pago.</string>
     
     <string name="add_expense_cash_tranche_funded_from">Financiado desde</string>
-    <string name="add_expense_cash_tranche_atm_label">Cajero — %1$s</string>
+    <string name="add_expense_cash_tranche_atm_label">Cajero · %1$s</string>
     <string name="add_expense_cash_tranche_atm_label_no_date">Cajero</string>
     <string name="add_expense_cash_tranche_remaining">%1$s restante</string>
     <string name="add_expense_cash_tranche_collapse">Ver menos ▲</string>
-    <string name="add_expense_cash_tranche_disclaimer">Indicativo — los tramos finales se confirman al guardar.</string>
+    <string name="add_expense_cash_tranche_disclaimer">Indicativo: los tramos finales se confirman al guardar.</string>
     <string name="add_expense_cash_tranche_rate_label">@ %1$s</string>
     <plurals name="add_expense_cash_tranche_count">
         <item quantity="one">%1$d retirada ▼</item>
@@ -442,7 +442,7 @@
     <string name="expense_step_info_exchange_rate_description">Solo aparece cuando la moneda del gasto es distinta a la moneda base del grupo. Es opcional y usa por defecto el último tipo de cambio disponible.\n\nEn pagos con tarjeta o digitales, puedes editar el tipo de cambio o el importe convertido al grupo y el otro campo se actualiza solo. En pagos en Efectivo, el cambio se vincula a tus retiradas en cajero y puedes elegir de qué fondo de efectivo descontarlo.</string>
 
     <string name="expense_step_info_split_title">Reparto entre miembros</string>
-    <string name="expense_step_info_split_description">Elige cómo dividir el gasto entre tus compañeros de viaje. Es opcional y por defecto aplica un reparto a partes iguales entre todos los miembros.\n\nSi el grupo tiene subunidades (como parejas o familias), activa \"Dividir por subunidad\" para repartir primero por grupo.</string>
+    <string name="expense_step_info_split_description">Elige cómo dividir el gasto entre los miembros del grupo. Es opcional y por defecto aplica un reparto a partes iguales entre todos los miembros.\n\nSi el grupo tiene subunidades (como parejas o familias), activa \"Dividir por subunidad\" para repartir primero por subunidad.</string>
     <string name="expense_step_info_split_item_equal_title">Partes iguales</string>
     <string name="expense_step_info_split_item_equal_description">Divide el importe a partes iguales entre los miembros seleccionados.</string>
     <string name="expense_step_info_split_item_exact_title">Cantidades</string>
@@ -456,7 +456,7 @@
     <string name="expense_step_info_funding_source_title">Pagado con</string>
     <string name="expense_step_info_funding_source_description">Elige de dónde salió el dinero para este pago. Es opcional y selecciona por defecto \"Tu dinero\" si el grupo no tiene fondos en el pocket, o \"Pocket del grupo\" si hay un pocket compartido activo.</string>
     <string name="expense_step_info_funding_source_item_your_money_title">Tu dinero</string>
-    <string name="expense_step_info_funding_source_item_your_money_description">Pagado de tu propio bolsillo. SplitTrip registra la parte de cada miembro para que tus compañeros te devuelvan lo que corresponda al liquidar.</string>
+    <string name="expense_step_info_funding_source_item_your_money_description">Pagado de tu propio bolsillo. SplitTrip registra la parte de cada miembro para que los demás te devuelvan lo que corresponda en los acuerdos de pago.</string>
     <string name="expense_step_info_funding_source_item_group_pocket_title">Pocket del grupo</string>
     <string name="expense_step_info_funding_source_item_group_pocket_description">Pagado con el fondo común que el grupo ya ha reunido. Se descuenta directamente del saldo del pocket sin necesidad de reembolsos personales.</string>
 

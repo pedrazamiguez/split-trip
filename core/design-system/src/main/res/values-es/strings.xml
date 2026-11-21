@@ -115,10 +115,10 @@
     <string name="preview_title_other_currencies">Otras monedas</string>
     <string name="preview_search_currency">Buscar moneda</string>
     <string name="preview_search_currency_hint">ej. USD, EUR, Libra…</string>
-    <string name="preview_helper_currencies">Añade las monedas que usaréis en el viaje</string>
+    <string name="preview_helper_currencies">Añade las monedas adicionales que usará el grupo</string>
     <string name="preview_remove_currency">Quitar moneda</string>
     <string name="preview_dialog_delete_title">¿Eliminar grupo?</string>
-    <string name="preview_dialog_delete_text">¿Seguro que quieres eliminar \"Viaje de verano 2026\"? Se borrarán todos los gastos y no podrás deshacerlo.</string>
+    <string name="preview_dialog_delete_text">¿Seguro que quieres eliminar \"Piso compartido\"? Se borrarán todos los gastos y no podrás deshacerlo.</string>
     <string name="preview_dialog_delete_short_title">¿Eliminar elemento?</string>
     <string name="preview_dialog_delete_short_text">Esta acción no se puede deshacer.</string>
     <string name="preview_dialog_logout_title">¿Cerrar sesión?</string>
@@ -140,15 +140,15 @@
     <string name="receipt_attach_document">Adjuntar documento</string>
     <string name="camera_permission_required">Se requiere el permiso de cámara para tomar fotos.</string>
 
-    <!-- Trip Closure -->
-    <string name="group_error_archived">Este viaje está archivado y no se puede modificar.</string>
-    <string name="group_detail_end_trip">Finalizar viaje</string>
-    <string name="group_detail_end_trip_title">¿Finalizar viaje?</string>
-    <string name="group_detail_end_trip_message">¿Estás seguro de que quieres finalizar este viaje? Esto bloqueará todos los gastos, aportaciones y retiradas, haciendo que el viaje sea de solo lectura.</string>
-    <string name="group_detail_end_trip_confirm">Finalizar viaje</string>
+    <!-- Group Closure -->
+    <string name="group_error_archived">Este grupo está archivado y no se puede modificar.</string>
+    <string name="group_detail_end_trip">Finalizar grupo</string>
+    <string name="group_detail_end_trip_title">¿Finalizar grupo?</string>
+    <string name="group_detail_end_trip_message">¿Seguro que quieres finalizar este grupo? Esto bloqueará todos los gastos, aportaciones y retiradas, dejando el grupo en modo de solo lectura.</string>
+    <string name="group_detail_end_trip_confirm">Finalizar grupo</string>
     <string name="group_detail_archived_label">Archivado</string>
-    <string name="group_error_archiving_failed">Error al finalizar el viaje. Por favor, inténtalo de nuevo.</string>
-    <string name="group_error_archiving_unresolved_settlements">No se puede finalizar el viaje mientras existan balances o acuerdos de pago pendientes sin resolver.</string>
+    <string name="group_error_archiving_failed">Error al finalizar el grupo. Por favor, inténtalo de nuevo.</string>
+    <string name="group_error_archiving_unresolved_settlements">No se puede finalizar el grupo mientras existan balances o acuerdos de pago pendientes sin resolver.</string>
 
     <!-- Settlement Widget -->
     <string name="settlement_pocket_type_virtual">Pocket virtual</string>
@@ -169,7 +169,7 @@
     <!-- %1$s = formatted rate, %2$s = group currency, %3$s = source currency; e.g. "@ 0.027 EUR/THB" -->
     <string name="core_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
     <!-- Fallback label when a withdrawal has no title; %1$s = short date -->
-    <string name="core_cash_breakdown_atm_fallback">Cajero — %1$s</string>
+    <string name="core_cash_breakdown_atm_fallback">Cajero · %1$s</string>
     <string name="core_cash_breakdown_view_cd">Ver desglose de efectivo</string>
     <!-- Fallback when the subunit referenced by a withdrawal is no longer found (data integrity edge case) -->
     <string name="core_cash_breakdown_unknown_subunit">Subunidad desconocida</string>
@@ -201,24 +201,24 @@
     <!-- Pro Feature Preview Bottom Sheet -->
     <string name="pro_preview_badge_label">SplitTrip Pro</string>
     <string name="pro_preview_cta_unlock">Desbloquear con SplitTrip Pro</string>
-    <string name="pro_preview_unlimited_groups_title">Crea viajes ilimitados</string>
-    <string name="pro_preview_unlimited_groups_description">Has alcanzado el límite de grupos propios del plan gratuito. Mejora a SplitTrip Pro para organizar todos los viajes y presupuestos compartidos que necesites.</string>
-    <string name="pro_preview_unlimited_groups_highlight">Viajes activos ilimitados y una experiencia sin anuncios</string>
-    <string name="pro_preview_expanded_members_title">Trae a todo el grupo</string>
-    <string name="pro_preview_expanded_members_description">Los viajes gratuitos admiten un número limitado de viajeros. Desbloquea SplitTrip Pro para invitar a grupos más grandes de amigos y familias.</string>
-    <string name="pro_preview_expanded_members_highlight">Añade hasta 20 viajeros por grupo sin esfuerzo</string>
-    <string name="pro_preview_group_cover_title">Personaliza la portada del viaje</string>
-    <string name="pro_preview_group_cover_description">Haz que cada aventura destaque en tu diario con fotos de portada personalizadas desde tu cámara o galería.</string>
+    <string name="pro_preview_unlimited_groups_title">Crea grupos ilimitados</string>
+    <string name="pro_preview_unlimited_groups_description">Has alcanzado el límite de grupos propios del plan gratuito. Mejora a SplitTrip Pro para organizar todos los presupuestos compartidos, hogares y viajes que necesites.</string>
+    <string name="pro_preview_unlimited_groups_highlight">Grupos activos ilimitados y una experiencia sin anuncios</string>
+    <string name="pro_preview_expanded_members_title">Incluye a todo el grupo</string>
+    <string name="pro_preview_expanded_members_description">Los grupos gratuitos admiten un número limitado de miembros. Desbloquea SplitTrip Pro para invitar a grupos más grandes de amigos, hogares y familias.</string>
+    <string name="pro_preview_expanded_members_highlight">Añade hasta 20 miembros por grupo sin esfuerzo</string>
+    <string name="pro_preview_group_cover_title">Personaliza la portada del grupo</string>
+    <string name="pro_preview_group_cover_description">Haz que cada grupo destaque con fotos de portada personalizadas desde tu cámara o galería.</string>
     <string name="pro_preview_group_cover_highlight">Fotos de portada personalizadas sincronizadas para todos los miembros</string>
     <string name="pro_preview_subunit_creation_title">Divide de forma justa por parejas y familias</string>
-    <string name="pro_preview_subunit_creation_description">Agrupa a los viajeros en subunidades compartidas con porcentajes personalizados para que parejas, familias o habitaciones liquiden juntos automáticamente.</string>
+    <string name="pro_preview_subunit_creation_description">Agrupa a los miembros en subunidades compartidas con porcentajes personalizados para que parejas, familias o compañeros de piso acuerden pagos juntos automáticamente.</string>
     <string name="pro_preview_subunit_creation_highlight">Repartos automáticos en dos niveles y balances unificados por subunidad</string>
     <string name="pro_preview_ai_receipt_title">Autocompleta gastos con IA</string>
     <string name="pro_preview_ai_receipt_description">Haz una foto o adjunta un recibo y deja que la IA en tu dispositivo extraiga el importe, la moneda, el comercio, la fecha y la categoría en segundos.</string>
     <string name="pro_preview_ai_receipt_highlight">Escaneo de recibos con IA privada en tu dispositivo, sin teclear manualmente</string>
     <string name="pro_preview_unlimited_receipts_title">Adjunta recibos ilimitados</string>
     <string name="pro_preview_unlimited_receipts_description">Guarda todas las fotos y PDF de tus recibos adjuntos y sincronizados para todo tu grupo, sin límite mensual de adjuntos.</string>
-    <string name="pro_preview_unlimited_receipts_highlight">Fotos y PDF de recibos ilimitados sincronizados en la nube para cada viaje</string>
+    <string name="pro_preview_unlimited_receipts_highlight">Fotos y PDF de recibos ilimitados sincronizados en la nube para cada grupo</string>
 
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">Al menos 8 caracteres</string>

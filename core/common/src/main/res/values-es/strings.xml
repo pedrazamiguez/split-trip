@@ -3,7 +3,7 @@
     
     <string name="support_email_subject">Reporte de fallos de SplitTrip</string>
     <string name="support_email_feature_subject">Sugerencia de mejora para SplitTrip</string>
-    <string name="support_email_feature_body_template">¿Qué función o mejora te gustaría ver?\n\n\n¿Cómo te ayudaría esta función en tus viajes?\n\n</string>
+    <string name="support_email_feature_body_template">¿Qué función o mejora te gustaría ver?\n\n\n¿Cómo te ayudaría esta función en tus grupos?\n\n</string>
     <string name="support_email_contact_subject">Solicitud de soporte de SplitTrip</string>
     <string name="support_email_contact_body_template">¿En qué podemos ayudarte?\n\n\n¿Qué ha ocurrido o qué dudas tienes?\n\n</string>
     <string name="support_email_system_info_header">Información del sistema (No modificar):</string>

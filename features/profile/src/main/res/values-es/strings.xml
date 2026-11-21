@@ -63,7 +63,7 @@
     <string name="profile_guest_title">Usuario Invitado</string>
     <string name="profile_guest_subtitle">Sesión local</string>
     <string name="profile_guest_promo_title">Vincula tu cuenta</string>
-    <string name="profile_guest_promo_text">Crea una cuenta permanente para invitar amigos, sincronizar tus viajes entre dispositivos y evitar perder tus datos.</string>
+    <string name="profile_guest_promo_text">Crea una cuenta permanente para invitar miembros, sincronizar tus grupos entre dispositivos y evitar perder tus datos.</string>
     <string name="profile_guest_promo_button">Vincular cuenta</string>
 </resources>
 

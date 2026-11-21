@@ -69,8 +69,8 @@ val GROUP_DOMAIN_1: Group = Group(
 
 val GROUP_DOMAIN_2: Group = Group(
     id = "b2c4d6e8-f0a1-2345-6789-abcdef012345",
-    name = "Summer Trip",
-    description = "Beach vacation 2026",
+    name = "Shared Apartment",
+    description = "Monthly bills and groceries 2026",
     currency = "USD",
     members = listOf(
         PREVIEW_USER_1.userId,

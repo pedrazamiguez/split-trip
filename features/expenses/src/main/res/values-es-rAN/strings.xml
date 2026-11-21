@@ -66,7 +66,7 @@
     <string name="expense_error_invalid_exchange_rate">Er tipo de cambio debe çêh mayôh que çero</string>
     <string name="expense_error_invalid_group_amount">El importe combertío debe çêh mayôh que çero</string>
     <string name="expense_error_insufficient_cash">No tienê çufiçiente efêttibo\nNeçeçitâ %1$s pero çolo tienê %2$s dîpponible</string>
-    <string name="expense_error_cash_conflict">Otro miembro acaba de uçâh êtte efêttibo. El importe dîpponible a cambiao — rebiça e inténtalo de nuebo.</string>
+    <string name="expense_error_cash_conflict">Otro miembro acaba de uçâh êtte efêttibo. El importe dîpponible a cambiao. Rebiça e inténtalo de nuebo.</string>
     <string name="add_expense_cash_conflict_resolution_title">El efêttibo a cambiao</string>
     <string name="add_expense_cash_conflict_use_remaining">Uçâh el efêttibo rêttante (%1$s)</string>
     <string name="add_expense_cash_conflict_switch_payment">Cambiâh método de pago</string>
@@ -104,11 +104,11 @@
     <string name="add_expense_cash_no_cash_available">No ay efêttibo dîpponible en %1$s. Añade una retirá o cambia er método de pago.</string>
     <string name="add_expense_cash_no_cash_available_generic">No ay efêttibo dîpponible en êtta moneda. Añade una retirá o cambia er método de pago.</string>
     <string name="add_expense_cash_tranche_funded_from">Finançiao dêdde</string>
-    <string name="add_expense_cash_tranche_atm_label">Cahero — %1$s</string>
+    <string name="add_expense_cash_tranche_atm_label">Cahero · %1$s</string>
     <string name="add_expense_cash_tranche_atm_label_no_date">Cahero</string>
     <string name="add_expense_cash_tranche_remaining">%1$s rêttante</string>
     <string name="add_expense_cash_tranche_collapse">Bêh menô ▲</string>
-    <string name="add_expense_cash_tranche_disclaimer">Indicatibo — lô tramô finalê çe confirman ar guardâh.</string>
+    <string name="add_expense_cash_tranche_disclaimer">Indicatibo: lô tramô finalê çe confirman ar guardâh.</string>
     <string name="add_expense_cash_tranche_rate_label">@ %1$s</string>
     <plurals name="add_expense_cash_tranche_count">
         <item quantity="one">%1$d retirá ▼</item>
@@ -368,7 +368,7 @@
     <string name="expense_step_info_exchange_rate_title">Comberçión de moneda</string>
     <string name="expense_step_info_exchange_rate_description">Çolo apareçe cuando la moneda der gâtto êh dîttinta a la moneda baçe der grupo. Êh ôççionâh y uça por defêtto el úrtimo tipo de cambio dîpponible.\n\nEn pagô con tarheta o dihitalê, puedê editâh er tipo de cambio o el importe combertío ar grupo y el otro campo çe âttualiça çolo. En pagô en Efêttibo, er cambio çe bincula a tû retirâh en cahero y puedê elehîh de qué fondo de efêttibo dêccontâl-lo.</string>
     <string name="expense_step_info_split_title">Reparto entre miembrô</string>
-    <string name="expense_step_info_split_description">Elihe cómo dibidîh er gâtto entre tû compañerô de biahe. Êh ôççionâh y por defêtto aplica un reparto a partê igualê entre tôh lô miembrô.\n\nÇi er grupo tiene çubunidadê (como parehâ o familiâ), âttiba \"Dibidîh por çubunidá\" pa repartîh primero por grupo.</string>
+    <string name="expense_step_info_split_description">Elihe cómo dibidîh er gâtto entre lô miembrô der grupo. Êh ôççionâh y por defêtto aplica un reparto a partê igualê entre tôh lô miembrô.\n\nÇi er grupo tiene çubunidadê (como parehâ o familiâ), âttiba \"Dibidîh por çubunidá\" pa repartîh primero por çubunidá.</string>
     <string name="expense_step_info_split_item_equal_title">Partê igualê</string>
     <string name="expense_step_info_split_item_equal_description">Dibide el importe a partê igualê entre lô miembrô çelêççionáô.</string>
     <string name="expense_step_info_split_item_exact_title">Cantidadê</string>
@@ -380,7 +380,7 @@
     <string name="expense_step_info_funding_source_title">Pagao con</string>
     <string name="expense_step_info_funding_source_description">Elihe de dónde çalió er dinero pa êtte pago. Êh ôççionâh y çelêççiona por defêtto \"Tu dinero\" çi er grupo no tiene fondô en er pockêh, o \"Pockêh der grupo\" çi ay un pockêh compartío âttibo.</string>
     <string name="expense_step_info_funding_source_item_your_money_title">Tu dinero</string>
-    <string name="expense_step_info_funding_source_item_your_money_description">Pagao de tu propio borçiyo. SplîTTrîh rehîttra la parte de cá miembro pa que tû compañerô te debuerban lo que corrêpponda ar liquidâh.</string>
+    <string name="expense_step_info_funding_source_item_your_money_description">Pagao de tu propio borçiyo. SplîTTrîh rehîttra la parte de cá miembro pa que lô demâh te debuerban lo que corrêpponda en lô acuerdô de pago.</string>
     <string name="expense_step_info_funding_source_item_group_pocket_title">Pockêh der grupo</string>
     <string name="expense_step_info_funding_source_item_group_pocket_description">Pagao con er fondo común que er grupo ya a reunío. Çe dêccuenta dirêttamente der çardo der pockêh çin neçeçidá de reemborçô perçonalê.</string>
     <string name="expense_step_info_contribution_scope_title">Pagao pa</string>

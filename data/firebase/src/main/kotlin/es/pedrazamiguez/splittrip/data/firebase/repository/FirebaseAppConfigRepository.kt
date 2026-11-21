@@ -440,23 +440,26 @@ class FirebaseAppConfigRepository(
                     "automatiçáô y la reçoluçión de problemâ de negoçio críticô en tó er stack."
             ),
             creditsMap = mapOf(
-                LANG_EN to "SplitTrip is a modular Android application designed for travellers to manage shared " +
-                    "expenses efficiently. It allows users to create expense groups, track spending in multiple " +
-                    "currencies, calculate debts, and sync data across devices.\n\n" +
-                    "Built with modern Android practices—including Jetpack Compose, Clean Architecture, and " +
-                    "Offline-First principles—the app serves as a reference for scalable, multi-module Android " +
+                LANG_EN to "SplitTrip is a modular Android application designed for groups to manage shared " +
+                    "expenses efficiently, from everyday shared living to trips abroad. It allows users to create " +
+                    "expense groups, track spending in multiple currencies, calculate debts, and sync data " +
+                    "across devices.\n\n" +
+                    "Built with modern Android practices, including Jetpack Compose, Clean Architecture, and " +
+                    "Offline-First principles, the app serves as a reference for scalable, multi-module Android " +
                     "development.",
-                LANG_ES to "SplitTrip es una aplicación modular de Android diseñada para que los viajeros gestionen " +
-                    "gastos compartidos de forma eficiente. Permite crear grupos de gastos, registrar pagos en " +
-                    "múltiples monedas, calcular deudas y sincronizar datos entre dispositivos.\n\n" +
-                    "Construida con las prácticas modernas de Android —incluyendo Jetpack Compose, Clean " +
-                    "Architecture y principios Offline-First—, la aplicación sirve como referencia para el " +
+                LANG_ES to "SplitTrip es una aplicación modular de Android diseñada para que los grupos gestionen " +
+                    "gastos compartidos de forma eficiente, desde la convivencia diaria hasta viajes al extranjero. " +
+                    "Permite crear grupos de gastos, registrar pagos en múltiples monedas, calcular deudas y " +
+                    "sincronizar datos entre dispositivos.\n\n" +
+                    "Construida con las prácticas modernas de Android, incluyendo Jetpack Compose, Clean " +
+                    "Architecture y principios Offline-First, la aplicación sirve como referencia para el " +
                     "desarrollo escalable y multimódulo en Android.",
-                LANG_ES_RAN to "SplîTTrîh êh una aplicaçión modulâh de Androîh diçeñá pa que lô biaherô hêttionen " +
-                    "gâttô compartíô de forma efiçiente. Permite creâh grupô de gâttô, rehîttrâh pagô en " +
-                    "múrtiplê monedâ, carculâh deudâ y çincroniçâh datô entre dîppoçitibô.\n\n" +
-                    "Côttruida con lâ prátticâ modênnâ de Androîh —incluyendo Hêppack Compoçe, Clean " +
-                    "Architecture y prinçipiô Ôffline-Firtt—, la aplicaçión çirbe como referençia pa er " +
+                LANG_ES_RAN to "SplîTTrîh êh una aplicaçión modulâh de Androîh diçeñá pa que lô grupô hêttionen " +
+                    "gâttô compartíô de forma efiçiente, dêdde la conbibençia diaria âtta biahê al êttranhero. " +
+                    "Permite creâh grupô de gâttô, rehîttrâh pagô en múrtiplê monedâ, carculâh deudâ y " +
+                    "çincroniçâh datô entre dîppoçitibô.\n\n" +
+                    "Côttruida con lâ prátticâ modênnâ de Androîh, incluyendo Jetpack Compose, Clean " +
+                    "Architecture y prinçipiô Ôffline-Firtt, la aplicaçión çirbe como referençia pa er " +
                     "deçarroyo êccalable y murtimódulo en Androîh."
             ),
             copyrightMap = mapOf(
