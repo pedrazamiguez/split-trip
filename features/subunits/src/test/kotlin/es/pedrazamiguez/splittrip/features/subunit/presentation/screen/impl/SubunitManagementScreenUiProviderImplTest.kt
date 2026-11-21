@@ -7,7 +7,10 @@ import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
+import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.subunit.GetGroupSubunitsFlowUseCase
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -18,12 +21,14 @@ import org.junit.jupiter.api.Test
 class SubunitManagementScreenUiProviderImplTest {
 
     private val observeSelectedGroupUseCase: ObserveSelectedGroupUseCase = mockk()
+    private val getGroupSubunitsFlowUseCase: GetGroupSubunitsFlowUseCase = mockk()
     private val featureGateService: FeatureGateService = mockk()
     private val upgradeNavigator: UpgradeNavigator = mockk(relaxed = true)
     private val telemetryTracker: TelemetryTracker = mockk(relaxed = true)
 
     private val uiProvider = SubunitManagementScreenUiProviderImpl(
         observeSelectedGroupUseCase = observeSelectedGroupUseCase,
+        getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
         featureGateService = featureGateService,
         upgradeNavigator = upgradeNavigator,
         telemetryTracker = telemetryTracker
@@ -38,6 +43,7 @@ class SubunitManagementScreenUiProviderImplTest {
     fun `provider configuration has expected custom route`() {
         val customRouteProvider = SubunitManagementScreenUiProviderImpl(
             observeSelectedGroupUseCase = observeSelectedGroupUseCase,
+            getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
             featureGateService = featureGateService,
             upgradeNavigator = upgradeNavigator,
             telemetryTracker = telemetryTracker,
@@ -47,16 +53,15 @@ class SubunitManagementScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick navigates to create when subunit creation is enabled`() {
+    fun `handleMainActionClick navigates to create when limitResult is Allowed`() {
         var createdRoute: String? = null
         var navigatedToSubscriptions = false
         var shownNotification: String? = null
 
         uiProvider.handleMainActionClick(
-            isSubunitCreationEnabled = true,
-            isActingUserPro = false,
+            limitResult = LimitResult.Allowed,
             groupId = "group-1",
-            proRequiredMessage = "Pro required",
+            limitReachedMessage = "Limit reached",
             navigateToCreate = { createdRoute = it },
             showProPreview = { navigatedToSubscriptions = true },
             showNotification = { shownNotification = it }
@@ -68,16 +73,15 @@ class SubunitManagementScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick opens pro preview without notification when disabled and user is not pro`() {
+    fun `handleMainActionClick opens pro preview without notification when blocked with upgradeRequired true`() {
         var createdRoute: String? = null
         var proPreviewShown = false
         var shownNotification: String? = null
 
         uiProvider.handleMainActionClick(
-            isSubunitCreationEnabled = false,
-            isActingUserPro = false,
+            limitResult = LimitResult.Blocked(GatedLimit.MAX_SUBUNITS_PER_GROUP, upgradeRequired = true),
             groupId = "group-1",
-            proRequiredMessage = "Pro required",
+            limitReachedMessage = "Limit reached",
             navigateToCreate = { createdRoute = it },
             showProPreview = { proPreviewShown = true },
             showNotification = { shownNotification = it }
@@ -90,8 +94,8 @@ class SubunitManagementScreenUiProviderImplTest {
             telemetryTracker.trackEvent(
                 MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
                 mapOf(
-                    MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                    MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                    MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                    MonetizationTelemetry.Param.GATE_NAME to "max_subunits_per_group",
                     MonetizationTelemetry.Param.ENTRY_POINT to MonetizationTelemetry.GateEntryPoint.SUBUNIT_FAB,
                     MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
                 )
@@ -100,16 +104,15 @@ class SubunitManagementScreenUiProviderImplTest {
     }
 
     @Test
-    fun `handleMainActionClick shows notification without pro preview when disabled and user is pro`() {
+    fun `handleMainActionClick shows notification without pro preview when blocked with upgradeRequired false`() {
         var createdRoute: String? = null
         var proPreviewShown = false
         var shownNotification: String? = null
 
         uiProvider.handleMainActionClick(
-            isSubunitCreationEnabled = false,
-            isActingUserPro = true,
+            limitResult = LimitResult.Blocked(GatedLimit.MAX_SUBUNITS_PER_GROUP, upgradeRequired = false),
             groupId = "group-1",
-            proRequiredMessage = "Pro required",
+            limitReachedMessage = "Limit reached",
             navigateToCreate = { createdRoute = it },
             showProPreview = { proPreviewShown = true },
             showNotification = { shownNotification = it }
@@ -117,13 +120,13 @@ class SubunitManagementScreenUiProviderImplTest {
 
         assertEquals(null, createdRoute)
         assertFalse(proPreviewShown)
-        assertEquals("Pro required", shownNotification)
+        assertEquals("Limit reached", shownNotification)
         verify(exactly = 1) {
             telemetryTracker.trackEvent(
                 MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
                 mapOf(
-                    MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                    MonetizationTelemetry.Param.GATE_NAME to "subunit_creation",
+                    MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                    MonetizationTelemetry.Param.GATE_NAME to "max_subunits_per_group",
                     MonetizationTelemetry.Param.ENTRY_POINT to MonetizationTelemetry.GateEntryPoint.SUBUNIT_FAB,
                     MonetizationTelemetry.Param.UPGRADE_PROMPTED to false
                 )
@@ -132,33 +135,39 @@ class SubunitManagementScreenUiProviderImplTest {
     }
 
     @Test
-    fun `shouldShowProBadge returns true when subunit creation disabled and user is not pro`() {
-        assertTrue(uiProvider.shouldShowProBadge(isSubunitCreationEnabled = false, isActingUserPro = false))
+    fun `shouldShowProBadge returns true when blocked with upgradeRequired true`() {
+        assertTrue(
+            uiProvider.shouldShowProBadge(
+                LimitResult.Blocked(GatedLimit.MAX_SUBUNITS_PER_GROUP, upgradeRequired = true)
+            )
+        )
     }
 
     @Test
-    fun `shouldShowProBadge returns false when subunit creation is enabled`() {
-        assertFalse(uiProvider.shouldShowProBadge(isSubunitCreationEnabled = true, isActingUserPro = false))
-        assertFalse(uiProvider.shouldShowProBadge(isSubunitCreationEnabled = true, isActingUserPro = true))
+    fun `shouldShowProBadge returns false when limitResult is Allowed`() {
+        assertFalse(uiProvider.shouldShowProBadge(LimitResult.Allowed))
     }
 
     @Test
-    fun `shouldShowProBadge returns false when user is pro even if creation disabled`() {
-        assertFalse(uiProvider.shouldShowProBadge(isSubunitCreationEnabled = false, isActingUserPro = true))
+    fun `shouldShowProBadge returns false when blocked with upgradeRequired false`() {
+        assertFalse(
+            uiProvider.shouldShowProBadge(
+                LimitResult.Blocked(GatedLimit.MAX_SUBUNITS_PER_GROUP, upgradeRequired = false)
+            )
+        )
     }
 
     @Test
-    fun `handleMainActionClick invokes showProPreview when creation disabled and user is not pro`() {
+    fun `handleMainActionClick invokes showProPreview when blocked with upgradeRequired true`() {
         val mockNavController = mockk<NavController>(relaxed = true)
         val showProPreview = {
             upgradeNavigator.navigateToUpgrade(mockNavController)
         }
 
         uiProvider.handleMainActionClick(
-            isSubunitCreationEnabled = false,
-            isActingUserPro = false,
+            limitResult = LimitResult.Blocked(GatedLimit.MAX_SUBUNITS_PER_GROUP, upgradeRequired = true),
             groupId = "group-1",
-            proRequiredMessage = "Pro required",
+            limitReachedMessage = "Limit reached",
             navigateToCreate = {},
             showProPreview = showProPreview,
             showNotification = {}

@@ -71,7 +71,21 @@
           "defaultValue": {
             "value": "5"
           },
-          "description": "Monthly quota of manual receipt attachments allocated to Free users.",
+          "description": "Shared monthly quota of Free media uploads (manual receipt attachments and group cover photo uploads).",
+          "valueType": "NUMBER"
+        },
+        "max_subunits_per_group_free": {
+          "defaultValue": {
+            "value": "1"
+          },
+          "description": "Maximum number of subunits allowed per group on the Free tier.",
+          "valueType": "NUMBER"
+        },
+        "max_subunits_per_group_pro": {
+          "defaultValue": {
+            "value": "-1"
+          },
+          "description": "Maximum number of subunits allowed per group on the Pro tier (-1 for unlimited).",
           "valueType": "NUMBER"
         },
         "pro_allowlist_email_hashes": {

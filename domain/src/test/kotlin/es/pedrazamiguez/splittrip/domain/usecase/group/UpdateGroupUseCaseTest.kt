@@ -5,12 +5,14 @@ import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveCurrencyException
 import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.usecase.group.impl.UpdateGroupUseCaseImpl
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
+import java.time.YearMonth
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -22,18 +24,24 @@ class UpdateGroupUseCaseTest {
 
     private lateinit var groupRepository: GroupRepository
     private lateinit var getGroupCurrenciesInUseUseCase: GetGroupCurrenciesInUseUseCase
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var useCase: UpdateGroupUseCase
 
+    private val fixedMonth = YearMonth.of(2026, 11)
     private val testGroup = Group(id = "group-123", name = "Trip to Japan", currency = "JPY")
 
     @BeforeEach
     fun setUp() {
         groupRepository = mockk()
         getGroupCurrenciesInUseUseCase = mockk()
+        userPreferenceRepository = mockk()
         coEvery { getGroupCurrenciesInUseUseCase(any()) } returns emptySet()
+        coEvery { userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(any()) } just Runs
         useCase = UpdateGroupUseCaseImpl(
             groupRepository = groupRepository,
-            getGroupCurrenciesInUseUseCase = getGroupCurrenciesInUseUseCase
+            getGroupCurrenciesInUseUseCase = getGroupCurrenciesInUseUseCase,
+            userPreferenceRepository = userPreferenceRepository,
+            yearMonthProvider = { fixedMonth }
         )
     }
 
@@ -78,6 +86,80 @@ class UpdateGroupUseCaseTest {
 
             // Then
             coVerify(exactly = 1) { groupRepository.updateGroup(testGroup) }
+        }
+
+        @Test
+        fun `does not increment monthly counter when mainImagePath is unchanged`() = runTest {
+            val existing = testGroup.copy(mainImagePath = "https://cdn.example/cover.jpg")
+            val updated = existing.copy(name = "Renamed Trip")
+            coEvery { groupRepository.getGroupById(testGroup.id) } returns existing
+            coEvery { groupRepository.updateGroup(updated) } just Runs
+
+            val result = useCase(updated)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 0) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(any())
+            }
+        }
+
+        @Test
+        fun `does not increment monthly counter when removing cover photo`() = runTest {
+            val existing = testGroup.copy(mainImagePath = "https://cdn.example/cover.jpg")
+            val updated = existing.copy(mainImagePath = null)
+            coEvery { groupRepository.getGroupById(testGroup.id) } returns existing
+            coEvery { groupRepository.updateGroup(updated) } just Runs
+
+            val result = useCase(updated)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 0) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(any())
+            }
+        }
+
+        @Test
+        fun `increments monthly counter once when adding cover photo where previously null`() = runTest {
+            val existing = testGroup.copy(mainImagePath = null)
+            val updated = existing.copy(mainImagePath = "/tmp/new-cover.jpg")
+            coEvery { groupRepository.getGroupById(testGroup.id) } returns existing
+            coEvery { groupRepository.updateGroup(updated) } just Runs
+
+            val result = useCase(updated)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(fixedMonth)
+            }
+        }
+
+        @Test
+        fun `increments monthly counter once when replacing existing cover photo`() = runTest {
+            val existing = testGroup.copy(mainImagePath = "https://cdn.example/old.jpg")
+            val updated = existing.copy(mainImagePath = "/tmp/new-cover.jpg")
+            coEvery { groupRepository.getGroupById(testGroup.id) } returns existing
+            coEvery { groupRepository.updateGroup(updated) } just Runs
+
+            val result = useCase(updated)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(fixedMonth)
+            }
+        }
+
+        @Test
+        fun `does not increment monthly counter when validation fails`() = runTest {
+            val archived = testGroup.copy(status = GroupStatus.ARCHIVED, mainImagePath = null)
+            val updated = archived.copy(mainImagePath = "/tmp/new-cover.jpg")
+            coEvery { groupRepository.getGroupById(testGroup.id) } returns archived
+
+            val result = useCase(updated)
+
+            assertTrue(result.isFailure)
+            coVerify(exactly = 0) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(any())
+            }
         }
     }
 

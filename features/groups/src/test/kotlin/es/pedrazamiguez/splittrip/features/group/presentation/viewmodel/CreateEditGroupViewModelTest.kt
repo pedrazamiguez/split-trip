@@ -14,9 +14,9 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
+import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
@@ -151,6 +151,9 @@ class CreateEditGroupViewModelTest {
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
         every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
         every { featureGateService.isFeatureEnabled(any(), any()) } returns flowOf(true)
+        every { featureGateService.observeMediaUploadQuota() } returns flowOf(
+            MediaUploadQuota(usedUploads = 0, monthlyFreeLimit = 5, isProTier = false)
+        )
         every { featureGateService.isActingUserPro() } returns flowOf(false)
         coEvery { featureGateService.checkLimit(any(), any(), any()) } returns flowOf(LimitResult.Allowed)
         coEvery { getSupportedCurrenciesUseCase() } returns Result.success(emptyList())
@@ -288,10 +291,22 @@ class CreateEditGroupViewModelTest {
         }
 
         @Test
-        fun `evaluates cover upload with groupId`() = runTest(testDispatcher) {
-            every {
-                featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, testGroupId)
-            } returns flowOf(false)
+        fun `enables cover upload when media upload quota has remaining uploads`() = runTest(testDispatcher) {
+            every { featureGateService.observeMediaUploadQuota() } returns flowOf(
+                MediaUploadQuota(usedUploads = 4, monthlyFreeLimit = 5, isProTier = false)
+            )
+            val vm = createViewModel()
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.isCoverUploadEnabled)
+        }
+
+        @Test
+        fun `disables cover upload when media upload quota is exhausted`() = runTest(testDispatcher) {
+            every { featureGateService.observeMediaUploadQuota() } returns flowOf(
+                MediaUploadQuota(usedUploads = 5, monthlyFreeLimit = 5, isProTier = false)
+            )
             val vm = createViewModel()
             vm.init(testGroupId)
             advanceUntilIdle()
@@ -1281,8 +1296,8 @@ class CreateEditGroupViewModelTest {
                     telemetryTracker.trackEvent(
                         MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
                         mapOf(
-                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                            MonetizationTelemetry.Param.GATE_NAME to "group_cover_upload",
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                            MonetizationTelemetry.Param.GATE_NAME to "manual_receipt_monthly_attachments",
                             MonetizationTelemetry.Param.ENTRY_POINT to
                                 MonetizationTelemetry.GateEntryPoint.GROUP_COVER_LOCKED_PREVIEW,
                             MonetizationTelemetry.Param.UPGRADE_PROMPTED to true

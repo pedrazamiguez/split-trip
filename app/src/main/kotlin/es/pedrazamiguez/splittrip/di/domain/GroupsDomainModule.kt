@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SettlementRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
@@ -69,7 +70,8 @@ val groupsDomainModule = module {
         createLoggingProxy<CreateGroupUseCase>(
             CreateGroupUseCaseImpl(
                 groupRepository = get<GroupRepository>(),
-                userRepository = get<UserRepository>()
+                userRepository = get<UserRepository>(),
+                userPreferenceRepository = get<UserPreferenceRepository>()
             ),
             LogTag.USE_CASE
         )
@@ -137,7 +139,8 @@ val groupsDomainModule = module {
         createLoggingProxy<UpdateGroupUseCase>(
             UpdateGroupUseCaseImpl(
                 groupRepository = get<GroupRepository>(),
-                getGroupCurrenciesInUseUseCase = get<GetGroupCurrenciesInUseUseCase>()
+                getGroupCurrenciesInUseUseCase = get<GetGroupCurrenciesInUseUseCase>(),
+                userPreferenceRepository = get<UserPreferenceRepository>()
             ),
             LogTag.USE_CASE
         )

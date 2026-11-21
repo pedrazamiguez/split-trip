@@ -51,6 +51,14 @@ class ProFeaturePreviewTypeTest {
     }
 
     @Test
+    fun `fromGatedLimit maps MAX_SUBUNITS_PER_GROUP to SUBUNIT_CREATION`() {
+        val result = ProFeaturePreviewType.fromGatedLimit(GatedLimit.MAX_SUBUNITS_PER_GROUP)
+
+        assertEquals(ProFeaturePreviewType.SUBUNIT_CREATION, result)
+        assertEquals(TablerIcons.Outline.Sitemap, result.icon)
+    }
+
+    @Test
     fun `fromGatedFeature maps GROUP_COVER_UPLOAD to GROUP_COVER_PHOTO`() {
         val result = ProFeaturePreviewType.fromGatedFeature(GatedFeature.GROUP_COVER_UPLOAD)
 

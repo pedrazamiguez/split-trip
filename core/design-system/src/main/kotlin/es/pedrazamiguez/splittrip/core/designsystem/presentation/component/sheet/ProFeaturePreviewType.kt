@@ -62,6 +62,7 @@ enum class ProFeaturePreviewType(
             GatedLimit.MAX_MEMBERS_PER_GROUP -> EXPANDED_GROUP_MEMBERS
             GatedLimit.AI_RECEIPT_MONTHLY_SCANS -> AI_RECEIPT_SCANNING
             GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS -> UNLIMITED_RECEIPTS
+            GatedLimit.MAX_SUBUNITS_PER_GROUP -> SUBUNIT_CREATION
         }
 
         fun fromGatedFeature(feature: GatedFeature): ProFeaturePreviewType = when (feature) {

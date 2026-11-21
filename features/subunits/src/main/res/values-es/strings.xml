@@ -19,6 +19,7 @@
     <string name="subunit_deleted_success">Subunidad eliminada</string>
     <string name="subunit_error_save_failed">Algo salió mal. Inténtalo de nuevo</string>
     <string name="subunit_error_pro_required">La creación de subunidades requiere SplitTrip Pro o un grupo creado por un suscriptor Pro.</string>
+    <string name="subunit_error_limit_reached">Has alcanzado el número máximo de subunidades para este grupo.</string>
     <string name="subunit_error_delete_failed">Error al eliminar la subunidad. Inténtalo de nuevo</string>
     <string name="subunit_delete_title">¿Eliminar subunidad?</string>
     <string name="subunit_delete_warning">¿Seguro que quieres eliminar \"%1$s\"?</string>

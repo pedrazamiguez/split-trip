@@ -58,7 +58,9 @@ SplitTrip parameters are organized into 5 functional groups:
 | `max_members_per_group_pro` | `NUMBER` | `20` | Maximum member cap for groups owned by a Pro user. |
 | `ai_receipt_monthly_limit_free` | `NUMBER` | `3` | Monthly quota of AI receipt scans allocated to Free users. |
 | `ai_receipt_monthly_limit_pro` | `NUMBER` | `100` | Monthly quota of AI receipt scans allocated to Pro users. |
-| `manual_receipt_monthly_limit_free` | `NUMBER` | `5` | Monthly quota of manual receipt attachments allocated to Free users. |
+| `manual_receipt_monthly_limit_free` | `NUMBER` | `5` | Shared monthly quota of Free media uploads (manual receipt attachments and group cover photo uploads). |
+| `max_subunits_per_group_free` | `NUMBER` | `1` | Maximum number of subunits allowed per group on the Free tier. |
+| `max_subunits_per_group_pro` | `NUMBER` | `-1` | Maximum number of subunits allowed per group on the Pro tier (`-1` for unlimited). |
 
 ### Group 2: Groups
 *General group limits, currency fallback defaults, and balance calculation debounce timers.*

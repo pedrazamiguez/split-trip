@@ -133,7 +133,7 @@
     <string name="group_error_limit_groups_exceeded">Las cuentas gratuitas permiten 1 grupo. Mejora a SplitTrip Pro para crear más.</string>
     <string name="group_error_limit_members_exceeded">Los grupos gratuitos admiten hasta 4 miembros. Mejora a SplitTrip Pro para añadir más.</string>
     <string name="group_error_limit_members_registered_exceeded">Los grupos están limitados a %1$d miembros.</string>
-    <string name="group_error_limit_cover_upload_disabled">Las portadas personalizadas requieren SplitTrip Pro o un grupo Pro.</string>
+    <string name="group_error_limit_cover_upload_disabled">Has agotado tus subidas gratuitas de este mes.</string>
 
     <!-- Edit Group -->
     <string name="group_edit_title">Editar grupo</string>
@@ -227,7 +227,7 @@
 
     <!-- Group Cover Photo Upfront Gate -->
     <string name="group_cover_photo_locked_pro_badge">Pro</string>
-    <string name="group_cover_photo_locked_description">Las fotos de portada requieren SplitTrip Pro. Toca para desbloquear.</string>
+    <string name="group_cover_photo_locked_description">Mejora a SplitTrip Pro para subir portadas y recibos ilimitados.</string>
 
     <!-- Group Member Capacity Indicator -->
     <string name="group_members_capacity_counter">%1$d/%2$d miembros</string>

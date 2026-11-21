@@ -132,7 +132,7 @@
     <string name="group_error_limit_groups_exceeded">Free accounts allow 1 group. Upgrade to SplitTrip Pro to create more.</string>
     <string name="group_error_limit_members_exceeded">Free groups allow up to 4 members. Upgrade to SplitTrip Pro to add more.</string>
     <string name="group_error_limit_members_registered_exceeded">Groups are limited to %1$d members.</string>
-    <string name="group_error_limit_cover_upload_disabled">Custom cover photos require SplitTrip Pro or a Pro group.</string>
+    <string name="group_error_limit_cover_upload_disabled">You\'ve used your monthly free uploads.</string>
 
     <!-- Edit Group -->
     <string name="group_edit_title">Edit group</string>
@@ -226,7 +226,7 @@
 
     <!-- Group Cover Photo Upfront Gate -->
     <string name="group_cover_photo_locked_pro_badge">Pro</string>
-    <string name="group_cover_photo_locked_description">Cover photos require SplitTrip Pro. Tap to upgrade.</string>
+    <string name="group_cover_photo_locked_description">Upgrade to SplitTrip Pro for unlimited cover photos and receipts.</string>
 
     <!-- Group Member Capacity Indicator -->
     <string name="group_members_capacity_counter">%1$d/%2$d members</string>
