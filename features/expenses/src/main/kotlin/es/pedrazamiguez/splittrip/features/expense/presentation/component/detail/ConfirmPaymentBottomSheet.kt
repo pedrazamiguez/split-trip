@@ -1,17 +1,12 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.detail
 
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.HorizonModalBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.ExpenseDetailUiModel
 
@@ -22,11 +17,6 @@ internal fun ConfirmPaymentBottomSheet(
     onConfirm: (Long) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val sheetState =
-        rememberBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-        )
     var amountText by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
 
@@ -41,13 +31,7 @@ internal fun ConfirmPaymentBottomSheet(
         }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        dragHandle = null,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentWindowInsets = { WindowInsets.safeDrawing }
-    ) {
+    HorizonModalBottomSheet(onDismissRequest = onDismiss) {
         ConfirmPaymentSheetContent(
             expense = expense,
             amountText = amountText,

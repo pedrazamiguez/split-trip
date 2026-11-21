@@ -17,8 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +35,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.PasswordRequirementsIndicator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.HorizonModalBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.event.AccountStatusUiEvent
@@ -50,18 +49,14 @@ internal fun LinkEmailBottomSheet(
     onEvent: (AccountStatusUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val isMismatch = uiState.linkPasswordError ==
         UiText.StringResource(R.string.account_status_link_email_sheet_error_mismatch)
     val isEmailEmptyError = uiState.linkPasswordError ==
         UiText.StringResource(R.string.account_status_link_email_sheet_error_email_empty)
     val isPasswordError = uiState.linkPasswordError != null && !isMismatch && !isEmailEmptyError
 
-    ModalBottomSheet(
+    HorizonModalBottomSheet(
         onDismissRequest = { onEvent(AccountStatusUiEvent.DismissLinkEmailSheet) },
-        sheetState = sheetState,
-        dragHandle = null,
-        containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         modifier = modifier
     ) {
