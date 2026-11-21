@@ -423,14 +423,14 @@
 
     <!-- AI Scan Pro Gate and Manual Receipt Demarcation -->
     <string name="expense_autofill_unlock_with_pro">Desbloquea escaneo IA con Pro</string>
-    <string name="add_expense_receipt_manual_description">Adjunta una foto o PDF como comprobante de compra para todos los miembros (Gratis e ilimitado).</string>
+    <string name="add_expense_receipt_manual_description">Adjunta una foto o PDF como comprobante de compra para todos los miembros.</string>
 
     <!-- Step Info Bottom Sheet -->
     <string name="action_step_info">Sobre este paso</string>
     <string name="expense_step_info_dismiss">Entendido</string>
 
     <string name="expense_step_info_title_title">Concepto del gasto</string>
-    <string name="expense_step_info_title_description">Dale al gasto un nombre claro (como \"Cena en Roma\" o \"Taxi al aeropuerto\") para que todos en el grupo lo identifiquen rápido en la lista de gastos.\n\nEste paso es obligatorio. En dispositivos compatibles, también puedes usar el escáner de recibos con IA para rellenar el concepto, el importe, la moneda y la fecha automáticamente a partir de un recibo.</string>
+    <string name="expense_step_info_title_description">Dale al gasto un nombre claro (como \"Cena de pizza margarita\" o \"Taxi al aeropuerto\") para que todos en el grupo lo identifiquen rápido en la lista de gastos.\n\nEste paso es obligatorio. En dispositivos compatibles, también puedes usar el escáner de recibos con IA para rellenar el concepto, el importe, la moneda y la fecha automáticamente a partir de un recibo.</string>
 
     <string name="expense_step_info_payment_method_title">Método de pago</string>
     <string name="expense_step_info_payment_method_description">Elige cómo se realizó el pago (Efectivo, Tarjeta de crédito o débito, Transferencia, Bizum y más). El último método usado en el grupo viene preseleccionado, y al tocar una opción pasarás directo al siguiente paso.\n\nAl elegir Efectivo, el gasto se vincula a tus retiradas de cajero y fija el tipo de cambio al de la retirada real. Los métodos digitales y con tarjeta usan tipos de cambio en vivo o personalizados.</string>
@@ -453,14 +453,14 @@
     <string name="expense_step_info_category_title">Categoría y subcategoría</string>
     <string name="expense_step_info_category_description">Agrupa el gasto bajo una categoría y una subcategoría opcional (como Comida y bebida, Alojamiento o Transporte). Es opcional y preselecciona la última categoría que usaste.\n\nLas categorías alimentan el gráfico de gastos en la pestaña de Gastos sin afectar a los balances de los miembros.</string>
 
-    <string name="expense_step_info_funding_source_title">Pagado con (Origen de los fondos)</string>
+    <string name="expense_step_info_funding_source_title">Pagado con</string>
     <string name="expense_step_info_funding_source_description">Elige de dónde salió el dinero para este pago. Es opcional y selecciona por defecto \"Tu dinero\" si el grupo no tiene fondos en el pocket, o \"Pocket del grupo\" si hay un pocket compartido activo.</string>
     <string name="expense_step_info_funding_source_item_your_money_title">Tu dinero</string>
     <string name="expense_step_info_funding_source_item_your_money_description">Pagado de tu propio bolsillo. SplitTrip registra la parte de cada miembro para que tus compañeros te devuelvan lo que corresponda al liquidar.</string>
     <string name="expense_step_info_funding_source_item_group_pocket_title">Pocket del grupo</string>
     <string name="expense_step_info_funding_source_item_group_pocket_description">Pagado con el fondo común que el grupo ya ha reunido. Se descuenta directamente del saldo del pocket sin necesidad de reembolsos personales.</string>
 
-    <string name="expense_step_info_contribution_scope_title">Pagado para (Alcance de la aportación)</string>
+    <string name="expense_step_info_contribution_scope_title">Pagado para</string>
     <string name="expense_step_info_contribution_scope_description">Solo aparece cuando pagas con \"Tu dinero\". Es opcional y por defecto selecciona \"Para ti\". Define a quién se le acredita este pago en los balances del grupo.</string>
     <string name="expense_step_info_contribution_scope_item_for_you_title">Para ti</string>
     <string name="expense_step_info_contribution_scope_item_for_you_description">Acredita tu balance personal para que el grupo te reembolse directamente.</string>
@@ -480,11 +480,13 @@
     <string name="expense_step_info_payment_status_item_scheduled_description">Pago futuro con fecha de vencimiento, mantenido aparte hasta que lo confirmes.</string>
     <string name="expense_step_info_payment_status_item_refundable_title">Pagado (Reembolsable)</string>
     <string name="expense_step_info_payment_status_item_refundable_description">Pago ya realizado (como una fianza reembolsable) con una fecha límite opcional, que puedes cancelar y reembolsar más adelante.</string>
+    <string name="expense_step_info_payment_status_item_cancelled_title">Cancelado / Reembolsado</string>
+    <string name="expense_step_info_payment_status_item_cancelled_description">Disponible al editar cualquier gasto, aunque no se marcara como reembolsable. Indica que el pago se canceló o reembolsó para excluirlo de los balances activos y devolver el dinero al pocket.</string>
 
     <string name="expense_step_info_receipt_title">Recibo adjunto</string>
-    <string name="expense_step_info_receipt_description">Adjunta una foto desde la cámara o galería, o sube un PDF como comprobante para todos los miembros (gratis e ilimitado). Es opcional y puedes omitirlo cuando quieras.\n\nEn dispositivos compatibles con SplitTrip Pro, también puedes usar el escáner de recibos con IA (con Gemini Nano en el dispositivo) para leer y rellenar los datos del gasto automáticamente.</string>
+    <string name="expense_step_info_receipt_description">Adjunta una foto desde la cámara o galería, o sube un PDF como comprobante para todos los miembros. Es opcional y puedes omitirlo cuando quieras.\n\nEn dispositivos compatibles, también puedes usar el escáner de recibos con IA (con Gemini Nano en el dispositivo) para rellenar los datos del gasto automáticamente. Las cuentas gratuitas incluyen un cupo mensual de escaneos, con límites mayores en SplitTrip Pro.</string>
 
-    <string name="expense_step_info_add_ons_title">Extras (Propinas, comisiones y descuentos)</string>
+    <string name="expense_step_info_add_ons_title">Extras y suplementos</string>
     <string name="expense_step_info_add_ons_description">Desglosa propinas, comisiones, recargos o descuentos como un importe fijo o un porcentaje. Es opcional y está vacío por defecto. Todos los extras se reparten proporcionalmente según la parte de cada persona en el gasto base.</string>
     <string name="expense_step_info_add_ons_item_on_top_title">Adicional</string>
     <string name="expense_step_info_add_ons_item_on_top_description">Se suma al importe introducido (o se resta si es un descuento), cambiando el total pagado.</string>

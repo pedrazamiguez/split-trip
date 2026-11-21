@@ -176,6 +176,10 @@ enum class AddExpenseStep(
             ExpenseStepInfoItem(
                 titleRes = R.string.expense_step_info_payment_status_item_refundable_title,
                 descriptionRes = R.string.expense_step_info_payment_status_item_refundable_description
+            ),
+            ExpenseStepInfoItem(
+                titleRes = R.string.expense_step_info_payment_status_item_cancelled_title,
+                descriptionRes = R.string.expense_step_info_payment_status_item_cancelled_description
             )
         ),
         isOptional = true

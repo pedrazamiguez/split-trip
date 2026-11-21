@@ -412,7 +412,7 @@ class AddExpenseStepTest {
                 AddExpenseStep.SPLIT to 3,
                 AddExpenseStep.FUNDING_SOURCE to 2,
                 AddExpenseStep.CONTRIBUTION_SCOPE to 3,
-                AddExpenseStep.PAYMENT_STATUS to 3,
+                AddExpenseStep.PAYMENT_STATUS to 4,
                 AddExpenseStep.ADD_ONS to 2
             )
 
