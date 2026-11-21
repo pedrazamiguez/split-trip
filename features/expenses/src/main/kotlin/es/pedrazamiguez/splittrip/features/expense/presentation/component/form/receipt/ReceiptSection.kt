@@ -11,7 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.badge.ProBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.features.expense.R
 
@@ -50,9 +55,10 @@ internal fun ReceiptSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (remainingAttachmentsLabel != null) {
-            ManualReceiptQuotaBadge(
-                label = remainingAttachmentsLabel,
-                isExhausted = isQuotaExhausted
+            PassportTag(
+                text = remainingAttachmentsLabel,
+                icon = if (isQuotaExhausted) TablerIcons.Outline.Lock else TablerIcons.Outline.Receipt,
+                style = if (isQuotaExhausted) PassportTagStyle.ERROR else PassportTagStyle.NEUTRAL
             )
         }
         ReceiptImagePicker(
