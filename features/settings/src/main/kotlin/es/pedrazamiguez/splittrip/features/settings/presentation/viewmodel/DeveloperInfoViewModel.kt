@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetDeveloperInfoUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.DeveloperInfoUiMapper
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.stateIn
 class DeveloperInfoViewModel(
     getDeveloperInfoUseCase: GetDeveloperInfoUseCase,
     getAppLanguageUseCase: GetAppLanguageUseCase,
-    private val getDiagnosticLogsUseCase: GetDiagnosticLogsUseCase,
     private val developerInfoUiMapper: DeveloperInfoUiMapper
 ) : ViewModel() {
 
@@ -29,8 +27,6 @@ class DeveloperInfoViewModel(
         started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MS),
         initialValue = developerInfoUiMapper.mapToUiState(getDeveloperInfoUseCase().value, null)
     )
-
-    fun getDiagnosticLogs(): String = getDiagnosticLogsUseCase()
 
     companion object {
         private const val SUBSCRIPTION_TIMEOUT_MS = 5_000L

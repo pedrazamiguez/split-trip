@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.DeveloperCreditsCard
-import es.pedrazamiguez.splittrip.features.settings.presentation.component.DeveloperDiagnosticsCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.DeveloperHeroCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.DeveloperLinksCard
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.DeveloperInfoUiState
@@ -21,8 +20,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.model.Developer
 @Composable
 fun DeveloperInfoScreen(
     uiState: DeveloperInfoUiState,
-    onLinkClick: (String) -> Unit,
-    onCopyDiagnosticsClick: () -> Unit = {}
+    onLinkClick: (String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -41,10 +39,6 @@ fun DeveloperInfoScreen(
                 uiState = uiState,
                 onLinkClick = onLinkClick
             )
-        }
-
-        item(key = "developer_diagnostics_card") {
-            DeveloperDiagnosticsCard(onCopyDiagnosticsClick = onCopyDiagnosticsClick)
         }
 
         if (uiState.credits.isNotBlank()) {

@@ -332,9 +332,6 @@
     <string name="subscriptions_complimentary_pro_manage_info">You have complimentary SplitTrip Pro access—no Google Play subscription to manage.</string>
 
     <!-- Developer Diagnostics -->
-    <string name="developer_diagnostics_title">Diagnostic Logs</string>
-    <string name="developer_diagnostics_description">Export sanitized in-memory logs for bug diagnosis and troubleshooting.</string>
-    <string name="developer_diagnostics_copy_action">Copy Diagnostics</string>
     <string name="developer_diagnostics_copied">Diagnostic logs copied to clipboard</string>
     <string name="settings_developer_diagnostics_title">Diagnostic Logs</string>
     <string name="settings_developer_diagnostics_description">Copy sanitized logs for debugging</string>
