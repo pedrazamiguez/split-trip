@@ -15,7 +15,7 @@ private fun DeleteConfirmationDialogPreview() {
         DeleteConfirmationDialog(
             groupToDelete = GroupUiModel(
                 id = "1",
-                name = "Summer Trip"
+                name = "Shared Apartment"
             ),
             onDeleteGroup = {},
             onDismiss = {}
@@ -30,7 +30,7 @@ private fun LeaveConfirmationDialogPreview() {
         LeaveConfirmationDialog(
             groupToLeave = GroupUiModel(
                 id = "1",
-                name = "Summer Trip"
+                name = "Shared Apartment"
             ),
             onLeaveGroup = {},
             onDismiss = {}

@@ -168,21 +168,21 @@
     <string name="account_status_link_email_sheet_email">Dirêççión de correo elêttrónico</string>
     <string name="account_status_link_email_sheet_error_email_empty">Er correo no puede êttâh baçío</string>
     <string name="settings_logout_guest_dialog_title">¿Rêttableçêh çeçión de imbitao?</string>
-    <string name="settings_logout_guest_dialog_text">Çerrâh çeçión o rêttableçêh borrará de forma permanente tôh lô biahê, gâttô y balançê localê. ¡Açegúrate de binculâh tu cuenta antê pa guardâh tû datô!</string>
+    <string name="settings_logout_guest_dialog_text">Çerrâh çeçión o rêttableçêh borrará de forma permanente tôh lô grupô, gâttô y balançê localê. ¡Açegúrate de binculâh tu cuenta antê pa guardâh tû datô!</string>
     <string name="faq_title">Preguntâ frecuentê</string>
     <string name="faq_question_1">¿Qué êh SplîTTrîh?</string>
-    <string name="faq_answer_1">SplîTTrîh êh una aplicaçión modênna pa compartîh gâttô y dibidîh cuentâ de grupo diçeñá pa açêh que lô biahê, çenâ y ebentô en grupo çean librê de êttrêh. Carcula balançê, râttrea gâttô y conçilia deudâ çin conêççión o en línea.</string>
+    <string name="faq_answer_1">SplîTTrîh êh una aplicaçión modênna pa compartîh gâttô y preçupuêttô de grupo, diçeñá pa que la combibençia, lô gâttô der día a día, lâ çenâ y lô biahê en grupo çean çin complicaçionê. Carcula balançê, controla er gâtto y conçilia deudâ con o çin conêççión.</string>
     <string name="faq_question_2">¿Cómo funçiona er modo çin conêççión?</string>
     <string name="faq_answer_2">SplîTTrîh êttá côttruío çobre una arquitêttura que prioriça la baçe de datô locâh (ôffline-firtt). Cuarquiêh trançâççión o ediçión de grupo que realiçê çe guarda îttantáneamente en tu baçe de datô locâh (Room) y çe propaga a la interfâh de uçuario de îmmediato. Cuando ay una conêççión de ré dîpponible, lô cambiô çe çincroniçan de forma çegura en çegundo plano en nuêttrâ baçê de datô de Cloûh Firêttore.</string>
     <string name="faq_question_3">¿Puedo uçâh múrtiplê monedâ?</string>
-    <string name="faq_answer_3">¡Çí! SplîTTrîh âmmite completamente biahê con múrtiplê monedâ. Puedê êttableçêh una moneda predeterminá pa tu perfîh, êppeçificâh monedâ pa gâttô indibidualê y bêh balançê combertíô automáticamente baçáô en tipô de cambio en tiempo reâh.</string>
+    <string name="faq_answer_3">¡Çí! SplîTTrîh âmmite completamente grupô con múrtiplê monedâ. Puedê êttableçêh una moneda predeterminá pa tu perfîh, êppeçificâh monedâ pa gâttô indibidualê y bêh balançê combertíô automáticamente baçáô en tipô de cambio en tiempo reâh.</string>
     <string name="faq_question_4">¿Mî datô êttán çegurô?</string>
-    <string name="faq_answer_4">Âççolutamente. SplîTTrîh utiliça Firebaçe Autentication pa autenticâh a lô uçuariô de forma çegura. Tu informaçión perçonâh, lô detayê der biahe y lâ trançâççionê finançierâ êttán protehíô utiliçando çifrao de tránçito êttándâ de la indûttria y robûttâ reglâ de çeguridá de Firêttore.</string>
+    <string name="faq_answer_4">Âççolutamente. SplîTTrîh utiliça Firebaçe Autentication pa autenticâh a lô uçuariô de forma çegura. Tu informaçión perçonâh, lô detayê de tû grupô y lâ trançâççionê finançierâ êttán protehíô utiliçando çifrao de tránçito êttándâ de la indûttria y robûttâ reglâ de çeguridá de Firêttore.</string>
     <string name="faq_question_5">¿Cómo binculo mi cuenta de imbitao?</string>
     <string name="faq_answer_5">Çi començâtte como imbitao, puedê îh a Ahûttê &gt; Êttao de la cuenta y binculâh una cuenta de Google o un correo elêttrónico y contraçeña. Êtto fuçiona tu çeçión locâh de imbitao con una cuenta permanente rêppardá en la nube pa que nunca pierdâ tû datô.</string>
     <string name="privacy_title">Política de pribaçidá</string>
     <string name="privacy_section_1_title">1. Informaçión que recopilamô</string>
-    <string name="privacy_section_1_body">Recopilamô informaçión de autenticaçión cuando te rehîttrâ (correo elêttrónico, nombre de perfîh, imahen de perfîh) y detayê finançierô compartíô (biahê, dêccrîççionê de gâttô, importê y lîttâ de miembrô) pa façilitâh lô cárculô de deudâ. No recopilamô datô de tarhetâ de crédito, credençialê bancariâ ni nô conêttamô a APÎ de bancô. Lô acuerdô de pago çon cárculô informatibô y la aplicaçión no ehecuta trâfferençiâ monetariâ. Lâ cuentâ de imbitao armaçenan êttô datô çolo en tu dîppoçitibo.</string>
+    <string name="privacy_section_1_body">Recopilamô informaçión de autenticaçión cuando te rehîttrâ (correo elêttrónico, nombre de perfîh, imahen de perfîh) y detayê finançierô compartíô (grupô, dêccrîççionê de gâttô, importê y lîttâ de miembrô) pa façilitâh lô cárculô de deudâ. No recopilamô datô de tarhetâ de crédito, credençialê bancariâ ni nô conêttamô a APÎ de bancô. Lô acuerdô de pago çon cárculô informatibô y la aplicaçión no ehecuta trâfferençiâ monetariâ. Lâ cuentâ de imbitao armaçenan êttô datô çolo en tu dîppoçitibo.</string>
     <string name="privacy_section_2_title">2. Cómo utiliçamô lô datô</string>
     <string name="privacy_section_2_body">Tû datô çe proçeçan en er dîppoçitibo y çe çincroniçan con la nube pa la colaboraçión en grupo en tiempo reâh. No bendemô ni monetiçamô tû rehîttrô de trançâççionê, métodô de pago o informaçión perçonâh.</string>
     <string name="privacy_section_3_title">3. Çeguridá de lô datô</string>
@@ -246,12 +246,12 @@
     <string name="account_security_manage_providers_button">Âmminîttrâh probeedorê</string>
     <string name="account_security_error_prefix">Errôh: %1$s</string>
     <string name="subscriptions_title">Çûccrîççionê</string>
-    <string name="subscriptions_subtitle">Elihe er plan que mehôh çe adâtte a tu êttilo de biahe</string>
+    <string name="subscriptions_subtitle">Elihe er plan que mehôh çe adâtte a tû grupô</string>
     <string name="subscriptions_interval_monthly">Mençuâh</string>
     <string name="subscriptions_interval_annual">Anuâh</string>
     <string name="subscriptions_annual_save_badge">Aorra 25%</string>
     <string name="subscriptions_tier_free_title">SplîTTrîh Free</string>
-    <string name="subscriptions_tier_free_description">Hêttión de gâttô eçençiâh pa biahê ocaçionalê</string>
+    <string name="subscriptions_tier_free_description">Hêttión de gâttô eçençiâh pa grupô der día a día y biahê</string>
     <string name="subscriptions_tier_free_price">0 €</string>
     <string name="subscriptions_tier_free_period">Gratî pa çiempre</string>
     <string name="subscriptions_tier_pro_title">SplîTTrîh Pro</string>
@@ -264,7 +264,7 @@
     <string name="subscriptions_period_annual_billed">fâtturao anuarmente</string>
     <string name="subscriptions_feature_free_groups">1 grupo</string>
     <string name="subscriptions_feature_free_members">Âtta 4 miembrô por grupo</string>
-    <string name="subscriptions_feature_free_standard_calc">Liquidaçión êttándâ de deudâ</string>
+    <string name="subscriptions_feature_free_standard_calc">Acuerdô de pago êttándâ</string>
     <string name="subscriptions_feature_free_multi_currency">Çoporte murtidibiça</string>
     <string name="subscriptions_feature_subunits">Hêttión de çubunidadê</string>
     <string name="subscriptions_feature_pro_unlimited_groups">Grupô ilimitáô</string>
@@ -322,5 +322,5 @@
     <string name="plan_allowances_perk_status_included">Incluío</string>
     <string name="plan_allowances_perk_status_pro_only">Pro</string>
     <string name="plan_allowances_upgrade_title">¿Neçeçitâ mâh capaçidá?</string>
-    <string name="plan_allowances_upgrade_description">Mehora a SplîTTrîh Pro pa tenêh mâh grupô, biahê mâh grandê, mâh êccaneô IA de reçibô, çubidâ de arxibô ilimitâh, çubunidadê ilimitâh y una êpperiençia çin anunçiô.</string>
+    <string name="plan_allowances_upgrade_description">Mehora a SplîTTrîh Pro pa tenêh mâh grupô, mâh miembrô por grupo, mâh êccaneô IA de reçibô, çubidâ de arxibô ilimitâh, çubunidadê ilimitâh y una êpperiençia çin anunçiô.</string>
 </resources>

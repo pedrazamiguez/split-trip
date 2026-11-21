@@ -40,7 +40,7 @@ fun SubunitManagementScreenWithDataPreview() {
             uiState = SubunitManagementUiState(
                 isLoading = false,
                 groupId = "group-1",
-                groupName = "Summer Trip",
+                groupName = "Shared Apartment",
                 subunits = PREVIEW_SUBUNIT_UI_MODELS
             )
         )
@@ -55,7 +55,7 @@ fun SubunitManagementScreenArchivedGroupPreview() {
             uiState = SubunitManagementUiState(
                 isLoading = false,
                 groupId = "group-1",
-                groupName = "Summer Trip",
+                groupName = "Shared Apartment",
                 subunits = PREVIEW_SUBUNIT_UI_MODELS,
                 isGroupArchived = true,
                 isSubunitCreationEnabled = false

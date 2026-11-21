@@ -1,13 +1,13 @@
 <resources>
     <!-- Onboarding Screen -->
-    <string name="onboarding_welcome_title">Travel together, minus the spreadsheets</string>
+    <string name="onboarding_welcome_title">Share expenses, minus the spreadsheets</string>
     <string name="onboarding_welcome_subtitle">Log out-of-pocket expenses in seconds or pool cash into a shared Group Pocket</string>
     <string name="onboarding_complete_button">Let\'s start!</string>
     <string name="onboarding_next_button">Next</string>
     <string name="onboarding_back_button">Back</string>
     <string name="onboarding_skip_button">Skip</string>
-    <string name="onboarding_step_trips_title">Trips Without Spreadsheets</string>
-    <string name="onboarding_step_trips_description">Forget manual currency math and messy notes. Organise group expenses across any currency with automatic conversion from takeoff to touchdown.</string>
+    <string name="onboarding_step_trips_title">Shared Groups Without Spreadsheets</string>
+    <string name="onboarding_step_trips_description">Forget manual currency calculations and messy notes. Organise expenses for households, couples, friends, or trips across any currency with automatic conversion.</string>
     <string name="onboarding_step_split_title">Quick Log, Smart Splits</string>
     <string name="onboarding_step_split_description">Log an expense in 3 quick steps using smart defaults. Customise splits (equal, exact, percentage, or family subunits), extras, and receipts only when you need them.</string>
     <string name="onboarding_step_cash_title">Your Money or Group Pocket</string>

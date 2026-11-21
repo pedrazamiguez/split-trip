@@ -16,7 +16,7 @@
 | **Default Language** | English (`en-GB`) | European English baseline locale |
 | **Additional Languages** | Spanish (`es-ES`) | European Castilian Spanish (Tone of Voice compliant) |
 | **Content Rating** | PEGI 3 / ESRB Everyone | Contains ads (Free tier). No offensive content, violence, or gambling |
-| **Target Audience** | 18+ (General Audience) | Group travellers, roommates, couples, families |
+| **Target Audience** | 18+ (General Audience) | Everyday groups, couples, flatmates, families, and travellers |
 | **Privacy Policy URL** | `https://splittrip.eu/privacy-policy.html` | Public web-accessible URL |
 | **Developer Contact** | `support@splittrip.eu` | Official support inbox |
 | **Website** | `https://splittrip.eu` | Official developer website & web presence |
@@ -38,32 +38,32 @@ SplitTrip: Group Expenses
 Split travel expenses offline & multi-currency. Fair debts, zero stress.
 ```
 
-### Full Description (2,488 / 4,000 characters)
+### Full Description (2,623 / 4,000 characters)
 ```text
-Travelling with friends, family, or your partner should be about making memories—not doing accounting gymnastics in messy spreadsheets. SplitTrip is the modern, offline-first group expense manager crafted specifically for travellers who cross borders, share expenses, and value fairness.
+Sharing expenses with friends, flatmates, your partner, or family should be about enjoying time together, not doing accounting gymnastics in messy spreadsheets. SplitTrip is the modern, offline-first group expense manager built for everyday shared life and travellers who cross borders.
 
-Whether you're backpacking through Southeast Asia, organising a European road trip, or sharing an apartment with flatmates, SplitTrip handles complex currencies, cash pockets, and debt settlements effortlessly.
+Whether you're backpacking through Southeast Asia, organising a European road trip, or sharing household bills with a partner or flatmates, SplitTrip handles complex currencies, cash pockets, and debt settlements effortlessly.
 
 ⚡ TRUE OFFLINE-FIRST ARCHITECTURE
-Log expenses anywhere—on a mountain hike, on a flight, or in remote areas with zero cell reception. SplitTrip writes all transactions instantly to your local device database. When internet connection is restored, background synchronisation reconciles changes across your entire group automatically.
+Log expenses anywhere: at a restaurant, on a mountain hike, on a flight, or in remote areas with zero cell reception. SplitTrip writes all transactions instantly to your local device database. When internet connection is restored, background synchronisation reconciles changes across your entire group automatically.
 
 🌍 MULTI-CURRENCY & REAL-TIME EXCHANGE RATES
 Spend in Japanese Yen, pay back in Euros, or split in US Dollars. SplitTrip supports 150+ global currencies with live exchange rates and captures immutable rate snapshots at the moment of each transaction so past calculations never shift unexpectedly.
 
 🤝 SETTLEMENT CONSENSUS ("YOUR POSITION")
-Eliminate end-of-trip awkwardness. SplitTrip simplifies tangled web-of-debt balances into the fewest possible transactions. Propose debt settlements directly within the app, review pending payments, and track mutual consensus state in real time.
+Eliminate awkwardness when settling up. SplitTrip simplifies tangled web-of-debt balances into the fewest possible transactions. Propose debt settlements directly within the app, review pending payments, and track mutual consensus state in real time.
 
 💰 GROUP POCKETS & FIFO CASH TRANCHES
 Keep shared virtual group funds separate from physical cash in hand. Track contributions into the group pocket and log cash withdrawals with First-In, First-Out (FIFO) currency tracking to ensure exact multi-currency precision down to the cent.
 
 👥 SUBUNITS FOR COUPLES & FAMILIES
-Travelling as a couple or family within a larger group? Create subunits to aggregate balances or split bills proportionally between units without tedious manual recalculations.
+Sharing expenses as a couple or family within a larger group? Create subunits to aggregate balances or split bills proportionally between units without tedious manual recalculations.
 
 📸 SMART RECEIPT SCANNING [PRO]
-Snap a photo of your dining or taxi receipt. SplitTrip extracts the total, tax, currency, and line items automatically, letting you assign specific dishes or add-on items to companions in seconds.
+Snap a photo of your dining or taxi receipt. SplitTrip extracts the total, tax, currency, and line items automatically, letting you assign specific dishes or add-on items to group members in seconds.
 
 🔒 AD-FREE WITH PRO & PRIVACY-FIRST
-Your financial data belongs to you. No bank linking or credit cards required. SplitTrip is a dedicated travel expense ledger—we never access your personal bank accounts or process money transfers. SplitTrip Pro offers an entirely ad-free experience, while the Free tier includes non-intrusive banner and occasional interstitial ads. SplitTrip never sells your transaction history to data brokers.
+Your financial data belongs to you. No bank linking or credit cards required. SplitTrip is a dedicated shared-expense ledger: we never access your personal bank accounts or process money transfers. SplitTrip Pro offers an entirely ad-free experience, while the Free tier includes non-intrusive banner and occasional interstitial ads. SplitTrip never sells your transaction history to data brokers.
 ```
 
 
@@ -72,7 +72,7 @@ Your financial data belongs to you. No bank linking or credit cards required. Sp
 ## 3. Spanish Store Listing (`es-ES`)
 
 > [!NOTE]
-> All Spanish copy follows SplitTrip's **Tone of Voice & Verbal Identity Guide** (`docs/design-system/tone-of-voice.md`) and **Ubiquitous Language** standards: adult elegance, conversational warmth, and precise financial travel terminology (*Pocket del grupo*, *Acuerdo de pago*, *Aportación*, *Retirada de efectivo*, *Reparto*).
+> All Spanish copy follows SplitTrip's **Tone of Voice & Verbal Identity Guide** (`docs/design-system/tone-of-voice.md`) and **Ubiquitous Language** standards: adult elegance, conversational warmth, and precise shared-expense terminology (*Pocket del grupo*, *Acuerdo de pago*, *Aportación*, *Retirada de efectivo*, *Reparto*).
 
 ### App Title (26 / 30 characters)
 ```text
@@ -84,32 +84,32 @@ SplitTrip: Gastos de viaje
 Divide gastos de viaje sin conexión y multidivisa. Cuentas claras sin estrés.
 ```
 
-### Full Description (2,667 / 4,000 characters)
+### Full Description (2,813 / 4,000 characters)
 ```text
-Viajar con amigos, en pareja o en familia consiste en coleccionar experiencias inolvidables, no en pelear con hojas de cálculo ni acumular recibos arrugados. SplitTrip es el gestor inteligente de gastos compartidos diseñado específicamente para viajeros que cruzan fronteras, comparten aventuras y buscan cuentas transparentes.
+Compartir gastos con amigos, en pareja, en piso compartido o en familia consiste en disfrutar juntos, no en pelear con hojas de cálculo ni acumular recibos arrugados. SplitTrip es el gestor inteligente de gastos compartidos pensado para grupos del día a día y viajeros que cruzan fronteras.
 
-Tanto si estás de ruta en furgoneta, de vacaciones en la playa o compartiendo piso, SplitTrip resuelve los cambios de moneda, los botes comunes y los acuerdos de pago con total claridad y elegancia.
+Tanto si estás de ruta en furgoneta, de vacaciones en la playa o compartiendo gastos en pareja o piso compartido, SplitTrip resuelve los cambios de moneda, los pockets del grupo y los acuerdos de pago con total claridad y elegancia.
 
 ⚡ FUNCIONAMIENTO REAL SIN CONEXIÓN (OFFLINE-FIRST)
-Añade gastos en cualquier lugar: en un vuelo, en alta mar o en pueblos de montaña sin cobertura. SplitTrip registra todas las transacciones de forma instantánea en la base de datos local de tu móvil. En cuanto recuperes la conexión, la sincronización en segundo plano actualiza los datos del grupo de forma automática y transparente.
+Añade gastos en cualquier lugar: en un restaurante, en un vuelo, en alta mar o en pueblos de montaña sin cobertura. SplitTrip registra todas las transacciones de forma instantánea en la base de datos local de tu móvil. En cuanto recuperes la conexión, la sincronización en segundo plano actualiza los datos del grupo de forma automática y transparente.
 
 🌍 MULTIDIVISA Y TIPOS DE CAMBIO OFICIALES
-Paga en yenes, aporta en dólares o liquida en euros. Compatible con más de 150 divisas internacionales con tipos de cambio actualizados. SplitTrip almacena una instantánea inmutable del cambio oficial en cada gasto para que las cuentas nunca varíen con el tiempo.
+Paga en yenes, aporta en dólares o acuerda pagos en euros. Compatible con más de 150 divisas internacionales con tipos de cambio actualizados. SplitTrip almacena una instantánea inmutable del cambio oficial en cada gasto para que las cuentas nunca varíen con el tiempo.
 
 🤝 ACUERDOS DE PAGO Y CONSENSO ("TU POSICIÓN")
-Olvídate de las tensiones al final del viaje. SplitTrip simplifica las deudas cruzadas para saldarlas con el menor número de transferencias posible. Propón acuerdos de pago, revisa transferencias pendientes y confirma recepciones con un sistema de consenso claro y transparente.
+Olvídate de las tensiones al ajustar cuentas. SplitTrip simplifica las deudas cruzadas para saldarlas con el menor número de transferencias posible. Propón acuerdos de pago, revisa transferencias pendientes y confirma recepciones con un sistema de consenso claro y transparente.
 
 💰 POCKET DEL GRUPO Y RETIRADAS DE EFECTIVO
 Gestiona el fondo virtual compartido separado del dinero físico. Registra aportaciones al pocket del grupo y retiradas de efectivo con trazabilidad FIFO de divisas, garantizando precisión bancaria hasta el último céntimo.
 
 👥 SUBUNIDADES PARA PAREJAS Y FAMILIAS
-¿Viajas en pareja o con hijos dentro de un grupo grande? Agrupa miembros en subunidades para repartir costes de forma conjunta o proporcional sin necesidad de hacer cálculos manuales.
+¿Compartes gastos en pareja o en familia dentro de un grupo grande? Agrupa miembros en subunidades para repartir costes de forma conjunta o proporcional sin necesidad de hacer cálculos manuales.
 
 📸 ESCANEO INTELIGENTE DE TIQUES [PRO]
 Fotografía el tique de una cena o transporte. SplitTrip detecta automáticamente importes, impuestos y conceptos para que puedas asignar extras o consumiciones individuales en segundos.
 
 🔒 SIN PUBLICIDAD CON PRO Y MÁXIMA PRIVACIDAD
-Tus datos financieros son únicamente tuyos. Sin necesidad de vincular cuentas bancarias ni tarjetas de crédito. SplitTrip es un registro de viaje independiente: nunca accedemos a tus cuentas bancarias personales ni gestionamos transferencias monetarias. SplitTrip Pro elimina por completo la publicidad, mientras que la versión gratuita incluye banners y anuncios intersticiales puntuales y no intrusivos. SplitTrip jamás comercializa tus registros de viaje.
+Tus datos financieros son únicamente tuyos. Sin necesidad de vincular cuentas bancarias ni tarjetas de crédito. SplitTrip es un registro de gastos compartidos independiente: nunca accedemos a tus cuentas bancarias personales ni gestionamos transferencias monetarias. SplitTrip Pro elimina por completo la publicidad, mientras que la versión gratuita incluye banners y anuncios intersticiales puntuales y no intrusivos. SplitTrip jamás comercializa tus registros financieros.
 ```
 
 ---
@@ -156,9 +156,9 @@ Every declaration below directly maps to Google Play Console's Data Safety quest
 
 A minimum of 4 and maximum of 8 screenshots are required. The recommended 6-screenshot sequence captures the core value proposition:
 
-1. **Screen 1 — Trips Hub:**
+1. **Screen 1 — Groups Hub:**
    - Visual: Groups screen showing upcoming and completed journeys (e.g., *"Ruta por Islandia"*, *"Fin de semana en Roma"*), offline status chips, and group member avatars.
-   - Header Caption: **Plan trips & track group costs effortlessly** / **Gestiona tus viajes y gastos en grupo**
+   - Header Caption: **Organise shared groups & track costs effortlessly** / **Organiza tus grupos y gastos compartidos**
 2. **Screen 2 — Multi-Currency Expense Log:**
    - Visual: Expense listing displaying multiple currencies (e.g., EUR, JPY, USD), category badges (Food, Transport, Lodging), and live rate conversions.
    - Header Caption: **Log expenses in 150+ currencies with live rates** / **Registra gastos en más de 150 divisas al instante**
@@ -178,7 +178,7 @@ A minimum of 4 and maximum of 8 screenshots are required. The recommended 6-scre
 ---
 
 ### Tablet Screenshots Specification
-- **7-inch Tablet:** Minimum 1 screenshot (min 1200 x 1920 or 1920 x 1200), max 8 screenshots. Recommended: Trips Hub & Balances Dashboard in 2-pane master-detail layout.
+- **7-inch Tablet:** Minimum 1 screenshot (min 1200 x 1920 or 1920 x 1200), max 8 screenshots. Recommended: Groups Hub & Balances Dashboard in 2-pane master-detail layout.
 - **10-inch Tablet:** Minimum 1 screenshot (min 1600 x 2560 or 2560 x 1600), max 8 screenshots. Recommended: Expense Log with side-by-side expense preview.
 
 ---

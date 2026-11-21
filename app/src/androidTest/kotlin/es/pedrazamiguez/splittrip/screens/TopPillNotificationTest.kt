@@ -88,7 +88,7 @@ class TopPillNotificationTest {
     @Test
     fun rendersMultiLineMessageExceedingTwoLines_withoutVisualOverflow() {
         val longMessage = "Las cuentas gratuitas permiten 1 grupo. " +
-            "Mejora a SplitTrip Pro para crear más grupos y añadir más compañeros de viaje."
+            "Mejora a SplitTrip Pro para crear más grupos y añadir más miembros a tus grupos."
 
         composeRule.setContent {
             val controller = rememberTopPillController()

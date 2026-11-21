@@ -91,7 +91,7 @@ private fun GroupSettlementOverviewScreenCreatorConfirmationStepPreview() {
                     ArchiveWizardStep.SETTLEMENT_SUMMARY,
                     ArchiveWizardStep.CONFIRMATION
                 ),
-                groupName = "Summer Trip",
+                groupName = "Shared Apartment",
                 areAllSettlementsResolved = true
             ),
             onEvent = {}
@@ -132,7 +132,7 @@ private fun ArchiveSummaryStepPreview() {
 private fun ArchiveConfirmationStepPreview() {
     PreviewThemeWrapper {
         ArchiveConfirmationStep(
-            groupName = "Summer Trip",
+            groupName = "Shared Apartment",
             hasUnresolvedSettlements = true,
             onGoToSettlementsClicked = {}
         )

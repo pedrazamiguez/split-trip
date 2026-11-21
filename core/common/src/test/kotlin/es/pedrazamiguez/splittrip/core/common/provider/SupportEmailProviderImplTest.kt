@@ -69,7 +69,7 @@ class SupportEmailProviderImplTest {
         // Arrange
         every { resourceProvider.getString(R.string.support_email_feature_subject) } returns "SplitTrip Feature Request"
         every { resourceProvider.getString(R.string.support_email_feature_body_template) } returns
-            "What feature would you like to see?\n\n\nHow would this feature help you on your trips?\n\n"
+            "What feature would you like to see?\n\n\nHow would this feature help you and your groups?\n\n"
 
         // Act
         val email = provider.buildFeatureSuggestionEmail()

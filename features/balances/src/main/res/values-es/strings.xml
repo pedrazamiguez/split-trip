@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="balances_title">Balances</string>
-    <string name="balances_subtitle">Resumen del viaje</string>
+    <string name="balances_subtitle">Resumen del grupo</string>
     <string name="balances_search">Buscar</string>
     <string name="balances_info">Info</string>
     <string name="balances_placeholder">Balances</string>
@@ -18,7 +18,7 @@
     <string name="balances_error_loading">No se pudieron cargar los balances</string>
     <string name="balances_empty_title">Sin actividad todavía</string>
     <string name="balances_empty_description">Registra gastos pagados de tu bolsillo para ver quién debe a quién, o añade una aportación si compartís un pocket común.</string>
-    <string name="balances_archived_readonly_notice">Este viaje está archivado y es de solo lectura. Las aportaciones, retiradas y ediciones de actividad están desactivadas.</string>
+    <string name="balances_archived_readonly_notice">Este grupo está archivado y es de solo lectura. Las aportaciones, retiradas y ediciones de actividad están desactivadas.</string>
 
     <!-- Member Balances -->
     <string name="balances_member_balances_title">Balances por miembro</string>
@@ -56,7 +56,7 @@
     <string name="balances_metric_total_contributed_title">Total aportado</string>
     <string name="balances_metric_total_contributed_description">Suma acumulada de todas las aportaciones realizadas por los miembros, tanto para el pocket del grupo como para uso personal.\n\nEl detalle de cuánto ha aportado cada miembro y su balance individual puede consultarse en el desglose de balances por miembro.</string>
     <string name="balances_metric_total_spent_title">Total gastado</string>
-    <string name="balances_metric_total_spent_description">Importe total gastado en el viaje hasta la fecha.\n\nIncluye todos los gastos pagados, los gastos en efectivo y los gastos reembolsables, ya que el dinero ya ha salido del bolsillo. No incluye los gastos programados futuros ni los importes de extras.</string>
+    <string name="balances_metric_total_spent_description">Importe total gastado en el grupo hasta la fecha.\n\nIncluye todos los gastos pagados, los gastos en efectivo y los gastos reembolsables, ya que el dinero ya ha salido del bolsillo. No incluye los gastos programados futuros ni los importes de extras.</string>
     <string name="balances_metric_cash_in_hand_title">Efectivo en mano</string>
     <string name="balances_metric_cash_in_hand_description">El dinero físico retirado por los miembros que aún no se ha gastado.\n\nEl total de la cabecera muestra el valor acumulado convertido a la moneda principal del grupo, mientras que la lista inferior detalla el desglose en cada una de las monedas reales disponibles.</string>
     <string name="balances_metric_extras_title">Extras</string>
@@ -109,7 +109,7 @@
     <string name="balances_cash_breakdown_estimated_hint">Estimado · tu parte proporcional del efectivo del grupo</string>
     <string name="balances_cash_breakdown_empty">Sin retiradas activas</string>
     <string name="balances_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
-    <string name="balances_cash_breakdown_atm_fallback">ATM — %1$s</string>
+    <string name="balances_cash_breakdown_atm_fallback">Cajero · %1$s</string>
     <string name="balances_cash_breakdown_view_cd">Ver desglose de efectivo</string>
     <!-- Fallback cuando la subunidad referenciada por una retirada ya no existe (caso límite de integridad de datos) -->
     <string name="balances_cash_breakdown_unknown_subunit">Subunidad desconocida</string>
@@ -133,7 +133,7 @@
     <string name="balances_extras_add_on_surcharge_plural">Recargos</string>
     <string name="balances_extras_add_on_tip_plural">Propinas</string>
     <string name="balances_extras_expense_fallback">Gasto</string>
-    <string name="balances_extras_atm_fallback">Cajero — %1$s</string>
+    <string name="balances_extras_atm_fallback">Cajero · %1$s</string>
 
     <!-- Main Action -->
     <string name="balances_filter">Filtrar balances</string>

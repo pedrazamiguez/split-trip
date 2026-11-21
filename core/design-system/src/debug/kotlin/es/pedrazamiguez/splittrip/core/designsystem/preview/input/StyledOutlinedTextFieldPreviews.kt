@@ -45,7 +45,7 @@ private fun StyledOutlinedTextFieldFilledPreview() {
                 .padding(16.dp)
         ) {
             StyledOutlinedTextField(
-                value = "Summer Trip 2026",
+                value = "Shared Apartment 2026",
                 onValueChange = {},
                 label = stringResource(R.string.preview_label_group_name)
             )

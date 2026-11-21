@@ -28,11 +28,12 @@ private fun DeveloperInfoScreenPreview() {
                 splitTripRepoUrl = "https://github.com/pedrazamiguez/split-trip",
                 linkedinUrl = "https://www.linkedin.com/in/pedrazamiguez",
                 portfolioUrl = "https://pedrazamiguez.github.io",
-                credits = "SplitTrip is a modular Android application designed for travellers to manage shared " +
-                    "expenses efficiently. It allows users to create expense groups, track spending in multiple " +
-                    "currencies, calculate debts, and sync data across devices.\n\n" +
-                    "Built with modern Android practices—including Jetpack Compose, Clean Architecture, and " +
-                    "Offline-First principles—the app serves as a reference for scalable, multi-module Android " +
+                credits = "SplitTrip is a modular Android application designed for groups to manage shared " +
+                    "expenses efficiently, from everyday shared living to trips abroad. It allows users to create " +
+                    "expense groups, track spending in multiple currencies, calculate debts, and sync data " +
+                    "across devices.\n\n" +
+                    "Built with modern Android practices, including Jetpack Compose, Clean Architecture, and " +
+                    "Offline-First principles, the app serves as a reference for scalable, multi-module Android " +
                     "development.",
                 copyright = "© 2026 Andrés Pedraza Míguez.\nAll rights reserved."
             ),
