@@ -139,4 +139,55 @@
     <string name="balances_filter">Filtrar balances</string>
     <string name="balances_your_balance_title">Tu balance</string>
 
+    <!-- Spending Insights -->
+    <string name="balances_insights_title">Análisis de gastos</string>
+    <string name="balances_insights_action_cd">Ver análisis de gastos</string>
+    <string name="balances_insights_entry_title">Análisis de gastos</string>
+    <string name="balances_insights_entry_subtitle">Categorías, ritmo de gasto y reparto</string>
+    <string name="balances_insights_period_all_time">Todo el historial</string>
+    <string name="balances_insights_period_this_month">Este mes</string>
+    <string name="balances_insights_period_last_month">Mes pasado</string>
+    <string name="balances_insights_period_custom">Personalizado</string>
+    <string name="balances_insights_date_from">Desde</string>
+    <string name="balances_insights_date_to">Hasta</string>
+    <string name="balances_insights_date_start_dialog_title">Seleccionar fecha inicial</string>
+    <string name="balances_insights_date_end_dialog_title">Seleccionar fecha final</string>
+    <string name="balances_insights_period_range">%1$s – %2$s</string>
+    <string name="balances_insights_period_summary">%1$s · %2$s</string>
+    <string name="balances_insights_burn_rate_title">Ritmo de gasto</string>
+    <string name="balances_insights_total_spent_label">Total gastado</string>
+    <string name="balances_insights_extras_included">Incluye %1$s en extras</string>
+    <string name="balances_insights_daily_average_label">Media diaria</string>
+    <string name="balances_insights_daily_average_value">%1$s / día</string>
+    <string name="balances_insights_peak_day_label">Día de mayor gasto</string>
+    <string name="balances_insights_monthly_pace_projected_label">Ritmo mensual proyectado</string>
+    <string name="balances_insights_monthly_pace_completed_label">Total del mes</string>
+    <string name="balances_insights_monthly_pace_30d_label">Ritmo a 30 días</string>
+    <string name="balances_insights_monthly_pace_value">%1$s / mes</string>
+    <string name="balances_insights_daily_trend_title">Gasto diario</string>
+    <string name="balances_insights_daily_bar_detail">%1$s · %2$s · %3$s</string>
+    <string name="balances_insights_daily_bar_cd">%1$s, %2$s</string>
+    <string name="balances_insights_category_title">Por categoría</string>
+    <string name="balances_insights_entity_title">Reparto del gasto</string>
+    <string name="balances_insights_mode_subunits">Subunidades</string>
+    <string name="balances_insights_mode_members">Miembros</string>
+    <string name="balances_insights_empty_title">Todavía no hay análisis</string>
+    <string name="balances_insights_empty_description">Registra gastos en el grupo para ver el desglose por categorías, el ritmo de gasto y el reparto por miembro.</string>
+    <string name="balances_insights_empty_period_title">Sin gastos en este periodo</string>
+    <string name="balances_insights_empty_period_description">Prueba a elegir otro periodo para consultar los gastos del grupo.</string>
+    <string name="balances_insights_error_loading">No se pudo cargar el análisis de gastos</string>
+
+    <plurals name="balances_insights_expense_count">
+        <item quantity="one">%1$d gasto</item>
+        <item quantity="other">%1$d gastos</item>
+    </plurals>
+    <plurals name="balances_insights_active_days">
+        <item quantity="one">%1$d día activo</item>
+        <item quantity="other">%1$d días activos</item>
+    </plurals>
+    <plurals name="balances_insights_member_count">
+        <item quantity="one">%1$d miembro</item>
+        <item quantity="other">%1$d miembros</item>
+    </plurals>
+
 </resources>

@@ -1,9 +1,13 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.screen.impl
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debounced
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartBar
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReportAnalytics
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
@@ -23,12 +27,24 @@ class BalancesScreenUiProviderImpl(
     @OptIn(ExperimentalMaterial3Api::class)
     override val topBar: @Composable () -> Unit = {
         val rootNavController = LocalRootNavController.current
+        val tabNavController = LocalTabNavController.current
         val avatarUrl = LocalProfileAvatarUrl.current
+        val onInsightsClick = debounced {
+            tabNavController.navigate(Routes.SPENDING_INSIGHTS) {
+                launchSingleTop = true
+            }
+        }
 
         DynamicTopAppBar(
             title = stringResource(R.string.balances_title),
             subtitle = stringResource(R.string.balances_subtitle),
             actions = {
+                IconButton(onClick = onInsightsClick) {
+                    Icon(
+                        imageVector = TablerIcons.Outline.ChartBar,
+                        contentDescription = stringResource(R.string.balances_insights_action_cd)
+                    )
+                }
                 ProfileAvatarButton(
                     avatarUrl = avatarUrl,
                     onClick = { rootNavController.navigate(Routes.PROFILE) }

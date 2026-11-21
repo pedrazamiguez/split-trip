@@ -33,4 +33,9 @@ class BalancesScreenUiProviderImplTest {
             "your_balance_container"
         )
     }
+
+    @Test
+    fun `Routes SPENDING_INSIGHTS has expected value`() {
+        assertEquals("spending_insights", Routes.SPENDING_INSIGHTS)
+    }
 }

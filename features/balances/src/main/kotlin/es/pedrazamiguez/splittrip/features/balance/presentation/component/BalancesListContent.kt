@@ -33,6 +33,7 @@ internal fun BalancesListContent(
     onNavigateToContribution: () -> Unit,
     onNavigateToContributionDetail: (String) -> Unit,
     onNavigateToWithdrawal: () -> Unit,
+    onNavigateToSpendingInsights: () -> Unit = {},
     onShowMetricInfo: (BalanceMetricType) -> Unit = {}
 ) {
     LazyColumn(
@@ -57,6 +58,11 @@ internal fun BalancesListContent(
                 onWithdrawCash = onNavigateToWithdrawal,
                 onShowMetricInfo = onShowMetricInfo
             )
+        }
+        if (uiState.hasSpendingActivity) {
+            item(key = "spending-insights-entry") {
+                SpendingInsightsEntryCard(onClick = onNavigateToSpendingInsights)
+            }
         }
         memberBalancesSection(uiState.memberBalances)
         activitySection(

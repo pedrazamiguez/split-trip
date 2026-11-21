@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
@@ -12,6 +13,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetBalancesDashboardFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSpendingInsightsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
@@ -19,8 +21,11 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLastSeenBalanceUseCa
 import es.pedrazamiguez.splittrip.features.balance.navigation.impl.BalancesNavigationProviderImpl
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.BalancesUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.SettlementsUiMapper
+import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.SpendingInsightsUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.screen.impl.BalancesScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.balance.presentation.screen.impl.SpendingInsightsScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.BalancesViewModel
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.SpendingInsightsViewModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandler
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandlerImpl
 import kotlinx.coroutines.Dispatchers
@@ -81,5 +86,27 @@ val balancesUiModule = module {
 
     single {
         BalancesScreenUiProviderImpl()
+    } bind ScreenUiProvider::class
+
+    single {
+        SpendingInsightsUiMapper(
+            formattingHelper = get<FormattingHelper>(),
+            resourceProvider = get<ResourceProvider>(),
+            userUiMapper = get<UserUiMapper>()
+        )
+    }
+
+    viewModel {
+        val getGroupSpendingInsightsFlowUseCase = get<GetGroupSpendingInsightsFlowUseCase>()
+        val spendingInsightsUiMapper = get<SpendingInsightsUiMapper>()
+        SpendingInsightsViewModel(
+            getGroupSpendingInsightsFlowUseCase = getGroupSpendingInsightsFlowUseCase,
+            spendingInsightsUiMapper = spendingInsightsUiMapper,
+            computationDispatcher = Dispatchers.Default
+        )
+    }
+
+    single {
+        SpendingInsightsScreenUiProviderImpl()
     } bind ScreenUiProvider::class
 }
