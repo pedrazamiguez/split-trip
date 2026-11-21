@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.SpendingInsightsPeriod
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.model.User
+import es.pedrazamiguez.splittrip.domain.service.SpendingInsightsService
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -563,6 +564,23 @@ class SpendingInsightsServiceImplTest {
             today = today
         )
         assertTrue(withSubunits.hasSubunits)
+    }
+
+    @Test
+    fun `interface calculate uses default today parameter when omitted`() {
+        val interfaceService: SpendingInsightsService = service
+        val result = interfaceService.calculate(
+            groupId = "group-1",
+            currency = "EUR",
+            expenses = emptyList(),
+            subunits = emptyList(),
+            groupMemberIds = listOf("u1"),
+            period = SpendingInsightsPeriod.ThisMonth,
+            memberProfiles = emptyMap(),
+            currentUserId = "u1"
+        )
+
+        assertEquals(LocalDate.now().dayOfMonth.coerceAtLeast(1), result.burnRate.elapsedDays)
     }
 
     private fun createExpense(

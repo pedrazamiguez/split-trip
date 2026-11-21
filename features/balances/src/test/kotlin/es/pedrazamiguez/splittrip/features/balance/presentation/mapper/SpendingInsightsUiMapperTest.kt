@@ -36,8 +36,8 @@ import org.junit.jupiter.api.Test
 
 class SpendingInsightsUiMapperTest {
 
-    private class FakeLocaleProvider(var currentLocale: Locale = Locale.US) : LocaleProvider {
-        override fun getCurrentLocale(): Locale = currentLocale
+    private class FakeLocaleProvider(var locale: Locale = Locale.US) : LocaleProvider {
+        override fun getCurrentLocale(): Locale = locale
     }
 
     private lateinit var localeProvider: FakeLocaleProvider
@@ -171,7 +171,7 @@ class SpendingInsightsUiMapperTest {
 
     @Test
     fun `formats total spent daily average projected monthly pace and peak day with locale currency`() {
-        localeProvider.currentLocale = Locale("es", "ES")
+        localeProvider.locale = Locale("es", "ES")
         val peakDate = LocalDate.of(2026, 11, 14)
         val insights = baseInsights(
             currency = "EUR",

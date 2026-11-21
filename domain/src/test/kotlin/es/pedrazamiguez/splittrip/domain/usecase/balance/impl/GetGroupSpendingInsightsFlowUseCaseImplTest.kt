@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.SpendingInsightsService
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSpendingInsightsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -102,7 +103,7 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
         } returns expected
 
         val emissions = mutableListOf<GroupSpendingInsights>()
-        val job = backgroundScope.launch {
+        val job = launch {
             useCase("g1", flowOf(SpendingInsightsPeriod.AllTime)) { fixedToday }.collect { emissions.add(it) }
         }
         advanceUntilIdle()
@@ -113,7 +114,7 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
     }
 
     @Test
-    fun `uses group currency when present and falls back to AppConfigService defaultCurrencyCode when group is null`() =
+    fun `uses group currency when present and falls back to defaultCurrencyCode when group is null`() =
         runTest(testDispatcher) {
             every { appConfigService.defaultCurrencyCode } returns MutableStateFlow("GBP")
             every { groupRepository.getGroupByIdFlow("g1") } returns flowOf(null)
@@ -135,7 +136,7 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
             } returns expected
 
             val emissions = mutableListOf<GroupSpendingInsights>()
-            val job = backgroundScope.launch {
+            val job = launch {
                 useCase("g1", flowOf(SpendingInsightsPeriod.AllTime)) { fixedToday }.collect { emissions.add(it) }
             }
             advanceUntilIdle()
@@ -176,7 +177,7 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
                 )
             } returns emptyInsights(groupId = "g1", currency = "EUR", period = SpendingInsightsPeriod.AllTime)
 
-            val job = backgroundScope.launch {
+            val job = launch {
                 useCase("g1", flowOf(SpendingInsightsPeriod.AllTime)) { fixedToday }.collect {}
             }
             advanceUntilIdle()
@@ -212,7 +213,7 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
             }
 
             val emissions = mutableListOf<GroupSpendingInsights>()
-            val job = backgroundScope.launch {
+            val job = launch {
                 useCase("g1", periodFlow) { fixedToday }.collect { emissions.add(it) }
             }
             advanceUntilIdle()
@@ -260,7 +261,7 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
             }
 
             val emissions = mutableListOf<GroupSpendingInsights>()
-            val job = backgroundScope.launch {
+            val job = launch {
                 useCase("g1", flowOf(SpendingInsightsPeriod.AllTime)) { fixedToday }.collect { emissions.add(it) }
             }
             advanceUntilIdle()
@@ -280,6 +281,37 @@ class GetGroupSpendingInsightsFlowUseCaseImplTest {
             assertEquals(0, emissions.last().expenseCount)
             job.cancel()
         }
+
+    @Test
+    fun `interface invoke uses default todayProvider when omitted`() = runTest(testDispatcher) {
+        val interfaceUseCase: GetGroupSpendingInsightsFlowUseCase = useCase
+        val expected = emptyInsights(groupId = "g1", currency = "EUR", period = SpendingInsightsPeriod.AllTime)
+        every { groupRepository.getGroupByIdFlow("g1") } returns flowOf(Group(id = "g1", currency = "EUR"))
+        every { expenseRepository.getGroupExpensesFlow("g1") } returns flowOf(emptyList())
+        every { subunitRepository.getGroupSubunitsFlow("g1") } returns flowOf(emptyList())
+        every {
+            spendingInsightsService.calculate(
+                groupId = "g1",
+                currency = "EUR",
+                expenses = emptyList(),
+                subunits = emptyList(),
+                groupMemberIds = emptyList(),
+                period = SpendingInsightsPeriod.AllTime,
+                memberProfiles = emptyMap(),
+                currentUserId = "u1",
+                today = any()
+            )
+        } returns expected
+
+        val emissions = mutableListOf<GroupSpendingInsights>()
+        val job = launch {
+            interfaceUseCase("g1", flowOf(SpendingInsightsPeriod.AllTime)).collect { emissions.add(it) }
+        }
+        advanceUntilIdle()
+
+        assertEquals(1, emissions.size)
+        job.cancel()
+    }
 
     private fun emptyInsights(
         groupId: String,
