@@ -6,11 +6,13 @@ import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
+import java.time.YearMonth
 import java.util.UUID
 
 class AddExpensePersistStrategy(
@@ -21,7 +23,9 @@ class AddExpensePersistStrategy(
     groupMembershipService: GroupMembershipService,
     contributionRepository: ContributionRepository,
     authenticationService: AuthenticationService,
-    addOnCalculationService: AddOnCalculationService
+    addOnCalculationService: AddOnCalculationService,
+    userPreferenceRepository: UserPreferenceRepository,
+    yearMonthProvider: () -> YearMonth = { YearMonth.now() }
 ) : BasePersistExpenseStrategy(
     expenseRepository,
     cashWithdrawalRepository,
@@ -30,7 +34,9 @@ class AddExpensePersistStrategy(
     groupMembershipService,
     contributionRepository,
     authenticationService,
-    addOnCalculationService
+    addOnCalculationService,
+    userPreferenceRepository,
+    yearMonthProvider
 ) {
 
     override suspend fun persist(
@@ -94,5 +100,7 @@ class AddExpensePersistStrategy(
                 throw exception
             }
         }
+
+        recordReceiptAttachmentIfApplicable(original = null, saved = expenseToSave.receiptAttachment)
     }
 }

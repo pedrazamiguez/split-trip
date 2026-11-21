@@ -185,7 +185,10 @@ fun ReceiptStep(
                     mimeType = uiState.receiptAttachment?.mimeType,
                     onPickerRequested = { onEvent(AddExpenseUiEvent.RequestPickerSource) },
                     onRemoveImage = { onEvent(AddExpenseUiEvent.RemoveReceiptImage) },
-                    onViewImage = { onEvent(AddExpenseUiEvent.ViewReceiptFullScreen) }
+                    onViewImage = { onEvent(AddExpenseUiEvent.ViewReceiptFullScreen) },
+                    remainingAttachmentsLabel = uiState.manualReceiptRemainingLabel,
+                    isQuotaExhausted = uiState.isManualReceiptGated,
+                    isProFeature = uiState.isManualReceiptProFeature
                 )
             }
         }

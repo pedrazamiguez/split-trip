@@ -93,6 +93,8 @@ fun AddExpenseFeature(
 
                 is AddExpenseUiAction.ShowProFeaturePreview -> proPreviewPrompt = action.prompt
 
+                AddExpenseUiAction.OpenReceiptPickerSource -> showReceiptSourceSheet = true
+
                 AddExpenseUiAction.None -> Unit
             }
         }
@@ -183,12 +185,7 @@ fun AddExpenseFeature(
         groupId = selectedGroupId.value,
         uiState = state,
         onEvent = { event ->
-            // RequestPickerSource is a pure-UI concern — handle it in the Feature
-            // so the ViewModel never touches source selection or launcher APIs.
             when (event) {
-                is AddExpenseUiEvent.RequestPickerSource -> {
-                    showReceiptSourceSheet = true
-                }
                 is AddExpenseUiEvent.ViewReceiptFullScreen -> {
                     state.receiptUri?.let { uri ->
                         navController.navigate(

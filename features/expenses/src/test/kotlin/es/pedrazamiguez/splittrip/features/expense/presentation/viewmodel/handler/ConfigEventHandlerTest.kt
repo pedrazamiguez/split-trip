@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.ManualReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.impl.RemainderDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.split.impl.SplitPreviewServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
@@ -30,6 +31,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -65,6 +67,7 @@ class ConfigEventHandlerTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
     private lateinit var aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper
+    private lateinit var manualReceiptQuotaUiMapper: ManualReceiptQuotaUiMapper
     private lateinit var resourceProvider: ResourceProvider
     private lateinit var receiptExtractionService: ReceiptExtractionService
     private lateinit var featureGateService: FeatureGateService
@@ -127,9 +130,12 @@ class ConfigEventHandlerTest {
         )
         receiptExtractionService = mockk(relaxed = true)
         aiReceiptQuotaUiMapper = AiReceiptQuotaUiMapper(resourceProvider)
+        manualReceiptQuotaUiMapper = ManualReceiptQuotaUiMapper(resourceProvider)
         val aiQuota = AiReceiptQuota(usedScans = 0, monthlyLimit = 100, isProTier = true)
+        val manualQuota = ManualReceiptQuota(usedAttachments = 0, monthlyFreeLimit = 5, isProTier = true)
         featureGateService = mockk(relaxed = true) {
             every { observeAiReceiptQuota() } returns flowOf(aiQuota)
+            every { observeManualReceiptQuota() } returns flowOf(manualQuota)
         }
 
         handler = createHandler(addExpenseOptionsMapper, addExpenseSplitMapper)
@@ -160,7 +166,8 @@ class ConfigEventHandlerTest {
         addExpenseUiMapper = addExpenseUiMapper,
         receiptExtractionService = receiptExtractionService,
         featureGateService = featureGateService,
-        aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper
+        aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
+        manualReceiptQuotaUiMapper = manualReceiptQuotaUiMapper
     )
 
     // ── Null / blank groupId ─────────────────────────────────────────────

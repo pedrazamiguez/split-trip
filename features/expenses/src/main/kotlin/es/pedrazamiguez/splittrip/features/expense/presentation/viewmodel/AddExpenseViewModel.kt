@@ -69,6 +69,7 @@ class AddExpenseViewModel(
         formEventHandler.bind(_uiState, _actions, viewModelScope)
         receiptAutoFillEventHandler.bind(_uiState, _actions, viewModelScope)
         receiptAutoFillEventHandler.startObservingAiQuota()
+        formEventHandler.startObservingManualReceiptQuota()
 
         submitEventHandler.setStrategy(strategy)
 
@@ -322,9 +323,8 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.RemoveReceiptImage ->
                 formEventHandler.handleReceiptImageChanged(null)
 
-            // RequestPickerSource is intercepted in AddExpenseFeature before reaching the
-            // ViewModel. If it somehow arrives, a no-op is the safe fallback.
-            is AddExpenseUiEvent.RequestPickerSource -> Unit
+            is AddExpenseUiEvent.RequestPickerSource ->
+                formEventHandler.handleRequestReceiptPicker()
 
             is AddExpenseUiEvent.ViewReceiptFullScreen -> Unit
 

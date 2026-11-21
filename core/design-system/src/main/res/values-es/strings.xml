@@ -216,6 +216,9 @@
     <string name="pro_preview_ai_receipt_title">Autocompleta gastos con IA</string>
     <string name="pro_preview_ai_receipt_description">Haz una foto o adjunta un recibo y deja que la IA en tu dispositivo extraiga el importe, la moneda, el comercio, la fecha y la categoría en segundos.</string>
     <string name="pro_preview_ai_receipt_highlight">Escaneo de recibos con IA privada en tu dispositivo, sin teclear manualmente</string>
+    <string name="pro_preview_unlimited_receipts_title">Adjunta recibos ilimitados</string>
+    <string name="pro_preview_unlimited_receipts_description">Guarda todas las fotos y PDF de tus recibos adjuntos y sincronizados para todo tu grupo, sin límite mensual de adjuntos.</string>
+    <string name="pro_preview_unlimited_receipts_highlight">Fotos y PDF de recibos ilimitados sincronizados en la nube para cada viaje</string>
 
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">Al menos 8 caracteres</string>

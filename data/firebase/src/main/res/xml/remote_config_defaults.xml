@@ -45,6 +45,10 @@
         <value>100</value>
     </entry>
     <entry>
+        <key>manual_receipt_monthly_limit_free</key>
+        <value>5</value>
+    </entry>
+    <entry>
         <key>extracted_date_max_future_days</key>
         <value>30</value>
     </entry>

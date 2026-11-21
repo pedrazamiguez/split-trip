@@ -46,7 +46,9 @@ class FeatureGateServiceImplTest {
     private val maxMembersPerGroupPro = MutableStateFlow(20)
     private val aiReceiptMonthlyLimitFree = MutableStateFlow(3)
     private val aiReceiptMonthlyLimitPro = MutableStateFlow(100)
+    private val manualReceiptMonthlyLimitFree = MutableStateFlow(5)
     private val monthlyScanCount = MutableStateFlow(0)
+    private val monthlyManualReceiptCount = MutableStateFlow(0)
     private val proAllowlistEmailHashes = MutableStateFlow<Set<String>>(emptySet())
 
     @BeforeEach
@@ -64,8 +66,12 @@ class FeatureGateServiceImplTest {
         every { appConfigRepository.maxMembersPerGroupPro } returns maxMembersPerGroupPro
         every { appConfigRepository.aiReceiptMonthlyLimitFree } returns aiReceiptMonthlyLimitFree
         every { appConfigRepository.aiReceiptMonthlyLimitPro } returns aiReceiptMonthlyLimitPro
+        every { appConfigRepository.manualReceiptMonthlyLimitFree } returns manualReceiptMonthlyLimitFree
         every { appConfigRepository.proAllowlistEmailHashes } returns proAllowlistEmailHashes
         every { userPreferenceRepository.getMonthlyAiReceiptScanCount(fixedYearMonth) } returns monthlyScanCount
+        every {
+            userPreferenceRepository.getMonthlyManualReceiptAttachmentCount(fixedYearMonth)
+        } returns monthlyManualReceiptCount
         every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
         every { authenticationService.currentUserEmail() } returns null
 
@@ -76,7 +82,9 @@ class FeatureGateServiceImplTest {
         maxMembersPerGroupPro.value = 20
         aiReceiptMonthlyLimitFree.value = 3
         aiReceiptMonthlyLimitPro.value = 100
+        manualReceiptMonthlyLimitFree.value = 5
         monthlyScanCount.value = 0
+        monthlyManualReceiptCount.value = 0
         proAllowlistEmailHashes.value = emptySet()
 
         service = FeatureGateServiceImpl(

@@ -66,3 +66,15 @@ private fun ProFeaturePreviewAiReceiptScanningPreview() {
         )
     }
 }
+
+@PreviewComplete
+@Composable
+private fun ProFeaturePreviewUnlimitedReceiptsPreview() {
+    PreviewThemeWrapper {
+        ProFeaturePreviewBottomSheet(
+            previewType = ProFeaturePreviewType.UNLIMITED_RECEIPTS,
+            onUpgrade = {},
+            onDismiss = {}
+        )
+    }
+}

@@ -55,6 +55,7 @@ object MonetizationTelemetry {
         const val SUBUNIT_MANAGEMENT = "subunit_management"
         const val SUBUNIT_CREATION = "subunit_creation"
         const val AI_RECEIPT_SCANNING = "ai_receipt_scanning"
+        const val MANUAL_RECEIPT_ATTACHMENT = "manual_receipt_attachment"
         const val DIRECT = "direct"
     }
 
@@ -80,6 +81,7 @@ object MonetizationTelemetry {
         const val GROUP_MEMBER_SUBMIT = "group_member_submit"
         const val AI_MODE_TOGGLE = "ai_mode_toggle"
         const val AI_RECEIPT_ATTACH = "ai_receipt_attach"
+        const val MANUAL_RECEIPT_ATTACH = "manual_receipt_attach"
         const val SUBUNIT_FAB = "subunit_fab"
         const val SUBUNIT_CREATE_EVENT = "subunit_create_event"
         const val SUBUNIT_CREATE_INIT = "subunit_create_init"

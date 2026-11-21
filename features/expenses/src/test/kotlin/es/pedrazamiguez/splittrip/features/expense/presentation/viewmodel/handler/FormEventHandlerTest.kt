@@ -3,32 +3,45 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChefHat
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
+import es.pedrazamiguez.splittrip.domain.service.featuregate.ManualReceiptQuota
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.ManualReceiptQuotaUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -45,6 +58,10 @@ class FormEventHandlerTest {
     private lateinit var addExpenseUiMapper: AddExpenseUiMapper
     private lateinit var addExpenseOptionsUiMapper: AddExpenseOptionsUiMapper
     private lateinit var attachReceiptUseCase: AttachReceiptUseCase
+    private lateinit var featureGateService: FeatureGateService
+    private lateinit var manualReceiptQuotaUiMapper: ManualReceiptQuotaUiMapper
+    private lateinit var telemetryTracker: TelemetryTracker
+    private lateinit var manualQuotaFlow: MutableStateFlow<ManualReceiptQuota>
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actions: MutableSharedFlow<AddExpenseUiAction>
     private val capturedPostActions = mutableListOf<FormPostAction>()
@@ -65,6 +82,23 @@ class FormEventHandlerTest {
         addExpenseUiMapper = mockk(relaxed = true)
         addExpenseOptionsUiMapper = mockk(relaxed = true)
         attachReceiptUseCase = mockk(relaxed = true)
+        manualQuotaFlow = MutableStateFlow(
+            ManualReceiptQuota(usedAttachments = 0, monthlyFreeLimit = 5, isProTier = false)
+        )
+        featureGateService = mockk(relaxed = true) {
+            every { observeManualReceiptQuota() } returns manualQuotaFlow
+        }
+        manualReceiptQuotaUiMapper = mockk(relaxed = true) {
+            every { mapQuotaToUiModel(any()) } answers {
+                val q = firstArg<ManualReceiptQuota>()
+                ManualReceiptQuotaUiModel(
+                    isManualReceiptGated = !q.canAttach,
+                    isManualReceiptProFeature = q.requiresUpgrade,
+                    remainingAttachmentsLabel = q.remainingAttachments?.let { "$it left" }
+                )
+            }
+        }
+        telemetryTracker = mockk(relaxed = true)
         capturedPostActions.clear()
 
         every { addExpenseOptionsUiMapper.mapPaymentStatuses(any(), any(), any()) } answers {
@@ -84,7 +118,10 @@ class FormEventHandlerTest {
         handler = FormEventHandler(
             addExpenseUiMapper = addExpenseUiMapper,
             addExpenseOptionsUiMapper = addExpenseOptionsUiMapper,
-            attachReceiptUseCase = attachReceiptUseCase
+            attachReceiptUseCase = attachReceiptUseCase,
+            featureGateService = featureGateService,
+            manualReceiptQuotaUiMapper = manualReceiptQuotaUiMapper,
+            telemetryTracker = telemetryTracker
         )
         handler.setFormPostCallback { capturedPostActions.add(it) }
 
@@ -610,6 +647,129 @@ class FormEventHandlerTest {
 
             assertEquals(1700000000000L, uiState.value.refundDateMillis)
             assertEquals("Nov 14, 2023", uiState.value.formattedRefundDate)
+        }
+    }
+
+    @Nested
+    inner class ManualReceiptQuotaGating {
+
+        @Test
+        fun `startObservingManualReceiptQuota updates state when quota changes`() = runTest {
+            handler.startObservingManualReceiptQuota()
+            advanceUntilIdle()
+
+            assertFalse(uiState.value.isManualReceiptGated)
+            assertFalse(uiState.value.isManualReceiptProFeature)
+            assertEquals("5 left", uiState.value.manualReceiptRemainingLabel)
+
+            manualQuotaFlow.value = ManualReceiptQuota(usedAttachments = 5, monthlyFreeLimit = 5, isProTier = false)
+            advanceUntilIdle()
+
+            assertTrue(uiState.value.isManualReceiptGated)
+            assertTrue(uiState.value.isManualReceiptProFeature)
+            assertEquals("0 left", uiState.value.manualReceiptRemainingLabel)
+        }
+
+        @Test
+        fun `handleRequestReceiptPicker emits OpenReceiptPickerSource when Free user has remaining quota`() = runTest {
+            val emitted = mutableListOf<AddExpenseUiAction>()
+            val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emitted.add(it) }
+            }
+
+            handler.handleRequestReceiptPicker()
+            advanceUntilIdle()
+
+            assertEquals(listOf(AddExpenseUiAction.OpenReceiptPickerSource), emitted)
+            job.cancel()
+        }
+
+        @Test
+        fun `handleRequestReceiptPicker in manual mode emits ShowProFeaturePreview and telemetry when exhausted`() =
+            runTest {
+                manualQuotaFlow.value = ManualReceiptQuota(
+                    usedAttachments = 5,
+                    monthlyFreeLimit = 5,
+                    isProTier = false
+                )
+                val emitted = mutableListOf<AddExpenseUiAction>()
+                val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+                    actions.collect { emitted.add(it) }
+                }
+
+                handler.handleRequestReceiptPicker()
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf(
+                        AddExpenseUiAction.ShowProFeaturePreview(
+                            ProFeaturePreviewPrompt(
+                                previewType = ProFeaturePreviewType.UNLIMITED_RECEIPTS,
+                                entrySource = MonetizationTelemetry.EntrySource.MANUAL_RECEIPT_ATTACHMENT
+                            )
+                        )
+                    ),
+                    emitted
+                )
+                verify(exactly = 1) {
+                    telemetryTracker.trackEvent(
+                        MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                        mapOf(
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                            MonetizationTelemetry.Param.GATE_NAME to
+                                GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS.name.lowercase(),
+                            MonetizationTelemetry.Param.ENTRY_POINT to
+                                MonetizationTelemetry.GateEntryPoint.MANUAL_RECEIPT_ATTACH,
+                            MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                        )
+                    )
+                }
+                job.cancel()
+            }
+
+        @Test
+        fun `handleRequestReceiptPicker in AI mode bypasses manual quota check`() = runTest {
+            manualQuotaFlow.value = ManualReceiptQuota(usedAttachments = 5, monthlyFreeLimit = 5, isProTier = false)
+            uiState.value = uiState.value.copy(isAiModeActive = true)
+            val emitted = mutableListOf<AddExpenseUiAction>()
+            val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emitted.add(it) }
+            }
+
+            handler.handleRequestReceiptPicker()
+            advanceUntilIdle()
+
+            assertEquals(listOf(AddExpenseUiAction.OpenReceiptPickerSource), emitted)
+            job.cancel()
+        }
+
+        @Test
+        fun `handleReceiptImageChanged in manual mode blocks when quota exhausted without attaching`() = runTest {
+            manualQuotaFlow.value = ManualReceiptQuota(usedAttachments = 5, monthlyFreeLimit = 5, isProTier = false)
+            val emitted = mutableListOf<AddExpenseUiAction>()
+            val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+                actions.collect { emitted.add(it) }
+            }
+
+            handler.handleReceiptImageChanged("content://receipt/1")
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { attachReceiptUseCase(any()) }
+            assertTrue(emitted.single() is AddExpenseUiAction.ShowProFeaturePreview)
+            verify(exactly = 1) {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    mapOf(
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                        MonetizationTelemetry.Param.GATE_NAME to
+                            GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS.name.lowercase(),
+                        MonetizationTelemetry.Param.ENTRY_POINT to
+                            MonetizationTelemetry.GateEntryPoint.MANUAL_RECEIPT_ATTACH,
+                        MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
+                    )
+                )
+            }
+            job.cancel()
         }
     }
 }

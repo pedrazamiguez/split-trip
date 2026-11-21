@@ -603,4 +603,51 @@ class UserPreferencesTest {
 
         assertEquals(0, prefsAForClear.getMonthlyAiReceiptScanCount(november).first())
     }
+
+    @Test
+    fun `monthlyManualReceiptAttachmentCount defaults to zero for new month`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+
+        val count = prefs.getMonthlyManualReceiptAttachmentCount(YearMonth.of(2026, 11)).first()
+
+        assertEquals(0, count)
+    }
+
+    @Test
+    fun `incrementMonthlyManualReceiptAttachmentCount increments count sequentially for same month`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        val november = YearMonth.of(2026, 11)
+
+        prefs.incrementMonthlyManualReceiptAttachmentCount(november)
+        prefs.incrementMonthlyManualReceiptAttachmentCount(november)
+
+        assertEquals(2, prefs.getMonthlyManualReceiptAttachmentCount(november).first())
+    }
+
+    @Test
+    fun `monthlyManualReceiptAttachmentCount resets across different calendar months`() = runTest {
+        val prefs = createUserPreferences(USER_A_ID)
+        val november = YearMonth.of(2026, 11)
+        val december = YearMonth.of(2026, 12)
+
+        prefs.incrementMonthlyManualReceiptAttachmentCount(november)
+
+        assertEquals(1, prefs.getMonthlyManualReceiptAttachmentCount(november).first())
+        assertEquals(0, prefs.getMonthlyManualReceiptAttachmentCount(december).first())
+    }
+
+    @Test
+    fun `monthlyManualReceiptAttachmentCount is isolated per user and cleared on clearAll`() = runTest {
+        val november = YearMonth.of(2026, 11)
+        val prefsA = createUserPreferences(USER_A_ID)
+        prefsA.incrementMonthlyManualReceiptAttachmentCount(november)
+
+        val prefsB = createUserPreferences(USER_B_ID)
+        assertEquals(0, prefsB.getMonthlyManualReceiptAttachmentCount(november).first())
+
+        val prefsAForClear = createUserPreferences(USER_A_ID)
+        prefsAForClear.clearAll()
+
+        assertEquals(0, prefsAForClear.getMonthlyManualReceiptAttachmentCount(november).first())
+    }
 }

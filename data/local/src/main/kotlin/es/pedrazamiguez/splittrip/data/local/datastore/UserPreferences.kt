@@ -52,6 +52,7 @@ class UserPreferences(
         private const val ACTIVE_AI_ENGINE = "active_ai_engine"
         private const val IS_RECONCILED = "is_reconciled"
         private const val AI_RECEIPT_SCAN_COUNT_PREFIX = "ai_receipt_scan_count"
+        private const val MANUAL_RECEIPT_ATTACHMENT_COUNT_PREFIX = "manual_receipt_attachment_count"
     }
 
     // ── Device ID (Device-scoped) ────────────────────────────────────────
@@ -343,6 +344,21 @@ class UserPreferences(
 
     suspend fun incrementMonthlyAiReceiptScanCount(yearMonth: YearMonth) {
         val key = intPreferencesKey(userKey("${AI_RECEIPT_SCAN_COUNT_PREFIX}_$yearMonth"))
+        context.dataStore.edit { prefs ->
+            val current = prefs[key] ?: 0
+            prefs[key] = current + 1
+        }
+    }
+
+    // ── Monthly Manual Receipt Attachment Quota (User-scoped, calendar-month keyed) ──
+
+    fun getMonthlyManualReceiptAttachmentCount(yearMonth: YearMonth): Flow<Int> = userScopedFlow { userId ->
+        val key = intPreferencesKey("${userId}_${MANUAL_RECEIPT_ATTACHMENT_COUNT_PREFIX}_$yearMonth")
+        context.dataStore.data.map { prefs -> prefs[key] ?: 0 }
+    }
+
+    suspend fun incrementMonthlyManualReceiptAttachmentCount(yearMonth: YearMonth) {
+        val key = intPreferencesKey(userKey("${MANUAL_RECEIPT_ATTACHMENT_COUNT_PREFIX}_$yearMonth"))
         context.dataStore.edit { prefs ->
             val current = prefs[key] ?: 0
             prefs[key] = current + 1

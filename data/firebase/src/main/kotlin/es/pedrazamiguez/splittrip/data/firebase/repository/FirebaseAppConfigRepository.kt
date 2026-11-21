@@ -55,6 +55,9 @@ class FirebaseAppConfigRepository(
     private val _aiReceiptMonthlyLimitPro = MutableStateFlow(DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO)
     override val aiReceiptMonthlyLimitPro: StateFlow<Int> = _aiReceiptMonthlyLimitPro.asStateFlow()
 
+    private val _manualReceiptMonthlyLimitFree = MutableStateFlow(DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE)
+    override val manualReceiptMonthlyLimitFree: StateFlow<Int> = _manualReceiptMonthlyLimitFree.asStateFlow()
+
     private val _extractedDateMaxFutureDays = MutableStateFlow(DEFAULT_EXTRACTED_DATE_MAX_FUTURE_DAYS)
     override val extractedDateMaxFutureDays: StateFlow<Int> = _extractedDateMaxFutureDays.asStateFlow()
 
@@ -236,6 +239,10 @@ class FirebaseAppConfigRepository(
         val aiLimitPro = remoteConfig.getLong("ai_receipt_monthly_limit_pro").toInt()
         _aiReceiptMonthlyLimitPro.value = if (aiLimitPro > 0) aiLimitPro else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO
 
+        val manualReceiptLimitFree = remoteConfig.getLong("manual_receipt_monthly_limit_free").toInt()
+        _manualReceiptMonthlyLimitFree.value =
+            if (manualReceiptLimitFree >= 0) manualReceiptLimitFree else DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE
+
         val proAllowlistStr = remoteConfig.getString("pro_allowlist_email_hashes")
         _proAllowlistEmailHashes.value = parseAllowlistHashes(proAllowlistStr, DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES)
     }
@@ -333,6 +340,7 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_PRO = 20
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 3
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = 100
+        private const val DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE = 5
         private const val DEFAULT_EXTRACTED_DATE_MAX_FUTURE_DAYS = 30
         private const val DEFAULT_SUPPORT_EMAIL = "support@splittrip.eu"
         private const val DEFAULT_SETTLEMENT_NUDGE_RATE_LIMIT_HOURS = 24L

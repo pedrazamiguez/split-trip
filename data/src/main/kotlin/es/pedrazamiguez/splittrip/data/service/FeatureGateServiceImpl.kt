@@ -12,10 +12,12 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
+import es.pedrazamiguez.splittrip.domain.service.featuregate.ManualReceiptQuota
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 internal class FeatureGateServiceImpl(
@@ -81,6 +83,21 @@ internal class FeatureGateServiceImpl(
             )
         }.distinctUntilChanged()
 
+    override fun observeManualReceiptQuota(): Flow<ManualReceiptQuota> =
+        combine(
+            appConfigRepository.subscriptionGatingEnabled,
+            observeActingUserTier(),
+            appConfigRepository.manualReceiptMonthlyLimitFree,
+            userPreferenceRepository.getMonthlyManualReceiptAttachmentCount(yearMonthProvider())
+        ) { gatingEnabled, actingTier, freeLimit, usedAttachments ->
+            ManualReceiptQuota(
+                usedAttachments = usedAttachments.coerceAtLeast(0),
+                monthlyFreeLimit = freeLimit.coerceAtLeast(0),
+                isProTier = actingTier == SubscriptionTier.PRO,
+                isGatingEnabled = gatingEnabled
+            )
+        }.distinctUntilChanged()
+
     override fun isActingUserPro(): Flow<Boolean> =
         observeActingUserTier()
             .map { it == SubscriptionTier.PRO }
@@ -100,6 +117,10 @@ internal class FeatureGateServiceImpl(
                 freeLimitFlow = appConfigRepository.aiReceiptMonthlyLimitFree,
                 proLimitFlow = appConfigRepository.aiReceiptMonthlyLimitPro
             )
+            GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS -> TierLimitFlows(
+                freeLimitFlow = appConfigRepository.manualReceiptMonthlyLimitFree,
+                proLimitFlow = flowOf(Int.MAX_VALUE)
+            )
         }
 
         return combine(
@@ -114,7 +135,8 @@ internal class FeatureGateServiceImpl(
             } else {
                 val effectiveTier = when (limit) {
                     GatedLimit.MAX_OWNED_GROUPS_COUNT,
-                    GatedLimit.AI_RECEIPT_MONTHLY_SCANS -> actingTier
+                    GatedLimit.AI_RECEIPT_MONTHLY_SCANS,
+                    GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS -> actingTier
                     GatedLimit.MAX_MEMBERS_PER_GROUP ->
                         resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
                 }
@@ -136,6 +158,9 @@ internal class FeatureGateServiceImpl(
         freeLimit: Int,
         proLimit: Int
     ): LimitResult {
+        if (effectiveTier == SubscriptionTier.PRO && limit == GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS) {
+            return LimitResult.Allowed
+        }
         val maxAllowed = if (effectiveTier == SubscriptionTier.PRO) proLimit else freeLimit
         return if (currentCount >= maxAllowed) {
             LimitResult.Blocked(limit, upgradeRequired = effectiveTier != SubscriptionTier.PRO)

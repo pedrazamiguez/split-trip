@@ -216,6 +216,9 @@
     <string name="pro_preview_ai_receipt_title">Auto-fill expenses with AI</string>
     <string name="pro_preview_ai_receipt_description">Snap a photo or attach a receipt and let on-device AI extract the amount, currency, merchant, date, and category in seconds.</string>
     <string name="pro_preview_ai_receipt_highlight">Private, on-device AI receipt scanning — no manual typing</string>
+    <string name="pro_preview_unlimited_receipts_title">Attach unlimited receipts</string>
+    <string name="pro_preview_unlimited_receipts_description">Keep every receipt photo and PDF safely attached and synced for your whole group — with no monthly attachment limit.</string>
+    <string name="pro_preview_unlimited_receipts_highlight">Unlimited receipt photos &amp; PDFs synced to the cloud for every trip</string>
 
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">At least 8 characters</string>

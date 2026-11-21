@@ -74,6 +74,13 @@ class UserPreferenceRepositoryImpl(
         userPreferences.incrementMonthlyAiReceiptScanCount(yearMonth)
     }
 
+    override fun getMonthlyManualReceiptAttachmentCount(yearMonth: YearMonth): Flow<Int> =
+        userPreferences.getMonthlyManualReceiptAttachmentCount(yearMonth)
+
+    override suspend fun incrementMonthlyManualReceiptAttachmentCount(yearMonth: YearMonth) {
+        userPreferences.incrementMonthlyManualReceiptAttachmentCount(yearMonth)
+    }
+
     override suspend fun clearAll() {
         userPreferences.clearAll()
     }

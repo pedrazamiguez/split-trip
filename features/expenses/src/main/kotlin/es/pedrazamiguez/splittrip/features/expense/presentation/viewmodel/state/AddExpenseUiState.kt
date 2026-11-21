@@ -201,6 +201,11 @@ data class AddExpenseUiState(
     val autoFillBanner: AutoFillBanner? = null,
     val expenseDateMillis: Long? = null,
 
+    // ── Manual Receipt Quota ────────────────────────────────────────────
+    val isManualReceiptGated: Boolean = false,
+    val isManualReceiptProFeature: Boolean = false,
+    val manualReceiptRemainingLabel: String? = null,
+
     // ── Wizard ──────────────────────────────────────────────────────────
     val currentStep: AddExpenseStep = AddExpenseStep.TITLE,
     /**
