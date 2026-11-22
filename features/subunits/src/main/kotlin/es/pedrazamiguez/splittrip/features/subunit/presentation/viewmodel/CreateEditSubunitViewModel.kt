@@ -117,6 +117,7 @@ class CreateEditSubunitViewModel(
                 membersError = form.membersError,
                 sharesError = form.sharesError,
                 currentStep = form.currentStep,
+                isStepInfoSheetVisible = form.isStepInfoSheetVisible,
                 initialFormSnapshot = form.initialFormSnapshot
             )
         }
@@ -234,6 +235,9 @@ class CreateEditSubunitViewModel(
                 }
             }
             is CreateEditSubunitUiEvent.JumpToStep -> handleJumpToStep(event.stepIndex)
+            is CreateEditSubunitUiEvent.ToggleStepInfoSheet -> _formState.update {
+                it.copy(isStepInfoSheetVisible = event.visible)
+            }
         }
     }
 
@@ -564,6 +568,7 @@ class CreateEditSubunitViewModel(
         val membersError: UiText? = null,
         val sharesError: UiText? = null,
         val currentStep: CreateEditSubunitStep = CreateEditSubunitStep.NAME,
+        val isStepInfoSheetVisible: Boolean = false,
         val initialFormSnapshot: CreateEditSubunitFormSnapshot? = null
     )
 }
